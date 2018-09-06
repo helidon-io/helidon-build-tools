@@ -250,7 +250,7 @@ release_build(){
     git commit -a -m "Release ${FULL_VERSION} [ci skip]"
 
     # Create the nexus staging repository
-    local STAGING_DESC="Helidon v${FULL_VERSION}"
+    local STAGING_DESC="Helidon Build Tools v${FULL_VERSION}"
     mvn nexus-staging:rc-open \
       -DstagingProfileId=6026dab46eed94 \
       -DstagingDescription="${STAGING_DESC}"
@@ -285,8 +285,8 @@ release_build(){
     git remote add release "${GIT_REMOTE}" > /dev/null 2>&1 || \
     git remote set-url release "${GIT_REMOTE}"
 
-    git tag "${FULL_VERSION}"
-    git push release tag "${FULL_VERSION}"
+    git tag -f "${FULL_VERSION}"
+    git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
 }
 
 # Invoke command

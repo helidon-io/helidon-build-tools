@@ -39,8 +39,8 @@
                         <id>default</id>
                         <phases>
                             <process-resources>org.apache.maven.plugins:maven-resources-plugin:resources</process-resources>
-                            <compile>io.helidon.sitegen:sitegen-maven-plugin:generate</compile>
-                            <package>io.helidon.sitegen:sitegen-maven-plugin:package</package>
+                            <compile>io.helidon.build-tools:sitegen-maven-plugin:generate</compile>
+                            <package>io.helidon.build-tools:sitegen-maven-plugin:package</package>
                             <install>org.apache.maven.plugins:maven-install-plugin:install</install>
                             <deploy>org.apache.maven.plugins:maven-deploy-plugin:deploy</deploy>
                         </phases>
