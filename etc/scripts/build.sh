@@ -45,6 +45,4 @@ fi
 
 mvn -f ${WS_DIR}/pom.xml \
     clean install \
-    -Pjavadoc,spotbugs --fail-at-end
-
-examples/archetypes/test-archetypes.sh
+    --fail-at-end

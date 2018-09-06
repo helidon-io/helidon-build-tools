@@ -28,6 +28,10 @@
     <name>Helidon Site Generator</name>
     <packaging>maven-plugin</packaging>
 
+    <properties>
+        <spotbugs.skip>true</spotbugs.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
