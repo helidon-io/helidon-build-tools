@@ -1,0 +1,4 @@
+skinparam class {
+BackgroundColor #BDE6EE
+BorderColor #00758F
+}
