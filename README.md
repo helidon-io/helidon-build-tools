@@ -8,8 +8,8 @@
     <a href="https://github.com/oracle/helidon-build-tools/issues">
         <img src="https://img.shields.io/github/issues/oracle/helidon-build-tools.svg" alt="latest version">
     </a>
-    <a href="https://app.wercker.com/project/byKey/de00e8ec6178ba9a2db8ee863d5c568a">
-        <img src="https://app.wercker.com/status/de00e8ec6178ba9a2db8ee863d5c568a/s/master" alt="build status">
+    <a href="https://app.wercker.com/project/byKey/d45daebbd98f6bdcf0c2280e30b4724d">
+        <img src="https://app.wercker.com/status/d45daebbd98f6bdcf0c2280e30b4724d/s/master" alt="build status">
     </a>
     <a href="https://twitter.com/intent/follow?screen_name=helidon_project">
         <img src="https://img.shields.io/twitter/follow/helidon_project.svg?style=social&logo=twitter" alt="follow on Twitter">
