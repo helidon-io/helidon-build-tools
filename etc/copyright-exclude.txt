@@ -1,0 +1,14 @@
+/README.md
+/.gitignore
+/NOTICE.txt
+/LICENSE.txt
+/3RD-PARTY-LICENSE.txt
+/etc/copyright-exclude.txt
+/etc/copyright.txt
+/etc/images/
+_plantuml-config.txt
+superagent.js
+vuex-router-sync.js
+.png
+.jpg
+.ftl
