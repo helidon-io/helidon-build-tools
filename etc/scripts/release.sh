@@ -250,7 +250,7 @@ release_build(){
     git commit -a -m "Release ${FULL_VERSION} [ci skip]"
 
     # Create the nexus staging repository
-    local STAGING_DESC="Helidon v${FULL_VERSION}"
+    local STAGING_DESC="Helidon Build Tools v${FULL_VERSION}"
     mvn nexus-staging:rc-open \
       -DstagingProfileId=6026dab46eed94 \
       -DstagingDescription="${STAGING_DESC}"
