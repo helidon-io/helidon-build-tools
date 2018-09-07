@@ -15,8 +15,13 @@
  -->
 <#assign _content = content>
 <#assign _level = level?number +1/>
+<#if attributes.id??>
+<#assign _id = attributes.id>
+<#elseif id??>
+<#assign _id = id>
+</#if>
 <@searchIndex>${_content}</@searchIndex>
-<h${_level} <#if attributes["id"]??> id="${attributes["id"]}"</#if>>${title}</h${_level}>
+<h${_level} <#if _id??>id="${_id}"</#if>>${title}</h${_level}>
 <div class="section">
 ${_content}
 </div>
