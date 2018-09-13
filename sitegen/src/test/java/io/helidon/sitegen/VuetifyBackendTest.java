@@ -27,6 +27,8 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.common.CollectionsHelper.listOf;
 import static io.helidon.common.CollectionsHelper.mapOf;
 import static io.helidon.sitegen.TestHelper.*;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -39,7 +41,8 @@ public class VuetifyBackendTest {
     public void testVuetify1() throws Exception {
 
         File sourcedir = getFile(SOURCE_DIR_PREFIX + "testvuetify1");
-        File outputdir = getFile("target/vuetify-backend-test/testvuetify1");
+        Path outputdirPath = FileSystems.getDefault().getPath("target", "vuetify-backend-test", "testvuetify1");
+        File outputdir = getFile(outputdirPath.toString());
 
         Site.builder()
                 .pages(listOf(SourcePathFilter.builder()
@@ -118,8 +121,15 @@ public class VuetifyBackendTest {
         File config = new File(outputdir, "main/config.js");
         assertTrue(config.exists());
 
-        File home = new File(outputdir, "pages/home.js");
-        assertTrue(home.exists());
+        Path homePath = outputdirPath.resolve("pages/home.js");
+        assertTrue(Files.exists(homePath));
+
+        assertTrue(Files.readAllLines(homePath).stream()
+                .filter(line -> line.contains("to an anchor<br>"))
+                .findFirst()
+                .isPresent()
+        );
+
     }
 
     @Test

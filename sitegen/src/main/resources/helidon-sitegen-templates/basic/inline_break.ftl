@@ -13,15 +13,5 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  -->
-<html>
-<head>
-<title>Example Document</title>
-</head>
-<body>
-<h1>Example Document</h1>
-<p>This is a very basic document</p>
-<h2>Introduction</h2>
-<p>This project does something.<br>
-We just haven&#8217;t decided what that is yet.</p>
-</body>
-<html>
+<#assign _text><@passthroughfix/></#assign>
+${_text}<br>
