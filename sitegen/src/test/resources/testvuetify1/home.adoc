@@ -23,4 +23,5 @@
 
 Welcome to my pet project about stuff. See <<about/01_intro.adoc,documentation>>
 
-Here is a <<about/01_intro.adoc#another-section,link>> to an anchor on another page
+Here is a <<about/01_intro.adoc#another-section,link>> to an anchor +
+on another page
