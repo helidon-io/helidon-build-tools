@@ -39,7 +39,6 @@ import org.asciidoctor.AttributesBuilder;
 import org.asciidoctor.OptionsBuilder;
 import org.asciidoctor.SafeMode;
 import org.asciidoctor.ast.Document;
-import org.asciidoctor.ast.DocumentHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -143,13 +142,24 @@ public class AsciidocEngine {
      */
     public Map<String, Object> readDocumentHeader(File source){
         checkValidFile(source, "source");
-        DocumentHeader header = asciidoctor.readDocumentHeader(source);
+        final OptionsBuilder optionsBuilder = OptionsBuilder.options()
+                .attributes(
+                        AttributesBuilder
+                                .attributes()
+                                .attributes(attributes))
+                .backend(this.backend)
+                .safe(SafeMode.UNSAFE)
+                .headerFooter(false)
+                .eruby("")
+                .baseDir(source.getParentFile())
+                .option("parse_header_only", true);
+        Document doc = asciidoctor.loadFile(source, optionsBuilder.asMap());
         Map<String, Object> headerMap = new HashMap<>();
         String h1 = parseSection0Title(source);
         if (h1 != null) {
             headerMap.put("h1", h1);
         }
-        headerMap.putAll(header.getAttributes());
+        headerMap.putAll(doc.getAttributes());
         return headerMap;
     }
 
