@@ -89,10 +89,12 @@ public class GenerateMojo extends AbstractMojo {
 
         project.addCompileSourceRoot(siteSourceDirectory.getAbsolutePath());
 
-        Properties properties = new Properties(project.getProperties());
+        Properties properties = new Properties();
+        properties.putAll(project.getProperties());
         properties.setProperty("project.groupId", project.getGroupId());
         properties.setProperty("project.artifactId", project.getArtifactId());
         properties.setProperty("project.version", project.getVersion());
+        properties.setProperty("project.basedir", project.getBasedir().getAbsolutePath());
 
         site = Site.builder()
                 .config(siteConfigFile, properties)
