@@ -32,6 +32,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collections;
 
 import io.helidon.sitegen.asciidoctor.AsciidocConverter;
+import java.nio.file.Paths;
 
 import org.slf4j.LoggerFactory;
 
@@ -89,7 +90,7 @@ public abstract class Helper {
                 templatesDir = fs.getPath(relativePath);
                 break;
             case "file":
-                templatesDir = new File(templatesDirURI).toPath();
+                templatesDir = Paths.get(templatesDirURI);
                 break;
             default:
                 throw new IllegalStateException(templatesDirURI.toASCIIString()
