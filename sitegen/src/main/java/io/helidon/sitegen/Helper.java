@@ -89,8 +89,7 @@ public abstract class Helper {
                 templatesDir = fs.getPath(relativePath);
                 break;
             case "file":
-                templatesDir = FileSystems.getDefault().getPath(
-                        templatesDirURI.getSchemeSpecificPart());
+                templatesDir = new File(templatesDirURI).toPath();
                 break;
             default:
                 throw new IllegalStateException(templatesDirURI.toASCIIString()
@@ -275,6 +274,6 @@ public abstract class Helper {
      * @return the relative path of the source file
      */
     public static String getRelativePath(File sourcedir, File source) {
-        return sourcedir.toPath().relativize(source.toPath()).toString();
+        return sourcedir.toURI().relativize(source.toURI()).toString();
     }
 }
