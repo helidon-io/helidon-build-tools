@@ -92,7 +92,7 @@
     <properties>
         <java.version>8</java.version>
 
-        <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF8</surefire.argLine>
+        <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF-8</surefire.argLine>
         <surefire.coverage.argline />
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
