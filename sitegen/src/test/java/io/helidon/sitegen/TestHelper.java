@@ -28,10 +28,6 @@ import com.github.difflib.patch.Patch;
 import freemarker.cache.FileTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
-import io.helidon.sitegen.maven.GenerateMojo;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.MojoExecution;
-import org.apache.maven.project.MavenProject;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -53,7 +49,7 @@ public abstract class TestHelper {
         if (basedirPath == null) {
             basedirPath = new File("").getAbsolutePath();
         }
-        return basedirPath;
+        return basedirPath.replace("\\","/");
     }
 
     /**
@@ -124,7 +120,7 @@ public abstract class TestHelper {
         // compare expected and rendered
         Patch<String> patch = DiffUtils.diff(expectedLines, actualLines);
         if (patch.getDeltas().size() > 0) {
-            fail("rendered file differs from expected" + patch.toString());
+            fail("rendered file differs from expected: " + patch.toString());
         }
     }
 }

@@ -92,7 +92,7 @@
     <properties>
         <java.version>8</java.version>
 
-        <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF8</surefire.argLine>
+        <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF-8</surefire.argLine>
         <surefire.coverage.argline />
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -103,7 +103,7 @@
 
         Changing these version requires approval for a new third party dependency!
         -->
-        <version.lib.asciidoctorj>1.6.0-alpha.6</version.lib.asciidoctorj>
+        <version.lib.asciidoctorj>1.6.0-RC.2</version.lib.asciidoctorj>
         <version.lib.asciidoctorj-diagram>1.5.4.1</version.lib.asciidoctorj-diagram>
         <version.lib.checkstyle>7.4</version.lib.checkstyle>
         <version.lib.diffutils>2.2</version.lib.diffutils>
@@ -442,6 +442,11 @@
             </dependency>
             <dependency>
                 <groupId>org.asciidoctor</groupId>
+                <artifactId>asciidoctorj-api</artifactId>
+                <version>${version.lib.asciidoctorj}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.asciidoctor</groupId>
                 <artifactId>asciidoctorj</artifactId>
                 <version>${version.lib.asciidoctorj}</version>
             </dependency>
@@ -458,6 +463,11 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
+                <version>${version.lib.slf4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>jul-to-slf4j</artifactId>
                 <version>${version.lib.slf4j}</version>
             </dependency>
             <dependency>
