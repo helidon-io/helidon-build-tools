@@ -28,6 +28,7 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collections;
 
@@ -89,8 +90,7 @@ public abstract class Helper {
                 templatesDir = fs.getPath(relativePath);
                 break;
             case "file":
-                templatesDir = FileSystems.getDefault().getPath(
-                        templatesDirURI.getSchemeSpecificPart());
+                templatesDir = Paths.get(templatesDirURI);
                 break;
             default:
                 throw new IllegalStateException(templatesDirURI.toASCIIString()
@@ -275,6 +275,8 @@ public abstract class Helper {
      * @return the relative path of the source file
      */
     public static String getRelativePath(File sourcedir, File source) {
-        return sourcedir.toPath().relativize(source.toPath()).toString();
+        return sourcedir.toPath().relativize(source.toPath()).toString()
+                // force UNIX style path on windows
+                .replace("\\", "/");
     }
 }
