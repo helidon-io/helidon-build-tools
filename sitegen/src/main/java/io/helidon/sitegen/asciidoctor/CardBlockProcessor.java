@@ -53,7 +53,7 @@ public class CardBlockProcessor extends BlockProcessor {
                           Map<String, Object> attributes) {
 
         // create a block with context "card", and put the parsed content into it
-        Block block = this.createBlock(parent, "CARD", reader.readLines(),
+        Block block = this.createBlock(parent, "card", reader.readLines(),
                 attributes);
         return block;
     }

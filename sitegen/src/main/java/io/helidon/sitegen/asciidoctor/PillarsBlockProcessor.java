@@ -57,7 +57,7 @@ public class PillarsBlockProcessor extends BlockProcessor {
         // means it can have nested blocks
         opts.put("content_model", "compound");
         // create an empty block with context "pillars"
-        Block block = this.createBlock(parent, "PILLARS",
+        Block block = this.createBlock(parent, "pillars",
                 Collections.emptyList(), attributes, opts);
         return block;
     }
