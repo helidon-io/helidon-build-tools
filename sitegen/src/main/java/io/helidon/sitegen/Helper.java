@@ -275,6 +275,8 @@ public abstract class Helper {
      * @return the relative path of the source file
      */
     public static String getRelativePath(File sourcedir, File source) {
-        return sourcedir.toURI().relativize(source.toURI()).toString();
+        return sourcedir.toPath().relativize(source.toPath()).toString()
+                // force UNIX style path on windows
+                .replace("\\","/");
     }
 }
