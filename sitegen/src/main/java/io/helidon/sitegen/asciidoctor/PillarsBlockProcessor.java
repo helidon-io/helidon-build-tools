@@ -24,10 +24,8 @@ import java.util.Map;
 import org.asciidoctor.ast.Block;
 import org.asciidoctor.ast.StructuralNode;
 import org.asciidoctor.extension.BlockProcessor;
+import org.asciidoctor.extension.Contexts;
 import org.asciidoctor.extension.Reader;
-
-import static org.asciidoctor.extension.BlockProcessor.CONTEXTS;
-import static org.asciidoctor.extension.Contexts.EXAMPLE;
 
 /**
  * A {@link BlockProcessor} implementation that provides custom asciidoc syntax
@@ -38,12 +36,15 @@ import static org.asciidoctor.extension.Contexts.EXAMPLE;
 public class PillarsBlockProcessor extends BlockProcessor {
 
     /**
+     * This block is of type example (delimited by ====).
+     */
+    private static final Map<String, Object> CONFIG = createConfig(Contexts.EXAMPLE);
+
+    /**
      * Create a new instance of {@link PillarsBlockProcessor}.
      */
     public PillarsBlockProcessor() {
-        super("PILLARS");
-        // this block is of type example (delimited by ====)
-        config.put(CONTEXTS, Arrays.asList(EXAMPLE));
+        super("PILLARS", CONFIG);
         setConfigFinalized();
     }
 
@@ -56,8 +57,19 @@ public class PillarsBlockProcessor extends BlockProcessor {
         // means it can have nested blocks
         opts.put("content_model", "compound");
         // create an empty block with context "pillars"
-        Block block = this.createBlock(parent, "pillars",
+        Block block = this.createBlock(parent, "PILLARS",
                 Collections.emptyList(), attributes, opts);
         return block;
+    }
+
+    /**
+     * Create a block processor configuration.
+     * @param blockType the type of block
+     * @return map
+     */
+    private static Map<String, Object> createConfig(String ... blockTypes){
+        Map<String, Object> config = new HashMap<>();
+        config.put(Contexts.KEY, Arrays.asList(blockTypes));
+        return config;
     }
 }

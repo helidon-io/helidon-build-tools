@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.sitegen.TestHelper.SOURCE_DIR_PREFIX;
 import static io.helidon.sitegen.TestHelper.assertString;
 import static io.helidon.sitegen.TestHelper.getFile;
+import org.junit.jupiter.api.AfterAll;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -40,15 +41,21 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class PageMetadataTest {
 
     private static final File SOURCEDIR = getFile(SOURCE_DIR_PREFIX + "testmetadata");
+    private static final String BACKEND_NAME = "dummy";
     private static AsciidocPageRenderer pageRenderer;
 
     @BeforeAll
     public static void init(){
-        final String backendName = "dummy";
-        SiteEngine.register(backendName, new SiteEngine(
-                new FreemarkerEngine(backendName, null, null),
-                new AsciidocEngine(backendName, null, null, null)));
-        pageRenderer = new AsciidocPageRenderer(backendName);
+        SiteEngine.register(BACKEND_NAME, new SiteEngine(
+                new FreemarkerEngine(BACKEND_NAME, null, null),
+                new AsciidocEngine(BACKEND_NAME, null, null, null)));
+        pageRenderer = new AsciidocPageRenderer(BACKEND_NAME);
+    }
+
+    @AfterAll
+    public static void cleanup(){
+        SiteEngine.get(BACKEND_NAME).asciidoc().unregister();
+        SiteEngine.deregister(BACKEND_NAME);
     }
 
     private static Metadata readMetadata(String fname){

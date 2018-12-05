@@ -39,6 +39,7 @@ import org.asciidoctor.AttributesBuilder;
 import org.asciidoctor.OptionsBuilder;
 import org.asciidoctor.SafeMode;
 import org.asciidoctor.ast.Document;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +66,8 @@ public class AsciidocEngine {
      */
     public static final String DEFAULT_IMAGESDIR = "./images";
 
+    private static volatile Asciidoctor asciidoctorInstance = null;
+
     private final String backend;
     private final List<String> libraries;
     private final Map<String, Object> attributes;
@@ -83,12 +86,23 @@ public class AsciidocEngine {
                           Map<String, Object> attributes,
                           String imagesdir){
         checkNonNullNonEmpty(backend, BACKEND_PROP);
+        installSLF4JBridge();
         this.backend = backend;
         this.attributes = attributes == null ? Collections.emptyMap() : attributes;
         this.libraries = libraries == null ? Collections.emptyList() : libraries;
         this.imagesdir = imagesdir == null ? DEFAULT_IMAGESDIR : imagesdir;
-        this.asciidoctor = Asciidoctor.Factory.create();
+        if(asciidoctorInstance == null){
+            asciidoctorInstance = Asciidoctor.Factory.create();
+        }
+        this.asciidoctor = asciidoctorInstance;
         new AsciidocExtensionRegistry(backend).register(asciidoctor);
+    }
+
+    /**
+     * Unregister asciidoctor extensions.
+     */
+    public void unregister(){
+        this.asciidoctor.unregisterAllExtensions();
     }
 
     /**
@@ -329,5 +343,13 @@ public class AsciidocEngine {
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Setup the SLF4J to JUL bridge.
+     */
+    private static void installSLF4JBridge(){
+        SLF4JBridgeHandler.removeHandlersForRootLogger();
+        SLF4JBridgeHandler.install();
     }
 }

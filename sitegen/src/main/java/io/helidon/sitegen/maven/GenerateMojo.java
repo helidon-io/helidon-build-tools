@@ -100,6 +100,11 @@ public class GenerateMojo extends AbstractMojo {
                 .config(siteConfigFile, properties)
                 .build();
 
+        // enable jruby verbose mode on debugging
+        if(getLog().isDebugEnabled()){
+            System.setProperty("jruby.cli.verbose", "true");
+        }
+
         try {
             site.generate(siteSourceDirectory, siteOutputDirectory);
         } catch (RenderingException ex) {
