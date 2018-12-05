@@ -101,7 +101,7 @@ public class GenerateMojo extends AbstractMojo {
                 .build();
 
         // enable jruby verbose mode on debugging
-        if(getLog().isDebugEnabled()){
+        if (getLog().isDebugEnabled()) {
             System.setProperty("jruby.cli.verbose", "true");
         }
 

@@ -39,9 +39,9 @@ import org.asciidoctor.AttributesBuilder;
 import org.asciidoctor.OptionsBuilder;
 import org.asciidoctor.SafeMode;
 import org.asciidoctor.ast.Document;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import static io.helidon.sitegen.Helper.checkNonNull;
 import static io.helidon.sitegen.Helper.checkNonNullNonEmpty;
@@ -91,7 +91,7 @@ public class AsciidocEngine {
         this.attributes = attributes == null ? Collections.emptyMap() : attributes;
         this.libraries = libraries == null ? Collections.emptyList() : libraries;
         this.imagesdir = imagesdir == null ? DEFAULT_IMAGESDIR : imagesdir;
-        if(asciidoctorInstance == null){
+        if (asciidoctorInstance == null) {
             asciidoctorInstance = Asciidoctor.Factory.create();
         }
         this.asciidoctor = asciidoctorInstance;
