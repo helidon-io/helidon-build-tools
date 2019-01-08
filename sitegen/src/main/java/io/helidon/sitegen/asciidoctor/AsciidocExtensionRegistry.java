@@ -49,5 +49,9 @@ public class AsciidocExtensionRegistry implements ExtensionRegistry {
                 .javaExtensionRegistry();
         javaExtensionRegistry.block(new CardBlockProcessor());
         javaExtensionRegistry.block(new PillarsBlockProcessor());
+        javaExtensionRegistry.preprocessor(new IncludePreprocessor());
+        javaExtensionRegistry.preprocessor(new RewriteSourcePreprocessor());
+        javaExtensionRegistry.treeprocessor(new SourceIncludeProcessor());
+        javaExtensionRegistry.postprocessor(new IncludePostprocessor());
     }
 }

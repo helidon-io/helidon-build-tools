@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public abstract class TestHelper {
 
-    protected static final String SOURCE_DIR_PREFIX = "src/test/resources/";
+    public static final String SOURCE_DIR_PREFIX = "src/test/resources/";
 
     /**
      * Get the base directory path of the project.
@@ -62,7 +62,7 @@ public abstract class TestHelper {
      * @param path a relative path within the project directory
      * @return the corresponding for the given path
      */
-    static File getFile(String path) {
+    public static File getFile(String path) {
         return new File(getBasedirPath(), path);
     }
 
@@ -101,7 +101,7 @@ public abstract class TestHelper {
      * @param actual the rendered file to be compared
      * @throws Exception if an error occurred
      */
-    static void assertRendering(File outputdir, File expectedTpl, File actual)
+    public static void assertRendering(File outputdir, File expectedTpl, File actual)
             throws Exception {
 
         assertTrue(actual.exists(), actual.getAbsolutePath() + " does not exist");

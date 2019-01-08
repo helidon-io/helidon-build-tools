@@ -42,6 +42,7 @@ public class GenerateMojoTest {
         GenerateMojo mojo = MavenPluginHelper.getInstance().getMojo(
                 "generate-mojo/pom-basic-backend.xml",
                 OUTPUT_DIR,
+                "generate",
                 GenerateMojo.class);
         mojo.execute();
         Site site = mojo.getSite();
@@ -54,6 +55,7 @@ public class GenerateMojoTest {
         GenerateMojo mojo = MavenPluginHelper.getInstance().getMojo(
                 "generate-mojo/pom-vuetify-backend.xml",
                 OUTPUT_DIR,
+                "generate",
                 GenerateMojo.class);
         mojo.execute();
         Site site = mojo.getSite();

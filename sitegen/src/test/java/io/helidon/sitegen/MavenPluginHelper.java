@@ -61,10 +61,10 @@ public final class MavenPluginHelper extends AbstractMojoTestCase {
         return project;
     }
 
-    public <T> T getMojo (String pom, File dir, Class<T> clazz) throws Exception {
+    public <T> T getMojo (String pom, File dir, String execName, Class<T> clazz) throws Exception {
         MavenProject project = newMavenProject(pom, dir);
         MavenSession session = newMavenSession(project);
-        MojoExecution execution = newMojoExecution("generate");
+        MojoExecution execution = newMojoExecution(execName);
         Mojo mojo = lookupConfiguredMojo(session, execution);
         assertNotNull(mojo);
         return clazz.cast(mojo);
