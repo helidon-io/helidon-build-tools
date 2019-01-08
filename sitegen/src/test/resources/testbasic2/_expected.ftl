@@ -39,7 +39,7 @@ $ mvn
 <dl>
 <dt>asciidoctor-version</dt>
 <dd>
-1.5.6.1
+1.5.8
 </dd>
 <dt>safe-mode-name</dt>
 <dd>

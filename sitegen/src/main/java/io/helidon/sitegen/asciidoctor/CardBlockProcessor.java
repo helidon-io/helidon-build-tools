@@ -17,14 +17,14 @@
 package io.helidon.sitegen.asciidoctor;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.asciidoctor.ast.Block;
 import org.asciidoctor.ast.StructuralNode;
 import org.asciidoctor.extension.BlockProcessor;
+import org.asciidoctor.extension.Contexts;
 import org.asciidoctor.extension.Reader;
-
-import static org.asciidoctor.extension.Contexts.OPEN;
 
 /**
  * A {@link BlockProcessor} implementation that provides custom asciidoc syntax
@@ -35,12 +35,15 @@ import static org.asciidoctor.extension.Contexts.OPEN;
 public class CardBlockProcessor extends BlockProcessor {
 
     /**
+     * This block is of type open (delimited by --).
+     */
+    private static final Map<String, Object> CONFIG = createConfig(Contexts.OPEN);
+
+    /**
      * Create a new instance of {@link CardBlockProcessor}.
      */
     public CardBlockProcessor() {
-        super("CARD");
-        // this block is of type open (delimited by --)
-        config.put(CONTEXTS, Arrays.asList(OPEN));
+        super("CARD", CONFIG);
         setConfigFinalized();
     }
 
@@ -53,5 +56,16 @@ public class CardBlockProcessor extends BlockProcessor {
         Block block = this.createBlock(parent, "card", reader.readLines(),
                 attributes);
         return block;
+    }
+
+    /**
+     * Create a block processor configuration.
+     * @param blockType the type of block
+     * @return map
+     */
+    private static Map<String, Object> createConfig(String ... blockTypes){
+        Map<String, Object> config = new HashMap<>();
+        config.put(Contexts.KEY, Arrays.asList(blockTypes));
+        return config;
     }
 }

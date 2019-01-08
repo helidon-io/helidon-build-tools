@@ -83,6 +83,15 @@ public class SiteEngine {
     }
 
     /**
+     * Remove the {@link SiteEngine} registered for the given backend.
+     * @param backend the backend to remove
+     */
+    public static void deregister(String backend) {
+        checkNonNullNonEmpty(backend, BACKEND_PROP);
+        REGISTRY.remove(backend);
+    }
+
+    /**
      * Get a {@link SiteEngine} from the registry.
      * @param backend the backend name identifying the registered {@link SiteEngine}
      * @return instance of {@link SiteEngine}, never {@code null}
