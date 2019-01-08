@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018-2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,10 +61,10 @@ public final class MavenPluginHelper extends AbstractMojoTestCase {
         return project;
     }
 
-    public <T> T getMojo (String pom, File dir, Class<T> clazz) throws Exception {
+    public <T> T getMojo (String pom, File dir, String execName, Class<T> clazz) throws Exception {
         MavenProject project = newMavenProject(pom, dir);
         MavenSession session = newMavenSession(project);
-        MojoExecution execution = newMojoExecution("generate");
+        MojoExecution execution = newMojoExecution(execName);
         Mojo mojo = lookupConfiguredMojo(session, execution);
         assertNotNull(mojo);
         return clazz.cast(mojo);

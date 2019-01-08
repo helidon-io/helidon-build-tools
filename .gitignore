@@ -22,3 +22,4 @@ node/
 *.swp
 .gradle/
 build/
+/sitegen/nbproject/
