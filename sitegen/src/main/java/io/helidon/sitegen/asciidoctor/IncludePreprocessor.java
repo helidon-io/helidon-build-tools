@@ -51,7 +51,7 @@ public class IncludePreprocessor extends Preprocessor {
         List<String> updatedLines = addBeginAndEndIncludeComments(origLines);
 
         // Force the reader to consume the original input, then erase it by
-        // restoring using an empty list. Add our augmented content as an
+        // restoring with an empty list. Add our augmented content as an
         // include which causes AsciiDoctorJ to process it (although ADJ will
         // not invoke this preprocessor again when it processes that
         // pseudo-included content).
