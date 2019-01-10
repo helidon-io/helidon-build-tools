@@ -120,7 +120,7 @@ public abstract class TestHelper {
         // compare expected and rendered
         Patch<String> patch = DiffUtils.diff(expectedLines, actualLines);
         if (patch.getDeltas().size() > 0) {
-            fail("rendered file differs from expected: " + patch.toString());
+            fail("rendered file " + actual.getAbsolutePath() + " differs from expected: " + patch.toString());
         }
     }
 }

@@ -16,9 +16,12 @@
  */
 package io.helidon.sitegen.asciidoctor;
 
+import io.helidon.sitegen.asciidoctor.RewriteSourcePreprocessor.IncludeAnalyzer;
+import io.helidon.sitegen.asciidoctor.RewriteSourcePreprocessor.SourceBlockAnalyzer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.asciidoctor.ast.Document;
 import org.asciidoctor.extension.Preprocessor;
@@ -31,6 +34,7 @@ public class IncludePreprocessor extends Preprocessor {
 
     static final String INCLUDE_START = "_include-start";
     static final String INCLUDE_END = "_include-end";
+    static final String INCLUDES_ATTR_NAME = "_includesProcessingState";
 
     @Override
     public void process(Document doc, PreprocessorReader reader) {
@@ -44,22 +48,36 @@ public class IncludePreprocessor extends Preprocessor {
 
     private void markIncludes(List<String> origLines, Document doc, PreprocessorReader reader) {
 
-        doc.setAttribute("includes", "yes", true);
+        doc.setAttribute(INCLUDES_ATTR_NAME, "bracketed", true);
 
-        // Read from the raw input; temporarily we need to suppress include processing
-        // because we need to see the include directives ourselves.
+        /*
+         * Read from the raw input; temporarily we need to suppress include processing
+         * because we need to see the include directives ourselves.
+         */
         List<String> updatedLines = addBeginAndEndIncludeComments(origLines);
 
-        // Force the reader to consume the original input, then erase it by
-        // restoring with an empty list. Add our augmented content as an
-        // include which causes AsciiDoctorJ to process it (although ADJ will
-        // not invoke this preprocessor again when it processes that
-        // pseudo-included content).
+        /*
+         * Force the reader to consume the original input, then erase it by
+         * restoring with an empty list. Add our augmented content as an
+         * include which causes AsciiDoctorJ to process it (although ADJ will
+         * not invoke this preprocessor again when it processes that
+         * pseudo-included content).
+         */
         reader.readLines();
         reader.restoreLines(Collections.emptyList());
         String updatedContent = updatedLines.stream()
                 .collect(Collectors.joining(System.lineSeparator()));
         reader.push_include(updatedContent, null, null, 1, Collections.emptyMap());
+
+        /*
+         * Convert the bracketed include comments and included text to numbered
+         * include comments and included text.
+         */
+
+        List<String> convertedLines = convertBracketedToNumberedIncludes(reader.readLines());
+        reader.restoreLines(convertedLines);
+
+
     }
 
     private void reorganizeIncludesInSourceBlocks(List<String> origLines, Document doc, PreprocessorReader reader) {
@@ -100,6 +118,27 @@ public class IncludePreprocessor extends Preprocessor {
 
     static String include(String includeTarget) {
         return String.format("include::" + includeTarget);
+    }
+
+    static List<String> convertBracketedToNumberedIncludes(List<String> content) {
+        List<String> result = new ArrayList<>();
+
+        AtomicInteger lineNumber = new AtomicInteger(0);
+        while (lineNumber.get() < content.size()) {
+            String line = content.get(lineNumber.get());
+            if (RewriteSourcePreprocessor.isIncludeStart(line)) {
+                IncludeAnalyzer ia = RewriteSourcePreprocessor.IncludeAnalyzer.consumeBracketedInclude(content, lineNumber.get() + 1, lineNumber);
+                result.add(ia.numberedDescriptor());
+                result.addAll(ia.body());
+            } else if (RewriteSourcePreprocessor.isSourceStart(line)) {
+                SourceBlockAnalyzer sba = SourceBlockAnalyzer.consumeSourceBlock(content, lineNumber);
+                result.addAll(sba.updatedSourceBlock());
+            } else {
+                result.add(line);
+                lineNumber.getAndIncrement();
+            }
+        }
+        return result;
     }
 
     private static boolean isLineIncludeStart(String line) {

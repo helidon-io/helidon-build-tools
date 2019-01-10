@@ -26,9 +26,13 @@ import static io.helidon.sitegen.asciidoctor.IncludePreprocessor.includeStart;
 import static io.helidon.sitegen.TestHelper.SOURCE_DIR_PREFIX;
 import static io.helidon.sitegen.TestHelper.assertRendering;
 import static io.helidon.sitegen.TestHelper.getFile;
+import io.helidon.sitegen.asciidoctor.RewriteSourcePreprocessor.IncludeAnalyzer;
+import io.helidon.sitegen.asciidoctor.RewriteSourcePreprocessor.SourceBlockAnalyzer;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
@@ -87,6 +91,175 @@ public class IncludePreprocessorTest {
         assertEquals(expectedProcessedTextAsList,
                 processedText,
                 "mismatch in pre-commented included text");
+    }
+
+    @Test
+    public void testSourceBlockHandling() {
+        String includedContentText =
+                "public class A {\n" +
+                "  public void hi() {\n" +
+                "    System.out.println(\"Hi!\")\n" +
+                "  }\n" +
+                "}\n";
+
+        String contentText = "[source]\n.Title for the block\nOther preamble\n" +
+                "----\n" +
+                "not-included\n" +
+                "// _include-start::A.java\n" +
+                includedContentText +
+                "// _include-end::A.java\n" +
+                "public class B {\n" +
+                "  public void bye() {\n" +
+                "    System.out.println(\"Bye!\");\n" +
+                "  }\n" +
+                "}\n" +
+                "----";
+
+        List<IncludeAnalyzer> expectedIncludes = new ArrayList<>();
+
+        List<String> content = asList(contentText);
+        expectedIncludes.add(new IncludeAnalyzer(content, 2, 1, 5, asList(includedContentText), "A.java"));
+
+        AtomicInteger lineNumber = new AtomicInteger(0);
+        SourceBlockAnalyzer sba = SourceBlockAnalyzer.consumeSourceBlock(content, lineNumber);
+        List<IncludeAnalyzer> includes = sba.sourceIncludes();
+
+        assertEquals(content.size(), lineNumber.get(), "returned line number did not match");
+        assertEquals(expectedIncludes, includes);
+
+    }
+
+    @Test
+    public void testIncludeAnalysisFromNumberedInclude() {
+        String expectedIncludeTarget = "randomStuff.adoc";
+        List<String> includedContent = asList(
+                "inc line 1\n" +
+                "inc line 2\n" +
+                "inc line 3\n");
+        List<String> content = new ArrayList<>();
+        content.add("before start of block");
+        content.add("line 1");
+        content.addAll(includedContent);
+        content.addAll(asList(
+                "line 2\n" +
+                "line 3\n"));
+        int expectedStartWithinBlock = 0;
+        int expectedEndWithinBlock = 2;
+
+        IncludeAnalyzer ia = IncludeAnalyzer.fromNumberedInclude(content, 2,
+                String.format("// _include::%d-%d:%s", expectedStartWithinBlock, expectedEndWithinBlock, expectedIncludeTarget));
+        assertEquals(expectedStartWithinBlock, ia.startWithinBlock(), "unexpected starting line number");
+        assertEquals(expectedEndWithinBlock, ia.endWithinBlock(), "unexpected ending line number");
+        assertEquals(includedContent, ia.body(), "unexpected body");
+        assertEquals(expectedIncludeTarget, ia.includeTarget(), "unexpected include target");
+    }
+
+    @Test
+    public void testIncludeAnalysisFromBracketedInclude() {
+        String expectedIncludeTarget = "randomStuff.adoc";
+        List<String> includedContent = asList(
+                "inc 1\n" +
+                "inc 2\n" +
+                "inc 3\n");
+        List<String> content = new ArrayList<>();
+        content.add("before start of block");
+        content.add("line 1");
+        content.add("// _include-start::" + expectedIncludeTarget);
+        content.addAll(includedContent);
+        content.add("// _include-end::" + expectedIncludeTarget);
+        content.addAll(asList(
+                "line 2\n" +
+                "line 3\n"));
+        int expectedStartWithinBlock = 0;
+        int expectedEndWithinBlock = 2;
+        int expectedFinalLineAfterConsuming = 7;
+
+        AtomicInteger lineNumber = new AtomicInteger(2);
+        IncludeAnalyzer ia = IncludeAnalyzer.consumeBracketedInclude(content, lineNumber.get(), lineNumber);
+
+        assertEquals(expectedStartWithinBlock, ia.startWithinBlock(), "unexpected start within block");
+        assertEquals(expectedEndWithinBlock, ia.endWithinBlock(), "unexpected end within block");
+        assertEquals(includedContent, ia.body(), "unexpected body");
+        assertEquals(expectedIncludeTarget, ia.includeTarget(), "unexpected include target");
+        assertEquals(expectedFinalLineAfterConsuming, lineNumber.get(), "unexpected final line number");
+    }
+
+    @Test
+    public void testOverallConversion() {
+        /*
+         * Create content containing begin-end bracketed includes, both in and
+         * outside [source] blocks.
+         */
+        String include1Target = "aFewLines.adoc";
+        List<String> include1Body = asList(
+            "inc 1\n" +
+            "inc 2\n" +
+            "inc 3\n");
+
+        String srcInclude1Target = "Include1.java";
+        List<String> srcInclude1Body = asList(
+            "src inc 1.1\n" +
+            "src inc 1.2\n" +
+            "src inc 1.3\n" +
+            "src inc 1.4\n");
+
+        String srcInclude2Target = "Include2.java";
+        List<String> srcInclude2Body = asList(
+            "src inc 2.1\n" +
+            "src inc 2.2\n" +
+            "src inc 2.3\n" +
+            "src inc 2.4\n");
+
+        String srcInclude3Target = "Include3.java";
+        List<String> srcInclude3Body = asList(
+            "src inc 3.1\n" +
+            "src inc 3.2\n");
+
+        List<String> src1Body = new ArrayList<>();
+        src1Body.add("// This is un-included source");
+        src1Body.add("// _include-start::" + srcInclude1Target);
+        src1Body.addAll(srcInclude1Body);
+        src1Body.add("// _include-end::" + srcInclude1Target);
+
+        src1Body.add("More un-included source");
+
+        src1Body.add("// _include-start::" + srcInclude2Target);
+        src1Body.addAll(srcInclude2Body);
+        src1Body.add("// _include-end::" + srcInclude2Target);
+
+        // Note - no intervening non-includec source here. Test two adjacent includes.
+
+        src1Body.add("// _include-start::" + srcInclude3Target);
+        src1Body.addAll(srcInclude3Body);
+        src1Body.add("// _include-end::" + srcInclude3Target);
+
+
+        List<String> src1 = new ArrayList<>();
+        src1.addAll(asList(
+            "[source]\n" +
+            ".Title for the source\n" +
+            "----\n" +
+            ""));
+        src1.addAll(src1Body);
+        src1.add("----");
+
+        // Now build the entire content.
+
+        List<String> content = new ArrayList<>();
+        content.addAll(asList(
+            "Beginning of document\n" +
+            "This is some useful information before any includes."));
+        content.add("// _include-start::" + include1Target);
+        content.addAll(include1Body);
+        content.add("// _include-end::" + include1Target);
+
+        content.add("");
+
+        content.addAll(src1);
+
+        List<String> numberedContent = IncludePreprocessor.convertBracketedToNumberedIncludes(content);
+
+
     }
 
     private static List<String> asList(String text) {
