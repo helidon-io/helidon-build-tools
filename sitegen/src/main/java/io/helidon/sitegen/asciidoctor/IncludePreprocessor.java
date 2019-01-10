@@ -75,8 +75,12 @@ public class IncludePreprocessor extends Preprocessor {
          */
 
         List<String> convertedLines = convertBracketedToNumberedIncludes(reader.readLines());
-        reader.restoreLines(convertedLines);
+        reader.restoreLines(Collections.emptyList());
+        String convertedContent = convertedLines.stream()
+                .collect(Collectors.joining(System.lineSeparator()));
+        reader.push_include(convertedContent, null, null, 1, Collections.emptyMap());
 
+        int i = 6;
 
     }
 
@@ -109,11 +113,11 @@ public class IncludePreprocessor extends Preprocessor {
     }
 
     static String includeStart(String includeTarget) {
-        return String.format("// %s %s", INCLUDE_START, includeTarget);
+        return String.format("// %s::%s", INCLUDE_START, includeTarget);
     }
 
     static String includeEnd(String includeTarget) {
-        return String.format("// %s %s", INCLUDE_END, includeTarget);
+        return String.format("// %s::%s", INCLUDE_END, includeTarget);
     }
 
     static String include(String includeTarget) {
@@ -150,6 +154,6 @@ public class IncludePreprocessor extends Preprocessor {
     }
 
     private static String targetFromIncludeStart(String line) {
-        return line.substring(("// " + INCLUDE_START + " ").length());
+        return line.substring(("// " + INCLUDE_START + "::").length());
     }
 }
