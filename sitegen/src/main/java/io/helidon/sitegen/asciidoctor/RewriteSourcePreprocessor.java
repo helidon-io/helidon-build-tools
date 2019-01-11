@@ -20,8 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.asciidoctor.ast.Document;
 import org.asciidoctor.extension.Preprocessor;
 import org.asciidoctor.extension.PreprocessorReader;
@@ -128,8 +130,10 @@ public class RewriteSourcePreprocessor extends Preprocessor {
                 int startOfBlock,
                 String numberedInclude) {
             Matcher m = INCLUDE_NUMBERED_PATTERN.matcher(numberedInclude);
-            if ( ! m.matches()) {
-                throw new IllegalStateException("Expected numbered include but did not match expected pattern - " + numberedInclude);
+            if (!m.matches()) {
+                throw new IllegalStateException(
+                        "Expected numbered include but did not match expected pattern - " +
+                                numberedInclude);
             }
             int startWithinBlock = Integer.parseInt(m.group(1));
             int endWithinBlock = Integer.parseInt(m.group(2));
@@ -159,7 +163,7 @@ public class RewriteSourcePreprocessor extends Preprocessor {
                 int startOfOutputBlock) {
             String line = content.get(lineNumber.get());
             Matcher m = INCLUDE_BRACKET_PATTERN.matcher(line);
-            if ( ! (m.matches() && m.group(1).equals("start"))) {
+            if (!(m.matches() && m.group(1).equals("start"))) {
                 return null;
             }
             lineNumber.incrementAndGet();
@@ -170,10 +174,11 @@ public class RewriteSourcePreprocessor extends Preprocessor {
             do {
                 line = content.get(lineNumber.getAndIncrement());
                 m.reset(line);
-                if ( ! (endFound = (m.matches() && m.group(1).equals("end")))) {
+                endFound = (m.matches() && m.group(1).equals("end"));
+                if (!endFound) {
                     body.add(line);
                 }
-            } while ( ! endFound);
+            } while (!endFound);
             int endWithinBlock = startWithinBlock + body.size() - 1;
             return new IncludeAnalyzer(
                     startOfOutputBlock,
@@ -266,7 +271,9 @@ public class RewriteSourcePreprocessor extends Preprocessor {
 
         @Override
         public String toString() {
-            return "IncludeAnalyzer{" + "startWithinBlock=" + startWithinBlock + ", endWithinBlock=" + endWithinBlock + ", body=" + body + ", includeTarget=" + includeTarget + '}';
+            return "IncludeAnalyzer{" + "startWithinBlock=" + startWithinBlock +
+                    ", endWithinBlock=" + endWithinBlock + ", body=" + body +
+                    ", includeTarget=" + includeTarget + '}';
         }
 
 
@@ -299,20 +306,19 @@ public class RewriteSourcePreprocessor extends Preprocessor {
             preamble = collectPreamble(content, aLineNumber);
             int blockStartLineNumber = body.size();
 
-            String line;
             Matcher m = INCLUDE_BRACKET_PATTERN.matcher("");
-            while ( ! isBlock(line = content.get(aLineNumber.getAndIncrement()))) {
-                m.reset(line);
-                if (m.matches() && m.groupCount() > 0 && m.group(1).equals("start")) {
-                    aLineNumber.decrementAndGet();
-                    IncludeAnalyzer ia = IncludeAnalyzer.consumeBracketedInclude(
-                            content, aLineNumber, body, blockStartLineNumber);
-                    includes.add(ia);
-                    body.addAll(ia.body());
-                } else {
-                    body.add(line);
-                }
-            }
+            doUntilBlockDelimiter(content, aLineNumber, line -> {
+                    m.reset(line);
+                    if (m.matches() && m.groupCount() > 0 && m.group(1).equals("start")) {
+                        aLineNumber.decrementAndGet();
+                        IncludeAnalyzer ia = IncludeAnalyzer.consumeBracketedInclude(
+                                content, aLineNumber, body, blockStartLineNumber);
+                        includes.add(ia);
+                        body.addAll(ia.body());
+                    } else {
+                        body.add(line);
+                    }
+                });
         }
 
         List<String> updatedSourceBlock() {
@@ -334,11 +340,18 @@ public class RewriteSourcePreprocessor extends Preprocessor {
 
         private List<String> collectPreamble(List<String> content, AtomicInteger lineNumber) {
             final List<String> result = new ArrayList<>();
-            String line;
-            while ( ! isBlock(line = content.get(lineNumber.getAndIncrement()))) {
-                result.add(line);
-            }
+            doUntilBlockDelimiter(content, lineNumber, line -> result.add(line));
             return result;
+        }
+
+        private void doUntilBlockDelimiter(List<String> content, AtomicInteger lineNumber, Consumer<String> lineConsumer) {
+            do {
+                String line = content.get(lineNumber.getAndIncrement());
+                if (isBlock(line)) {
+                    break;
+                }
+                lineConsumer.accept(line);
+            } while (true);
         }
     }
 

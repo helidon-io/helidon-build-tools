@@ -16,13 +16,15 @@
  */
 package io.helidon.sitegen.asciidoctor;
 
-import io.helidon.sitegen.asciidoctor.RewriteSourcePreprocessor.IncludeAnalyzer;
-import io.helidon.sitegen.asciidoctor.RewriteSourcePreprocessor.SourceBlockAnalyzer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+
+import io.helidon.sitegen.asciidoctor.RewriteSourcePreprocessor.IncludeAnalyzer;
+import io.helidon.sitegen.asciidoctor.RewriteSourcePreprocessor.SourceBlockAnalyzer;
+
 import org.asciidoctor.ast.Document;
 import org.asciidoctor.extension.Preprocessor;
 import org.asciidoctor.extension.PreprocessorReader;
@@ -105,7 +107,7 @@ public class IncludePreprocessor extends Preprocessor {
             } else if (isLineIncludeEnd(line)) {
                 augmentedLines.add(line);
                 isDiscardingOldIncludedContent = false;
-            } else if ( ! isDiscardingOldIncludedContent) {
+            } else if (!isDiscardingOldIncludedContent) {
                 augmentedLines.add(line);
             }
         }
