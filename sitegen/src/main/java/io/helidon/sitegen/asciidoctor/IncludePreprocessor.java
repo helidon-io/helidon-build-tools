@@ -131,7 +131,8 @@ public class IncludePreprocessor extends Preprocessor {
         while (lineNumber.get() < content.size()) {
             String line = content.get(lineNumber.get());
             if (RewriteSourcePreprocessor.isIncludeStart(line)) {
-                IncludeAnalyzer ia = RewriteSourcePreprocessor.IncludeAnalyzer.consumeBracketedInclude(content, lineNumber.get() + 1, lineNumber);
+                IncludeAnalyzer ia = RewriteSourcePreprocessor.IncludeAnalyzer.consumeBracketedInclude(
+                        content, lineNumber, result, result.size());
                 result.add(ia.numberedDescriptor());
                 result.addAll(ia.body());
             } else if (RewriteSourcePreprocessor.isSourceStart(line)) {

@@ -16,23 +16,32 @@
  */
 package io.helidon.sitegen.asciidoctor;
 
-import io.helidon.sitegen.Site;
-import io.helidon.sitegen.SourcePathFilter;
-import static io.helidon.common.CollectionsHelper.listOf;
-import static io.helidon.sitegen.asciidoctor.IncludePreprocessor.addBeginAndEndIncludeComments;
-import static io.helidon.sitegen.asciidoctor.IncludePreprocessor.include;
-import static io.helidon.sitegen.asciidoctor.IncludePreprocessor.includeEnd;
-import static io.helidon.sitegen.asciidoctor.IncludePreprocessor.includeStart;
-import static io.helidon.sitegen.TestHelper.SOURCE_DIR_PREFIX;
-import static io.helidon.sitegen.TestHelper.assertRendering;
-import static io.helidon.sitegen.TestHelper.getFile;
-import io.helidon.sitegen.asciidoctor.RewriteSourcePreprocessor.IncludeAnalyzer;
-import io.helidon.sitegen.asciidoctor.RewriteSourcePreprocessor.SourceBlockAnalyzer;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import com.github.difflib.DiffUtils;
+import com.github.difflib.algorithm.DiffException;
+
+import io.helidon.sitegen.Site;
+import io.helidon.sitegen.SourcePathFilter;
+
+import static io.helidon.common.CollectionsHelper.listOf;
+
+import static io.helidon.sitegen.asciidoctor.IncludePreprocessor.addBeginAndEndIncludeComments;
+import static io.helidon.sitegen.asciidoctor.IncludePreprocessor.include;
+import static io.helidon.sitegen.asciidoctor.IncludePreprocessor.includeEnd;
+import static io.helidon.sitegen.asciidoctor.IncludePreprocessor.includeStart;
+
+import static io.helidon.sitegen.TestHelper.SOURCE_DIR_PREFIX;
+import static io.helidon.sitegen.TestHelper.assertRendering;
+import static io.helidon.sitegen.TestHelper.getFile;
+
+import io.helidon.sitegen.asciidoctor.RewriteSourcePreprocessor.IncludeAnalyzer;
+import io.helidon.sitegen.asciidoctor.RewriteSourcePreprocessor.SourceBlockAnalyzer;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
@@ -118,7 +127,7 @@ public class IncludePreprocessorTest {
         List<IncludeAnalyzer> expectedIncludes = new ArrayList<>();
 
         List<String> content = asList(contentText);
-        expectedIncludes.add(new IncludeAnalyzer(content, 2, 1, 5, asList(includedContentText), "A.java"));
+        expectedIncludes.add(new IncludeAnalyzer(2, 1, 5, asList(includedContentText), "A.java"));
 
         AtomicInteger lineNumber = new AtomicInteger(0);
         SourceBlockAnalyzer sba = SourceBlockAnalyzer.consumeSourceBlock(content, lineNumber);
@@ -175,7 +184,8 @@ public class IncludePreprocessorTest {
         int expectedFinalLineAfterConsuming = 7;
 
         AtomicInteger lineNumber = new AtomicInteger(2);
-        IncludeAnalyzer ia = IncludeAnalyzer.consumeBracketedInclude(content, lineNumber.get(), lineNumber);
+        List<String> result = new ArrayList<>();
+        IncludeAnalyzer ia = IncludeAnalyzer.consumeBracketedInclude(content, lineNumber, result, result.size());
 
         assertEquals(expectedStartWithinBlock, ia.startWithinBlock(), "unexpected start within block");
         assertEquals(expectedEndWithinBlock, ia.endWithinBlock(), "unexpected end within block");
@@ -185,7 +195,7 @@ public class IncludePreprocessorTest {
     }
 
     @Test
-    public void testOverallConversion() {
+    public void testOverallConversion() throws DiffException {
         /*
          * Create content containing begin-end bracketed includes, both in and
          * outside [source] blocks.
@@ -233,6 +243,22 @@ public class IncludePreprocessorTest {
         src1Body.addAll(srcInclude3Body);
         src1Body.add("// _include-end::" + srcInclude3Target);
 
+        // Build what we expect to see after includes have been converted to
+        // numbered include comments.
+        List<String> src1BodyNumbered = new ArrayList<>();
+        List<String> src1NumberedIncludes = new ArrayList<>();
+
+        src1BodyNumbered.add("// This is un-included source");
+        src1NumberedIncludes.add("// _include::1-4:" + srcInclude1Target);
+        src1BodyNumbered.addAll(srcInclude1Body);
+
+        src1BodyNumbered.add("More un-included source");
+
+        src1NumberedIncludes.add("// _include::6-9:" + srcInclude2Target);
+        src1BodyNumbered.addAll(srcInclude2Body);
+
+        src1NumberedIncludes.add("// _include::10-11:" + srcInclude3Target);
+        src1BodyNumbered.addAll(srcInclude3Body);
 
         List<String> src1 = new ArrayList<>();
         src1.addAll(asList(
@@ -243,12 +269,23 @@ public class IncludePreprocessorTest {
         src1.addAll(src1Body);
         src1.add("----");
 
+        List<String> src1Numbered = new ArrayList<>();
+        src1Numbered.addAll(asList(
+            "[source]\n" +
+            ".Title for the source\n"));
+        src1Numbered.addAll(src1NumberedIncludes);
+        src1Numbered.add("----");
+        src1Numbered.addAll(src1BodyNumbered);
+        src1Numbered.add("----");
+
         // Now build the entire content.
 
-        List<String> content = new ArrayList<>();
-        content.addAll(asList(
+        List<String> contentBeginning = asList(
             "Beginning of document\n" +
-            "This is some useful information before any includes."));
+            "This is some useful information before any includes.");
+
+        List<String> content = new ArrayList<>();
+        content.addAll(contentBeginning);
         content.add("// _include-start::" + include1Target);
         content.addAll(include1Body);
         content.add("// _include-end::" + include1Target);
@@ -257,9 +294,20 @@ public class IncludePreprocessorTest {
 
         content.addAll(src1);
 
+        List<String> expectedNumberedContent = new ArrayList<>();
+        expectedNumberedContent.addAll(contentBeginning);
+        expectedNumberedContent.add("// _include::0-2:" + include1Target);
+        expectedNumberedContent.addAll(include1Body);
+
+        expectedNumberedContent.add("");
+
+        expectedNumberedContent.addAll(src1Numbered);
+
+
         List<String> numberedContent = IncludePreprocessor.convertBracketedToNumberedIncludes(content);
 
-
+        assertEquals(expectedNumberedContent, numberedContent, "overall resulting content did not match; " +
+                DiffUtils.diff(expectedNumberedContent, numberedContent));
     }
 
     private static List<String> asList(String text) {

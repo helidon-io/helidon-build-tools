@@ -50,50 +50,7 @@ public class RewriteSourcePreprocessor extends Preprocessor {
 
     @Override
     public void process(Document document, PreprocessorReader reader) {
-
-//        String includesAttr = (String) document.getAttribute(IncludePreprocessor.INCLUDES_ATTR_NAME);
-//
-//        /*
-//         * We want to overwrite the input file with our augmented
-//         * content. We get the augmented content not from the raw
-//         * input (i.e., not using reader.lines()) but from the
-//         * processed input (i.e., readLines()). But once we read that
-//         * it seems we have to restore it so the rest of the extensions
-//         * and the main processing can see the content.
-//         */
-//        List<String> processedContent = reader.readLines();
-//        List<String> updatedContent = new ArrayList<>();
-//
-//        boolean isInSource = false;
-//
-//        int lineNumber = 0;
-//        while (lineNumber < processedContent.size()) {
-//            String line = processedContent.get(lineNumber);
-//            if (line.startsWith("[source")) {
-//                lineNumber = processSource(processedContent, updatedContent, lineNumber);
-//            } else if (line.startsWith("include::")) {
-//                lineNumber = processInclude(processedContent, updatedContent, lineNumber);
-//            } else {
-//                updatedContent.add(line);
-//            }
-//            lineNumber++;
-//        }
-//        String processedContentString = processedContent.stream()
-//                .collect(Collectors.joining(System.lineSeparator()));
-//        reader.restoreLines(processedContent);
-////        System.err.println(String.format("In rewrite preproc: processed output is ----\n%s\n----",
-////                processedContent));
     }
-
-//    static int processSource(List<String> processedContent, List<String> updatedContent, int lineNumber) {
-//
-//        SourceBlockAnalyzer sba = new SourceBlockAnalyzer();
-//
-//        lineNumber = sba.run(processedContent, lineNumber);
-//        updatedContent.addAll(sba.updatedSourceBlock());
-//
-//        return lineNumber;
-//    }
 
     static int processInclude(List<String> processedContent, List<String> updatedContent, int lineNumber) {
         return lineNumber;
@@ -105,7 +62,7 @@ public class RewriteSourcePreprocessor extends Preprocessor {
 
     /**
      * Describes included content by starting and ending line number within the
-     * content block of interest, the include target (path and other information
+     * block of interest, the include target (path and other information
      * from the original include::), and the included text itself.
      *
      * The starting and ending line numbers exclude any bracketing comment lines
@@ -123,24 +80,32 @@ public class RewriteSourcePreprocessor extends Preprocessor {
         private final List<String> body;
         private final String includeTarget;
 
-        IncludeAnalyzer(List<String> content, int startOfBlock,
-                int startWithinBlock, int endWithinBlock, List<String> body, String includeTarget) {
+        IncludeAnalyzer(int startOfBlock,
+                int startWithinBlock,
+                int endWithinBlock,
+                List<String> body,
+                String includeTarget) {
             this.startWithinBlock = startWithinBlock;
             this.endWithinBlock = endWithinBlock;
             this.includeTarget = includeTarget;
-            this.body = new ArrayList<>(body);
+            this.body = body;
         }
 
-        IncludeAnalyzer(List<String> content, int startOfBlock,
-                int startWithinBlock, int endWithinBlock, String includeTarget) {
+        IncludeAnalyzer(List<String> content,
+                int startOfBlock,
+                int startWithinBlock,
+                int endWithinBlock,
+                String includeTarget) {
 
-            this(content, startOfBlock, startWithinBlock, endWithinBlock,
+            this(startOfBlock, startWithinBlock, endWithinBlock,
                     buildBody(content, startOfBlock, startWithinBlock, endWithinBlock),
                     includeTarget);
         }
 
-        private static List<String> buildBody(List<String> content, int startOfBlock,
-                int startWithinBlock, int endWithinBlock) {
+        private static List<String> buildBody(List<String> content,
+                int startOfBlock,
+                int startWithinBlock,
+                int endWithinBlock) {
             List<String> b = new ArrayList<>();
             for (int i = startWithinBlock; i <= endWithinBlock; i++) {
                 b.add(content.get(startOfBlock + i));
@@ -183,17 +148,22 @@ public class RewriteSourcePreprocessor extends Preprocessor {
          * within the content.
          *
          * @param content lines containing the bracketed include to be parsed
-         * @oaran startOfBlock where the relevant block begins in the content
          * @param lineNumber starting point of the bracketed include
-         * @return updated line number within the content, after the bracketed include
+         * @param output line within which the result of consuming and translating the include will be stored
+         * @oaran startOfOutputBlock where the included content itself begins in the output
+         * @return an IncludeAnalyzer describing this include
          */
-        static IncludeAnalyzer consumeBracketedInclude(List<String> content, int startOfBlock, AtomicInteger lineNumber) {
+        static IncludeAnalyzer consumeBracketedInclude(List<String> content,
+                AtomicInteger lineNumber,
+                List<String> output,
+                int startOfOutputBlock) {
             String line = content.get(lineNumber.get());
             Matcher m = INCLUDE_BRACKET_PATTERN.matcher(line);
             if ( ! (m.matches() && m.group(1).equals("start"))) {
                 return null;
             }
-            int startWithinBlock = lineNumber.getAndIncrement() - startOfBlock;
+            lineNumber.incrementAndGet();
+            int startWithinBlock = output.size() - startOfOutputBlock;
             String includeTarget = m.group(2);
             boolean endFound;
             List<String> body = new ArrayList<>();
@@ -204,13 +174,9 @@ public class RewriteSourcePreprocessor extends Preprocessor {
                     body.add(line);
                 }
             } while ( ! endFound);
-            // Subtract 2 next because we are already past the // _include-end and
-            // we don't even want to include that line in the calculation of the
-            // ending point within the block of the included content.
             int endWithinBlock = startWithinBlock + body.size() - 1;
             return new IncludeAnalyzer(
-                    content,
-                    startOfBlock,
+                    startOfOutputBlock,
                     startWithinBlock,
                     endWithinBlock,
                     body,
@@ -331,15 +297,16 @@ public class RewriteSourcePreprocessor extends Preprocessor {
             sourceBlockDecl = content.get(aLineNumber.getAndIncrement());
 
             preamble = collectPreamble(content, aLineNumber);
-            int blockStartLineNumber = aLineNumber.get();
+            int blockStartLineNumber = body.size();
 
             String line;
-
+            Matcher m = INCLUDE_BRACKET_PATTERN.matcher("");
             while ( ! isBlock(line = content.get(aLineNumber.getAndIncrement()))) {
-                Matcher m = INCLUDE_BRACKET_PATTERN.matcher(line);
+                m.reset(line);
                 if (m.matches() && m.groupCount() > 0 && m.group(1).equals("start")) {
                     aLineNumber.decrementAndGet();
-                    IncludeAnalyzer ia = IncludeAnalyzer.consumeBracketedInclude(content, blockStartLineNumber, aLineNumber);
+                    IncludeAnalyzer ia = IncludeAnalyzer.consumeBracketedInclude(
+                            content, aLineNumber, body, blockStartLineNumber);
                     includes.add(ia);
                     body.addAll(ia.body());
                 } else {
