@@ -39,8 +39,15 @@ import static io.helidon.sitegen.TestHelper.SOURCE_DIR_PREFIX;
 import static io.helidon.sitegen.TestHelper.assertRendering;
 import static io.helidon.sitegen.TestHelper.getFile;
 
-import io.helidon.sitegen.asciidoctor.RewriteSourcePreprocessor.IncludeAnalyzer;
-import io.helidon.sitegen.asciidoctor.RewriteSourcePreprocessor.SourceBlockAnalyzer;
+import io.helidon.sitegen.asciidoctor.AnalyzerUtils.IncludeAnalyzer;
+import io.helidon.sitegen.asciidoctor.AnalyzerUtils.SourceBlockAnalyzer;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
@@ -69,37 +76,6 @@ public class IncludePreprocessorTest {
                 OUTPUT_DIR,
                 new File(sourcedir, "_expected.ftl"),
                 new File(OUTPUT_DIR, "example-manual.html"));
-    }
-
-    @Test
-    public void testIncludeCommentDiscard() {
-        String includeTarget = "MyFirstInclude.java";
-        String part1 = "line 1\nline 2\n//random comment";
-        String part2 = "and that's how include works.";
-        String includedCode = "public class IncludedClass {\n" +
-                "// this comment should remain\n" +
-                "private static final String HI = \"hi\";\n" +
-                "}";
-        String commentedText = part1 + "\n" +
-                includeStart(includeTarget) + "\n" +
-                includedCode + "\n" +
-                includeEnd(includeTarget) + "\n" +
-                part2;
-
-        String expectedProcessedText = part1 + "\n" +
-                includeStart(includeTarget) + "\n" +
-                include(includeTarget) + "\n" +
-                includeEnd(includeTarget) + "\n" +
-                part2;
-
-        List<String> commentedTextAsList = asList(commentedText);
-        List<String> expectedProcessedTextAsList = asList(expectedProcessedText);
-
-        List<String> processedText = addBeginAndEndIncludeComments(commentedTextAsList);
-
-        assertEquals(expectedProcessedTextAsList,
-                processedText,
-                "mismatch in pre-commented included text");
     }
 
     @Test
@@ -206,21 +182,21 @@ public class IncludePreprocessorTest {
             "inc 2\n" +
             "inc 3\n");
 
-        String srcInclude1Target = "Include1.java";
+        String srcInclude1Target = "Include1.adoc";
         List<String> srcInclude1Body = asList(
             "src inc 1.1\n" +
             "src inc 1.2\n" +
             "src inc 1.3\n" +
             "src inc 1.4\n");
 
-        String srcInclude2Target = "Include2.java";
+        String srcInclude2Target = "Include2.adoc";
         List<String> srcInclude2Body = asList(
             "src inc 2.1\n" +
             "src inc 2.2\n" +
             "src inc 2.3\n" +
             "src inc 2.4\n");
 
-        String srcInclude3Target = "Include3.java";
+        String srcInclude3Target = "Include3.adoc";
         List<String> srcInclude3Body = asList(
             "src inc 3.1\n" +
             "src inc 3.2\n");
@@ -308,6 +284,75 @@ public class IncludePreprocessorTest {
 
         assertEquals(expectedNumberedContent, numberedContent, "overall resulting content did not match; " +
                 DiffUtils.diff(expectedNumberedContent, numberedContent));
+    }
+
+    @Test
+    public void testInitialProcessing() throws IOException, DiffException, URISyntaxException {
+        String testFileDir = "preprocess-adoc";
+        Path originalPath = Paths.get(testFileDir, "variousIncludes.adoc");
+        List<String> originalLines = loadFromPath(originalPath);
+
+        Path afterInitialPreprocessingPath = Paths.get(testFileDir,
+                "variousIncludes-afterInitialPreprocessing.adoc");
+        List<String> expectedAfterInitialPreprocessingLines =
+                loadFromPath(afterInitialPreprocessingPath);
+
+        List<String> actualAfterInitialPreprocessingLines =
+                IncludePreprocessor.addBeginAndEndIncludeComments(originalLines);
+
+        assertEquals(expectedAfterInitialPreprocessingLines,
+                actualAfterInitialPreprocessingLines,
+                DiffUtils.diff(expectedAfterInitialPreprocessingLines,
+                        actualAfterInitialPreprocessingLines).toString());
+    }
+
+    private List<String> loadFromPath(Path path) throws URISyntaxException, IOException {
+        URL url = getClass().getClassLoader().getResource(path.toString());
+        return Files.readAllLines(Paths.get(url.toURI()));
+    }
+
+    @Test
+    public void testSourceBlockIncludeBracketing() throws DiffException {
+        List<String> orig = asList(
+                  "[source]\n"
+                + ".Title of the source block\n"
+                + "// _include::1-3:a.adoc\n"
+                + "// _include::5-7:b.adoc\n"
+                + "----\n"
+                + "Not included\n"
+                + "inc 1.1\n"
+                + "inc 1.2\n"
+                + "inc 1.3\n"
+                + "Also not included\n"
+                + "inc 2.1\n"
+                + "inc 2.2\n"
+                + "inc 2.3\n"
+                + "Other not included\n"
+                + "----"
+        );
+
+        List<String> expectedBracketed = asList(
+                  "[source]\n"
+                + ".Title of the source block\n"
+                + "----\n"
+                + "Not included\n"
+                + "// _include-start::a.adoc\n"
+                + "include::a.adoc\n"
+                + "// _include-end::a.adoc\n"
+                + "Also not included\n"
+                + "// _include-start::b.adoc\n"
+                + "include::b.adoc\n"
+                + "// _include-end::b.adoc\n"
+                + "Other not included\n"
+                + "----"
+        );
+
+        AtomicInteger lineNumber = new AtomicInteger(0);
+        SourceBlockAnalyzer sba = SourceBlockAnalyzer.consumeSourceBlock(orig, lineNumber);
+
+        List<String> bracketed = sba.bracketedSourceBlock();
+        assertEquals(expectedBracketed, bracketed,
+                DiffUtils.diff(orig, bracketed).toString());
     }
 
     private static List<String> asList(String text) {

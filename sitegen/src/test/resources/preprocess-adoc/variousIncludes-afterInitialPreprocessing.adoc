@@ -1,0 +1,29 @@
+Beginning of document
+This is some useful information before any includes.
+// _include-start::aFewLines.adoc
+include::aFewLines.adoc
+// _include-end::aFewLines.adoc
+A buffer
+// _include-start::fiveRandomLines.adoc
+include::fiveRandomLines.adoc
+// _include-end::fiveRandomLines.adoc
+Ending buffer
+
+[source]
+.Title for the source
+----
+// This is un-included source
+// _include-start::Include1.adoc
+include::Include1.adoc
+// _include-end::Include1.adoc
+More un-included source
+// _include-start::Include2.adoc
+include::Include2.adoc
+// _include-end::Include2.adoc
+// _include-start::Include3.adoc
+include::Include3.adoc
+// _include-end::Include3.adoc
+// _include-start::threeFunLines.adoc
+include::threeFunLines.adoc
+// _include-end::threeFunLines.adoc
+----
