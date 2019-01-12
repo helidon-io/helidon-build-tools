@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.regex.Matcher;
 
 import org.asciidoctor.ast.Document;
 import org.asciidoctor.extension.Preprocessor;

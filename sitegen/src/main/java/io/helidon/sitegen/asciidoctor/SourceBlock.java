@@ -39,20 +39,20 @@ import java.util.regex.Matcher;
  * <h1>Text Formatting</h1>
  * At different times we represent a source block as text in three ways.
  * <h2>Brief Bracketed Form (internal)</h2>
- * In this form we bracket each AsciiDoc {@code include::} directive in the
- * body with a preceding {@code // _include-start::} and a following
+ * In this form we bracket each AsciiDoc {@code include::} directive in the body
+ * with a preceding {@code // _include-start::} and a following
  * {@code // _include-end::} comment. Our preprocessing submits this form to
  * AsciiDoc in a way that creates the full bracketed form.
  * <h2>Full Bracketed Form (internal)</h2>
- * In this format the bracketing comments surround the included text
- * itself rather than the {@code include::} AsciiDoc directive.
+ * In this format the bracketing comments surround the included text itself
+ * rather than the {@code include::} AsciiDoc directive.
  * <h2>Numbered Form</h2>
  * In this format:
  * <ul>
  * <li>The preamble contains an AsciiDoc comment for each AsciiDoc
- * {@code include::} that originally appeared in the body. Each such
- * comment indicates the origin of the include and the line numbers within
- * the source block's body where the corresponding included content resides.
+ * {@code include::} that originally appeared in the body. Each such comment
+ * indicates the origin of the include and the line numbers within the source
+ * block's body where the corresponding included content resides.
  * <li>The body contains the included content in the correct positions.
  * </ul>
  * For example, given an original AsciiDoc source block like this:
@@ -68,8 +68,7 @@ import java.util.regex.Matcher;
  * Further content
  * ----
  * }
- * </pre>
- * here is the corresponding numbered form:
+ * </pre> here is the corresponding numbered form:
  * <pre>
  * {@code
  * [source]
@@ -92,14 +91,14 @@ import java.util.regex.Matcher;
  * }
  * </pre>
  * <h2>Creating {@code SourceBlock} Instances by Parsing AsciiDoc</h2>
- * The {@link #consumeSourceBlock} method reads content and builds an
- * instance representing the corresponding source block, advancing the
- * current line indicator for the content as it does so.
+ * The {@link #consumeSourceBlock} method reads content and builds an instance
+ * representing the corresponding source block, advancing the current line
+ * indicator for the content as it does so.
  * <p>
- * Note that this method handles the original AsciiDoc form (with {@code include::}
- * directives in the body), pure numbered format, and a hybrid in which
- * the user has added AsciiDoc {@code include::} directives in the body of
- * the numbered form.
+ * Note that this method handles the original AsciiDoc form (with
+ * {@code include::} directives in the body), pure numbered format, and a hybrid
+ * in which the user has added AsciiDoc {@code include::} directives in the body
+ * of the numbered form.
  */
 public class SourceBlock {
 
@@ -115,13 +114,14 @@ public class SourceBlock {
      * @return a new SourceBlock describing the source block
      */
     static SourceBlock consumeSourceBlock(List<String> content, AtomicInteger lineNumber) {
-        SourceBlock sba = new SourceBlock();
-        sba.run(content, lineNumber);
-        return sba;
+        SourceBlock sb = new SourceBlock();
+        sb.prepare(content, lineNumber);
+        return sb;
     }
 
     /**
-     * Returns whether the specified line represents the start of a source block.
+     * Returns whether the specified line represents the start of a source
+     * block.
      *
      * @param line the line to check
      * @return true if the line starts a source block; false otherwise
@@ -148,36 +148,53 @@ public class SourceBlock {
      * preamble
      */
     List<String> asNumberedSourceBlock() {
-        return asSourceBlock( () -> {
-                List<String> result = new ArrayList<>();
-                includes.forEach((ia) -> {
-                    result.add(ia.asNumberedAsciiDocInclude());
+        return asSourceBlock(() -> {
+            List<String> result = new ArrayList<>();
+            includes.forEach((ia) -> {
+                result.add(ia.asNumberedAsciiDocInclude());
             });
-                return result;
-            },
+            return result;
+        },
                 () -> {
                     return body();
                 });
 
     }
 
+    /**
+     * Formats the source block with no special include-related comments and no
+     * pre-included content, using instead what were (or could have been)
+     * original AsciiDoc {@code include::} directives.
+     *
+     * @return source block formatted as normal AsciiDoc
+     */
     List<String> asOriginalSourceBlock() {
-        return asSourceBlock( () -> {
-                return Collections.emptyList();
-            },
-             () -> {
-                 return originalBody();
-             });
+        return asSourceBlock(
+                () -> {
+                    return originalBody();
+                });
     }
 
+    /**
+     * Formats the source block with no numbering, with each include bracketed
+     * with special include-related comments.
+     *
+     * @return source block formatted using bracketed includes
+     */
     List<String> asBracketedSourceBlock() {
+        return asSourceBlock(
+                () -> {
+                    return bracketedBody();
+                });
+    }
+
+    private List<String> asSourceBlock(
+            Supplier<List<String>> bodyGenerator) {
         return asSourceBlock(
                 () -> {
                     return Collections.emptyList();
                 },
-                () -> {
-                    return bracketedBody();
-                });
+                bodyGenerator);
     }
 
     private List<String> asSourceBlock(
@@ -223,7 +240,6 @@ public class SourceBlock {
         return result;
     }
 
-
     private List<String> bracketedBody() {
         List<String> result = new ArrayList<>();
         Matcher m = Include.ASCIIDOC_INCLUDE_PATTERN.matcher("");
@@ -253,7 +269,7 @@ public class SourceBlock {
         return includes;
     }
 
-    private void run(List<String> content, AtomicInteger aLineNumber) {
+    private void prepare(List<String> content, AtomicInteger aLineNumber) {
         sourceBlockDecl = content.get(aLineNumber.getAndIncrement());
 
         /*
@@ -308,6 +324,5 @@ public class SourceBlock {
             lineConsumer.accept(line);
         } while (true);
     }
-
 
 }

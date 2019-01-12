@@ -298,7 +298,16 @@ public class IncludePreprocessorTest {
 
     private List<String> loadFromPath(Path path) throws URISyntaxException, IOException {
         URL url = getClass().getClassLoader().getResource(path.toString());
-        return Files.readAllLines(Paths.get(url.toURI()));
+        List<String> result = new ArrayList<>();
+        boolean inCommentBlock = false;
+        for (String line : Files.readAllLines(Paths.get(url.toURI()))) {
+            if (line.startsWith("////")) {
+                inCommentBlock = !inCommentBlock;
+            } else if (!inCommentBlock) {
+                result.add(line);
+            }
+        }
+        return result;
     }
 
     @Test

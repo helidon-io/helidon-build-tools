@@ -166,7 +166,7 @@ public class Include {
     }
 
     /**
-     * Extracts the include-relevant part of an _include-start line
+     * Extracts the include-relevant part of an _include-start line.
      *
      * @param line the line to be examined
      * @return the include path and any modifiers from the line
@@ -185,7 +185,7 @@ public class Include {
     }
 
     /**
-     * Formats an include target as a normal AsciiDoc {@code include::} directive
+     * Formats an include target as a normal AsciiDoc {@code include::} directive.
      *
      * @param includeTarget the target
      * @return the include directive
@@ -195,7 +195,7 @@ public class Include {
     }
 
     /**
-     * Formats an include target as the end bracket include comment
+     * Formats an include target as the end bracket include comment.
      *
      * @param includeTarget the target
      * @return the ending bracket comment
@@ -205,7 +205,7 @@ public class Include {
     }
 
     /**
-     * Formats an include target as the starting bracket include command
+     * Formats an include target as the starting bracket include command.
      *
      * @param includeTarget the target
      * @return the starting bracket comment
