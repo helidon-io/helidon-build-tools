@@ -23,9 +23,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 
-import io.helidon.sitegen.asciidoctor.AnalyzerUtils.IncludeAnalyzer;
-import io.helidon.sitegen.asciidoctor.AnalyzerUtils.SourceBlockAnalyzer;
-
 import org.asciidoctor.ast.Document;
 import org.asciidoctor.extension.Preprocessor;
 import org.asciidoctor.extension.PreprocessorReader;
@@ -67,24 +64,15 @@ public class IncludePreprocessor extends Preprocessor {
     static List<String> addBeginAndEndIncludeComments(List<String> lines) {
         List<String> augmentedLines = new ArrayList<>();
 
-        boolean isDiscardingOldIncludedContent = false;
-
         for (AtomicInteger lineNumber = new AtomicInteger(0); lineNumber.get() < lines.size();) {
             String line = lines.get(lineNumber.get());
             if (line.startsWith("include::")) {
                 augmentedLines.addAll(handleADocInclude(lines, lineNumber));
-//            } else if (IncludeAnalyzer.isLineIncludeStart(line)) {
-//                augmentedLines.add(line);
-//                isDiscardingOldIncludedContent = true;
-//                augmentedLines.add(include(IncludeAnalyzer.targetFromIncludeStart(line)));
-//            } else if (IncludeAnalyzer.isLineIncludeEnd(line)) {
-//                augmentedLines.add(line);
-//                isDiscardingOldIncludedContent = false;
             } else if (line.startsWith("[source")) {
                 augmentedLines.addAll(handleSourceBlock(lines, lineNumber));
-            } else if (IncludeAnalyzer.isLineIncludeNumbered(line)) {
+            } else if (Include.isIncludeNumbered(line)) {
                 augmentedLines.addAll(handleNumberedInclude(lines, lineNumber));
-            } else if (!isDiscardingOldIncludedContent) {
+            } else {
                 augmentedLines.add(line);
                 lineNumber.getAndIncrement();
             }
@@ -92,17 +80,6 @@ public class IncludePreprocessor extends Preprocessor {
         return augmentedLines;
     }
 
-    static String includeStart(String includeTarget) {
-        return String.format("// %s::%s", IncludeAnalyzer.INCLUDE_START, includeTarget);
-    }
-
-    static String includeEnd(String includeTarget) {
-        return String.format("// %s::%s", IncludeAnalyzer.INCLUDE_END, includeTarget);
-    }
-
-    static String include(String includeTarget) {
-        return String.format("include::" + includeTarget);
-    }
 
     static List<String> convertBracketedToNumberedIncludes(List<String> content) {
         List<String> result = new ArrayList<>();
@@ -110,14 +87,14 @@ public class IncludePreprocessor extends Preprocessor {
         AtomicInteger lineNumber = new AtomicInteger(0);
         while (lineNumber.get() < content.size()) {
             String line = content.get(lineNumber.get());
-            if (isIncludeStart(line)) {
-                IncludeAnalyzer ia = IncludeAnalyzer.consumeBracketedInclude(
+            if (Include.isIncludeStart(line)) {
+                Include ia = Include.consumeBracketedInclude(
                         content, lineNumber, result, result.size());
-                result.add(ia.numberedDescriptor());
+                result.add(ia.asNumberedAsciiDocInclude());
                 result.addAll(ia.body());
-            } else if (isSourceStart(line)) {
-                SourceBlockAnalyzer sba = SourceBlockAnalyzer.consumeSourceBlock(content, lineNumber);
-                result.addAll(sba.updatedSourceBlock());
+            } else if (SourceBlock.isSourceStart(line)) {
+                SourceBlock sba = SourceBlock.consumeSourceBlock(content, lineNumber);
+                result.addAll(sba.asNumberedSourceBlock());
             } else {
                 result.add(line);
                 lineNumber.getAndIncrement();
@@ -129,15 +106,6 @@ public class IncludePreprocessor extends Preprocessor {
     @Override
     public void process(Document doc, PreprocessorReader reader) {
         markIncludes(reader.lines(), doc, reader);
-    }
-
-    private static boolean isIncludeStart(String line) {
-        Matcher m = IncludeAnalyzer.INCLUDE_BRACKET_PATTERN.matcher(line);
-        return (m.matches() && m.group(1).equals("start"));
-    }
-
-    private static boolean isSourceStart(String line) {
-        return line.startsWith("[source");
     }
 
     private void markIncludes(List<String> origLines, Document doc, PreprocessorReader reader) {
@@ -177,19 +145,19 @@ public class IncludePreprocessor extends Preprocessor {
         List<String> result = new ArrayList<>();
         String line = lines.get(lineNumber.getAndIncrement());
         String includeTarget = line.substring("include::".length());
-        result.add(includeStart(includeTarget));
+        result.add(Include.includeStart(includeTarget));
         result.add(line);
-        result.add(includeEnd(includeTarget));
+        result.add(Include.includeEnd(includeTarget));
         return result;
     }
 
     private static List<String> handleSourceBlock(List<String> lines, AtomicInteger lineNumber) {
-        SourceBlockAnalyzer sba = SourceBlockAnalyzer.consumeSourceBlock(lines, lineNumber);
-        return sba.bracketedSourceBlock();
+        SourceBlock sba = SourceBlock.consumeSourceBlock(lines, lineNumber);
+        return sba.asBracketedSourceBlock();
     }
 
     private static List<String> handleNumberedInclude(List<String> lines, AtomicInteger lineNumber) {
-        IncludeAnalyzer ia = IncludeAnalyzer.fromNumberedInclude(lines, 0, lines.get(lineNumber.getAndIncrement()));
+        Include ia = Include.fromNumberedInclude(lines, 0, lines.get(lineNumber.getAndIncrement()));
 
         // Skip over the previously-included text.
         lineNumber.addAndGet(ia.endWithinBlock() - ia.startWithinBlock() + 1);

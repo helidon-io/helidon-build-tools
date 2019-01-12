@@ -16,7 +16,13 @@
  */
 package io.helidon.sitegen.asciidoctor;
 
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,25 +35,9 @@ import io.helidon.sitegen.Site;
 import io.helidon.sitegen.SourcePathFilter;
 
 import static io.helidon.common.CollectionsHelper.listOf;
-
-import static io.helidon.sitegen.asciidoctor.IncludePreprocessor.addBeginAndEndIncludeComments;
-import static io.helidon.sitegen.asciidoctor.IncludePreprocessor.include;
-import static io.helidon.sitegen.asciidoctor.IncludePreprocessor.includeEnd;
-import static io.helidon.sitegen.asciidoctor.IncludePreprocessor.includeStart;
-
 import static io.helidon.sitegen.TestHelper.SOURCE_DIR_PREFIX;
 import static io.helidon.sitegen.TestHelper.assertRendering;
 import static io.helidon.sitegen.TestHelper.getFile;
-
-import io.helidon.sitegen.asciidoctor.AnalyzerUtils.IncludeAnalyzer;
-import io.helidon.sitegen.asciidoctor.AnalyzerUtils.SourceBlockAnalyzer;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
@@ -100,14 +90,14 @@ public class IncludePreprocessorTest {
                 "}\n" +
                 "----";
 
-        List<IncludeAnalyzer> expectedIncludes = new ArrayList<>();
+        List<Include> expectedIncludes = new ArrayList<>();
 
         List<String> content = asList(contentText);
-        expectedIncludes.add(new IncludeAnalyzer(2, 1, 5, asList(includedContentText), "A.java"));
+        expectedIncludes.add(new Include(2, 1, 5, asList(includedContentText), "A.java"));
 
         AtomicInteger lineNumber = new AtomicInteger(0);
-        SourceBlockAnalyzer sba = SourceBlockAnalyzer.consumeSourceBlock(content, lineNumber);
-        List<IncludeAnalyzer> includes = sba.sourceIncludes();
+        SourceBlock sba = SourceBlock.consumeSourceBlock(content, lineNumber);
+        List<Include> includes = sba.sourceIncludes();
 
         assertEquals(content.size(), lineNumber.get(), "returned line number did not match");
         assertEquals(expectedIncludes, includes);
@@ -131,7 +121,7 @@ public class IncludePreprocessorTest {
         int expectedStartWithinBlock = 0;
         int expectedEndWithinBlock = 2;
 
-        IncludeAnalyzer ia = IncludeAnalyzer.fromNumberedInclude(content, 2,
+        Include ia = Include.fromNumberedInclude(content, 2,
                 String.format("// _include::%d-%d:%s", expectedStartWithinBlock, expectedEndWithinBlock, expectedIncludeTarget));
         assertEquals(expectedStartWithinBlock, ia.startWithinBlock(), "unexpected starting line number");
         assertEquals(expectedEndWithinBlock, ia.endWithinBlock(), "unexpected ending line number");
@@ -161,7 +151,7 @@ public class IncludePreprocessorTest {
 
         AtomicInteger lineNumber = new AtomicInteger(2);
         List<String> result = new ArrayList<>();
-        IncludeAnalyzer ia = IncludeAnalyzer.consumeBracketedInclude(content, lineNumber, result, result.size());
+        Include ia = Include.consumeBracketedInclude(content, lineNumber, result, result.size());
 
         assertEquals(expectedStartWithinBlock, ia.startWithinBlock(), "unexpected start within block");
         assertEquals(expectedEndWithinBlock, ia.endWithinBlock(), "unexpected end within block");
@@ -348,9 +338,9 @@ public class IncludePreprocessorTest {
         );
 
         AtomicInteger lineNumber = new AtomicInteger(0);
-        SourceBlockAnalyzer sba = SourceBlockAnalyzer.consumeSourceBlock(orig, lineNumber);
+        SourceBlock sba = SourceBlock.consumeSourceBlock(orig, lineNumber);
 
-        List<String> bracketed = sba.bracketedSourceBlock();
+        List<String> bracketed = sba.asBracketedSourceBlock();
         assertEquals(expectedBracketed, bracketed,
                 DiffUtils.diff(orig, bracketed).toString());
     }
