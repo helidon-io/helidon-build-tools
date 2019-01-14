@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -121,3 +121,7 @@ This is a list:
 * list item level 1
 ** list item level 2
 *** list item level 3
+
+== Line through test
+
+Some text in this sentence has some [.line-through]#line through# style.
