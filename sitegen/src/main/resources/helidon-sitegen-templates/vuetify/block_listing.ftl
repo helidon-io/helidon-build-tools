@@ -13,13 +13,16 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  -->
+<#assign _content = content!"">
+<#if content??>
 <#if style?? && style="source">
 <markup
 <#if attributes["language"]?? >lang="${attributes["language"]}"</#if>
 <#if title??>title="${title}"</#if>
->${content!""}</markup>
+>${_content}</markup>
 <#else>
 <div class="listing">
-<pre>${content!""}</pre>
+<pre>${_content}</pre>
 </div>
+</#if>
 </#if>
