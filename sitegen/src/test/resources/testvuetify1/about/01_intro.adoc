@@ -121,3 +121,7 @@ This is a list:
 * list item level 1
 ** list item level 2
 *** list item level 3
+
+== Line through test
+
+Some text in this sentence has some [.line-through]#line through# style.

@@ -44,6 +44,10 @@
 &#8216;${_text}&#8217;
 <#break>
 <#default>
+<#if role == "line-through">
+<s>${_text}</s>
+<#else>
 ${_text}
+</#if>
 </#switch>
 </#compress>
