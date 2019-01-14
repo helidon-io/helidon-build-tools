@@ -125,3 +125,10 @@ This is a list:
 == Line through test
 
 Some text in this sentence has some [.line-through]#line through# style.
+
+== Empty include test
+
+[source,java]
+----
+include::../IncludeTest.java[tag=emptyInclude]
+----
