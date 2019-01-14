@@ -1,5 +1,5 @@
 <#--
-  Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,13 +13,16 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  -->
+<#assign _content = content!"">
+<#if content??>
 <#if style?? && style="source">
 <markup
 <#if attributes["language"]?? >lang="${attributes["language"]}"</#if>
 <#if title??>title="${title}"</#if>
->${content}</markup>
+>${_content}</markup>
 <#else>
 <div class="listing">
-<pre>${content}</pre>
+<pre>${_content}</pre>
 </div>
+</#if>
 </#if>
