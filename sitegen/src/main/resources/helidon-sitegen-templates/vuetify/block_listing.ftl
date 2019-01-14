@@ -17,9 +17,9 @@
 <markup
 <#if attributes["language"]?? >lang="${attributes["language"]}"</#if>
 <#if title??>title="${title}"</#if>
->${content}</markup>
+>${content!""}</markup>
 <#else>
 <div class="listing">
-<pre>${content}</pre>
+<pre>${content!""}</pre>
 </div>
 </#if>
