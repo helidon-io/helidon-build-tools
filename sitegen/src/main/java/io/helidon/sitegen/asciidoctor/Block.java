@@ -17,27 +17,31 @@
 package io.helidon.sitegen.asciidoctor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 
 /**
- * Describes content that is a {@code [source]} block that might contain
+ * Describes content that is a block (e.g., {@code [source]}) that might contain
  * includes.
  * <p>
  * <h1>Overview</h1>
- * For our purposes a source block contains
+ * For our purposes a block contains
  * <ul>
- * <li>its declaration ({@code [source]} with, potentially, additional
+ * <li>its declaration (e.g., {@code [source]} with, potentially, additional
  * attributes),
- * <li>any includes that contribute to the body of the source block, and
+ * <li>any includes that contribute to the body of the block, and
  * <li>the body itself.
  * </ul>
  * <h1>Text Formatting</h1>
- * At different times we represent a source block as text in three ways.
+ * At different times we represent a block as text in three ways.
  * <h2>Brief Bracketed Form (internal)</h2>
  * In this form we bracket each AsciiDoc {@code include::} directive in the body
  * with a preceding {@code // _include-start::} and a following
@@ -51,11 +55,11 @@ import java.util.regex.Matcher;
  * <ul>
  * <li>The preamble contains an AsciiDoc comment for each AsciiDoc
  * {@code include::} that originally appeared in the body. Each such comment
- * indicates the origin of the include and the line numbers within the source
+ * indicates the origin of the include and the line numbers within the
  * block's body where the corresponding included content resides.
  * <li>The body contains the included content in the correct positions.
  * </ul>
- * For example, given an original AsciiDoc source block like this:
+ * For example, given an original AsciiDoc block like this:
  * <pre>
  * {@code
  * [source]
@@ -90,9 +94,9 @@ import java.util.regex.Matcher;
  * ----
  * }
  * </pre>
- * <h2>Creating {@code SourceBlock} Instances by Parsing AsciiDoc</h2>
- * The {@link #consumeSourceBlock} method reads content and builds an instance
- * representing the corresponding source block, advancing the current line
+ * <h2>Creating {@code Block} Instances by Parsing AsciiDoc</h2>
+ * The {@link #consumeBlock} method reads content and builds an instance
+ * representing the corresponding block, advancing the current line
  * indicator for the content as it does so.
  * <p>
  * Note that this method handles the original AsciiDoc form (with
@@ -100,55 +104,65 @@ import java.util.regex.Matcher;
  * in which the user has added AsciiDoc {@code include::} directives in the body
  * of the numbered form.
  */
-public class SourceBlock {
+public class Block {
 
-    private static final String BLOCK_DELIMITER = "----";
+    private static final Set<String> BLOCK_DELIMITERS
+            = new HashSet<>(Arrays.asList(
+                    new String[]{"====", // example
+                        "----" // listing, source
+                }));
+
+    private static final Set<String> BLOCK_INTRODUCERS
+            = new HashSet<>(Arrays.asList(
+                    new String[]{"source", "listing", "example"}));
 
     /**
-     * Creates a SourceBlock by consuming input text from the AsciiDoc
-     * preprocessor reader.
+     * Creates a Block by consuming input text from the AsciiDoc
+ preprocessor reader.
      *
      * @param content lines containing AsciiDoc
-     * @param lineNumber line number at which to begin processing the source
+     * @param lineNumber line number at which to begin processing the block
      * block
-     * @return a new SourceBlock describing the source block
+     * @return a new Block describing the block
      */
-    static SourceBlock consumeSourceBlock(List<String> content, AtomicInteger lineNumber) {
-        SourceBlock sb = new SourceBlock();
+    static Block consumeBlock(List<String> content, AtomicInteger lineNumber) {
+        Block sb = new Block();
         sb.prepare(content, lineNumber);
         return sb;
     }
 
     /**
-     * Returns whether the specified line represents the start of a source
-     * block.
+     * Returns whether the specified line represents the start of a block.
      *
      * @param line the line to check
-     * @return true if the line starts a source block; false otherwise
+     * @return true if the line starts a block; false otherwise
      */
-    static boolean isSourceStart(String line) {
-        return line.startsWith("[source");
+    static boolean isBlockStart(String line) {
+        return BLOCK_INTRODUCERS.stream()
+                .anyMatch(intro -> line.startsWith("[" + intro));
     }
 
     private static boolean isBlock(String line) {
-        return line.equals(BLOCK_DELIMITER);
+        return BLOCK_DELIMITERS.stream()
+                .anyMatch(delimiter -> line.equals(delimiter));
     }
 
-    private String sourceBlockDecl = null;
+    private String blockDecl = null;
+    private String delimiter = null;
     private final List<Include> includes = new ArrayList<>();
     private final List<String> body = new ArrayList<>();
 
     private List<String> preamble = new ArrayList<>();
 
     /**
-     * Formats the source block using numbered include comments in the preamble
+     * Formats the block using numbered include comments in the preamble
      * and the actual inserted text in the body.
      *
-     * @return source block with (if needed) numbered include comments in the
+     * @return block with (if needed) numbered include comments in the
      * preamble
      */
-    List<String> asNumberedSourceBlock() {
-        return asSourceBlock(() -> {
+    List<String> asBlockWithNumberedIncludes() {
+        return asBlock(() -> {
             List<String> result = new ArrayList<>();
             includes.forEach((ia) -> {
                 result.add(ia.asNumberedAsciiDocInclude());
@@ -162,51 +176,51 @@ public class SourceBlock {
     }
 
     /**
-     * Formats the source block with no special include-related comments and no
+     * Formats the block with no special include-related comments and no
      * pre-included content, using instead what were (or could have been)
      * original AsciiDoc {@code include::} directives.
      *
-     * @return source block formatted as normal AsciiDoc
+     * @return block formatted as normal AsciiDoc
      */
-    List<String> asOriginalSourceBlock() {
-        return asSourceBlock(
+    List<String> asOriginalBlock() {
+        return asBlock(
                 () -> {
                     return originalBody();
                 });
     }
 
     /**
-     * Formats the source block with no numbering, with each include bracketed
+     * Formats the block with no numbering, with each include bracketed
      * with special include-related comments.
      *
-     * @return source block formatted using bracketed includes
+     * @return block formatted using bracketed includes
      */
-    List<String> asBracketedSourceBlock() {
-        return asSourceBlock(
+    List<String> asBracketedBlock() {
+        return asBlock(
                 () -> {
                     return bracketedBody();
                 });
     }
 
-    private List<String> asSourceBlock(
+    private List<String> asBlock(
             Supplier<List<String>> bodyGenerator) {
-        return asSourceBlock(
+        return asBlock(
                 () -> {
                     return Collections.emptyList();
                 },
                 bodyGenerator);
     }
 
-    private List<String> asSourceBlock(
+    private List<String> asBlock(
             Supplier<List<String>> preambleCommentsGenerator,
             Supplier<List<String>> bodyGenerator) {
         List<String> result = new ArrayList<>();
-        result.add(sourceBlockDecl);
+        result.add(blockDecl);
         result.addAll(preamble);
         result.addAll(preambleCommentsGenerator.get());
-        result.add(BLOCK_DELIMITER);
+        result.add(delimiter);
         result.addAll(bodyGenerator.get());
-        result.add(BLOCK_DELIMITER);
+        result.add(delimiter);
         return result;
     }
 
@@ -218,7 +232,7 @@ public class SourceBlock {
         List<String> result = new ArrayList<>(body);
 
         /*
-         * Replace the actual included text in the body of the source block with
+         * Replace the actual included text in the body of the block with
          * AsciiDoc includes. (Below we add brackets to all includes, which will
          * include the ones we add now and any new ones the user might have
          * added to the original .adoc file.)
@@ -263,20 +277,21 @@ public class SourceBlock {
 
     /**
      *
-     * @return IncludeAnalyzers for any includes processed in the source block
+     * @return IncludeAnalyzers for any includes processed in the block
      */
-    List<Include> sourceIncludes() {
+    List<Include> includes() {
         return includes;
     }
 
     private void prepare(List<String> content, AtomicInteger aLineNumber) {
-        sourceBlockDecl = content.get(aLineNumber.getAndIncrement());
+        blockDecl = content.get(aLineNumber.getAndIncrement());
 
         /*
-         * The "preamble" is any text after the [source] line and before the
-         * first "----" marking the beginning of the body.
+         * The "preamble" is any text after the introducer (e.g., [source]) line
+         * and before the first delimiter (e.g., "----") marking the beginning
+         * of the body.
          */
-        preamble = collectPreamble(content, aLineNumber);
+        collectPreamble(content, aLineNumber);
         int blockStartLineNumber = body.size();
 
         doUntilBlockDelimiter(content, aLineNumber, line -> {
@@ -292,14 +307,15 @@ public class SourceBlock {
             } else {
                 body.add(line);
             }
-        });
+        },
+                line -> delimiter.equals(line));
     }
 
-    private List<String> collectPreamble(List<String> content, AtomicInteger lineNumber) {
+    private void collectPreamble(List<String> content, AtomicInteger lineNumber) {
         final List<String> result = new ArrayList<>();
         final List<String> pendingIncludes = new ArrayList<>();
         final Matcher m = Include.INCLUDE_NUMBERED_PATTERN.matcher("");
-        doUntilBlockDelimiter(content, lineNumber, line -> {
+        delimiter = doUntilInitialBlockDelimiter(content, lineNumber, line -> {
             m.reset(line);
             if (m.matches()) {
                 pendingIncludes.add(line);
@@ -312,17 +328,26 @@ public class SourceBlock {
             includes.add(Include.fromNumberedInclude(
                     content, startOfBlock, pendingInclude));
         });
-        return result;
+        preamble = result;
     }
 
-    private void doUntilBlockDelimiter(List<String> content, AtomicInteger lineNumber, Consumer<String> lineConsumer) {
+    private String doUntilBlockDelimiter(
+            List<String> content,
+            AtomicInteger lineNumber,
+            Consumer<String> lineConsumer,
+            Predicate<String> delimiterDetector) {
         do {
             String line = content.get(lineNumber.getAndIncrement());
-            if (isBlock(line)) {
-                break;
+            if (delimiterDetector.test(line)) {
+                return line;
             }
             lineConsumer.accept(line);
         } while (true);
+    }
+
+    private String doUntilInitialBlockDelimiter(List<String> content, AtomicInteger lineNumber, Consumer<String> lineConsumer) {
+        return doUntilBlockDelimiter(content, lineNumber, lineConsumer,
+                (line) -> isBlock(line));
     }
 
 }

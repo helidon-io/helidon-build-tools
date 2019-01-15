@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018-2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 package io.helidon.sitegen.maven;
 
 import java.io.File;
-
-import static io.helidon.sitegen.maven.Constants.PROPERTY_PREFIX;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -26,8 +24,13 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import io.helidon.sitegen.asciidoctor.AsciidocExtensionRegistry;
+import static io.helidon.sitegen.maven.Constants.PROPERTY_PREFIX;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -36,6 +39,13 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.asciidoctor.Asciidoctor;
+import org.asciidoctor.AttributesBuilder;
+import org.asciidoctor.OptionsBuilder;
+import org.asciidoctor.SafeMode;
+import org.asciidoctor.ast.Document;
+import org.asciidoctor.log.LogHandler;
+import org.asciidoctor.log.LogRecord;
 
 /**
  * Preprocesses AsciiDoc files to execute includes so the resulting
@@ -54,15 +64,18 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject project;
 
-    @Parameter(property = PROPERTY_PREFIX + "outputDirectory",
-               defaultValue = DEFAULT_OUTPUT_DIR,
-               required = true)
-    private File outputDirectory;
-
     @Parameter(property = PROPERTY_PREFIX + "inputDirectory",
                defaultValue = DEFAULT_SRC_DIR,
                required = true)
     private File inputDirectory;
+
+    /**
+     * Where the intermediate file should be stored; not stored if
+     * not specified.
+     */
+    @Parameter(property = PROPERTY_PREFIX + "intermediateOutputDirectory",
+            defaultValue = "$project.basedir}/src/main")
+    private File intermediateOutputDirectory;
 
     /**
      * List of files to include.
@@ -80,9 +93,18 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         validateParams(inputDirectory, includes);
+//        Site.builder()
+//                .pages(listOf(SourcePathFilter.builder()
+//                        .includes(listOf(includes))
+//                        .excludes(listOf(excludes))
+//                        .build()))
+//                .build()
+//                .generate(inputDirectory, intermediateOutputDirectory);
+
+        Asciidoctor asciiDoctor = createAsciiDoctor("simple");
         try {
             for (Path p : inputs(inputDirectory.toPath(), includes, excludes)) {
-                processFile(inputDirectory.toPath(), outputDirectory.toPath(), p);
+                processFile(asciiDoctor, inputDirectory.toPath(), p);
             }
         } catch (IOException ex) {
             throw new MojoExecutionException("Error collecting inputs", ex);
@@ -101,9 +123,9 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
      * @throws IOException in case of errors matching candidate paths
      */
     static Collection<Path> inputs(Path inputDirectory, String[] includes, String[] excludes) throws IOException {
-        return Files.find(inputDirectory, 5, (path,attrs) ->
+        return Files.find(inputDirectory, Integer.MAX_VALUE, (path, attrs) ->
                         matches(path, pathMatchers(inputDirectory, includes))
-                        && ! matches(path, pathMatchers(inputDirectory, excludes)))
+                        && !matches(path, pathMatchers(inputDirectory, excludes)))
                 .collect(Collectors.toSet());
     }
 
@@ -113,14 +135,14 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
      * @param globs the glob patterns
      * @return PathMatchers for the globs
      */
-    static private Stream<PathMatcher> pathMatchers(Path inputDirectory, String [] globs) {
+    private static Stream<PathMatcher> pathMatchers(Path inputDirectory, String[] globs) {
           return Arrays.stream(globs)
                 .map(glob -> {
                     return FileSystems.getDefault().getPathMatcher("glob:" + inputDirectory + "/" + glob);
                 });
     }
 
-    static private boolean matches(Path candidate, Stream<PathMatcher> matchers) {
+    private static boolean matches(Path candidate, Stream<PathMatcher> matchers) {
         return matchers.anyMatch((m) -> (m.matches(candidate)));
     }
 
@@ -128,19 +150,58 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
         if (includes.length == 0) {
             throw new MojoExecutionException("You must specify at least one 'includes'");
         }
-        if (! inputDirectory.exists() ||
-            ! inputDirectory.isDirectory()) {
+        if (!inputDirectory.exists()
+                || !inputDirectory.isDirectory()) {
             throw new MojoExecutionException(
                     String.format("inputDirectory %s does not exist or is not a directory", inputDirectory));
         }
     }
 
-    private void processFile(Path inputDirectory, Path outputDirectory, Path adocFilePath) {
-        Path outputAdocPath = outputDirectory.resolve(inputDirectory.relativize(adocFilePath));
-        System.out.println(String.format("input path: %s, output path: %s", inputDirectory.resolve(adocFilePath),
-                outputDirectory.resolve(adocFilePath)));
+    private void processFile(
+            Asciidoctor asciiDoctor,
+            Path inputDirectory,
+            Path adocFilePath) throws IOException {
 
+        Document doc = asciiDoctor.loadFile(adocFilePath.toFile(),
+                asciiDoctorOptions(
+                        Collections.emptyMap(),
+                        inputDirectory.relativize(adocFilePath),
+                        intermediateOutputDirectory,
+                        inputDirectory.toAbsolutePath()));
+        doc.convert();
+    }
 
+    private Asciidoctor createAsciiDoctor(String backendName) {
+        Asciidoctor asciiDoctor = Asciidoctor.Factory.create();
+        asciiDoctor.registerLogHandler(new LogHandler() {
+                @Override
+                public void log(LogRecord logRecord) {
+                    System.err.println(logRecord.getMessage());
+                }
+            });
+        new AsciidocExtensionRegistry("simple").register(asciiDoctor);
+        return asciiDoctor;
+    }
 
+    private Map<String, Object> asciiDoctorOptions(
+            Map<String, Object> attributes,
+            Path inputRelativePath,
+            File intermediateOutputDirectory,
+            Path baseDirPath) {
+        final OptionsBuilder optionsBuilder = OptionsBuilder.options()
+                .attributes(
+                        AttributesBuilder
+                                .attributes()
+                                .attributes(attributes))
+                .safe(SafeMode.UNSAFE)
+                .headerFooter(false)
+                .baseDir(baseDirPath.toFile())
+                .eruby("");
+        if (intermediateOutputDirectory != null) {
+            optionsBuilder.option("intermediateOutputPath",
+                        intermediateOutputDirectory.toPath().resolve(inputRelativePath));
+        }
+
+        return optionsBuilder.asMap();
     }
 }

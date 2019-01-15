@@ -96,8 +96,8 @@ public class IncludePreprocessorTest {
         expectedIncludes.add(new Include(2, 1, 5, asList(includedContentText), "A.java"));
 
         AtomicInteger lineNumber = new AtomicInteger(0);
-        SourceBlock sba = SourceBlock.consumeSourceBlock(content, lineNumber);
-        List<Include> includes = sba.sourceIncludes();
+        Block sba = Block.consumeBlock(content, lineNumber);
+        List<Include> includes = sba.includes();
 
         assertEquals(content.size(), lineNumber.get(), "returned line number did not match");
         assertEquals(expectedIncludes, includes);
@@ -347,9 +347,9 @@ public class IncludePreprocessorTest {
         );
 
         AtomicInteger lineNumber = new AtomicInteger(0);
-        SourceBlock sba = SourceBlock.consumeSourceBlock(orig, lineNumber);
+        Block sba = Block.consumeBlock(orig, lineNumber);
 
-        List<String> bracketed = sba.asBracketedSourceBlock();
+        List<String> bracketed = sba.asBracketedBlock();
         assertEquals(expectedBracketed, bracketed,
                 DiffUtils.diff(orig, bracketed).toString());
     }
