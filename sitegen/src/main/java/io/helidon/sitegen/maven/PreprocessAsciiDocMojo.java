@@ -24,8 +24,8 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
+import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -116,6 +116,15 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
     @Parameter(property = PROPERTY_PREFIX + "excludes")
     private String[] excludes;
 
+    /**
+     * Type of output to produce: either numbered (with numbered comments
+     * annotating the included text) or natural (with the normal AsciiDoc-style
+     * include directives).
+     */
+    @Parameter(property = PROPERTY_PREFIX + "outputType",
+            defaultValue = "numbered")
+    private String outputType;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         validateParams(inputDirectory, includes);
@@ -179,7 +188,9 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
         if (!inputDirectory.exists()
                 || !inputDirectory.isDirectory()) {
             throw new MojoExecutionException(
-                    String.format("inputDirectory %s does not exist or is not a directory", inputDirectory));
+                    String.format(
+                            "inputDirectory %s does not exist or is not a directory",
+                            inputDirectory));
         }
     }
 
@@ -190,7 +201,7 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
 
         asciiDoctor.loadFile(adocFilePath.toFile(),
                 asciiDoctorOptions(
-                        Collections.emptyMap(),
+                        projectPropertiesMap(project),
                         inputDirectory.relativize(adocFilePath),
                         intermediateOutputDirectory,
                         inputDirectory.toAbsolutePath()));
@@ -227,12 +238,26 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
                 .safe(SafeMode.UNSAFE)
                 .headerFooter(false)
                 .baseDir(baseDirPath.toFile())
-                .eruby("");
+                .eruby("")
+                .option("outputType", outputType);
         if (intermediateOutputDirectory != null) {
             optionsBuilder.option("intermediateOutputPath",
                         intermediateOutputDirectory.toPath().resolve(inputRelativePath));
         }
 
         return optionsBuilder.asMap();
+    }
+
+    private Map<String, Object> projectPropertiesMap(MavenProject project) {
+        Properties properties = new Properties();
+        properties.putAll(project.getProperties());
+        properties.setProperty("project.groupId", project.getGroupId());
+        properties.setProperty("project.artifactId", project.getArtifactId());
+        properties.setProperty("project.version", project.getVersion());
+        properties.setProperty("project.basedir", project.getBasedir().getAbsolutePath());
+
+        return properties.entrySet().stream()
+                .collect(Collectors.toMap(entry -> String.class.cast(entry.getKey()),
+                                          entry -> entry.getValue()));
     }
 }

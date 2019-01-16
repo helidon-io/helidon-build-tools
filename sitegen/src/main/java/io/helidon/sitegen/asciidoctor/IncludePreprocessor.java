@@ -20,8 +20,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -82,6 +84,29 @@ public class IncludePreprocessor extends Preprocessor {
     }
 
     /**
+     * Converts the bracketed form to the natural form (with normal AsciiDoc
+     * {@code include::} directories.
+     *
+     * @param lines bracketed form content
+     * @return natural form content
+     */
+    static List<String> convertBracketedToNatural(List<String> lines) {
+        List<String> result = new ArrayList<>();
+
+        for (AtomicInteger lineNumber = new AtomicInteger(0); lineNumber.get() < lines.size();) {
+            String line = lines.get(lineNumber.get());
+            if (Include.isIncludeStart(line)) {
+                result.addAll(bracketedIncludeToNatural(lines, lineNumber));
+            } else {
+                result.add(line);
+                lineNumber.getAndIncrement();
+            }
+        }
+
+        return result;
+    }
+
+    /**
      * Changes the provided bracketed form into the same content in numbered
      * form.
      *
@@ -112,11 +137,26 @@ public class IncludePreprocessor extends Preprocessor {
 
     @Override
     public void process(Document doc, PreprocessorReader reader) {
-        List<String> processedContent = markIncludes(reader);
+        List<String> processedContent = markIncludes(reader, OutputType.match(doc.getOptions().get("outputType")));
         saveIntermediateDocIfRequested(processedContent, doc);
     }
 
-    private List<String> markIncludes(PreprocessorReader reader) {
+     enum OutputType {
+        NUMBERED,
+        NATURAL;
+
+        static OutputType match(Object outputType) {
+            Optional<OutputType> match = Arrays.stream(OutputType.values())
+                    .filter(ot -> ot.toString().toLowerCase().equals(outputType))
+                    .findFirst();
+            if (!match.isPresent()) {
+                return NUMBERED;
+            }
+            return match.get();
+        }
+    }
+
+    private List<String> markIncludes(PreprocessorReader reader, OutputType outputType) {
 
         /*
          * Use the raw input. Do not use reader.readLines() yet because that
@@ -148,9 +188,26 @@ public class IncludePreprocessor extends Preprocessor {
          * Prepare the reader to consume the numbered format just computed.
          */
         String numberedIncludesWithIncludedTextContent = linesToString(numberedIncludesWithIncludedText);
-        reader.push_include(numberedIncludesWithIncludedTextContent, null, null, 1, Collections.emptyMap());
+        reader.push_include(
+                numberedIncludesWithIncludedTextContent,
+                null,
+                null,
+                1,
+                Collections.emptyMap());
 
-        return numberedIncludesWithIncludedText;
+        switch (outputType) {
+            case NUMBERED:
+                return numberedIncludesWithIncludedText;
+
+            case NATURAL:
+                return convertBracketedToNatural(bracketedIncludesWithIncludedText);
+
+            default:
+                throw new IllegalArgumentException(
+                        String.format("outputType %s is not one of %s",
+                            outputType == null ? "null" : outputType.toString().toLowerCase(),
+                            Arrays.toString(OutputType.values())));
+        }
     }
 
     private static List<String> readAndClearReader(PreprocessorReader reader) {
@@ -198,5 +255,12 @@ public class IncludePreprocessor extends Preprocessor {
         lineNumber.addAndGet(ia.endWithinBlock() - ia.startWithinBlock() + 1);
 
         return ia.asBracketedAsciiDocInclude();
+    }
+
+    private static List<String> bracketedIncludeToNatural(List<String> lines, AtomicInteger lineNumber) {
+        List<String> result = new ArrayList<>();
+        Include inc = Include.consumeBracketedInclude(lines, lineNumber, result, 0);
+        result.addAll(inc.asAsciiDocInclude());
+        return result;
     }
 }

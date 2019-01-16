@@ -15,4 +15,22 @@
     limitations under the License.
 
 ///////////////////////////////////////////////////////////////////////////////
-This is file b.
+
+= Example Document
+Beginning of document
+This is some useful information before any includes.
+include::aFewLines.adoc[]
+A buffer
+include::fiveRandomLines.adoc[]
+Ending buffer
+
+[source]
+.Title for the source
+----
+// This is un-included source
+include::Include1.adoc[]
+More un-included source
+include::Include2.adoc[]
+include::Include3.adoc[]
+include::threeFunLines.adoc[]
+----

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018-2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,8 +119,19 @@ public class PreprocessAsciiDocMojoTest {
 
     @Test
     public void testWithRealIncludes() throws Exception {
+        runMojo("preprocess-mojo/pom-test-includes.xml",
+                "variousIncludes-afterFullPreprocessing.adoc");
+    }
+
+    @Test
+    public void testWithRealIncludesAndNaturalOutput() throws Exception {
+        runMojo("preprocess-mojo/pom-test-includes-natural-output.xml",
+                "variousIncludes-naturalForm.adoc");
+    }
+
+    private void runMojo(String pomFile, String expectedFile) throws Exception {
         PreprocessAsciiDocMojo mojo = MavenPluginHelper.getInstance().getMojo(
-                "preprocess-mojo/pom-test-includes.xml",
+                pomFile,
                 INCLUDES_TEST_ROOT.toFile(),
                 "preprocess-adoc",
                 PreprocessAsciiDocMojo.class);
@@ -143,7 +154,7 @@ public class PreprocessAsciiDocMojoTest {
         Path expectedOutputPath = Paths.get(
                 baseDir,
                 "../preprocess-adoc",
-                "variousIncludes-afterFullPreprocessing.adoc");
+                expectedFile);
         List<String> expectedOutput = Files.readAllLines(expectedOutputPath);
 
         assertEquals(expectedOutput, mojoOutput, () -> {
