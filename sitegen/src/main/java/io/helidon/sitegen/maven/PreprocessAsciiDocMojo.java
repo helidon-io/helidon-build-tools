@@ -77,6 +77,13 @@ import org.asciidoctor.log.LogRecord;
  * <td>excludes</td>
  * <td>glob expressions for .adoc files to skip</td>
  * </tr>
+ *
+ * <tr>
+ * <td>outputType</td>
+ * <td>type of output: numbered (default) or natural; natural uses only normal
+ * AsciiDoc {@code include::} directives which makes it easier for developers to
+ * edit the .adoc file.
+ * </tr>
  * </table>
  *
  */
@@ -236,7 +243,7 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
                     System.err.println(logRecord.getMessage());
                 }
             });
-        new AsciidocExtensionRegistry("simple").register(asciiDoctor);
+        new AsciidocExtensionRegistry(backendName).register(asciiDoctor);
         return asciiDoctor;
     }
 
