@@ -60,7 +60,7 @@ import org.asciidoctor.log.LogRecord;
  *
  * <tr>
  * <td>inputDirectory</td>
- * <td>directory within which files to be processed reside</td>
+ * <td>directory containing the files to be processed</td>
  * </tr>
  *
  * <tr>
