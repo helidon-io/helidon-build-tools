@@ -49,7 +49,7 @@ import org.asciidoctor.log.LogRecord;
 /**
  * Preprocesses AsciiDoc files to "pre-execute" includes so the resulting
  * AsciiDoc output will render nicely on github (because github AsciiDoc
- * rendering does not yet support include itself).
+ * rendering does not yet support include).
  * <p>
  * Settings for the goal:
  * <table>
@@ -86,6 +86,7 @@ import org.asciidoctor.log.LogRecord;
 public class PreprocessAsciiDocMojo extends AbstractMojo {
 
     private static final String DEFAULT_SRC_DIR = "${project.basedir}/src/main/docs";
+    private static final String JRUBY_DEBUG_PROPERTY_NAME = "jruby.cli.verbose";
 
     @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject project;
@@ -129,6 +130,12 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException, MojoFailureException {
         validateParams(inputDirectory, includes);
 
+        // enable jruby verbose mode on debugging
+        final String previousJRubyCliVerboseValue = System.getProperty(JRUBY_DEBUG_PROPERTY_NAME);
+        if (getLog().isDebugEnabled()) {
+            System.setProperty(JRUBY_DEBUG_PROPERTY_NAME, "true");
+        }
+
         Asciidoctor asciiDoctor = createAsciiDoctor("simple");
         try {
             for (Path p : inputs(inputDirectory.toPath(), includes, excludes)) {
@@ -136,6 +143,14 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
             }
         } catch (IOException ex) {
             throw new MojoExecutionException("Error collecting inputs", ex);
+        } finally {
+            if (getLog().isDebugEnabled()) {
+                if (previousJRubyCliVerboseValue == null) {
+                    System.clearProperty(JRUBY_DEBUG_PROPERTY_NAME);
+                } else {
+                    System.setProperty(JRUBY_DEBUG_PROPERTY_NAME, previousJRubyCliVerboseValue);
+                }
+            }
         }
     }
 
