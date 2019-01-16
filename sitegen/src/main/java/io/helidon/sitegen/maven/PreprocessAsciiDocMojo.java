@@ -43,14 +43,41 @@ import org.asciidoctor.Asciidoctor;
 import org.asciidoctor.AttributesBuilder;
 import org.asciidoctor.OptionsBuilder;
 import org.asciidoctor.SafeMode;
-import org.asciidoctor.ast.Document;
 import org.asciidoctor.log.LogHandler;
 import org.asciidoctor.log.LogRecord;
 
 /**
- * Preprocesses AsciiDoc files to execute includes so the resulting
+ * Preprocesses AsciiDoc files to "pre-execute" includes so the resulting
  * AsciiDoc output will render nicely on github (because github AsciiDoc
  * rendering does not yet support include itself).
+ * <p>
+ * Settings for the goal:
+ * <table>
+ * <tr>
+ * <th>Property</th>
+ * <th>Usage</th>
+ * </tr>
+ *
+ * <tr>
+ * <td>inputDirectory</td>
+ * <td>directory within which files to be processed reside</td>
+ * </tr>
+ *
+ * <tr>
+ * <td>intermediateOutputDirectory</td>
+ * <td>where the reformatted .adoc file should be written</td>
+ * </tr>
+ *
+ * <tr>
+ * <td>includes</td>
+ * <td>glob expressions for .adoc files to process</td>
+ * </tr>
+ *
+ * <tr>
+ * <td>excludes</td>
+ * <td>glob expressions for .adoc files to skip</td>
+ * </tr>
+ * </table>
  *
  */
 @Mojo(name = "preprocess-adoc",
@@ -59,7 +86,6 @@ import org.asciidoctor.log.LogRecord;
 public class PreprocessAsciiDocMojo extends AbstractMojo {
 
     private static final String DEFAULT_SRC_DIR = "${project.basedir}/src/main/docs";
-    private static final String DEFAULT_OUTPUT_DIR = "${project.basedir}/target/docs";
 
     @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject project;
@@ -93,13 +119,6 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         validateParams(inputDirectory, includes);
-//        Site.builder()
-//                .pages(listOf(SourcePathFilter.builder()
-//                        .includes(listOf(includes))
-//                        .excludes(listOf(excludes))
-//                        .build()))
-//                .build()
-//                .generate(inputDirectory, intermediateOutputDirectory);
 
         Asciidoctor asciiDoctor = createAsciiDoctor("simple");
         try {
@@ -109,6 +128,13 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
         } catch (IOException ex) {
             throw new MojoExecutionException("Error collecting inputs", ex);
         }
+    }
+
+    /**
+     * @return the Maven project for this mojo
+     */
+    public MavenProject project() {
+        return project;
     }
 
     /**
@@ -162,13 +188,18 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
             Path inputDirectory,
             Path adocFilePath) throws IOException {
 
-        Document doc = asciiDoctor.loadFile(adocFilePath.toFile(),
+        asciiDoctor.loadFile(adocFilePath.toFile(),
                 asciiDoctorOptions(
                         Collections.emptyMap(),
                         inputDirectory.relativize(adocFilePath),
                         intermediateOutputDirectory,
                         inputDirectory.toAbsolutePath()));
-        doc.convert();
+        /*
+         * We do not need to convert the document because the
+         * preprocessor has written the updated version of the .adoc
+         * file already and we do not need any rendered output as a
+         * result of invoking this mojo.
+         */
     }
 
     private Asciidoctor createAsciiDoctor(String backendName) {

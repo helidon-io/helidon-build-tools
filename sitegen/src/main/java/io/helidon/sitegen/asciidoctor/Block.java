@@ -37,7 +37,8 @@ import java.util.regex.Matcher;
  * <ul>
  * <li>its declaration (e.g., {@code [source]} with, potentially, additional
  * attributes),
- * <li>any includes that contribute to the body of the block, and
+ * <li>any {@code include::} directives that contribute to the body of the
+ * block, and
  * <li>the body itself.
  * </ul>
  * <h1>Text Formatting</h1>
@@ -55,8 +56,8 @@ import java.util.regex.Matcher;
  * <ul>
  * <li>The preamble contains an AsciiDoc comment for each AsciiDoc
  * {@code include::} that originally appeared in the body. Each such comment
- * indicates the origin of the include and the line numbers within the
- * block's body where the corresponding included content resides.
+ * indicates the origin of the include and the line numbers within the block's
+ * body where the corresponding included content resides.
  * <li>The body contains the included content in the correct positions.
  * </ul>
  * For example, given an original AsciiDoc block like this:
@@ -96,8 +97,8 @@ import java.util.regex.Matcher;
  * </pre>
  * <h2>Creating {@code Block} Instances by Parsing AsciiDoc</h2>
  * The {@link #consumeBlock} method reads content and builds an instance
- * representing the corresponding block, advancing the current line
- * indicator for the content as it does so.
+ * representing the corresponding block, advancing the current line indicator
+ * for the content as it does so.
  * <p>
  * Note that this method handles the original AsciiDoc form (with
  * {@code include::} directives in the body), pure numbered format, and a hybrid
@@ -109,7 +110,8 @@ public class Block {
     private static final Set<String> BLOCK_DELIMITERS
             = new HashSet<>(Arrays.asList(
                     new String[]{"====", // example
-                        "----" // listing, source
+                        "----", // listing, source
+                        "...." // listing
                 }));
 
     private static final Set<String> BLOCK_INTRODUCERS
@@ -117,8 +119,8 @@ public class Block {
                     new String[]{"source", "listing", "example"}));
 
     /**
-     * Creates a Block by consuming input text from the AsciiDoc
- preprocessor reader.
+     * Creates a Block by consuming the input text, advancing {@code lineNumber}
+     * so it points just past the end of the block's ending delimiter.
      *
      * @param content lines containing AsciiDoc
      * @param lineNumber line number at which to begin processing the block
@@ -142,7 +144,7 @@ public class Block {
                 .anyMatch(intro -> line.startsWith("[" + intro));
     }
 
-    private static boolean isBlock(String line) {
+    private static boolean isBlockDelimiter(String line) {
         return BLOCK_DELIMITERS.stream()
                 .anyMatch(delimiter -> line.equals(delimiter));
     }
@@ -155,11 +157,10 @@ public class Block {
     private List<String> preamble = new ArrayList<>();
 
     /**
-     * Formats the block using numbered include comments in the preamble
-     * and the actual inserted text in the body.
+     * Formats the block using numbered include comments in the preamble and the
+     * actual inserted text in the body.
      *
-     * @return block with (if needed) numbered include comments in the
-     * preamble
+     * @return block with (if needed) numbered include comments in the preamble
      */
     List<String> asBlockWithNumberedIncludes() {
         return asBlock(() -> {
@@ -190,8 +191,8 @@ public class Block {
     }
 
     /**
-     * Formats the block with no numbering, with each include bracketed
-     * with special include-related comments.
+     * Formats the block with no numbering, with each include bracketed with
+     * special include-related comments.
      *
      * @return block formatted using bracketed includes
      */
@@ -233,11 +234,9 @@ public class Block {
 
         /*
          * Replace the actual included text in the body of the block with
-         * AsciiDoc includes. (Below we add brackets to all includes, which will
-         * include the ones we add now and any new ones the user might have
-         * added to the original .adoc file.)
+         * AsciiDoc includes.
          *
-         * We work on the includes from bottom to top so we don't disrupt the
+         * We work on the includes from bottom to top to avoid disrupting the
          * line number references from the numbered includes into the body.
          */
         for (int i = includes.size() - 1; i >= 0; i--) {
@@ -288,8 +287,8 @@ public class Block {
 
         /*
          * The "preamble" is any text after the introducer (e.g., [source]) line
-         * and before the first delimiter (e.g., "----") marking the beginning
-         * of the body.
+         * and before the first delimiter (e.g., "----") that marks the beginning
+         * of the body of the block.
          */
         collectPreamble(content, aLineNumber);
         int blockStartLineNumber = body.size();
@@ -347,7 +346,6 @@ public class Block {
 
     private String doUntilInitialBlockDelimiter(List<String> content, AtomicInteger lineNumber, Consumer<String> lineConsumer) {
         return doUntilBlockDelimiter(content, lineNumber, lineConsumer,
-                (line) -> isBlock(line));
+                (line) -> isBlockDelimiter(line));
     }
-
 }

@@ -58,10 +58,11 @@ public class IncludePreprocessor extends Preprocessor {
      * Converts an external AsciiDoc file to our initial intermediate form, with
      * include:: and // _include:: turned into bracketed includes.
      *
-     * @param lines
-     * @return
+     * @param lines possibly hybrid format containing Asciidoc {@code include::}
+     * and our numbered commented includes
+     * @return lines with beginning and ending comments bracketing the includes
      */
-    static List<String> addBeginAndEndIncludeComments(List<String> lines) {
+    static List<String> convertHybridToBracketed(List<String> lines) {
         List<String> augmentedLines = new ArrayList<>();
 
         for (AtomicInteger lineNumber = new AtomicInteger(0); lineNumber.get() < lines.size();) {
@@ -80,7 +81,14 @@ public class IncludePreprocessor extends Preprocessor {
         return augmentedLines;
     }
 
-    static List<String> convertBracketedToNumberedIncludes(List<String> content) {
+    /**
+     * Changes the provided bracketed form into the same content in numbered
+     * form.
+     *
+     * @param content bracketed form of the content
+     * @return content converted to numbered form
+     */
+    static List<String> convertBracketedToNumbered(List<String> content) {
         List<String> result = new ArrayList<>();
 
         AtomicInteger lineNumber = new AtomicInteger(0);
@@ -104,45 +112,56 @@ public class IncludePreprocessor extends Preprocessor {
 
     @Override
     public void process(Document doc, PreprocessorReader reader) {
-        List<String> processedContent = markIncludes(reader.lines(), doc, reader);
+        List<String> processedContent = markIncludes(reader);
         saveIntermediateDocIfRequested(processedContent, doc);
     }
 
-    private List<String> markIncludes(List<String> origLines, Document doc, PreprocessorReader reader) {
+    private List<String> markIncludes(PreprocessorReader reader) {
 
         /*
-         * Read from the raw input; temporarily we need to suppress include
-         * processing because we need to see the include directives ourselves.
+         * Use the raw input. Do not use reader.readLines() yet because that
+         * would trigger {@code include::} handling which needs to happen below.
          */
-        List<String> origWithBracketedIncludes = addBeginAndEndIncludeComments(origLines);
+        List<String> origWithBracketedIncludes = convertHybridToBracketed(reader.lines());
 
         /*
-         * Force the reader to consume the original input, then erase it by
-         * restoring with an empty list. Add our augmented content as an include
-         * which causes AsciiDoctorJ to process it (although ADJ will not invoke
-         * this preprocessor again when it processes that pseudo-included
-         * content).
+         * Replace the reader's content with the bracketed format.
          */
-        reader.readLines();
-        reader.restoreLines(Collections.emptyList());
-        String origWithBracketedIncludesContent = origWithBracketedIncludes.stream()
-                .collect(Collectors.joining(System.lineSeparator()));
+        readAndClearReader(reader);
+        String origWithBracketedIncludesContent = linesToString(origWithBracketedIncludes);
         reader.push_include(origWithBracketedIncludesContent, null, null, 1, Collections.emptyMap());
 
         /*
-         * Force the reader to consume the bracketed-include content which will
-         * insert the included text between the bracketing comments. Then
-         * convert the bracketed comments to numbered comments.
+         * Have the reader consume the bracketed-include content which will
+         * insert the included text between the bracketing comments.
          */
-        List<String> bracketedIncludesWithIncludedText = reader.readLines();
-        List<String> numberedIncludesWithIncludedText = convertBracketedToNumberedIncludes(bracketedIncludesWithIncludedText);
+        List<String> bracketedIncludesWithIncludedText = readAndClearReader(reader);
 
-        reader.restoreLines(Collections.emptyList());
-        String numberedIncludesWithIncludedTextContent = numberedIncludesWithIncludedText.stream()
-                .collect(Collectors.joining(System.lineSeparator()));
+        /*
+         * With the actual included text between the bracketing comments convert
+         * that to the numbered format which is ultimate what we want.
+         */
+        List<String> numberedIncludesWithIncludedText
+                = convertBracketedToNumbered(bracketedIncludesWithIncludedText);
+
+        /*
+         * Prepare the reader to consume the numbered format just computed.
+         */
+        String numberedIncludesWithIncludedTextContent = linesToString(numberedIncludesWithIncludedText);
         reader.push_include(numberedIncludesWithIncludedTextContent, null, null, 1, Collections.emptyMap());
 
         return numberedIncludesWithIncludedText;
+    }
+
+    private static List<String> readAndClearReader(PreprocessorReader reader) {
+        List<String> result = reader.readLines();
+        reader.restoreLines(Collections.emptyList());
+        return result;
+    }
+
+    private static String linesToString(List<String> lines) {
+        return lines.stream()
+                .collect(Collectors.joining(System.lineSeparator()));
     }
 
     private void saveIntermediateDocIfRequested(List<String> content, Document doc) {

@@ -21,7 +21,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,41 +30,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.github.difflib.DiffUtils;
 import com.github.difflib.algorithm.DiffException;
 
-import io.helidon.sitegen.Site;
-import io.helidon.sitegen.SourcePathFilter;
-
-import static io.helidon.common.CollectionsHelper.listOf;
-import static io.helidon.sitegen.TestHelper.SOURCE_DIR_PREFIX;
-import static io.helidon.sitegen.TestHelper.assertRendering;
-import static io.helidon.sitegen.TestHelper.getFile;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
 /**
- *
+ * Unit tests for the include preprocessing logic.
  */
 public class IncludePreprocessorTest {
 
     public IncludePreprocessorTest() {
-    }
-
-    private static final File OUTPUT_DIR = getFile("target/basic-backend-test");
-
-    @Test
-    public void testBasic2() throws Exception {
-        File sourcedir = getFile(SOURCE_DIR_PREFIX + "testbasic2");
-        Site.builder()
-                .pages(listOf(SourcePathFilter.builder()
-                        .includes(listOf("**/*.adoc"))
-                        .excludes(listOf("**/_*"))
-                        .build()))
-                .build()
-                .generate(sourcedir, OUTPUT_DIR);
-        assertRendering(
-                OUTPUT_DIR,
-                new File(sourcedir, "_expected.ftl"),
-                new File(OUTPUT_DIR, "example-manual.html"));
     }
 
     @Test
@@ -269,8 +242,7 @@ public class IncludePreprocessorTest {
 
         expectedNumberedContent.addAll(src1Numbered);
 
-
-        List<String> numberedContent = IncludePreprocessor.convertBracketedToNumberedIncludes(content);
+        List<String> numberedContent = IncludePreprocessor.convertBracketedToNumbered(content);
 
         assertEquals(expectedNumberedContent, numberedContent, "overall resulting content did not match; " +
                 DiffUtils.diff(expectedNumberedContent, numberedContent));
@@ -288,7 +260,7 @@ public class IncludePreprocessorTest {
                 loadFromPath(afterInitialPreprocessingPath);
 
         List<String> actualAfterInitialPreprocessingLines =
-                IncludePreprocessor.addBeginAndEndIncludeComments(originalLines);
+                IncludePreprocessor.convertHybridToBracketed(originalLines);
 
         assertEquals(expectedAfterInitialPreprocessingLines,
                 actualAfterInitialPreprocessingLines,

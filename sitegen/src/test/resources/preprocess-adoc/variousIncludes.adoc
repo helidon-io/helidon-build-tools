@@ -15,11 +15,13 @@
     limitations under the License.
 
 ///////////////////////////////////////////////////////////////////////////////
+
+= Example Document
 Beginning of document
 This is some useful information before any includes.
-include::aFewLines.adoc
+include::aFewLines.adoc[]
 A buffer
-// _include::0-4:fiveRandomLines.adoc
+// _include::0-4:fiveRandomLines.adoc[]
 These
 are
 five
@@ -29,13 +31,13 @@ Ending buffer
 
 [source]
 .Title for the source
-// _include::5-7:threeFunLines.adoc
+// _include::5-7:threeFunLines.adoc[]
 ----
 // This is un-included source
-include::Include1.adoc
+include::Include1.adoc[]
 More un-included source
-include::Include2.adoc
-include::Include3.adoc
+include::Include2.adoc[]
+include::Include3.adoc[]
 fun line 1
 fun line 2
 fun line 3
