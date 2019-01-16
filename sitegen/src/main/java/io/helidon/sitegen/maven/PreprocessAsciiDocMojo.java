@@ -64,7 +64,7 @@ import org.asciidoctor.log.LogRecord;
  * </tr>
  *
  * <tr>
- * <td>intermediateOutputDirectory</td>
+ * <td>outputDirectory</td>
  * <td>where the reformatted .adoc file should be written</td>
  * </tr>
  *
@@ -104,12 +104,12 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
     private File inputDirectory;
 
     /**
-     * Where the intermediate file should be stored; not stored if
+     * Where the pre-included file should be stored; not stored if
      * not specified.
      */
-    @Parameter(property = PROPERTY_PREFIX + "intermediateOutputDirectory",
+    @Parameter(property = PROPERTY_PREFIX + "outputDirectory",
             defaultValue = "$project.basedir}/src/main")
-    private File intermediateOutputDirectory;
+    private File outputDirectory;
 
     /**
      * List of files to include.
@@ -225,7 +225,7 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
                 asciiDoctorOptions(
                         projectPropertiesMap(project),
                         inputDirectory.relativize(adocFilePath),
-                        intermediateOutputDirectory,
+                        outputDirectory,
                         inputDirectory.toAbsolutePath()));
         /*
          * We do not need to convert the document because the
@@ -250,7 +250,7 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
     private Map<String, Object> asciiDoctorOptions(
             Map<String, Object> attributes,
             Path inputRelativePath,
-            File intermediateOutputDirectory,
+            File outputDirectory,
             Path baseDirPath) {
         final OptionsBuilder optionsBuilder = OptionsBuilder.options()
                 .attributes(
@@ -261,10 +261,10 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
                 .headerFooter(false)
                 .baseDir(baseDirPath.toFile())
                 .eruby("")
-                .option("outputType", outputType);
-        if (intermediateOutputDirectory != null) {
-            optionsBuilder.option("intermediateOutputPath",
-                        intermediateOutputDirectory.toPath().resolve(inputRelativePath));
+                .option("preincludeOutputType", outputType);
+        if (outputDirectory != null) {
+            optionsBuilder.option("preincludeOutputPath",
+                        outputDirectory.toPath().resolve(inputRelativePath));
         }
 
         return optionsBuilder.asMap();

@@ -139,7 +139,7 @@ public class PreprocessAsciiDocMojoTest {
 
         /*
          * The pom resides in preprocess-mojo and specifies the
-         * intermediateOutputDirectory (where the pre-included file should be
+         * outputDirectory (where the pre-included file should be
          * written) as . which means we should write it to preprocess-mojo (even
          * though we read the source from preprocess-adoc). This avoids clobbering
          * the original source with the updated copy during every run.

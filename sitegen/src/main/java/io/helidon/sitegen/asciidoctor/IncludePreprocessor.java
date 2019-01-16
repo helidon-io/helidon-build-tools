@@ -137,8 +137,12 @@ public class IncludePreprocessor extends Preprocessor {
 
     @Override
     public void process(Document doc, PreprocessorReader reader) {
-        List<String> processedContent = markIncludes(reader, OutputType.match(doc.getOptions().get("outputType")));
-        saveIntermediateDocIfRequested(processedContent, doc);
+        OutputType outputType = OutputType.match(doc.getOptions().get("preincludeOutputType"));
+        if (outputType == null) {
+            return;
+        }
+        List<String> processedContent = markIncludes(reader, outputType);
+        savePreincludedDocIfRequested(processedContent, doc);
     }
 
      enum OutputType {
@@ -150,7 +154,7 @@ public class IncludePreprocessor extends Preprocessor {
                     .filter(ot -> ot.toString().toLowerCase().equals(outputType))
                     .findFirst();
             if (!match.isPresent()) {
-                return NUMBERED;
+                return null;
             }
             return match.get();
         }
@@ -221,12 +225,12 @@ public class IncludePreprocessor extends Preprocessor {
                 .collect(Collectors.joining(System.lineSeparator()));
     }
 
-    private void saveIntermediateDocIfRequested(List<String> content, Document doc) {
-        Path intermediateOutputPath = Path.class.cast(doc.getOptions().get("intermediateOutputPath"));
-        if (intermediateOutputPath != null) {
+    private void savePreincludedDocIfRequested(List<String> content, Document doc) {
+        Path outputPath = Path.class.cast(doc.getOptions().get("preincludeOutputPath"));
+        if (outputPath != null) {
             try {
-                Files.createDirectories(intermediateOutputPath.getParent());
-                Files.write(intermediateOutputPath, content);
+                Files.createDirectories(outputPath.getParent());
+                Files.write(outputPath, content);
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
