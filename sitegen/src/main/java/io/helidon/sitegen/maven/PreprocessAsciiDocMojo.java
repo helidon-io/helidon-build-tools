@@ -108,7 +108,7 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
      * not specified.
      */
     @Parameter(property = PROPERTY_PREFIX + "outputDirectory",
-            defaultValue = "$project.basedir}/src/main")
+            defaultValue = "${project.basedir}")
     private File outputDirectory;
 
     /**
