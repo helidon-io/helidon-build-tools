@@ -31,6 +31,11 @@ import java.util.stream.Stream;
 
 import io.helidon.sitegen.asciidoctor.AsciidocExtensionRegistry;
 import static io.helidon.sitegen.maven.Constants.PROPERTY_PREFIX;
+import java.io.BufferedInputStream;
+import java.io.InputStream;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -48,7 +53,7 @@ import org.asciidoctor.log.LogRecord;
 
 /**
  * Preprocesses AsciiDoc files to "pre-execute" includes so the resulting
- * AsciiDoc output will render nicely on github (because github AsciiDoc
+ * AsciiDoc output will render nicely on GitHub (because GitHub AsciiDoc
  * rendering does not yet support include).
  * <p>
  * Settings for the goal:
@@ -80,9 +85,17 @@ import org.asciidoctor.log.LogRecord;
  *
  * <tr>
  * <td>outputType</td>
- * <td>type of output: numbered (default) or natural; natural uses only normal
+ * <td>type of output: numbered (default) or natural. Natural uses only normal
  * AsciiDoc {@code include::} directives which makes it easier for developers to
  * edit the .adoc file.
+ * </tr>
+ *
+ * <tr>
+ * <td>check</td>
+ * <td>whether to check that the input and output are the same. Typically used
+ * in pipeline builds to make sure that the developer committed a pre-included
+ * version of the .adoc file.
+ * </td>
  * </tr>
  * </table>
  *
@@ -132,6 +145,16 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
     @Parameter(property = PROPERTY_PREFIX + "outputType",
             defaultValue = "numbered")
     private String outputType;
+
+    /**
+     * Whether to check that the input and output files are the same. Primarily
+     * intended for use during a pipeline build to make sure that the .adoc file
+     * in the repository is the same as the pre-included form (to ensure that the
+     * developer has included the updated pre-included file in the commit).
+     */
+    @Parameter(property = PROPERTY_PREFIX + "check",
+            defaultValue = "false")
+    private boolean check;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -219,12 +242,21 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
     private void processFile(
             Asciidoctor asciiDoctor,
             Path inputDirectory,
-            Path adocFilePath) throws IOException {
+            Path adocFilePath) throws IOException, MojoFailureException, MojoExecutionException {
+
+        Path relativeInputPath = inputDirectory.relativize(adocFilePath);
+        Path outputPath = outputDirectory.toPath().resolve(relativeInputPath);
+
+        getLog().info(String.format("processing %s to format '%s' in %s",
+                adocFilePath.toString(),
+                outputType,
+                outputPath.toString()));
+
 
         asciiDoctor.loadFile(adocFilePath.toFile(),
                 asciiDoctorOptions(
                         projectPropertiesMap(project),
-                        inputDirectory.relativize(adocFilePath),
+                        relativeInputPath,
                         outputDirectory,
                         inputDirectory.toAbsolutePath()));
         /*
@@ -233,6 +265,42 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
          * file already and we do not need any rendered output as a
          * result of invoking this mojo.
          */
+
+        if (check) {
+            compareFiles(adocFilePath, outputPath);
+        }
+    }
+
+    private void compareFiles(Path pathA, Path pathB) throws IOException, MojoFailureException, MojoExecutionException {
+        if (pathA.equals(pathB)) {
+            getLog().warn(
+                    new IllegalArgumentException(
+                        "'check' set to true but it will always pass: " +
+                                "input and output files are the same"));
+        }
+        try {
+            byte[] inputDigest = digest(pathA);
+            byte[] outputDigest = digest(pathB);
+            if (!Arrays.equals(inputDigest, outputDigest)) {
+                throw new MojoFailureException(String.format(
+                        "file %s does not match its expected pre-included form; " +
+                                "the commit might need an up-to-date file from running 'preinclude-adoc' ",
+                        pathA.toString()));
+            }
+        } catch (NoSuchAlgorithmException e) {
+            throw new MojoExecutionException("error checking for matching input and output files", e);
+        }
+    }
+
+    private byte[] digest(Path path) throws IOException, NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance("MD5");
+
+        byte[] buffer = new byte[256];
+        try (InputStream is = new BufferedInputStream(Files.newInputStream(path));
+             DigestInputStream dis = new DigestInputStream(is, md)) {
+            while (dis.read(buffer) != -1) {}
+        }
+        return md.digest();
     }
 
     private Asciidoctor createAsciiDoctor(String backendName) {
