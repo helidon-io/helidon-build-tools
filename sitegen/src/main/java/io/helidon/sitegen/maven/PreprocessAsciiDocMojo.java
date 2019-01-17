@@ -92,7 +92,7 @@ import org.asciidoctor.log.LogRecord;
       requiresProject = true)
 public class PreprocessAsciiDocMojo extends AbstractMojo {
 
-    private static final String DEFAULT_SRC_DIR = "${project.basedir}/src/main/docs";
+    private static final String DEFAULT_SRC_DIR = "${project.basedir}";
     private static final String JRUBY_DEBUG_PROPERTY_NAME = "jruby.cli.verbose";
 
     @Parameter(defaultValue = "${project}", readonly = true)
