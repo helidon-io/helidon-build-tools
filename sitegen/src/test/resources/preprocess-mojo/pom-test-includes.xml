@@ -32,7 +32,7 @@
                     <includes>
                         <include>variousIncludes.adoc</include>
                     </includes>
-                    <outputDirectory>.</outputDirectory>
+                    <outputDirectory>../../../../target/docs</outputDirectory>
                 </configuration>
             </plugin>
         </plugins>

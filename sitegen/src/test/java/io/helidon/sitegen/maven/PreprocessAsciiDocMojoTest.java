@@ -137,18 +137,9 @@ public class PreprocessAsciiDocMojoTest {
                 PreprocessAsciiDocMojo.class);
         mojo.execute();
 
-        /*
-         * The pom resides in preprocess-mojo and specifies the
-         * outputDirectory (where the pre-included file should be
-         * written) as . which means we should write it to preprocess-mojo (even
-         * though we read the source from preprocess-adoc). This avoids clobbering
-         * the original source with the updated copy during every run.
-         */
-
         String baseDir = mojo.project().getBasedir().toPath().toString();
-        Path mojoOutputPath = Paths.get(
-                baseDir,
-                "variousIncludes.adoc");
+        Path mojoOutputPath = Paths.get(baseDir, "../../../../target/docs",
+                "variousIncludes.adoc").normalize();
         List<String> mojoOutput = Files.readAllLines(mojoOutputPath);
 
         Path expectedOutputPath = Paths.get(
