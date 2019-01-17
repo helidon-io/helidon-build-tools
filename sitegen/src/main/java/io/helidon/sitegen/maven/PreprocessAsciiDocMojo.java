@@ -16,12 +16,17 @@
  */
 package io.helidon.sitegen.maven;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -31,11 +36,6 @@ import java.util.stream.Stream;
 
 import io.helidon.sitegen.asciidoctor.AsciidocExtensionRegistry;
 import static io.helidon.sitegen.maven.Constants.PROPERTY_PREFIX;
-import java.io.BufferedInputStream;
-import java.io.InputStream;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -275,16 +275,16 @@ public class PreprocessAsciiDocMojo extends AbstractMojo {
         if (pathA.equals(pathB)) {
             getLog().warn(
                     new IllegalArgumentException(
-                        "'check' set to true but it will always pass: " +
-                                "input and output files are the same"));
+                        "'check' set to true but it will always pass: "
+                                + "input and output files are the same"));
         }
         try {
             byte[] inputDigest = digest(pathA);
             byte[] outputDigest = digest(pathB);
             if (!Arrays.equals(inputDigest, outputDigest)) {
                 throw new MojoFailureException(String.format(
-                        "file %s does not match its expected pre-included form; " +
-                                "the commit might need an up-to-date file from running 'preinclude-adoc' ",
+                        "file %s does not match its expected pre-included form; "
+                                + "the commit might need an up-to-date file from running 'preinclude-adoc' ",
                         pathA.toString()));
             }
         } catch (NoSuchAlgorithmException e) {
