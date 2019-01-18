@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018-2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -161,12 +161,14 @@ public class AsciidocEngine {
                         AttributesBuilder
                                 .attributes()
                                 .attributes(attributes))
-                .backend(this.backend)
                 .safe(SafeMode.UNSAFE)
                 .headerFooter(false)
                 .eruby("")
                 .baseDir(source.getParentFile())
                 .option("parse_header_only", true);
+        if (backend != null) {
+            optionsBuilder.backend(this.backend);
+        }
         Document doc = asciidoctor.loadFile(source, optionsBuilder.asMap());
         Map<String, Object> headerMap = new HashMap<>();
         String h1 = parseSection0Title(source);
@@ -234,13 +236,14 @@ public class AsciidocEngine {
         final OptionsBuilder optionsBuilder = OptionsBuilder.options();
         optionsBuilder
                 .attributes(attributesBuilder)
-                .backend(this.backend)
                 .safe(SafeMode.UNSAFE)
                 .headerFooter(false)
                 .eruby("")
                 .baseDir(source.getParentFile())
                 .option("parse", false);
-
+        if (backend != null) {
+            optionsBuilder.backend(this.backend);
+        }
         LOGGER.info("rendering {} to {}", source.getPath(), target.getPath());
         Document document = asciidoctor.loadFile(source, optionsBuilder.asMap());
         document.setAttribute("templateSession", ctx.getTemplateSession(), true);
