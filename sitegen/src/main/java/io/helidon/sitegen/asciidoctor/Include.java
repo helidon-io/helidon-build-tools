@@ -99,7 +99,7 @@ import java.util.regex.Pattern;
  * n+1 lines of included text from somePath.adoc
  * }
  * </pre>
- * See {@link SourceBlock#asNumberedSourceBlock() } which also creates
+ * See {@link Block#asBlockWithNumberedIncludes() } which also creates
  * the numbered form but organizes the comment and the corresponding included text somewhat differently.
  *
  * <h1>Creating {@code Include} Instances by Parsing AsciiDoc</h1>

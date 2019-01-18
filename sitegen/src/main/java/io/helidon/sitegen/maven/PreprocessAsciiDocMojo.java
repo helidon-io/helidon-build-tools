@@ -38,9 +38,8 @@ import org.apache.maven.plugins.annotations.Parameter;
  * Preprocesses AsciiDoc files to "pre-execute" includes so the resulting
  * AsciiDoc output will render nicely on GitHub (because GitHub AsciiDoc
  * rendering does not yet support {@code include::}).
- * <p>
- * Additional settings for this goal (see {@link AbstractAsciiDocMojo}):
  * <table>
+ * <caption>Additional settings (see {@link AbstractAsciiDocMojo})</caption>
  * <tr>
  * <th>Property</th>
  * <th>Usage</th>
