@@ -33,7 +33,6 @@
                         <include>variousIncludes.adoc</include>
                     </includes>
                     <outputDirectory>../../../../target/docs</outputDirectory>
-                    <outputType>natural</outputType>
                 </configuration>
             </plugin>
         </plugins>

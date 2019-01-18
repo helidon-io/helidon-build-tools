@@ -120,21 +120,29 @@ public class PreprocessAsciiDocMojoTest {
     @Test
     public void testWithRealIncludes() throws Exception {
         runMojo("preprocess-mojo/pom-test-includes.xml",
-                "variousIncludes-afterFullPreprocessing.adoc");
+                "variousIncludes-afterFullPreprocessing.adoc",
+                "preprocess-adoc",
+                PreprocessAsciiDocMojo.class);
     }
 
     @Test
     public void testWithRealIncludesAndNaturalOutput() throws Exception {
         runMojo("preprocess-mojo/pom-test-includes-natural-output.xml",
-                "variousIncludes-naturalForm.adoc");
+                "variousIncludes-naturalForm.adoc",
+                "naturalize-adoc",
+                NaturalizeAsciiDocMojo.class);
     }
 
-    private void runMojo(String pomFile, String expectedFile) throws Exception {
-        PreprocessAsciiDocMojo mojo = MavenPluginHelper.getInstance().getMojo(
+    private void runMojo(
+            String pomFile,
+            String expectedFile,
+            String goal,
+            Class<? extends AbstractAsciiDocMojo> mojoClass) throws Exception {
+        AbstractAsciiDocMojo mojo = MavenPluginHelper.getInstance().getMojo(
                 pomFile,
                 INCLUDES_TEST_ROOT.toFile(),
-                "preprocess-adoc",
-                PreprocessAsciiDocMojo.class);
+                goal,
+                mojoClass);
         mojo.execute();
 
         String baseDir = mojo.project().getBasedir().toPath().toString();

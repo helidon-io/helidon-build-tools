@@ -146,7 +146,7 @@ public class IncludePreprocessor extends Preprocessor {
     }
 
      enum OutputType {
-        NUMBERED,
+        PREPROCESSED,
         NATURAL;
 
         static OutputType match(Object outputType) {
@@ -200,7 +200,7 @@ public class IncludePreprocessor extends Preprocessor {
                 Collections.emptyMap());
 
         switch (outputType) {
-            case NUMBERED:
+            case PREPROCESSED:
                 return numberedIncludesWithIncludedText;
 
             case NATURAL:
