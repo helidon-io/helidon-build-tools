@@ -97,7 +97,7 @@ public class PreprocessAsciiDocMojo extends AbstractAsciiDocMojo {
             if (!Arrays.equals(inputDigest, outputDigest)) {
                 throw new MojoFailureException(String.format(
                         "file %s does not match its expected pre-included form; "
-                                + "the commit might need an up-to-date file from running 'preinclude-adoc' ",
+                                + "the commit might need an up-to-date file from running 'preprocess-adoc' ",
                         pathA.toString()));
             }
         } catch (NoSuchAlgorithmException e) {
