@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 /**
  * Describes content that is a block (e.g., {@code [source]}) that might contain
  * includes.
- * <p>
  * <h1>Overview</h1>
  * For our purposes a block contains
  * <ul>

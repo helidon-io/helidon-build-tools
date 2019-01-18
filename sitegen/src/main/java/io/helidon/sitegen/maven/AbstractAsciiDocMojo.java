@@ -56,9 +56,8 @@ import org.asciidoctor.log.LogRecord;
  * <p>
  * This class contains the behavior common between the two separate mojos
  * ({@link PreprocessAsciiDocMojo} and {@link NaturalizeAsciiDocMojo}).
- * <p>
- * Settings common to both goals:
  * <table>
+ * <caption>Settings common to both goals</caption>
  * <tr>
  * <th>Property</th>
  * <th>Usage</th>
