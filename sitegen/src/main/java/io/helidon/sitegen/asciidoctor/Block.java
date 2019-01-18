@@ -27,6 +27,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 /**
  * Describes content that is a block (e.g., {@code [source]}) that might contain
@@ -140,13 +141,11 @@ public class Block {
      * @return true if the line starts a block; false otherwise
      */
     static boolean isBlockStart(String line) {
-        return BLOCK_INTRODUCERS.stream()
-                .anyMatch(intro -> line.startsWith("[" + intro));
+        return line.startsWith("[") && BLOCK_INTRODUCERS.contains(line.substring(1, line.length() - 1));
     }
 
     private static boolean isBlockDelimiter(String line) {
-        return BLOCK_DELIMITERS.stream()
-                .anyMatch(delimiter -> line.equals(delimiter));
+        return BLOCK_DELIMITERS.contains(line);
     }
 
     private String blockDecl = null;
@@ -164,16 +163,11 @@ public class Block {
      */
     List<String> asBlockWithNumberedIncludes() {
         return asBlock(() -> {
-            List<String> result = new ArrayList<>();
-            includes.forEach((ia) -> {
-                result.add(ia.asNumberedAsciiDocInclude());
-            });
-            return result;
+            return includes.stream()
+                    .map(Include::asNumberedAsciiDocInclude)
+                    .collect(Collectors.toList());
         },
-                () -> {
-                    return body();
-                });
-
+                this::body);
     }
 
     /**
@@ -184,10 +178,7 @@ public class Block {
      * @return block formatted as normal AsciiDoc
      */
     List<String> asOriginalBlock() {
-        return asBlock(
-                () -> {
-                    return originalBody();
-                });
+        return asBlock(this::originalBody);
     }
 
     /**
@@ -197,19 +188,12 @@ public class Block {
      * @return block formatted using bracketed includes
      */
     List<String> asBracketedBlock() {
-        return asBlock(
-                () -> {
-                    return bracketedBody();
-                });
+        return asBlock(this::bracketedBody);
     }
 
     private List<String> asBlock(
             Supplier<List<String>> bodyGenerator) {
-        return asBlock(
-                () -> {
-                    return Collections.emptyList();
-                },
-                bodyGenerator);
+        return asBlock(Collections::emptyList, bodyGenerator);
     }
 
     private List<String> asBlock(
@@ -294,7 +278,7 @@ public class Block {
         int blockStartLineNumber = body.size();
 
         doUntilBlockDelimiter(content, aLineNumber, line -> {
-            if (line.startsWith(Include.INCLUDE_START_COMMENT_PREFIX)) {
+            if (Include.isIncludeStart(line)) {
                 aLineNumber.decrementAndGet();
                 Include ia = Include.consumeBracketedInclude(
                         content,
@@ -307,7 +291,7 @@ public class Block {
                 body.add(line);
             }
         },
-                line -> delimiter.equals(line));
+                delimiter::equals);
     }
 
     private void collectPreamble(List<String> content, AtomicInteger lineNumber) {
@@ -346,6 +330,6 @@ public class Block {
 
     private String doUntilInitialBlockDelimiter(List<String> content, AtomicInteger lineNumber, Consumer<String> lineConsumer) {
         return doUntilBlockDelimiter(content, lineNumber, lineConsumer,
-                (line) -> isBlockDelimiter(line));
+                Block::isBlockDelimiter);
     }
 }

@@ -138,12 +138,11 @@ public class Include {
      * matches an AsciiDoc include:: directive
      */
     static final Pattern ASCIIDOC_INCLUDE_PATTERN = Pattern.compile("include::(.*)");
+    static final String INCLUDE_BRACKET_TEMPLATE = "// " + INCLUDE_PREFIX + "-%s::%s";
 
     private static final String INCLUDE_NUMBERED_TEMPLATE = "// " + INCLUDE_PREFIX + "::%d-%d:%s";
-    static final String INCLUDE_BRACKET_TEMPLATE = "// " + INCLUDE_PREFIX + "-%s::%s";
-    static final String INCLUDE_START = INCLUDE_PREFIX + "-start";
-    static final String INCLUDE_END = INCLUDE_PREFIX + "-end";
-    static final String INCLUDE_START_COMMENT_PREFIX = "// " + INCLUDE_START;
+    private static final String INCLUDE_START = INCLUDE_PREFIX + "-start";
+    private static final String INCLUDE_END = INCLUDE_PREFIX + "-end";
 
     /**
      * Returns whether the line is an _include-start line.
