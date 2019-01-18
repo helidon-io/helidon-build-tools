@@ -162,12 +162,10 @@ public class Block {
      * @return block with (if needed) numbered include comments in the preamble
      */
     List<String> asBlockWithNumberedIncludes() {
-        return asBlock(() -> {
-            return includes.stream()
+        return asBlock(() -> includes.stream()
                     .map(Include::asNumberedAsciiDocInclude)
-                    .collect(Collectors.toList());
-        },
-                this::body);
+                    .collect(Collectors.toList()),
+                    this::body);
     }
 
     /**
