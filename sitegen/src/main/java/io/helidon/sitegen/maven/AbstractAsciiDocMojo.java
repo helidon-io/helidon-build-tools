@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 
 import io.helidon.sitegen.asciidoctor.AsciidocExtensionRegistry;
 import static io.helidon.sitegen.maven.Constants.PROPERTY_PREFIX;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -41,6 +42,7 @@ import org.asciidoctor.Asciidoctor;
 import org.asciidoctor.AttributesBuilder;
 import org.asciidoctor.OptionsBuilder;
 import org.asciidoctor.SafeMode;
+import org.asciidoctor.ast.Document;
 import org.asciidoctor.log.LogHandler;
 import org.asciidoctor.log.LogRecord;
 
@@ -138,10 +140,11 @@ public abstract class AbstractAsciiDocMojo extends AbstractMojo {
             System.setProperty(JRUBY_DEBUG_PROPERTY_NAME, "true");
         }
 
-        Asciidoctor asciiDoctor = createAsciiDoctor("simple");
+        AtomicBoolean isPrelim = new AtomicBoolean();
+        Asciidoctor asciiDoctor = createAsciiDoctor("simple", isPrelim);
         try {
             for (Path p : inputs(inputDirectory.toPath(), includes, excludes)) {
-                processFile(asciiDoctor, inputDirectory.toPath(), p);
+                processFile(asciiDoctor, inputDirectory.toPath(), p, isPrelim);
             }
         } catch (IOException ex) {
             throw new MojoExecutionException("Error collecting inputs", ex);
@@ -206,7 +209,8 @@ public abstract class AbstractAsciiDocMojo extends AbstractMojo {
     void processFile(
             Asciidoctor asciiDoctor,
             Path inputDirectory,
-            Path adocFilePath) throws IOException, MojoFailureException, MojoExecutionException {
+            Path adocFilePath,
+            AtomicBoolean isPrelim) throws IOException, MojoFailureException, MojoExecutionException {
 
         Path relativeInputPath = inputDirectory.relativize(adocFilePath);
         Path outputPath = outputDirectory.toPath().resolve(relativeInputPath);
@@ -216,13 +220,31 @@ public abstract class AbstractAsciiDocMojo extends AbstractMojo {
                 outputType(),
                 outputPath.toString()));
 
-
-        asciiDoctor.loadFile(adocFilePath.toFile(),
+        /*
+         * Process the document once, suppressing the preprocessing,
+         * to gather attributes that might be needed to resolve include
+         * references during the second, real AsciiDoctor processing.
+         */
+        Map<String, Object> attributes = projectPropertiesMap(project);
+        isPrelim.set(true);
+        Document doc = asciiDoctor.loadFile(adocFilePath.toFile(),
                 asciiDoctorOptions(
-                        projectPropertiesMap(project),
+                        attributes,
                         relativeInputPath,
                         outputDirectory,
-                        inputDirectory.toAbsolutePath()));
+                        inputDirectory.toAbsolutePath(),
+                        false));
+
+        attributes.putAll(doc.getAttributes());
+
+        isPrelim.set(false);
+        asciiDoctor.loadFile(adocFilePath.toFile(),
+                asciiDoctorOptions(
+                        attributes,
+                        relativeInputPath,
+                        outputDirectory,
+                        inputDirectory.toAbsolutePath(),
+                        true));
         /*
          * We do not need to convert the document because the
          * preprocessor has written the updated version of the .adoc
@@ -263,23 +285,35 @@ public abstract class AbstractAsciiDocMojo extends AbstractMojo {
         }
     }
 
-    private Asciidoctor createAsciiDoctor(String backendName) {
+    private Asciidoctor createAsciiDoctor(String backendName, AtomicBoolean isPrelim) {
         Asciidoctor asciiDoctor = Asciidoctor.Factory.create();
-        asciiDoctor.registerLogHandler(new LogHandler() {
-                @Override
-                public void log(LogRecord logRecord) {
-                    System.err.println(logRecord.getMessage());
-                }
-            });
+        asciiDoctor.registerLogHandler(new SelectiveLogHandler(isPrelim));
         new AsciidocExtensionRegistry(backendName).register(asciiDoctor);
         return asciiDoctor;
+    }
+
+    private static class SelectiveLogHandler implements LogHandler {
+
+        private final AtomicBoolean isPrelim;
+
+        private SelectiveLogHandler(AtomicBoolean isPrelim) {
+            this.isPrelim = isPrelim;
+        }
+
+        @Override
+        public void log(LogRecord logRecord) {
+            if (!isPrelim.get()) {
+                System.err.println(logRecord.getMessage());
+            }
+        }
     }
 
     private Map<String, Object> asciiDoctorOptions(
             Map<String, Object> attributes,
             Path inputRelativePath,
             File outputDirectory,
-            Path baseDirPath) {
+            Path baseDirPath,
+            boolean runPreprocessing) {
         final OptionsBuilder optionsBuilder = OptionsBuilder.options()
                 .attributes(
                         AttributesBuilder
@@ -288,11 +322,13 @@ public abstract class AbstractAsciiDocMojo extends AbstractMojo {
                 .safe(SafeMode.UNSAFE)
                 .headerFooter(false)
                 .baseDir(baseDirPath.toFile())
-                .eruby("")
-                .option("preincludeOutputType", outputType());
+                .eruby("");
         if (outputDirectory != null) {
             optionsBuilder.option("preincludeOutputPath",
                         outputDirectory.toPath().resolve(inputRelativePath));
+        }
+        if (runPreprocessing) {
+            optionsBuilder.option("preprocessOutputType", outputType());
         }
 
         return optionsBuilder.asMap();
