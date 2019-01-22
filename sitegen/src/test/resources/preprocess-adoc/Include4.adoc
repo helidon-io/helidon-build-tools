@@ -15,30 +15,8 @@
     limitations under the License.
 
 ///////////////////////////////////////////////////////////////////////////////
-
-= Example Document
-Beginning of document
-This is some useful information before any includes.
-include::aFewLines.adoc[]
-A buffer
-include::fiveRandomLines.adoc[]
-Ending buffer
-
-Here is a source with no pre-existing preamble.
-[source,java]
-----
-Original stuff
-include::Include4.adoc[]
-Other stuff
-----
-
-[source]
-.Title for the source
-----
-// This is un-included source
-include::Include1.adoc[]
-More un-included source
-include::Include2.adoc[]
-include::Include3.adoc[]
-include::threeFunLines.adoc[]
-----
+src inc 4.1
+src inc 4.2
+src inc 4.3
+src inc 4.4
+src inc 4.5

@@ -28,6 +28,16 @@ include::fiveRandomLines.adoc[]
 // _include-end::fiveRandomLines.adoc[]
 Ending buffer
 
+Here is a source with no pre-existing preamble.
+[source,java]
+----
+Original stuff
+// _include-start::Include4.adoc[]
+include::Include4.adoc[]
+// _include-end::Include4.adoc[]
+Other stuff
+----
+
 [source]
 .Title for the source
 ----

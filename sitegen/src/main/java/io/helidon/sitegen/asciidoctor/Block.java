@@ -27,6 +27,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -118,6 +119,11 @@ public class Block {
             = new HashSet<>(Arrays.asList(
                     new String[]{"source", "listing", "example"}));
 
+    /*
+     * Matches lines that start with a "[", capturing until , or ] as the introducer
+     */
+    private static final Pattern BLOCK_INTRODUCER_PATTERN = Pattern.compile("\\[([^,\\]]*).*");
+
     /**
      * Creates a Block by consuming the input text, advancing {@code lineNumber}
      * so it points just past the end of the block's ending delimiter.
@@ -140,7 +146,8 @@ public class Block {
      * @return true if the line starts a block; false otherwise
      */
     static boolean isBlockStart(String line) {
-        return line.startsWith("[") && BLOCK_INTRODUCERS.contains(line.substring(1, line.length() - 1));
+        Matcher m = BLOCK_INTRODUCER_PATTERN.matcher(line);
+        return m.matches() && BLOCK_INTRODUCERS.contains(m.group(1));
     }
 
     private static boolean isBlockDelimiter(String line) {
