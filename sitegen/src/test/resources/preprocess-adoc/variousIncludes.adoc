@@ -29,6 +29,14 @@ random
 lines
 Ending buffer
 
+Here is a source with no pre-existing preamble.
+[source,java]
+----
+Original stuff
+include::Include4.adoc[]
+Other stuff
+----
+
 [source]
 .Title for the source
 // _include::5-7:threeFunLines.adoc[]

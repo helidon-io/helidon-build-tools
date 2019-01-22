@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -137,11 +138,11 @@ public class IncludePreprocessor extends Preprocessor {
 
     @Override
     public void process(Document doc, PreprocessorReader reader) {
-        OutputType outputType = OutputType.match(doc.getOptions().get("preincludeOutputType"));
+        OutputType outputType = OutputType.match(doc.getOptions().get("preprocessOutputType"));
         if (outputType == null) {
             return;
         }
-        List<String> processedContent = markIncludes(reader, outputType);
+        List<String> processedContent = markIncludes(reader, outputType, doc.getAttributes());
         savePreincludedDocIfRequested(processedContent, doc);
     }
 
@@ -160,7 +161,10 @@ public class IncludePreprocessor extends Preprocessor {
         }
     }
 
-    private List<String> markIncludes(PreprocessorReader reader, OutputType outputType) {
+    private List<String> markIncludes(
+            PreprocessorReader reader,
+            OutputType outputType,
+            Map<String, Object> attributes) {
 
         /*
          * Use the raw input. Do not use reader.readLines() yet because that
@@ -173,7 +177,7 @@ public class IncludePreprocessor extends Preprocessor {
          */
         readAndClearReader(reader);
         String origWithBracketedIncludesContent = linesToString(origWithBracketedIncludes);
-        reader.push_include(origWithBracketedIncludesContent, null, null, 1, Collections.emptyMap());
+        reader.push_include(origWithBracketedIncludesContent, null, null, 1, attributes);
 
         /*
          * Have the reader consume the bracketed-include content which will
@@ -197,7 +201,7 @@ public class IncludePreprocessor extends Preprocessor {
                 null,
                 null,
                 1,
-                Collections.emptyMap());
+                attributes);
 
         switch (outputType) {
             case PREPROCESSED:
