@@ -26,12 +26,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.sitegen.asciidoctor.AsciidocExtensionRegistry;
 import static io.helidon.sitegen.maven.Constants.PROPERTY_PREFIX;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
