@@ -25,6 +25,12 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.github.difflib.DiffUtils;
+import com.github.difflib.algorithm.DiffException;
+import com.github.difflib.patch.Delta;
 
 import static io.helidon.sitegen.maven.Constants.PROPERTY_PREFIX;
 
@@ -95,12 +101,19 @@ public class PreprocessAsciiDocMojo extends AbstractAsciiDocMojo {
             byte[] outputDigest = digest(pathB);
             if (!Arrays.equals(inputDigest, outputDigest)) {
                 throw new MojoFailureException(String.format(
-                        "file %s does not match its expected pre-included form; "
-                                + "the commit might need an up-to-date file from running 'preprocess-adoc' ",
-                        pathA.toString()));
+                        "file %s does not match its expected pre-processed form; "
+                                + "the commit might need an up-to-date file from running 'preprocess-adoc'%n%s ",
+                        pathA.toString(),
+                        formatDiffs(pathA, pathB)));
             }
         } catch (NoSuchAlgorithmException e) {
             throw new MojoExecutionException("error checking for matching input and output files", e);
+        } catch (DiffException ex) {
+            throw new MojoExecutionException(
+                String.format("Error comparing %s and %s",
+                        pathA.toString(),
+                        pathB.toString()),
+                ex);
         }
     }
 
@@ -113,5 +126,13 @@ public class PreprocessAsciiDocMojo extends AbstractAsciiDocMojo {
             while (dis.read(buffer) != -1) {}
         }
         return md.digest();
+    }
+
+    private String formatDiffs(Path pathA, Path pathB) throws IOException, DiffException {
+        List<String> contentA = Files.readAllLines(pathA);
+        List<String> contentB = Files.readAllLines(pathB);
+        return DiffUtils.diff(contentA, contentB).getDeltas().stream()
+                .map(Delta::toString)
+                .collect(Collectors.joining(System.lineSeparator()));
     }
 }
