@@ -100,6 +100,10 @@
             <artifactId>slf4j-simple</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.github.wumpz</groupId>
+            <artifactId>diffutils</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.maven.plugin-testing</groupId>
             <artifactId>maven-plugin-testing-harness</artifactId>
             <scope>test</scope>
@@ -120,11 +124,6 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.github.wumpz</groupId>
-            <artifactId>diffutils</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
