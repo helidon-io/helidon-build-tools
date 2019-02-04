@@ -26,10 +26,10 @@
 <img width="150" height="150" src="${imageUri(attributes["image"])}"/>
 </#if>
 </v-layout>
-</#if>
 <div class="px-3">
 <v-divider class="indigo lighten-4"/>
 </div>
+</#if>
 <#if attributes["title"]??>
 <v-card-title primary class="headline layout justify-center">
 <span style="text-align:center">${attributes["title"]}</span>
