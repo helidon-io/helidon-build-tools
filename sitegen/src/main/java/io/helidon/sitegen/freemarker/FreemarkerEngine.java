@@ -193,6 +193,7 @@ public class FreemarkerEngine {
                     env.setVariable(directive.getKey(), directive.getValue());
                 }
             }
+            env.setVariable("helper", new Helper(OBJECT_WRAPPER));
             env.setVariable("passthroughfix", new PassthroughFixDirective());
             env.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
             env.setLogTemplateExceptions(false);

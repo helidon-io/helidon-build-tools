@@ -24,9 +24,12 @@ import io.helidon.sitegen.SiteEngine;
 import io.helidon.sitegen.freemarker.FreemarkerEngine;
 
 import org.asciidoctor.ast.ContentNode;
+import org.asciidoctor.ast.PhraseNode;
 import org.asciidoctor.converter.AbstractConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.helidon.sitegen.asciidoctor.CardBlockProcessor.BLOCKLINK_TEXT;
 
 /**
  * An asciidoctor converter that supports backends implemented with Freemarker.
@@ -58,15 +61,26 @@ public class AsciidocConverter extends AbstractConverter<String> {
                           Map<Object, Object> opts) {
 
         if (node != null && node.getNodeName() != null) {
-            LOGGER.debug("Rendering node: {}", node);
             String templateName;
             if (node.equals(node.getDocument())) {
                 templateName = "document";
             } else if (node.isBlock()) {
                 templateName = "block_" + node.getNodeName();
             } else {
+                // detect phrase node for generated block links
+                if(node.getNodeName().equals("inline_anchor")
+                        && BLOCKLINK_TEXT.equals(((PhraseNode)node).getText())){
+                    // store the link model as an attribute in the corresponding
+                    // block
+                    node.getParent().getParent().getAttributes()
+                            .put("_link", (PhraseNode)node);
+                    // the template for the block is responsible for rendering
+                    // the link, discard the output
+                    return "";
+                }
                 templateName = node.getNodeName();
             }
+            LOGGER.debug("Rendering node: {}", node);
             return templateEngine.renderString(templateName, node);
         } else {
             return "";

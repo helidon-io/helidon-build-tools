@@ -98,16 +98,17 @@ public class SimpleMethodModel implements TemplateMethodModelEx {
         for (Method m : object.getClass().getMethods()) {
             if (methodName.equals(m.getName())) {
                 int paramsOffset = m.getParameterCount() - numArgs;
+                Class<?>[] mParameterTypes = m.getParameterTypes();
                 if (!(paramsOffset == 0
                    || (paramsOffset == 1
-                        && m.getParameterTypes()[numArgs].isArray()))) {
+                        && mParameterTypes[numArgs].isArray()))) {
                     // method params do not match
                     // or has more more but the last param is not an array
                     continue;
                 }
                 boolean paramsMatch = true;
                 for (int i = 0; i < numArgs; i++) {
-                    if (!m.getParameterTypes()[i].equals(parameterTypes[i])) {
+                    if (!mParameterTypes[i].isAssignableFrom(parameterTypes[i])) {
                         paramsMatch = false;
                         break;
                     }
