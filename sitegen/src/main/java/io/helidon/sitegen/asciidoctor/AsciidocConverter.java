@@ -68,12 +68,12 @@ public class AsciidocConverter extends AbstractConverter<String> {
                 templateName = "block_" + node.getNodeName();
             } else {
                 // detect phrase node for generated block links
-                if(node.getNodeName().equals("inline_anchor")
-                        && BLOCKLINK_TEXT.equals(((PhraseNode)node).getText())){
+                if (node.getNodeName().equals("inline_anchor")
+                        && BLOCKLINK_TEXT.equals(((PhraseNode) node).getText())) {
                     // store the link model as an attribute in the corresponding
                     // block
                     node.getParent().getParent().getAttributes()
-                            .put("_link", (PhraseNode)node);
+                            .put("_link", (PhraseNode) node);
                     // the template for the block is responsible for rendering
                     // the link, discard the output
                     return "";

@@ -19,13 +19,12 @@ package io.helidon.sitegen.freemarker;
 import java.util.Map;
 import java.util.Objects;
 
+import io.helidon.sitegen.Model;
 import io.helidon.sitegen.Page;
 
-import freemarker.template.TemplateException;
 import freemarker.template.TemplateHashModel;
 import freemarker.template.TemplateModel;
 import freemarker.template.TemplateModelException;
-import io.helidon.sitegen.Model;
 import org.asciidoctor.ast.PhraseNode;
 
 /**
@@ -37,7 +36,7 @@ public class Helper implements TemplateHashModel {
 
     /**
      * Create a new instance.
-     * @param objectWrapper 
+     * @param objectWrapper
      */
     Helper(ObjectWrapper objectWrapper) {
         this.objectWrapper = objectWrapper;
@@ -48,11 +47,10 @@ public class Helper implements TemplateHashModel {
      * @param node the node representing the link
      * @return the link helper or {@code null} if the provided node is
      * {@code null}
-     * @throws TemplateException
      */
     @SuppressWarnings("unchecked")
-    public Link link(PhraseNode node) throws TemplateException {
-        if(node == null){
+    public Link link(PhraseNode node){
+        if (node == null) {
             return null;
         }
         Map<String, Object> docAttrs = node.getDocument().getAttributes();
@@ -123,21 +121,22 @@ public class Helper implements TemplateHashModel {
          * @param id the link id
          * @param window the link window
          */
+        @SuppressWarnings("checkstyle:ParameterNumber")
         public Link(Map<String, Page> pages, Page page, String type, String path,
-                String refid, String fragment, String target, String title, String text,
-                String id, String window) {
+                String refid, String fragment, String target, String title,
+                String text, String id, String window) {
 
             Objects.requireNonNull(pages, "pages is null");
             Objects.requireNonNull(pages, "page is null");
             Objects.requireNonNull(type, "type is null");
-            switch(type){
+            switch (type) {
                 case("xref"):
-                    if(path != null){
+                    if (path != null) {
                         this.source = path.replace(".html", ".adoc");
                     } else {
                         this.source = refid;
                     }
-                    if(pages.containsKey("/" + source)){
+                    if (pages.containsKey("/" + source)) {
                         this.target = pages.get("/" + source).getTargetPath();
                     } else {
                         this.target = "";
@@ -146,9 +145,9 @@ public class Helper implements TemplateHashModel {
                     if ((hash != null && (this.target == null || this.target.isEmpty()))
                             || page.getTargetPath().equals(this.target)){
                         this.type = XREF_ANCHOR_SELF_TYPE;
-                    } else if(hash != null
+                    } else if (hash != null
                             && target != null
-                            && !hash.equals(source)){
+                            && !hash.equals(source)) {
                        this.type = XREF_ANCHOR_TYPE;
                     } else {
                         this.type = type;

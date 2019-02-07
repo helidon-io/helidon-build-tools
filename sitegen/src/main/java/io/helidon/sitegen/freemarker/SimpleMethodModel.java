@@ -83,7 +83,7 @@ public class SimpleMethodModel implements TemplateMethodModelEx {
             Object arg = arguments.get(i);
             if (arg instanceof TemplateModel) {
                 parameters[i] = objectWrapper.unwrap((TemplateModel) arg);
-            } else if(arg == null) {
+            } else if (arg == null) {
                 parameters[i] = null;
             } else {
                 throw new TemplateModelException(String.format(
@@ -112,7 +112,7 @@ public class SimpleMethodModel implements TemplateMethodModelEx {
                 boolean paramsMatch = true;
                 for (int i = 0; i < numArgs; i++) {
                     // treat null as a match
-                    if(parameterTypes[i] == null){
+                    if (parameterTypes[i] == null) {
                         continue;
                     }
                     if (!mParameterTypes[i].isAssignableFrom(parameterTypes[i])) {

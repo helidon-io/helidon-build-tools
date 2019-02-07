@@ -58,7 +58,7 @@ public class TemplateLoader extends URLTemplateLoader {
     @Override
     protected URL getURL(String name) {
         String tplName = name;
-        if(!tplName.endsWith(TEMPLATE_FILE_EXT)){
+        if (!tplName.endsWith(TEMPLATE_FILE_EXT)) {
             tplName += TEMPLATE_FILE_EXT;
         }
         Path tpl = templatesDir.resolve(tplName);

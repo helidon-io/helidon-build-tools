@@ -34,6 +34,9 @@ import org.asciidoctor.extension.Reader;
  */
 public class CardBlockProcessor extends BlockProcessor {
 
+    /**
+     * Marker text for generated block links.
+     */
     public static final String BLOCKLINK_TEXT = "@@blocklink@@";
 
     /**
@@ -65,7 +68,7 @@ public class CardBlockProcessor extends BlockProcessor {
         // if the link attribute is present
         // add a link into the content with a marker as text
         String link = (String) attributes.get("link");
-        if(link != null){
+        if (link != null) {
             parseContent(block,
                     Arrays.asList("<<" + link + "," + BLOCKLINK_TEXT + ">>"));
             // trigger rendering for the nested content here to trigger the
