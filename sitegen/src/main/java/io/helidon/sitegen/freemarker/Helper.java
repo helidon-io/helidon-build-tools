@@ -46,11 +46,15 @@ public class Helper implements TemplateHashModel {
     /**
      * Create a new link helper.
      * @param node the node representing the link
-     * @return the link helper.
+     * @return the link helper or {@code null} if the provided node is
+     * {@code null}
      * @throws TemplateException
      */
     @SuppressWarnings("unchecked")
     public Link link(PhraseNode node) throws TemplateException {
+        if(node == null){
+            return null;
+        }
         Map<String, Object> docAttrs = node.getDocument().getAttributes();
         Map<String, Object> nodeAttrs = node.getAttributes();
         return new Link((Map<String, Page>) docAttrs.get("pages"),
