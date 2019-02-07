@@ -498,6 +498,26 @@ table > thead > tr > th {
     text-align: center;
 }
 
+.card__link-hover {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    border: 2px solid transparent;
+    transition: .2s;
+}
+
+.card__link-hover:hover {
+    border-color: #3f51b596;
+}
+
+.card a {
+    color:inherit!important;
+}
+
+.card a:hover {
+    color:inherit!important;
+}
+
 /* Section components styles */
 
 .section-def {

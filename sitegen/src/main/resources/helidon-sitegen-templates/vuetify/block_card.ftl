@@ -14,8 +14,12 @@
   limitations under the License.
  -->
 <#compress>
+<#import "common.ftl" as c>
 <v-flex xs12 sm4 lg3>
 <v-card>
+<@c.renderLink link=(helper.link(attributes["_link"]))!"">
+<div class="card__link-hover"/>
+</@c.renderLink>
 <#if attributes["icon"]?? || attributes["image"]??>
 <v-layout align-center justify-center class="pa-5">
 <#if attributes["icon"]??>
