@@ -15,6 +15,5 @@
  -->
 <#compress>
 <#import "common.ftl" as c>
-<#assign link = helper.link(this) />
-<@c.renderLink link=link>${link.text}</@c.renderLink>
+<@c.renderLink link=helper.link(this)>${text!""}</@c.renderLink>
 </#compress>
