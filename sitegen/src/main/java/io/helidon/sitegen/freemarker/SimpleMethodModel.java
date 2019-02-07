@@ -83,6 +83,8 @@ public class SimpleMethodModel implements TemplateMethodModelEx {
             Object arg = arguments.get(i);
             if (arg instanceof TemplateModel) {
                 parameters[i] = objectWrapper.unwrap((TemplateModel) arg);
+            } else if(arg == null) {
+                parameters[i] = null;
             } else {
                 throw new TemplateModelException(String.format(
                         "Unkown parameter type for method invocation: object=%s, methodname=%s, parameter=%s",
@@ -90,7 +92,8 @@ public class SimpleMethodModel implements TemplateMethodModelEx {
                         methodName,
                         arg));
             }
-            parameterTypes[i] = parameters[i].getClass();
+            parameterTypes[i] = parameters[i] == null
+                    ? null : parameters[i].getClass();
         }
 
         // find a method with matching parameters
@@ -108,6 +111,10 @@ public class SimpleMethodModel implements TemplateMethodModelEx {
                 }
                 boolean paramsMatch = true;
                 for (int i = 0; i < numArgs; i++) {
+                    // treat null as a match
+                    if(parameterTypes[i] == null){
+                        continue;
+                    }
                     if (!mParameterTypes[i].isAssignableFrom(parameterTypes[i])) {
                         paramsMatch = false;
                         break;
