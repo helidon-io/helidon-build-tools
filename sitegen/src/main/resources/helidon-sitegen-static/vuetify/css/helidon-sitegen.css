@@ -510,14 +510,6 @@ table > thead > tr > th {
     border-color: #3f51b596;
 }
 
-.card a {
-    color:inherit!important;
-}
-
-.card a:hover {
-    color:inherit!important;
-}
-
 /* Section components styles */
 
 .section-def {
