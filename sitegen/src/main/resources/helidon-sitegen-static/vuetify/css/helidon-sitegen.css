@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -496,6 +496,26 @@ table > thead > tr > th {
 .card__text.caption {
     font-size: inherit !important;
     text-align: center;
+}
+
+.card__link-hover {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    border: 2px solid transparent;
+    transition: .2s;
+}
+
+.card__link-hover:hover {
+    border-color: #3f51b596;
+}
+
+.card a {
+    color:inherit!important;
+}
+
+.card a:hover {
+    color:inherit!important;
 }
 
 /* Section components styles */

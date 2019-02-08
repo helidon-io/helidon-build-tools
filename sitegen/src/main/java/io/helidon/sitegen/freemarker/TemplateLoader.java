@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,11 @@ public class TemplateLoader extends URLTemplateLoader {
 
     @Override
     protected URL getURL(String name) {
-        Path tpl = templatesDir.resolve(name + TEMPLATE_FILE_EXT);
+        String tplName = name;
+        if (!tplName.endsWith(TEMPLATE_FILE_EXT)) {
+            tplName += TEMPLATE_FILE_EXT;
+        }
+        Path tpl = templatesDir.resolve(tplName);
         if (!Files.exists(tpl)) {
             return null;
         }

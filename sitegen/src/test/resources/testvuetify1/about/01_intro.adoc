@@ -67,7 +67,7 @@ Innovation is key to success, however it does not come without cost. This is a
 
 [CARD]
 .A world full of plugins!
-[icon=extension]
+[icon=extension,link=about/02_contributing.adoc]
 --
 Plugins plugins plugins! Ship an empty shell for free and give the illusion of
  cost free software, and then make them PAY! Well, Gandalf did not say that for
