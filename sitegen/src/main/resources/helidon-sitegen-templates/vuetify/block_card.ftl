@@ -21,7 +21,7 @@
 <div class="card__link-hover"/>
 </@c.renderLink>
 <#if attributes["icon"]?? || attributes["image"]??>
-<v-layout align-center justify-center class="pa-5">
+<v-layout align-center justify-center class="${attributes["avatar-style"]!""}">
 <#if attributes["icon"]??>
 <v-avatar size="150px">
 <v-icon class="xxx-large">${attributes["icon"]}</v-icon>
