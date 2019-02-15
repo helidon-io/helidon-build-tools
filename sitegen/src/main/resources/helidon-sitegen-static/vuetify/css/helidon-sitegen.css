@@ -493,6 +493,10 @@ table > thead > tr > th {
     letter-spacing: -1px;
 }
 
+.card__title {
+    padding-bottom: 0px!important;
+}
+
 .card__text.caption {
     font-size: inherit !important;
     text-align: center;
