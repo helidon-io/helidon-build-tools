@@ -19,6 +19,7 @@ package io.helidon.sitegen.asciidoctor;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import org.asciidoctor.ast.Block;
 import org.asciidoctor.ast.StructuralNode;
@@ -33,6 +34,9 @@ import org.asciidoctor.extension.Reader;
  * @author rgrecour
  */
 public class CardBlockProcessor extends BlockProcessor {
+
+    private static final Logger LOGGER = Logger.getLogger(
+            CardBlockProcessor.class.getName());
 
     /**
      * Marker text for generated block links.
@@ -69,12 +73,24 @@ public class CardBlockProcessor extends BlockProcessor {
         // add a link into the content with a marker as text
         String link = (String) attributes.get("link");
         if (link != null) {
-            parseContent(block,
-                    Arrays.asList("<<" + link + "," + BLOCKLINK_TEXT + ">>"));
-            // trigger rendering for the nested content here to trigger the
-            // converter so that the converter can catch the generated phrase node
-            // and add it as an attribute named _link to the block
-            block.getContent();
+            String linkPhrase;
+            String linkType = (String) attributes.get("link-type");
+            if (linkType == null || linkType.equals("xref")) {
+                linkPhrase = "<<" + link + "," + BLOCKLINK_TEXT + ">>";
+            } else if (linkType.equals("url")) {
+                linkPhrase = "link:" + link + "[" + BLOCKLINK_TEXT + "]";
+            } else {
+                linkPhrase = null;
+                LOGGER.warning(link);
+            }
+            if (linkPhrase != null){
+                parseContent(block, Arrays.asList(linkPhrase));
+                // trigger rendering for the nested content here to trigger the
+                // converter so that the converter can catch the generated
+                // phrase node and add it as an attribute named _link to the
+                // block
+                block.getContent();
+            }
         }
         return block;
     }
