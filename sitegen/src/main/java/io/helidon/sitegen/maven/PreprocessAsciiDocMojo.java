@@ -31,14 +31,13 @@ import java.util.stream.Collectors;
 import com.github.difflib.DiffUtils;
 import com.github.difflib.algorithm.DiffException;
 import com.github.difflib.patch.Delta;
-
-import static io.helidon.sitegen.maven.Constants.PROPERTY_PREFIX;
-
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+
+import static io.helidon.sitegen.maven.Constants.PROPERTY_PREFIX;
 
 /**
  * Preprocesses AsciiDoc files to "pre-execute" includes so the resulting

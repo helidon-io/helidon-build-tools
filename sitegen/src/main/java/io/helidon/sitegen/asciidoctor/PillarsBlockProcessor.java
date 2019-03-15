@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ public class PillarsBlockProcessor extends BlockProcessor {
      * @param blockType the type of block
      * @return map
      */
-    private static Map<String, Object> createConfig(String ... blockTypes){
+    private static Map<String, Object> createConfig(String... blockTypes){
         Map<String, Object> config = new HashMap<>();
         config.put(Contexts.KEY, Arrays.asList(blockTypes));
         return config;

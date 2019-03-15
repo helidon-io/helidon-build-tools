@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.sitegen.asciidoctor.AsciidocExtensionRegistry;
-import static io.helidon.sitegen.maven.Constants.PROPERTY_PREFIX;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -45,6 +44,8 @@ import org.asciidoctor.SafeMode;
 import org.asciidoctor.ast.Document;
 import org.asciidoctor.log.LogHandler;
 import org.asciidoctor.log.LogRecord;
+
+import static io.helidon.sitegen.maven.Constants.PROPERTY_PREFIX;
 
 /**
  * Processes AsciiDoc files to convert them between "natural" format (with
