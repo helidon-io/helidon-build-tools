@@ -67,7 +67,7 @@ public class PillarsBlockProcessor extends BlockProcessor {
      * @param blockType the type of block
      * @return map
      */
-    private static Map<String, Object> createConfig(String ... blockTypes){
+    private static Map<String, Object> createConfig(String... blockTypes){
         Map<String, Object> config = new HashMap<>();
         config.put(Contexts.KEY, Arrays.asList(blockTypes));
         return config;
