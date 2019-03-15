@@ -58,7 +58,7 @@ if [ "${WERCKER}" = "true" ] ; then
     git remote add origin-https "${GIT_REMOTE}" > /dev/null 2>&1 || \
     git remote set-url origin-https "${GIT_REMOTE}"
 
-    git fetch --unshallow origin-https
+    git fetch --unshallow origin-https || true
 fi
 
 mvn -q org.glassfish.copyright:glassfish-copyright-maven-plugin:copyright \
