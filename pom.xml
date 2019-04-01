@@ -144,7 +144,7 @@
     </properties>
 
     <modules>
-        <module>sitegen</module>
+        <module>sitegen-maven-plugin</module>
     </modules>
 
     <build>
@@ -205,6 +205,7 @@
                     <configuration>
                         <!-- DO NOT override argLine instead use surefire.argLine -->
                         <argLine>${surefire.argLine} ${surefire.coverage.argline}</argLine>
+                        <trimStackTrace>false</trimStackTrace>
                     </configuration>
                     <dependencies>
                         <dependency>
