@@ -27,6 +27,8 @@ Generates the site files.
 | siteSourceDirectory | File | `${project.basedir}/src/main/site` | Directory containing the site sources |
 | siteGenerateSkip | Boolean | `false` | Skip this goal execution |
 
+User properties are of the form `io.helidon.sitegen.PROPERTY`.
+
 ## Goal: `package`
 
 Creates the site archive.
@@ -41,6 +43,8 @@ Creates the site archive.
 | siteArchiveIncludes | List | [] | List of files to include |
 | siteArchiveExcludes | List | [] |List of files to exclude |
 | siteArchiveSkip | Boolean | `false` | Skip this goal execution |
+
+User properties are of the form `io.helidon.sitegen.PROPERTY`.
 
 ## Goal: `preprocess-adoc`
 
@@ -58,6 +62,8 @@ Pre-includes included text specified by AsciiDoc `include::` directives into
 | includes | List | [] | List of files to include |
 | exclude | List | [] | List of files to exclude |
 
+User properties are of the form `io.helidon.sitegen.PROPERTY`.
+
 ## Goal: `naturalize-adoc`
 
 Converts a preprocessed `.adoc` file back into natural form with conventional
@@ -71,6 +77,8 @@ Converts a preprocessed `.adoc` file back into natural form with conventional
 | outputDirectory| File | `${project.basedir}` | Directory where the reformatted `.adoc` file should be written |
 | includes | List | [] | List of files to include |
 | exclude | List | [] | List of files to exclude |
+
+User properties are of the form `io.helidon.sitegen.PROPERTY`.
 
 ## Site Config File
 
@@ -193,11 +201,11 @@ The value for glyph of type "icon" must be the name of an icon from one of the
 The plugin provides a custom mapping `site`. It is associated with the ".jar"
  file extension and maps the following plugin executions:
 
-* process-resources: org.apache.maven.plugins:maven-resources-plugin:resources
-* compile: io.helidon.build-tools:sitegen-maven-plugin:generate
-* package: io.helidon.build-tools:sitegen-maven-plugin:package
-* install: org.apache.maven.plugins:maven-install-plugin:install
-* deploy: org.apache.maven.plugins:maven-deploy-plugin:deploy
+* `process-resource`s: org.apache.maven.plugins:maven-resources-plugin:resources
+* `compile`: io.helidon.build-tools:sitegen-maven-plugin:generate
+* `package`: io.helidon.build-tools:sitegen-maven-plugin:package
+* `install`: org.apache.maven.plugins:maven-install-plugin:install
+* `deploy`: org.apache.maven.plugins:maven-deploy-plugin:deploy
 
 You need to declare the plugin as an extension in order to use it:
 
@@ -208,7 +216,7 @@ You need to declare the plugin as an extension in order to use it:
     <version>1.0-SNAPSHOT</version>
     <packaging>site</packaging>
     <build>
-        </plugins>
+        <plugins>
             <plugin>
                 <groupId>io.helidon.build-tools</groupId>
                 <artifactId>sitegen-maven-plugin</artifactId>
