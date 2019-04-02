@@ -273,7 +273,7 @@ public class GraalNativeMojo extends AbstractMojo {
         while (it.hasNext()) {
             sb.append(it.next());
             if (it.hasNext()) {
-                sb.append(",");
+                sb.append("|");
             }
         }
         String resourcesStr = sb.toString();
@@ -297,7 +297,7 @@ public class GraalNativeMojo extends AbstractMojo {
             while (it.hasNext()) {
                 sb.append(it.next());
                 if (it.hasNext()) {
-                    sb.append(File.pathSeparatorChar);
+                    sb.append(":");
                 }
             }
             String classpath = sb.toString();
@@ -358,6 +358,7 @@ public class GraalNativeMojo extends AbstractMojo {
                     + cmd.getAbsolutePath()
                     + " is not a valid file");
         }
+        getLog().debug("Found " + NATIVE_IMAGE_CMD + ": " + cmd);
         return cmd;
     }
 }
