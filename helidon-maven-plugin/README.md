@@ -26,8 +26,11 @@ This plugin binds to the `package` phase by default.
 
 There are 3 ways to specify the path to the `native-image` command:
 * export `GRAALVM_HOME` in your environment
-* set the graalVMHome Maven property (either in the pom or with -D on the command line)
+* set the `graalVMHome` Maven property (either in the pom or with -D on the command line)
 * add the GraalVM `bin` folder to your PATH environment variable
+
+If the plugin fails to determine the path to `native-image`, the build will
+ fail with an error.
 
 ### Adding build resources
 
@@ -71,7 +74,7 @@ You then build your native image with the following command:
 mvn package -Pnative-image
 ```
 
-You can also execute this plugin outside of a configure life-cycle, however
+You can also execute this plugin outside of a configured life-cycle, however
  it requires the project jar to be present:
 
 ```bash
