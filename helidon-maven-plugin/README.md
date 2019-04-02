@@ -2,7 +2,7 @@
 
 This plugin provides common utilities for Maven based Helidon applications.
 
-* [Goal: native-image](#native-image)
+* [Goal: native-image](#goal-native-image)
 
 ## Goal: `native-image`
 
