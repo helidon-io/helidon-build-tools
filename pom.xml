@@ -116,6 +116,7 @@
         <version.lib.maven.filtering>3.1.1</version.lib.maven.filtering>
         <version.lib.maven-plugin-testing-harness>3.3.0</version.lib.maven-plugin-testing-harness>
         <version.lib.plexus-utils>3.0.24</version.lib.plexus-utils>
+        <version.lib.plexus-build-api>0.0.7</version.lib.plexus-build-api>
         <version.lib.slf4j>1.7.25</version.lib.slf4j>
         <!--
         !Version statement! - end
@@ -132,7 +133,7 @@
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.javadoc>3.0.0</version.plugin.javadoc>
         <version.plugin.license>1.16</version.plugin.license>
-        <version.plugin.nexus-staging>1.6.7</version.plugin.nexus-staging>
+        <version.plugin.nexus-staging>1.6.8</version.plugin.nexus-staging>
         <version.plugin.resources>2.7</version.plugin.resources>
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>3.1.3.1</version.plugin.spotbugs>
@@ -144,7 +145,8 @@
     </properties>
 
     <modules>
-        <module>sitegen</module>
+        <module>sitegen-maven-plugin</module>
+        <module>helidon-maven-plugin</module>
     </modules>
 
     <build>
@@ -205,6 +207,7 @@
                     <configuration>
                         <!-- DO NOT override argLine instead use surefire.argLine -->
                         <argLine>${surefire.argLine} ${surefire.coverage.argline}</argLine>
+                        <trimStackTrace>false</trimStackTrace>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -308,6 +311,13 @@
                     <groupId>org.sonatype.plugins</groupId>
                     <artifactId>nexus-staging-maven-plugin</artifactId>
                     <version>${version.plugin.nexus-staging}</version>
+                    <configuration>
+                        <serverId>ossrh</serverId>
+                        <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                        <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        <skipStagingRepositoryClose>true</skipStagingRepositoryClose>
+                        <skipNexusStagingDeployMojo>${maven.deploy.skip}</skipNexusStagingDeployMojo>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -371,18 +381,6 @@
                     <suppressionsLocation>/etc/checkstyle-suppressions.xml</suppressionsLocation>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <extensions>true</extensions>
-                <configuration>
-                    <serverId>ossrh</serverId>
-                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                    <skipStagingRepositoryClose>true</skipStagingRepositoryClose>
-                    <skipNexusStagingDeployMojo>${maven.deploy.skip}</skipNexusStagingDeployMojo>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 
@@ -429,6 +427,11 @@
                 <groupId>org.apache.maven.shared</groupId>
                 <artifactId>maven-filtering</artifactId>
                 <version>${version.lib.maven.filtering}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.sonatype.plexus</groupId>
+                <artifactId>plexus-build-api</artifactId>
+                <version>${version.lib.plexus-build-api}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.plugin-testing</groupId>
@@ -588,6 +591,11 @@
             <id>release</id>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <extensions>true</extensions>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-enforcer-plugin</artifactId>
