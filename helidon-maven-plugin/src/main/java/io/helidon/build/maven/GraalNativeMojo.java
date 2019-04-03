@@ -113,16 +113,14 @@ public class GraalNativeMojo extends AbstractMojo {
     /**
      * Build shared library.
      */
-    @Parameter(name = "shared", defaultValue = "false",
-            property = "native.image.shared")
+    @Parameter(defaultValue = "false", property = "native.image.buildShared")
     private boolean buildShared;
 
     /**
      * Build statically linked executable (requires static {@code libc} and
      * {@code zlib}).
      */
-    @Parameter(name = "static", defaultValue = "false",
-            property = "native.image.static")
+    @Parameter(defaultValue = "false", property = "native.image.buildStatic")
     private boolean buildStatic;
 
     /**
@@ -160,6 +158,7 @@ public class GraalNativeMojo extends AbstractMojo {
         }
 
         File outputFile = new File(buildDirectory, finalName);
+        getLog().info("Building native image :" + outputFile.getAbsolutePath());
 
         // create the command
         List<String> command = new ArrayList<>();
@@ -170,9 +169,11 @@ public class GraalNativeMojo extends AbstractMojo {
                         "static and shared option cannot be used together");
             }
             if (buildShared) {
+                getLog().info("Building a shared library");
                 command.add("--shared");
             }
             if (buildStatic) {
+                getLog().info("Building a statically linked executable");
                 command.add("--static");
             }
         }
@@ -366,7 +367,7 @@ public class GraalNativeMojo extends AbstractMojo {
                 }
             }
             throw new MojoExecutionException(NATIVE_IMAGE_CMD
-                    + " not found in the PATH");
+                    + " not found in the PATH environment");
         }
 
         getLog().debug(

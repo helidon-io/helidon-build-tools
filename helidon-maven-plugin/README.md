@@ -16,16 +16,16 @@ This plugin binds to the `package` phase by default.
 | --- | --- | --- | --- |
 | graalVMHome | File | `${env.GRAALVM_HOME}` | GraalVM home |
 | reportExceptionStackTraces | Boolean | `true` | Show exception stack traces for exceptions during image building |
-| shared | Boolean | `false` | Build shared library |
-| static | Boolean | `false` | Build statically linked executable (requires static `libc` and `zlib` |
+| buildShared | Boolean | `false` | Build shared library |
+| buildStatic | Boolean | `false` | Build statically linked executable (requires static `libc` and `zlib` |
 | noServer | Boolean | `true` | Do not use image-build server |
 | addProjectResources | Boolean | `true` | Indicates if project build resources should be added to the image |
 | includeResources | List | [] | List of regexp matching names of resources to be included in the image |
 | additionalArgs | List | [] | Additional command line arguments |
 | skipNativeImage | Boolean | `false` | Skip this goal execution |
 
-The parameters `reportExceptionStackTraces`, `noServer`, `shared`, `static`
- and `skipNativeImage` are mapped to user properties of the form:
+The parameters `reportExceptionStackTraces`, `noServer`, `buildShared`,
+ `buildStatic` and `skipNativeImage` are mapped to user properties of the form:
  `native.image.PROPERTY`. The parameter `siteArchiveSkip` is mapped to:
  `native.image.skip`.
 
