@@ -87,13 +87,15 @@ public class GraalNativeMojo extends AbstractMojo {
     /**
      * Show exception stack traces for exceptions during image building.
      */
-    @Parameter(defaultValue = "true")
+    @Parameter(defaultValue = "true",
+            property = "native.image.reportExceptionStackTraces")
     private boolean reportExceptionStackTraces;
 
     /**
      * Do not use image-build server.
      */
-    @Parameter(defaultValue = "true")
+    @Parameter(defaultValue = "true",
+            property = "native.image.noServer")
     private boolean noServer;
 
     /**
@@ -109,6 +111,21 @@ public class GraalNativeMojo extends AbstractMojo {
     private List<String> includeResources;
 
     /**
+     * Build shared library.
+     */
+    @Parameter(name = "shared", defaultValue = "false",
+            property = "native.image.shared")
+    private boolean buildShared;
+
+    /**
+     * Build statically linked executable (requires static {@code libc} and
+     * {@code zlib}).
+     */
+    @Parameter(name = "static", defaultValue = "false",
+            property = "native.image.static")
+    private boolean buildStatic;
+
+    /**
      * Additional command line arguments.
      */
     @Parameter
@@ -117,7 +134,7 @@ public class GraalNativeMojo extends AbstractMojo {
     /**
      * Skip execution for this plugin.
      */
-    @Parameter(defaultValue = "false", property = "native-image.skip")
+    @Parameter(defaultValue = "false", property = "native.image.skip")
     private boolean skipNativeImage;
 
     /**
@@ -147,6 +164,18 @@ public class GraalNativeMojo extends AbstractMojo {
         // create the command
         List<String> command = new ArrayList<>();
         command.add(findNativeImageCmd().getAbsolutePath());
+        if (buildShared || buildStatic) {
+            if (buildShared && buildShared) {
+                throw new MojoExecutionException(
+                        "static and shared option cannot be used together");
+            }
+            if (buildShared) {
+                command.add("--shared");
+            }
+            if (buildStatic) {
+                command.add("--static");
+            }
+        }
         command.add("-H:Name=" + outputFile.getAbsolutePath());
         String resources = getResources();
         if (!resources.isEmpty()) {

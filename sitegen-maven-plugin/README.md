@@ -27,7 +27,7 @@ Generates the site files.
 | siteSourceDirectory | File | `${project.basedir}/src/main/site` | Directory containing the site sources |
 | siteGenerateSkip | Boolean | `false` | Skip this goal execution |
 
-User properties are of the form `io.helidon.sitegen.PROPERTY`.
+All parameters are mapped to user properties of the form `sitegen.PROPERTY`.
 
 ## Goal: `package`
 
@@ -44,7 +44,8 @@ Creates the site archive.
 | siteArchiveExcludes | List | [] |List of files to exclude |
 | siteArchiveSkip | Boolean | `false` | Skip this goal execution |
 
-User properties are of the form `io.helidon.sitegen.PROPERTY`.
+The parameter `siteArchiveSkip` is mapped to a user property:
+ `sitegen.siteArchiveSkip`.
 
 ## Goal: `preprocess-adoc`
 
@@ -58,11 +59,11 @@ Pre-includes included text specified by AsciiDoc `include::` directives into
 | --- | --- | --- | --- |
 | inputDirectory | File | `${project.basedir}` | Directory containing the files to be processed |
 | outputDirectory| File | `${project.basedir}` | Directory where the reformatted `.adoc` file should be written |
-| check | Boolean | `false` | Check that the input and output files are the same |
+| checkPreprocess | Boolean | `false` | Check that the input and output files are the same |
 | includes | List | [] | List of files to include |
 | exclude | List | [] | List of files to exclude |
 
-User properties are of the form `io.helidon.sitegen.PROPERTY`.
+All parameters are mapped to user properties of the form `sitegen.PROPERTY`.
 
 ## Goal: `naturalize-adoc`
 
@@ -78,7 +79,7 @@ Converts a preprocessed `.adoc` file back into natural form with conventional
 | includes | List | [] | List of files to include |
 | exclude | List | [] | List of files to exclude |
 
-User properties are of the form `io.helidon.sitegen.PROPERTY`.
+All parameters are mapped to user properties of the form `sitegen.PROPERTY`.
 
 ## Site Config File
 

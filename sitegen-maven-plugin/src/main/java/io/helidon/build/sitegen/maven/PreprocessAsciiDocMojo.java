@@ -71,14 +71,14 @@ public class PreprocessAsciiDocMojo extends AbstractAsciiDocMojo {
      * in the repository is the same as the pre-included form (to ensure that the
      * developer has included the updated pre-included file in the commit).
      */
-    @Parameter(property = PROPERTY_PREFIX + "check",
+    @Parameter(property = PROPERTY_PREFIX + "checkPreprocess",
             defaultValue = "false")
-    private boolean check;
+    private boolean checkPreprocess;
 
     @Override
     void postProcessFile(Path adocFilePath, Path outputPath)
             throws IOException, MojoFailureException, MojoExecutionException {
-    if (check) {
+    if (checkPreprocess) {
             compareFiles(adocFilePath, outputPath);
         }
     }

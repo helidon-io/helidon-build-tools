@@ -21,7 +21,7 @@ package io.helidon.build.sitegen.maven;
  * @author rgrecour
  */
 abstract class Constants {
-    static final String PROPERTY_PREFIX = "helidon.sitegen.";
+    static final String PROPERTY_PREFIX = "sitegen.";
     static final String DEFAULT_SITE_OUTPUT_DIR = "${project.build.directory}/site";
     static final String DEFAULT_SITE_SOURCE_DIR = "${project.basedir}/src/main/site";
 }

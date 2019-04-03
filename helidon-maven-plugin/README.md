@@ -16,17 +16,25 @@ This plugin binds to the `package` phase by default.
 | --- | --- | --- | --- |
 | graalVMHome | File | `${env.GRAALVM_HOME}` | GraalVM home |
 | reportExceptionStackTraces | Boolean | `true` | Show exception stack traces for exceptions during image building |
+| shared | Boolean | `false` | Build shared library |
+| static | Boolean | `false` | Build statically linked executable (requires static `libc` and `zlib` |
 | noServer | Boolean | `true` | Do not use image-build server |
 | addProjectResources | Boolean | `true` | Indicates if project build resources should be added to the image |
 | includeResources | List | [] | List of regexp matching names of resources to be included in the image |
 | additionalArgs | List | [] | Additional command line arguments |
 | skipNativeImage | Boolean | `false` | Skip this goal execution |
 
+The parameters `reportExceptionStackTraces`, `noServer`, `shared`, `static`
+ and `skipNativeImage` are mapped to user properties of the form:
+ `native.image.PROPERTY`. The parameter `siteArchiveSkip` is mapped to:
+ `native.image.skip`.
+
 ### Specifying the path to `native-image`
 
 There are 3 ways to specify the path to the `native-image` command:
 * export `GRAALVM_HOME` in your environment
-* set the `graalVMHome` Maven property (either in the pom or with -D on the command line)
+* set the `graalVMHome` Maven property (either in the pom or with -D on the
+ command line)
 * add the GraalVM `bin` folder to your PATH environment variable
 
 If the plugin fails to determine the path to `native-image`, the build will
