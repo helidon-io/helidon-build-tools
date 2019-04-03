@@ -83,7 +83,7 @@ All parameters are mapped to user properties of the form `sitegen.PROPERTY`.
 
 ## Site Config File
 
-The site configuration file is used to configure the following
+The site configuration file is used to configure the following:
 * Asciidoctor engine: add libraries, declare attributes etc
 * Static assets: specify static files to be added to the output directory
 * Pages: define matching rules for the pages
@@ -199,10 +199,10 @@ The value for glyph of type "icon" must be the name of an icon from one of the
 
 ## Life-cycle Mapping: `site`
 
-The plugin provides a custom mapping `site`. It is associated with the ".jar"
+The plugin provides a custom mapping `site`. It is associated with the `.jar`
  file extension and maps the following plugin executions:
 
-* `process-resource`s: org.apache.maven.plugins:maven-resources-plugin:resources
+* `process-resources`: org.apache.maven.plugins:maven-resources-plugin:resources
 * `compile`: io.helidon.build-tools:sitegen-maven-plugin:generate
 * `package`: io.helidon.build-tools:sitegen-maven-plugin:package
 * `install`: org.apache.maven.plugins:maven-install-plugin:install
