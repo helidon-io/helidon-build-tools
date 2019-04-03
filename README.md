@@ -22,7 +22,7 @@ Build tools for the Helidon Project.
 
 ## Helidon Compatibility
 
-The Helidon Build Tools version is aligned with the Helidon `major.minor`.
+The Helidon Build Tools version is aligned with the Helidon `major.minor` version.
  I.e Helidon Built Tools version `X.Y.?` is compatible with Helidon version
  `X.Y.?`.
 
