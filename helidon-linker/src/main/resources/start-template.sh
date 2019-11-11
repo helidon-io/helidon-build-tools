@@ -2,14 +2,23 @@
 
 usage() {
     echo
-    echo "Start ${mainJarName} from this runtime image."
+    echo "Start <MAIN_JAR_NAME> from this runtime image."
     echo
-    echo "Usage: ${scriptName} <options> [mainArg]..."
+    echo "Usage: ${scriptName} <options> [arg]..."
     echo
     echo "Options:"
-    echo "     -j | --jvm <option>     Add a JVM option. Can be used multiple times, and/or quoted strings provided."
-    echo "     -d | --debug            Add JVM debug options. Uses JAVA_DEBUG env var if present, or a default if not."
-    echo "     -c | --cds              Use the CDS archive if present."
+    echo "     --jvm <option>     Add a JVM option. Can be used multiple times, and/or quoted strings provided."
+    echo "     --debug            Add JVM debug options."
+    echo "     --cds              Use the CDS archive if present."
+    echo "     --dry | --dryRun   Prints the command rather than executing it."
+    echo
+    echo "Any unrecognized option is <UNRECOGNIZED_DESC> to <MAIN_JAR_NAME>."
+    echo
+    echo "Supported environment variables:"
+    echo
+    echo "     JVM_OPTIONS    <JVM_OPTIONS_DESC>"
+    echo "     MAIN_ARGS      <MAIN_ARGS_DESC>"
+    echo "     DEBUG_OPTIONS  <DEBUG_OPTIONS_DESC>"
     echo
     exit 0
 }
@@ -20,26 +29,36 @@ main() {
 }
 
 start() {
-    exec ${command}
+    if [[ ${dryRun} ]]; then
+        echo ${command}
+    else
+        exec ${command}
+    fi
 }
 
 init() {
     readonly mainJarName="<MAIN_JAR_NAME>"
+    readonly defaultJvmOptions="<JVM_OPTIONS>"
+    readonly defaultMainArgs="<MAIN_ARGS>"
+    readonly defaultDebugOptions="<DEBUG_OPTIONS>"
     readonly scriptName=$(basename "${0}")
     readonly binDir=$(dirname "${0}")
     readonly homeDir=$(cd "${binDir}"/..; pwd)
     readonly javaCommand="${binDir}/java"
     readonly cdsArchive="${homeDir}/lib/start.jsa"
     readonly mainJar="${homeDir}/app/${mainJarName}"
-    jvmOptions=
-    mainArgs=
+    readonly debugOptions=${DEBUG_OPTIONS:-${defaultDebugOptions}}
+    jvmOptions=${JVM_OPTIONS:-${defaultJvmOptions}}
+    mainArgs=${MAIN_ARGS:-${defaultMainArgs}}
+    dryRun=
 
     while (( ${#} > 0 )); do
         case "${1}" in
             -h | --help) usage ;;
             -c | --cds) setCds ;;
-            -d | --debug) setDebug ;;
+            -d | --debug) appendVar jvmOptions "${debugOptions}" ;;
             -j | --jvm) shift; appendVar jvmOptions "${1}" ;;
+            --dry | --dryRun) dryRun=true ;;
             *) appendVar mainArgs "${1}" ;;
         esac
         shift
@@ -53,14 +72,6 @@ setCds() {
         appendVar jvmOptions "-XX:SharedArchiveFile=${cdsArchive}"
     else
         echo "WARNING: CDS archive not found"
-    fi
-}
-
-setDebug() {
-    if [[ ${JAVA_DEBUG} ]]; then
-        appendVar jvmOptions "${JAVA_DEBUG}"
-    else
-        appendVar jvmOptions "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005"
     fi
 }
 

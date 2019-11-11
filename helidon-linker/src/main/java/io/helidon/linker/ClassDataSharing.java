@@ -33,6 +33,7 @@ import io.helidon.linker.util.ProcessMonitor;
 
 import static io.helidon.linker.util.FileUtils.assertDir;
 import static io.helidon.linker.util.FileUtils.assertFile;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -147,10 +148,14 @@ public class ClassDataSharing {
         private String targetOption;
         private String targetDescription;
         private boolean logOutput;
+        private List<String> jvmOptions;
+        private List<String> args;
 
         private Builder() {
             this.createArchive = true;
             this.archiveDir = LIB_DIR_NAME;
+            this.jvmOptions = emptyList();
+            this.args = emptyList();
         }
 
         /**
@@ -188,6 +193,28 @@ public class ClassDataSharing {
          */
         public Builder applicationModule(String mainModuleName) {
             this.applicationModule = requireNonNull(mainModuleName);
+            return this;
+        }
+
+        /**
+         * Sets JVM options to use when starting the application.
+         *
+         * @param jvmOptions The options.
+         * @return The builder.
+         */
+        public Builder jvmOptions(List<String> jvmOptions) {
+            this.jvmOptions = jvmOptions;
+            return this;
+        }
+
+        /**
+         * Sets JVM options to use when starting the application.
+         *
+         * @param args The options.
+         * @return The builder.
+         */
+        public Builder args(List<String> args) {
+            this.args = requireNonNull(args);
             return this;
         }
 
@@ -332,10 +359,12 @@ public class ClassDataSharing {
             final List<String> command = new ArrayList<>();
 
             command.add(javaPath().toString());
+            command.addAll(jvmOptions);
             command.add(EXIT_ON_STARTED);
             command.addAll(Arrays.asList(jvmArgs));
             command.add(targetOption);
             command.add(target);
+            command.addAll(args);
             builder.command(command);
 
             builder.directory(jre.toFile());

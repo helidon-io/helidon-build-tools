@@ -160,6 +160,13 @@ public class FileUtils {
         }
     }
 
+    /**
+     * Deletes the given directory if it exists.
+     *
+     * @param directory The directory.
+     * @return The directory.
+     * @throws IOException If an error occurs.
+     */
     public static Path deleteDirectory(Path directory) throws IOException {
         if (Files.exists(directory)) {
             if (Files.isDirectory(directory)) {

@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
+import java.util.List;
 import java.util.Set;
 
 import io.helidon.linker.util.FileUtils;
@@ -37,13 +38,60 @@ import static org.hamcrest.Matchers.is;
  */
 class StartScriptTest {
 
+    private static final Path MAIN_JAR = TestFiles.helidonSeJar();
+    private static final String MAIN_JAR_NAME = MAIN_JAR.getFileName().toString();
+
+    private StartScript.Builder builder() {
+        return StartScript.builder().mainJar(MAIN_JAR);
+    }
+
+    @Test
+    void testMainJarName() {
+        String script = builder().build().toString();
+        assertThat(script, containsString("Start " + MAIN_JAR_NAME));
+        assertThat(script, containsString("passed to " + MAIN_JAR_NAME));
+        assertThat(script, containsString("mainJarName=\"" + MAIN_JAR_NAME + "\""));
+    }
+
+    @Test
+    void testDefaultJvmOptions() {
+        String script = builder().build().toString();
+        assertThat(script, containsString("JVM_OPTIONS    Sets JVM options."));
+        assertThat(script, containsString("defaultJvmOptions=\"\""));
+
+        script = builder().jvmOptions(List.of("-verbose:class", "-Xms32")).build().toString();
+        assertThat(script, containsString("JVM_OPTIONS    Overrides default: ${defaultJvmOptions}"));
+        assertThat(script, containsString("defaultJvmOptions=\"-verbose:class -Xms32\""));
+    }
+
+    @Test
+    void testDefaultDebugOptions() {
+        String script = builder().build().toString();
+        assertThat(script, containsString("DEBUG_OPTIONS  Overrides default: ${defaultDebugOptions}"));
+        assertThat(script, containsString("defaultDebugOptions=\"" + StartScript.Builder.DEFAULT_DEBUG + "\""));
+
+        script = builder().debugOptions(List.of("-Xdebug", "-Xnoagent")).build().toString();
+        assertThat(script, containsString("DEBUG_OPTIONS  Overrides default: ${defaultDebugOptions}"));
+        assertThat(script, containsString("defaultDebugOptions=\"-Xdebug -Xnoagent\""));
+    }
+
+    @Test
+    void testDefaultArguments() {
+        String script = builder().build().toString();
+        assertThat(script, containsString("MAIN_ARGS      Sets arguments."));
+        assertThat(script, containsString("defaultMainArgs=\"\""));
+
+        script = builder().args(List.of("--foo", "bar")).build().toString();
+        assertThat(script, containsString("MAIN_ARGS      Overrides default: ${defaultMainArgs}"));
+        assertThat(script, containsString("defaultMainArgs=\"--foo bar\""));
+    }
+
     @Test
     void testInstall() throws Exception {
         Path targetDir = TestFiles.targetDir();
         Path binDir = FileUtils.ensureDirectory(targetDir.resolve("scripts/bin"));
-        Path mainJar = TestFiles.helidonSeJar();
-        StartScript script = StartScript.newScript(mainJar);
-        assertThat(script.toString(), containsString(mainJar.getFileName().toString()));
+        Files.deleteIfExists(binDir.resolve("start"));
+        StartScript script = builder().build();
         Path scriptFile = script.install(binDir.getParent());
         assertThat(Files.exists(scriptFile), is(true));
         assertExecutable(scriptFile);

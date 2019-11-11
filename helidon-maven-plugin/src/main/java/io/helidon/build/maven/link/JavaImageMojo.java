@@ -19,6 +19,7 @@ package io.helidon.build.maven.link;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import io.helidon.linker.Configuration;
 import io.helidon.linker.Linker;
@@ -50,29 +51,50 @@ public class JavaImageMojo extends AbstractMojo {
     /**
      * The project build output directory. (e.g. {@code target/})
      */
-    @Parameter(defaultValue = "${project.build.directory}",
-        readonly = true, required = true)
+    @Parameter(defaultValue = "${project.build.directory}", readonly = true, required = true)
     private File buildDirectory;
 
     /**
      * Name of the output directory to be generated.
      */
-    @Parameter(defaultValue = "${project.build.finalName}", readonly = true,
-        required = true)
+    @Parameter(defaultValue = "${project.build.finalName}", readonly = true, required = true)
     private String finalName;
+
+    /**
+     * The Java Home directory from which to build the image. Must contain {@code .jmod} files.
+     * Defaults to the current JVM home directory.
+     */
+    @Parameter(property = "java.image.sourceJavaHome")
+    private File sourceJavaHome;
 
     /**
      * Add a CDS archive.
      */
-    @Parameter(defaultValue = "true",
-        property = "java.image.addCdsArchive")
+    @Parameter(defaultValue = "true", property = "java.image.addCdsArchive")
     private boolean addCdsArchive;
+
+    /**
+     * JVM options to use when starting the application.
+     */
+    @Parameter(property = "java.image.jvmOptions")
+    private List<String> jvmOptions;
+
+    /**
+     * JVM options to use when starting the application with {@code --debug}.
+     */
+    @Parameter(property = "java.image.debugOptions")
+    private List<String> debugOptions;
+
+    /**
+     * Arguments to use when starting the application.
+     */
+    @Parameter(property = "java.image.args")
+    private List<String> args;
 
     /**
      * Verbose output.
      */
-    @Parameter(defaultValue = "false",
-        property = "java.image.verbose")
+    @Parameter(defaultValue = "false", property = "java.image.verbose")
     private boolean verbose;
 
     /**
@@ -80,11 +102,6 @@ public class JavaImageMojo extends AbstractMojo {
      */
     @Parameter(defaultValue = "false", property = "java.image.skip")
     private boolean skipJavaImage;
-
-    /**
-     * The {@code native-image} execution process.
-     */
-    private Process process;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -96,14 +113,19 @@ public class JavaImageMojo extends AbstractMojo {
         final Path mainJar = mainJar(buildDir);
         final Path outputDir = buildDir.resolve(finalName);
         final Log.Writer writer = new MavenLogWriter(getLog());
+        final Path jdkDir = sourceJavaHome == null ? null : sourceJavaHome.toPath();
         try {
             Configuration config = Configuration.builder()
                                                 .logWriter(writer)
-                                                .jreDirectory(outputDir)
+                                                .jdkDirectory(jdkDir)
                                                 .mainJar(mainJar)
+                                                .jvmOptions(jvmOptions)
+                                                .args(args)
+                                                .debugOptions(debugOptions)
                                                 .replace(true)
                                                 .verbose(verbose)
                                                 .cds(addCdsArchive)
+                                                .jreDirectory(outputDir)
                                                 .build();
             Linker.linker(config).link();
         } catch (Exception e) {
