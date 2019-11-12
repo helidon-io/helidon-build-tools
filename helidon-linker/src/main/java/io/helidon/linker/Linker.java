@@ -154,8 +154,8 @@ public class Linker {
                 ClassDataSharing.builder()
                                 .jre(jre.path())
                                 .applicationJar(jreMainJar)
-                                .jvmOptions(config.jvmOptions())
-                                .args((config.args()))
+                                .jvmOptions(config.defaultJvmOptions())
+                                .args((config.defaultArgs()))
                                 .archiveFile(application.archivePath())
                                 .logOutput(config.verbose())
                                 .build();
@@ -168,9 +168,10 @@ public class Linker {
     private void installStartScript() {
         if (!WINDOWS) {
             StartScript.builder()
-                       .jvmOptions(config.jvmOptions())
+                       .defaultJvmOptions(config.defaultJvmOptions())
+                       .defaultDebugOptions(config.defaultDebugOptions())
                        .mainJar(jreMainJar)
-                       .args(config.args())
+                       .defaultArgs(config.defaultArgs())
                        .build()
                        .install(jre.path());
         }

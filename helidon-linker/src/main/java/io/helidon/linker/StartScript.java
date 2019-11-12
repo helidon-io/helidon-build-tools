@@ -22,6 +22,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -90,35 +91,31 @@ public class StartScript {
      * The builder.
      */
     public static class Builder {
-        static final String DEFAULT_DEBUG = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005";
         private static final String TEMPLATE_PATH = "start-template.sh";
-        private static final String MAIN_JAR_NAME = "<MAIN_JAR_NAME>";
-        private static final String MAIN_ARGS = "<MAIN_ARGS>";
-        private static final String JVM_OPTIONS = "<JVM_OPTIONS>";
-        private static final String DEBUG_OPTIONS = "<DEBUG_OPTIONS>";
-        private static final String MAIN_ARGS_DESC = "<MAIN_ARGS_DESC>";
-        private static final String JVM_OPTIONS_DESC = "<JVM_OPTIONS_DESC>";
-        private static final String DEBUG_OPTIONS_DESC = "<DEBUG_OPTIONS_DESC>";
-        private static final String UNRECOGNIZED_DESC = "<UNRECOGNIZED_DESC>";
-        private static final String JVM_SOME = "Overrides default: ${defaultJvmOptions}";
-        private static final String JVM_NONE = "Sets JVM options.";
-        private static final String ARGS_SOME = "Overrides default: ${defaultMainArgs}";
-        private static final String ARGS_NONE = "Sets arguments.";
-        private static final String DEBUG_SOME = "Overrides default: ${defaultDebugOptions}";
+        private static final String JAR_NAME = "<JAR_NAME>";
+        private static final String DEFAULT_ARGS = "<DEFAULT_ARGS>";
+        private static final String DEFAULT_JVM = "<DEFAULT_JVM>";
+        private static final String DEFAULT_DEBUG = "<DEFAULT_DEBUG>";
+        private static final String DEFAULT_ARGS_DESC = "<DEFAULT_ARGS_DESC>";
+        private static final String DEFAULT_JVM_DESC = "<DEFAULT_JVM_DESC>";
+        private static final String DEFAULT_DEBUG_DESC = "<DEFAULT_DEBUG_DESC>";
+        private static final String JVM_SOME = "Overrides default JVM options: ${defaultJvm}";
+        private static final String JVM_NONE = "Sets default JVM options.";
+        private static final String ARGS_SOME = "Overrides default arguments: ${defaultArgs}";
+        private static final String ARGS_NONE = "Sets default arguments.";
+        private static final String DEBUG_SOME = "Overrides default debug options: ${defaultDebug}";
         private static final String DEBUG_NONE = "Sets debug options.";
-        private static final String UNRECOGNIZED_SOME = "added to the default arguments and passed";
-        private static final String UNRECOGNIZED_NONE = "passed as an argument";
 
         private static final String TEMPLATE = template();
         private Path mainJar;
-        private List<String> jvmOptions;
-        private List<String> args;
-        private List<String> debugOptions;
+        private List<String> defaultJvmOptions;
+        private List<String> defaultDebugOptions;
+        private List<String> defaultArgs;
 
         private Builder() {
-            jvmOptions = emptyList();
-            args = emptyList();
-            debugOptions = List.of(DEFAULT_DEBUG);
+            defaultJvmOptions = emptyList();
+            defaultDebugOptions = List.of(Configuration.Builder.DEFAULT_DEBUG);
+            defaultArgs = emptyList();
         }
 
         /**
@@ -133,35 +130,41 @@ public class StartScript {
         }
 
         /**
-         * Sets the JVM options.
+         * Sets the default JVM options.
          *
          * @param jvmOptions The options.
          * @return The builder.
          */
-        public Builder jvmOptions(List<String> jvmOptions) {
-            this.jvmOptions = jvmOptions;
+        public Builder defaultJvmOptions(List<String> jvmOptions) {
+            if (isValid(jvmOptions)) {
+                this.defaultJvmOptions = jvmOptions;
+            }
             return this;
         }
 
         /**
-         * Sets the arguments.
+         * Sets the default arguments.
          *
          * @param args The arguments.
          * @return The builder.
          */
-        public Builder args(List<String> args) {
-            this.args = args;
+        public Builder defaultArgs(List<String> args) {
+            if (isValid(args)) {
+                this.defaultArgs = args;
+            }
             return this;
         }
 
         /**
-         * Sets the debug arguments used when starting the application with the {@code --debug} flag.
+         * Sets the default debug arguments used when starting the application with the {@code --debug} flag.
          *
          * @param debugOptions The options.
          * @return The builder.
          */
-        public Builder debugOptions(List<String> debugOptions) {
-            this.debugOptions = debugOptions;
+        public Builder defaultDebugOptions(List<String> debugOptions) {
+            if (isValid(debugOptions)) {
+                this.defaultDebugOptions = debugOptions;
+            }
             return this;
         }
 
@@ -173,27 +176,28 @@ public class StartScript {
         public StartScript build() {
             final String name = mainJar.getFileName().toString();
 
-            final String jvmOptions = String.join(" ", this.jvmOptions);
-            final String jvmDesc = jvmOptions.isEmpty() ? JVM_NONE : JVM_SOME.replace(JVM_OPTIONS, jvmOptions);
+            final String jvm = String.join(" ", this.defaultJvmOptions);
+            final String jvmDesc = jvm.isEmpty() ? JVM_NONE : JVM_SOME.replace(DEFAULT_JVM, jvm);
 
-            final String args = String.join(" ", this.args);
-            final String argsDesc = args.isEmpty() ? ARGS_NONE : ARGS_SOME.replace(MAIN_ARGS, args);
+            final String args = String.join(" ", this.defaultArgs);
+            final String argsDesc = args.isEmpty() ? ARGS_NONE : ARGS_SOME.replace(DEFAULT_ARGS, args);
 
-            final String debugOptions = String.join(" ", this.debugOptions);
-            final String debugDesc = debugOptions.isEmpty() ? DEBUG_NONE : DEBUG_SOME.replace(DEBUG_OPTIONS, debugOptions);
+            final String debug = String.join(" ", this.defaultDebugOptions);
+            final String debugDesc = debug.isEmpty() ? DEBUG_NONE : DEBUG_SOME.replace(DEFAULT_DEBUG, debug);
 
-            final String unrecognizedDesc = args.isEmpty() ? UNRECOGNIZED_NONE : UNRECOGNIZED_SOME;
-
-            final String script = TEMPLATE.replace(MAIN_JAR_NAME, name)
-                                          .replace(JVM_OPTIONS, jvmOptions)
-                                          .replace(JVM_OPTIONS_DESC, jvmDesc)
-                                          .replace(UNRECOGNIZED_DESC, unrecognizedDesc)
-                                          .replace(MAIN_ARGS, args)
-                                          .replace(MAIN_ARGS_DESC, argsDesc)
-                                          .replace(DEBUG_OPTIONS, debugOptions)
-                                          .replace(DEBUG_OPTIONS_DESC, debugDesc);
+            final String script = TEMPLATE.replace(JAR_NAME, name)
+                                          .replace(DEFAULT_JVM, jvm)
+                                          .replace(DEFAULT_JVM_DESC, jvmDesc)
+                                          .replace(DEFAULT_ARGS, args)
+                                          .replace(DEFAULT_ARGS_DESC, argsDesc)
+                                          .replace(DEFAULT_DEBUG, debug)
+                                          .replace(DEFAULT_DEBUG_DESC, debugDesc);
 
             return new StartScript(script);
+        }
+
+        private static boolean isValid(Collection<?> value) {
+            return value != null && !value.isEmpty();
         }
 
         private static String template() {

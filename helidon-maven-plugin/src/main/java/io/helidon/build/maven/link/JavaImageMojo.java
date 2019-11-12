@@ -74,22 +74,22 @@ public class JavaImageMojo extends AbstractMojo {
     private boolean addCdsArchive;
 
     /**
-     * JVM options to use when starting the application.
+     * Default JVM options to use when starting the application.
      */
-    @Parameter(property = "java.image.jvmOptions")
-    private List<String> jvmOptions;
+    @Parameter(property = "java.image.defaultJvmOptions")
+    private List<String> defaultJvmOptions;
 
     /**
-     * JVM options to use when starting the application with {@code --debug}.
+     * Default JVM debug options to use when starting the application with {@code --debug}.
      */
-    @Parameter(property = "java.image.debugOptions")
-    private List<String> debugOptions;
+    @Parameter(property = "java.image.defaultDebugOptions")
+    private List<String> defaultDebugOptions;
 
     /**
-     * Arguments to use when starting the application.
+     * Default arguments to use when starting the application.
      */
-    @Parameter(property = "java.image.args")
-    private List<String> args;
+    @Parameter(property = "java.image.defaultArgs")
+    private List<String> defaultArgs;
 
     /**
      * Verbose output.
@@ -119,9 +119,9 @@ public class JavaImageMojo extends AbstractMojo {
                                                 .logWriter(writer)
                                                 .jdkDirectory(jdkDir)
                                                 .mainJar(mainJar)
-                                                .jvmOptions(jvmOptions)
-                                                .args(args)
-                                                .debugOptions(debugOptions)
+                                                .defaultJvmOptions(defaultJvmOptions)
+                                                .defaultArgs(defaultArgs)
+                                                .defaultDebugOptions(defaultDebugOptions)
                                                 .replace(true)
                                                 .verbose(verbose)
                                                 .cds(addCdsArchive)

@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.JarEntry;
@@ -203,18 +204,22 @@ public class ClassDataSharing {
          * @return The builder.
          */
         public Builder jvmOptions(List<String> jvmOptions) {
-            this.jvmOptions = jvmOptions;
+            if (isValid(jvmOptions)) {
+                this.jvmOptions = jvmOptions;
+            }
             return this;
         }
 
         /**
-         * Sets JVM options to use when starting the application.
+         * Sets arguments to use when starting the application.
          *
-         * @param args The options.
+         * @param args The arguments.
          * @return The builder.
          */
         public Builder args(List<String> args) {
-            this.args = requireNonNull(args);
+            if (isValid(args)) {
+                this.args = args;
+            }
             return this;
         }
 
@@ -374,6 +379,10 @@ public class ClassDataSharing {
 
         private Path javaPath() {
             return JavaRuntime.javaCommand(jre);
+        }
+
+        private static boolean isValid(Collection<?> value) {
+            return value != null && !value.isEmpty();
         }
 
         private static Path tempFile(String suffix) throws IOException {

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import io.helidon.linker.util.FileUtils;
@@ -39,8 +40,9 @@ import static java.util.Objects.requireNonNull;
 public class Configuration {
     private final JavaRuntime jdk;
     private final Path mainJar;
-    private final List<String> jvmOptions;
-    private final List<String> args;
+    private final List<String> defaultJvm;
+    private final List<String> defaultArgs;
+    private final List<String> defaultDebug;
     private final Path jreDirectory;
     private final boolean verbose;
     private final boolean stripDebug;
@@ -58,8 +60,9 @@ public class Configuration {
     private Configuration(Builder builder) {
         this.jdk = builder.jdk;
         this.mainJar = builder.mainJar;
-        this.jvmOptions = builder.jvmOptions;
-        this.args = builder.args;
+        this.defaultJvm = builder.defaultJvm;
+        this.defaultArgs = builder.defaultArgs;
+        this.defaultDebug = builder.defaultDebug;
         this.jreDirectory = builder.jreDirectory;
         this.verbose = builder.verbose;
         this.stripDebug = builder.stripDebug;
@@ -94,12 +97,21 @@ public class Configuration {
     }
 
     /**
-     * Returns the JVM options to use when starting the application.
+     * Returns the default JVM debug options to use when starting the application with {@code --debug}.
      *
      * @return The options.
      */
-    public List<String> jvmOptions() {
-        return jvmOptions;
+    public List<String> defaultDebugOptions() {
+        return defaultDebug;
+    }
+
+    /**
+     * Returns the default JVM options to use when starting the application.
+     *
+     * @return The options.
+     */
+    public List<String> defaultJvmOptions() {
+        return defaultJvm;
     }
 
     /**
@@ -107,8 +119,8 @@ public class Configuration {
      *
      * @return The arguments.
      */
-    public List<String> args() {
-        return args;
+    public List<String> defaultArgs() {
+        return defaultArgs;
     }
 
     /**
@@ -142,10 +154,11 @@ public class Configuration {
      * A {@link Configuration} builder.
      */
     public static class Builder {
+        static final String DEFAULT_DEBUG = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005";
         private Path mainJar;
-        private List<String> jvmOptions;
-        private List<String> args;
-        private List<String> debugOptions;
+        private List<String> defaultJvm;
+        private List<String> defaultArgs;
+        private List<String> defaultDebug;
         private Path jdkDirectory;
         private Path jreDirectory;
         private boolean replace;
@@ -156,9 +169,9 @@ public class Configuration {
         private Log.Writer logWriter;
 
         private Builder() {
-            jvmOptions = emptyList();
-            args = emptyList();
-            debugOptions = emptyList();
+            defaultJvm = emptyList();
+            defaultArgs = emptyList();
+            defaultDebug = List.of(DEFAULT_DEBUG);
             jdkDirectory = CURRENT_JAVA_HOME_DIR;
             cds = true;
         }
@@ -168,15 +181,15 @@ public class Configuration {
          *
          * @param args The arguments: [options] path-to-main-jar. Options:
          * <pre>
-         *     --jvmOptions options   JVM options to use when starting the application.
-         *     --debugOptions options JVM options to use when starting the application with the {@code --debug} flag.
-         *     --args args            Arguments to use when starting the application.
-         *     --jdk directory        The JDK directory from which to create the JRE. Defaults to current.
-         *     --jre directory        The directory at which to create the JRE.
-         *     --replace              Delete the JRE directory if it exists.
-         *     --cds                  Create a CDS archive.
-         *     --verbose              Log detail messages.
-         *     --stripDebug           Strip debug information from JDK classes. Defaults to false.
+         *     --defaultJvmOptions options    Default JVM options to use when starting the application.
+         *     --defaultDebugOptions options  Default JVM debug options to use when starting the application with {@code --debug}.
+         *     --defaultArgs args             Default arguments to use when starting the application.
+         *     --jdk directory                The JDK directory from which to create the JRE. Defaults to current.
+         *     --jre directory                The directory at which to create the JRE.
+         *     --replace                      Delete the JRE directory if it exists.
+         *     --cds                          Create a CDS archive.
+         *     --verbose                      Log detail messages.
+         *     --stripDebug                   Strip debug information from JDK classes. Defaults to false.
          * </pre>
          * @return The builder.
          */
@@ -188,10 +201,12 @@ public class Configuration {
                         jdkDirectory(Paths.get(argAt(++i, args)));
                     } else if (arg.equalsIgnoreCase("--jre")) {
                         jreDirectory(Paths.get(argAt(++i, args)));
-                    } else if (arg.equalsIgnoreCase("--jvmOptions")) {
-                        jvmOptions(argAt(++i, args));
-                    } else if (arg.equalsIgnoreCase("--args")) {
-                        args(argAt(++i, args));
+                    } else if (arg.equalsIgnoreCase("--defaultJvmOptions")) {
+                        defaultJvmOptions(argAt(++i, args));
+                    } else if (arg.equalsIgnoreCase("--defaultDebugOptions")) {
+                        defaultDebugOptions(argAt(++i, args));
+                    } else if (arg.equalsIgnoreCase("--defaultArgs")) {
+                        defaultArgs(argAt(++i, args));
                     } else if (arg.equalsIgnoreCase("--replace")) {
                         replace(true);
                     } else if (arg.equalsIgnoreCase("--cds")) {
@@ -225,74 +240,74 @@ public class Configuration {
         }
 
         /**
-         * Sets JVM options to use when starting the application.
+         * Sets default JVM options to use when starting the application.
          *
          * @param jvmOptions The options.
          * @return The builder.
          */
-        public Builder jvmOptions(String jvmOptions) {
-            if (jvmOptions != null && !jvmOptions.isBlank()) {
-                jvmOptions(Arrays.asList(jvmOptions.split(" ")));
-            }
+        public Builder defaultJvmOptions(String jvmOptions) {
+            defaultJvmOptions(toList(jvmOptions));
             return this;
         }
 
         /**
-         * Sets JVM options to use when starting the application.
+         * Sets default JVM options to use when starting the application.
          *
          * @param jvmOptions The options.
          * @return The builder.
          */
-        public Builder jvmOptions(List<String> jvmOptions) {
-            this.jvmOptions = jvmOptions;
-            return this;
-        }
-
-        /**
-         * Sets arguments to use when starting the application.
-         *
-         * @param args The args.
-         * @return The builder.
-         */
-        public Builder args(String args) {
-            if (args != null && !args.isBlank()) {
-                args(Arrays.asList(args.split(" ")));
+        public Builder defaultJvmOptions(List<String> jvmOptions) {
+            if (isValid(jvmOptions)) {
+                this.defaultJvm = jvmOptions;
             }
             return this;
         }
 
         /**
-         * Sets arguments to use when starting the application.
+         * Sets default arguments to use when starting the application.
          *
          * @param args The args.
          * @return The builder.
          */
-        public Builder args(List<String> args) {
-            this.args = args;
+        public Builder defaultArgs(String args) {
+            defaultArgs(toList(args));
             return this;
         }
 
         /**
-         * Sets JVM options to use when starting the application with the {@code --debug} flag.
+         * Sets default arguments to use when starting the application.
          *
-         * @param debugOptions The options.
+         * @param args The args.
          * @return The builder.
          */
-        public Builder debugOptions(String debugOptions) {
-            if (debugOptions != null && !debugOptions.isBlank()) {
-                debugOptions(Arrays.asList(debugOptions.split(" ")));
+        public Builder defaultArgs(List<String> args) {
+            if (isValid(args)) {
+                this.defaultArgs = args;
             }
             return this;
         }
 
         /**
-         * Sets JVM options to use when starting the application with the {@code --debug} flag.
+         * Sets default JVM debug options to use when starting the application with {@code --debug}.
          *
          * @param debugOptions The options.
          * @return The builder.
          */
-        public Builder debugOptions(List<String> debugOptions) {
-            this.debugOptions = debugOptions;
+        public Builder defaultDebugOptions(String debugOptions) {
+            defaultDebugOptions(toList(debugOptions));
+            return this;
+        }
+
+        /**
+         * Sets default JVM debug options to use when starting the application with {@code --debug}.
+         *
+         * @param debugOptions The options.
+         * @return The builder.
+         */
+        public Builder defaultDebugOptions(List<String> debugOptions) {
+            if (isValid(debugOptions)) {
+                this.defaultDebug = debugOptions;
+            }
             return this;
         }
 
@@ -393,6 +408,18 @@ public class Configuration {
             }
             Log.setWriter(logWriter);
             return new Configuration(this);
+        }
+
+        private static List<String> toList(String value) {
+            if (value != null && !value.isBlank()) {
+                return Arrays.asList(value.split(" "));
+            } else {
+                return null;
+            }
+        }
+
+        private static boolean isValid(Collection<?> value) {
+            return value != null && !value.isEmpty();
         }
 
         private static String argAt(int index, String[] args) {
