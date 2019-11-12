@@ -34,7 +34,7 @@ import io.helidon.linker.util.Log;
  * This class assumes that the application was built re
  */
 public class Application {
-    private static final Path APP_DIR = Paths.get("app");
+    static final Path APP_DIR = Paths.get("app");
     private static final Path ARCHIVE_PATH = Paths.get("lib/start.jsa");
     private static final String MP_FILE_PREFIX = "helidon-microprofile";
     private final Jar mainJar;
@@ -63,18 +63,18 @@ public class Application {
     }
 
     /**
-     * Copy this application into the given Java Home.
+     * Copy this application into the given Java Runtime Image.
      *
-     * @param jre The JRE in which to install this application.
+     * @param jri The JRI in which to install this application.
      * @return The location of the installed application jar.
      */
-    public Path install(JavaRuntime jre) {
+    public Path install(JavaRuntime jri) {
         final Path appRootDir = mainJar.path().getParent();
-        final Path appInstallDir = jre.ensureDirectory(APP_DIR);
+        final Path appInstallDir = jri.ensureDirectory(APP_DIR);
         final Path installedAppJar = mainJar.copyToDirectory(appInstallDir, isMicroprofile());
         classPath.forEach(jar -> {
             final Path relativeDir = appRootDir.relativize(jar.path().getParent());
-            final Path installDir = jre.ensureDirectory(appInstallDir.resolve(relativeDir));
+            final Path installDir = jri.ensureDirectory(appInstallDir.resolve(relativeDir));
             jar.copyToDirectory(installDir, isMicroprofile());
         });
         return installedAppJar;

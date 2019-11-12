@@ -53,14 +53,14 @@ public class StartScript {
     }
 
     /**
-     * Install the script in the given JRE path.
+     * Install the script in the given JRI path.
      *
-     * @param jrePath The path.
+     * @param jriPath The path.
      * @return The path to the installed script.
      */
-    Path install(Path jrePath) {
+    Path install(Path jriPath) {
         try {
-            final Path scriptFile = assertDir(jrePath).resolve(INSTALL_PATH);
+            final Path scriptFile = assertDir(jriPath).resolve(INSTALL_PATH);
             Files.copy(new ByteArrayInputStream(script.getBytes()), scriptFile);
             Files.setPosixFilePermissions(scriptFile, Set.of(
                 PosixFilePermission.OWNER_READ,

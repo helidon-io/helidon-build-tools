@@ -125,7 +125,7 @@ public class JavaImageMojo extends AbstractMojo {
                                                 .replace(true)
                                                 .verbose(verbose)
                                                 .cds(addCdsArchive)
-                                                .jreDirectory(outputDir)
+                                                .jriDirectory(outputDir)
                                                 .build();
             Linker.linker(config).link();
         } catch (Exception e) {

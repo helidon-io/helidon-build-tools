@@ -44,7 +44,7 @@ public class JavaRuntime {
     private static final String JMOD_SUFFIX = ".jmod";
     private static final String JAVA_BASE_JMOD = "java.base.jmod";
     private static final String JMOD_MODULE_INFO_PATH = "classes/module-info.class";
-    private static final String JRE_SUFFIX = "-jre";
+    private static final String JRI_SUFFIX = "-jri";
     private static final String FILE_SEP = File.separator;
     private static final String JAVA_CMD_PATH = "bin" + FILE_SEP + "java";
     private final Path javaHome;
@@ -53,47 +53,47 @@ public class JavaRuntime {
     private final Map<String, Path> modules;
 
     /**
-     * Ensures a valid JRE directory path, deleting if required.
+     * Ensures a valid JRI directory path, deleting if required.
      *
-     * @param jreDirectory The JRE directory. May be {@code null}.
-     * @param mainJar The main jar, used to create a name if {@code jreDirectory} not provided.
+     * @param jriDirectory The JRI directory. May be {@code null}.
+     * @param mainJar The main jar, used to create a name if {@code jriDirectory} not provided.
      * May not be {@code null}.
      * @param replaceExisting {@code true} if the directory can be deleted if already present.
      * @return The directory.
      * @throws IOException If an error occurs.
      */
-    public static Path prepareJreDirectory(Path jreDirectory, Path mainJar, boolean replaceExisting) throws IOException {
-        if (jreDirectory == null) {
+    public static Path prepareJriDirectory(Path jriDirectory, Path mainJar, boolean replaceExisting) throws IOException {
+        if (jriDirectory == null) {
             final String jarName = requireNonNull(mainJar).getFileName().toString();
-            final String dirName = jarName.substring(0, jarName.lastIndexOf('.')) + JRE_SUFFIX;
-            jreDirectory = FileUtils.WORKING_DIR.resolve(dirName);
+            final String dirName = jarName.substring(0, jarName.lastIndexOf('.')) + JRI_SUFFIX;
+            jriDirectory = FileUtils.WORKING_DIR.resolve(dirName);
         }
-        if (Files.exists(jreDirectory)) {
-            if (Files.isDirectory(jreDirectory)) {
+        if (Files.exists(jriDirectory)) {
+            if (Files.isDirectory(jriDirectory)) {
                 if (replaceExisting) {
-                    FileUtils.deleteDirectory(jreDirectory);
+                    FileUtils.deleteDirectory(jriDirectory);
                 } else {
-                    throw new IllegalArgumentException(jreDirectory + " is an existing directory");
+                    throw new IllegalArgumentException(jriDirectory + " is an existing directory");
                 }
             } else {
-                throw new IllegalArgumentException(jreDirectory + " is an existing file");
+                throw new IllegalArgumentException(jriDirectory + " is an existing file");
             }
         }
-        return jreDirectory;
+        return jriDirectory;
     }
 
     /**
      * Asserts that the given directory points to a valid Java Runtime.
      *
-     * @param jreDirectory The directory.
+     * @param jriDirectory The directory.
      * @return The normalized, absolute directory path.
-     * @throws IllegalArgumentException If the directory is not a valid JRE.
+     * @throws IllegalArgumentException If the directory is not a valid JRI.
      */
-    public static Path assertJre(Path jreDirectory) {
-        final Path result = FileUtils.assertDir(jreDirectory);
-        final Path javaCommand = jreDirectory.resolve(JAVA_CMD_PATH);
+    public static Path assertJri(Path jriDirectory) {
+        final Path result = FileUtils.assertDir(jriDirectory);
+        final Path javaCommand = jriDirectory.resolve(JAVA_CMD_PATH);
         if (!Files.isRegularFile(javaCommand)) {
-            throw new IllegalArgumentException("Not a valid JRE (" + javaCommand + " not found): " + jreDirectory);
+            throw new IllegalArgumentException("Not a valid JRI (" + javaCommand + " not found): " + jriDirectory);
         }
         return result;
     }
@@ -106,7 +106,7 @@ public class JavaRuntime {
      * @throws IllegalArgumentException If the directory is not a valid JDK.
      */
     public static Path assertJdk(Path jdkDirectory) {
-        final Path result = assertJre(jdkDirectory);
+        final Path result = assertJri(jdkDirectory);
         final Path jmodsDir = result.resolve(JMODS_DIR);
         final Path javaBase = jmodsDir.resolve(JAVA_BASE_JMOD);
         if (!Files.isDirectory(jmodsDir) || !Files.exists(javaBase)) {
@@ -116,14 +116,14 @@ public class JavaRuntime {
     }
 
     /**
-     * Returns the path to the {@code java} executable in the given JRE directory.
+     * Returns the path to the {@code java} executable in the given JRI directory.
      *
-     * @param jreDirectory The directory.
+     * @param jriDirectory The directory.
      * @return The normalized, absolute directory path.
      * @throws IllegalArgumentException If the directory is not a valid JDK.
      */
-    public static Path javaCommand(Path jreDirectory) {
-        return assertFile(assertDir(jreDirectory).resolve(JAVA_CMD_PATH));
+    public static Path javaCommand(Path jriDirectory) {
+        return assertFile(assertDir(jriDirectory).resolve(JAVA_CMD_PATH));
     }
 
     /**
@@ -134,11 +134,11 @@ public class JavaRuntime {
      * @throws IllegalArgumentException If this JVM is not a valid JDK.
      */
     public static JavaRuntime current(boolean assertJdk) {
-        final Path jreDir = CURRENT_JAVA_HOME_DIR;
+        final Path jriDir = CURRENT_JAVA_HOME_DIR;
         if (assertJdk) {
-            assertJdk(jreDir);
+            assertJdk(jriDir);
         }
-        return new JavaRuntime(jreDir, null);
+        return new JavaRuntime(jriDir, null);
     }
 
     /**
@@ -168,14 +168,14 @@ public class JavaRuntime {
     /**
      * Returns a new {@code JavaRuntime} for the given directory.
      *
-     * @param jreDirectory The directory.
-     * @param version The runtime version of the given JRE. If {@code null}, the version is computed if {@code jmod}
+     * @param jriDirectory The directory.
+     * @param version The runtime version of the given JRI. If {@code null}, the version is computed if {@code jmod}
      * files are present otherwise an exception is thrown.
      * @return The new instance.
-     * @throws IllegalArgumentException If this JVM is not a valid JRE or the runtime version cannot be computed.
+     * @throws IllegalArgumentException If this JVM is not a valid JRI or the runtime version cannot be computed.
      */
-    public static JavaRuntime jre(Path jreDirectory, Runtime.Version version) {
-        return new JavaRuntime(jreDirectory, requireNonNull(version));
+    public static JavaRuntime jri(Path jriDirectory, Runtime.Version version) {
+        return new JavaRuntime(jriDirectory, requireNonNull(version));
     }
 
     private JavaRuntime(Path javaHome, Runtime.Version version) {

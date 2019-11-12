@@ -21,7 +21,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -38,13 +37,11 @@ class ClassDataSharingTest {
     private static final Path JAVA_HOME = Paths.get(System.getProperty("java.home"));
 
     @Test
-    @Disabled // TODO: weldJrtJar is not available in maven build at this point!
     void testQuickstartMp() throws Exception {
         Path mainJar = TestFiles.helidonMpJar();
-        Path weldJrtJar = TestFiles.weldJrtJar();
-        Path archiveFile = Files.createTempFile("server","jsa");
+        Path archiveFile = Files.createTempFile("start","jsa");
         ClassDataSharing cds = ClassDataSharing.builder()
-                                               .jre(JAVA_HOME)
+                                               .jri(JAVA_HOME)
                                                .applicationJar(mainJar)
                                                .createArchive(false)
                                                .logOutput(false)
@@ -62,20 +59,12 @@ class ClassDataSharingTest {
         assertDoesNotContain(cds.classList(), "io/helidon/weld/JrtDiscoveryStrategy");
 
         cds = ClassDataSharing.builder()
-                              .jre(JAVA_HOME)
+                              .jri(JAVA_HOME)
                               .applicationJar(mainJar)
                               .classListFile(cds.classListFile())
                               .archiveFile(archiveFile)
-                              .weldJrtJar(weldJrtJar)
                               .logOutput(false)
                               .build();
-
-        assertThat(cds.classListFile(), is(not(nullValue())));
-
-        assertContains(cds.classList(), "org/jboss/weld/environment/deployment/discovery/BeanArchiveScanner");
-        assertContains(cds.classList(), "io/helidon/weld/JrtBeanArchiveHandler");
-        assertContains(cds.classList(), "io/helidon/weld/JrtBeanArchiveScanner");
-        assertContains(cds.classList(), "io/helidon/weld/JrtDiscoveryStrategy");
 
         Path archive = cds.archiveFile();
         assertThat(archive, is(not(nullValue())));

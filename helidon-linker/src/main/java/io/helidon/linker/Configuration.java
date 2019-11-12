@@ -43,7 +43,7 @@ public class Configuration {
     private final List<String> defaultJvm;
     private final List<String> defaultArgs;
     private final List<String> defaultDebug;
-    private final Path jreDirectory;
+    private final Path jriDirectory;
     private final boolean verbose;
     private final boolean stripDebug;
     private final boolean cds;
@@ -63,14 +63,14 @@ public class Configuration {
         this.defaultJvm = builder.defaultJvm;
         this.defaultArgs = builder.defaultArgs;
         this.defaultDebug = builder.defaultDebug;
-        this.jreDirectory = builder.jreDirectory;
+        this.jriDirectory = builder.jriDirectory;
         this.verbose = builder.verbose;
         this.stripDebug = builder.stripDebug;
         this.cds = builder.cds;
     }
 
     /**
-     * Returns the JDK from which to create the JRE.
+     * Returns the JDK from which to create the JRI.
      *
      * @return The {@link JavaRuntime}.
      */
@@ -79,12 +79,12 @@ public class Configuration {
     }
 
     /**
-     * Returns the directory at which to create the JRE.
+     * Returns the directory at which to create the JRI.
      *
      * @return The path, guaranteed to not exist.
      */
-    public Path jreDirectory() {
-        return jreDirectory;
+    public Path jriDirectory() {
+        return jriDirectory;
     }
 
     /**
@@ -160,7 +160,7 @@ public class Configuration {
         private List<String> defaultArgs;
         private List<String> defaultDebug;
         private Path jdkDirectory;
-        private Path jreDirectory;
+        private Path jriDirectory;
         private boolean replace;
         private boolean verbose;
         private boolean stripDebug;
@@ -184,9 +184,9 @@ public class Configuration {
          *     --defaultJvmOptions options    Default JVM options to use when starting the application.
          *     --defaultDebugOptions options  Default JVM debug options to use when starting the application with {@code --debug}.
          *     --defaultArgs args             Default arguments to use when starting the application.
-         *     --jdk directory                The JDK directory from which to create the JRE. Defaults to current.
-         *     --jre directory                The directory at which to create the JRE.
-         *     --replace                      Delete the JRE directory if it exists.
+         *     --jdk directory                The JDK directory from which to create the JRI. Defaults to current.
+         *     --jri directory                The directory at which to create the JRI.
+         *     --replace                      Delete the JRI directory if it exists.
          *     --cds                          Create a CDS archive.
          *     --verbose                      Log detail messages.
          *     --stripDebug                   Strip debug information from JDK classes. Defaults to false.
@@ -199,8 +199,8 @@ public class Configuration {
                 if (arg.startsWith("--")) {
                     if (arg.equalsIgnoreCase("--jdk")) {
                         jdkDirectory(Paths.get(argAt(++i, args)));
-                    } else if (arg.equalsIgnoreCase("--jre")) {
-                        jreDirectory(Paths.get(argAt(++i, args)));
+                    } else if (arg.equalsIgnoreCase("--jri")) {
+                        jriDirectory(Paths.get(argAt(++i, args)));
                     } else if (arg.equalsIgnoreCase("--defaultJvmOptions")) {
                         defaultJvmOptions(argAt(++i, args));
                     } else if (arg.equalsIgnoreCase("--defaultDebugOptions")) {
@@ -312,7 +312,7 @@ public class Configuration {
         }
 
         /**
-         * Sets the JDK from which to create the JRE. Defaults to current.
+         * Sets the JDK from which to create the JRI. Defaults to current.
          *
          * @param jdkDirectory The directory. If not {@code null}, must be a valid JDK containing jmod files.
          * @return The builder.
@@ -325,19 +325,19 @@ public class Configuration {
         }
 
         /**
-         * Sets the directory at which to create the JRE. If not provided, will be created in
+         * Sets the directory at which to create the JRI. If not provided, will be created in
          * a subdirectory of the current working directory, with a name based on the {@link #mainJar}.
          *
-         * @param jreDirectory The directory. May be {@code null}.
+         * @param jriDirectory The directory. May be {@code null}.
          * @return The builder.
          */
-        public Builder jreDirectory(Path jreDirectory) {
-            this.jreDirectory = jreDirectory;
+        public Builder jriDirectory(Path jriDirectory) {
+            this.jriDirectory = jriDirectory;
             return this;
         }
 
         /**
-         * Sets whether or not to delete the {@code jreDirectory} if it exists. Defaults to {@code false}.
+         * Sets whether or not to delete the {@code jriDirectory} if it exists. Defaults to {@code false}.
          *
          * @param replace {@code true} if the directory should be deleted if present.
          * @return The builder.
@@ -402,7 +402,7 @@ public class Configuration {
                 throw new IllegalArgumentException("applicationJar required");
             }
             jdk = JavaRuntime.jdk(jdkDirectory);
-            jreDirectory = JavaRuntime.prepareJreDirectory(jreDirectory, mainJar, replace);
+            jriDirectory = JavaRuntime.prepareJriDirectory(jriDirectory, mainJar, replace);
             if (logWriter == null) {
                 logWriter = new SystemLogWriter(verbose ? Log.Level.DEBUG : Log.Level.INFO);
             }

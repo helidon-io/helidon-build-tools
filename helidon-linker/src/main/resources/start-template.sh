@@ -7,6 +7,7 @@ usage() {
     echo "Usage: ${scriptName} <options> [arg]..."
     echo
     echo "Options:"
+    echo
     echo "     --jvm <option>     Add one or more JVM options, replacing defaults."
     echo "     --debug            Add JVM debug options."
     echo "     --cds              Use the CDS archive if present."

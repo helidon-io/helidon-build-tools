@@ -44,7 +44,7 @@ import static java.util.Objects.requireNonNull;
 public class ClassDataSharing {
     private final Path applicationJar;
     private final String applicationModule;
-    private final Path jre;
+    private final Path jri;
     private final Path classListFile;
     private final Path archiveFile;
     private final List<String> classList;
@@ -61,7 +61,7 @@ public class ClassDataSharing {
     private ClassDataSharing(Builder builder) {
         this.applicationJar = builder.mainJar;
         this.applicationModule = builder.applicationModule;
-        this.jre = builder.jre;
+        this.jri = builder.jri;
         this.classListFile = builder.classListFile;
         this.archiveFile = builder.archiveFile;
         this.classList = builder.classList;
@@ -86,12 +86,12 @@ public class ClassDataSharing {
     }
 
     /**
-     * Returns the path to the JRE used to build the archive.
+     * Returns the path to the JRI used to build the archive.
      *
      * @return The path.
      */
-    public Path jre() {
-        return jre;
+    public Path jri() {
+        return jri;
     }
 
     /**
@@ -136,7 +136,7 @@ public class ClassDataSharing {
         private static final String CLASS_SUFFIX = ".class";
         private static final String MODULE_INFO_NAME = "module-info";
         private static final String BEAN_ARCHIVE_SCANNER = "org/jboss/weld/environment/deployment/discovery/BeanArchiveScanner";
-        private Path jre;
+        private Path jri;
         private String archiveDir;
         private String applicationModule;
         private Path mainJar;
@@ -160,13 +160,13 @@ public class ClassDataSharing {
         }
 
         /**
-         * Sets the path to the JRE to use when building the archive.
+         * Sets the path to the JRI to use when building the archive.
          *
-         * @param jre The path.
+         * @param jri The path.
          * @return The builder.
          */
-        public Builder jre(Path jre) {
-            this.jre = jre;
+        public Builder jri(Path jri) {
+            this.jri = jri;
             javaPath(); // Validate
             return this;
         }
@@ -181,7 +181,7 @@ public class ClassDataSharing {
             if (requireNonNull(mainJar).isAbsolute()) {
                 this.mainJar = assertJar(mainJar);
             } else {
-                this.mainJar = assertJar(jre.resolve(mainJar));
+                this.mainJar = assertJar(jri.resolve(mainJar));
             }
             return this;
         }
@@ -288,7 +288,7 @@ public class ClassDataSharing {
          * @throws Exception If an error occurs.
          */
         public ClassDataSharing build() throws Exception {
-            requireNonNull(jre, "java home required");
+            requireNonNull(jri, "java home required");
             if (mainJar == null && applicationModule == null) {
                 throw new IllegalStateException("Either application jar or module name required");
             } else if (mainJar != null && applicationModule != null) {
@@ -300,7 +300,7 @@ public class ClassDataSharing {
             } else {
                 this.targetOption = "-m";
                 this.target = applicationModule;
-                this.targetDescription = "module " + target + " in " + jre;
+                this.targetDescription = "module " + target + " in " + jri;
             }
 
             if (classListFile == null) {
@@ -314,7 +314,7 @@ public class ClassDataSharing {
 
             if (createArchive) {
                 if (archiveFile == null) {
-                    archiveFile = assertDir(jre.resolve(archiveDir)).resolve(ARCHIVE_NAME);
+                    archiveFile = assertDir(jri.resolve(archiveDir)).resolve(ARCHIVE_NAME);
                 }
                 buildCdsArchive();
             }
@@ -345,13 +345,13 @@ public class ClassDataSharing {
         }
 
         private List<String> buildClassList() throws Exception {
-            execute("Building startup class list for " + targetDescription,
+            execute("Creating startup class list for " + targetDescription,
                     XSHARE_OFF, XX_DUMP_LOADED_CLASS_LIST + classListFile);
             return loadClassList();
         }
 
         private void buildCdsArchive() throws Exception {
-            execute("Building CDS archive for " + targetDescription,
+            execute("Creating CDS archive for " + targetDescription,
                     XSHARE_DUMP, XX_SHARED_ARCHIVE_FILE + archiveFile, XX_SHARED_CLASS_LIST_FILE + classListFile);
         }
 
@@ -372,13 +372,13 @@ public class ClassDataSharing {
             command.addAll(args);
             builder.command(command);
 
-            builder.directory(jre.toFile());
+            builder.directory(jri.toFile());
 
             ProcessMonitor.newMonitor(action, builder, logOutput).run();
         }
 
         private Path javaPath() {
-            return JavaRuntime.javaCommand(jre);
+            return JavaRuntime.javaCommand(jri);
         }
 
         private static boolean isValid(Collection<?> value) {

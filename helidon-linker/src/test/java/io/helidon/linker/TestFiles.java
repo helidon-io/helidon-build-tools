@@ -19,24 +19,15 @@ package io.helidon.linker;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static io.helidon.linker.util.FileUtils.assertDir;
-import static io.helidon.linker.util.FileUtils.assertFile;
-
 /**
  * Test file utilities.
  */
 public class TestFiles {
-    private static Path CURRENT_DIR = Paths.get(System.getProperty("user.dir"));
     private static Path OUR_TARGET_DIR = ourTargetDir();
-    private static Path PROJECT_DIR = OUR_TARGET_DIR.getParent().getParent();
 
     private static Path ourTargetDir() {
         final Path ourCodeSource = Paths.get(TestFiles.class.getProtectionDomain().getCodeSource().getLocation().getPath());
         return ourCodeSource.getParent();
-    }
-
-    public static Path currentDir() {
-        return CURRENT_DIR;
     }
 
     public static Path targetDir() {
@@ -53,23 +44,7 @@ public class TestFiles {
         return targetDir.resolve("helidon-quickstart-mp.jar");
     }
 
-    public static Path jandexJar() {
-        return Paths.get("/Users/batsatt/.m2/repository/org/jboss/jandex/2.1.1.Final/jandex-2.1.1.Final.jar"); // TODO
-    }
-
     public static Path signedJar() {
         return Paths.get("/Users/batsatt/.m2/repository/org/bouncycastle/bcpkix-jdk15on/1.60/bcpkix-jdk15on-1.60.jar");  // TODO
-    }
-
-    public static Path agentJar() {
-        return assertFile(PROJECT_DIR.resolve("agent/target/helidon-jre-agent.jar"));
-    }
-
-    public static Path patchesDir() {
-        return assertDir(PROJECT_DIR.resolve("etc/patches"));
-    }
-
-    public static Path weldJrtJar() {
-        return assertFile(OUR_TARGET_DIR.resolve("lib/helidon-weld-jrt.jar"));
     }
 }

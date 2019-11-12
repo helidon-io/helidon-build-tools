@@ -39,17 +39,17 @@ class LinkerTest {
         Path mainJar = TestFiles.helidonSeJar();
         Path targetDir = mainJar.getParent();
         Configuration config = Configuration.builder()
-                                            .jreDirectory(targetDir.resolve("se-jars-jre"))
+                                            .jriDirectory(targetDir.resolve("se-jri-no-cds"))
                                             .mainJar(mainJar)
                                             .replace(true)
                                             .cds(false)
                                             .build();
-        Path jre = Linker.linker(config).link();
+        Path jri = Linker.linker(config).link();
 
-        FileUtils.assertDir(jre);
-        assertApplication(jre, mainJar.getFileName().toString());
-        assertCdsArchive(jre, false);
-        assertScript(jre);
+        FileUtils.assertDir(jri);
+        assertApplication(jri, mainJar.getFileName().toString());
+        assertCdsArchive(jri, false);
+        assertScript(jri);
     }
 
     @Test
@@ -57,18 +57,18 @@ class LinkerTest {
         Path mainJar = TestFiles.helidonSeJar();
         Path targetDir = mainJar.getParent();
         Configuration config = Configuration.builder()
-                                            .jreDirectory(targetDir.resolve("se-jars-jre"))
+                                            .jriDirectory(targetDir.resolve("se-jri"))
                                             .mainJar(mainJar)
                                             .replace(true)
                                             .verbose(false)
                                             .cds(true)
                                             .build();
-        Path jre = Linker.linker(config).link();
+        Path jri = Linker.linker(config).link();
 
-        FileUtils.assertDir(jre);
-        assertApplication(jre, mainJar.getFileName().toString());
-        assertCdsArchive(jre, true);
-        assertScript(jre);
+        FileUtils.assertDir(jri);
+        assertApplication(jri, mainJar.getFileName().toString());
+        assertCdsArchive(jri, true);
+        assertScript(jri);
     }
 
     @Test
@@ -76,22 +76,22 @@ class LinkerTest {
         Path mainJar = TestFiles.helidonMpJar();
         Path targetDir = mainJar.getParent();
         Configuration config = Configuration.builder()
-                                            .jreDirectory(targetDir.resolve("mp-jars-jre"))
+                                            .jriDirectory(targetDir.resolve("mp-jri"))
                                             .mainJar(mainJar)
                                             .replace(true)
                                             .cds(true)
                                             .build();
-        Path jre = Linker.linker(config).link();
+        Path jri = Linker.linker(config).link();
 
-        FileUtils.assertDir(jre);
-        assertApplication(jre, mainJar.getFileName().toString());
-        assertCdsArchive(jre, true);
-        assertScript(jre);
+        FileUtils.assertDir(jri);
+        assertApplication(jri, mainJar.getFileName().toString());
+        assertCdsArchive(jri, true);
+        assertScript(jri);
     }
 
-    private static void assertApplication(Path jre, String mainJarName) throws IOException {
-        FileUtils.assertDir(jre);
-        Path appDir = FileUtils.assertDir(jre.resolve("app"));
+    private static void assertApplication(Path jri, String mainJarName) throws IOException {
+        FileUtils.assertDir(jri);
+        Path appDir = FileUtils.assertDir(jri.resolve("app"));
         Path mainAppJar = FileUtils.assertFile(appDir.resolve(mainJarName));
         assertReadOnly(mainAppJar);
         Path appLibDir = FileUtils.assertDir(appDir.resolve("libs"));
@@ -100,14 +100,14 @@ class LinkerTest {
         }
     }
 
-    private static void assertScript(Path jre) throws IOException {
-        Path binDir = FileUtils.assertDir(jre.resolve("bin"));
+    private static void assertScript(Path jri) throws IOException {
+        Path binDir = FileUtils.assertDir(jri.resolve("bin"));
         Path scriptFile = FileUtils.assertFile(binDir.resolve("start"));
         assertExecutable(scriptFile);
     }
 
-    private static void assertCdsArchive(Path jre, boolean archiveExists) {
-        Path libDir = FileUtils.assertDir(jre.resolve("lib"));
+    private static void assertCdsArchive(Path jri, boolean archiveExists) {
+        Path libDir = FileUtils.assertDir(jri.resolve("lib"));
         Path archiveFile = libDir.resolve("start.jsa");
         assertThat(Files.exists(archiveFile), is(archiveExists));
     }

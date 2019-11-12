@@ -25,10 +25,11 @@ import java.util.spi.ToolProvider;
 import io.helidon.linker.util.JavaRuntime;
 import io.helidon.linker.util.Log;
 
+import static io.helidon.linker.Application.APP_DIR;
 import static io.helidon.linker.util.FileUtils.fromWorking;
 
 /**
- * Create a custom JRE by finding the Java modules required of a Helidon application and linking them via jlink,
+ * Create a custom runtime image by finding the Java modules required of a Helidon application and linking them via jlink,
  * then adding the jars, a start script and, optionally, a CDS archive. Adds Jandex indices as needed.
  */
 public class Linker {
@@ -38,10 +39,11 @@ public class Linker {
     private final ToolProvider jlink;
     private final List<String> jlinkArgs;
     private Configuration config;
+    private long startTime;
     private Application application;
     private Set<String> javaDependencies;
-    private JavaRuntime jre;
-    private Path jreMainJar;
+    private JavaRuntime jri;
+    private Path jriMainJar;
 
     /**
      * Main entry point.
@@ -77,21 +79,21 @@ public class Linker {
     }
 
     /**
-     * Create the JRE.
+     * Create the JRI.
      *
-     * @return The JRE directory.
+     * @return The JRI directory.
      */
     public Path link() {
-        final long startTime = System.currentTimeMillis();
+        begin();
         buildApplication();
         collectJavaDependencies();
         buildJlinkArguments();
-        buildJre();
+        buildJri();
         installJars();
         installCdsArchive();
         installStartScript();
-        complete(startTime);
-        return config.jreDirectory();
+        end();
+        return config.jriDirectory();
     }
 
     /**
@@ -101,6 +103,11 @@ public class Linker {
      */
     public Configuration config() {
         return config;
+    }
+
+    private void begin() {
+        Log.info("Creating Java Runtime Image from %s", config.mainJar().getFileName());
+        this.startTime = System.currentTimeMillis();
     }
 
     private void buildApplication() {
@@ -120,9 +127,9 @@ public class Linker {
 
         addArgument("--add-modules", String.join(",", javaDependencies));
 
-        // Tell jlink the directory in which to create and write the JRE
+        // Tell jlink the directory in which to create and write the JRI
 
-        addArgument("--output", config.jreDirectory());
+        addArgument("--output", config.jriDirectory());
 
         // Tell jlink to strip out unnecessary stuff
 
@@ -134,26 +141,26 @@ public class Linker {
         addArgument("--compress", "2");
     }
 
-    private void buildJre() {
-        Log.info("Building Helidon JRE: %s", jreDirectory());
+    private void buildJri() {
+        Log.info("Creating base JRI: %s", jriDirectory());
         final int result = jlink.run(System.out, System.err, jlinkArgs.toArray(new String[0]));
         if (result != 0) {
-            throw new Error("Helidon JRE creation failed.");
+            throw new Error("JRI creation failed.");
         }
-        jre = JavaRuntime.jre(config.jreDirectory(), config.jdk().version());
+        jri = JavaRuntime.jri(config.jriDirectory(), config.jdk().version());
     }
 
     private void installJars() {
-        Log.info("Copying %d application jars to %s", application.size(), jreDirectory());
-        this.jreMainJar = application.install(jre);
+        Log.info("Installing %d application jars in %s", application.size(), jriDirectory().resolve(APP_DIR));
+        this.jriMainJar = application.install(jri);
     }
 
     private void installCdsArchive() {
         if (config.cds()) {
             try {
                 ClassDataSharing.builder()
-                                .jre(jre.path())
-                                .applicationJar(jreMainJar)
+                                .jri(jri.path())
+                                .applicationJar(jriMainJar)
                                 .jvmOptions(config.defaultJvmOptions())
                                 .args((config.defaultArgs()))
                                 .archiveFile(application.archivePath())
@@ -167,27 +174,29 @@ public class Linker {
 
     private void installStartScript() {
         if (!WINDOWS) {
+            Log.info("Installing start script in %s", jriDirectory().resolve("bin"));
             StartScript.builder()
                        .defaultJvmOptions(config.defaultJvmOptions())
                        .defaultDebugOptions(config.defaultDebugOptions())
-                       .mainJar(jreMainJar)
+                       .mainJar(jriMainJar)
                        .defaultArgs(config.defaultArgs())
                        .build()
-                       .install(jre.path());
+                       .install(jri.path());
         }
     }
 
-    private void complete(long startTime) {
+    private void end() {
         final long elapsed = System.currentTimeMillis() - startTime;
         final float startSeconds = elapsed / 1000F;
-        Log.info("Helidon JRE completed in %.1f seconds", startSeconds);
+        Log.info("Helidon JRI completed in %.1f seconds", startSeconds);
         if (!WINDOWS) {
-            Log.info("See %s/start --help", jreDirectory().resolve("bin"));
+            Log.info("");
+            Log.info("Try %s/start --help", jriDirectory().resolve("bin"));
         }
     }
 
-    private Path jreDirectory() {
-        return fromWorking(config.jreDirectory());
+    private Path jriDirectory() {
+        return fromWorking(config.jriDirectory());
     }
 
     private void addArgument(String argument) {

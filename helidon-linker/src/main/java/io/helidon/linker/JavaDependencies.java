@@ -97,7 +97,7 @@ public class JavaDependencies {
     }
 
     private void addJar(Jar jar) {
-        Log.info("Collecting dependencies of %s", jar);
+        Log.info("  checking %s", jar);
         final List<String> args = new ArrayList<>();
         if (!javaHome.isCurrent()) {
             args.add(SYSTEM_ARG);
