@@ -92,12 +92,6 @@ public class JavaImageMojo extends AbstractMojo {
     private List<String> defaultArgs;
 
     /**
-     * Verbose output.
-     */
-    @Parameter(defaultValue = "false", property = "java.image.verbose")
-    private boolean verbose;
-
-    /**
      * Skip execution for this plugin.
      */
     @Parameter(defaultValue = "false", property = "java.image.skip")
@@ -117,15 +111,15 @@ public class JavaImageMojo extends AbstractMojo {
         try {
             Configuration config = Configuration.builder()
                                                 .logWriter(writer)
+                                                .verbose(getLog().isDebugEnabled())
                                                 .jdkDirectory(jdkDir)
                                                 .mainJar(mainJar)
                                                 .defaultJvmOptions(defaultJvmOptions)
                                                 .defaultArgs(defaultArgs)
                                                 .defaultDebugOptions(defaultDebugOptions)
-                                                .replace(true)
-                                                .verbose(verbose)
                                                 .cds(addCdsArchive)
                                                 .jriDirectory(outputDir)
+                                                .replace(true)
                                                 .build();
             Linker.linker(config).link();
         } catch (Exception e) {

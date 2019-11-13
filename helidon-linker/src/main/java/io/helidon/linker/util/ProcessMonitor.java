@@ -82,18 +82,17 @@ public class ProcessMonitor {
     private ProcessMonitor(ProcessBuilder builder, String description, Consumer<String> stdOut, Consumer<String> stdErr) {
         this.builder = requireNonNull(builder);
         this.description = requireNonNull(description);
+        this.monitorOut = Log::info;
         if (stdOut == null && stdErr == null) {
-            this.monitorOut = Log::info;
             this.capturing = true;
-            this.stdOut = null;
-            this.stdErr = null;
             this.capturedOutput = new ArrayList<>();
+            this.stdOut = this::capture;
+            this.stdErr = this::capture;
         } else if (stdOut != null && stdErr != null) {
-            this.monitorOut = stdOut;
             this.capturing = false;
+            this.capturedOutput = emptyList();
             this.stdOut = stdOut;
             this.stdErr = stdErr;
-            this.capturedOutput = emptyList();
         } else {
             throw new IllegalArgumentException("stdOut and stdErr must both be valid or both be null");
         }
@@ -120,6 +119,12 @@ public class ProcessMonitor {
                 capturedOutput.forEach(line -> message.append("    ").append(line).append(EOL));
             }
             throw new IOException(message.toString());
+        }
+    }
+
+    private void capture(String line) {
+        synchronized (capturedOutput) {
+            capturedOutput.add(line);
         }
     }
 

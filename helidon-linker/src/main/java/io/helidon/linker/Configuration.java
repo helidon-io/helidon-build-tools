@@ -258,7 +258,7 @@ public class Configuration {
          */
         public Builder defaultJvmOptions(List<String> jvmOptions) {
             if (isValid(jvmOptions)) {
-                this.defaultJvm = jvmOptions;
+                this.defaultJvm = split(jvmOptions);
             }
             return this;
         }
@@ -282,7 +282,7 @@ public class Configuration {
          */
         public Builder defaultArgs(List<String> args) {
             if (isValid(args)) {
-                this.defaultArgs = args;
+                this.defaultArgs = split(args);
             }
             return this;
         }
@@ -306,7 +306,7 @@ public class Configuration {
          */
         public Builder defaultDebugOptions(List<String> debugOptions) {
             if (isValid(debugOptions)) {
-                this.defaultDebug = debugOptions;
+                this.defaultDebug = split(debugOptions);
             }
             return this;
         }
@@ -420,6 +420,14 @@ public class Configuration {
 
         private static boolean isValid(Collection<?> value) {
             return value != null && !value.isEmpty();
+        }
+
+        private static List<String> split(List<String> list) {
+            if (list.size() == 1) {
+                return Arrays.asList(list.get(0).split(" "));
+            } else {
+                return list;
+            }
         }
 
         private static String argAt(int index, String[] args) {

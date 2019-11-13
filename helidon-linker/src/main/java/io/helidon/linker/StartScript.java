@@ -22,22 +22,28 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.linker.util.FileUtils;
+import io.helidon.linker.util.Log;
+import io.helidon.linker.util.ProcessMonitor;
 import io.helidon.linker.util.StreamUtils;
 
 import static io.helidon.linker.util.FileUtils.assertDir;
 import static java.util.Collections.emptyList;
-import static java.util.Objects.requireNonNull;
 
 /**
  * Installs a start script for a main jar.
  */
 public class StartScript {
-    private static final String INSTALL_PATH = "bin/start";
+    private static final String INSTALL_PATH = "start";
+    private final Path scriptFile;
     private final String script;
+
 
     /**
      * Returns a new builder.
@@ -48,19 +54,18 @@ public class StartScript {
         return new Builder();
     }
 
-    private StartScript(String script) {
-        this.script = script;
+    private StartScript(Builder builder) {
+        this.scriptFile = builder.scriptFile;
+        this.script = builder.script;
     }
 
     /**
-     * Install the script in the given JRI path.
+     * Install the script.
      *
-     * @param jriPath The path.
      * @return The path to the installed script.
      */
-    Path install(Path jriPath) {
+    Path install() {
         try {
-            final Path scriptFile = assertDir(jriPath).resolve(INSTALL_PATH);
             Files.copy(new ByteArrayInputStream(script.getBytes()), scriptFile);
             Files.setPosixFilePermissions(scriptFile, Set.of(
                 PosixFilePermission.OWNER_READ,
@@ -76,6 +81,29 @@ public class StartScript {
             throw new UncheckedIOException(e);
         }
     }
+
+    /**
+     * Execute the script with the given arguments.
+     *
+     * @param description A description of what is being executed.
+     * @param args The arguments.
+     */
+    public void execute(String description, String... args) {
+        final ProcessBuilder builder = new ProcessBuilder();
+        final List<String> command = new ArrayList<>();
+
+        command.add(scriptFile.toString());
+        command.addAll(Arrays.asList(args));
+        builder.command(command);
+
+        builder.directory(scriptFile.getParent().getParent().toFile());
+        try {
+            ProcessMonitor.newMonitor(description, builder, Log::info, Log::warn).run();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     /**
      * Returns the script.
@@ -107,15 +135,30 @@ public class StartScript {
         private static final String DEBUG_NONE = "Sets debug options.";
 
         private static final String TEMPLATE = template();
+        private Path installDirectory;
         private Path mainJar;
         private List<String> defaultJvmOptions;
         private List<String> defaultDebugOptions;
         private List<String> defaultArgs;
+        private Path scriptFile;
+        private String script;
+
 
         private Builder() {
             defaultJvmOptions = emptyList();
             defaultDebugOptions = List.of(Configuration.Builder.DEFAULT_DEBUG);
             defaultArgs = emptyList();
+        }
+
+        /**
+         * Sets the install directory.
+         *
+         * @param installDirectory The target.
+         * @return The builder.
+         */
+        public Builder installDirectory(Path installDirectory) {
+            this.installDirectory = assertDir(installDirectory);
+            return this;
         }
 
         /**
@@ -125,7 +168,7 @@ public class StartScript {
          * @return The builder.
          */
         public Builder mainJar(Path mainJar) {
-            this.mainJar = requireNonNull(mainJar);
+            this.mainJar = FileUtils.assertFile(mainJar);
             return this;
         }
 
@@ -174,6 +217,20 @@ public class StartScript {
          * @return The instance.
          */
         public StartScript build() {
+            if (installDirectory == null) {
+                throw new IllegalStateException("installTarget is required");
+            }
+            if (mainJar == null) {
+                throw new IllegalStateException("mainJar is required");
+            }
+
+            this.scriptFile = assertDir(installDirectory).resolve(INSTALL_PATH);
+            this.script = createScript();
+
+            return new StartScript(this);
+        }
+
+        private String createScript() {
             final String name = mainJar.getFileName().toString();
 
             final String jvm = String.join(" ", this.defaultJvmOptions);
@@ -185,15 +242,13 @@ public class StartScript {
             final String debug = String.join(" ", this.defaultDebugOptions);
             final String debugDesc = debug.isEmpty() ? DEBUG_NONE : DEBUG_SOME.replace(DEFAULT_DEBUG, debug);
 
-            final String script = TEMPLATE.replace(JAR_NAME, name)
-                                          .replace(DEFAULT_JVM, jvm)
-                                          .replace(DEFAULT_JVM_DESC, jvmDesc)
-                                          .replace(DEFAULT_ARGS, args)
-                                          .replace(DEFAULT_ARGS_DESC, argsDesc)
-                                          .replace(DEFAULT_DEBUG, debug)
-                                          .replace(DEFAULT_DEBUG_DESC, debugDesc);
-
-            return new StartScript(script);
+            return TEMPLATE.replace(JAR_NAME, name)
+                           .replace(DEFAULT_JVM, jvm)
+                           .replace(DEFAULT_JVM_DESC, jvmDesc)
+                           .replace(DEFAULT_ARGS, args)
+                           .replace(DEFAULT_ARGS_DESC, argsDesc)
+                           .replace(DEFAULT_DEBUG, debug)
+                           .replace(DEFAULT_DEBUG_DESC, debugDesc);
         }
 
         private static boolean isValid(Collection<?> value) {

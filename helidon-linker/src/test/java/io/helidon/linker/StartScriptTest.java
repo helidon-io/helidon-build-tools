@@ -40,9 +40,11 @@ class StartScriptTest {
 
     private static final Path JAR = TestFiles.helidonSeJar();
     private static final String JAR_NAME = JAR.getFileName().toString();
+    private static final Path BIN_DIR = FileUtils.ensureDirectory(TestFiles.targetDir().resolve("scripts/bin"));
+
 
     private StartScript.Builder builder() {
-        return StartScript.builder().mainJar(JAR);
+        return StartScript.builder().mainJar(JAR).installDirectory(BIN_DIR);
     }
 
     @Test
@@ -88,11 +90,9 @@ class StartScriptTest {
 
     @Test
     void testInstall() throws Exception {
-        Path targetDir = TestFiles.targetDir();
-        Path binDir = FileUtils.ensureDirectory(targetDir.resolve("scripts/bin"));
-        Files.deleteIfExists(binDir.resolve("start"));
+        Files.deleteIfExists(BIN_DIR.resolve("start"));
         StartScript script = builder().build();
-        Path scriptFile = script.install(binDir.getParent());
+        Path scriptFile = script.install();
         assertThat(Files.exists(scriptFile), is(true));
         assertExecutable(scriptFile);
         String onDisk = StreamUtils.toString(new FileInputStream(scriptFile.toFile()));

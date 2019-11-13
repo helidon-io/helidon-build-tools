@@ -23,10 +23,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.List;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
+import java.util.function.Consumer;
 
 import io.helidon.linker.util.JavaRuntime;
 import io.helidon.linker.util.Log;
@@ -131,11 +129,8 @@ public class ClassDataSharing {
         private static final String XX_DUMP_LOADED_CLASS_LIST = "-XX:DumpLoadedClassList=";
         private static final String XX_SHARED_ARCHIVE_FILE = "-XX:SharedArchiveFile=";
         private static final String XX_SHARED_CLASS_LIST_FILE = "-XX:SharedClassListFile=";
-        private static final String EXIT_ON_STARTED = "-Dexit.on.started";
+        private static final String EXIT_ON_STARTED = "-Dexit.on.started=✅";
         private static final String LIB_DIR_NAME = "lib";
-        private static final String CLASS_SUFFIX = ".class";
-        private static final String MODULE_INFO_NAME = "module-info";
-        private static final String BEAN_ARCHIVE_SCANNER = "org/jboss/weld/environment/deployment/discovery/BeanArchiveScanner";
         private Path jri;
         private String archiveDir;
         private String applicationModule;
@@ -144,7 +139,6 @@ public class ClassDataSharing {
         private Path archiveFile;
         private List<String> classList;
         private boolean createArchive;
-        private Path weldJrtJar;
         private String target;
         private String targetOption;
         private String targetDescription;
@@ -246,19 +240,6 @@ public class ClassDataSharing {
         }
 
         /**
-         * Sets the path to the {@code helidon-weld-jrt.jar} file. For MP apps, this will
-         * insert the class names from this jar into the class list so that they will be
-         * included in the CDS archive.
-         *
-         * @param weldJrtJar The path.
-         * @return The builder.
-         */
-        public Builder weldJrtJar(Path weldJrtJar) {
-            this.weldJrtJar = weldJrtJar == null ? null : assertJar(weldJrtJar);
-            return this;
-        }
-
-        /**
          * Sets whether or not to output from the build process(es) should be logged.
          * Defaults to {@code false} and will include the output in any exception message.
          *
@@ -310,8 +291,6 @@ public class ClassDataSharing {
                 this.classList = loadClassList();
             }
 
-            updateClassList();
-
             if (createArchive) {
                 if (archiveFile == null) {
                     archiveFile = assertDir(jri.resolve(archiveDir)).resolve(ARCHIVE_NAME);
@@ -320,28 +299,6 @@ public class ClassDataSharing {
             }
 
             return new ClassDataSharing(this);
-        }
-
-        private void updateClassList() throws IOException {
-            if (weldJrtJar != null) {
-                final int beanArchiveScannerIndex = classList.indexOf(BEAN_ARCHIVE_SCANNER);
-                if (beanArchiveScannerIndex > 0) {
-                    try (final JarFile jar = new JarFile(weldJrtJar.toFile())) {
-                        final List<String> classes = new ArrayList<>();
-                        final Enumeration<JarEntry> entries = jar.entries();
-                        while (entries.hasMoreElements()) {
-                            final JarEntry entry = entries.nextElement();
-                            final String name = entry.getName();
-                            if (name.endsWith(CLASS_SUFFIX) && !name.startsWith(MODULE_INFO_NAME)) {
-                                classes.add(name.substring(0, name.length() - CLASS_SUFFIX.length()));
-                            }
-                        }
-                        classList.addAll(beanArchiveScannerIndex, classes);
-                    }
-                } else {
-                    Log.warn("weldJrtJar provided but %s not found", BEAN_ARCHIVE_SCANNER);
-                }
-            }
         }
 
         private List<String> buildClassList() throws Exception {
@@ -361,6 +318,8 @@ public class ClassDataSharing {
 
         private void execute(String action, String... jvmArgs) throws Exception {
             final ProcessBuilder builder = new ProcessBuilder();
+            final Consumer<String> stdOut = logOutput ? Log::debug : null;
+            final Consumer<String> stdErr = logOutput ? Log::warn : null;
             final List<String> command = new ArrayList<>();
 
             command.add(javaPath().toString());
@@ -374,7 +333,7 @@ public class ClassDataSharing {
 
             builder.directory(jri.toFile());
 
-            ProcessMonitor.newMonitor(action, builder, logOutput).run();
+            ProcessMonitor.newMonitor(action, builder, stdOut, stdErr).run();
         }
 
         private Path javaPath() {

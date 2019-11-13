@@ -8,18 +8,18 @@ usage() {
     echo
     echo "Options:"
     echo
-    echo "     --jvm <option>     Add one or more JVM options, replacing defaults."
-    echo "     --debug            Add JVM debug options."
-    echo "     --cds              Use the CDS archive if present."
-    echo "     --dry | --dryRun   Prints the command rather than executing it."
+    echo "    --jvm <option>    Add one or more JVM options, replacing defaults."
+    echo "    --debug           Add JVM debug options."
+    echo "    --cds             Use the CDS archive if present."
+    echo "    --dry | --dryRun  Prints the command rather than executing it."
     echo
     echo "Unrecognized options are passed as args to <JAR_NAME>, replacing defaults."
     echo
     echo "Supported environment variables:"
     echo
-    echo "     DEFAULT_JVM     <DEFAULT_JVM_DESC>"
-    echo "     DEFAULT_ARGS    <DEFAULT_ARGS_DESC>"
-    echo "     DEFAULT_DEBUG   <DEFAULT_DEBUG_DESC>"
+    echo "    DEFAULT_JVM       <DEFAULT_JVM_DESC>"
+    echo "    DEFAULT_ARGS      <DEFAULT_ARGS_DESC>"
+    echo "    DEFAULT_DEBUG     <DEFAULT_DEBUG_DESC>"
     echo
     exit 0
 }

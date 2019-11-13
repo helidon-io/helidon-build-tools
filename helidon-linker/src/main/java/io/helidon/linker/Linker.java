@@ -44,6 +44,7 @@ public class Linker {
     private Set<String> javaDependencies;
     private JavaRuntime jri;
     private Path jriMainJar;
+    private StartScript startScript;
 
     /**
      * Main entry point.
@@ -174,25 +175,28 @@ public class Linker {
 
     private void installStartScript() {
         if (!WINDOWS) {
-            Log.info("Installing start script in %s", jriDirectory().resolve("bin"));
-            StartScript.builder()
-                       .defaultJvmOptions(config.defaultJvmOptions())
-                       .defaultDebugOptions(config.defaultDebugOptions())
-                       .mainJar(jriMainJar)
-                       .defaultArgs(config.defaultArgs())
-                       .build()
-                       .install(jri.path());
+            final Path installDir = jriDirectory().resolve("bin");
+            Log.info("Installing start script in %s", installDir);
+
+            startScript = StartScript.builder()
+                                     .installDirectory(installDir)
+                                     .defaultJvmOptions(config.defaultJvmOptions())
+                                     .defaultDebugOptions(config.defaultDebugOptions())
+                                     .mainJar(jriMainJar)
+                                     .defaultArgs(config.defaultArgs())
+                                     .build();
+             startScript.install();
         }
     }
 
     private void end() {
         final long elapsed = System.currentTimeMillis() - startTime;
         final float startSeconds = elapsed / 1000F;
-        Log.info("Helidon JRI completed in %.1f seconds", startSeconds);
         if (!WINDOWS) {
-            Log.info("");
-            Log.info("Try %s/start --help", jriDirectory().resolve("bin"));
+            final String description = String.format("Executing %s/start --help", jriDirectory().resolve("bin"));
+            startScript.execute(description,"--help");
         }
+        Log.info("Helidon JRI completed in %.1f seconds", startSeconds);
     }
 
     private Path jriDirectory() {

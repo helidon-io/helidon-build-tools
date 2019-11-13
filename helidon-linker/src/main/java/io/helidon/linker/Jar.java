@@ -341,27 +341,27 @@ public class Jar {
     }
 
     private Index loadIndex() {
-        Log.debug("Loading Jandex index for %s", this);
+        Log.info("  checking index in CDI beans archive %s", this);
         try (InputStream in = getEntry(JANDEX_INDEX_PATH).data()) {
             return new IndexReader(in).read();
         } catch (IllegalArgumentException e) {
-            Log.warn("Jandex index in %s is not valid: %s", path, e.getMessage());
+            Log.warn("  Jandex index in %s is not valid, will re-create: %s", path, e.getMessage());
         } catch (UnsupportedVersion e) {
-            Log.warn("Jandex index in %s is an unsupported version: %s", path, e.getMessage());
+            Log.warn("  Jandex index in %s is an unsupported version, will re-create: %s", path, e.getMessage());
         } catch (IOException e) {
-            Log.warn("Jandex index in %s cannot be read: %s", path, e.getMessage());
+            Log.warn("  Jandex index in %s cannot be read, will re-create: %s", path, e.getMessage());
         }
         return null;
     }
 
     private Index buildIndex() {
-        Log.info("Building index for CDI beans archive %s", this);
+        Log.info("  creating missing index for CDI beans archive %s", this);
         final Indexer indexer = new Indexer();
         classEntries().forEach(entry -> {
             try {
                 indexer.index(entry.data());
             } catch (IOException e) {
-                Log.warn("Could not index class %s in %s: %s", entry.path(), this, e.getMessage());
+                Log.warn("  could not index class %s in %s: %s", entry.path(), this, e.getMessage());
             }
         });
         return indexer.complete();

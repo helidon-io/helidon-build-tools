@@ -39,6 +39,7 @@ public class MavenLogWriter implements io.helidon.linker.util.Log.Writer {
     @Override
     public void write(Level level, Throwable thrown, String message, Object... args) {
         switch (level) {
+
             case DEBUG:
                 if (log.isDebugEnabled()) {
                     final String msg = String.format(message, args);
@@ -48,6 +49,8 @@ public class MavenLogWriter implements io.helidon.linker.util.Log.Writer {
                         log.debug(msg, thrown);
                     }
                 }
+                break;
+
             case INFO: {
                 if (log.isInfoEnabled()) {
                     final String msg = String.format(message, args);
