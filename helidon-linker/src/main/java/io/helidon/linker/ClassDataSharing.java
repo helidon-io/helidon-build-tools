@@ -130,6 +130,8 @@ public class ClassDataSharing {
         private static final String XX_SHARED_ARCHIVE_FILE = "-XX:SharedArchiveFile=";
         private static final String XX_SHARED_CLASS_LIST_FILE = "-XX:SharedClassListFile=";
         private static final String EXIT_ON_STARTED = "-Dexit.on.started=✅";
+        private static final String SKIPPED_CLASS_PREFIX = "skip writing class";
+        private static final String CANNOT_FIND_PREFIX = "Preload Warning: Cannot find";
         private static final String LIB_DIR_NAME = "lib";
         private Path jri;
         private String archiveDir;
@@ -308,7 +310,7 @@ public class ClassDataSharing {
         }
 
         private void buildCdsArchive() throws Exception {
-            execute("Creating CDS archive for " + targetDescription,
+            execute("Creating Class Data Sharing archive for " + targetDescription,
                     XSHARE_DUMP, XX_SHARED_ARCHIVE_FILE + archiveFile, XX_SHARED_CLASS_LIST_FILE + classListFile);
         }
 
@@ -317,7 +319,7 @@ public class ClassDataSharing {
         }
 
         private void execute(String action, String... jvmArgs) throws Exception {
-            final ProcessBuilder builder = new ProcessBuilder();
+            final ProcessBuilder processBuilder = new ProcessBuilder();
             final Consumer<String> stdOut = logOutput ? Log::debug : null;
             final Consumer<String> stdErr = logOutput ? Log::warn : null;
             final List<String> command = new ArrayList<>();
@@ -329,11 +331,22 @@ public class ClassDataSharing {
             command.add(targetOption);
             command.add(target);
             command.addAll(args);
-            builder.command(command);
+            processBuilder.command(command);
 
-            builder.directory(jri.toFile());
+            processBuilder.directory(jri.toFile());
 
-            ProcessMonitor.newMonitor(action, builder, stdOut, stdErr).run();
+            ProcessMonitor.builder()
+                          .description(action)
+                          .processBuilder(processBuilder)
+                          .stdOut(stdOut)
+                          .stdErr(stdErr)
+                          .filter(Builder::filter)
+                          .build()
+                          .execute();
+        }
+
+        private static boolean filter(String line) {
+            return !line.startsWith(SKIPPED_CLASS_PREFIX) && !line.startsWith(CANNOT_FIND_PREFIX);
         }
 
         private Path javaPath() {

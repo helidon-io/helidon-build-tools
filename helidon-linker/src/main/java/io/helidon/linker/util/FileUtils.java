@@ -18,12 +18,16 @@ package io.helidon.linker.util;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -184,6 +188,48 @@ public class FileUtils {
             }
         }
         return directory;
+    }
+
+    /**
+     * Returns the total size of all files in the given path, including subdirectories.
+     *
+     * @param path The path. May be a file or directory.
+     * @return The size, in bytes.
+     * @throws UncheckedIOException If an error occurs.
+     */
+    public static long sizeOf(Path path) {
+        try {
+            if (Files.isRegularFile(path)) {
+                return Files.size(path);
+            } else {
+                final AtomicLong size = new AtomicLong();
+                Files.walkFileTree(path, new FileVisitor<>() {
+                    @Override
+                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                        size.addAndGet(attrs.size());
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFileFailed(Path file, IOException exc) {
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+                return size.get();
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private FileUtils() {

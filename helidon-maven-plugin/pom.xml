@@ -65,7 +65,7 @@
                 <artifactId>maven-plugin-plugin</artifactId>
                 <configuration>
                     <goalPrefix>helidon</goalPrefix>
-                    <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
+                    <skipErrorNoDescriptorsFound>false</skipErrorNoDescriptorsFound>
                 </configuration>
                 <executions>
                     <execution>

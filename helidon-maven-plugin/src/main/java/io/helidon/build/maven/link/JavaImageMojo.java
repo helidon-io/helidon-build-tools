@@ -35,7 +35,7 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
 /**
- * Maven goal to create a custom Java Runtime Image  {@code java-image}.
+ * Maven goal to create a custom Java Runtime Image {@code java-image}.
  */
 @Mojo(name = "java-image",
     defaultPhase = LifecyclePhase.PACKAGE,
@@ -68,10 +68,10 @@ public class JavaImageMojo extends AbstractMojo {
     private File sourceJavaHome;
 
     /**
-     * Add a CDS archive.
+     * Add a Class Data Sharing archive.
      */
-    @Parameter(defaultValue = "true", property = "java.image.addCdsArchive")
-    private boolean addCdsArchive;
+    @Parameter(defaultValue = "true", property = "java.image.addClassDataSharingArchive")
+    private boolean addClassDataSharingArchive;
 
     /**
      * Default JVM options to use when starting the application.
@@ -117,7 +117,7 @@ public class JavaImageMojo extends AbstractMojo {
                                                 .defaultJvmOptions(defaultJvmOptions)
                                                 .defaultArgs(defaultArgs)
                                                 .defaultDebugOptions(defaultDebugOptions)
-                                                .cds(addCdsArchive)
+                                                .cds(addClassDataSharingArchive)
                                                 .jriDirectory(outputDir)
                                                 .replace(true)
                                                 .build();

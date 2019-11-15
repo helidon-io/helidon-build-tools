@@ -16,12 +16,14 @@
 
 package io.helidon.linker;
 
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.spi.ToolProvider;
 
+import io.helidon.linker.util.FileUtils;
 import io.helidon.linker.util.JavaRuntime;
 import io.helidon.linker.util.Log;
 
@@ -36,6 +38,7 @@ public class Linker {
     private static final String JLINK_TOOL_NAME = "jlink";
     private static final String JLINK_DEBUG_PROPERTY = JLINK_TOOL_NAME + ".debug";
     private static final boolean WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
+    private static final float BYTES_PER_MEGABYTE = 1024F * 1024F;
     private final ToolProvider jlink;
     private final List<String> jlinkArgs;
     private Configuration config;
@@ -143,7 +146,7 @@ public class Linker {
     }
 
     private void buildJri() {
-        Log.info("Creating base JRI: %s", jriDirectory());
+        Log.info("Creating base image: %s", jriDirectory());
         final int result = jlink.run(System.out, System.err, jlinkArgs.toArray(new String[0]));
         if (result != 0) {
             throw new Error("JRI creation failed.");
@@ -185,18 +188,42 @@ public class Linker {
                                      .mainJar(jriMainJar)
                                      .defaultArgs(config.defaultArgs())
                                      .build();
-             startScript.install();
+            startScript.install();
         }
     }
 
     private void end() {
+         if (!WINDOWS) {
+            final String description = String.format("Executing %s/start --help", jriDirectory().resolve("bin"));
+            startScript.execute(description, "--help");
+        }
+        try {
+            final long jars = application.diskSize();
+            final long jdk = config.jdk().diskSize();
+            final long jri = this.jri.diskSize();
+            final long cds = config.cds() ? FileUtils.sizeOf(application.archivePath()) : 0;
+            final long initial = jars + jdk;
+            final float reduction = (1F - (float) jri / (float) initial) * 100F;
+            
+            Log.info("");
+            Log.info("Initial disk size: %5.1fM  (%.1f application, %.1f JDK)", mb(initial), mb(jars), mb(jdk));
+            if (cds == 0) {
+                Log.info("  Image disk size: %5.1fM", mb(jri));
+            } else {
+                Log.info("  Image disk size: %5.1fM (includes %.1f CDS archive)", mb(jri), mb(cds));
+            }
+            Log.info("        Reduction: %5.1f%%", reduction);
+        } catch (UncheckedIOException e) {
+            Log.debug("Could not compute disk size: %s", e.getMessage());
+        }
         final long elapsed = System.currentTimeMillis() - startTime;
         final float startSeconds = elapsed / 1000F;
-        if (!WINDOWS) {
-            final String description = String.format("Executing %s/start --help", jriDirectory().resolve("bin"));
-            startScript.execute(description,"--help");
-        }
-        Log.info("Helidon JRI completed in %.1f seconds", startSeconds);
+        Log.info("");
+        Log.info("Java Runtime Image completed in %.1f seconds", startSeconds);
+    }
+
+    private static float mb(final long bytes) {
+        return ((float) bytes) / BYTES_PER_MEGABYTE;
     }
 
     private Path jriDirectory() {

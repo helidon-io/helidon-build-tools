@@ -41,6 +41,7 @@ import static java.util.Collections.emptyList;
  */
 public class StartScript {
     private static final String INSTALL_PATH = "start";
+    private static final String EOL = System.getProperty("line.separator");
     private final Path scriptFile;
     private final String script;
 
@@ -89,16 +90,22 @@ public class StartScript {
      * @param args The arguments.
      */
     public void execute(String description, String... args) {
-        final ProcessBuilder builder = new ProcessBuilder();
+        final ProcessBuilder processBuilder = new ProcessBuilder();
         final List<String> command = new ArrayList<>();
-
         command.add(scriptFile.toString());
         command.addAll(Arrays.asList(args));
-        builder.command(command);
+        processBuilder.command(command);
+        processBuilder.directory(scriptFile.getParent().getParent().toFile());
 
-        builder.directory(scriptFile.getParent().getParent().toFile());
         try {
-            ProcessMonitor.newMonitor(description, builder, Log::info, Log::warn).run();
+            final List<String> output = ProcessMonitor.builder()
+                                                      .description(description)
+                                                      .processBuilder(processBuilder)
+                                                      .capture(true)
+                                                      .build()
+                                                      .execute()
+                                                      .output();
+            Log.info(String.join(EOL, output));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -127,11 +134,11 @@ public class StartScript {
         private static final String DEFAULT_ARGS_DESC = "<DEFAULT_ARGS_DESC>";
         private static final String DEFAULT_JVM_DESC = "<DEFAULT_JVM_DESC>";
         private static final String DEFAULT_DEBUG_DESC = "<DEFAULT_DEBUG_DESC>";
-        private static final String JVM_SOME = "Overrides default JVM options: ${defaultJvm}";
+        private static final String JVM_SOME = "Overrides default JVM options (${defaultJvm})";
         private static final String JVM_NONE = "Sets default JVM options.";
-        private static final String ARGS_SOME = "Overrides default arguments: ${defaultArgs}";
+        private static final String ARGS_SOME = "Overrides default arguments (${defaultArgs})";
         private static final String ARGS_NONE = "Sets default arguments.";
-        private static final String DEBUG_SOME = "Overrides default debug options: ${defaultDebug}";
+        private static final String DEBUG_SOME = "Overrides default debug options (${defaultDebug})";
         private static final String DEBUG_NONE = "Sets debug options.";
 
         private static final String TEMPLATE = template();
@@ -142,7 +149,6 @@ public class StartScript {
         private List<String> defaultArgs;
         private Path scriptFile;
         private String script;
-
 
         private Builder() {
             defaultJvmOptions = emptyList();

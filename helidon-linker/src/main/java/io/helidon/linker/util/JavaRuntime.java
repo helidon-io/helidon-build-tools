@@ -271,6 +271,16 @@ public class JavaRuntime {
         return FileUtils.ensureDirectory(path().resolve(relativeDir));
     }
 
+    /**
+     * Returns the on disk size.
+     *
+     * @return The size, in bytes.
+     * @throws UncheckedIOException If an error occurs.
+     */
+    public long diskSize() {
+        return FileUtils.sizeOf(path());
+    }
+
     private Runtime.Version findVersion() {
         assertHasJavaBaseJmod();
         final Path javaBase = assertFile(jmodsDir.resolve(JAVA_BASE_JMOD));

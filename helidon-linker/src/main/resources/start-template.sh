@@ -8,10 +8,10 @@ usage() {
     echo
     echo "Options:"
     echo
-    echo "    --jvm <option>    Add one or more JVM options, replacing defaults."
-    echo "    --debug           Add JVM debug options."
     echo "    --cds             Use the CDS archive if present."
+    echo "    --debug           Add JVM debug options."
     echo "    --dry | --dryRun  Prints the command rather than executing it."
+    echo "    --jvm <option>    Add one or more JVM options, replacing defaults."
     echo
     echo "Unrecognized options are passed as args to <JAR_NAME>, replacing defaults."
     echo
@@ -56,9 +56,9 @@ init() {
 
     while (( ${#} > 0 )); do
         case "${1}" in
-            -h | --help) usage ;;
             -c | --cds) setCds ;;
             -d | --debug) debug="${debugOptions} " ;;
+            -h | --help) usage ;;
             -j | --jvm) shift; appendVar jvm "${1}" ;;
             --dry | --dryRun) dryRun=true ;;
             *) appendVar args "${1}" ;;

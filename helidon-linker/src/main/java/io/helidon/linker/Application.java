@@ -16,6 +16,7 @@
 
 package io.helidon.linker;
 
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -105,6 +106,17 @@ public class Application {
      */
     public int size() {
         return 1 + classPath.size();
+    }
+
+    /**
+     * Returns the on disk size.
+     *
+     * @return The size, in bytes.
+     * @throws UncheckedIOException If an error occurs.
+     */
+    public long diskSize() {
+        return jars().mapToLong(jar -> FileUtils.sizeOf(jar.path()))
+                     .sum();
     }
 
     private Stream<Jar> jars() {

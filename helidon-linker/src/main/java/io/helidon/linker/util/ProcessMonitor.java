@@ -26,9 +26,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import static java.util.Collections.emptyList;
-import static java.util.Objects.requireNonNull;
 
 /**
  * Executes a process and waits for completion, monitoring the output.
@@ -43,72 +43,147 @@ public class ProcessMonitor {
     private final Consumer<String> monitorOut;
     private final Consumer<String> stdOut;
     private final Consumer<String> stdErr;
+    private final Predicate<String> filter;
 
     /**
-     * Returns a new monitor for the given {@link ProcessBuilder}. If {@code logOutput} is {@code false}, output is captured
-     * and included in the exception message if the process returns a non-zero exit code.
+     * Returns a new builder.
      *
-     * @param description A description of the process.
-     * @param builder The builder, which must be ready to start.
-     * @param logOutput {@code true} if process output should be logged..
-     * included in the exception message if the process returns a non-zero exit code.
-     * @return The monitor.
+     * @return The builder.
      */
-    public static ProcessMonitor newMonitor(String description, ProcessBuilder builder, boolean logOutput) {
-        if (logOutput) {
-            return newMonitor(description, builder, Log::info, Log::warn);
-        } else {
-            return newMonitor(description, builder, null, null);
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Builder for a {@link ProcessMonitor}.
+     */
+    public static class Builder {
+        private ProcessBuilder builder;
+        private String description;
+        private boolean capture;
+        private Consumer<String> monitorOut;
+        private Consumer<String> stdOut;
+        private Consumer<String> stdErr;
+        private Predicate<String> filter;
+
+        private Builder() {
         }
-    }
 
-    /**
-     * Returns a new monitor for the given {@link ProcessBuilder}. If both {@code stdOut} and {@code stdErr} are
-     * {@code null}, output is captured and included in the exception message if the process returns a non-zero exit code.
-     *
-     * @param description A description of the process.
-     * @param builder The builder, which must be ready to start.
-     * @param stdOut A consumer for the process output stream. Output is captured if {@code null}.
-     * @param stdErr A consumer for the process error stream. Output is captured if {@code null}.
-     * @return The monitor.
-     */
-    public static ProcessMonitor newMonitor(String description,
-                                            ProcessBuilder builder,
-                                            Consumer<String> stdOut,
-                                            Consumer<String> stdErr) {
-        return new ProcessMonitor(builder, description, stdOut, stdErr);
-    }
+        /**
+         * Sets the process builder.
+         *
+         * @param processBuilder The process builder.
+         * @return This builder.
+         */
+        public Builder processBuilder(ProcessBuilder processBuilder) {
+            this.builder = processBuilder;
+            return this;
+        }
 
-    private ProcessMonitor(ProcessBuilder builder, String description, Consumer<String> stdOut, Consumer<String> stdErr) {
-        this.builder = requireNonNull(builder);
-        this.description = requireNonNull(description);
-        this.monitorOut = Log::info;
-        if (stdOut == null && stdErr == null) {
-            this.capturing = true;
-            this.capturedOutput = new ArrayList<>();
-            this.stdOut = this::capture;
-            this.stdErr = this::capture;
-        } else if (stdOut != null && stdErr != null) {
-            this.capturing = false;
-            this.capturedOutput = emptyList();
+        /**
+         * Sets the process description.
+         *
+         * @param description The description.
+         * @return This builder.
+         */
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        /**
+         * Sets whether or not to capture output.
+         *
+         * @param capture {@code true} if output should be capturee.
+         * @return This builder.
+         */
+        public Builder capture(boolean capture) {
+            this.capture = capture;
+            return this;
+        }
+
+        /**
+         * Sets the consumer for process {@code stdout} stream.
+         *
+         * @param stdOut The description.
+         * @return This builder.
+         */
+        public Builder stdOut(Consumer<String> stdOut) {
             this.stdOut = stdOut;
+            return this;
+        }
+
+        /**
+         * Sets the consumer for process {@code stderr} stream.
+         *
+         * @param stdErr The description.
+         * @return This builder.
+         */
+        public Builder stdErr(Consumer<String> stdErr) {
             this.stdErr = stdErr;
-        } else {
-            throw new IllegalArgumentException("stdOut and stdErr must both be valid or both be null");
+            return this;
+        }
+
+        /**
+         * Sets a filter for all process output.
+         *
+         * @param filter The filter.
+         * @return This builder.
+         */
+        public Builder filter(Predicate<String> filter) {
+            this.filter = filter;
+            return this;
+        }
+
+        public ProcessMonitor build() {
+            if (builder == null) {
+                throw new IllegalStateException("processBuilder required");
+            }
+            if (description == null) {
+                throw new IllegalStateException("description required");
+            }
+            monitorOut = stdOut;
+            if (stdOut == null) {
+                capture = true;
+                stdOut = ProcessMonitor::devNull;
+                monitorOut = Log::info;
+            }
+            if (stdErr == null) {
+                capture = true;
+                stdErr = ProcessMonitor::devNull;
+            }
+            if (filter == null) {
+                filter = line -> true;
+            }
+            return new ProcessMonitor(this);
         }
     }
 
+    private ProcessMonitor(Builder builder) {
+        this.builder = builder.builder;
+        this.description = builder.description;
+        this.capturing = builder.capture;
+        this.monitorOut = builder.monitorOut;
+        this.stdOut = builder.stdOut;
+        this.stdErr = builder.stdErr;
+        this.capturedOutput = capturing ? new ArrayList<>() : emptyList();
+        this.filter = builder.filter;
+    }
+
     /**
-     * Starts the process and waits for completion.
+     * Executes the process and waits for completion.
      *
+     * @return This instance.
      * @throws IOException If the process fails.
      */
-    public void run() throws IOException, InterruptedException {
-        monitorOut.accept(capturing ? description : (description + EOL));
+    public ProcessMonitor execute() throws IOException, InterruptedException {
+        if (description != null) {
+            monitorOut.accept(description);
+        }
         final Process process = builder.start();
-        final Future out = monitor(process.getInputStream(), stdOut);
-        final Future err = monitor(process.getErrorStream(), stdErr);
-        int exitCode = process.waitFor();
+        final Future out = monitor(process.getInputStream(), filter, capturing ? this::captureStdOut : stdOut);
+        final Future err = monitor(process.getErrorStream(), filter, capturing ? this::captureStdErr : stdErr);
+        final int exitCode = process.waitFor();
         out.cancel(true);
         err.cancel(true);
         if (exitCode != 0) {
@@ -120,15 +195,40 @@ public class ProcessMonitor {
             }
             throw new IOException(message.toString());
         }
+        return this;
     }
 
-    private void capture(String line) {
+    /**
+     * Returns the captured output.
+     *
+     * @return The output. Empty if capture not enabled.
+     */
+    public List<String> output() {
+        return capturedOutput;
+    }
+
+    private static void devNull(String line) {
+    }
+
+    private void captureStdOut(String line) {
+        stdOut.accept(line);
         synchronized (capturedOutput) {
             capturedOutput.add(line);
         }
     }
 
-    private static Future monitor(InputStream input, Consumer<String> output) {
-        return EXECUTOR.submit(() -> new BufferedReader(new InputStreamReader(input)).lines().forEach(output));
+    private void captureStdErr(String line) {
+        stdErr.accept(line);
+        synchronized (capturedOutput) {
+            capturedOutput.add(line);
+        }
+    }
+
+    private static Future monitor(InputStream input, Predicate<String> filter, Consumer<String> output) {
+        return EXECUTOR.submit(() -> new BufferedReader(new InputStreamReader(input)).lines().forEach(line -> {
+            if (filter.test(line)) {
+                output.accept(line);
+            }
+        }));
     }
 }
