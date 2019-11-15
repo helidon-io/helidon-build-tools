@@ -37,8 +37,9 @@ import static io.helidon.linker.util.FileUtils.fromWorking;
 public class Linker {
     private static final String JLINK_TOOL_NAME = "jlink";
     private static final String JLINK_DEBUG_PROPERTY = JLINK_TOOL_NAME + ".debug";
-    private static final boolean WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
     private static final float BYTES_PER_MEGABYTE = 1024F * 1024F;
+    private static final String EOL = System.getProperty("line.separator");
+    private static final String INDENT = "    ";
     private final ToolProvider jlink;
     private final List<String> jlinkArgs;
     private Configuration config;
@@ -96,6 +97,7 @@ public class Linker {
         installJars();
         installCdsArchive();
         installStartScript();
+        reportSizes();
         end();
         return config.jriDirectory();
     }
@@ -177,26 +179,37 @@ public class Linker {
     }
 
     private void installStartScript() {
-        if (!WINDOWS) {
+        try {
             final Path installDir = jriDirectory().resolve("bin");
-            Log.info("Installing start script in %s", installDir);
-
             startScript = StartScript.builder()
                                      .installDirectory(installDir)
                                      .defaultJvmOptions(config.defaultJvmOptions())
                                      .defaultDebugOptions(config.defaultDebugOptions())
                                      .mainJar(jriMainJar)
                                      .defaultArgs(config.defaultArgs())
+                                     .cdsInstalled(config.cds())
                                      .build();
+
+            Log.info("Installing start script in %s", installDir);
             startScript.install();
+
+            final Path scriptFile = fromWorking(startScript.scriptFile());
+            final String description = String.format("Executing %s --help", scriptFile);
+            final List<String> output = startScript.execute(description, "--help");
+            Log.info(INDENT + String.join(EOL + INDENT, output));
+        } catch (IllegalStateException e) {
+            final boolean cds = config.cds();
+            final Path root = fromWorking(jri.path());
+            final String jvm = cds ? " -XX:SharedArchiveFile=lib/start.jsa" : "";
+            final String command = String.format("cd %s; bin/java%s -jar app/%s", root, jvm, jriMainJar.getFileName());
+            Log.info("Start script cannot be created for this platform, use: %s%s%s%s%s", EOL, EOL, INDENT, command, EOL);
+            if (cds) {
+                Log.info("Note that for CDS to function, the jar path MUST be relative as shown.");
+            }
         }
     }
 
-    private void end() {
-         if (!WINDOWS) {
-            final String description = String.format("Executing %s/start --help", jriDirectory().resolve("bin"));
-            startScript.execute(description, "--help");
-        }
+    private void reportSizes() {
         try {
             final long jars = application.diskSize();
             final long jdk = config.jdk().diskSize();
@@ -204,7 +217,6 @@ public class Linker {
             final long cds = config.cds() ? FileUtils.sizeOf(application.archivePath()) : 0;
             final long initial = jars + jdk;
             final float reduction = (1F - (float) jri / (float) initial) * 100F;
-            
             Log.info("");
             Log.info("Initial disk size: %5.1fM  (%.1f application, %.1f JDK)", mb(initial), mb(jars), mb(jdk));
             if (cds == 0) {
@@ -216,6 +228,9 @@ public class Linker {
         } catch (UncheckedIOException e) {
             Log.debug("Could not compute disk size: %s", e.getMessage());
         }
+    }
+
+    private void end() {
         final long elapsed = System.currentTimeMillis() - startTime;
         final float startSeconds = elapsed / 1000F;
         Log.info("");

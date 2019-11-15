@@ -64,7 +64,9 @@ public class JavaImageMojo extends AbstractMojo {
      * The Java Home directory from which to build the image. Must contain {@code .jmod} files.
      * Defaults to the current JVM home directory.
      */
-    @Parameter(property = "java.image.sourceJavaHome")
+    // This feature needs more work: e.g. future JDKs have updated class file versions,
+    // so reading module-info.class fails. Likely need to execute process.    
+    // @Parameter(property = "java.image.sourceJavaHome")
     private File sourceJavaHome;
 
     /**

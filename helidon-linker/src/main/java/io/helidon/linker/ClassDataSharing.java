@@ -278,7 +278,10 @@ public class ClassDataSharing {
                 throw new IllegalStateException("Cannot specify both application jar and module name");
             } else if (mainJar != null) {
                 this.targetOption = "-jar";
-                this.target = mainJar.toString();
+                // Note that for CDS archives to work correctly, the path used at runtime must be the
+                // same as that used here. Make this path relative to the JRI so that it can be moved
+                // around and still function.
+                this.target = jri.relativize(mainJar).toString();
                 this.targetDescription = mainJar.getFileName().toString();
             } else {
                 this.targetOption = "-m";

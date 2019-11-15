@@ -18,6 +18,7 @@ package io.helidon.linker;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,7 +30,6 @@ import java.util.List;
 import java.util.Set;
 
 import io.helidon.linker.util.FileUtils;
-import io.helidon.linker.util.Log;
 import io.helidon.linker.util.ProcessMonitor;
 import io.helidon.linker.util.StreamUtils;
 
@@ -41,7 +41,6 @@ import static java.util.Collections.emptyList;
  */
 public class StartScript {
     private static final String INSTALL_PATH = "start";
-    private static final String EOL = System.getProperty("line.separator");
     private final Path scriptFile;
     private final String script;
 
@@ -88,29 +87,45 @@ public class StartScript {
      *
      * @param description A description of what is being executed.
      * @param args The arguments.
+     * @return The output.
      */
-    public void execute(String description, String... args) {
+    public List<String> execute(String description, String... args) {
         final ProcessBuilder processBuilder = new ProcessBuilder();
         final List<String> command = new ArrayList<>();
         command.add(scriptFile.toString());
         command.addAll(Arrays.asList(args));
         processBuilder.command(command);
         processBuilder.directory(scriptFile.getParent().getParent().toFile());
-
         try {
-            final List<String> output = ProcessMonitor.builder()
-                                                      .description(description)
-                                                      .processBuilder(processBuilder)
-                                                      .capture(true)
-                                                      .build()
-                                                      .execute()
-                                                      .output();
-            Log.info(String.join(EOL, output));
+            return ProcessMonitor.builder()
+                                 .description(description)
+                                 .processBuilder(processBuilder)
+                                 .capture(true)
+                                 .build()
+                                 .execute()
+                                 .output();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
+    /**
+     * Returns the script.
+     *
+     * @return The script.
+     */
+    public String script() {
+        return script;
+    }
+
+    /**
+     * Returns the path to the script file.
+     *
+     * @return The path.
+     */
+    public Path scriptFile() {
+        return scriptFile;
+    }
 
     /**
      * Returns the script.
@@ -126,34 +141,36 @@ public class StartScript {
      * The builder.
      */
     public static class Builder {
-        private static final String TEMPLATE_PATH = "start-template.sh";
+        private static final boolean WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
+        private static final String TEMPLATE_NAME = "start-template";
+        private static final String BASH_EXTENSION = ".sh";
+        private static final String WINDOWS_EXTENSION = ".bat";
         private static final String JAR_NAME = "<JAR_NAME>";
         private static final String DEFAULT_ARGS = "<DEFAULT_ARGS>";
         private static final String DEFAULT_JVM = "<DEFAULT_JVM>";
         private static final String DEFAULT_DEBUG = "<DEFAULT_DEBUG>";
+        private static final String HAS_CDS = "<HAS_CDS>";
         private static final String DEFAULT_ARGS_DESC = "<DEFAULT_ARGS_DESC>";
         private static final String DEFAULT_JVM_DESC = "<DEFAULT_JVM_DESC>";
         private static final String DEFAULT_DEBUG_DESC = "<DEFAULT_DEBUG_DESC>";
-        private static final String JVM_SOME = "Overrides default JVM options (${defaultJvm})";
-        private static final String JVM_NONE = "Sets default JVM options.";
-        private static final String ARGS_SOME = "Overrides default arguments (${defaultArgs})";
-        private static final String ARGS_NONE = "Sets default arguments.";
-        private static final String DEBUG_SOME = "Overrides default debug options (${defaultDebug})";
-        private static final String DEBUG_NONE = "Sets debug options.";
+        private static final String OVERRIDES = "Overrides default %s.";
+        private static final String SETS = "Sets default %s.";
 
-        private static final String TEMPLATE = template();
+        private final String template;
         private Path installDirectory;
         private Path mainJar;
         private List<String> defaultJvmOptions;
         private List<String> defaultDebugOptions;
         private List<String> defaultArgs;
+        private boolean cdsInstalled;
         private Path scriptFile;
         private String script;
 
         private Builder() {
-            defaultJvmOptions = emptyList();
-            defaultDebugOptions = List.of(Configuration.Builder.DEFAULT_DEBUG);
-            defaultArgs = emptyList();
+            this.template = template();
+            this.defaultJvmOptions = emptyList();
+            this.defaultDebugOptions = List.of(Configuration.Builder.DEFAULT_DEBUG);
+            this.defaultArgs = emptyList();
         }
 
         /**
@@ -218,6 +235,17 @@ public class StartScript {
         }
 
         /**
+         * Sets whether or not a CDS archive was installed.
+         *
+         * @param cdsInstalled {@code true} if installed.
+         * @return The builder.
+         */
+        public Builder cdsInstalled(boolean cdsInstalled) {
+            this.cdsInstalled = cdsInstalled;
+            return this;
+        }
+
+        /**
          * Builds and returns the instance.
          *
          * @return The instance.
@@ -240,21 +268,28 @@ public class StartScript {
             final String name = mainJar.getFileName().toString();
 
             final String jvm = String.join(" ", this.defaultJvmOptions);
-            final String jvmDesc = jvm.isEmpty() ? JVM_NONE : JVM_SOME.replace(DEFAULT_JVM, jvm);
+            final String jvmDesc = description("JVM options", this.defaultJvmOptions);
 
             final String args = String.join(" ", this.defaultArgs);
-            final String argsDesc = args.isEmpty() ? ARGS_NONE : ARGS_SOME.replace(DEFAULT_ARGS, args);
+            final String argsDesc = description("arguments", this.defaultArgs);
 
             final String debug = String.join(" ", this.defaultDebugOptions);
-            final String debugDesc = debug.isEmpty() ? DEBUG_NONE : DEBUG_SOME.replace(DEFAULT_DEBUG, debug);
+            final String debugDesc = description("debug options", this.defaultDebugOptions);
 
-            return TEMPLATE.replace(JAR_NAME, name)
+            final String cds = cdsInstalled ? "yes" : "";
+
+            return template.replace(JAR_NAME, name)
                            .replace(DEFAULT_JVM, jvm)
                            .replace(DEFAULT_JVM_DESC, jvmDesc)
                            .replace(DEFAULT_ARGS, args)
                            .replace(DEFAULT_ARGS_DESC, argsDesc)
                            .replace(DEFAULT_DEBUG, debug)
-                           .replace(DEFAULT_DEBUG_DESC, debugDesc);
+                           .replace(DEFAULT_DEBUG_DESC, debugDesc)
+                           .replace(HAS_CDS, cds);
+        }
+
+        private static String description(String name, List<String> defaults) {
+            return String.format(defaults.isEmpty() ? SETS : OVERRIDES, name);
         }
 
         private static boolean isValid(Collection<?> value) {
@@ -262,10 +297,16 @@ public class StartScript {
         }
 
         private static String template() {
-            try {
-                return StreamUtils.toString(StartScript.class.getClassLoader().getResourceAsStream(TEMPLATE_PATH));
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
+            final String path = TEMPLATE_NAME + (WINDOWS ? WINDOWS_EXTENSION : BASH_EXTENSION);
+            final InputStream content = StartScript.class.getClassLoader().getResourceAsStream(path);
+            if (content == null) {
+                throw new IllegalStateException(path + " not found");
+            } else {
+                try {
+                    return StreamUtils.toString(content);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
             }
         }
     }
