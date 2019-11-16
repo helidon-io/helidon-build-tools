@@ -155,6 +155,7 @@ public class Configuration {
      */
     public static class Builder {
         static final String DEFAULT_DEBUG = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005";
+        private static final int MINIMUM_JDK_VERSION = 11; // TODO 9?
         private Path mainJar;
         private List<String> defaultJvm;
         private List<String> defaultArgs;
@@ -390,7 +391,7 @@ public class Configuration {
             this.stripDebug = stripDebug;
             return this;
         }
-
+        
         /**
          * Returns the {@link Configuration} instance.
          *
@@ -402,6 +403,10 @@ public class Configuration {
                 throw new IllegalArgumentException("applicationJar required");
             }
             jdk = JavaRuntime.jdk(jdkDirectory);
+            if (jdk.version().feature() < MINIMUM_JDK_VERSION) {
+                throw new IllegalArgumentException(jdkDirectory + " is an unsupported version,"
+                                                   + MINIMUM_JDK_VERSION + " or higher required");
+            }
             jriDirectory = JavaRuntime.prepareJriDirectory(jriDirectory, mainJar, replace);
             if (logWriter == null) {
                 logWriter = new SystemLogWriter(verbose ? Log.Level.DEBUG : Log.Level.INFO);

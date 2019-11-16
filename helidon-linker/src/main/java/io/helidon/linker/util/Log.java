@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Simple centralized logging.
+ * Simple, centralized logging.
  */
 public abstract class Log {
     private static AtomicReference<Writer> WRITER = new AtomicReference<>();

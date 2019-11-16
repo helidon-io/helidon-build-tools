@@ -28,11 +28,15 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import io.helidon.linker.util.FileUtils;
+import io.helidon.linker.util.Log;
 import io.helidon.linker.util.ProcessMonitor;
 import io.helidon.linker.util.StreamUtils;
 
+import static io.helidon.linker.util.Constants.INDENT;
+import static io.helidon.linker.util.Constants.WINDOWS;
 import static io.helidon.linker.util.FileUtils.assertDir;
 import static java.util.Collections.emptyList;
 
@@ -85,11 +89,10 @@ public class StartScript {
     /**
      * Execute the script with the given arguments.
      *
-     * @param description A description of what is being executed.
+     * @param indent {@code true} if output should be indented.
      * @param args The arguments.
-     * @return The output.
      */
-    public List<String> execute(String description, String... args) {
+    public void execute(boolean indent, String... args) {
         final ProcessBuilder processBuilder = new ProcessBuilder();
         final List<String> command = new ArrayList<>();
         command.add(scriptFile.toString());
@@ -97,13 +100,15 @@ public class StartScript {
         processBuilder.command(command);
         processBuilder.directory(scriptFile.getParent().getParent().toFile());
         try {
-            return ProcessMonitor.builder()
-                                 .description(description)
-                                 .processBuilder(processBuilder)
-                                 .capture(true)
-                                 .build()
-                                 .execute()
-                                 .output();
+            final Consumer<String> out = indent ? line -> Log.info(INDENT + line) : Log::info;
+            final Consumer<String> err = indent ? line -> Log.warn(INDENT + line) : Log::warn;
+            ProcessMonitor.builder()
+                          .processBuilder(processBuilder)
+                          .stdOut(out)
+                          .stdErr(err)
+                          .capture(false)
+                          .build()
+                          .execute();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -141,7 +146,6 @@ public class StartScript {
      * The builder.
      */
     public static class Builder {
-        private static final boolean WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
         private static final String TEMPLATE_NAME = "start-template";
         private static final String BASH_EXTENSION = ".sh";
         private static final String WINDOWS_EXTENSION = ".bat";

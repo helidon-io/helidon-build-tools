@@ -21,11 +21,12 @@ import java.io.StringWriter;
 
 import io.helidon.linker.util.Log.Level;
 
+import static io.helidon.linker.util.Constants.EOL;
+
 /**
  * {@link Log.Writer} that writes to {@link System#out} and {@link System#err}.
  */
 public class SystemLogWriter implements Log.Writer {
-    private static final String EOL = System.getProperty("line.separator");
     private final int ordinal;
 
     /**

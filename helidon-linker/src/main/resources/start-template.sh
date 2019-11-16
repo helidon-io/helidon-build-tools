@@ -33,7 +33,6 @@ main() {
 
 start() {
     if [[ ${dryRun} ]]; then
-        echo "cd ${homeDir}"
         echo ${command}
     else
         cd ${homeDir}

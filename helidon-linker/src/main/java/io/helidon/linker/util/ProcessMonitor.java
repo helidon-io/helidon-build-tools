@@ -28,13 +28,14 @@ import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import static io.helidon.linker.util.Constants.EOL;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNullElseGet;
 
 /**
  * Executes a process and waits for completion, monitoring the output.
  */
 public class ProcessMonitor {
-    private static final String EOL = System.getProperty("line.separator");
     private static final ExecutorService EXECUTOR = ForkJoinPool.commonPool();
     private final ProcessBuilder builder;
     private final String description;
@@ -139,9 +140,6 @@ public class ProcessMonitor {
             if (builder == null) {
                 throw new IllegalStateException("processBuilder required");
             }
-            if (description == null) {
-                throw new IllegalStateException("description required");
-            }
             monitorOut = stdOut;
             if (stdOut == null) {
                 capture = true;
@@ -188,7 +186,8 @@ public class ProcessMonitor {
         err.cancel(true);
         if (exitCode != 0) {
             final StringBuilder message = new StringBuilder();
-            message.append(description).append(" failed with exit code ").append(exitCode);
+            message.append(requireNonNullElseGet(description, () -> String.join(" ", builder.command())));
+            message.append(" FAILED with exit code ").append(exitCode);
             if (capturing) {
                 message.append(EOL);
                 capturedOutput.forEach(line -> message.append("    ").append(line).append(EOL));

@@ -163,8 +163,7 @@ public class JavaRuntime {
     public static JavaRuntime jdk(Path jdkDirectory, Runtime.Version version) {
         return new JavaRuntime(assertJdk(jdkDirectory), version);
     }
-
-
+    
     /**
      * Returns a new {@code JavaRuntime} for the given directory.
      *

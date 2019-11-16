@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 import io.helidon.linker.util.JavaRuntime;
 import io.helidon.linker.util.Log;
 
+import static io.helidon.linker.util.Constants.EOL;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -41,7 +42,6 @@ public class JavaDependencies {
     private static final String SYSTEM_ARG = "--system";
     private static final String LIST_DEPS_ARG = "--list-deps";
     private static final String JAVA_BASE_MODULE_NAME = "java.base";
-    private static final String EOL = System.getProperty("line.separator");
     private static final ToolProvider JDEPS = ToolProvider.findFirst(JDEPS_TOOL_NAME).orElseThrow();
     private final JavaRuntime javaHome;
     private final Set<String> javaModuleNames;

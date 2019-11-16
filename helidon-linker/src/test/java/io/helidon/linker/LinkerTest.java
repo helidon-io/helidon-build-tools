@@ -60,7 +60,7 @@ class LinkerTest {
                                             .jriDirectory(targetDir.resolve("se-jri"))
                                             .mainJar(mainJar)
                                             .replace(true)
-                                            .verbose(true)
+                                            .verbose(false)
                                             .cds(true)
                                             .build();
         Path jri = Linker.linker(config).link();

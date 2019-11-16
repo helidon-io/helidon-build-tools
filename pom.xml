@@ -125,6 +125,7 @@
         <version.lib.plexus-build-api>0.0.7</version.lib.plexus-build-api>
         <version.lib.slf4j>1.7.25</version.lib.slf4j>
         <version.lib.jandex>2.1.1.Final</version.lib.jandex>
+        <version.lib.jansi>1.18</version.lib.jansi>  <!-- TODO approval? -->
         <!--
           !Version statement! - end
           -->
@@ -505,6 +506,11 @@
                 <groupId>org.jboss</groupId>
                 <artifactId>jandex</artifactId>
                 <version>${version.lib.jandex}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.fusesource.jansi</groupId>
+                <artifactId>jansi</artifactId>
+                <version>${version.lib.jansi}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -13,12 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module helidon.linker {
-    exports io.helidon.linker;
-    exports io.helidon.linker.util;
 
-    requires jdk.jlink;
-    requires jdk.jdeps;
-    requires jandex;
-    requires org.fusesource.jansi;
+package io.helidon.linker.util;
+
+import java.util.Locale;
+
+/**
+ * Shared constants.
+ */
+public class Constants {
+
+    /**
+     * Whether or not this is a Windows platform.
+     */
+    public static final boolean WINDOWS = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("win");
+
+    /**
+     * End of line string.
+     */
+    public static final String EOL = System.getProperty("line.separator");
+
+    /**
+     * Indent.
+     */
+    public static final String INDENT = "    ";
 }
