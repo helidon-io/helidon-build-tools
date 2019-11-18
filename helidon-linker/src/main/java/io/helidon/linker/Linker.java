@@ -28,12 +28,12 @@ import io.helidon.linker.util.Log;
 
 import static io.helidon.linker.Application.APP_DIR;
 import static io.helidon.linker.util.Constants.DIR_SEP;
-import static io.helidon.linker.util.Constants.INDENT;
 import static io.helidon.linker.util.FileUtils.fromWorking;
 import static io.helidon.linker.util.FileUtils.sizeOf;
 import static io.helidon.linker.util.Style.BoldBlue;
-import static io.helidon.linker.util.Style.BoldBrightCyan;
+import static io.helidon.linker.util.Style.Cyan;
 import static io.helidon.linker.util.Style.BoldBrightGreen;
+import static io.helidon.linker.util.Style.BoldBrightYellow;
 
 /**
  * Create a custom runtime image by finding the Java modules required of a Helidon application and linking them via jlink,
@@ -54,6 +54,13 @@ public class Linker {
     private Path jriMainJar;
     private StartScript startScript;
     private String startCommand;
+    private float jarsSize;
+    private float jdkSize;
+    private float jriSize;
+    private float cdsSize;
+    private String initialSize;
+    private String imageSize;
+    private String percent;
 
     /**
      * Main entry point.
@@ -104,7 +111,7 @@ public class Linker {
         installJars();
         installCdsArchive();
         installStartScript();
-        reportSizes();
+        computeSizes();
         end();
         return config.jriDirectory();
     }
@@ -119,7 +126,7 @@ public class Linker {
     }
 
     private void begin() {
-        Log.info("Creating Java Runtime Image %s from %s", BoldBrightCyan.apply(imageName), 
+        Log.info("Creating Java Runtime Image %s from %s", Cyan.apply(imageName),
                  config.mainJar().getFileName());
         this.startTime = System.currentTimeMillis();
     }
@@ -212,31 +219,23 @@ public class Linker {
         }
     }
 
-    private void reportSizes() {
+    private void computeSizes() {
         try {
             final long jars = application.diskSize();
             final long jdk = config.jdk().diskSize();
-
             final long jri = this.jri.diskSize();
             final long cds = config.cds() ? sizeOf(this.jri.path().resolve(application.archivePath())) : 0;
             final long jriOnly = jri - cds - jars;
-
             final long initial = jars + jdk;
             final float reduction = (1F - (float) jri / (float) initial) * 100F;
 
-            final String initialSize = BoldBlue.format("%5.1fM", mb(initial));
-            final String imageSize = BoldBrightGreen.format("%5.1fM", mb(jri));
-            final String percent = BoldBrightGreen.format("%5.1f%%", reduction);
-
-            Log.info("");
-            Log.info("Initial disk size: %s  (%.1f application + %.1f JDK)", initialSize, mb(jars), mb(jdk));
-            if (cds == 0) {
-                Log.info("  Image disk size: %s  (%.1f application + %.1f JDK)", imageSize, mb(jars), mb(jriOnly));
-            } else {
-                Log.info("  Image disk size: %s  (%.1f application + %.1f JDK + %.1f CDS)", imageSize, mb(jars),
-                         mb(jriOnly), mb(cds));
-            }
-            Log.info("        Reduction: %s", percent);
+            jarsSize = mb(jars);
+            jdkSize = mb(jdk);
+            jriSize = mb(jriOnly);
+            cdsSize = config.cds() ? mb(cds) : 0;
+            initialSize = BoldBlue.format("%5.1fM", mb(initial));
+            imageSize = BoldBrightGreen.format("%5.1fM", mb(jri));
+            percent = BoldBrightGreen.format("%5.1f%%", reduction);
         } catch (UncheckedIOException e) {
             Log.debug("Could not compute disk size: %s", e.getMessage());
         }
@@ -245,15 +244,23 @@ public class Linker {
     private void end() {
         final long elapsed = System.currentTimeMillis() - startTime;
         final float startSeconds = elapsed / 1000F;
-        Log.info("");
-        Log.info("Execute the following to start:", imageName);
-        Log.info("");
-        Log.info(INDENT + BoldBlue.apply(startCommand));
+        String note = "";
         if (startScript == null && config.cds()) {
-            Log.info("Note that for CDS to function, the jar path MUST be relative as shown.");
+            note = BoldBrightYellow.apply("Note:") + " for CDS to function, the jar path MUST be relative as shown.";
         }
         Log.info("");
-        Log.info("Java Runtime Image %s completed in %.1f seconds", BoldBrightCyan.apply(imageName), startSeconds);
+        Log.info("Use %s to launch. %s", BoldBlue.apply(startCommand), note);
+         Log.info("");
+        Log.info("Java Runtime Image %s completed in %.1f seconds", Cyan.apply(imageName), startSeconds);
+        Log.info("");
+        Log.info("     initial size: %s  (%.1f JDK + %.1f application)", initialSize, jdkSize, jarsSize);
+        if (config.cds()) {
+            Log.info("       image size: %s  (%5.1f JDK + %.1f application + %.1f CDS)", imageSize, jriSize, jarsSize, cdsSize);
+        } else {
+            Log.info("       image size: %s  (%5.1f JDK + %.1f application)", imageSize, jriSize, jarsSize);
+        }
+        Log.info("        reduction: %s", percent);
+        Log.info("");
     }
 
     private static float mb(final long bytes) {

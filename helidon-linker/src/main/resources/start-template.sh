@@ -12,6 +12,7 @@ usage() {
     echo "    --dry | --dryRun  Prints the command rather than executing it."
     echo "    --jvm <option>    Add one or more JVM options, replacing defaults."
     [[ ${hasCds} ]] && echo "    --noCds           Do not use CDS."
+    echo "    --test            Exit on started."
     echo
     echo "Unrecognized options are passed as args to <JAR_NAME>, replacing defaults."
     echo
@@ -50,6 +51,7 @@ init() {
     readonly defaultArgs="<DEFAULT_ARGS>"
     readonly hasCds="<HAS_CDS>"
     readonly cdsOption="-XX:SharedArchiveFile=lib/start.jsa"
+    readonly exitOption="-Dexit.on.started=✅"
     readonly debugOptions="${DEFAULT_DEBUG:-${defaultDebug}}"
     readonly jvmDefaults="${DEFAULT_JVM:-${defaultJvm}}"
     readonly argDefaults="${DEFAULT_ARGS:-${defaultArgs}}"
@@ -63,6 +65,7 @@ init() {
             -h | --help) usage ;;
             -j | --jvm) shift; appendVar jvm "${1}" ;;
             -n | --noCds) useCds= ;;
+            --test) appendVar jvm ${exitOption} ;;
             *) appendVar args "${1}" ;;
         esac
         shift

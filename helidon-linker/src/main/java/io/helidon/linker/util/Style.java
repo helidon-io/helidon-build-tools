@@ -70,7 +70,22 @@ public enum Style implements Function<Object, String> {
     /**
      * Bold, bright green.
      */
-    BoldBrightGreen(false, true, Ansi.Color.GREEN);
+    BoldBrightGreen(false, true, Ansi.Color.GREEN),
+
+    /**
+     * Yellow.
+     */
+    Yellow(false, false, Ansi.Color.YELLOW),
+
+    /**
+     * Bold yellow.
+     */
+    BoldYellow(false, false, Ansi.Color.YELLOW),
+
+    /**
+     * Bold, bright yellow.
+     */
+    BoldBrightYellow(false, true, Ansi.Color.YELLOW);
 
     private final boolean bold;
     private final boolean bright;
