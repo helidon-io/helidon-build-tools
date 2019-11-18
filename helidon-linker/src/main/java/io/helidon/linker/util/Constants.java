@@ -16,6 +16,7 @@
 
 package io.helidon.linker.util;
 
+import java.io.File;
 import java.util.Locale;
 
 /**
@@ -32,6 +33,11 @@ public class Constants {
      * End of line string.
      */
     public static final String EOL = System.getProperty("line.separator");
+
+    /**
+     * File system directory separator.
+     */
+    public static final String DIR_SEP = File.separator;
 
     /**
      * Indent.

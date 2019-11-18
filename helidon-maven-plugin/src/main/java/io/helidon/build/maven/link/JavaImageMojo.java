@@ -61,15 +61,6 @@ public class JavaImageMojo extends AbstractMojo {
     private String finalName;
 
     /**
-     * The Java Home directory from which to build the image. Must contain {@code .jmod} files.
-     * Defaults to the current JVM home directory.
-     */
-    // This feature needs more work: e.g. future JDKs have updated class file versions,
-    // so reading module-info.class fails. Likely need to execute process.    
-    // @Parameter(property = "java.image.sourceJavaHome")
-    private File sourceJavaHome;
-
-    /**
      * Add a Class Data Sharing archive.
      */
     @Parameter(defaultValue = "true", property = "java.image.addClassDataSharingArchive")
@@ -109,12 +100,10 @@ public class JavaImageMojo extends AbstractMojo {
         final Path mainJar = mainJar(buildDir);
         final Path outputDir = buildDir.resolve(finalName);
         final Log.Writer writer = new MavenLogWriter(getLog());
-        final Path jdkDir = sourceJavaHome == null ? null : sourceJavaHome.toPath();
         try {
             Configuration config = Configuration.builder()
                                                 .logWriter(writer)
                                                 .verbose(getLog().isDebugEnabled())
-                                                .jdkDirectory(jdkDir)
                                                 .mainJar(mainJar)
                                                 .defaultJvmOptions(defaultJvmOptions)
                                                 .defaultArgs(defaultArgs)

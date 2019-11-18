@@ -23,14 +23,17 @@ import java.util.List;
 import java.util.Set;
 import java.util.spi.ToolProvider;
 
-import io.helidon.linker.util.FileUtils;
 import io.helidon.linker.util.JavaRuntime;
 import io.helidon.linker.util.Log;
 
 import static io.helidon.linker.Application.APP_DIR;
+import static io.helidon.linker.util.Constants.DIR_SEP;
 import static io.helidon.linker.util.Constants.INDENT;
 import static io.helidon.linker.util.FileUtils.fromWorking;
-import static org.fusesource.jansi.Ansi.ansi;
+import static io.helidon.linker.util.FileUtils.sizeOf;
+import static io.helidon.linker.util.Style.BoldBlue;
+import static io.helidon.linker.util.Style.BoldBrightCyan;
+import static io.helidon.linker.util.Style.BoldBrightGreen;
 
 /**
  * Create a custom runtime image by finding the Java modules required of a Helidon application and linking them via jlink,
@@ -42,7 +45,8 @@ public class Linker {
     private static final float BYTES_PER_MEGABYTE = 1024F * 1024F;
     private final ToolProvider jlink;
     private final List<String> jlinkArgs;
-    private Configuration config;
+    private final Configuration config;
+    private final String imageName;
     private long startTime;
     private Application application;
     private Set<String> javaDependencies;
@@ -79,6 +83,8 @@ public class Linker {
         this.jlink = ToolProvider.findFirst(JLINK_TOOL_NAME).orElseThrow();
         this.jlinkArgs = new ArrayList<>();
         this.config = config;
+        this.imageName = config.jriDirectory().getFileName().toString();
+
         if (config.verbose()) {
             System.setProperty(JLINK_DEBUG_PROPERTY, "true");
         }
@@ -113,7 +119,8 @@ public class Linker {
     }
 
     private void begin() {
-        Log.info("Creating Java Runtime Image from %s", config.mainJar().getFileName());
+        Log.info("Creating Java Runtime Image %s from %s", BoldBrightCyan.apply(imageName), 
+                 config.mainJar().getFileName());
         this.startTime = System.currentTimeMillis();
     }
 
@@ -192,17 +199,16 @@ public class Linker {
 
             Log.info("Installing start script in %s", installDir);
             startScript.install();
-
-            final Path scriptFile = fromWorking(startScript.scriptFile());
+            startCommand = imageName + DIR_SEP + "bin" + DIR_SEP + startScript.scriptFile().getFileName();
             Log.info("");
-            Log.info("Executing %s", ansi().bold().fgBrightBlue().a("bin/start --help").reset());
+            Log.info("Executing %s", BoldBlue.apply(startCommand + " --help"));
             startScript.execute(true, "--help");
-            startCommand = "bin/start";
         } catch (IllegalStateException e) {
             Log.warn("Start script cannot be created for this platform.");
             final Path root = fromWorking(jri.path());
-            final String jvm = config.cds() ? " -XX:SharedArchiveFile=lib/start.jsa" : "";
-            startCommand = String.format("cd %s; bin/java%s -jar app/%s", root, jvm, jriMainJar.getFileName());
+            final String jvm = config.cds() ? " -XX:SharedArchiveFile=lib" + DIR_SEP + "start.jsa" : "";
+            final Path jarName = jriMainJar.getFileName();
+            startCommand = String.format("cd %s; bin" + DIR_SEP + "java%s -jar app" + DIR_SEP + "%s", root, jvm, jarName);
         }
     }
 
@@ -210,21 +216,25 @@ public class Linker {
         try {
             final long jars = application.diskSize();
             final long jdk = config.jdk().diskSize();
+
             final long jri = this.jri.diskSize();
+            final long cds = config.cds() ? sizeOf(this.jri.path().resolve(application.archivePath())) : 0;
+            final long jriOnly = jri - cds - jars;
+
             final long initial = jars + jdk;
-            final long cds = config.cds() ? FileUtils.sizeOf(application.archivePath()) : 0;
             final float reduction = (1F - (float) jri / (float) initial) * 100F;
 
-            final String initialSize = ansi().bold().fgBrightBlue().a(String.format("%5.1fM", mb(initial))).reset().toString();
-            final String imageSize = ansi().bold().fgGreen().a(String.format("%5.1fM", mb(jri))).reset().toString();
-            final String percent = ansi().bold().fgGreen().a(String.format("%5.1f%%", reduction)).reset().toString();
+            final String initialSize = BoldBlue.format("%5.1fM", mb(initial));
+            final String imageSize = BoldBrightGreen.format("%5.1fM", mb(jri));
+            final String percent = BoldBrightGreen.format("%5.1f%%", reduction);
 
             Log.info("");
-            Log.info("Initial disk size: %s  (%.1f application, %.1f JDK)", initialSize, mb(jars), mb(jdk));
+            Log.info("Initial disk size: %s  (%.1f application + %.1f JDK)", initialSize, mb(jars), mb(jdk));
             if (cds == 0) {
-                Log.info("  Image disk size: %s", imageSize);
+                Log.info("  Image disk size: %s  (%.1f application + %.1f JDK)", imageSize, mb(jars), mb(jriOnly));
             } else {
-                Log.info("  Image disk size: %5.1fM (includes %.1f CDS archive)", imageSize, mb(cds));
+                Log.info("  Image disk size: %s  (%.1f application + %.1f JDK + %.1f CDS)", imageSize, mb(jars),
+                         mb(jriOnly), mb(cds));
             }
             Log.info("        Reduction: %s", percent);
         } catch (UncheckedIOException e) {
@@ -233,18 +243,17 @@ public class Linker {
     }
 
     private void end() {
-        final Path root = fromWorking(jri.path());
         final long elapsed = System.currentTimeMillis() - startTime;
         final float startSeconds = elapsed / 1000F;
         Log.info("");
-        Log.info("From the %s directory, execute the following to start:", ansi().bold().fgBrightBlue().a(root).reset());
+        Log.info("Execute the following to start:", imageName);
         Log.info("");
-        Log.info(INDENT + ansi().bold().fgBrightBlue().a(startCommand).reset().toString());
+        Log.info(INDENT + BoldBlue.apply(startCommand));
         if (startScript == null && config.cds()) {
             Log.info("Note that for CDS to function, the jar path MUST be relative as shown.");
         }
         Log.info("");
-        Log.info("Java Runtime Image %s completed in %.1f seconds", root, startSeconds);
+        Log.info("Java Runtime Image %s completed in %.1f seconds", BoldBrightCyan.apply(imageName), startSeconds);
     }
 
     private static float mb(final long bytes) {

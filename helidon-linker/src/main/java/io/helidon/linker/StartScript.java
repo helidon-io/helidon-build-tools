@@ -157,7 +157,7 @@ public class StartScript {
         private static final String DEFAULT_ARGS_DESC = "<DEFAULT_ARGS_DESC>";
         private static final String DEFAULT_JVM_DESC = "<DEFAULT_JVM_DESC>";
         private static final String DEFAULT_DEBUG_DESC = "<DEFAULT_DEBUG_DESC>";
-        private static final String OVERRIDES = "Overrides default %s.";
+        private static final String OVERRIDES = "Overrides configured default %s.";
         private static final String SETS = "Sets default %s.";
 
         private final String template;
