@@ -50,7 +50,7 @@ init() {
     readonly defaultJvm="<DEFAULT_JVM>"
     readonly defaultArgs="<DEFAULT_ARGS>"
     readonly hasCds="<HAS_CDS>"
-    readonly cdsOption="-XX:SharedArchiveFile=lib/start.jsa"
+    readonly cdsOption="<CDS_UNLOCK>-XX:SharedArchiveFile=lib/start.jsa -Xshare:on"
     readonly exitOption="-Dexit.on.started=✅"
     readonly debugOptions="${DEFAULT_DEBUG:-${defaultDebug}}"
     readonly jvmDefaults="${DEFAULT_JVM:-${defaultJvm}}"

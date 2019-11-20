@@ -149,7 +149,7 @@
         <version.plugin.surefire>2.19.1</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.release-plugin>2.5.3</version.plugin.release-plugin>
-        <version.plugin.plugin-plugin>3.6.0</version.plugin.plugin-plugin>  <!-- TODO approved? -->
+        <version.plugin.plugin-plugin>3.6.0</version.plugin.plugin-plugin>
     </properties>
 
     <modules>

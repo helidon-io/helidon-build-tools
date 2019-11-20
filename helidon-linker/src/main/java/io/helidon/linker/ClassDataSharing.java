@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
+import io.helidon.linker.util.Constants;
 import io.helidon.linker.util.JavaRuntime;
 import io.helidon.linker.util.Log;
 import io.helidon.linker.util.ProcessMonitor;
@@ -313,8 +314,14 @@ public class ClassDataSharing {
         }
 
         private void buildCdsArchive() throws Exception {
-            execute("Creating Class Data Sharing archive for " + targetDescription,
-                    XSHARE_DUMP, XX_SHARED_ARCHIVE_FILE + archiveFile, XX_SHARED_CLASS_LIST_FILE + classListFile);
+            final String action = "Creating Class Data Sharing archive for " + targetDescription;
+            if (Constants.CDS_REQUIRES_UNLOCK_OPTION) {
+                execute(action, Constants.CDS_UNLOCK_OPTIONS, XSHARE_DUMP, XX_SHARED_ARCHIVE_FILE + archiveFile,
+                        XX_SHARED_CLASS_LIST_FILE + classListFile);
+            } else {
+                execute(action, XSHARE_DUMP, XX_SHARED_ARCHIVE_FILE + archiveFile,
+                        XX_SHARED_CLASS_LIST_FILE + classListFile);
+            }
         }
 
         private List<String> loadClassList() throws IOException {

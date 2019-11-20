@@ -35,6 +35,8 @@ import io.helidon.linker.util.Log;
 import io.helidon.linker.util.ProcessMonitor;
 import io.helidon.linker.util.StreamUtils;
 
+import static io.helidon.linker.util.Constants.CDS_REQUIRES_UNLOCK_OPTION;
+import static io.helidon.linker.util.Constants.CDS_UNLOCK_OPTIONS;
 import static io.helidon.linker.util.Constants.INDENT;
 import static io.helidon.linker.util.Constants.WINDOWS;
 import static io.helidon.linker.util.FileUtils.assertDir;
@@ -154,6 +156,7 @@ public class StartScript {
         private static final String DEFAULT_JVM = "<DEFAULT_JVM>";
         private static final String DEFAULT_DEBUG = "<DEFAULT_DEBUG>";
         private static final String HAS_CDS = "<HAS_CDS>";
+        private static final String CDS_UNLOCK_OPTION = "<CDS_UNLOCK>";
         private static final String DEFAULT_ARGS_DESC = "<DEFAULT_ARGS_DESC>";
         private static final String DEFAULT_JVM_DESC = "<DEFAULT_JVM_DESC>";
         private static final String DEFAULT_DEBUG_DESC = "<DEFAULT_DEBUG_DESC>";
@@ -281,6 +284,7 @@ public class StartScript {
             final String debugDesc = description("debug options", this.defaultDebugOptions);
 
             final String cds = cdsInstalled ? "yes" : "";
+            final String cdsUnlock = requiresUnlock() ? CDS_UNLOCK_OPTIONS + " " : "";
 
             return template.replace(JAR_NAME, name)
                            .replace(DEFAULT_JVM, jvm)
@@ -289,13 +293,18 @@ public class StartScript {
                            .replace(DEFAULT_ARGS_DESC, argsDesc)
                            .replace(DEFAULT_DEBUG, debug)
                            .replace(DEFAULT_DEBUG_DESC, debugDesc)
-                           .replace(HAS_CDS, cds);
+                           .replace(HAS_CDS, cds)
+                           .replace(CDS_UNLOCK_OPTION, cdsUnlock);
+        }
+        
+        private boolean requiresUnlock() {
+            return cdsInstalled && CDS_REQUIRES_UNLOCK_OPTION;
         }
 
         private static String description(String name, List<String> defaults) {
             return String.format(defaults.isEmpty() ? SETS : OVERRIDES, name);
         }
-
+        
         private static boolean isValid(Collection<?> value) {
             return value != null && !value.isEmpty();
         }

@@ -62,18 +62,18 @@ class StartScriptTest {
         assertThat(script, containsString("defaultJvm=\"\""));
 
         script = builder().defaultJvmOptions(List.of("-verbose:class", "-Xms32")).build().toString();
-        assertThat(script, containsString("DEFAULT_JVM       Overrides default JVM options: ${defaultJvm}"));
+        assertThat(script, containsString("DEFAULT_JVM       Overrides configured default JVM options."));
         assertThat(script, containsString("defaultJvm=\"-verbose:class -Xms32\""));
     }
 
     @Test
     void testDefaultDebugOptions() {
         String script = builder().build().toString();
-        assertThat(script, containsString("DEFAULT_DEBUG     Overrides default debug options: ${defaultDebug}"));
+        assertThat(script, containsString("DEFAULT_DEBUG     Overrides configured default debug options."));
         assertThat(script, containsString("defaultDebug=\"" + Configuration.Builder.DEFAULT_DEBUG + "\""));
 
         script = builder().defaultDebugOptions(List.of("-Xdebug", "-Xnoagent")).build().toString();
-        assertThat(script, containsString("DEFAULT_DEBUG     Overrides default debug options: ${defaultDebug}"));
+        assertThat(script, containsString("DEFAULT_DEBUG     Overrides configured default debug options."));
         assertThat(script, containsString("defaultDebug=\"-Xdebug -Xnoagent\""));
     }
 
@@ -84,7 +84,7 @@ class StartScriptTest {
         assertThat(script, containsString("defaultArgs=\"\""));
 
         script = builder().defaultArgs(List.of("--foo", "bar")).build().toString();
-        assertThat(script, containsString("DEFAULT_ARGS      Overrides default arguments: ${defaultArgs}"));
+        assertThat(script, containsString("DEFAULT_ARGS      Overrides configured default arguments."));
         assertThat(script, containsString("defaultArgs=\"--foo bar\""));
     }
 

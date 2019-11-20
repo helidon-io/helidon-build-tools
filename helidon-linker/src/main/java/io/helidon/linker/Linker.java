@@ -31,9 +31,9 @@ import static io.helidon.linker.util.Constants.DIR_SEP;
 import static io.helidon.linker.util.FileUtils.fromWorking;
 import static io.helidon.linker.util.FileUtils.sizeOf;
 import static io.helidon.linker.util.Style.BoldBlue;
-import static io.helidon.linker.util.Style.Cyan;
 import static io.helidon.linker.util.Style.BoldBrightGreen;
 import static io.helidon.linker.util.Style.BoldBrightYellow;
+import static io.helidon.linker.util.Style.Cyan;
 
 /**
  * Create a custom runtime image by finding the Java modules required of a Helidon application and linking them via jlink,
@@ -87,7 +87,7 @@ public class Linker {
     }
 
     private Linker(Configuration config) {
-        this.jlink = ToolProvider.findFirst(JLINK_TOOL_NAME).orElseThrow();
+        this.jlink = ToolProvider.findFirst(JLINK_TOOL_NAME).orElseThrow(() -> new IllegalStateException("jlink not found"));
         this.jlinkArgs = new ArrayList<>();
         this.config = config;
         this.imageName = config.jriDirectory().getFileName().toString();
@@ -126,8 +126,8 @@ public class Linker {
     }
 
     private void begin() {
-        Log.info("Creating Java Runtime Image %s from %s", Cyan.apply(imageName),
-                 config.mainJar().getFileName());
+        Log.info("Creating Java Runtime Image %s from %s and JDK %s", Cyan.apply(imageName),
+                 config.mainJar().getFileName(), config.jdk().version());
         this.startTime = System.currentTimeMillis();
     }
 
@@ -142,6 +142,10 @@ public class Linker {
     }
 
     private void buildJlinkArguments() {
+
+        // On JDK 9, jlink insists on a --module-path so give it the jmods directory
+
+        addArgument("--module-path", config.jdk().jmodsDir());
 
         // Tell jlink which jdk modules to include
 

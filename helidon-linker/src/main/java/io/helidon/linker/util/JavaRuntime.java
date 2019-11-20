@@ -163,7 +163,7 @@ public class JavaRuntime {
     public static JavaRuntime jdk(Path jdkDirectory, Runtime.Version version) {
         return new JavaRuntime(assertJdk(jdkDirectory), version);
     }
-    
+
     /**
      * Returns a new {@code JavaRuntime} for the given directory.
      *
@@ -185,6 +185,7 @@ public class JavaRuntime {
             final List<Path> jmodFiles = listFiles(jmodsDir, fileName -> fileName.endsWith(JMOD_SUFFIX));
             this.version = isCurrent() ? Runtime.version() : findVersion();
             this.modules = jmodFiles.stream()
+                                    .filter(file -> !Constants.EXCLUDED_MODULES.contains(moduleNameOf(file)))
                                     .collect(Collectors.toMap(JavaRuntime::moduleNameOf, identity()));
         } else if (version == null) {
             throw new IllegalArgumentException("Version required in a Java Runtime without 'jmods' dir: " + javaHome);
@@ -209,7 +210,7 @@ public class JavaRuntime {
      * @return The feature version.
      */
     public String featureVersion() {
-        return Integer.toString(version.feature());
+        return Integer.toString(version.major());
     }
 
     /**
@@ -252,6 +253,15 @@ public class JavaRuntime {
             throw new IllegalArgumentException("Cannot find .jmod file for module '" + moduleName + "' in " + path());
         }
         return result;
+    }
+
+    /**
+     * Returns the path to the {@code jmods} directory.
+     *
+     * @return The path.
+     */
+    public Path jmodsDir() {
+        return requireNonNull(jmodsDir);
     }
 
     /**
@@ -306,7 +316,11 @@ public class JavaRuntime {
     }
 
     private static String moduleNameOf(Path jmodFile) {
-        final String fileName = jmodFile.getFileName().toString();
+        final String fileName = fileNameOf(jmodFile);
         return fileName.substring(0, fileName.length() - JMOD_SUFFIX.length());
+    }
+    
+    private static String fileNameOf(Path file) {
+        return file.getFileName().toString();
     }
 }

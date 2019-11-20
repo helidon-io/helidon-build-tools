@@ -18,12 +18,18 @@ package io.helidon.linker.util;
 
 import java.io.File;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * Shared constants.
  */
 public class Constants {
 
+    /**
+     * The minimum supported JDK version.
+     */
+    public static final int MINIMUM_JDK_VERSION = 9;
+    
     /**
      * Whether or not this is a Windows platform.
      */
@@ -40,7 +46,22 @@ public class Constants {
     public static final String DIR_SEP = File.separator;
 
     /**
+     * Whether or not CDS requires the unlock option.
+     */
+    public static final boolean CDS_REQUIRES_UNLOCK_OPTION = Runtime.version().major() <= 9;
+
+    /**
+     * The CDS unlock diagnostic options.
+     */
+    public static final String CDS_UNLOCK_OPTIONS = "-XX:+UnlockDiagnosticVMOptions";
+
+    /**
      * Indent.
      */
     public static final String INDENT = "    ";
+
+    /**
+     * Excluded module names.
+     */
+    public static final Set<String> EXCLUDED_MODULES = Set.of("java.xml.ws.annotation");
 }

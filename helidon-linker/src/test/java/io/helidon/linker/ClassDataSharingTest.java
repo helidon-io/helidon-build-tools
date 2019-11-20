@@ -35,7 +35,8 @@ import static org.hamcrest.Matchers.nullValue;
  */
 class ClassDataSharingTest {
     private static final Path JAVA_HOME = Paths.get(System.getProperty("java.home"));
-
+    private static final String APP_CLASS = "org/jboss/weld/environment/deployment/discovery/BeanArchiveScanner";
+    
     @Test
     void testQuickstartMp() throws Exception {
         Path mainJar = TestFiles.helidonMpJar();
@@ -53,11 +54,12 @@ class ClassDataSharingTest {
         assertThat(cds.classListFile(), is(not(nullValue())));
         assertThat(cds.archiveFile(), is(nullValue()));
 
-        assertContains(cds.classList(), "org/jboss/weld/environment/deployment/discovery/BeanArchiveScanner");
-        assertDoesNotContain(cds.classList(), "io/helidon/weld/JrtBeanArchiveHandler");
-        assertDoesNotContain(cds.classList(), "io/helidon/weld/JrtBeanArchiveScanner");
-        assertDoesNotContain(cds.classList(), "io/helidon/weld/JrtDiscoveryStrategy");
-
+        if (Runtime.version().major() > 9) {
+            // Application classes should be included in CDS archive
+            assertContains(cds.classList(), APP_CLASS);
+        } else {
+            assertDoesNotContain(cds.classList(), APP_CLASS);
+        }
         cds = ClassDataSharing.builder()
                               .jri(JAVA_HOME)
                               .applicationJar(mainJar)

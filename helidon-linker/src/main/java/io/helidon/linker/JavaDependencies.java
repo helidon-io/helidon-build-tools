@@ -23,7 +23,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 
@@ -31,18 +33,27 @@ import io.helidon.linker.util.JavaRuntime;
 import io.helidon.linker.util.Log;
 
 import static io.helidon.linker.util.Constants.EOL;
+import static io.helidon.linker.util.Constants.EXCLUDED_MODULES;
 import static java.util.Objects.requireNonNull;
 
 /**
  * Collects Java module dependencies for a set of jars.
  */
 public class JavaDependencies {
-    private static final String JDEPS_TOOL_NAME = "jdeps";
+    private static final ToolProvider JDEPS = ToolProvider.findFirst("jdeps")
+                                                          .orElseThrow(() -> new IllegalStateException("jdeps not found"));
     private static final String MULTI_RELEASE_ARG = "--multi-release";
     private static final String SYSTEM_ARG = "--system";
     private static final String LIST_DEPS_ARG = "--list-deps";
     private static final String JAVA_BASE_MODULE_NAME = "java.base";
-    private static final ToolProvider JDEPS = ToolProvider.findFirst(JDEPS_TOOL_NAME).orElseThrow();
+    private static final Set<String> KNOWN_SPLIT_PACKAGES = Set.of("javax.annotation", "javax.activation");
+    private static final Map<String, BiConsumer<String, Jar>> PREFIX_HANDLERS = Map.of(
+        "split package", JavaDependencies::split,
+        "not found", JavaDependencies::ignore,
+        "unnamed module", JavaDependencies::ignore,
+        "JDK removed internal API", JavaDependencies::debug
+    );
+
     private final JavaRuntime javaHome;
     private final Set<String> javaModuleNames;
     private final Set<String> dependencies;
@@ -118,8 +129,49 @@ public class JavaDependencies {
 
         Arrays.stream(out.toString().split(EOL))
               .map(String::trim)
-              .filter(s -> !s.isEmpty())
-              .filter(javaModuleNames::contains)
-              .forEach(dependencies::add);
+              .filter(line -> !line.isEmpty())
+              .forEach(line -> handle(line, jar));
+    }
+
+    private void handle(String line, Jar jar) {
+        if (javaModuleNames.contains(line)) {
+            dependencies.add(line);
+        } else {
+            for (Map.Entry<String, BiConsumer<String, Jar>> entry : PREFIX_HANDLERS.entrySet()) {
+                if (line.startsWith(entry.getKey())) {
+                    entry.getValue().accept(line, jar);
+                    return;
+                }
+            }
+            if (!line.contains(":") && line.contains("/")) {
+                handle(line.split("/")[0], jar);
+            } else if (!EXCLUDED_MODULES.contains(line)) {
+                throw new IllegalStateException("Unhandled dependency: " + toString(line, jar));
+            }
+        }
+    }
+
+    private static String toString(String line, Jar jar) {
+        return jar + " -> " + line;
+    }
+
+    private static void ignore(String line, Jar jar) {
+    }
+
+    private static void debug(String line, Jar jar) {
+        Log.debug(toString(line, jar));
+    }
+
+    private static void warn(String line, Jar jar) {
+        Log.warn(toString(line, jar));
+    }
+
+    private static void split(String line, Jar jar) {
+        for (String ignored : KNOWN_SPLIT_PACKAGES) {
+            if (line.contains(ignored)) {
+                return;
+            }
+        }
+        warn(line, jar);
     }
 }

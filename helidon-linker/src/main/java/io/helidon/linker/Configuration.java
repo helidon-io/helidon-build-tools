@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import io.helidon.linker.util.Constants;
 import io.helidon.linker.util.FileUtils;
 import io.helidon.linker.util.JavaRuntime;
 import io.helidon.linker.util.Log;
@@ -155,7 +156,6 @@ public class Configuration {
      */
     public static class Builder {
         static final String DEFAULT_DEBUG = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005";
-        private static final int MINIMUM_JDK_VERSION = 11; // TODO 9?
         private Path mainJar;
         private List<String> defaultJvm;
         private List<String> defaultArgs;
@@ -403,9 +403,9 @@ public class Configuration {
                 throw new IllegalArgumentException("applicationJar required");
             }
             jdk = JavaRuntime.jdk(jdkDirectory);
-            if (jdk.version().feature() < MINIMUM_JDK_VERSION) {
+            if (jdk.version().major() < Constants.MINIMUM_JDK_VERSION) {
                 throw new IllegalArgumentException(jdkDirectory + " is an unsupported version,"
-                                                   + MINIMUM_JDK_VERSION + " or higher required");
+                                                   + Constants.MINIMUM_JDK_VERSION + " or higher required");
             }
             jriDirectory = JavaRuntime.prepareJriDirectory(jriDirectory, mainJar, replace);
             if (logWriter == null) {
@@ -416,7 +416,7 @@ public class Configuration {
         }
 
         private static List<String> toList(String value) {
-            if (value != null && !value.isBlank()) {
+            if (value != null && !value.isEmpty()) {
                 return Arrays.asList(value.split(" "));
             } else {
                 return null;
