@@ -28,7 +28,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 import io.helidon.linker.util.FileUtils;
 import io.helidon.linker.util.Log;
@@ -37,7 +37,6 @@ import io.helidon.linker.util.StreamUtils;
 
 import static io.helidon.linker.util.Constants.CDS_REQUIRES_UNLOCK_OPTION;
 import static io.helidon.linker.util.Constants.CDS_UNLOCK_OPTIONS;
-import static io.helidon.linker.util.Constants.INDENT;
 import static io.helidon.linker.util.Constants.WINDOWS;
 import static io.helidon.linker.util.FileUtils.assertDir;
 import static java.util.Collections.emptyList;
@@ -91,10 +90,10 @@ public class StartScript {
     /**
      * Execute the script with the given arguments.
      *
-     * @param indent {@code true} if output should be indented.
+     * @param transform the output transform.
      * @param args The arguments.
      */
-    public void execute(boolean indent, String... args) {
+    public void execute(Function<String, String> transform, String... args) {
         final ProcessBuilder processBuilder = new ProcessBuilder();
         final List<String> command = new ArrayList<>();
         command.add(scriptFile.toString());
@@ -102,12 +101,11 @@ public class StartScript {
         processBuilder.command(command);
         processBuilder.directory(scriptFile.getParent().getParent().toFile());
         try {
-            final Consumer<String> out = indent ? line -> Log.info(INDENT + line) : Log::info;
-            final Consumer<String> err = indent ? line -> Log.warn(INDENT + line) : Log::warn;
             ProcessMonitor.builder()
                           .processBuilder(processBuilder)
-                          .stdOut(out)
-                          .stdErr(err)
+                          .stdOut(Log::info)
+                          .stdErr(Log::warn)
+                          .transform(transform)
                           .capture(false)
                           .build()
                           .execute();
@@ -160,7 +158,7 @@ public class StartScript {
         private static final String DEFAULT_ARGS_DESC = "<DEFAULT_ARGS_DESC>";
         private static final String DEFAULT_JVM_DESC = "<DEFAULT_JVM_DESC>";
         private static final String DEFAULT_DEBUG_DESC = "<DEFAULT_DEBUG_DESC>";
-        private static final String OVERRIDES = "Overrides configured default %s.";
+        private static final String OVERRIDES = "Overrides \\\"${default%s}\\\".";
         private static final String SETS = "Sets default %s.";
 
         private final String template;
@@ -275,13 +273,13 @@ public class StartScript {
             final String name = mainJar.getFileName().toString();
 
             final String jvm = String.join(" ", this.defaultJvmOptions);
-            final String jvmDesc = description("JVM options", this.defaultJvmOptions);
+            final String jvmDesc = description(this.defaultJvmOptions, "JVM options", "Jvm");
 
             final String args = String.join(" ", this.defaultArgs);
-            final String argsDesc = description("arguments", this.defaultArgs);
+            final String argsDesc = description(this.defaultArgs, "arguments", "Args");
 
             final String debug = String.join(" ", this.defaultDebugOptions);
-            final String debugDesc = description("debug options", this.defaultDebugOptions);
+            final String debugDesc = description(this.defaultDebugOptions, "debug options", "Debug");
 
             final String cds = cdsInstalled ? "yes" : "";
             final String cdsUnlock = requiresUnlock() ? CDS_UNLOCK_OPTIONS + " " : "";
@@ -296,15 +294,19 @@ public class StartScript {
                            .replace(HAS_CDS, cds)
                            .replace(CDS_UNLOCK_OPTION, cdsUnlock);
         }
-        
+
         private boolean requiresUnlock() {
             return cdsInstalled && CDS_REQUIRES_UNLOCK_OPTION;
         }
 
-        private static String description(String name, List<String> defaults) {
-            return String.format(defaults.isEmpty() ? SETS : OVERRIDES, name);
+        private static String description(List<String> defaults, String description, String varName) {
+            if (defaults.isEmpty()) {
+                return String.format(SETS, description);
+            } else {
+                return String.format(OVERRIDES, varName);
+            }
         }
-        
+
         private static boolean isValid(Collection<?> value) {
             return value != null && !value.isEmpty();
         }

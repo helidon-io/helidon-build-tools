@@ -29,8 +29,6 @@ import io.helidon.linker.util.JavaRuntime;
 import io.helidon.linker.util.Log;
 import io.helidon.linker.util.SystemLogWriter;
 
-import static io.helidon.linker.util.FileUtils.CURRENT_JAVA_HOME_DIR;
-import static io.helidon.linker.util.FileUtils.assertDir;
 import static io.helidon.linker.util.FileUtils.assertFile;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
@@ -156,16 +154,15 @@ public class Configuration {
      */
     public static class Builder {
         static final String DEFAULT_DEBUG = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005";
+        private JavaRuntime jdk;
         private Path mainJar;
         private List<String> defaultJvm;
         private List<String> defaultArgs;
         private List<String> defaultDebug;
-        private Path jdkDirectory;
         private Path jriDirectory;
         private boolean replace;
         private boolean verbose;
         private boolean stripDebug;
-        private JavaRuntime jdk;
         private boolean cds;
         private Log.Writer logWriter;
 
@@ -173,7 +170,6 @@ public class Configuration {
             defaultJvm = emptyList();
             defaultArgs = emptyList();
             defaultDebug = List.of(DEFAULT_DEBUG);
-            jdkDirectory = CURRENT_JAVA_HOME_DIR;
             cds = true;
         }
 
@@ -185,7 +181,6 @@ public class Configuration {
          *     --defaultJvmOptions options    Default JVM options to use when starting the application.
          *     --defaultDebugOptions options  Default JVM debug options to use when starting the application with {@code --debug}.
          *     --defaultArgs args             Default arguments to use when starting the application.
-         *     --jdk directory                The JDK directory from which to create the JRI. Defaults to current.
          *     --jri directory                The directory at which to create the JRI.
          *     --replace                      Delete the JRI directory if it exists.
          *     --cds                          Create a CDS archive.
@@ -198,9 +193,7 @@ public class Configuration {
             for (int i = 0; i < args.length; i++) {
                 final String arg = args[i];
                 if (arg.startsWith("--")) {
-                    if (arg.equalsIgnoreCase("--jdk")) {
-                        jdkDirectory(Paths.get(argAt(++i, args)));
-                    } else if (arg.equalsIgnoreCase("--jri")) {
+                    if (arg.equalsIgnoreCase("--jri")) {
                         jriDirectory(Paths.get(argAt(++i, args)));
                     } else if (arg.equalsIgnoreCase("--defaultJvmOptions")) {
                         defaultJvmOptions(argAt(++i, args));
@@ -313,19 +306,6 @@ public class Configuration {
         }
 
         /**
-         * Sets the JDK from which to create the JRI. Defaults to current.
-         *
-         * @param jdkDirectory The directory. If not {@code null}, must be a valid JDK containing jmod files.
-         * @return The builder.
-         */
-        public Builder jdkDirectory(Path jdkDirectory) {
-            if (jdkDirectory != null) {
-                this.jdkDirectory = assertDir(jdkDirectory);
-            }
-            return this;
-        }
-
-        /**
          * Sets the directory at which to create the JRI. If not provided, will be created in
          * a subdirectory of the current working directory, with a name based on the {@link #mainJar}.
          *
@@ -402,9 +382,9 @@ public class Configuration {
             if (mainJar == null) {
                 throw new IllegalArgumentException("applicationJar required");
             }
-            jdk = JavaRuntime.jdk(jdkDirectory);
+            jdk = JavaRuntime.current(true);
             if (jdk.version().major() < Constants.MINIMUM_JDK_VERSION) {
-                throw new IllegalArgumentException(jdkDirectory + " is an unsupported version,"
+                throw new IllegalArgumentException(jdk + " is an unsupported version,"
                                                    + Constants.MINIMUM_JDK_VERSION + " or higher required");
             }
             jriDirectory = JavaRuntime.prepareJriDirectory(jriDirectory, mainJar, replace);

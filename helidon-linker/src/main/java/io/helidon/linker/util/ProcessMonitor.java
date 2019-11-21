@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static io.helidon.linker.util.Constants.EOL;
@@ -45,6 +46,7 @@ public class ProcessMonitor {
     private final Consumer<String> stdOut;
     private final Consumer<String> stdErr;
     private final Predicate<String> filter;
+    private final Function<String, String> transform;
 
     /**
      * Returns a new builder.
@@ -66,6 +68,7 @@ public class ProcessMonitor {
         private Consumer<String> stdOut;
         private Consumer<String> stdErr;
         private Predicate<String> filter;
+        private Function<String, String> transform;
 
         private Builder() {
         }
@@ -136,6 +139,17 @@ public class ProcessMonitor {
             return this;
         }
 
+        /**
+         * Sets a transformer for all process output.
+         *
+         * @param transform The transformer.
+         * @return This builder.
+         */
+        public Builder transform(Function<String, String> transform) {
+            this.transform = transform;
+            return this;
+        }
+
         public ProcessMonitor build() {
             if (builder == null) {
                 throw new IllegalStateException("processBuilder required");
@@ -153,6 +167,9 @@ public class ProcessMonitor {
             if (filter == null) {
                 filter = line -> true;
             }
+            if (transform == null) {
+                transform = Function.identity();
+            }
             return new ProcessMonitor(this);
         }
     }
@@ -166,6 +183,7 @@ public class ProcessMonitor {
         this.stdErr = builder.stdErr;
         this.capturedOutput = capturing ? new ArrayList<>() : emptyList();
         this.filter = builder.filter;
+        this.transform = builder.transform;
     }
 
     /**
@@ -179,8 +197,8 @@ public class ProcessMonitor {
             monitorOut.accept(description);
         }
         final Process process = builder.start();
-        final Future out = monitor(process.getInputStream(), filter, capturing ? this::captureStdOut : stdOut);
-        final Future err = monitor(process.getErrorStream(), filter, capturing ? this::captureStdErr : stdErr);
+        final Future out = monitor(process.getInputStream(), filter, transform, capturing ? this::captureStdOut : stdOut);
+        final Future err = monitor(process.getErrorStream(), filter, transform, capturing ? this::captureStdErr : stdErr);
         final int exitCode = process.waitFor();
         out.cancel(true);
         err.cancel(true);
@@ -223,10 +241,13 @@ public class ProcessMonitor {
         }
     }
 
-    private static Future monitor(InputStream input, Predicate<String> filter, Consumer<String> output) {
+    private static Future monitor(InputStream input, 
+                                  Predicate<String> filter, 
+                                  Function<String, String> transform, 
+                                  Consumer<String> output) {
         return EXECUTOR.submit(() -> new BufferedReader(new InputStreamReader(input)).lines().forEach(line -> {
             if (filter.test(line)) {
-                output.accept(line);
+                output.accept(transform.apply(line));
             }
         }));
     }

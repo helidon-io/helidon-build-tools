@@ -28,8 +28,10 @@ import io.helidon.linker.util.Log;
 
 import static io.helidon.linker.Application.APP_DIR;
 import static io.helidon.linker.util.Constants.DIR_SEP;
+import static io.helidon.linker.util.Constants.INDENT;
 import static io.helidon.linker.util.FileUtils.fromWorking;
 import static io.helidon.linker.util.FileUtils.sizeOf;
+import static io.helidon.linker.util.Style.Bold;
 import static io.helidon.linker.util.Style.BoldBlue;
 import static io.helidon.linker.util.Style.BoldBrightGreen;
 import static io.helidon.linker.util.Style.BoldBrightYellow;
@@ -52,6 +54,7 @@ public class Linker {
     private Set<String> javaDependencies;
     private JavaRuntime jri;
     private Path jriMainJar;
+    private long cdsArchiveSize;
     private StartScript startScript;
     private String startCommand;
     private float jarsSize;
@@ -126,8 +129,9 @@ public class Linker {
     }
 
     private void begin() {
-        Log.info("Creating Java Runtime Image %s from %s and JDK %s", Cyan.apply(imageName),
-                 config.mainJar().getFileName(), config.jdk().version());
+        Log.info("");
+        Log.info("Creating Java Runtime Image %s from %s and %s", Cyan.apply(imageName),
+                 Cyan.apply(config.mainJar().getFileName()), Cyan.apply("JDK " + config.jdk().version()));
         this.startTime = System.currentTimeMillis();
     }
 
@@ -138,7 +142,9 @@ public class Linker {
     private void collectJavaDependencies() {
         Log.info("Collecting Java module dependencies");
         this.javaDependencies = application.javaDependencies(config.jdk());
-        Log.info("Found %d Java module dependencies: %s", javaDependencies.size(), String.join(", ", javaDependencies));
+        final List<String> sorted = new ArrayList<>(javaDependencies);
+        sorted.sort(null);
+        Log.info("Found %d Java module dependencies: %s", javaDependencies.size(), String.join(", ", sorted));
     }
 
     private void buildJlinkArguments() {
@@ -182,14 +188,50 @@ public class Linker {
     private void installCdsArchive() {
         if (config.cds()) {
             try {
-                ClassDataSharing.builder()
-                                .jri(jri.path())
-                                .applicationJar(jriMainJar)
-                                .jvmOptions(config.defaultJvmOptions())
-                                .args((config.defaultArgs()))
-                                .archiveFile(application.archivePath())
-                                .logOutput(config.verbose())
-                                .build();
+                final ClassDataSharing cds = ClassDataSharing.builder()
+                                                             .jri(jri.path())
+                                                             .applicationJar(jriMainJar)
+                                                             .jvmOptions(config.defaultJvmOptions())
+                                                             .args((config.defaultArgs()))
+                                                             .archiveFile(application.archivePath())
+                                                             .logOutput(config.verbose())
+                                                             .build();
+
+                // Get the archive size
+
+                cdsArchiveSize = sizeOf(jri.path().resolve(application.archivePath()));
+
+                // Count how many classes in the archive are from the JDK vs the app. Note that we cannot
+                // just count one and subtract since some classes in the class list may not have been
+                // put in the archive (see verbose output for examples).
+                
+                final JavaRuntime jdk = config.jdk();
+                final Application app = application;
+                int jdkCount = 0;
+                int appCount = 0;
+                for (String name : cds.classList()) {
+                    final String resourcePath = name + ".class";
+                    if (jdk.containsResource(resourcePath)) {
+                        jdkCount++;
+                    } else if (app.containsResource(resourcePath)) {
+                        appCount++;
+                    }
+                }
+                
+                // Report the stats
+
+                final String cdsSize = BoldBlue.format("%.1fM", mb(cdsArchiveSize));
+                final String jdkSize = BoldBlue.format("%d", jdkCount);
+                final String appSize = BoldBlue.format("%d", appCount);
+                if (appCount == 0) {
+                    if (jdk.version().major() > 9) {
+                        Log.warn("CDS archive does not contain any application classes, but should!");
+                    }
+                    Log.info("CDS archive is %s, contains %s JDK classes", cdsSize, jdkSize);
+                } else {
+                    Log.info("CDS archive is %s, contains %s JDK and %s application classes", cdsSize, jdkSize, appSize);
+                }
+
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -212,14 +254,20 @@ public class Linker {
             startScript.install();
             startCommand = imageName + DIR_SEP + "bin" + DIR_SEP + startScript.scriptFile().getFileName();
             Log.info("");
-            Log.info("Executing %s", BoldBlue.apply(startCommand + " --help"));
-            startScript.execute(true, "--help");
+            Log.info("Executing %s", Cyan.apply(startCommand + " --help"));
+            startScript.execute(line -> INDENT + Bold.apply(line), "--help");
         } catch (IllegalStateException e) {
             Log.warn("Start script cannot be created for this platform.");
             final Path root = fromWorking(jri.path());
             final String jvm = config.cds() ? " -XX:SharedArchiveFile=lib" + DIR_SEP + "start.jsa" : "";
             final Path jarName = jriMainJar.getFileName();
             startCommand = String.format("cd %s; bin" + DIR_SEP + "java%s -jar app" + DIR_SEP + "%s", root, jvm, jarName);
+            String note = "";
+            if (config.cds()) {
+                note = BoldBrightYellow.apply("Note:") + " for CDS to function, the jar path MUST be relative as shown.";
+            }
+            Log.info("");
+            Log.info("Use %s to launch. %s", Cyan.apply(startCommand), note);
         }
     }
 
@@ -228,11 +276,11 @@ public class Linker {
             final long jars = application.diskSize();
             final long jdk = config.jdk().diskSize();
             final long jri = this.jri.diskSize();
-            final long cds = config.cds() ? sizeOf(this.jri.path().resolve(application.archivePath())) : 0;
+            final long cds = cdsArchiveSize;
             final long jriOnly = jri - cds - jars;
             final long initial = jars + jdk;
             final float reduction = (1F - (float) jri / (float) initial) * 100F;
-
+            
             jarsSize = mb(jars);
             jdkSize = mb(jdk);
             jriSize = mb(jriOnly);
@@ -248,13 +296,7 @@ public class Linker {
     private void end() {
         final long elapsed = System.currentTimeMillis() - startTime;
         final float startSeconds = elapsed / 1000F;
-        String note = "";
-        if (startScript == null && config.cds()) {
-            note = BoldBrightYellow.apply("Note:") + " for CDS to function, the jar path MUST be relative as shown.";
-        }
         Log.info("");
-        Log.info("Use %s to launch. %s", BoldBlue.apply(startCommand), note);
-         Log.info("");
         Log.info("Java Runtime Image %s completed in %.1f seconds", Cyan.apply(imageName), startSeconds);
         Log.info("");
         Log.info("     initial size: %s  (%.1f JDK + %.1f application)", initialSize, jdkSize, jarsSize);

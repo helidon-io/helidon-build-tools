@@ -85,7 +85,12 @@ public enum Style implements Function<Object, String> {
     /**
      * Bold, bright yellow.
      */
-    BoldBrightYellow(false, true, Ansi.Color.YELLOW);
+    BoldBrightYellow(false, true, Ansi.Color.YELLOW),
+
+    /**
+     * Bold.
+     */
+    Bold(true, false, null);
 
     private final boolean bold;
     private final boolean bright;
@@ -122,7 +127,7 @@ public enum Style implements Function<Object, String> {
         }
         if (bright) {
             ansi.fgBright(color);
-        } else {
+        } else if (color != null) {
             ansi.fg(color);
         }
         return ansi.a(message).reset().toString();

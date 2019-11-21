@@ -34,7 +34,7 @@ import io.helidon.linker.util.Log;
  * A Helidon application supporting Java dependency collection and installation into a Java Home.
  * This class assumes that the application was built re
  */
-public class Application {
+public class Application implements ResourceContainer {
     static final Path APP_DIR = Paths.get("app");
     private static final Path ARCHIVE_PATH = Paths.get("lib/start.jsa");
     private static final String MP_FILE_PREFIX = "helidon-microprofile";
@@ -117,6 +117,11 @@ public class Application {
     public long diskSize() {
         return jars().mapToLong(jar -> FileUtils.sizeOf(jar.path()))
                      .sum();
+    }
+    
+    @Override
+    public boolean containsResource(String resourcePath) {
+        return jars().anyMatch(jar -> jar.containsResource(resourcePath));
     }
 
     private Stream<Jar> jars() {

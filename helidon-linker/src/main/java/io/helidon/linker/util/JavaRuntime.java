@@ -29,17 +29,19 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import io.helidon.linker.Jar;
+import io.helidon.linker.ResourceContainer;
+
 import static io.helidon.linker.util.FileUtils.CURRENT_JAVA_HOME_DIR;
 import static io.helidon.linker.util.FileUtils.assertDir;
 import static io.helidon.linker.util.FileUtils.assertFile;
 import static io.helidon.linker.util.FileUtils.listFiles;
 import static java.util.Objects.requireNonNull;
-import static java.util.function.Function.identity;
 
 /**
  * A Java Runtime directory.
  */
-public class JavaRuntime {
+public class JavaRuntime implements ResourceContainer {
     private static final String JMODS_DIR = "jmods";
     private static final String JMOD_SUFFIX = ".jmod";
     private static final String JAVA_BASE_JMOD = "java.base.jmod";
@@ -49,8 +51,9 @@ public class JavaRuntime {
     private static final String JAVA_CMD_PATH = "bin" + FILE_SEP + "java";
     private final Path javaHome;
     private final Runtime.Version version;
+    private final boolean isJdk;
     private final Path jmodsDir;
-    private final Map<String, Path> modules;
+    private final Map<String, Jar> modules;
 
     /**
      * Ensures a valid JRI directory path, deleting if required.
@@ -90,10 +93,9 @@ public class JavaRuntime {
      * @throws IllegalArgumentException If the directory is not a valid JRI.
      */
     public static Path assertJri(Path jriDirectory) {
-        final Path result = FileUtils.assertDir(jriDirectory);
-        final Path javaCommand = jriDirectory.resolve(JAVA_CMD_PATH);
-        if (!Files.isRegularFile(javaCommand)) {
-            throw new IllegalArgumentException("Not a valid JRI (" + javaCommand + " not found): " + jriDirectory);
+        final Path result = assertDir(jriDirectory);
+        if (!isValidJri(jriDirectory)) {
+            throw new IllegalArgumentException("Not a valid JRI (" + JAVA_CMD_PATH + " not found): " + jriDirectory);
         }
         return result;
     }
@@ -106,13 +108,11 @@ public class JavaRuntime {
      * @throws IllegalArgumentException If the directory is not a valid JDK.
      */
     public static Path assertJdk(Path jdkDirectory) {
-        final Path result = assertJri(jdkDirectory);
-        final Path jmodsDir = result.resolve(JMODS_DIR);
-        final Path javaBase = jmodsDir.resolve(JAVA_BASE_JMOD);
-        if (!Files.isDirectory(jmodsDir) || !Files.exists(javaBase)) {
+        final Path result = assertDir(jdkDirectory);
+        if (!isValidJdk(result)) {
             throw new IllegalArgumentException("Not a valid JDK (" + JAVA_BASE_JMOD + " not found): " + jdkDirectory);
         }
-        return jdkDirectory;
+        return result;
     }
 
     /**
@@ -134,11 +134,8 @@ public class JavaRuntime {
      * @throws IllegalArgumentException If this JVM is not a valid JDK.
      */
     public static JavaRuntime current(boolean assertJdk) {
-        final Path jriDir = CURRENT_JAVA_HOME_DIR;
-        if (assertJdk) {
-            assertJdk(jriDir);
-        }
-        return new JavaRuntime(jriDir, null);
+        final Path jriDir = assertJdk ? assertJdk(CURRENT_JAVA_HOME_DIR) : assertJri(CURRENT_JAVA_HOME_DIR);
+        return new JavaRuntime(jriDir, null, assertJdk);
     }
 
     /**
@@ -149,7 +146,7 @@ public class JavaRuntime {
      * @throws IllegalArgumentException If this JVM is not a valid JDK.
      */
     public static JavaRuntime jdk(Path jdkDirectory) {
-        return new JavaRuntime(assertJdk(jdkDirectory), null);
+        return new JavaRuntime(assertJdk(jdkDirectory), null, true);
     }
 
     /**
@@ -161,7 +158,7 @@ public class JavaRuntime {
      * @throws IllegalArgumentException If this JVM is not a valid JDK.
      */
     public static JavaRuntime jdk(Path jdkDirectory, Runtime.Version version) {
-        return new JavaRuntime(assertJdk(jdkDirectory), version);
+        return new JavaRuntime(assertJdk(jdkDirectory), version, true);
     }
 
     /**
@@ -174,25 +171,27 @@ public class JavaRuntime {
      * @throws IllegalArgumentException If this JVM is not a valid JRI or the runtime version cannot be computed.
      */
     public static JavaRuntime jri(Path jriDirectory, Runtime.Version version) {
-        return new JavaRuntime(jriDirectory, requireNonNull(version));
+        final Path jriDir = assertJri(jriDirectory);
+        final boolean isJdk = isValidJdk(jriDir);
+        return new JavaRuntime(jriDir, version, isJdk);
     }
 
-    private JavaRuntime(Path javaHome, Runtime.Version version) {
-        javaCommand(javaHome); // Assert valid.
+    private JavaRuntime(Path javaHome, Runtime.Version version, boolean isJdk) {
         this.javaHome = assertDir(javaHome);
         this.jmodsDir = javaHome.resolve(JMODS_DIR);
-        if (Files.isDirectory(jmodsDir)) {
+        if (isJdk) {
             final List<Path> jmodFiles = listFiles(jmodsDir, fileName -> fileName.endsWith(JMOD_SUFFIX));
             this.version = isCurrent() ? Runtime.version() : findVersion();
             this.modules = jmodFiles.stream()
                                     .filter(file -> !Constants.EXCLUDED_MODULES.contains(moduleNameOf(file)))
-                                    .collect(Collectors.toMap(JavaRuntime::moduleNameOf, identity()));
+                                    .collect(Collectors.toMap(JavaRuntime::moduleNameOf, Jar::open));
         } else if (version == null) {
             throw new IllegalArgumentException("Version required in a Java Runtime without 'jmods' dir: " + javaHome);
         } else {
             this.version = version;
             this.modules = Map.of();
         }
+        this.isJdk = isJdk;
     }
 
     /**
@@ -222,6 +221,12 @@ public class JavaRuntime {
         return javaHome;
     }
 
+    @Override
+    public boolean containsResource(String resourcePath) {
+        final String path = resourcePath.endsWith(".class") ? "classes/" + resourcePath : resourcePath;
+        return modules.values().stream().anyMatch(jar -> jar.containsResource(path));
+    }
+
     /**
      * Returns whether or not this instance represents the current JVM.
      *
@@ -241,14 +246,14 @@ public class JavaRuntime {
     }
 
     /**
-     * Returns the path to the {@code .jmod} file for the given name.
+     * Returns the {@code .jmod} file for the given name as a {@link Jar}.
      *
      * @param moduleName The module name.
-     * @return The path the the {@code .jmod} file.
-     * @throws IllegalArgumentException If the file cannot be found.
+     * @return The jar.
+     * @throws IllegalArgumentException If the jar cannot be found.
      */
-    public Path jmodFile(String moduleName) {
-        final Path result = modules.get(moduleName);
+    public Jar jmod(String moduleName) {
+        final Jar result = modules.get(moduleName);
         if (result == null) {
             throw new IllegalArgumentException("Cannot find .jmod file for module '" + moduleName + "' in " + path());
         }
@@ -290,8 +295,12 @@ public class JavaRuntime {
         return FileUtils.sizeOf(path());
     }
 
+    @Override
+    public String toString() {
+        return (isJdk ? "JDK " : "JRI ") + version;
+    }
+
     private Runtime.Version findVersion() {
-        assertHasJavaBaseJmod();
         final Path javaBase = assertFile(jmodsDir.resolve(JAVA_BASE_JMOD));
         try {
             final ZipFile zip = new ZipFile(javaBase.toFile());
@@ -308,18 +317,25 @@ public class JavaRuntime {
         }
     }
 
-    private void assertHasJavaBaseJmod() {
-        final Path javaBase = jmodsDir.resolve(JAVA_BASE_JMOD);
-        if (!Files.isDirectory(jmodsDir) || !Files.exists(javaBase)) {
-            throw new IllegalArgumentException("Not a valid JDK (" + JAVA_BASE_JMOD + " not found): " + javaHome);
+    private static boolean isValidJri(Path jriDirectory) {
+        final Path javaCommand = jriDirectory.resolve(JAVA_CMD_PATH);
+        return Files.isRegularFile(javaCommand);
+    }
+
+    private static boolean isValidJdk(Path jdkDirectory) {
+        if (isValidJri(jdkDirectory)) {
+            final Path jmodsDir = jdkDirectory.resolve(JMODS_DIR);
+            final Path javaBase = jmodsDir.resolve(JAVA_BASE_JMOD);
+            return Files.isDirectory(jmodsDir) && Files.exists(javaBase);
         }
+        return false;
     }
 
     private static String moduleNameOf(Path jmodFile) {
         final String fileName = fileNameOf(jmodFile);
         return fileName.substring(0, fileName.length() - JMOD_SUFFIX.length());
     }
-    
+
     private static String fileNameOf(Path file) {
         return file.getFileName().toString();
     }

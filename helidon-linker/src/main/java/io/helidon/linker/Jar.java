@@ -35,6 +35,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -61,7 +62,7 @@ import static java.util.Collections.emptyList;
 /**
  * CDI BeansArchive aware jar wrapper. Supports creating an index if missing and adding it during copy.
  */
-public class Jar {
+public class Jar implements ResourceContainer {
     private static final String JMOD_SUFFIX = ".jmod";
     private static final Set<String> SUPPORTED_SUFFIXES = Set.of(".jar", ".zip", JMOD_SUFFIX);
     private static final String BEANS_PATH = "META-INF/beans.xml";
@@ -79,6 +80,7 @@ public class Jar {
     private final boolean isBeansArchive;
     private final boolean isSigned;
     private final ModuleDescriptor descriptor;
+    private final AtomicReference<Set<String>> resources;
     private Index index;
     private boolean builtIndex;
 
@@ -160,6 +162,7 @@ public class Jar {
             } else {
                 this.descriptor = null;
             }
+            this.resources = new AtomicReference<>();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -184,6 +187,15 @@ public class Jar {
     }
 
     /**
+     * Returns whether or not this is a {@code .jmod} file.
+     *
+     * @return {@code true} if {@link .jmod}.
+     */
+    public boolean isJmod() {
+        return isJmod;
+    }
+
+    /**
      * Returns the manifest class-path if present.
      *
      * @return The paths that exist in the file system. May be empty or contain directories.
@@ -203,7 +215,7 @@ public class Jar {
     }
 
     /**
-     * Retuns the entries in this jar.
+     * Returns the entries in this jar.
      *
      * @return The entries.
      */
@@ -211,6 +223,18 @@ public class Jar {
         final Iterator<JarEntry> iterator = jar.entries().asIterator();
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false)
                             .map(Entry::new);
+    }
+
+    @Override
+    public boolean containsResource(String resourcePath) {
+        Set<String> paths = resources.get();
+        if (paths == null) {
+            synchronized (resources) {
+                paths = entries().map(JarEntry::getName).collect(Collectors.toSet());
+                resources.set(paths);
+            }
+        }
+        return paths.contains(resourcePath);
     }
 
     /**
