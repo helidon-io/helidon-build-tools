@@ -37,6 +37,7 @@ import io.helidon.linker.util.StreamUtils;
 
 import static io.helidon.linker.util.Constants.CDS_REQUIRES_UNLOCK_OPTION;
 import static io.helidon.linker.util.Constants.CDS_UNLOCK_OPTIONS;
+import static io.helidon.linker.util.Constants.DIR_SEP;
 import static io.helidon.linker.util.Constants.WINDOWS;
 import static io.helidon.linker.util.FileUtils.assertDir;
 import static java.util.Collections.emptyList;
@@ -92,6 +93,7 @@ public class StartScript {
      *
      * @param transform the output transform.
      * @param args The arguments.
+     * @throws RuntimeException If the process fails.
      */
     public void execute(Function<String, String> transform, String... args) {
         final ProcessBuilder processBuilder = new ProcessBuilder();
@@ -143,6 +145,26 @@ public class StartScript {
     }
 
     /**
+     * Platform not supported error.
+     */
+    public static final class PlatformNotSupportedError extends IllegalStateException {
+        private final List<String> command;
+
+        private PlatformNotSupportedError(List<String> command) {
+            this.command = command;
+        }
+
+        /**
+         * Returns the Java command to execute on this platform.
+         *
+         * @return The command.
+         */
+        List<String> command() {
+            return command;
+        }
+    }
+
+    /**
      * The builder.
      */
     public static class Builder {
@@ -161,7 +183,7 @@ public class StartScript {
         private static final String OVERRIDES = "Overrides \\\"${default%s}\\\".";
         private static final String SETS = "Sets default %s.";
 
-        private final String template;
+        private String template;
         private Path installDirectory;
         private Path mainJar;
         private List<String> defaultJvmOptions;
@@ -172,7 +194,6 @@ public class StartScript {
         private String script;
 
         private Builder() {
-            this.template = template();
             this.defaultJvmOptions = emptyList();
             this.defaultDebugOptions = List.of(Configuration.Builder.DEFAULT_DEBUG);
             this.defaultArgs = emptyList();
@@ -254,6 +275,7 @@ public class StartScript {
          * Builds and returns the instance.
          *
          * @return The instance.
+         * @throws PlatformNotSupportedError If a script cannot be created for the current platform.
          */
         public StartScript build() {
             if (installDirectory == null) {
@@ -262,7 +284,7 @@ public class StartScript {
             if (mainJar == null) {
                 throw new IllegalStateException("mainJar is required");
             }
-
+            this.template = template();
             this.scriptFile = assertDir(installDirectory).resolve(INSTALL_PATH);
             this.script = createScript();
 
@@ -295,6 +317,23 @@ public class StartScript {
                            .replace(CDS_UNLOCK_OPTION, cdsUnlock);
         }
 
+        private List<String> createCommand() {
+            final List<String> command = new ArrayList<>();
+            command.add("bin" + DIR_SEP + "java");
+            if (cdsInstalled) {
+                if (requiresUnlock()) {
+                    command.add(CDS_UNLOCK_OPTIONS);
+                }
+                command.add("-XX:SharedArchiveFile=lib" + DIR_SEP + "start.jsa");
+                command.add("-Xshare:on");
+            }
+            command.addAll(defaultJvmOptions);
+            command.add("-jar");
+            command.add("app" + DIR_SEP + mainJar.getFileName());
+            command.addAll(defaultArgs);
+            return command;
+        }
+
         private boolean requiresUnlock() {
             return cdsInstalled && CDS_REQUIRES_UNLOCK_OPTION;
         }
@@ -311,11 +350,11 @@ public class StartScript {
             return value != null && !value.isEmpty();
         }
 
-        private static String template() {
+        private String template() {
             final String path = TEMPLATE_NAME + (WINDOWS ? WINDOWS_EXTENSION : BASH_EXTENSION);
             final InputStream content = StartScript.class.getClassLoader().getResourceAsStream(path);
             if (content == null) {
-                throw new IllegalStateException(path + " not found");
+                throw new PlatformNotSupportedError(createCommand());
             } else {
                 try {
                     return StreamUtils.toString(content);

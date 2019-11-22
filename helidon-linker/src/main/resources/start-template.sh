@@ -12,7 +12,8 @@ usage() {
     [[ ${hasCds} ]] && echo "    --noCds         Do not use CDS."
     echo "    --debug         Add JVM debug options."
     echo "    --test          Exit when started."
-    echo "    --dry           Print the command rather than executing it."
+    echo "    --dryRun        Display the command rather than executing it."
+    echo "    --help          Display usage."
     echo
     echo "Unrecognized options are passed as args to <JAR_NAME>, replacing defaults."
     echo
@@ -53,16 +54,16 @@ init() {
     readonly debugOptions="${DEFAULT_DEBUG:-${defaultDebug}}"
     readonly jvmDefaults="${DEFAULT_JVM:-${defaultJvm}}"
     readonly argDefaults="${DEFAULT_ARGS:-${defaultArgs}}"
-    useCds=${hasCds}
-    args= cds= debug= dryRun= jvm= 
+    local useCds=${hasCds}
+    local args= cds= debug= dryRun= jvm= 
 
     while (( ${#} > 0 )); do
         case "${1}" in
-            -d | --debug) debug="${debugOptions} " ;;
-            --dry | --dryRun) dryRun=true ;;
+            --debug) debug="${debugOptions} " ;;
+            --dryRun) dryRun=true ;;
             -h | --help) usage ;;
-            -j | --jvm) shift; appendVar jvm "${1}" ;;
-            -n | --noCds) useCds= ;;
+            --jvm) shift; appendVar jvm "${1}" ;;
+            --noCds) useCds= ;;
             --test) appendVar jvm ${exitOption} ;;
             *) appendVar args "${1}" ;;
         esac

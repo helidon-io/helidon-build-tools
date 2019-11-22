@@ -16,6 +16,7 @@
 
 package io.helidon.linker;
 
+import java.io.File;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -25,16 +26,17 @@ import java.util.spi.ToolProvider;
 
 import io.helidon.linker.util.JavaRuntime;
 import io.helidon.linker.util.Log;
+import io.helidon.linker.util.ProcessMonitor;
 
 import static io.helidon.linker.Application.APP_DIR;
 import static io.helidon.linker.util.Constants.DIR_SEP;
 import static io.helidon.linker.util.Constants.INDENT;
+import static io.helidon.linker.util.Constants.INDENT_BOLD;
 import static io.helidon.linker.util.FileUtils.fromWorking;
 import static io.helidon.linker.util.FileUtils.sizeOf;
-import static io.helidon.linker.util.Style.Bold;
 import static io.helidon.linker.util.Style.BoldBlue;
 import static io.helidon.linker.util.Style.BoldBrightGreen;
-import static io.helidon.linker.util.Style.BoldBrightYellow;
+import static io.helidon.linker.util.Style.BoldYellow;
 import static io.helidon.linker.util.Style.Cyan;
 
 /**
@@ -56,7 +58,7 @@ public class Linker {
     private Path jriMainJar;
     private long cdsArchiveSize;
     private StartScript startScript;
-    private String startCommand;
+    private List<String> startCommand;
     private float jarsSize;
     private float jdkSize;
     private float jriSize;
@@ -114,6 +116,8 @@ public class Linker {
         installJars();
         installCdsArchive();
         installStartScript();
+        testImage();
+        displayStartScriptHelp();
         computeSizes();
         end();
         return config.jriDirectory();
@@ -129,7 +133,7 @@ public class Linker {
     }
 
     private void begin() {
-        Log.info("");
+        Log.info();
         Log.info("Creating Java Runtime Image %s from %s and %s", Cyan.apply(imageName),
                  Cyan.apply(config.mainJar().getFileName()), Cyan.apply("JDK " + config.jdk().version()));
         this.startTime = System.currentTimeMillis();
@@ -204,7 +208,7 @@ public class Linker {
                 // Count how many classes in the archive are from the JDK vs the app. Note that we cannot
                 // just count one and subtract since some classes in the class list may not have been
                 // put in the archive (see verbose output for examples).
-                
+
                 final JavaRuntime jdk = config.jdk();
                 final Application app = application;
                 int jdkCount = 0;
@@ -217,7 +221,7 @@ public class Linker {
                         appCount++;
                     }
                 }
-                
+
                 // Report the stats
 
                 final String cdsSize = BoldBlue.format("%.1fM", mb(cdsArchiveSize));
@@ -227,9 +231,10 @@ public class Linker {
                     if (jdk.version().major() > 9) {
                         Log.warn("CDS archive does not contain any application classes, but should!");
                     }
-                    Log.info("CDS archive is %s, contains %s JDK classes", cdsSize, jdkSize);
+                    Log.info("CDS archive is %s for %s JDK classes", cdsSize, jdkSize);
                 } else {
-                    Log.info("CDS archive is %s, contains %s JDK and %s application classes", cdsSize, jdkSize, appSize);
+                    final String total = BoldBlue.format("%d", jdkCount + appCount);
+                    Log.info("CDS archive is %s for %s classes: %s JDK and %s application", cdsSize, total, jdkSize, appSize);
                 }
 
             } catch (Exception e) {
@@ -252,22 +257,57 @@ public class Linker {
 
             Log.info("Installing start script in %s", installDir);
             startScript.install();
-            startCommand = imageName + DIR_SEP + "bin" + DIR_SEP + startScript.scriptFile().getFileName();
-            Log.info("");
-            Log.info("Executing %s", Cyan.apply(startCommand + " --help"));
-            startScript.execute(line -> INDENT + Bold.apply(line), "--help");
-        } catch (IllegalStateException e) {
-            Log.warn("Start script cannot be created for this platform.");
-            final Path root = fromWorking(jri.path());
-            final String jvm = config.cds() ? " -XX:SharedArchiveFile=lib" + DIR_SEP + "start.jsa" : "";
-            final Path jarName = jriMainJar.getFileName();
-            startCommand = String.format("cd %s; bin" + DIR_SEP + "java%s -jar app" + DIR_SEP + "%s", root, jvm, jarName);
-            String note = "";
+            startCommand = List.of(imageName + DIR_SEP + "bin" + DIR_SEP + startScript.scriptFile().getFileName());
+        } catch (StartScript.PlatformNotSupportedError e) {
             if (config.cds()) {
-                note = BoldBrightYellow.apply("Note:") + " for CDS to function, the jar path MUST be relative as shown.";
+                Log.warn("Start script cannot be created for this platform; for CDS to function, the jar path %s" +
+                         " be relative as shown below.", BoldYellow.apply("must"));
+            } else {
+                Log.warn("Start script cannot be created for this platform.");
             }
-            Log.info("");
-            Log.info("Use %s to launch. %s", Cyan.apply(startCommand), note);
+            startCommand = e.command();
+        }
+    }
+
+    private String startCommand() {
+        return String.join(" ", startCommand);
+    }
+
+    private void testImage() {
+        if (config.test()) {
+            if (startScript != null) {
+                Log.info();
+                Log.info("Executing %s", Cyan.apply(startCommand() + " --test"));
+                Log.info();
+                startScript.execute(INDENT, "--test");
+            } else {
+                Log.info();
+                Log.info("Executing %s", Cyan.apply(startCommand()));
+                Log.info();
+                final List<String> command = new ArrayList<>(startCommand);
+                command.add(command.indexOf("-jar"), "-Dexit.on.started=✅");
+                final File root = config.jriDirectory().toFile();
+                try {
+                    ProcessMonitor.builder()
+                                  .processBuilder(new ProcessBuilder().command(command).directory(root))
+                                  .stdOut(Log::info)
+                                  .stdErr(Log::warn)
+                                  .transform(INDENT)
+                                  .capture(false)
+                                  .build()
+                                  .execute();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
+
+    private void displayStartScriptHelp() {
+        if (startScript != null) {
+            Log.info();
+            Log.info("Executing %s", Cyan.apply(startCommand() + " --help"));
+            startScript.execute(INDENT_BOLD, "--help");
         }
     }
 
@@ -280,7 +320,7 @@ public class Linker {
             final long jriOnly = jri - cds - jars;
             final long initial = jars + jdk;
             final float reduction = (1F - (float) jri / (float) initial) * 100F;
-            
+
             jarsSize = mb(jars);
             jdkSize = mb(jdk);
             jriSize = mb(jriOnly);
@@ -296,9 +336,9 @@ public class Linker {
     private void end() {
         final long elapsed = System.currentTimeMillis() - startTime;
         final float startSeconds = elapsed / 1000F;
-        Log.info("");
+        Log.info();
         Log.info("Java Runtime Image %s completed in %.1f seconds", Cyan.apply(imageName), startSeconds);
-        Log.info("");
+        Log.info();
         Log.info("     initial size: %s  (%.1f JDK + %.1f application)", initialSize, jdkSize, jarsSize);
         if (config.cds()) {
             Log.info("       image size: %s  (%5.1f JDK + %.1f application + %.1f CDS)", imageSize, jriSize, jarsSize, cdsSize);
@@ -306,7 +346,7 @@ public class Linker {
             Log.info("       image size: %s  (%5.1f JDK + %.1f application)", imageSize, jriSize, jarsSize);
         }
         Log.info("        reduction: %s", percent);
-        Log.info("");
+        Log.info();
     }
 
     private static float mb(final long bytes) {

@@ -19,6 +19,9 @@ package io.helidon.linker.util;
 import java.io.File;
 import java.util.Locale;
 import java.util.Set;
+import java.util.function.Function;
+
+import static io.helidon.linker.util.Style.Bold;
 
 /**
  * Shared constants.
@@ -29,7 +32,7 @@ public class Constants {
      * The minimum supported JDK version.
      */
     public static final int MINIMUM_JDK_VERSION = 9;
-    
+
     /**
      * Whether or not this is a Windows platform.
      */
@@ -56,9 +59,14 @@ public class Constants {
     public static final String CDS_UNLOCK_OPTIONS = "-XX:+UnlockDiagnosticVMOptions";
 
     /**
-     * Indent.
+     * Indent function.
      */
-    public static final String INDENT = "    ";
+    public static final Function<String, String> INDENT = line -> "    " + line;
+
+    /**
+     * Indent bold function.
+     */
+    public static final Function<String, String> INDENT_BOLD = line -> "    " + Bold.apply(line);
 
     /**
      * Excluded module names.

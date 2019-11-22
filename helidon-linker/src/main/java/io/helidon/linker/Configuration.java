@@ -46,6 +46,7 @@ public class Configuration {
     private final boolean verbose;
     private final boolean stripDebug;
     private final boolean cds;
+    private final boolean test;
 
     /**
      * Returns a new configuration builder.
@@ -66,6 +67,7 @@ public class Configuration {
         this.verbose = builder.verbose;
         this.stripDebug = builder.stripDebug;
         this.cds = builder.cds;
+        this.test = builder.test;
     }
 
     /**
@@ -132,6 +134,15 @@ public class Configuration {
     }
 
     /**
+     * Returns whether or not to test the start script.
+     *
+     * @return {@code true} if the start script should be tested.
+     */
+    public boolean test() {
+        return test;
+    }
+
+    /**
      * Returns whether or not to log detail messages.
      *
      * @return {@code true} if detail messages should be logged.
@@ -164,6 +175,7 @@ public class Configuration {
         private boolean verbose;
         private boolean stripDebug;
         private boolean cds;
+        private boolean test;
         private Log.Writer logWriter;
 
         private Builder() {
@@ -171,6 +183,7 @@ public class Configuration {
             defaultArgs = emptyList();
             defaultDebug = List.of(DEFAULT_DEBUG);
             cds = true;
+            test = true;
         }
 
         /**
@@ -183,7 +196,8 @@ public class Configuration {
          *     --defaultArgs args             Default arguments to use when starting the application.
          *     --jri directory                The directory at which to create the JRI.
          *     --replace                      Delete the JRI directory if it exists.
-         *     --cds                          Create a CDS archive.
+         *     --skipCds                      Do not create a CDS archive.
+         *     --skipTest                     Do not test the start script.
          *     --verbose                      Log detail messages.
          *     --stripDebug                   Strip debug information from JDK classes. Defaults to false.
          * </pre>
@@ -203,8 +217,10 @@ public class Configuration {
                         defaultArgs(argAt(++i, args));
                     } else if (arg.equalsIgnoreCase("--replace")) {
                         replace(true);
-                    } else if (arg.equalsIgnoreCase("--cds")) {
-                        cds(true);
+                    } else if (arg.equalsIgnoreCase("--skipCds")) {
+                        cds(false);
+                    } else if (arg.equalsIgnoreCase("--skipTest")) {
+                        test(false);
                     } else if (arg.equalsIgnoreCase("--verbose")) {
                         verbose(true);
                     } else if (arg.equalsIgnoreCase("--stripDebug")) {
@@ -336,6 +352,17 @@ public class Configuration {
          */
         public Builder cds(boolean cds) {
             this.cds = cds;
+            return this;
+        }
+
+        /**
+         * Sets whether or not to test the start script. Defaults to {@code true}.
+         *
+         * @param test {@code true} if the start script should be tested.
+         * @return The builder.
+         */
+        public Builder test(boolean test) {
+            this.test = test;
             return this;
         }
 

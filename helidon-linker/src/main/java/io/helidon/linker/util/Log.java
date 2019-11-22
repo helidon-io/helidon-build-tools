@@ -72,6 +72,13 @@ public abstract class Log {
     }
 
     /**
+     * Log an empty message at INFO level.
+     */
+    public static void info() {
+        log(Level.INFO, "");
+    }
+
+    /**
      * Log a message at INFO level.
      *
      * @param message The message.

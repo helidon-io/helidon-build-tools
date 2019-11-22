@@ -67,6 +67,12 @@ public class JavaImageMojo extends AbstractMojo {
     private boolean addClassDataSharingArchive;
 
     /**
+     * Test the image after creation.
+     */
+    @Parameter(defaultValue = "true", property = "java.image.testImage")
+    private boolean testImage;
+
+    /**
      * Default JVM options to use when starting the application.
      */
     @Parameter(property = "java.image.defaultJvmOptions")
@@ -109,6 +115,7 @@ public class JavaImageMojo extends AbstractMojo {
                                                 .defaultArgs(defaultArgs)
                                                 .defaultDebugOptions(defaultDebugOptions)
                                                 .cds(addClassDataSharingArchive)
+                                                .test(testImage)
                                                 .jriDirectory(outputDir)
                                                 .replace(true)
                                                 .build();
