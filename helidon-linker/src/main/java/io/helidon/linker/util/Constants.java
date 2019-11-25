@@ -49,9 +49,14 @@ public class Constants {
     public static final String DIR_SEP = File.separator;
 
     /**
+     * Whether or not JDEPS requires the missing deps option.
+     */
+    public static final boolean JDEPS_REQUIRES_MISSING_DEPS_OPTION = Runtime.version().major() > 11;
+
+    /**
      * Whether or not CDS requires the unlock option.
      */
-    public static final boolean CDS_REQUIRES_UNLOCK_OPTION = Runtime.version().major() <= 9;
+    public static final boolean CDS_REQUIRES_UNLOCK_OPTION = Runtime.version().major() <= 10;
 
     /**
      * The CDS unlock diagnostic options.

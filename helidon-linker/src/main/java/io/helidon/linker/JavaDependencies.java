@@ -34,6 +34,7 @@ import io.helidon.linker.util.Log;
 
 import static io.helidon.linker.util.Constants.EOL;
 import static io.helidon.linker.util.Constants.EXCLUDED_MODULES;
+import static io.helidon.linker.util.Constants.JDEPS_REQUIRES_MISSING_DEPS_OPTION;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -45,6 +46,7 @@ public class JavaDependencies {
     private static final String MULTI_RELEASE_ARG = "--multi-release";
     private static final String SYSTEM_ARG = "--system";
     private static final String LIST_DEPS_ARG = "--list-deps";
+    private static final String IGNORE_MISSING_DEPS_ARG = "--ignore-missing-deps";
     private static final String JAVA_BASE_MODULE_NAME = "java.base";
     private static final Set<String> KNOWN_SPLIT_PACKAGES = Set.of("javax.annotation", "javax.activation");
     private static final Map<String, BiConsumer<String, Jar>> PREFIX_HANDLERS = Map.of(
@@ -118,6 +120,9 @@ public class JavaDependencies {
             args.add(MULTI_RELEASE_ARG);
             args.add(javaHome.featureVersion());
         }
+        if (JDEPS_REQUIRES_MISSING_DEPS_OPTION) {
+            args.add(IGNORE_MISSING_DEPS_ARG);
+        }
         args.add(LIST_DEPS_ARG);
         args.add(jar.path().toString());
 
@@ -138,7 +143,7 @@ public class JavaDependencies {
             dependencies.add(line);
         } else {
             for (Map.Entry<String, BiConsumer<String, Jar>> entry : PREFIX_HANDLERS.entrySet()) {
-                if (line.startsWith(entry.getKey())) {
+                if (line.contains(entry.getKey())) {
                     entry.getValue().accept(line, jar);
                     return;
                 }

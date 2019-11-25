@@ -29,6 +29,7 @@ import io.helidon.linker.util.Log;
 import io.helidon.linker.util.ProcessMonitor;
 
 import static io.helidon.linker.Application.APP_DIR;
+import static io.helidon.linker.util.Constants.CDS_REQUIRES_UNLOCK_OPTION;
 import static io.helidon.linker.util.Constants.DIR_SEP;
 import static io.helidon.linker.util.Constants.INDENT;
 import static io.helidon.linker.util.Constants.INDENT_BOLD;
@@ -67,6 +68,18 @@ public class Linker {
     private String imageSize;
     private String percent;
 
+    /* CDS Constraints
+    
+         9: cannot rename or move directory: shared class paths mismatch (hint: enable -Xlog:class+path=info to diagnose the failure) 
+        10: cannot rename or move directory: Required classpath entry does not exist: /Users/batsatt/dev/helidon-quickstart-se/target/se-jri/lib/modules
+        11: CAN rename, but move resulted in: A jar file is not the one used while building the shared archive file: app/helidon-quickstart-se.jar               Loi!!
+        12: CAN rename, but copy resulted in: A jar file is not the one used while building the shared archive file: app/helidon-quickstart-se.jar
+        13: CAN rename, but copy resulted in: A jar file is not the one used while building the shared archive file: app/helidon-quickstart-se.jar
+        14: CAN rename, but copy resulted in: A jar file is not the one used while building the shared archive file: app/helidon-quickstart-se.jar
+     */
+    
+    
+    
     /**
      * Main entry point.
      *
@@ -228,7 +241,7 @@ public class Linker {
                 final String jdkSize = BoldBlue.format("%d", jdkCount);
                 final String appSize = BoldBlue.format("%d", appCount);
                 if (appCount == 0) {
-                    if (jdk.version().major() > 9) {
+                    if (!CDS_REQUIRES_UNLOCK_OPTION) {
                         Log.warn("CDS archive does not contain any application classes, but should!");
                     }
                     Log.info("CDS archive is %s for %s JDK classes", cdsSize, jdkSize);
