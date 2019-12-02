@@ -51,7 +51,7 @@ class StartScriptTest {
     void testJarName() {
         String script = builder().build().toString();
         assertThat(script, containsString("Start " + JAR_NAME));
-        assertThat(script, containsString("passed as args to " + JAR_NAME));
+        assertThat(script, containsString("passed as arguments to " + JAR_NAME));
         assertThat(script, containsString("jarName=\"" + JAR_NAME + "\""));
     }
 

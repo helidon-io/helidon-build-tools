@@ -30,6 +30,7 @@ import io.helidon.linker.util.ProcessMonitor;
 
 import static io.helidon.linker.Application.APP_DIR;
 import static io.helidon.linker.util.Constants.CDS_REQUIRES_UNLOCK_OPTION;
+import static io.helidon.linker.util.Constants.DEBUGGER_MODULE;
 import static io.helidon.linker.util.Constants.DIR_SEP;
 import static io.helidon.linker.util.Constants.INDENT;
 import static io.helidon.linker.util.Constants.INDENT_BOLD;
@@ -161,7 +162,13 @@ public class Linker {
         this.javaDependencies = application.javaDependencies(config.jdk());
         final List<String> sorted = new ArrayList<>(javaDependencies);
         sorted.sort(null);
-        Log.info("Found %d Java module dependencies: %s", javaDependencies.size(), String.join(", ", sorted));
+        Log.info("Including %d Java dependencies: %s", sorted.size(), String.join(", ", sorted));
+        if (config.stripDebug()) {
+            Log.info("Excluding debug support: %s", DEBUGGER_MODULE);
+        } else {
+            javaDependencies.add(DEBUGGER_MODULE);
+            Log.info("Including debug support: %s", DEBUGGER_MODULE);
+        }
     }
 
     private void buildJlinkArguments() {

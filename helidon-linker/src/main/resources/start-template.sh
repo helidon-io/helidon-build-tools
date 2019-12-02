@@ -15,7 +15,7 @@ usage() {
     echo "    --dryRun        Display the command rather than executing it."
     echo "    --help          Display usage."
     echo
-    echo "Unrecognized options are passed as args to <JAR_NAME>, replacing defaults."
+    echo "Unrecognized options are passed as arguments to <JAR_NAME>, replacing defaults."
     echo
     echo "Supported environment variables:"
     echo
@@ -27,6 +27,7 @@ usage() {
 }
 
 main() {
+    local homeDir dryRun command
     init "$@"
     start
 }
@@ -41,21 +42,21 @@ start() {
 }
 
 init() {
-    readonly scriptName=$(basename "${0}")
-    readonly binDir=$(dirname "${0}")
-    readonly homeDir=$(cd "${binDir}"/..; pwd)
-    readonly jarName="<JAR_NAME>"
-    readonly defaultDebug="<DEFAULT_DEBUG>"
-    readonly defaultJvm="<DEFAULT_JVM>"
-    readonly defaultArgs="<DEFAULT_ARGS>"
-    readonly hasCds="<HAS_CDS>"
-    readonly cdsOption="<CDS_UNLOCK>-XX:SharedArchiveFile=lib/start.jsa -Xshare:on"
-    readonly exitOption="-Dexit.on.started=✅"
-    readonly debugOptions="${DEFAULT_DEBUG:-${defaultDebug}}"
-    readonly jvmDefaults="${DEFAULT_JVM:-${defaultJvm}}"
-    readonly argDefaults="${DEFAULT_ARGS:-${defaultArgs}}"
+    local -r scriptName=$(basename "${0}")
+    local -r binDir=$(dirname "${0}")
+    local -r jarName="<JAR_NAME>"
+    local -r defaultDebug="<DEFAULT_DEBUG>"
+    local -r defaultJvm="<DEFAULT_JVM>"
+    local -r defaultArgs="<DEFAULT_ARGS>"
+    local -r hasCds="<HAS_CDS>"
+    local -r cdsOption="<CDS_UNLOCK>-XX:SharedArchiveFile=lib/start.jsa -Xshare:on"
+    local -r exitOption="-Dexit.on.started=✅"
+    local -r debugOptions="${DEFAULT_DEBUG:-${defaultDebug}}"
+    local -r jvmDefaults="${DEFAULT_JVM:-${defaultJvm}}"
+    local -r argDefaults="${DEFAULT_ARGS:-${defaultArgs}}"
     local useCds=${hasCds}
-    local args= cds= debug= dryRun= jvm= 
+    local args= cds= debug= jvm= 
+    homeDir=$(cd "${binDir}"/..; pwd)
 
     while (( ${#} > 0 )); do
         case "${1}" in
@@ -71,7 +72,7 @@ init() {
     done
 
     [[ ${useCds} ]] && cds="${cdsOption} "
-    readonly command="bin/java ${debug}${cds}${jvm:-${jvmDefaults}} -jar app/${jarName} ${args:-${argDefaults}}"
+    command="bin/java ${debug}${cds}${jvm:-${jvmDefaults}} -jar app/${jarName} ${args:-${argDefaults}}"
 }
 
 appendVar() {

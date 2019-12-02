@@ -61,7 +61,7 @@ public class JavaDependencies {
     private final Set<String> dependencies;
 
     /**
-     * Collect the dependencies of the given jars on the given Java Home.
+     * Collect the dependencies of the given jars on the given Java Runtime.
      *
      * @param jars The jars.
      * @param javaHome The Java Home.

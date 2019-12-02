@@ -77,4 +77,9 @@ public class Constants {
      * Excluded module names.
      */
     public static final Set<String> EXCLUDED_MODULES = Set.of("java.xml.ws.annotation");
+
+    /**
+     * The debugger module name.
+     */
+    public static final String DEBUGGER_MODULE = "jdk.jdwp.agent";
 }
