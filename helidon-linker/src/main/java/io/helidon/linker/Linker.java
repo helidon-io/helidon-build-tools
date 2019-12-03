@@ -277,6 +277,7 @@ public class Linker {
                                      .mainJar(jriMainJar)
                                      .defaultArgs(config.defaultArgs())
                                      .cdsInstalled(config.cds())
+                                     .debugInstalled(!config.stripDebug())
                                      .build();
 
             Log.info("Installing start script in %s", installDir);

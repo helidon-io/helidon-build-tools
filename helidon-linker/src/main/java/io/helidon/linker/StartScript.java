@@ -194,14 +194,14 @@ public class StartScript {
         private List<String> defaultDebugOptions;
         private List<String> defaultArgs;
         private boolean cdsInstalled;
-        private boolean debugSupported;
+        private boolean debugInstalled;
         private Path scriptFile;
         private String script;
 
         private Builder() {
             this.defaultJvmOptions = emptyList();
             this.defaultDebugOptions = List.of(Configuration.Builder.DEFAULT_DEBUG);
-            this.debugSupported = true;
+            this.debugInstalled = true;
             this.defaultArgs = emptyList();
         }
 
@@ -280,11 +280,11 @@ public class StartScript {
         /**
          * Sets whether or not a debug classes and module were installed.
          *
-         * @param debugSupported {@code true} if debug is supported.
+         * @param debugInstalled {@code true} if debug is installed.
          * @return The builder.
          */
-        public Builder debugSupported(boolean debugSupported) {
-            this.debugSupported = debugSupported;
+        public Builder debugInstalled(boolean debugInstalled) {
+            this.debugInstalled = debugInstalled;
             return this;
         }
 
@@ -317,19 +317,19 @@ public class StartScript {
             final String args = String.join(" ", this.defaultArgs);
             final String argsDesc = description(this.defaultArgs, "arguments", "Args");
 
-            final List<String> debugOptions = debugSupported ? this.defaultDebugOptions : emptyList();
+            final List<String> debugOptions = debugInstalled ? this.defaultDebugOptions : emptyList();
             final String debug = String.join(" ", debugOptions);
             final String debugDesc = description(debugOptions, "debug options", "Debug");
 
             final String hasCds = cdsInstalled ? "yes" : "";
-            final String hasDebug = debugSupported ? "yes" : "";
+            final String hasDebug = debugInstalled ? "yes" : "";
             final String cdsUnlock = requiresUnlock() ? CDS_UNLOCK_OPTIONS + " " : "";
 
             if (!cdsInstalled) {
                 removeTemplateLines(CDS);
             }
             
-            if (!debugSupported) {
+            if (!debugInstalled) {
                 removeTemplateLines(DEBUG);
             }
 

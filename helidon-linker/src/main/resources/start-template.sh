@@ -27,18 +27,9 @@ usage() {
 }
 
 main() {
-    local homeDir dryRun command
+    local action command
     init "$@"
-    start
-}
-
-start() {
-    if [[ ${dryRun} ]]; then
-        echo ${command}
-    else
-        cd ${homeDir}
-        exec ${command}
-    fi
+    ${action} ${command}
 }
 
 init() {
@@ -52,36 +43,34 @@ init() {
     local -r exitOption="-Dexit.on.started=✅"
     local -r jvmDefaults="${DEFAULT_JVM:-${defaultJvm}}"
     local -r argDefaults="${DEFAULT_ARGS:-${defaultArgs}}"
-    local args jvm share=auto 
-    local useCds=true cds
+    local args jvm test share=auto 
+    local useCds=true
     local debug
-    homeDir=$(cd "${binDir}"/..; pwd)
-
+    action=exec
+ 
     while (( ${#} > 0 )); do
         case "${1}" in
-            -h | --help) usage ;;
-            --dryRun) dryRun=true ;;
             --jvm) shift; appendVar jvm "${1}" ;;
-            --debug) debug=true ;;
             --noCds) useCds= ;;
-            --test) share=on; appendVar jvm "${exitOption}" ;;
+            --debug) debug=true ;;
+            --test) test=true; share=on ;;
+            --dryRun) action=echo ;;
+            -h | --help) usage ;;
             *) appendVar args "${1}" ;;
         esac
         shift
     done
 
     local jvmOptions=${jvm:-${jvmDefaults}}
-    local arguments=${args:-${argDefaults}}    
     [[ ${useCds} ]] && appendVar jvmOptions "${cdsOption}${share}"
     [[ ${debug} ]] && appendVar jvmOptions "${DEFAULT_DEBUG:-${defaultDebug}}"
-    command="bin/java ${jvmOptions} -jar app/${jarName} ${arguments}"
+    [[ ${test} ]] && appendVar jvmOptions "${exitOption}"
+    command="bin/java ${jvmOptions} -jar app/${jarName} ${args:-${argDefaults}}"
+    cd "${binDir}/.."
 }
 
 appendVar() {
-    local var=${1}
-    local value=${2}
-    local sep=${3:- }
-    export ${var}="${!var:+${!var}${sep}}${value}"
+    export ${1}="${!1:+${!1} }${2}"
 }
 
 main "$@"
