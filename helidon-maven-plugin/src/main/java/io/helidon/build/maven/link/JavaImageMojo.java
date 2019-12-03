@@ -91,6 +91,12 @@ public class JavaImageMojo extends AbstractMojo {
     private List<String> defaultArgs;
 
     /**
+     * Strip debug information from all classes and exclude {@code jdk.jdwp.agent} module.
+     */
+    @Parameter(defaultValue = "false", property = "java.image.stripDebug")
+    private boolean stripDebug;
+
+    /**
      * Skip execution for this plugin.
      */
     @Parameter(defaultValue = "false", property = "java.image.skip")
@@ -115,6 +121,7 @@ public class JavaImageMojo extends AbstractMojo {
                                                 .defaultArgs(defaultArgs)
                                                 .defaultDebugOptions(defaultDebugOptions)
                                                 .cds(addClassDataSharingArchive)
+                                                .stripDebug(stripDebug)
                                                 .test(testImage)
                                                 .jriDirectory(outputDir)
                                                 .replace(true)

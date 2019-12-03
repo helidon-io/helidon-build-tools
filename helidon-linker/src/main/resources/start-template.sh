@@ -9,7 +9,7 @@ usage() {
     echo "Options:"
     echo
     echo "    --jvm <option>  Add one or more JVM options, replacing defaults."
-    [[ ${hasCds} ]] && echo "    --noCds         Do not use CDS."
+    echo "    --noCds         Do not use CDS."
     echo "    --debug         Add JVM debug options."
     echo "    --test          Exit when started."
     echo "    --dryRun        Display the command rather than executing it."
@@ -48,31 +48,33 @@ init() {
     local -r defaultDebug="<DEFAULT_DEBUG>"
     local -r defaultJvm="<DEFAULT_JVM>"
     local -r defaultArgs="<DEFAULT_ARGS>"
-    local -r hasCds="<HAS_CDS>"
-    local -r cdsOption="<CDS_UNLOCK>-XX:SharedArchiveFile=lib/start.jsa -Xshare:on"
+    local -r cdsOption="<CDS_UNLOCK>-XX:SharedArchiveFile=lib/start.jsa -Xshare:"
     local -r exitOption="-Dexit.on.started=✅"
-    local -r debugOptions="${DEFAULT_DEBUG:-${defaultDebug}}"
     local -r jvmDefaults="${DEFAULT_JVM:-${defaultJvm}}"
     local -r argDefaults="${DEFAULT_ARGS:-${defaultArgs}}"
-    local useCds=${hasCds}
-    local args= cds= debug= jvm= 
+    local args jvm share=auto 
+    local useCds=true cds
+    local debug
     homeDir=$(cd "${binDir}"/..; pwd)
 
     while (( ${#} > 0 )); do
         case "${1}" in
-            --debug) debug="${debugOptions} " ;;
-            --dryRun) dryRun=true ;;
             -h | --help) usage ;;
+            --dryRun) dryRun=true ;;
             --jvm) shift; appendVar jvm "${1}" ;;
+            --debug) debug=true ;;
             --noCds) useCds= ;;
-            --test) appendVar jvm ${exitOption} ;;
+            --test) share=on; appendVar jvm "${exitOption}" ;;
             *) appendVar args "${1}" ;;
         esac
         shift
     done
 
-    [[ ${useCds} ]] && cds="${cdsOption} "
-    command="bin/java ${debug}${cds}${jvm:-${jvmDefaults}} -jar app/${jarName} ${args:-${argDefaults}}"
+    local jvmOptions=${jvm:-${jvmDefaults}}
+    local arguments=${args:-${argDefaults}}    
+    [[ ${useCds} ]] && appendVar jvmOptions "${cdsOption}${share}"
+    [[ ${debug} ]] && appendVar jvmOptions "${DEFAULT_DEBUG:-${defaultDebug}}"
+    command="bin/java ${jvmOptions} -jar app/${jarName} ${arguments}"
 }
 
 appendVar() {

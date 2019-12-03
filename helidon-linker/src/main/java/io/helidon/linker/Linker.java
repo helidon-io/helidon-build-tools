@@ -61,10 +61,11 @@ public class Linker {
     private long cdsArchiveSize;
     private StartScript startScript;
     private List<String> startCommand;
-    private float jarsSize;
+    private float appSize;
     private float jdkSize;
     private float jriSize;
     private float cdsSize;
+    private float jriAppSize;
     private String initialSize;
     private String imageSize;
     private String percent;
@@ -73,7 +74,7 @@ public class Linker {
     
          9: cannot rename or move directory: shared class paths mismatch (hint: enable -Xlog:class+path=info to diagnose the failure) 
         10: cannot rename or move directory: Required classpath entry does not exist: /Users/batsatt/dev/helidon-quickstart-se/target/se-jri/lib/modules
-        11: CAN rename, but move resulted in: A jar file is not the one used while building the shared archive file: app/helidon-quickstart-se.jar               Loi!!
+        11: CAN rename, but move resulted in: A jar file is not the one used while building the shared archive file: app/helidon-quickstart-se.jar               Ioi!!
         12: CAN rename, but copy resulted in: A jar file is not the one used while building the shared archive file: app/helidon-quickstart-se.jar
         13: CAN rename, but copy resulted in: A jar file is not the one used while building the shared archive file: app/helidon-quickstart-se.jar
         14: CAN rename, but copy resulted in: A jar file is not the one used while building the shared archive file: app/helidon-quickstart-se.jar
@@ -205,8 +206,11 @@ public class Linker {
     }
 
     private void installJars() {
-        Log.info("Installing %d application jars in %s", application.size(), jriDirectory().resolve(APP_DIR));
-        this.jriMainJar = application.install(jri);
+        final boolean stripDebug = config.stripDebug();
+        final Path appDir = jriDirectory().resolve(APP_DIR);
+        final String message = stripDebug ? ", stripping debug information from all classes" : "";
+        Log.info("Installing %d application jars in %s%s", application.size(), appDir, message);
+        this.jriMainJar = application.install(jri, stripDebug);
     }
 
     private void installCdsArchive() {
@@ -333,18 +337,20 @@ public class Linker {
 
     private void computeSizes() {
         try {
-            final long jars = application.diskSize();
+            final long app = application.diskSize();
             final long jdk = config.jdk().diskSize();
             final long jri = this.jri.diskSize();
             final long cds = cdsArchiveSize;
-            final long jriOnly = jri - cds - jars;
-            final long initial = jars + jdk;
+            final long jriApp = config.stripDebug() ? application.installedSize(this.jri) : app;
+            final long jriOnly = jri - cds - jriApp;
+            final long initial = app + jdk;
             final float reduction = (1F - (float) jri / (float) initial) * 100F;
 
-            jarsSize = mb(jars);
+            appSize = mb(app);
             jdkSize = mb(jdk);
             jriSize = mb(jriOnly);
             cdsSize = config.cds() ? mb(cds) : 0;
+            jriAppSize = mb(jriApp);
             initialSize = BoldBlue.format("%5.1fM", mb(initial));
             imageSize = BoldBrightGreen.format("%5.1fM", mb(jri));
             percent = BoldBrightGreen.format("%5.1f%%", reduction);
@@ -359,11 +365,11 @@ public class Linker {
         Log.info();
         Log.info("Java Runtime Image %s completed in %.1f seconds", Cyan.apply(imageName), startSeconds);
         Log.info();
-        Log.info("     initial size: %s  (%.1f JDK + %.1f application)", initialSize, jdkSize, jarsSize);
+        Log.info("     initial size: %s  (%.1f JDK + %.1f application)", initialSize, jdkSize, appSize);
         if (config.cds()) {
-            Log.info("       image size: %s  (%5.1f JDK + %.1f application + %.1f CDS)", imageSize, jriSize, jarsSize, cdsSize);
+            Log.info("       image size: %s  (%5.1f JDK + %.1f application + %.1f CDS)", imageSize, jriSize, jriAppSize, cdsSize);
         } else {
-            Log.info("       image size: %s  (%5.1f JDK + %.1f application)", imageSize, jriSize, jarsSize);
+            Log.info("       image size: %s  (%5.1f JDK + %.1f application)", imageSize, jriSize, jriAppSize);
         }
         Log.info("        reduction: %s", percent);
         Log.info();

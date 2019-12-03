@@ -49,6 +49,8 @@ import java.util.zip.ZipEntry;
 import io.helidon.linker.util.Log;
 import io.helidon.linker.util.StreamUtils;
 
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexReader;
 import org.jboss.jandex.IndexWriter;
@@ -297,9 +299,10 @@ public class Jar implements ResourceContainer {
      * @param targetDir The targetDirectory.
      * @param ensureIndex {@code true} if an index should be added if this is a beans archive
      * and their is no Jandex index present.
+     * @param stripDebug {@code true} if debug information should be stripped from classes.
      * @return The normalized, absolute path to the new file.
      */
-    public Path copyToDirectory(Path targetDir, boolean ensureIndex) {
+    public Path copyToDirectory(Path targetDir, boolean ensureIndex, boolean stripDebug) {
         final Path fileName = path.getFileName();
         final Path targetFile = assertDir(targetDir).resolve(fileName);
         if (ensureIndex) {
@@ -307,10 +310,12 @@ public class Jar implements ResourceContainer {
         }
         try (BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(targetFile))) {
 
-            // Add an index if we created it, otherwise just copy the file
+            // Add the index if we built it, and/or strip debug information if required; otherwise just copy the whole jar file
 
             if (builtIndex) {
-                copyAndAddIndex(out);
+                copy(out, true, stripDebug);
+            } else if (stripDebug) {
+                copy(out, false, true);
             } else {
                 StreamUtils.transfer(Files.newInputStream(path), out);
             }
@@ -414,18 +419,15 @@ public class Jar implements ResourceContainer {
     }
 
     private Stream<Entry> classEntries() {
-        return entries().filter(entry -> {
-            final String name = entry.path();
-            return name.endsWith(CLASS_FILE_SUFFIX) && !name.equals(MODULE_INFO_CLASS);
-        });
+        return entries().filter(Jar::isNormalClassFile);
     }
 
-    private void copyAndAddIndex(OutputStream out) throws IOException {
+    private void copy(OutputStream out, boolean addIndex, boolean stripDebug) throws IOException {
         try (final JarOutputStream jar = new JarOutputStream(out)) {
 
-            // Add the index
-
-            addIndex(jar);
+            if (addIndex) {
+                addIndex(jar);
+            }
 
             // Copy all entries, filtering out any previous index (that could not be read)
 
@@ -434,7 +436,7 @@ public class Jar implements ResourceContainer {
                          try {
                              jar.putNextEntry(newJarEntry(entry));
                              if (!entry.isDirectory()) {
-                                 StreamUtils.transfer(entry.data(), jar);
+                                 StreamUtils.transfer(data(entry, stripDebug), jar);
                              }
                              jar.flush();
                              jar.closeEntry();
@@ -444,7 +446,23 @@ public class Jar implements ResourceContainer {
                      });
         }
     }
-
+    
+    private static InputStream data(Entry entry, boolean stripDebug) throws IOException {
+        if (stripDebug && isNormalClassFile(entry)) {
+            ClassReader reader = new ClassReader(entry.data());
+            ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+            reader.accept(writer, ClassReader.SKIP_DEBUG);
+            return new ByteArrayInputStream(writer.toByteArray()); 
+        } else {
+            return entry.data();
+        }
+    }
+    
+    private static boolean isNormalClassFile(Entry entry) {
+        final String name = entry.path();
+        return name.endsWith(CLASS_FILE_SUFFIX) && !name.equals(MODULE_INFO_CLASS);
+    }
+    
     private static JarEntry newJarEntry(Entry entry) {
         final JarEntry result = new JarEntry(entry.getName());
         if (result.getCreationTime() != null) {

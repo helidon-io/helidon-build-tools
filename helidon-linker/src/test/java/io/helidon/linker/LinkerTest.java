@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
 
 /**
  * Unit test for class {@link Linker}.
@@ -50,6 +51,28 @@ class LinkerTest {
         assertApplication(jri, mainJar.getFileName().toString());
         assertCdsArchive(jri, false);
         assertScript(jri);
+    }
+
+    @Test
+    void testQuickstartSeNoCDSStripDebug() throws Exception {
+        Path mainJar = TestFiles.helidonSeJar();
+        Path targetDir = mainJar.getParent();
+        Configuration config = Configuration.builder()
+                                            .jriDirectory(targetDir.resolve("se-jri-no-cds-or-debug"))
+                                            .mainJar(mainJar)
+                                            .replace(true)
+                                            .cds(false)
+                                            .stripDebug(true)
+                                            .build();
+        Path jri = Linker.linker(config).link();
+
+        FileUtils.assertDir(jri);
+        assertApplication(jri, mainJar.getFileName().toString());
+        assertCdsArchive(jri, false);
+        assertScript(jri);
+        long origSize = FileUtils.sizeOf(mainJar);
+        long copySize = FileUtils.sizeOf(jri.resolve("app").resolve(mainJar.getFileName()));
+        assertThat(copySize, is(lessThan(origSize)));
     }
 
     @Test

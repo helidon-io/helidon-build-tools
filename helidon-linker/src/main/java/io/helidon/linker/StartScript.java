@@ -38,6 +38,7 @@ import io.helidon.linker.util.StreamUtils;
 import static io.helidon.linker.util.Constants.CDS_REQUIRES_UNLOCK_OPTION;
 import static io.helidon.linker.util.Constants.CDS_UNLOCK_OPTIONS;
 import static io.helidon.linker.util.Constants.DIR_SEP;
+import static io.helidon.linker.util.Constants.EOL;
 import static io.helidon.linker.util.Constants.WINDOWS;
 import static io.helidon.linker.util.FileUtils.assertDir;
 import static java.util.Collections.emptyList;
@@ -176,26 +177,31 @@ public class StartScript {
         private static final String DEFAULT_JVM = "<DEFAULT_JVM>";
         private static final String DEFAULT_DEBUG = "<DEFAULT_DEBUG>";
         private static final String HAS_CDS = "<HAS_CDS>";
+        private static final String HAS_DEBUG = "<HAS_DEBUG>";
         private static final String CDS_UNLOCK_OPTION = "<CDS_UNLOCK>";
         private static final String DEFAULT_ARGS_DESC = "<DEFAULT_ARGS_DESC>";
         private static final String DEFAULT_JVM_DESC = "<DEFAULT_JVM_DESC>";
         private static final String DEFAULT_DEBUG_DESC = "<DEFAULT_DEBUG_DESC>";
         private static final String OVERRIDES = "Overrides \\\"${default%s}\\\".";
         private static final String SETS = "Sets default %s.";
+        private static final String CDS = "cds";
+        private static final String DEBUG = "debug";
 
-        private String template;
+        private List<String> template;
         private Path installDirectory;
         private Path mainJar;
         private List<String> defaultJvmOptions;
         private List<String> defaultDebugOptions;
         private List<String> defaultArgs;
         private boolean cdsInstalled;
+        private boolean debugSupported;
         private Path scriptFile;
         private String script;
 
         private Builder() {
             this.defaultJvmOptions = emptyList();
             this.defaultDebugOptions = List.of(Configuration.Builder.DEFAULT_DEBUG);
+            this.debugSupported = true;
             this.defaultArgs = emptyList();
         }
 
@@ -272,6 +278,17 @@ public class StartScript {
         }
 
         /**
+         * Sets whether or not a debug classes and module were installed.
+         *
+         * @param debugSupported {@code true} if debug is supported.
+         * @return The builder.
+         */
+        public Builder debugSupported(boolean debugSupported) {
+            this.debugSupported = debugSupported;
+            return this;
+        }
+
+        /**
          * Builds and returns the instance.
          *
          * @return The instance.
@@ -300,21 +317,41 @@ public class StartScript {
             final String args = String.join(" ", this.defaultArgs);
             final String argsDesc = description(this.defaultArgs, "arguments", "Args");
 
-            final String debug = String.join(" ", this.defaultDebugOptions);
-            final String debugDesc = description(this.defaultDebugOptions, "debug options", "Debug");
+            final List<String> debugOptions = debugSupported ? this.defaultDebugOptions : emptyList();
+            final String debug = String.join(" ", debugOptions);
+            final String debugDesc = description(debugOptions, "debug options", "Debug");
 
-            final String cds = cdsInstalled ? "yes" : "";
+            final String hasCds = cdsInstalled ? "yes" : "";
+            final String hasDebug = debugSupported ? "yes" : "";
             final String cdsUnlock = requiresUnlock() ? CDS_UNLOCK_OPTIONS + " " : "";
 
-            return template.replace(JAR_NAME, name)
-                           .replace(DEFAULT_JVM, jvm)
-                           .replace(DEFAULT_JVM_DESC, jvmDesc)
-                           .replace(DEFAULT_ARGS, args)
-                           .replace(DEFAULT_ARGS_DESC, argsDesc)
-                           .replace(DEFAULT_DEBUG, debug)
-                           .replace(DEFAULT_DEBUG_DESC, debugDesc)
-                           .replace(HAS_CDS, cds)
-                           .replace(CDS_UNLOCK_OPTION, cdsUnlock);
+            if (!cdsInstalled) {
+                removeTemplateLines(CDS);
+            }
+            
+            if (!debugSupported) {
+                removeTemplateLines(DEBUG);
+            }
+
+            return String.join(EOL, template)
+                         .replace(JAR_NAME, name)
+                         .replace(DEFAULT_JVM, jvm)
+                         .replace(DEFAULT_JVM_DESC, jvmDesc)
+                         .replace(DEFAULT_ARGS, args)
+                         .replace(DEFAULT_ARGS_DESC, argsDesc)
+                         .replace(DEFAULT_DEBUG, debug)
+                         .replace(DEFAULT_DEBUG_DESC, debugDesc)
+                         .replace(HAS_CDS, hasCds)
+                         .replace(HAS_DEBUG, hasDebug)
+                         .replace(CDS_UNLOCK_OPTION, cdsUnlock);
+        }
+
+        private void removeTemplateLines(String containing) {
+            for (int i = template.size() -1; i >= 0; i--) {
+                if (template.get(i).toLowerCase().contains(containing)) {
+                    template.remove(i);
+                }
+            }
         }
 
         private List<String> createCommand() {
@@ -350,14 +387,14 @@ public class StartScript {
             return value != null && !value.isEmpty();
         }
 
-        private String template() {
+        private List<String> template() {
             final String path = TEMPLATE_NAME + (WINDOWS ? WINDOWS_EXTENSION : BASH_EXTENSION);
             final InputStream content = StartScript.class.getClassLoader().getResourceAsStream(path);
             if (content == null) {
                 throw new PlatformNotSupportedError(createCommand());
             } else {
                 try {
-                    return StreamUtils.toString(content);
+                    return StreamUtils.toLines(content);
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }

@@ -67,18 +67,30 @@ public class Application implements ResourceContainer {
      * Copy this application into the given Java Runtime Image.
      *
      * @param jri The JRI in which to install this application.
+     * @param stripDebug {@code true} if debug information should be stripped from classes.
      * @return The location of the installed application jar.
      */
-    public Path install(JavaRuntime jri) {
+    public Path install(JavaRuntime jri, boolean stripDebug) {
         final Path appRootDir = mainJar.path().getParent();
         final Path appInstallDir = jri.ensureDirectory(APP_DIR);
-        final Path installedAppJar = mainJar.copyToDirectory(appInstallDir, isMicroprofile());
+        final Path installedAppJar = mainJar.copyToDirectory(appInstallDir, isMicroprofile(), stripDebug);
         classPath.forEach(jar -> {
             final Path relativeDir = appRootDir.relativize(jar.path().getParent());
             final Path installDir = jri.ensureDirectory(appInstallDir.resolve(relativeDir));
-            jar.copyToDirectory(installDir, isMicroprofile());
+            jar.copyToDirectory(installDir, isMicroprofile(), stripDebug);
         });
         return installedAppJar;
+    }
+
+    /**
+     * Returns the on disk size of the installed application.
+     *
+     * @param jri The JRI in which the application is installed.
+     * @return The size, in bytes.
+     * @throws UncheckedIOException If an error occurs.
+     */
+    public long installedSize(JavaRuntime jri) {
+        return FileUtils.sizeOf(jri.path().resolve(APP_DIR));
     }
 
     /**
@@ -118,7 +130,7 @@ public class Application implements ResourceContainer {
         return jars().mapToLong(jar -> FileUtils.sizeOf(jar.path()))
                      .sum();
     }
-    
+
     @Override
     public boolean containsResource(String resourcePath) {
         return jars().anyMatch(jar -> jar.containsResource(resourcePath));

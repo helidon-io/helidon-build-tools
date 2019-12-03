@@ -16,11 +16,15 @@
 
 package io.helidon.linker.util;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Stream utilities.
@@ -57,6 +61,28 @@ public class StreamUtils {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         transfer(in, out);
         return new String(out.toByteArray(), StandardCharsets.UTF_8);
+    }
+
+
+    /**
+     * Reads the contents of the given input stream as a list of UTF8 lines.
+     *
+     * @param in The input stream.
+     * @return The list.
+     * @throws IOException If an error occurs.
+     */
+    public static List<String> toLines(InputStream in) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+            final List<String> result = new ArrayList<>();
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                result.add(line);
+            }
+            return result;
+        }
     }
 
     private StreamUtils() {
