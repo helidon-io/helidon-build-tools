@@ -447,8 +447,8 @@ public class Jar implements ResourceContainer {
         }
     }
     
-    private static InputStream data(Entry entry, boolean stripDebug) throws IOException {
-        if (stripDebug && isNormalClassFile(entry)) {
+    private InputStream data(Entry entry, boolean stripDebug) throws IOException {
+        if (stripDebug && isNormalClassFile(entry) && !isSigned) {
             ClassReader reader = new ClassReader(entry.data());
             ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
             reader.accept(writer, ClassReader.SKIP_DEBUG);
