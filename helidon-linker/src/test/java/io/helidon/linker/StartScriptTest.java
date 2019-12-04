@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 /**
  * Unit test for class {@link StartScript}.
@@ -86,6 +87,82 @@ class StartScriptTest {
         script = builder().defaultArgs(List.of("--foo", "bar")).build().toString();
         assertThat(script, containsString("DEFAULT_ARGS    Overrides "));
         assertThat(script, containsString("defaultArgs=\"--foo bar\""));
+    }
+
+    @Test
+    void testDefaultConditionals() {
+        String script = builder().build().toString();
+        assertThat(script, containsString("--noCds         Do not use CDS."));
+        assertThat(script, containsString("--debug         Add JVM debug options."));
+        assertThat(script, containsString("DEFAULT_DEBUG"));
+ 
+        assertThat(script, containsString("local -r defaultDebug="));
+        assertThat(script, containsString("local -r cdsOption="));
+        assertThat(script, containsString("local useCds="));
+        assertThat(script, containsString("local debug"));
+
+        assertThat(script, containsString("--noCds)"));
+        assertThat(script, containsString("--debug)"));
+
+        assertThat(script, containsString("${useCds}"));
+        assertThat(script, containsString("${debug}"));
+   }
+
+    @Test
+    void testConditionalsNoCDS() {
+        String script = builder().cdsInstalled(false).build().toString();
+        assertThat(script, not(containsString("--noCds         Do not use CDS.")));
+        assertThat(script, containsString("--debug         Add JVM debug options."));
+        assertThat(script, containsString("DEFAULT_DEBUG"));
+
+        assertThat(script, containsString("local -r defaultDebug="));
+        assertThat(script, not(containsString("local -r cdsOption=")));
+        assertThat(script, not(containsString("local useCds=")));
+        assertThat(script, containsString("local debug"));
+
+        assertThat(script, not(containsString("--noCds)")));
+        assertThat(script, containsString("--debug)"));
+
+        assertThat(script, not(containsString("${useCds}")));
+        assertThat(script, containsString("${debug}"));
+    }
+
+    @Test
+    void testConditionalsNoDebug() {
+        String script = builder().debugInstalled(false).build().toString();
+        assertThat(script, containsString("--noCds         Do not use CDS."));
+        assertThat(script, not(containsString("--debug         Add JVM debug options.")));
+        assertThat(script, not(containsString("DEFAULT_DEBUG")));
+
+        assertThat(script, not(containsString("local -r defaultDebug=")));
+        assertThat(script, containsString("local -r cdsOption="));
+        assertThat(script, containsString("local useCds="));
+        assertThat(script, not(containsString("local debug")));
+
+        assertThat(script, containsString("--noCds)"));
+        assertThat(script, not(containsString("--debug)")));
+
+        assertThat(script, containsString("${useCds}"));
+        assertThat(script, not(containsString("${debug}")));
+    }
+
+    @Test
+    void testConditionalsNoCDsNoDebug() {
+        String script = builder().cdsInstalled(false).debugInstalled(false).build().toString();
+        assertThat(script, not(containsString("--noCds         Do not use CDS.")));
+        assertThat(script, not(containsString("--debug         Add JVM debug options.")));
+        assertThat(script, not(containsString("DEFAULT_DEBUG")));
+
+        assertThat(script, not(containsString("local -r defaultDebug=")));
+        assertThat(script, not(containsString("local -r cdsOption=")));
+        assertThat(script, not(containsString("local useCds=")));
+        assertThat(script, not(containsString("local debug")));
+
+        assertThat(script, not(containsString("--noCds)")));
+        assertThat(script, not(containsString("--debug)")));
+
+        assertThat(script, not(containsString("${useCds}")));
+        assertThat(script, not(containsString("${debug}")));
     }
 
     @Test

@@ -201,6 +201,7 @@ public class StartScript {
         private Builder() {
             this.defaultJvmOptions = emptyList();
             this.defaultDebugOptions = List.of(Configuration.Builder.DEFAULT_DEBUG);
+            this.cdsInstalled = true;
             this.debugInstalled = true;
             this.defaultArgs = emptyList();
         }
