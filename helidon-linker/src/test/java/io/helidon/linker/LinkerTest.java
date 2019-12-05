@@ -34,7 +34,7 @@ import static org.hamcrest.Matchers.lessThan;
  * Unit test for class {@link Linker}.
  */
 class LinkerTest {
-
+     
     @Test
     void testQuickstartSeNoCDS() throws Exception {
         Path mainJar = TestFiles.helidonSeJar();

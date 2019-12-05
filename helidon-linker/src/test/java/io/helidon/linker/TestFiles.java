@@ -18,16 +18,31 @@ package io.helidon.linker;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
+import io.helidon.linker.util.Log;
+import io.helidon.linker.util.ProcessMonitor;
+
+import static io.helidon.linker.util.FileUtils.assertDir;
+import static io.helidon.linker.util.FileUtils.assertFile;
 
 /**
  * Test file utilities.
  */
 public class TestFiles {
-    private static Path OUR_TARGET_DIR = ourTargetDir();
+    private static final String ARCHETYPE_VERSION = "1.4.0"; // TODO need to keep this up to date... Bedrock?
+    private static final Path OUR_TARGET_DIR = ourTargetDir();
+    private static final AtomicReference<Path> SE_JAR = new AtomicReference<>();
+    private static final AtomicReference<Path> MP_JAR = new AtomicReference<>();
 
     private static Path ourTargetDir() {
         final Path ourCodeSource = Paths.get(TestFiles.class.getProtectionDomain().getCodeSource().getLocation().getPath());
         return ourCodeSource.getParent();
+    }
+
+    public static Path signedJar() {
+        return Paths.get("/Users/batsatt/.m2/repository/org/bouncycastle/bcpkix-jdk15on/1.60/bcpkix-jdk15on-1.60.jar");  // TODO
     }
 
     public static Path targetDir() {
@@ -35,16 +50,66 @@ public class TestFiles {
     }
 
     public static Path helidonSeJar() {
-        final Path targetDir = Paths.get("/Users/batsatt/dev/helidon-quickstart-se/target");  // TODO generate via archetype?
-        return targetDir.resolve("helidon-quickstart-se.jar");
+        return quickstartJar(SE_JAR, "se");
     }
 
     public static Path helidonMpJar() {
-        final Path targetDir = Paths.get("/Users/batsatt/dev/helidon-quickstart-mp/target");  // TODO generate via archetype?
-        return targetDir.resolve("helidon-quickstart-mp.jar");
+        return quickstartJar(MP_JAR, "mp");
     }
 
-    public static Path signedJar() {
-        return Paths.get("/Users/batsatt/.m2/repository/org/bouncycastle/bcpkix-jdk15on/1.60/bcpkix-jdk15on-1.60.jar");  // TODO
+    private static Path quickstartJar(AtomicReference<Path> holder, String helidonVariant) {
+        if (holder.get() == null) {
+            holder.set(createQuickstartJar(helidonVariant));
+        }
+        return holder.get();
+    }
+
+    private static Path createQuickstartJar(String helidonVariant) {
+        createQuickstartProject(helidonVariant);
+        return buildQuickstartProject(helidonVariant);
+    }
+
+    private static Path buildQuickstartProject(String helidonVariant) {
+        final Path targetDir = ourTargetDir();
+        final String id = "helidon-quickstart-" + helidonVariant;
+        final Path sourceDir = assertDir(ourTargetDir().resolve(id));
+        Log.info("Building %s", id);
+        execute(new ProcessBuilder().directory(sourceDir.toFile())
+                                    .command(List.of("mvn",
+                                                     "clean",
+                                                     "package",
+                                                     "-DskipTests")));
+        return assertFile(sourceDir.resolve("target/" + id + ".jar"));
+    }
+
+    private static Path createQuickstartProject(String helidonVariant) {
+        final Path targetDir = ourTargetDir();
+        final String id = "helidon-quickstart-" + helidonVariant;
+        final String pkg = "io.helidon.examples.quickstart." + helidonVariant;
+        Log.info("Creating %s from archetype %s", id, ARCHETYPE_VERSION);
+        execute(new ProcessBuilder().directory(targetDir.toFile())
+                                    .command(List.of("mvn",
+                                                     "archetype:generate",
+                                                     "-DinteractiveMode=false",
+                                                     "-DarchetypeGroupId=io.helidon.archetypes",
+                                                     "-DarchetypeArtifactId=" + id,
+                                                     "-DarchetypeVersion=" + ARCHETYPE_VERSION,
+                                                     "-DgroupId=test",
+                                                     "-DartifactId=" + id,
+                                                     "-Dpackage=" + pkg
+                                    )));
+        return assertDir(targetDir.resolve(id));
+    }
+
+    private static void execute(ProcessBuilder builder) {
+        try {
+            ProcessMonitor.builder()
+                          .processBuilder(builder)
+                          .capture(true)
+                          .build()
+                          .execute();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
