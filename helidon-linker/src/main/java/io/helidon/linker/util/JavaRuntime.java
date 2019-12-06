@@ -45,7 +45,8 @@ public class JavaRuntime implements ResourceContainer {
     private static final String JMODS_DIR = "jmods";
     private static final String JMOD_SUFFIX = ".jmod";
     private static final String JAVA_BASE_JMOD = "java.base.jmod";
-    private static final String JMOD_MODULE_INFO_PATH = "classes/module-info.class";
+    private static final String JMOD_CLASSES_PREFIX = "classes/";
+    private static final String JMOD_MODULE_INFO_PATH = JMOD_CLASSES_PREFIX + "module-info.class";
     private static final String JRI_SUFFIX = "-jri";
     private static final String FILE_SEP = File.separator;
     private static final String JAVA_CMD_PATH = "bin" + FILE_SEP + "java";
@@ -223,7 +224,7 @@ public class JavaRuntime implements ResourceContainer {
 
     @Override
     public boolean containsResource(String resourcePath) {
-        final String path = resourcePath.endsWith(".class") ? "classes/" + resourcePath : resourcePath;
+        final String path = resourcePath.endsWith(".class") ? JMOD_CLASSES_PREFIX + resourcePath : resourcePath;
         return modules.values().stream().anyMatch(jar -> jar.containsResource(path));
     }
 

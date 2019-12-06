@@ -26,9 +26,11 @@ import java.util.Set;
 
 import io.helidon.linker.util.FileUtils;
 import io.helidon.linker.util.StreamUtils;
+import io.helidon.test.util.TestFiles;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.linker.util.Constants.DIR_SEP;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -41,8 +43,7 @@ class StartScriptTest {
 
     private static final Path JAR = TestFiles.helidonSeJar();
     private static final String JAR_NAME = JAR.getFileName().toString();
-    private static final Path BIN_DIR = FileUtils.ensureDirectory(TestFiles.targetDir().resolve("scripts/bin"));
-
+    private static final Path BIN_DIR = FileUtils.ensureDirectory(TestFiles.targetDir().resolve("scripts" + DIR_SEP + "bin"));
 
     private StartScript.Builder builder() {
         return StartScript.builder().mainJar(JAR).installDirectory(BIN_DIR);

@@ -30,13 +30,15 @@ import io.helidon.linker.util.FileUtils;
 import io.helidon.linker.util.JavaRuntime;
 import io.helidon.linker.util.Log;
 
+import static io.helidon.linker.util.Constants.DIR_SEP;
+
 /**
  * A Helidon application supporting Java dependency collection and installation into a Java Home.
  * This class assumes that the application was built re
  */
 public class Application implements ResourceContainer {
     static final Path APP_DIR = Paths.get("app");
-    private static final Path ARCHIVE_PATH = Paths.get("lib/start.jsa");
+    private static final Path ARCHIVE_PATH = Paths.get("lib" + DIR_SEP + "start.jsa");
     private static final String MP_FILE_PREFIX = "helidon-microprofile";
     private final Jar mainJar;
     private final List<Jar> classPath;

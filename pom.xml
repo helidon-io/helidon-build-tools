@@ -125,8 +125,10 @@
         <version.lib.plexus-build-api>0.0.7</version.lib.plexus-build-api>
         <version.lib.slf4j>1.7.25</version.lib.slf4j>
         <version.lib.jandex>2.1.1.Final</version.lib.jandex>
-        <version.lib.jansi>1.18</version.lib.jansi>  <!-- TODO approval? -->
-        <version.lib.asm>7.2</version.lib.asm>  <!-- TODO approval? -->
+        <version.lib.jansi>1.18</version.lib.jansi>
+        <version.lib.asm>7.2</version.lib.asm>
+        <version.lib.maven-resolver>1.4.1</version.lib.maven-resolver>
+        <version.lib.maven-settings>3.6.2</version.lib.maven-settings>        
         <!--
           !Version statement! - end
           -->
@@ -517,6 +519,51 @@
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm</artifactId>
                 <version>${version.lib.asm}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-api</artifactId>
+                <version>${version.lib.maven-resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-spi</artifactId>
+                <version>${version.lib.maven-resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-impl</artifactId>
+                <version>${version.lib.maven-resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-connector-basic</artifactId>
+                <version>${version.lib.maven-resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-transport-file</artifactId>
+                <version>${version.lib.maven-resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-transport-http</artifactId>
+                <version>${version.lib.maven-resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-settings</artifactId>
+                <version>${version.lib.maven-settings}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-settings-builder</artifactId>
+                <version>${version.lib.maven-settings}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-resolver-provider</artifactId>
+                <version>${version.lib.maven}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -67,8 +67,8 @@ import static java.util.Collections.emptyList;
 public class Jar implements ResourceContainer {
     private static final String JMOD_SUFFIX = ".jmod";
     private static final Set<String> SUPPORTED_SUFFIXES = Set.of(".jar", ".zip", JMOD_SUFFIX);
-    private static final String BEANS_PATH = "META-INF/beans.xml";
-    private static final String JANDEX_INDEX_PATH = "META-INF/jandex.idx";
+    private static final String BEANS_RESOURCE_PATH = "META-INF/beans.xml";
+    private static final String JANDEX_INDEX_RESOURCE_PATH = "META-INF/jandex.idx";
     private static final String CLASS_FILE_SUFFIX = ".class";
     private static final String JMOD_CLASSES_PREFIX = "classes/";
     private static final String MODULE_INFO_CLASS = "module-info.class";
@@ -157,7 +157,7 @@ public class Jar implements ResourceContainer {
             this.manifest = jar.getManifest();
             this.isMultiRelease = !isJmod && isMultiRelease(manifest);
             this.isSigned = !isJmod && hasSignatureFile();
-            this.isBeansArchive = !isJmod && hasEntry(BEANS_PATH);
+            this.isBeansArchive = !isJmod && hasEntry(BEANS_RESOURCE_PATH);
             final Entry moduleInfo = findEntry(isJmod ? JMOD_CLASSES_PREFIX + MODULE_INFO_CLASS : MODULE_INFO_CLASS);
             if (moduleInfo != null) {
                 this.descriptor = ModuleDescriptor.read(moduleInfo.data());
@@ -355,7 +355,7 @@ public class Jar implements ResourceContainer {
 
     private void ensureIndex() {
         if (isBeansArchive) {
-            if (hasEntry(JANDEX_INDEX_PATH)) {
+            if (hasEntry(JANDEX_INDEX_RESOURCE_PATH)) {
                 index = loadIndex();
             }
             if (index == null) {
@@ -371,7 +371,7 @@ public class Jar implements ResourceContainer {
 
     private Index loadIndex() {
         Log.info("  checking index in CDI beans archive %s", this);
-        try (InputStream in = getEntry(JANDEX_INDEX_PATH).data()) {
+        try (InputStream in = getEntry(JANDEX_INDEX_RESOURCE_PATH).data()) {
             return new IndexReader(in).read();
         } catch (IllegalArgumentException e) {
             Log.warn("  Jandex index in %s is not valid, will re-create: %s", path, e.getMessage());
@@ -431,7 +431,7 @@ public class Jar implements ResourceContainer {
 
             // Copy all entries, filtering out any previous index (that could not be read)
 
-            entries().filter(e -> !e.path().equals(JANDEX_INDEX_PATH))
+            entries().filter(e -> !e.path().equals(JANDEX_INDEX_RESOURCE_PATH))
                      .forEach(entry -> {
                          try {
                              jar.putNextEntry(newJarEntry(entry));
@@ -492,7 +492,7 @@ public class Jar implements ResourceContainer {
         try {
             writer.write(index);
             final ByteArrayInputStream data = new ByteArrayInputStream(out.toByteArray());
-            final JarEntry entry = new JarEntry(JANDEX_INDEX_PATH);
+            final JarEntry entry = new JarEntry(JANDEX_INDEX_RESOURCE_PATH);
             entry.setLastModifiedTime(FileTime.fromMillis(System.currentTimeMillis()));
             jar.putNextEntry(entry);
             StreamUtils.transfer(data, jar);

@@ -18,8 +18,7 @@ package io.helidon.linker;
 
 import java.nio.file.Path;
 
-import io.helidon.linker.Jar;
-import io.helidon.linker.TestFiles;
+import io.helidon.test.util.TestFiles;
 
 import org.junit.jupiter.api.Test;
 
