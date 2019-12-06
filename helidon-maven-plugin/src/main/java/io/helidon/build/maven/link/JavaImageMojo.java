@@ -61,7 +61,7 @@ public class JavaImageMojo extends AbstractMojo {
     private String finalName;
 
     /**
-     * Add a Class Data Sharing archive.
+     * Add a Class Data Sharing archive to reduce startup time.
      */
     @Parameter(defaultValue = "true", property = "java.image.addClassDataSharingArchive")
     private boolean addClassDataSharingArchive;

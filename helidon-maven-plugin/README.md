@@ -3,6 +3,7 @@
 This plugin provides common utilities for Maven based Helidon applications.
 
 * [Goal: native-image](#goal-native-image)
+* [Goal: java-image](#goal-java-image)
 
 ## Goal: `native-image`
 
@@ -88,4 +89,67 @@ You can also execute this plugin outside of a configured life-cycle, however
 ```bash
 mvn package
 mvn helidon:native-image
+```
+
+## Goal: `java-image`
+
+Maven goal to create a custom Java Runtime Image containing the application jars and the JDK modules 
+on which they depend. Enables Class Data Sharing by default to reduce startup time. Generates a 
+custom `start` script.
+
+This plugin binds to the `package` phase by default.
+
+### Optional Parameters
+
+| Property | Type | Default<br/>Value | Description |
+| --- | --- | --- | --- |
+| defaultJvmOptions | List | [] | JVM options to use if none are passed to the `start` script |
+| defaultArgs | List | [] | Application arguments to use if none are passed to the `start` script |
+| defaultDebugOptions | List | [] | JVM debug options to use if the `--debug` flag is passed to the `start` script |
+| addClassDataSharingArchive | Boolean | `true` | Add a Class Data Sharing archive to reduce startup time |
+| testImage | Boolean | `true` | Start the application after the image is built |
+| stripDebug | Boolean | `false` | Remove all debug support from the image, including within `.class` files |
+| skipJavaImage | Boolean | `false` | Skip this goal execution |
+
+
+
+### General usage
+
+A good practice would be to define an execution for this goal under a profile named `java-image`.
+
+```xml
+    <profiles>
+        <profile>
+            <id>java-image</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>java-image</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+```
+
+You then build your image with the following command:
+
+```bash
+mvn package -Pjava-image
+```
+
+You can also execute this plugin outside of a configured life-cycle, however
+ it requires the project jar to be present and will use only _default_ configuration:
+
+```bash
+mvn package
+mvn helidon:java-image
 ```
