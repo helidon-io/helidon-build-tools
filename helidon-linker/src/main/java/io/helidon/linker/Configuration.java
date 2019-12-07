@@ -398,7 +398,7 @@ public class Configuration {
             this.stripDebug = stripDebug;
             return this;
         }
-        
+
         /**
          * Returns the {@link Configuration} instance.
          *

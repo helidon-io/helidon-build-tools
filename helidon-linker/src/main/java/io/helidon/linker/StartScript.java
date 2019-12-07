@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import io.helidon.linker.util.FileUtils;
 import io.helidon.linker.util.Log;
@@ -293,7 +294,7 @@ public class StartScript {
          * Builds and returns the instance.
          *
          * @return The instance.
-         * @throws PlatformNotSupportedError If a script cannot be created for the current platform.
+         * @throws StartScript.PlatformNotSupportedError If a script cannot be created for the current platform.
          */
         public StartScript build() {
             if (installDirectory == null) {
@@ -329,7 +330,7 @@ public class StartScript {
             if (!cdsInstalled) {
                 removeTemplateLines(CDS);
             }
-            
+
             if (!debugInstalled) {
                 removeTemplateLines(DEBUG);
             }
@@ -345,14 +346,6 @@ public class StartScript {
                          .replace(HAS_CDS, hasCds)
                          .replace(HAS_DEBUG, hasDebug)
                          .replace(CDS_UNLOCK_OPTION, cdsUnlock);
-        }
-
-        private void removeTemplateLines(String containing) {
-            for (int i = template.size() -1; i >= 0; i--) {
-                if (template.get(i).toLowerCase().contains(containing)) {
-                    template.remove(i);
-                }
-            }
         }
 
         private List<String> createCommand() {
@@ -395,11 +388,33 @@ public class StartScript {
                 throw new PlatformNotSupportedError(createCommand());
             } else {
                 try {
-                    return StreamUtils.toLines(content);
+                    return removeLines(StreamUtils.toLines(content), Builder::isComment);
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
             }
+        }
+
+        private static List<String> removeLines(List<String> template, Predicate<String> predicate) {
+            for (int i = template.size() - 1; i >= 0; i--) {
+                if (predicate.test(template.get(i))) {
+                    template.remove(i);
+                }
+            }
+            return template;
+        }
+
+        private void removeTemplateLines(String substring) {
+            removeLines(template, line -> containsIgnoreCase(line, substring));
+        }
+
+        private static boolean containsIgnoreCase(String line, String substring) {
+            return line.toLowerCase().contains(substring);
+        }
+
+        private static boolean isComment(String line) {
+            final int length = line.length();
+            return length > 0 && line.charAt(0) == '#' && (length == 1 || line.charAt(1) != '!');
         }
     }
 }

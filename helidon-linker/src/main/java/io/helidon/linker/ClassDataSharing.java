@@ -120,6 +120,9 @@ public class ClassDataSharing {
         return archiveFile;
     }
 
+    /**
+     * Builder.
+     */
     public static class Builder {
         private static final String FILE_PREFIX = "start";
         private static final String ARCHIVE_NAME = FILE_PREFIX + ".jsa";

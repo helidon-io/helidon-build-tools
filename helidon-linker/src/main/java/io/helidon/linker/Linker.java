@@ -70,18 +70,6 @@ public class Linker {
     private String imageSize;
     private String percent;
 
-    /* CDS Constraints
-    
-         9: cannot rename or move directory: shared class paths mismatch (hint: enable -Xlog:class+path=info to diagnose the failure) 
-        10: cannot rename or move directory: Required classpath entry does not exist: /Users/batsatt/dev/helidon-quickstart-se/target/se-jri/lib/modules
-        11: CAN rename, but move resulted in: A jar file is not the one used while building the shared archive file: app/helidon-quickstart-se.jar               Ioi!!
-        12: CAN rename, but copy resulted in: A jar file is not the one used while building the shared archive file: app/helidon-quickstart-se.jar
-        13: CAN rename, but copy resulted in: A jar file is not the one used while building the shared archive file: app/helidon-quickstart-se.jar
-        14: CAN rename, but copy resulted in: A jar file is not the one used while building the shared archive file: app/helidon-quickstart-se.jar
-     */
-    
-    
-    
     /**
      * Main entry point.
      *
@@ -285,8 +273,8 @@ public class Linker {
             startCommand = List.of(imageName + DIR_SEP + "bin" + DIR_SEP + startScript.scriptFile().getFileName());
         } catch (StartScript.PlatformNotSupportedError e) {
             if (config.cds()) {
-                Log.warn("Start script cannot be created for this platform; for CDS to function, the jar path %s" +
-                         " be relative as shown below.", BoldYellow.apply("must"));
+                Log.warn("Start script cannot be created for this platform; for CDS to function, the jar path %s"
+                         + " be relative as shown below.", BoldYellow.apply("must"));
             } else {
                 Log.warn("Start script cannot be created for this platform.");
             }

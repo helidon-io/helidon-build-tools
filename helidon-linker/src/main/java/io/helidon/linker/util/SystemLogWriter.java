@@ -39,6 +39,7 @@ public class SystemLogWriter implements Log.Writer {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:AvoidNestedBlocks")
     public void write(Level level, Throwable thrown, String message, Object... args) {
         if (shouldWrite(level)) {
             final String msg = toString(String.format(message, args), thrown);
@@ -57,6 +58,10 @@ public class SystemLogWriter implements Log.Writer {
                 case ERROR: {
                     System.err.println("ERROR: " + msg);
                     break;
+                }
+
+                default: {
+                    throw new Error();
                 }
             }
         }

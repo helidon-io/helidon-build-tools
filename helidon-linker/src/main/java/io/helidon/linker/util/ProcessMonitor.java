@@ -150,6 +150,11 @@ public class ProcessMonitor {
             return this;
         }
 
+        /**
+         * Builds the instance.
+         *
+         * @return The instance.
+         */
         public ProcessMonitor build() {
             if (builder == null) {
                 throw new IllegalStateException("processBuilder required");
@@ -191,14 +196,15 @@ public class ProcessMonitor {
      *
      * @return This instance.
      * @throws IOException If the process fails.
+     * @throws InterruptedException If the a thread is interrupted.
      */
     public ProcessMonitor execute() throws IOException, InterruptedException {
         if (description != null) {
             monitorOut.accept(description);
         }
         final Process process = builder.start();
-        final Future out = monitor(process.getInputStream(), filter, transform, capturing ? this::captureStdOut : stdOut);
-        final Future err = monitor(process.getErrorStream(), filter, transform, capturing ? this::captureStdErr : stdErr);
+        final Future<?> out = monitor(process.getInputStream(), filter, transform, capturing ? this::captureStdOut : stdOut);
+        final Future<?> err = monitor(process.getErrorStream(), filter, transform, capturing ? this::captureStdErr : stdErr);
         final int exitCode = process.waitFor();
         out.cancel(true);
         err.cancel(true);
@@ -241,10 +247,10 @@ public class ProcessMonitor {
         }
     }
 
-    private static Future monitor(InputStream input, 
-                                  Predicate<String> filter, 
-                                  Function<String, String> transform, 
-                                  Consumer<String> output) {
+    private static Future<?> monitor(InputStream input,
+                                     Predicate<String> filter,
+                                     Function<String, String> transform,
+                                     Consumer<String> output) {
         return EXECUTOR.submit(() -> new BufferedReader(new InputStreamReader(input)).lines().forEach(line -> {
             if (filter.test(line)) {
                 output.accept(transform.apply(line));

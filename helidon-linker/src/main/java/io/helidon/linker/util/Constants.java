@@ -82,4 +82,7 @@ public class Constants {
      * The debugger module name.
      */
     public static final String DEBUGGER_MODULE = "jdk.jdwp.agent";
+
+    private Constants() {
+    }
 }

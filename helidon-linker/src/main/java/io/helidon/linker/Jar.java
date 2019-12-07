@@ -49,13 +49,13 @@ import java.util.zip.ZipEntry;
 import io.helidon.linker.util.Log;
 import io.helidon.linker.util.StreamUtils;
 
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassWriter;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexReader;
 import org.jboss.jandex.IndexWriter;
 import org.jboss.jandex.Indexer;
 import org.jboss.jandex.UnsupportedVersion;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
 
 import static io.helidon.linker.util.FileUtils.assertDir;
 import static io.helidon.linker.util.FileUtils.assertFile;
@@ -423,7 +423,7 @@ public class Jar implements ResourceContainer {
     }
 
     private void copy(OutputStream out, boolean addIndex, boolean stripDebug) throws IOException {
-        try (final JarOutputStream jar = new JarOutputStream(out)) {
+        try (JarOutputStream jar = new JarOutputStream(out)) {
 
             if (addIndex) {
                 addIndex(jar);
@@ -446,23 +446,23 @@ public class Jar implements ResourceContainer {
                      });
         }
     }
-    
+
     private InputStream data(Entry entry, boolean stripDebug) throws IOException {
         if (stripDebug && isNormalClassFile(entry) && !isSigned) {
             ClassReader reader = new ClassReader(entry.data());
             ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
             reader.accept(writer, ClassReader.SKIP_DEBUG);
-            return new ByteArrayInputStream(writer.toByteArray()); 
+            return new ByteArrayInputStream(writer.toByteArray());
         } else {
             return entry.data();
         }
     }
-    
+
     private static boolean isNormalClassFile(Entry entry) {
         final String name = entry.path();
         return name.endsWith(CLASS_FILE_SUFFIX) && !name.equals(MODULE_INFO_CLASS);
     }
-    
+
     private static JarEntry newJarEntry(Entry entry) {
         final JarEntry result = new JarEntry(entry.getName());
         if (result.getCreationTime() != null) {

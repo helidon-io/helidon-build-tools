@@ -24,15 +24,27 @@ import static java.util.Objects.requireNonNull;
  * Simple, centralized logging.
  */
 public abstract class Log {
-    private static AtomicReference<Writer> WRITER = new AtomicReference<>();
+    private static final AtomicReference<Writer> WRITER = new AtomicReference<>();
 
     /**
      * Levels.
      */
     public enum Level {
+        /**
+         * Debug level.
+         */
         DEBUG,
+        /**
+         * Info level.
+         */
         INFO,
+        /**
+         * Warn level.
+         */
         WARN,
+        /**
+         * Error level.
+         */
         ERROR
     }
 
