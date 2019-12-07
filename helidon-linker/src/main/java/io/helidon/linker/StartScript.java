@@ -294,7 +294,7 @@ public class StartScript {
          * Builds and returns the instance.
          *
          * @return The instance.
-         * @throws StartScript.PlatformNotSupportedError If a script cannot be created for the current platform.
+         * @throws IllegalArgumentException If a script cannot be created for the current platform.
          */
         public StartScript build() {
             if (installDirectory == null) {
