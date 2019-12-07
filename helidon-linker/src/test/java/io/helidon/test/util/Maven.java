@@ -56,6 +56,7 @@ import org.eclipse.aether.version.Version;
 
 import static io.helidon.linker.util.Constants.DIR_SEP;
 import static io.helidon.linker.util.FileUtils.assertDir;
+import static io.helidon.linker.util.FileUtils.assertFile;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -168,6 +169,7 @@ public class Maven {
 
         private final Path userHome;
         private Path mavenHome;
+        private Path localRepositoryDir;
         private Path globalSettings;
         private Path userSettings;
         private boolean offline;
@@ -192,6 +194,39 @@ public class Maven {
         }
 
         /**
+         * Sets the path to the global {@code settings.xml} file.
+         *
+         * @param globalSettingsFile The path.
+         * @return This instance.
+         */
+        public Builder globalSettingsFile(Path globalSettingsFile) {
+            this.globalSettings = assertFile(globalSettingsFile);
+            return this;
+        }
+
+        /**
+         * Sets the path to the user {@code settings.xml} file.
+         *
+         * @param userSettingsFile The path.
+         * @return This instance.
+         */
+        public Builder userSettingsFile(Path userSettingsFile) {
+            this.userSettings = assertFile(userSettingsFile);
+            return this;
+        }
+
+        /**
+         * Sets the path to the local repository.
+         *
+         * @param localRepositoryDir The path.
+         * @return This instance.
+         */
+        public Builder localRepositoryDir(Path localRepositoryDir) {
+            this.localRepositoryDir = assertDir(localRepositoryDir);
+            return this;
+        }
+
+        /**
          * Sets offline mode.
          *
          * @param offline {@code true} if offline.
@@ -212,8 +247,7 @@ public class Maven {
             session = MavenRepositorySystemUtils.newSession()
                                                 .setOffline(offline)
                                                 .setCache(new DefaultRepositoryCache());
-            final Path localRepoDir = assertDir(userHome.resolve(LOCAL_REPOSITORY_PATH));
-            final LocalRepository localRepo = new LocalRepository(localRepoDir.toFile());
+            final LocalRepository localRepo = localRepository();
             session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
 
             //session.setTransferListener( new ConsoleTransferListener() );
@@ -222,6 +256,13 @@ public class Maven {
             settings = settings();
             repositories = repositories();
             return new Maven(this);
+        }
+
+        private LocalRepository localRepository() {
+            if (localRepositoryDir == null) {
+                localRepositoryDir = assertDir(userHome.resolve(LOCAL_REPOSITORY_PATH));
+            }
+            return new LocalRepository(localRepositoryDir.toFile());
         }
 
         private Settings settings() {
@@ -234,8 +275,12 @@ public class Maven {
             }
             final SettingsBuilder settingsBuilder = new DefaultSettingsBuilderFactory().newInstance();
             final DefaultSettingsBuildingRequest request = new DefaultSettingsBuildingRequest();
-            request.setGlobalSettingsFile(globalSettings.toFile());
-            request.setUserSettingsFile(userSettings.toFile());
+            if (Files.isRegularFile(globalSettings)) {
+                request.setGlobalSettingsFile(globalSettings.toFile());
+            }
+            if (Files.isRegularFile(userSettings)) {
+                request.setUserSettingsFile(userSettings.toFile());
+            }
             request.setSystemProperties(System.getProperties());
             try {
                 return settingsBuilder.build(request).getEffectiveSettings();

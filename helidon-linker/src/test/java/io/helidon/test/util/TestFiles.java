@@ -39,7 +39,7 @@ public class TestFiles {
     private static final String HELIDON_QUICKSTART_PREFIX = "helidon-quickstart-";
     private static final String QUICKSTART_PACKAGE_PREFIX = "io.helidon.examples.quickstart.";
     private static final String SIGNED_JAR_COORDINATES = "org.bouncycastle:bcpkix-jdk15on:1.60";
-    private static final Instance<Maven> MAVEN = new Instance<>(() -> Maven.builder().build());
+    private static final Instance<Maven> MAVEN = new Instance<>(TestFiles::createMaven);
     private static final Instance<Version> ARCHETYPE_VERSION = new Instance<>(TestFiles::lookupLatestQuickstartVersion);
     private static final Instance<Path> SE_JAR = new Instance<>(TestFiles::getOrCreateQuickstartSeJar);
     private static final Instance<Path> MP_JAR = new Instance<>(TestFiles::getOrCreateQuickstartMpJar);
@@ -92,6 +92,28 @@ public class TestFiles {
 
     private static Maven maven() {
         return MAVEN.instance();
+    }
+
+    private static Maven createMaven() {
+
+        /*
+        Installing /pipeline/source/pom.xml to /pipeline/cache/local_repository/io/helidon/build-tools/helidon-build-tools-project/1.0.11-SNAPSHOT/helidon-build-tools-project-1.0.11-SNAPSHOT.pom
+
+            localRepo = /pipeline/cache/local_repository
+         */
+
+        Log.info("\n--- Environment ---- \n");
+        System.getenv().forEach((key, value) -> Log.info("    %s = %s", key, value));
+        Log.info("\n--- System Properties ---- \n");
+        System.getProperties().forEach((key, value) -> Log.info("    %s = %s", key, value));
+
+        final Path workDir = Paths.get(System.getProperty("user.dir")).toAbsolutePath();
+        if (workDir.getRoot().toString().equals("pipeline")) {
+            // Assume pipeline until we learn more TODO cleanup!
+            return Maven.builder().localRepositoryDir(Paths.get("/pipeline/cache/local_repository")).build();
+        } else {
+            return Maven.builder().build();
+        }
     }
 
     private static Version lookupLatestQuickstartVersion() {
