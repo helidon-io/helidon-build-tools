@@ -101,12 +101,13 @@ public class JavaDependencies {
     }
 
     private void addModule(Jar module) {
-        module.moduleDescriptor()
-              .requires()
-              .stream()
-              .map(ModuleDescriptor.Requires::name)
-              .filter(javaModuleNames::contains)
-              .forEach(dependencies::add);
+        final ModuleDescriptor descriptor = module.moduleDescriptor();
+        Log.info("  checking module %s", descriptor.name());
+        descriptor.requires()
+                  .stream()
+                  .map(ModuleDescriptor.Requires::name)
+                  .filter(javaModuleNames::contains)
+                  .forEach(dependencies::add);
     }
 
     private void addJar(Jar jar) {
