@@ -166,6 +166,9 @@ public class Maven {
         private static final String CENTRAL_ID = "central";
         private static final String REPOSITORY_TYPE = "default";
         private static final String CENTRAL_URL = "https://repo.maven.apache.org/maven2/";
+        private static final String LOCAL_REPOSITORY_KEY = "localRepository";
+        private static final String MAVEN_HOME_VAR = "MAVEN_HOME";
+        private static final String MVN_HOME_VAR = "MVN_HOME";
 
         private final Path userHome;
         private Path mavenHome;
@@ -258,16 +261,38 @@ public class Maven {
             return new Maven(this);
         }
 
+        private Path mavenHome() {
+            if (mavenHome == null) {
+                mavenHome = envVarPath(MAVEN_HOME_VAR);
+                if (mavenHome == null) {
+                    mavenHome = envVarPath(MVN_HOME_VAR);
+                    if (mavenHome == null) {
+                        mavenHome = findExecutable(MVN_BINARY_NAME);
+                    }
+                }
+            }
+            return mavenHome;
+        }
+
         private LocalRepository localRepository() {
             if (localRepositoryDir == null) {
-                localRepositoryDir = assertDir(userHome.resolve(LOCAL_REPOSITORY_PATH));
+                final String localRepo = System.getProperty(LOCAL_REPOSITORY_KEY);
+                if (localRepo != null) {
+                    final Path dir = Paths.get(localRepo);
+                    if (Files.isDirectory(dir)) {
+                        localRepositoryDir = dir;
+                    }
+                }
+                if (localRepositoryDir == null) {
+                    localRepositoryDir = assertDir(userHome.resolve(LOCAL_REPOSITORY_PATH));
+                }
             }
             return new LocalRepository(localRepositoryDir.toFile());
         }
 
         private Settings settings() {
             if (globalSettings == null) {
-                final Path home = mavenHome == null ? findExecutable(MVN_BINARY_NAME) : mavenHome;
+                final Path home = mavenHome();
                 this.globalSettings = home.resolve(GLOBAL_SETTINGS_PATH);
             }
             if (userSettings == null) {
@@ -316,6 +341,11 @@ public class Maven {
                 }
             });
             return locator.getService(RepositorySystem.class);
+        }
+
+        private static Path envVarPath(String var) {
+            final String path = System.getenv(var);
+            return path == null ? null : Paths.get(path);
         }
 
         private static Path findExecutable(String executableName) {
