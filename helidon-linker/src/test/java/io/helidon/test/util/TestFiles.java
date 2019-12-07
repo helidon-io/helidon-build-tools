@@ -35,12 +35,14 @@ import static io.helidon.linker.util.FileUtils.assertFile;
  */
 public class TestFiles {
     private static final Path OUR_TARGET_DIR = ourTargetDir();
-    private static final String ARCHETYPES_GROUP = "io.helidon.archetypes";
+    private static final String HELIDON_GROUP_ID = "io.helidon";
+    private static final String HELIDON_PROJECT_ID = "helidon-project";
+    private static final String ARCHETYPES_GROUP_ID = "io.helidon.archetypes";
     private static final String HELIDON_QUICKSTART_PREFIX = "helidon-quickstart-";
     private static final String QUICKSTART_PACKAGE_PREFIX = "io.helidon.examples.quickstart.";
     private static final String SIGNED_JAR_COORDINATES = "org.bouncycastle:bcpkix-jdk15on:1.60";
     private static final Instance<Maven> MAVEN = new Instance<>(TestFiles::createMaven);
-    private static final Instance<Version> ARCHETYPE_VERSION = new Instance<>(TestFiles::lookupLatestQuickstartVersion);
+    private static final Instance<Version> LATEST_HELIDON_VERSION = new Instance<>(TestFiles::lookupLatestHelidonVersion);
     private static final Instance<Path> SE_JAR = new Instance<>(TestFiles::getOrCreateQuickstartSeJar);
     private static final Instance<Path> MP_JAR = new Instance<>(TestFiles::getOrCreateQuickstartMpJar);
     private static final Instance<Path> SIGNED_JAR = new Instance<>(TestFiles::fetchSignedJar);
@@ -55,12 +57,12 @@ public class TestFiles {
     }
 
     /**
-     * Returns the latest quickstart archetype version.
+     * Returns the latest Helidon version.
      *
      * @return The version.
      */
-    public static Version latestQuickstartArchetypeVersion() {
-        return ARCHETYPE_VERSION.instance();
+    public static Version latestHelidonVersion() {
+        return LATEST_HELIDON_VERSION.instance();
     }
 
     /**
@@ -95,32 +97,19 @@ public class TestFiles {
     }
 
     private static Maven createMaven() {
-
-        /*
-        Installing /pipeline/source/pom.xml to /pipeline/cache/local_repository/io/helidon/build-tools/helidon-build-tools-project/1.0.11-SNAPSHOT/helidon-build-tools-project-1.0.11-SNAPSHOT.pom
-
-            localRepo = /pipeline/cache/local_repository
-         */
-
-        Log.info("\n--- Environment ---- \n");
-        System.getenv().forEach((key, value) -> Log.info("    %s = %s", key, value));
-        Log.info("\n--- System Properties ---- \n");
-        System.getProperties().forEach((key, value) -> Log.info("    %s = %s", key, value));
-
-        final Path workDir = Paths.get(System.getProperty("user.dir")).toAbsolutePath();
-        if (workDir.getRoot().toString().equals("pipeline")) {
-            // Assume pipeline until we learn more TODO cleanup!
-            return Maven.builder().localRepositoryDir(Paths.get("/pipeline/cache/local_repository")).build();
-        } else {
-            return Maven.builder().build();
+        if (System.getProperty("dump.env") != null) {
+            Log.info("\n--- Environment ---- \n");
+            System.getenv().forEach((key, value) -> Log.info("    %s = %s", key, value));
+            Log.info("\n--- System Properties ---- \n");
+            System.getProperties().forEach((key, value) -> Log.info("    %s = %s", key, value));
         }
+        return Maven.builder().build();
     }
 
-    private static Version lookupLatestQuickstartVersion() {
-        final String artifactId = quickstartId("se");
-        Log.info("Looking up latest %s:%s version", ARCHETYPES_GROUP, artifactId);
-        final Version version = Maven.builder().build().latestVersion(ARCHETYPES_GROUP, artifactId);
-        Log.info("Latest archetype version is %s", version);
+    private static Version lookupLatestHelidonVersion() {
+        Log.info("Looking up latest Helidon release version");
+        final Version version = maven().latestVersion(HELIDON_GROUP_ID, HELIDON_PROJECT_ID);
+        Log.info("Latest Helidon release version is %s", version);
         return version;
     }
 
@@ -178,13 +167,13 @@ public class TestFiles {
         final Path targetDir = ourTargetDir();
         final String id = quickstartId(helidonVariant);
         final String pkg = QUICKSTART_PACKAGE_PREFIX + helidonVariant;
-        final Version archetypeVersion = latestQuickstartArchetypeVersion();
+        final Version archetypeVersion = latestHelidonVersion();
         Log.info("Creating %s from archetype %s", id, archetypeVersion);
         execute(new ProcessBuilder().directory(targetDir.toFile())
                                     .command(List.of("mvn",
                                                      "archetype:generate",
                                                      "-DinteractiveMode=false",
-                                                     "-DarchetypeGroupId=" + ARCHETYPES_GROUP,
+                                                     "-DarchetypeGroupId=" + ARCHETYPES_GROUP_ID,
                                                      "-DarchetypeArtifactId=" + id,
                                                      "-DarchetypeVersion=" + archetypeVersion,
                                                      "-DgroupId=test",
