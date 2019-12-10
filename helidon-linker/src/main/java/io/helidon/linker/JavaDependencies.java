@@ -136,10 +136,10 @@ public class JavaDependencies {
         Arrays.stream(out.toString().split(EOL))
               .map(String::trim)
               .filter(line -> !line.isEmpty())
-              .forEach(line -> handle(line, jar));
+              .forEach(line -> handleJdepsResultLine(line, jar));
     }
 
-    private void handle(String line, Jar jar) {
+    private void handleJdepsResultLine(String line, Jar jar) {
         if (javaModuleNames.contains(line)) {
             dependencies.add(line);
         } else {
@@ -150,7 +150,7 @@ public class JavaDependencies {
                 }
             }
             if (!line.contains(":") && line.contains("/")) {
-                handle(line.split("/")[0], jar);
+                handleJdepsResultLine(line.split("/")[0], jar);
             } else if (!EXCLUDED_MODULES.contains(line)) {
                 throw new IllegalStateException("Unhandled dependency: " + toString(line, jar));
             }
