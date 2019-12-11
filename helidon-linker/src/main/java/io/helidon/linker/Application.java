@@ -34,7 +34,8 @@ import static io.helidon.linker.util.Constants.DIR_SEP;
 
 /**
  * A Helidon application supporting Java dependency collection and installation into a Java Home.
- * This class assumes that the application was built re
+ * This class assumes that the application was built such that the main jar contains the class path
+ * in its manifest.
  */
 public class Application implements ResourceContainer {
     static final Path APP_DIR = Paths.get("app");
