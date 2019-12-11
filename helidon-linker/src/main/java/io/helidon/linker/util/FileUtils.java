@@ -27,6 +27,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -229,6 +230,20 @@ public class FileUtils {
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Returns the last modified time of the given file, in seconds.
+     *
+     * @param file The file.
+     * @return The last modified time.
+     */
+    public static long lastModifiedTime(Path file) {
+        try {
+            return Files.getLastModifiedTime(file).to(TimeUnit.SECONDS);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

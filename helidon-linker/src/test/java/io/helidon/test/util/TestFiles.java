@@ -16,6 +16,7 @@
 
 package io.helidon.test.util;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -92,6 +93,23 @@ public class TestFiles {
         return SIGNED_JAR.instance();
     }
 
+    /**
+     * Creates the given file (with no content) if it does not already exist.
+     *
+     * @param file The file.
+     * @return The file.
+     */
+    public static Path ensureMockFile(Path file) {
+        if (!Files.exists(file)) {
+            try {
+                Files.createFile(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return file;
+    }
+
     private static Maven maven() {
         return MAVEN.instance();
     }
@@ -108,7 +126,7 @@ public class TestFiles {
 
     private static Version lookupLatestHelidonVersion() {
         Log.info("Looking up latest Helidon release version");
-        final Version version = maven().latestVersion(HELIDON_GROUP_ID, HELIDON_PROJECT_ID);
+        final Version version = maven().latestVersion(HELIDON_GROUP_ID, HELIDON_PROJECT_ID, false);
         Log.info("Latest Helidon release version is %s", version);
         return version;
     }

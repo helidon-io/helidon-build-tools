@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 import io.helidon.linker.util.Log;
 
@@ -64,6 +65,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class Maven {
     private static final String LATEST_VERSION = "[0,)";
+    private static final String SNAPSHOT_SUFFIX = "-SNAPSHOT";
     private final RepositorySystem system;
     private final DefaultRepositorySystemSession session;
     private final List<RemoteRepository> repositories;
@@ -88,10 +90,11 @@ public class Maven {
      *
      * @param groupId The artifact group id.
      * @param artifactId The artifact id.
+     * @param allowSnapshot {@code true} if snapshot versions are allowed.
      * @return The latest version.
      */
-    public Version latestVersion(String groupId, String artifactId) {
-        return latestVersion(toCoordinates(groupId, artifactId, LATEST_VERSION));
+    public Version latestVersion(String groupId, String artifactId, boolean allowSnapshot) {
+        return latestVersion(toCoordinates(groupId, artifactId, LATEST_VERSION), allowSnapshot);
     }
 
 
@@ -99,14 +102,25 @@ public class Maven {
      * Returns the latest version for the given artifact.
      *
      * @param coordinates The artifact coordinates.
+     * @param allowSnapshot {@code true} if snapshot versions are allowed.
      * @return The latest version.
      */
-    public Version latestVersion(String coordinates) {
+    public Version latestVersion(String coordinates, boolean allowSnapshot) {
         final Artifact artifact = new DefaultArtifact(coordinates);
         final VersionRangeRequest request = new VersionRangeRequest(artifact, repositories, null);
         try {
             final VersionRangeResult result = system.resolveVersionRange(session, request);
-            return result.getHighestVersion();
+            if (allowSnapshot) {
+                return result.getHighestVersion();
+            } else {
+                final List<Version> versions = result.getVersions();
+                final int lastIndex = versions.size() - 1;
+                return IntStream.rangeClosed(0, lastIndex)
+                                .mapToObj(index -> versions.get(lastIndex - index))
+                                .filter(version -> !version.toString().endsWith(SNAPSHOT_SUFFIX))
+                                .findFirst()
+                                .orElseThrow(() -> new IllegalStateException("no non-snapshot version found!"));
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -34,9 +34,9 @@ usage() {
     echo
     echo "Supported environment variables:"
     echo
-    echo "    DEFAULT_JVM     <DEFAULT_JVM_DESC>"
-    echo "    DEFAULT_ARGS    <DEFAULT_ARGS_DESC>"
-    echo "    DEFAULT_DEBUG   <DEFAULT_DEBUG_DESC>"
+    echo "    DEFAULT_APP_JVM     <DEFAULT_APP_JVM_DESC>"
+    echo "    DEFAULT_APP_ARGS    <DEFAULT_APP_ARGS_DESC>"
+    echo "    DEFAULT_APP_DEBUG   <DEFAULT_APP_DEBUG_DESC>"
     echo
     exit 0
 }
@@ -50,19 +50,20 @@ main() {
 init() {
     local -r scriptName=$(basename "${0}")
     local -r binDir=$(dirname "${0}")
+    local -r homeDir=$(cd "${binDir}/.."; pwd)
     local -r jarName="<JAR_NAME>"
-    local -r defaultDebug="<DEFAULT_DEBUG>"
-    local -r defaultJvm="<DEFAULT_JVM>"
-    local -r defaultArgs="<DEFAULT_ARGS>"
+    local -r defaultDebug="<DEFAULT_APP_DEBUG>"
+    local -r defaultJvm="<DEFAULT_APP_JVM>"
+    local -r defaultArgs="<DEFAULT_APP_ARGS>"
     local -r cdsOption="<CDS_UNLOCK>-XX:SharedArchiveFile=lib/start.jsa -Xshare:"
     local -r exitOption="-Dexit.on.started=✅"
-    local -r jvmDefaults="${DEFAULT_JVM:-${defaultJvm}}"
-    local -r argDefaults="${DEFAULT_ARGS:-${defaultArgs}}"
-    local args jvm test share=auto 
+    local -r jvmDefaults="${DEFAULT_APP_JVM:-${defaultJvm}}"
+    local -r argDefaults="${DEFAULT_APP_ARGS:-${defaultArgs}}"
+    local args jvm test share=auto
     local useCds=true
     local debug
     action=exec
- 
+
     while (( ${#} > 0 )); do
         case "${1}" in
             --jvm) shift; appendVar jvm "${1}" ;;
@@ -78,14 +79,27 @@ init() {
 
     local jvmOptions=${jvm:-${jvmDefaults}}
     [[ ${useCds} ]] && appendVar jvmOptions "${cdsOption}${share}"
-    [[ ${debug} ]] && appendVar jvmOptions "${DEFAULT_DEBUG:-${defaultDebug}}"
-    [[ ${test} ]] && appendVar jvmOptions "${exitOption}"
+    [[ ${debug} ]] && appendVar jvmOptions "${DEFAULT_APP_DEBUG:-${defaultDebug}}"
+    if [[ ${test} ]]; then
+        appendVar jvmOptions "${exitOption}"
+        [[ ${useCds} ]] && checkTimeStamps
+    fi
     command="bin/java ${jvmOptions} -jar app/${jarName} ${args:-${argDefaults}}"
-    cd "${binDir}/.."
+    cd "${homeDir}"
 }
 
 appendVar() {
     export ${1}="${!1:+${!1} }${2}"
+}
+
+checkTimeStamps() {
+    local -r timeStampFormat="<STAT_FORMAT>"
+    local -r modulesTimeStamp=$(stat ${timeStampFormat} "${homeDir}/lib/modules")
+    local -r jarTimeStamp=$(stat ${timeStampFormat} "${homeDir}/app/${jarName}")
+    if [[ ${modulesTimeStamp} != "<MODULES_TIME_STAMP>" || ${jarTimeStamp} != "<JAR_TIME_STAMP>" ]]; then
+        echo "WARNING: CDS will likely fail since it appears this image is a copy (timestamps differ)."
+        echo "         <COPY_INSTRUCTIONS>"
+    fi
 }
 
 main "$@"

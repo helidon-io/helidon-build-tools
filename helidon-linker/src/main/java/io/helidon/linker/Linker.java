@@ -257,9 +257,8 @@ public class Linker {
 
     private void installStartScript() {
         try {
-            final Path installDir = jriDirectory().resolve("bin");
             startScript = StartScript.builder()
-                                     .installDirectory(installDir)
+                                     .installHomeDirectory(config.jriDirectory())
                                      .defaultJvmOptions(config.defaultJvmOptions())
                                      .defaultDebugOptions(config.defaultDebugOptions())
                                      .mainJar(jriMainJar)
@@ -268,7 +267,7 @@ public class Linker {
                                      .debugInstalled(!config.stripDebug())
                                      .build();
 
-            Log.info("Installing start script in %s", installDir);
+            Log.info("Installing start script in %s", startScript.installDirectory());
             startScript.install();
             startCommand = List.of(imageName + DIR_SEP + "bin" + DIR_SEP + startScript.scriptFile().getFileName());
         } catch (StartScript.PlatformNotSupportedError e) {

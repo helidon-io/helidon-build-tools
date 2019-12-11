@@ -29,14 +29,37 @@ import static io.helidon.linker.util.Style.Bold;
 public class Constants {
 
     /**
+     * Operating system types.
+     */
+    public enum OSType {
+        /**
+         * Macintosh.
+         */
+        MacOS,
+        /**
+         * Windows.
+         */
+        Windows,
+        /**
+         * Linux.
+         */
+        Linux,
+        /**
+         * Unknon.
+         */
+        Unknown
+    }
+
+    /**
+     * The operating system type.
+     *
+     */
+    public static final OSType OS_TYPE = osType();
+
+    /**
      * The minimum supported JDK version.
      */
     public static final int MINIMUM_JDK_VERSION = 9;
-
-    /**
-     * Whether or not this is a Windows platform.
-     */
-    public static final boolean WINDOWS = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("win");
 
     /**
      * End of line string.
@@ -64,6 +87,11 @@ public class Constants {
     public static final String CDS_UNLOCK_OPTIONS = "-XX:+UnlockDiagnosticVMOptions";
 
     /**
+     * Whether or not CDS supports image copy (with preserved timestamps).
+     */
+    public static final boolean CDS_SUPPORTS_IMAGE_COPY = Runtime.version().major() >= 10;
+
+    /**
      * Indent function.
      */
     public static final Function<String, String> INDENT = line -> "    " + line;
@@ -83,6 +111,19 @@ public class Constants {
      */
     public static final String DEBUGGER_MODULE = "jdk.jdwp.agent";
 
+
+    private static OSType osType() {
+        final String name = System.getProperty("os.name", "unknown").toLowerCase(Locale.ENGLISH);
+        if (name.contains("win")) {
+            return OSType.Windows;
+        } else if (name.contains("mac") || name.contains("darwin")) {
+            return OSType.MacOS;
+        } else if (name.contains("nux")) {
+            return OSType.Linux;
+        } else {
+            return OSType.Unknown;
+        }
+    }
     private Constants() {
     }
 }

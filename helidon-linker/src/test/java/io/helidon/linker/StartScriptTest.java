@@ -24,13 +24,13 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.List;
 import java.util.Set;
 
-import io.helidon.linker.util.FileUtils;
 import io.helidon.linker.util.StreamUtils;
 import io.helidon.test.util.TestFiles;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.linker.util.Constants.DIR_SEP;
+import static io.helidon.linker.util.FileUtils.ensureDirectory;
+import static io.helidon.linker.util.FileUtils.lastModifiedTime;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -41,12 +41,29 @@ import static org.hamcrest.Matchers.not;
  */
 class StartScriptTest {
 
-    private static final Path JAR = TestFiles.helidonSeJar();
-    private static final String JAR_NAME = JAR.getFileName().toString();
-    private static final Path BIN_DIR = FileUtils.ensureDirectory(TestFiles.targetDir().resolve("scripts" + DIR_SEP + "bin"));
+    private static final Path INSTALL_DIR = ensureDirectory(TestFiles.targetDir().resolve("script-home"));
+    private static final Path BIN_DIR = ensureDirectory(INSTALL_DIR.resolve("bin"));
+    private static final Path LIB_DIR = ensureDirectory(INSTALL_DIR.resolve("lib"));
+    private static final Path APP_DIR = ensureDirectory(INSTALL_DIR.resolve("app"));
+    private static final Path INSTALLED_JAR_FILE = TestFiles.ensureMockFile(APP_DIR.resolve("main.jar"));
+    private static final Path INSTALLED_MODULES_FILE = TestFiles.ensureMockFile(LIB_DIR.resolve("modules"));
+    private static final String JAR_NAME = INSTALLED_JAR_FILE.getFileName().toString();
 
     private StartScript.Builder builder() {
-        return StartScript.builder().mainJar(JAR).installDirectory(BIN_DIR);
+        return StartScript.builder().mainJar(INSTALLED_JAR_FILE).installHomeDirectory(INSTALL_DIR);
+    }
+
+    private static String modulesTimeStampComparison() {
+        return timeStampComparison("modules", INSTALLED_MODULES_FILE);
+    }
+
+    private static String jarTimeStampComparison() {
+        return timeStampComparison("jar", INSTALLED_JAR_FILE);
+    }
+
+    private static String timeStampComparison(String name, Path file) {
+        final String timestamp = Long.toString(lastModifiedTime(file));
+        return "${" + name + "TimeStamp} != \"" + timestamp + "\"";
     }
 
     @Test
@@ -60,33 +77,33 @@ class StartScriptTest {
     @Test
     void testDefaultJvmOptions() {
         String script = builder().build().toString();
-        assertThat(script, containsString("DEFAULT_JVM     Sets default JVM options."));
+        assertThat(script, containsString("DEFAULT_APP_JVM     Sets default JVM options."));
         assertThat(script, containsString("defaultJvm=\"\""));
 
         script = builder().defaultJvmOptions(List.of("-verbose:class", "-Xms32")).build().toString();
-        assertThat(script, containsString("DEFAULT_JVM     Overrides "));
+        assertThat(script, containsString("DEFAULT_APP_JVM     Overrides "));
         assertThat(script, containsString("defaultJvm=\"-verbose:class -Xms32\""));
     }
 
     @Test
     void testDefaultDebugOptions() {
         String script = builder().build().toString();
-        assertThat(script, containsString("DEFAULT_DEBUG   Overrides "));
+        assertThat(script, containsString("DEFAULT_APP_DEBUG   Overrides "));
         assertThat(script, containsString("defaultDebug=\"" + Configuration.Builder.DEFAULT_DEBUG + "\""));
 
         script = builder().defaultDebugOptions(List.of("-Xdebug", "-Xnoagent")).build().toString();
-        assertThat(script, containsString("DEFAULT_DEBUG   Overrides "));
+        assertThat(script, containsString("DEFAULT_APP_DEBUG   Overrides "));
         assertThat(script, containsString("defaultDebug=\"-Xdebug -Xnoagent\""));
     }
 
     @Test
     void testDefaultArguments() {
         String script = builder().build().toString();
-        assertThat(script, containsString("DEFAULT_ARGS    Sets default arguments."));
+        assertThat(script, containsString("DEFAULT_APP_ARGS    Sets default arguments."));
         assertThat(script, containsString("defaultArgs=\"\""));
 
         script = builder().defaultArgs(List.of("--foo", "bar")).build().toString();
-        assertThat(script, containsString("DEFAULT_ARGS    Overrides "));
+        assertThat(script, containsString("DEFAULT_APP_ARGS    Overrides "));
         assertThat(script, containsString("defaultArgs=\"--foo bar\""));
     }
 
@@ -95,8 +112,8 @@ class StartScriptTest {
         String script = builder().build().toString();
         assertThat(script, containsString("--noCds         Do not use CDS."));
         assertThat(script, containsString("--debug         Add JVM debug options."));
-        assertThat(script, containsString("DEFAULT_DEBUG"));
- 
+        assertThat(script, containsString("DEFAULT_APP_DEBUG"));
+
         assertThat(script, containsString("local -r defaultDebug="));
         assertThat(script, containsString("local -r cdsOption="));
         assertThat(script, containsString("local useCds="));
@@ -107,14 +124,18 @@ class StartScriptTest {
 
         assertThat(script, containsString("${useCds}"));
         assertThat(script, containsString("${debug}"));
-   }
+
+        assertThat(script, containsString(modulesTimeStampComparison()));
+        assertThat(script, containsString(jarTimeStampComparison()));
+        assertThat(script, containsString("timeStamp"));
+    }
 
     @Test
     void testConditionalsNoCDS() {
         String script = builder().cdsInstalled(false).build().toString();
         assertThat(script, not(containsString("--noCds         Do not use CDS.")));
         assertThat(script, containsString("--debug         Add JVM debug options."));
-        assertThat(script, containsString("DEFAULT_DEBUG"));
+        assertThat(script, containsString("DEFAULT_APP_DEBUG"));
 
         assertThat(script, containsString("local -r defaultDebug="));
         assertThat(script, not(containsString("local -r cdsOption=")));
@@ -126,6 +147,10 @@ class StartScriptTest {
 
         assertThat(script, not(containsString("${useCds}")));
         assertThat(script, containsString("${debug}"));
+
+        assertThat(script, not(containsString(modulesTimeStampComparison())));
+        assertThat(script, not(containsString(jarTimeStampComparison())));
+        assertThat(script, not(containsString("timeStamp")));
     }
 
     @Test
@@ -133,7 +158,7 @@ class StartScriptTest {
         String script = builder().debugInstalled(false).build().toString();
         assertThat(script, containsString("--noCds         Do not use CDS."));
         assertThat(script, not(containsString("--debug         Add JVM debug options.")));
-        assertThat(script, not(containsString("DEFAULT_DEBUG")));
+        assertThat(script, not(containsString("DEFAULT_APP_DEBUG")));
 
         assertThat(script, not(containsString("local -r defaultDebug=")));
         assertThat(script, containsString("local -r cdsOption="));
@@ -145,6 +170,10 @@ class StartScriptTest {
 
         assertThat(script, containsString("${useCds}"));
         assertThat(script, not(containsString("${debug}")));
+
+        assertThat(script, containsString(modulesTimeStampComparison()));
+        assertThat(script, containsString(jarTimeStampComparison()));
+        assertThat(script, containsString("timeStamp"));
     }
 
     @Test
@@ -152,7 +181,7 @@ class StartScriptTest {
         String script = builder().cdsInstalled(false).debugInstalled(false).build().toString();
         assertThat(script, not(containsString("--noCds         Do not use CDS.")));
         assertThat(script, not(containsString("--debug         Add JVM debug options.")));
-        assertThat(script, not(containsString("DEFAULT_DEBUG")));
+        assertThat(script, not(containsString("DEFAULT_APP_DEBUG")));
 
         assertThat(script, not(containsString("local -r defaultDebug=")));
         assertThat(script, not(containsString("local -r cdsOption=")));
@@ -164,15 +193,21 @@ class StartScriptTest {
 
         assertThat(script, not(containsString("${useCds}")));
         assertThat(script, not(containsString("${debug}")));
+
+        assertThat(script, not(containsString(modulesTimeStampComparison())));
+        assertThat(script, not(containsString(jarTimeStampComparison())));
+        assertThat(script, not(containsString("timeStamp")));
     }
 
     @Test
     void testInstall() throws Exception {
-        Files.deleteIfExists(BIN_DIR.resolve("start"));
+        Path installedScript = BIN_DIR.resolve("start");
+        Files.deleteIfExists(installedScript);
         StartScript script = builder().build();
         Path scriptFile = script.install();
         assertThat(Files.exists(scriptFile), is(true));
         assertExecutable(scriptFile);
+        assertThat(scriptFile, is(installedScript));
         String onDisk = StreamUtils.toString(new FileInputStream(scriptFile.toFile()));
         assertThat(onDisk, is(script.toString()));
     }
