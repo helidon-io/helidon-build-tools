@@ -177,7 +177,7 @@ public class StartScript {
     }
 
     /**
-     * Template configuration;
+     * Template configuration.
      */
     public interface TemplateConfig {
         /**
@@ -293,7 +293,8 @@ public class StartScript {
     }
 
     /**
-     * Template that uses hand-coded substitutions rather than rely on a full-fledged template engine. Enables the
+     * Template that uses hand-coded substitutions rather than rely on a full-
+     * fledged template engine. Enables the
      * template file to be a valid script that can be error checked in an IDE.
      */
     public abstract static class SimpleTemplate implements Template {
