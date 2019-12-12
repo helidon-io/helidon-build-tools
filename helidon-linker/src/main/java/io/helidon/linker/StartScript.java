@@ -18,7 +18,6 @@ package io.helidon.linker;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,14 +34,11 @@ import java.util.stream.IntStream;
 import io.helidon.linker.util.FileUtils;
 import io.helidon.linker.util.Log;
 import io.helidon.linker.util.ProcessMonitor;
-import io.helidon.linker.util.StreamUtils;
 
 import static io.helidon.linker.util.Constants.CDS_REQUIRES_UNLOCK_OPTION;
 import static io.helidon.linker.util.Constants.CDS_SUPPORTS_IMAGE_COPY;
 import static io.helidon.linker.util.Constants.CDS_UNLOCK_OPTIONS;
 import static io.helidon.linker.util.Constants.DIR_SEP;
-import static io.helidon.linker.util.Constants.EOL;
-import static io.helidon.linker.util.Constants.OSType.MacOS;
 import static io.helidon.linker.util.Constants.OSType.Windows;
 import static io.helidon.linker.util.Constants.OS_TYPE;
 import static io.helidon.linker.util.FileUtils.assertDir;
@@ -67,7 +63,7 @@ public class StartScript {
     }
 
     private StartScript(Builder builder) {
-        this.installDirectory = builder.installDirectory;
+        this.installDirectory = builder.scriptInstallDirectory;
         this.scriptFile = builder.scriptFile;
         this.script = builder.script;
     }
@@ -181,17 +177,195 @@ public class StartScript {
     }
 
     /**
+     * Template configuration;
+     */
+    public interface TemplateConfig {
+        /**
+         * Returns the path to the installation home directory.
+         *
+         * @return The path.
+         */
+        Path installHomeDirectory();
+
+        /**
+         * Returns the path to the script install directory.
+         *
+         * @return The path.
+         */
+        Path scriptInstallDirectory();
+
+        /**
+         * Returns the path to the main jar.
+         *
+         * @return The path.
+         */
+        Path mainJar();
+
+        /**
+         * Returns the default JVM options.
+         *
+         * @return The options.
+         */
+        List<String> defaultJvmOptions();
+
+        /**
+         * Returns the default debug options.
+         *
+         * @return The options.
+         */
+        List<String> defaultDebugOptions();
+
+        /**
+         * Returns the default arguments.
+         *
+         * @return The arguments.
+         */
+        List<String> defaultArgs();
+
+        /**
+         * Returns whether or not CDS is installed.
+         *
+         * @return {@code true} if installed.
+         */
+        boolean cdsInstalled();
+
+        /**
+         * Returns whether or not debug support is installed.
+         *
+         * @return {@code true} if installed.
+         */
+        boolean debugInstalled();
+
+        /**
+         * Returns whether or not CDS requires the unlock option.
+         *
+         * @return {@code true} if required.
+         */
+        default boolean cdsRequiresUnlock() {
+            return cdsInstalled() && CDS_REQUIRES_UNLOCK_OPTION;
+        }
+
+        /**
+         * Returns whether or not CDS supports copying the image.
+         *
+         * @return {@code true} if supported.
+         */
+        default boolean cdsSupportsImageCopy() {
+            return cdsInstalled() && CDS_SUPPORTS_IMAGE_COPY;
+        }
+
+        /**
+         * Returns the configuration as a command. Intended as a simple substitute for those
+         * cases where a template cannot be created.
+         *
+         * @return The command.
+         */
+        default List<String> toCommand() {
+            final List<String> command = new ArrayList<>();
+            command.add("bin" + DIR_SEP + "java");
+            if (cdsInstalled()) {
+                if (cdsRequiresUnlock()) {
+                    command.add(CDS_UNLOCK_OPTIONS);
+                }
+                command.add("-XX:SharedArchiveFile=lib" + DIR_SEP + "start.jsa");
+                command.add("-Xshare:auto");
+            }
+            command.addAll(defaultJvmOptions());
+            command.add("-jar");
+            command.add("app" + DIR_SEP + mainJar().getFileName());
+            command.addAll(defaultArgs());
+            return command;
+        }
+    }
+
+    /**
+     * Template resolver.
+     */
+    public interface Template {
+
+        /**
+         * Returns the resolved template.
+         *
+         * @param config The configuration.
+         * @return The resolved template.
+         */
+        String resolve(TemplateConfig config);
+    }
+
+    /**
+     * Template that uses hand-coded substitutions rather than rely on a full-fledged template engine. Enables the
+     * template file to be a valid script that can be error checked in an IDE.
+     */
+    public abstract static class SimpleTemplate implements Template {
+
+        /**
+         * Returns the last modified time of the given file, in seconds.
+         *
+         * @param file The file.
+         * @return The last modified time.
+         */
+        static String lastModifiedTime(Path file) {
+            return Long.toString(FileUtils.lastModifiedTime(file));
+        }
+
+        /**
+         * Removes lines from the given list that match the given predicate.
+         *
+         * @param lines The lines.
+         * @param predicate The predicate.
+         * @return The updated list.
+         */
+        static List<String> removeLines(List<String> lines, BiPredicate<Integer, String> predicate) {
+            for (int i = lines.size() - 1; i >= 0; i--) {
+                if (predicate.test(i, lines.get(i))) {
+                    lines.remove(i);
+                }
+            }
+            return lines;
+        }
+
+        /**
+         * Returns the first index of the line that contains the given substring.
+         *
+         * @param lines The lines.
+         * @param startIndex The start index.
+         * @param substring The substring.
+         * @return The index.
+         * @throws IllegalStateException if no matching line is found.
+         */
+        static int indexOf(List<String> lines, int startIndex, String substring) {
+            return IntStream.range(startIndex, lines.size())
+                            .filter(index -> lines.get(index).contains(substring))
+                            .findFirst()
+                            .orElseThrow(IllegalStateException::new);
+        }
+
+        /**
+         * Tests if the given line contains the given substring, ignoring case.
+         *
+         * @param line The line.
+         * @param substring The substring.
+         * @return {@code true} if the line contains the substring.
+         */
+        static boolean containsIgnoreCase(String line, String substring) {
+            return line.toLowerCase().contains(substring);
+        }
+    }
+
+    /**
      * The builder.
      */
     public static class Builder {
         private Path installHomeDirectory;
-        private Path installDirectory;
+        private Path scriptInstallDirectory;
         private Path mainJar;
         private List<String> defaultJvmOptions;
         private List<String> defaultDebugOptions;
         private List<String> defaultArgs;
         private boolean cdsInstalled;
         private boolean debugInstalled;
+        private Template template;
+        private TemplateConfig config;
         private Path scriptFile;
         private String script;
 
@@ -211,7 +385,7 @@ public class StartScript {
          */
         public Builder installHomeDirectory(Path installHomeDirectory) {
             this.installHomeDirectory = assertDir(installHomeDirectory);
-            this.installDirectory = assertDir(installHomeDirectory).resolve("bin");
+            this.scriptInstallDirectory = assertDir(installHomeDirectory).resolve("bin");
             return this;
         }
 
@@ -288,6 +462,17 @@ public class StartScript {
         }
 
         /**
+         * Sets the template.
+         *
+         * @param template The template.
+         * @return The builder.
+         */
+        public Builder template(Template template) {
+            this.template = template;
+            return this;
+        }
+
+        /**
          * Builds and returns the instance.
          *
          * @return The instance.
@@ -300,245 +485,70 @@ public class StartScript {
             if (mainJar == null) {
                 throw new IllegalStateException("mainJar is required");
             }
-            this.scriptFile = installDirectory.resolve(INSTALL_PATH);
-            this.script = template().resolve(this);
+            this.scriptFile = scriptInstallDirectory.resolve(INSTALL_PATH);
+            this.config = toConfig();
+            this.script = template().resolve(config);
             return new StartScript(this);
         }
 
         private Template template() {
-            if (OS_TYPE.equals(Windows)) {
-                throw new PlatformNotSupportedError(createCommand());
-            } else {
-                return new BashTemplate();
-            }
-        }
-
-        private List<String> createCommand() {
-            final List<String> command = new ArrayList<>();
-            command.add("bin" + DIR_SEP + "java");
-            if (cdsInstalled) {
-                if (cdsRequiresUnlock()) {
-                    command.add(CDS_UNLOCK_OPTIONS);
+            if (template == null) {
+                if (OS_TYPE.equals(Windows)) {
+                    throw new PlatformNotSupportedError(config.toCommand());
+                } else {
+                    return new BashStartScriptTemplate();
                 }
-                command.add("-XX:SharedArchiveFile=lib" + DIR_SEP + "start.jsa");
-                command.add("-Xshare:auto");
+            } else {
+                return template;
             }
-            command.addAll(defaultJvmOptions);
-            command.add("-jar");
-            command.add("app" + DIR_SEP + mainJar.getFileName());
-            command.addAll(defaultArgs);
-            return command;
         }
 
-        private boolean cdsRequiresUnlock() {
-            return cdsInstalled && CDS_REQUIRES_UNLOCK_OPTION;
-        }
+        private TemplateConfig toConfig() {
+            return new TemplateConfig() {
+                @Override
+                public Path installHomeDirectory() {
+                    return installHomeDirectory;
+                }
 
-        private boolean cdsSupportsImageCopy() {
-            return cdsInstalled && CDS_SUPPORTS_IMAGE_COPY;
+                @Override
+                public Path scriptInstallDirectory() {
+                    return scriptInstallDirectory;
+                }
+
+                @Override
+                public Path mainJar() {
+                    return mainJar;
+                }
+
+                @Override
+                public List<String> defaultJvmOptions() {
+                    return defaultJvmOptions;
+                }
+
+                @Override
+                public List<String> defaultDebugOptions() {
+                    return defaultDebugOptions;
+                }
+
+                @Override
+                public List<String> defaultArgs() {
+                    return defaultArgs;
+                }
+
+                @Override
+                public boolean cdsInstalled() {
+                    return cdsInstalled;
+                }
+
+                @Override
+                public boolean debugInstalled() {
+                    return debugInstalled;
+                }
+            };
         }
 
         private static boolean isValid(Collection<?> value) {
             return value != null && !value.isEmpty();
-        }
-
-        /**
-         * Template resolver.
-         */
-        interface Template {
-
-            /**
-             * Returns the resolved template.
-             *
-             * @param config The configuration.
-             * @return The resolved template.
-             */
-            String resolve(Builder config);
-        }
-
-        /**
-         * Simple template that assumes the template file is a valid script. This approach trades off potential
-         * brittleness for template file validation support in an IDE.
-         */
-        abstract static class SimpleTemplate implements Template {
-
-            /**
-             * Returns the last modified time of the given file in seconds.
-             *
-             * @param file The file.
-             * @return The last modified time.
-             */
-            static String lastModifiedTime(Path file) {
-                return Long.toString(FileUtils.lastModifiedTime(file));
-            }
-
-            /**
-             * Removes lines from the given list that match the given predicate.
-             *
-             * @param lines The lines.
-             * @param predicate The predicate.
-             * @return The updated list.
-             */
-            static List<String> removeLines(List<String> lines, BiPredicate<Integer, String> predicate) {
-                for (int i = lines.size() - 1; i >= 0; i--) {
-                    if (predicate.test(i, lines.get(i))) {
-                        lines.remove(i);
-                    }
-                }
-                return lines;
-            }
-
-            /**
-             * Returns the first index of the line that contains the given substring.
-             *
-             * @param lines The lines.
-             * @param startIndex The start index.
-             * @param substring The substring.
-             * @return The index.
-             * @throws IllegalStateException if no matching line is found.
-             */
-            static int indexOf(List<String> lines, int startIndex, String substring) {
-                return IntStream.range(startIndex, lines.size())
-                                .filter(index -> lines.get(index).contains(substring))
-                                .findFirst()
-                                .orElseThrow(IllegalStateException::new);
-            }
-
-            /**
-             * Tests if the given line contains the given substring, ignoring case.
-             *
-             * @param line The line.
-             * @param substring The substring.
-             * @return {@code true} if the line contains the substring.
-             */
-            static boolean containsIgnoreCase(String line, String substring) {
-                return line.toLowerCase().contains(substring);
-            }
-        }
-
-        /**
-         * Template for bash script.
-         */
-        private static class BashTemplate extends SimpleTemplate {
-            private static final String TEMPLATE_RESOURCE = "start-template.sh";
-            private static final String JAR_NAME_VAR = "<JAR_NAME>";
-            private static final String DEFAULT_ARGS_VAR = "<DEFAULT_APP_ARGS>";
-            private static final String DEFAULT_JVM_VAR = "<DEFAULT_APP_JVM>";
-            private static final String DEFAULT_DEBUG_VAR = "<DEFAULT_APP_DEBUG>";
-            private static final String HAS_CDS_VAR = "<HAS_CDS>";
-            private static final String HAS_DEBUG_VAR = "<HAS_DEBUG>";
-            private static final String CDS_UNLOCK_OPTION_VAR = "<CDS_UNLOCK>";
-            private static final String DEFAULT_ARGS_DESC_VAR = "<DEFAULT_APP_ARGS_DESC>";
-            private static final String DEFAULT_JVM_DESC_VAR = "<DEFAULT_APP_JVM_DESC>";
-            private static final String DEFAULT_DEBUG_DESC_VAR = "<DEFAULT_APP_DEBUG_DESC>";
-            private static final String STAT_FORMAT_VAR = "<STAT_FORMAT>";
-            private static final String STAT_FORMAT_MAC = "-f %m";
-            private static final String STAT_FORMAT_LINUX = "-c %Y";
-            private static final String MODULES_TIME_STAMP_VAR = "<MODULES_TIME_STAMP>";
-            private static final String JAR_TIME_STAMP_VAR = "<JAR_TIME_STAMP>";
-            private static final String MODULES_FILE = "lib/modules";
-            private static final String OVERRIDES = "Overrides \\\"${default%s}\\\".";
-            private static final String CHECK_TIME_STAMPS = "checkTimeStamps()";
-            private static final String CDS_WARNING = "WARNING: CDS";
-            private static final String SETS = "Sets default %s.";
-            private static final String CDS = "cds";
-            private static final String DEBUG = "debug";
-            private static final String COPY_INSTRUCTIONS_VAR = "<COPY_INSTRUCTIONS>";
-            private static final String NO_CDS = ", use the --noCds option or disable CDS in image generation.";
-            private static final String COPY_NOT_SUPPORTED = "Copies are not supported in this Java version; avoid them" + NO_CDS;
-            private static final String COPY_SUPPORTED = "Use a timestamp preserving copy option (e.g. 'cp -rp')" + NO_CDS;
-            private List<String> template;
-
-            @Override
-            public String resolve(Builder config) {
-                this.template = load();
-                return createScript(config);
-            }
-
-            private String createScript(Builder config) {
-                final String name = config.mainJar.getFileName().toString();
-
-                final String jvm = String.join(" ", config.defaultJvmOptions);
-                final String jvmDesc = description(config.defaultJvmOptions, "JVM options", "Jvm");
-
-                final String args = String.join(" ", config.defaultArgs);
-                final String argsDesc = description(config.defaultArgs, "arguments", "Args");
-
-                final List<String> debugOptions = config.debugInstalled ? config.defaultDebugOptions : emptyList();
-                final String debug = String.join(" ", debugOptions);
-                final String debugDesc = description(debugOptions, "debug options", "Debug");
-
-                final String hasCds = config.cdsInstalled ? "yes" : "";
-                final String hasDebug = config.debugInstalled ? "yes" : "";
-                final String cdsUnlock = config.cdsRequiresUnlock() ? CDS_UNLOCK_OPTIONS + " " : "";
-
-                final String statFormat = OS_TYPE == MacOS ? STAT_FORMAT_MAC : STAT_FORMAT_LINUX;
-                final String modulesModTime = lastModifiedTime(config.installHomeDirectory.resolve(MODULES_FILE));
-                final String jarModTime = lastModifiedTime(config.mainJar);
-                final String copyInstructions = config.cdsSupportsImageCopy() ? COPY_SUPPORTED : COPY_NOT_SUPPORTED;
-
-                if (!config.cdsInstalled) {
-                    removeCheckTimeStampFunction();
-                    removeTemplateLines(CDS);
-                }
-
-                if (!config.debugInstalled) {
-                    removeTemplateLines(DEBUG);
-                }
-
-                return String.join(EOL, template)
-                             .replace(JAR_NAME_VAR, name)
-                             .replace(DEFAULT_JVM_VAR, jvm)
-                             .replace(DEFAULT_JVM_DESC_VAR, jvmDesc)
-                             .replace(DEFAULT_ARGS_VAR, args)
-                             .replace(DEFAULT_ARGS_DESC_VAR, argsDesc)
-                             .replace(DEFAULT_DEBUG_VAR, debug)
-                             .replace(DEFAULT_DEBUG_DESC_VAR, debugDesc)
-                             .replace(HAS_CDS_VAR, hasCds)
-                             .replace(HAS_DEBUG_VAR, hasDebug)
-                             .replace(CDS_UNLOCK_OPTION_VAR, cdsUnlock)
-                             .replace(STAT_FORMAT_VAR, statFormat)
-                             .replace(MODULES_TIME_STAMP_VAR, modulesModTime)
-                             .replace(JAR_TIME_STAMP_VAR, jarModTime)
-                             .replace(COPY_INSTRUCTIONS_VAR, copyInstructions);
-            }
-
-            private static String description(List<String> defaults, String description, String varName) {
-                if (defaults.isEmpty()) {
-                    return String.format(SETS, description);
-                } else {
-                    return String.format(OVERRIDES, varName);
-                }
-            }
-
-            private void removeCheckTimeStampFunction() {
-                final int startIndex = indexOf(template, 0, CHECK_TIME_STAMPS);
-                final int warningIndex = indexOf(template, startIndex + 1, CDS_WARNING);
-                final int closingBraceIndex = indexOf(template, warningIndex + 1, "}") + 1; // include empty line
-                removeLines(template, (index, line) -> index >= startIndex && index <= closingBraceIndex);
-            }
-
-            private void removeTemplateLines(String substring) {
-                removeLines(template, (index, line) -> containsIgnoreCase(line, substring));
-            }
-
-            private static boolean isComment(String line) {
-                final int length = line.length();
-                return length > 0 && line.charAt(0) == '#' && (length == 1 || line.charAt(1) != '!');
-            }
-
-            private List<String> load() {
-                final InputStream content = StartScript.class.getClassLoader().getResourceAsStream(TEMPLATE_RESOURCE);
-                if (content == null) {
-                    throw new IllegalStateException(TEMPLATE_RESOURCE + " not found");
-                } else {
-                    try {
-                        return removeLines(StreamUtils.toLines(content), (index, line) -> isComment(line));
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                }
-            }
         }
     }
 }

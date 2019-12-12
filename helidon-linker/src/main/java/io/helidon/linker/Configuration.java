@@ -34,7 +34,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
 /**
- * JarsLinker configuration.
+ * Linker configuration.
  */
 public class Configuration {
     private final JavaRuntime jdk;
