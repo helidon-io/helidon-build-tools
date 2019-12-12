@@ -558,7 +558,6 @@ public class StartScript {
         private Template template() {
             if (template == null) {
                 if (OS_TYPE.equals(Windows)) {
-                    // TODO: need windows implementation
                     throw new PlatformNotSupportedError(config.toCommand());
                 } else {
                     return new BashStartScriptTemplate();
