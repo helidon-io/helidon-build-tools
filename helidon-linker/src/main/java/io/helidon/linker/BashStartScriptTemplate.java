@@ -16,25 +16,20 @@
 
 package io.helidon.linker;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.util.List;
 
 import io.helidon.linker.StartScript.TemplateConfig;
-import io.helidon.linker.util.StreamUtils;
 
 import static io.helidon.linker.util.Constants.CDS_UNLOCK_OPTIONS;
-import static io.helidon.linker.util.Constants.EOL;
 import static io.helidon.linker.util.Constants.OSType.MacOS;
 import static io.helidon.linker.util.Constants.OS_TYPE;
 import static java.util.Collections.emptyList;
 
 /**
- * Template for bash script.
+ * Template for bash start script.
  */
-class BashStartScriptTemplate extends StartScript.SimpleTemplate {
-    private static final String TEMPLATE_RESOURCE = "start-template.sh";
+public class BashStartScriptTemplate extends StartScript.SimpleTemplate {
+    private static final String TEMPLATE_RESOURCE_PATH = "start-template.sh";
     private static final String JAR_NAME_VAR = "<JAR_NAME>";
     private static final String DEFAULT_ARGS_VAR = "<DEFAULT_APP_ARGS>";
     private static final String DEFAULT_JVM_VAR = "<DEFAULT_APP_JVM>";
@@ -61,17 +56,17 @@ class BashStartScriptTemplate extends StartScript.SimpleTemplate {
     private static final String NO_CDS = ", use the --noCds option or disable CDS in image generation.";
     private static final String COPY_NOT_SUPPORTED = "Copies are not supported in this Java version: avoid them" + NO_CDS;
     private static final String COPY_SUPPORTED = "Use a timestamp preserving copy option (e.g. 'cp -rp')" + NO_CDS;
-    private List<String> template;
-    private TemplateConfig config;
 
-    @Override
-    public String resolve(TemplateConfig config) {
-        this.template = load();
-        this.config = config;
-        return resolve();
+    /**
+     * Constructor.
+     */
+    public BashStartScriptTemplate() {
+        super(TEMPLATE_RESOURCE_PATH);
+        removeLines((index, line) -> isComment(line));
     }
 
-    private String resolve() {
+    @Override
+    public String render(TemplateConfig config) {
         final String name = config.mainJar().getFileName().toString();
 
         final String jvm = String.join(" ", config.defaultJvmOptions());
@@ -95,28 +90,27 @@ class BashStartScriptTemplate extends StartScript.SimpleTemplate {
 
         if (!config.cdsInstalled()) {
             removeCheckTimeStampFunction();
-            removeTemplateLines(CDS);
+            removeLines(CDS, true);
         }
 
         if (!config.debugInstalled()) {
-            removeTemplateLines(DEBUG);
+            removeLines(DEBUG, true);
         }
 
-        return String.join(EOL, template)
-                     .replace(JAR_NAME_VAR, name)
-                     .replace(DEFAULT_JVM_VAR, jvm)
-                     .replace(DEFAULT_JVM_DESC_VAR, jvmDesc)
-                     .replace(DEFAULT_ARGS_VAR, args)
-                     .replace(DEFAULT_ARGS_DESC_VAR, argsDesc)
-                     .replace(DEFAULT_DEBUG_VAR, debug)
-                     .replace(DEFAULT_DEBUG_DESC_VAR, debugDesc)
-                     .replace(HAS_CDS_VAR, hasCds)
-                     .replace(HAS_DEBUG_VAR, hasDebug)
-                     .replace(CDS_UNLOCK_OPTION_VAR, cdsUnlock)
-                     .replace(STAT_FORMAT_VAR, statFormat)
-                     .replace(MODULES_TIME_STAMP_VAR, modulesModTime)
-                     .replace(JAR_TIME_STAMP_VAR, jarModTime)
-                     .replace(COPY_INSTRUCTIONS_VAR, copyInstructions);
+        return toString().replace(JAR_NAME_VAR, name)
+                         .replace(DEFAULT_JVM_VAR, jvm)
+                         .replace(DEFAULT_JVM_DESC_VAR, jvmDesc)
+                         .replace(DEFAULT_ARGS_VAR, args)
+                         .replace(DEFAULT_ARGS_DESC_VAR, argsDesc)
+                         .replace(DEFAULT_DEBUG_VAR, debug)
+                         .replace(DEFAULT_DEBUG_DESC_VAR, debugDesc)
+                         .replace(HAS_CDS_VAR, hasCds)
+                         .replace(HAS_DEBUG_VAR, hasDebug)
+                         .replace(CDS_UNLOCK_OPTION_VAR, cdsUnlock)
+                         .replace(STAT_FORMAT_VAR, statFormat)
+                         .replace(MODULES_TIME_STAMP_VAR, modulesModTime)
+                         .replace(JAR_TIME_STAMP_VAR, jarModTime)
+                         .replace(COPY_INSTRUCTIONS_VAR, copyInstructions);
     }
 
     private static String description(List<String> defaults, String description, String varName) {
@@ -128,31 +122,14 @@ class BashStartScriptTemplate extends StartScript.SimpleTemplate {
     }
 
     private void removeCheckTimeStampFunction() {
-        final int startIndex = indexOf(template, 0, CHECK_TIME_STAMPS);
-        final int warningIndex = indexOf(template, startIndex + 1, CDS_WARNING);
-        final int closingBraceIndex = indexOf(template, warningIndex + 1, "}") + 1; // include empty line
-        removeLines(template, (index, line) -> index >= startIndex && index <= closingBraceIndex);
-    }
-
-    private void removeTemplateLines(String substring) {
-        removeLines(template, (index, line) -> containsIgnoreCase(line, substring));
+        final int startIndex = indexOf(0, CHECK_TIME_STAMPS, false);
+        final int warningIndex = indexOf(startIndex + 1, CDS_WARNING, false);
+        final int closingBraceIndex = indexOf(warningIndex + 1, "}", false) + 1;
+        removeLines((index, line) -> index >= startIndex && index <= closingBraceIndex);
     }
 
     private static boolean isComment(String line) {
         final int length = line.length();
         return length > 0 && line.charAt(0) == '#' && (length == 1 || line.charAt(1) != '!');
-    }
-
-    private List<String> load() {
-        final InputStream content = StartScript.class.getClassLoader().getResourceAsStream(TEMPLATE_RESOURCE);
-        if (content == null) {
-            throw new IllegalStateException(TEMPLATE_RESOURCE + " not found");
-        } else {
-            try {
-                return removeLines(StreamUtils.toLines(content), (index, line) -> isComment(line));
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
     }
 }

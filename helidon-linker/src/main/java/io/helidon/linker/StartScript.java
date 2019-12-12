@@ -18,6 +18,7 @@ package io.helidon.linker;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,11 +35,13 @@ import java.util.stream.IntStream;
 import io.helidon.linker.util.FileUtils;
 import io.helidon.linker.util.Log;
 import io.helidon.linker.util.ProcessMonitor;
+import io.helidon.linker.util.StreamUtils;
 
 import static io.helidon.linker.util.Constants.CDS_REQUIRES_UNLOCK_OPTION;
 import static io.helidon.linker.util.Constants.CDS_SUPPORTS_IMAGE_COPY;
 import static io.helidon.linker.util.Constants.CDS_UNLOCK_OPTIONS;
 import static io.helidon.linker.util.Constants.DIR_SEP;
+import static io.helidon.linker.util.Constants.EOL;
 import static io.helidon.linker.util.Constants.OSType.Windows;
 import static io.helidon.linker.util.Constants.OS_TYPE;
 import static io.helidon.linker.util.FileUtils.assertDir;
@@ -279,25 +282,94 @@ public class StartScript {
     }
 
     /**
-     * Template resolver.
+     * Template renderer.
      */
     public interface Template {
 
         /**
-         * Returns the resolved template.
+         * Returns the final text rendered using the given configuration.
          *
          * @param config The configuration.
-         * @return The resolved template.
+         * @return The rendered text.
          */
-        String resolve(TemplateConfig config);
+        String render(TemplateConfig config);
     }
 
     /**
-     * Template that uses hand-coded substitutions rather than rely on a full-
-     * fledged template engine. Enables the
-     * template file to be a valid script that can be error checked in an IDE.
+     * A {@link Template} that uses hand-coded substitutions/modifications rather than relying on a full-fledged template engine.
+     * This approach supports having a template file be a valid script that can be error checked in an IDE.
      */
     public abstract static class SimpleTemplate implements Template {
+        private final List<String> template;
+
+        /**
+         * Constructor that loads the template from the given resource path.
+         *
+         * @param templateResourcePath The template.
+         */
+        protected SimpleTemplate(String templateResourcePath) {
+            this(load(templateResourcePath));
+        }
+
+        /**
+         * Constructor.
+         *
+         * @param template The template lines.
+         */
+        protected SimpleTemplate(List<String> template) {
+            this.template = template;
+        }
+
+        /**
+         * Removes any lines that contain the given substring.
+         *
+         * @param substring The substring.
+         * @param ignoreCase {@code true} if substring match should ignore case.
+         */
+        protected void removeLines(String substring, boolean ignoreCase) {
+            removeLines((index, line) -> contains(line, substring, ignoreCase));
+        }
+
+        /**
+         * Removes any lines that match the given predicate.
+         *
+         * @param predicate The predicate.
+         */
+        protected void removeLines(BiPredicate<Integer, String> predicate) {
+            for (int i = template.size() - 1; i >= 0; i--) {
+                if (predicate.test(i, template.get(i))) {
+                    template.remove(i);
+                }
+            }
+        }
+
+        /**
+         * Returns the index of the first line that contains the given substring.
+         *
+         * @param startIndex The start index.
+         * @param substring The substring.
+         * @param ignoreCase {@code true} if substring match should ignore case.
+         * @return The index.
+         * @throws IllegalStateException if no matching line is found.
+         */
+        protected int indexOf(int startIndex, String substring, boolean ignoreCase) {
+            return indexOf(startIndex, (index, line) -> contains(line, substring, ignoreCase));
+        }
+
+        /**
+         * Returns the index of the first line that matches the given predicate.
+         *
+         * @param startIndex The start index.
+         * @param predicate The predicate.
+         * @return The index.
+         * @throws IllegalStateException if no matching line is found.
+         */
+        protected int indexOf(int startIndex, BiPredicate<Integer, String> predicate) {
+            return IntStream.range(startIndex, template.size())
+                            .filter(index -> predicate.test(index, template.get(index)))
+                            .findFirst()
+                            .orElseThrow(IllegalStateException::new);
+        }
 
         /**
          * Returns the last modified time of the given file, in seconds.
@@ -305,51 +377,30 @@ public class StartScript {
          * @param file The file.
          * @return The last modified time.
          */
-        static String lastModifiedTime(Path file) {
+        protected static String lastModifiedTime(Path file) {
             return Long.toString(FileUtils.lastModifiedTime(file));
         }
 
-        /**
-         * Removes lines from the given list that match the given predicate.
-         *
-         * @param lines The lines.
-         * @param predicate The predicate.
-         * @return The updated list.
-         */
-        static List<String> removeLines(List<String> lines, BiPredicate<Integer, String> predicate) {
-            for (int i = lines.size() - 1; i >= 0; i--) {
-                if (predicate.test(i, lines.get(i))) {
-                    lines.remove(i);
+        @Override
+        public String toString() {
+            return String.join(EOL, template);
+        }
+
+        private static boolean contains(String line, String substring, boolean ignoreCase) {
+            return ignoreCase ? line.toLowerCase().contains(substring) : line.contains(substring);
+        }
+
+        private static List<String> load(String resourcePath) {
+            final InputStream content = SimpleTemplate.class.getClassLoader().getResourceAsStream(resourcePath);
+            if (content == null) {
+                throw new IllegalStateException(resourcePath + " not found");
+            } else {
+                try {
+                    return StreamUtils.toLines(content);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
                 }
             }
-            return lines;
-        }
-
-        /**
-         * Returns the first index of the line that contains the given substring.
-         *
-         * @param lines The lines.
-         * @param startIndex The start index.
-         * @param substring The substring.
-         * @return The index.
-         * @throws IllegalStateException if no matching line is found.
-         */
-        static int indexOf(List<String> lines, int startIndex, String substring) {
-            return IntStream.range(startIndex, lines.size())
-                            .filter(index -> lines.get(index).contains(substring))
-                            .findFirst()
-                            .orElseThrow(IllegalStateException::new);
-        }
-
-        /**
-         * Tests if the given line contains the given substring, ignoring case.
-         *
-         * @param line The line.
-         * @param substring The substring.
-         * @return {@code true} if the line contains the substring.
-         */
-        static boolean containsIgnoreCase(String line, String substring) {
-            return line.toLowerCase().contains(substring);
         }
     }
 
@@ -408,7 +459,7 @@ public class StartScript {
          * @return The builder.
          */
         public Builder defaultJvmOptions(List<String> jvmOptions) {
-            if (isValid(jvmOptions)) {
+            if (hasContent(jvmOptions)) {
                 this.defaultJvmOptions = jvmOptions;
             }
             return this;
@@ -421,7 +472,7 @@ public class StartScript {
          * @return The builder.
          */
         public Builder defaultArgs(List<String> args) {
-            if (isValid(args)) {
+            if (hasContent(args)) {
                 this.defaultArgs = args;
             }
             return this;
@@ -434,7 +485,7 @@ public class StartScript {
          * @return The builder.
          */
         public Builder defaultDebugOptions(List<String> debugOptions) {
-            if (isValid(debugOptions)) {
+            if (hasContent(debugOptions)) {
                 this.defaultDebugOptions = debugOptions;
             }
             return this;
@@ -481,20 +532,21 @@ public class StartScript {
          */
         public StartScript build() {
             if (installHomeDirectory == null) {
-                throw new IllegalStateException("installTarget is required");
+                throw new IllegalStateException("installHomeDirectory is required");
             }
             if (mainJar == null) {
                 throw new IllegalStateException("mainJar is required");
             }
             this.scriptFile = scriptInstallDirectory.resolve(INSTALL_PATH);
             this.config = toConfig();
-            this.script = template().resolve(config);
+            this.script = template().render(config);
             return new StartScript(this);
         }
 
         private Template template() {
             if (template == null) {
                 if (OS_TYPE.equals(Windows)) {
+                    // TODO: need windows implementation
                     throw new PlatformNotSupportedError(config.toCommand());
                 } else {
                     return new BashStartScriptTemplate();
@@ -548,7 +600,7 @@ public class StartScript {
             };
         }
 
-        private static boolean isValid(Collection<?> value) {
+        private static boolean hasContent(Collection<?> value) {
             return value != null && !value.isEmpty();
         }
     }
