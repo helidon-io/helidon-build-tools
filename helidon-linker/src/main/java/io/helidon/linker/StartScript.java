@@ -296,7 +296,7 @@ public class StartScript {
     }
 
     /**
-     * A {@link Template} that uses hand-coded substitutions/modifications rather than relying on a full-fledged template engine.
+     * A {@link Template} that relies on hand-coded modifications rather than on a full-fledged template engine.
      * This approach supports having a template file be a valid script that can be error checked in an IDE.
      */
     public abstract static class SimpleTemplate implements Template {
@@ -369,6 +369,18 @@ public class StartScript {
                             .filter(index -> predicate.test(index, template.get(index)))
                             .findFirst()
                             .orElseThrow(IllegalStateException::new);
+        }
+
+        /**
+         * Replaces the given substring in each line.
+         *
+         * @param substring The substring.
+         * @param replacement The replacement.
+         */
+        protected void replace(String substring, String replacement) {
+            for (int i = 0; i < template.size(); i++) {
+                template.set(i, template.get(i).replace(substring, replacement));
+            }
         }
 
         /**

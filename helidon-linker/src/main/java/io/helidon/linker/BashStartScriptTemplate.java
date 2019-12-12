@@ -67,6 +67,16 @@ public class BashStartScriptTemplate extends StartScript.SimpleTemplate {
 
     @Override
     public String render(TemplateConfig config) {
+
+        if (!config.cdsInstalled()) {
+            removeCheckTimeStampFunction();
+            removeLines(CDS, true);
+        }
+
+        if (!config.debugInstalled()) {
+            removeLines(DEBUG, true);
+        }
+
         final String name = config.mainJar().getFileName().toString();
 
         final String jvm = String.join(" ", config.defaultJvmOptions());
@@ -88,29 +98,22 @@ public class BashStartScriptTemplate extends StartScript.SimpleTemplate {
         final String jarModTime = lastModifiedTime(config.mainJar());
         final String copyInstructions = config.cdsSupportsImageCopy() ? COPY_SUPPORTED : COPY_NOT_SUPPORTED;
 
-        if (!config.cdsInstalled()) {
-            removeCheckTimeStampFunction();
-            removeLines(CDS, true);
-        }
+        replace(JAR_NAME_VAR, name);
+        replace(DEFAULT_JVM_VAR, jvm);
+        replace(DEFAULT_JVM_DESC_VAR, jvmDesc);
+        replace(DEFAULT_ARGS_VAR, args);
+        replace(DEFAULT_ARGS_DESC_VAR, argsDesc);
+        replace(DEFAULT_DEBUG_VAR, debug);
+        replace(DEFAULT_DEBUG_DESC_VAR, debugDesc);
+        replace(HAS_CDS_VAR, hasCds);
+        replace(HAS_DEBUG_VAR, hasDebug);
+        replace(CDS_UNLOCK_OPTION_VAR, cdsUnlock);
+        replace(STAT_FORMAT_VAR, statFormat);
+        replace(MODULES_TIME_STAMP_VAR, modulesModTime);
+        replace(JAR_TIME_STAMP_VAR, jarModTime);
+        replace(COPY_INSTRUCTIONS_VAR, copyInstructions);
 
-        if (!config.debugInstalled()) {
-            removeLines(DEBUG, true);
-        }
-
-        return toString().replace(JAR_NAME_VAR, name)
-                         .replace(DEFAULT_JVM_VAR, jvm)
-                         .replace(DEFAULT_JVM_DESC_VAR, jvmDesc)
-                         .replace(DEFAULT_ARGS_VAR, args)
-                         .replace(DEFAULT_ARGS_DESC_VAR, argsDesc)
-                         .replace(DEFAULT_DEBUG_VAR, debug)
-                         .replace(DEFAULT_DEBUG_DESC_VAR, debugDesc)
-                         .replace(HAS_CDS_VAR, hasCds)
-                         .replace(HAS_DEBUG_VAR, hasDebug)
-                         .replace(CDS_UNLOCK_OPTION_VAR, cdsUnlock)
-                         .replace(STAT_FORMAT_VAR, statFormat)
-                         .replace(MODULES_TIME_STAMP_VAR, modulesModTime)
-                         .replace(JAR_TIME_STAMP_VAR, jarModTime)
-                         .replace(COPY_INSTRUCTIONS_VAR, copyInstructions);
+        return toString();
     }
 
     private static String description(List<String> defaults, String description, String varName) {
