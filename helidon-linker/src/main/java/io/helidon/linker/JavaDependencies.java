@@ -17,7 +17,6 @@
 package io.helidon.linker;
 
 import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.lang.module.ModuleDescriptor;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,16 +30,18 @@ import java.util.stream.Stream;
 
 import io.helidon.linker.util.JavaRuntime;
 import io.helidon.linker.util.Log;
+import io.helidon.linker.util.StreamUtils;
 
 import static io.helidon.linker.util.Constants.EOL;
 import static io.helidon.linker.util.Constants.EXCLUDED_MODULES;
 import static io.helidon.linker.util.Constants.JDEPS_REQUIRES_MISSING_DEPS_OPTION;
+import static io.helidon.linker.util.StreamUtils.toPrintStream;
 import static java.util.Objects.requireNonNull;
 
 /**
  * Collects Java module dependencies for a set of jars.
  */
-public class JavaDependencies {
+public final class JavaDependencies {
     private static final ToolProvider JDEPS = ToolProvider.findFirst("jdeps")
                                                           .orElseThrow(() -> new IllegalStateException("jdeps not found"));
     private static final String MULTI_RELEASE_ARG = "--multi-release";
@@ -128,12 +129,12 @@ public class JavaDependencies {
         args.add(jar.path().toString());
 
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        final int result = JDEPS.run(new PrintStream(out), System.err, args.toArray(new String[0]));
+        final int result = JDEPS.run(toPrintStream(out, false), System.err, args.toArray(new String[0]));
         if (result != 0) {
             throw new RuntimeException("Could not collect dependencies of " + jar);
         }
 
-        Arrays.stream(out.toString().split(EOL))
+        Arrays.stream(StreamUtils.toString(out).split(EOL))
               .map(String::trim)
               .filter(line -> !line.isEmpty())
               .forEach(line -> handleJdepsResultLine(line, jar));

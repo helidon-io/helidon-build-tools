@@ -59,12 +59,14 @@ import org.objectweb.asm.ClassWriter;
 
 import static io.helidon.linker.util.FileUtils.assertDir;
 import static io.helidon.linker.util.FileUtils.assertFile;
+import static io.helidon.linker.util.FileUtils.fileName;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 
 /**
  * CDI BeansArchive aware jar wrapper. Supports creating an index if missing and adding it during copy.
  */
-public class Jar implements ResourceContainer {
+public final class Jar implements ResourceContainer {
     private static final String JMOD_SUFFIX = ".jmod";
     private static final Set<String> SUPPORTED_SUFFIXES = Set.of(".jar", ".zip", JMOD_SUFFIX);
     private static final String BEANS_RESOURCE_PATH = "META-INF/beans.xml";
@@ -89,7 +91,7 @@ public class Jar implements ResourceContainer {
     /**
      * An entry in a jar file.
      */
-    public class Entry extends JarEntry {
+    public final class Entry extends JarEntry {
 
         private Entry(JarEntry entry) {
             super(entry);
@@ -126,7 +128,7 @@ public class Jar implements ResourceContainer {
      */
     public static boolean isJar(Path path) {
         if (Files.isRegularFile(path)) {
-            final String name = path.getFileName().toString();
+            final String name = fileName(path);
             final int lastDot = name.lastIndexOf('.');
             if (lastDot >= 0) {
                 return SUPPORTED_SUFFIXES.contains(name.substring(lastDot));
@@ -151,7 +153,7 @@ public class Jar implements ResourceContainer {
 
     private Jar(Path path) {
         this.path = assertFile(path); // Absolute and normalized
-        this.isJmod = path.getFileName().toString().endsWith(JMOD_SUFFIX);
+        this.isJmod = fileName(path).endsWith(JMOD_SUFFIX);
         try {
             this.jar = new JarFile(path.toFile());
             this.manifest = jar.getManifest();
@@ -176,7 +178,7 @@ public class Jar implements ResourceContainer {
      * @return The name.
      */
     public String name() {
-        return path.getFileName().toString();
+        return fileName(path);
     }
 
     /**
@@ -204,10 +206,10 @@ public class Jar implements ResourceContainer {
      */
     public List<Path> classPath() {
         if (manifest != null) {
-            final Object path = manifest.getMainAttributes().get(Attributes.Name.CLASS_PATH);
-            if (path != null) {
-                final Path root = path().getParent();
-                return Arrays.stream(((String) path).split(" "))
+            final Object classPath = manifest.getMainAttributes().get(Attributes.Name.CLASS_PATH);
+            if (classPath != null) {
+                final Path root = requireNonNull(path().getParent());
+                return Arrays.stream(((String) classPath).split(" "))
                              .map(root::resolve)
                              .filter(file -> Files.exists(file))
                              .collect(Collectors.toList());

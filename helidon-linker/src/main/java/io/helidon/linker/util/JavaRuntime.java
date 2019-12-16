@@ -35,13 +35,14 @@ import io.helidon.linker.ResourceContainer;
 import static io.helidon.linker.util.FileUtils.CURRENT_JAVA_HOME_DIR;
 import static io.helidon.linker.util.FileUtils.assertDir;
 import static io.helidon.linker.util.FileUtils.assertFile;
+import static io.helidon.linker.util.FileUtils.fileName;
 import static io.helidon.linker.util.FileUtils.listFiles;
 import static java.util.Objects.requireNonNull;
 
 /**
  * A Java Runtime directory.
  */
-public class JavaRuntime implements ResourceContainer {
+public final class JavaRuntime implements ResourceContainer {
     private static final String JMODS_DIR = "jmods";
     private static final String JMOD_SUFFIX = ".jmod";
     private static final String JAVA_BASE_JMOD = "java.base.jmod";
@@ -68,7 +69,7 @@ public class JavaRuntime implements ResourceContainer {
      */
     public static Path prepareJriDirectory(Path jriDirectory, Path mainJar, boolean replaceExisting) throws IOException {
         if (jriDirectory == null) {
-            final String jarName = requireNonNull(mainJar).getFileName().toString();
+            final String jarName = fileName(requireNonNull(mainJar));
             final String dirName = jarName.substring(0, jarName.lastIndexOf('.')) + JRI_SUFFIX;
             jriDirectory = FileUtils.WORKING_DIR.resolve(dirName);
         }
@@ -303,8 +304,7 @@ public class JavaRuntime implements ResourceContainer {
 
     private Runtime.Version findVersion() {
         final Path javaBase = assertFile(jmodsDir.resolve(JAVA_BASE_JMOD));
-        try {
-            final ZipFile zip = new ZipFile(javaBase.toFile());
+        try (final ZipFile zip = new ZipFile(javaBase.toFile())) {
             final ZipEntry entry = zip.getEntry(JMOD_MODULE_INFO_PATH);
             if (entry == null) {
                 throw new IllegalStateException("Cannot find " + JMOD_MODULE_INFO_PATH + " in " + javaBase);
@@ -333,11 +333,7 @@ public class JavaRuntime implements ResourceContainer {
     }
 
     private static String moduleNameOf(Path jmodFile) {
-        final String fileName = fileNameOf(jmodFile);
+        final String fileName = fileName(jmodFile);
         return fileName.substring(0, fileName.length() - JMOD_SUFFIX.length());
-    }
-
-    private static String fileNameOf(Path file) {
-        return file.getFileName().toString();
     }
 }

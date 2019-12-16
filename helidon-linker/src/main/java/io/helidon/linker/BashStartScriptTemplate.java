@@ -23,6 +23,7 @@ import io.helidon.linker.StartScript.TemplateConfig;
 import static io.helidon.linker.util.Constants.CDS_UNLOCK_OPTIONS;
 import static io.helidon.linker.util.Constants.OSType.MacOS;
 import static io.helidon.linker.util.Constants.OS_TYPE;
+import static io.helidon.linker.util.FileUtils.fileName;
 import static java.util.Collections.emptyList;
 
 /**
@@ -58,15 +59,9 @@ public class BashStartScriptTemplate extends StartScript.SimpleTemplate {
     private static final String COPY_SUPPORTED = "Use a timestamp preserving copy option (e.g. 'cp -rp')" + NO_CDS;
 
     /**
-     * Returns a new instance.
-     *
-     * @return The instance.
+     * Constructor.
      */
-    public static BashStartScriptTemplate create() {
-        return new BashStartScriptTemplate();
-    }
-
-    private BashStartScriptTemplate() {
+    public BashStartScriptTemplate() {
         super(TEMPLATE_RESOURCE_PATH);
         removeLines((index, line) -> isComment(line));
     }
@@ -83,7 +78,7 @@ public class BashStartScriptTemplate extends StartScript.SimpleTemplate {
             removeLines(DEBUG, true);
         }
 
-        final String name = config.mainJar().getFileName().toString();
+        final String name = fileName(config.mainJar());
 
         final String jvm = String.join(" ", config.defaultJvmOptions());
         final String jvmDesc = description(config.defaultJvmOptions(), "JVM options", "Jvm");

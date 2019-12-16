@@ -27,12 +27,14 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import io.helidon.linker.util.Constants;
+import io.helidon.linker.util.FileUtils;
 import io.helidon.linker.util.JavaRuntime;
 import io.helidon.linker.util.Log;
 import io.helidon.linker.util.ProcessMonitor;
 
 import static io.helidon.linker.util.FileUtils.assertDir;
 import static io.helidon.linker.util.FileUtils.assertFile;
+import static io.helidon.linker.util.FileUtils.fileName;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
@@ -40,7 +42,7 @@ import static java.util.Objects.requireNonNull;
  * A builder for a CDS archive for a Helidon application either as a jar or a module.
  * Assumes that it can cause the application to exit once startup has completed by setting the "exit.on.startup" system property.
  */
-public class ClassDataSharing {
+public final class ClassDataSharing {
     private final Path applicationJar;
     private final String applicationModule;
     private final Path jri;
@@ -123,7 +125,7 @@ public class ClassDataSharing {
     /**
      * Builder.
      */
-    public static class Builder {
+    public static final class Builder {
         private static final String FILE_PREFIX = "start";
         private static final String ARCHIVE_NAME = FILE_PREFIX + ".jsa";
         private static final String CLASS_LIST_FILE_SUFFIX = ".classlist";
@@ -286,7 +288,7 @@ public class ClassDataSharing {
                 // same as that used here. Make this path relative to the JRI so that it can be moved
                 // around and still function.
                 this.target = jri.relativize(mainJar).toString();
-                this.targetDescription = mainJar.getFileName().toString();
+                this.targetDescription = fileName(mainJar);
             } else {
                 this.targetOption = "-m";
                 this.target = applicationModule;
@@ -377,7 +379,7 @@ public class ClassDataSharing {
         }
 
         private static Path assertJar(Path path) {
-            final String fileName = assertFile(path).getFileName().toString();
+            final String fileName = FileUtils.fileName(assertFile(path));
             if (!fileName.endsWith(JAR_SUFFIX)) {
                 throw new IllegalArgumentException(path + " is not a jar");
             }

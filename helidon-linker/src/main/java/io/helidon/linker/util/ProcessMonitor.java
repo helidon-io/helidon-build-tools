@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -36,7 +37,7 @@ import static java.util.Objects.requireNonNullElseGet;
 /**
  * Executes a process and waits for completion, monitoring the output.
  */
-public class ProcessMonitor {
+public final class ProcessMonitor {
     private static final ExecutorService EXECUTOR = ForkJoinPool.commonPool();
     private final ProcessBuilder builder;
     private final String description;
@@ -60,7 +61,7 @@ public class ProcessMonitor {
     /**
      * Builder for a {@link ProcessMonitor}.
      */
-    public static class Builder {
+    public static final class Builder {
         private ProcessBuilder builder;
         private String description;
         private boolean capture;
@@ -251,7 +252,8 @@ public class ProcessMonitor {
                                      Predicate<String> filter,
                                      Function<String, String> transform,
                                      Consumer<String> output) {
-        return EXECUTOR.submit(() -> new BufferedReader(new InputStreamReader(input)).lines().forEach(line -> {
+        final BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
+        return EXECUTOR.submit(() -> reader.lines().forEach(line -> {
             if (filter.test(line)) {
                 output.accept(transform.apply(line));
             }

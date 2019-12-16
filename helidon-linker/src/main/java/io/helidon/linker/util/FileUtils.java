@@ -37,7 +37,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * File utilities.
  */
-public class FileUtils {
+public final class FileUtils {
     /**
      * The Java Home directory for the running JVM.
      */
@@ -46,7 +46,7 @@ public class FileUtils {
     /**
      * The working directory.
      */
-    public static final Path WORKING_DIR = Paths.get(".").toAbsolutePath();
+    public static final Path WORKING_DIR = Paths.get(System.getProperty("user.dir")).toAbsolutePath();
 
     /**
      * Returns the relative path from the working directory for the given path, if possible.
@@ -245,6 +245,16 @@ public class FileUtils {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Returns the file name of the given file, as a string.
+     *
+     * @param file The file.
+     * @return The name.
+     */
+    public static String fileName(Path file) {
+        return requireNonNull(file.getFileName()).toString();
     }
 
     private FileUtils() {

@@ -36,7 +36,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Linker configuration.
  */
-public class Configuration {
+public final class Configuration {
     private final JavaRuntime jdk;
     private final Path mainJar;
     private final List<String> defaultJvm;
@@ -163,7 +163,7 @@ public class Configuration {
     /**
      * A {@link Configuration} builder.
      */
-    public static class Builder {
+    public static final class Builder {
         static final String DEFAULT_DEBUG = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005";
         private JavaRuntime jdk;
         private Path mainJar;

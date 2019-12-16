@@ -34,6 +34,7 @@ import static io.helidon.linker.util.Constants.DEBUGGER_MODULE;
 import static io.helidon.linker.util.Constants.DIR_SEP;
 import static io.helidon.linker.util.Constants.INDENT;
 import static io.helidon.linker.util.Constants.INDENT_BOLD;
+import static io.helidon.linker.util.FileUtils.fileName;
 import static io.helidon.linker.util.FileUtils.fromWorking;
 import static io.helidon.linker.util.FileUtils.sizeOf;
 import static io.helidon.linker.util.Style.BoldBlue;
@@ -45,7 +46,7 @@ import static io.helidon.linker.util.Style.Cyan;
  * Create a custom runtime image by finding the Java modules required of a Helidon application and linking them via jlink,
  * then adding the jars, a start script and, optionally, a CDS archive. Adds Jandex indices as needed.
  */
-public class Linker {
+public final class Linker {
     private static final String JLINK_TOOL_NAME = "jlink";
     private static final String JLINK_DEBUG_PROPERTY = JLINK_TOOL_NAME + ".debug";
     private static final float BYTES_PER_MEGABYTE = 1024F * 1024F;
@@ -98,7 +99,7 @@ public class Linker {
         this.jlink = ToolProvider.findFirst(JLINK_TOOL_NAME).orElseThrow(() -> new IllegalStateException("jlink not found"));
         this.jlinkArgs = new ArrayList<>();
         this.config = config;
-        this.imageName = config.jriDirectory().getFileName().toString();
+        this.imageName = fileName(config.jriDirectory());
 
         if (config.verbose()) {
             System.setProperty(JLINK_DEBUG_PROPERTY, "true");

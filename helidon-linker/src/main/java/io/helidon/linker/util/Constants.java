@@ -26,7 +26,7 @@ import static io.helidon.linker.util.Style.Bold;
 /**
  * Shared constants.
  */
-public class Constants {
+public final class Constants {
 
     /**
      * Operating system types.

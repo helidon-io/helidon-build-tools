@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
@@ -46,6 +47,7 @@ import static io.helidon.linker.util.Constants.OSType.Windows;
 import static io.helidon.linker.util.Constants.OS_TYPE;
 import static io.helidon.linker.util.FileUtils.assertDir;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Installs a start script for a main jar.
@@ -87,7 +89,7 @@ public class StartScript {
      */
     Path install() {
         try {
-            Files.copy(new ByteArrayInputStream(script.getBytes()), scriptFile);
+            Files.copy(new ByteArrayInputStream(script.getBytes(StandardCharsets.UTF_8)), scriptFile);
             Files.setPosixFilePermissions(scriptFile, Set.of(
                 PosixFilePermission.OWNER_READ,
                 PosixFilePermission.OWNER_WRITE,
@@ -113,10 +115,11 @@ public class StartScript {
     public void execute(Function<String, String> transform, String... args) {
         final ProcessBuilder processBuilder = new ProcessBuilder();
         final List<String> command = new ArrayList<>();
+        final Path root = requireNonNull(requireNonNull(scriptFile.getParent()).getParent());
         command.add(scriptFile.toString());
         command.addAll(Arrays.asList(args));
         processBuilder.command(command);
-        processBuilder.directory(scriptFile.getParent().getParent().toFile());
+        processBuilder.directory(root.toFile());
         try {
             ProcessMonitor.builder()
                           .processBuilder(processBuilder)
@@ -419,7 +422,7 @@ public class StartScript {
     /**
      * The builder.
      */
-    public static class Builder {
+    public static final class Builder {
         private Path installHomeDirectory;
         private Path scriptInstallDirectory;
         private Path mainJar;
@@ -560,7 +563,7 @@ public class StartScript {
                 if (OS_TYPE.equals(Windows)) {
                     throw new PlatformNotSupportedError(config.toCommand());
                 } else {
-                    return BashStartScriptTemplate.create();
+                    return new BashStartScriptTemplate();
                 }
             } else {
                 return template;
