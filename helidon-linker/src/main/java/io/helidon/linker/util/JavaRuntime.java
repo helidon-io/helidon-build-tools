@@ -304,7 +304,7 @@ public final class JavaRuntime implements ResourceContainer {
 
     private Runtime.Version findVersion() {
         final Path javaBase = assertFile(jmodsDir.resolve(JAVA_BASE_JMOD));
-        try (final ZipFile zip = new ZipFile(javaBase.toFile())) {
+        try (ZipFile zip = new ZipFile(javaBase.toFile())) {
             final ZipEntry entry = zip.getEntry(JMOD_MODULE_INFO_PATH);
             if (entry == null) {
                 throw new IllegalStateException("Cannot find " + JMOD_MODULE_INFO_PATH + " in " + javaBase);
