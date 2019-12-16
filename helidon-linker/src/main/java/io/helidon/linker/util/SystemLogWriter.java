@@ -33,6 +33,7 @@ public class SystemLogWriter implements Log.Writer {
      * Returns a new instance with the given level.
      *
      * @param level The level at or above which messages should be logged.
+     * @return The instance.
      */
     public static SystemLogWriter create(Level level) {
         return new SystemLogWriter(level);

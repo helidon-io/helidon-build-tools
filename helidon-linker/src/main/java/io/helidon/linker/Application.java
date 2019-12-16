@@ -49,6 +49,7 @@ public class Application implements ResourceContainer {
      * Returns a new instance with the given main jar.
      *
      * @param mainJar The main jar.
+     * @return The instance.
      */
     public static Application create(Path mainJar) {
         return new Application(mainJar);

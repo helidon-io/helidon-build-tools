@@ -59,6 +59,8 @@ public class BashStartScriptTemplate extends StartScript.SimpleTemplate {
 
     /**
      * Returns a new instance.
+     *
+     * @return The instance.
      */
     public static BashStartScriptTemplate create() {
         return new BashStartScriptTemplate();
