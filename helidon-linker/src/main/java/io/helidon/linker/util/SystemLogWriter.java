@@ -30,11 +30,15 @@ public class SystemLogWriter implements Log.Writer {
     private final int ordinal;
 
     /**
-     * Constructor.
+     * Returns a new instance with the given level.
      *
      * @param level The level at or above which messages should be logged.
      */
-    public SystemLogWriter(Level level) {
+    public static SystemLogWriter create(Level level) {
+        return new SystemLogWriter(level);
+    }
+
+    private SystemLogWriter(Level level) {
         this.ordinal = level.ordinal();
     }
 

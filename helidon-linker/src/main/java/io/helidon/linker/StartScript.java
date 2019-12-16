@@ -560,7 +560,7 @@ public class StartScript {
                 if (OS_TYPE.equals(Windows)) {
                     throw new PlatformNotSupportedError(config.toCommand());
                 } else {
-                    return new BashStartScriptTemplate();
+                    return BashStartScriptTemplate.create();
                 }
             } else {
                 return template;

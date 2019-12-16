@@ -416,7 +416,7 @@ public class Configuration {
             }
             jriDirectory = JavaRuntime.prepareJriDirectory(jriDirectory, mainJar, replace);
             if (logWriter == null) {
-                logWriter = new SystemLogWriter(verbose ? Log.Level.DEBUG : Log.Level.INFO);
+                logWriter = SystemLogWriter.create(verbose ? Log.Level.DEBUG : Log.Level.INFO);
             }
             Log.setWriter(logWriter);
             return new Configuration(this);

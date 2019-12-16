@@ -46,11 +46,15 @@ public class Application implements ResourceContainer {
     private final boolean isMicroprofile;
 
     /**
-     * Constructor.
+     * Returns a new instance with the given main jar.
      *
      * @param mainJar The main jar.
      */
-    public Application(Path mainJar) {
+    public static Application create(Path mainJar) {
+        return new Application(mainJar);
+    }
+
+    private Application(Path mainJar) {
         this.mainJar = Jar.open(mainJar);
         this.classPath = collectClassPath();
         this.isMicroprofile = classPath.stream().anyMatch(jar -> jar.name().startsWith(MP_FILE_PREFIX));

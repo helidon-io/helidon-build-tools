@@ -58,9 +58,13 @@ public class BashStartScriptTemplate extends StartScript.SimpleTemplate {
     private static final String COPY_SUPPORTED = "Use a timestamp preserving copy option (e.g. 'cp -rp')" + NO_CDS;
 
     /**
-     * Constructor.
+     * Returns a new instance.
      */
-    public BashStartScriptTemplate() {
+    public static BashStartScriptTemplate create() {
+        return new BashStartScriptTemplate();
+    }
+
+    private BashStartScriptTemplate() {
         super(TEMPLATE_RESOURCE_PATH);
         removeLines((index, line) -> isComment(line));
     }

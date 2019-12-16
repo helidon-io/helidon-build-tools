@@ -143,7 +143,7 @@ public class Linker {
     }
 
     private void buildApplication() {
-        this.application = new Application(config.mainJar());
+        this.application = Application.create(config.mainJar());
     }
 
     private void collectJavaDependencies() {
