@@ -56,6 +56,7 @@ public final class Linker {
     private final String imageName;
     private long startTime;
     private Application application;
+    private String exitOnStarted;
     private Set<String> javaDependencies;
     private JavaRuntime jri;
     private Path jriMainJar;
@@ -138,13 +139,18 @@ public final class Linker {
 
     private void begin() {
         Log.info();
-        Log.info("Creating Java Runtime Image %s from %s and %s", Cyan.apply(imageName),
-                 Cyan.apply(config.mainJar().getFileName()), Cyan.apply("JDK " + config.jdk().version()));
         this.startTime = System.currentTimeMillis();
     }
 
     private void buildApplication() {
         this.application = Application.create(config.mainJar());
+        this.exitOnStarted = application.exitOnStartedValue();
+        final Runtime.Version version = application.helidonVersion();
+        Log.info("Creating Java Runtime Image %s from %s and %s, built with Helidon %s",
+                 Cyan.apply(imageName),
+                 Cyan.apply("JDK " + config.jdk().version()),
+                 Cyan.apply(config.mainJar().getFileName()),
+                 Cyan.apply(version));
     }
 
     private void collectJavaDependencies() {
@@ -211,6 +217,7 @@ public final class Linker {
                                                              .jvmOptions(config.defaultJvmOptions())
                                                              .args((config.defaultArgs()))
                                                              .archiveFile(application.archivePath())
+                                                             .exitOnStartedValue(exitOnStarted)
                                                              .logOutput(config.verbose())
                                                              .build();
 
@@ -266,6 +273,7 @@ public final class Linker {
                                      .defaultArgs(config.defaultArgs())
                                      .cdsInstalled(config.cds())
                                      .debugInstalled(!config.stripDebug())
+                                     .exitOnStartedValue(exitOnStarted)
                                      .build();
 
             Log.info("Installing start script in %s", startScript.installDirectory());
@@ -298,7 +306,7 @@ public final class Linker {
                 Log.info("Executing %s", Cyan.apply(startCommand()));
                 Log.info();
                 final List<String> command = new ArrayList<>(startCommand);
-                command.add(command.indexOf("-jar"), "-Dexit.on.started=✅");
+                command.add(command.indexOf("-jar"), "-Dexit.on.started=!");
                 final File root = config.jriDirectory().toFile();
                 try {
                     ProcessMonitor.builder()

@@ -243,6 +243,13 @@ public class StartScript {
         boolean debugInstalled();
 
         /**
+         * Returns the {@code -Dexit.on.started} property value.
+         *
+         * @return The value.
+         */
+        String exitOnStartedValue();
+
+        /**
          * Returns whether or not CDS requires the unlock option.
          *
          * @return {@code true} if required.
@@ -431,6 +438,7 @@ public class StartScript {
         private List<String> defaultArgs;
         private boolean cdsInstalled;
         private boolean debugInstalled;
+        private String exitOnStartedValue;
         private Template template;
         private TemplateConfig config;
         private Path scriptFile;
@@ -441,6 +449,7 @@ public class StartScript {
             this.defaultDebugOptions = List.of(Configuration.Builder.DEFAULT_DEBUG);
             this.cdsInstalled = true;
             this.debugInstalled = true;
+            this.exitOnStartedValue = "!";
             this.defaultArgs = emptyList();
         }
 
@@ -529,6 +538,17 @@ public class StartScript {
         }
 
         /**
+         * Sets the {@code -Dexit.on.started} property value.
+         *
+         * @param exitOnStartedValue The value
+         * @return The builder.
+         */
+        public Builder exitOnStartedValue(String exitOnStartedValue) {
+            this.exitOnStartedValue = requireNonNull(exitOnStartedValue);
+            return this;
+        }
+
+        /**
          * Sets the template.
          *
          * @param template The template.
@@ -610,6 +630,11 @@ public class StartScript {
                 @Override
                 public boolean debugInstalled() {
                     return debugInstalled;
+                }
+
+                @Override
+                public String exitOnStartedValue() {
+                    return exitOnStartedValue;
                 }
             };
         }

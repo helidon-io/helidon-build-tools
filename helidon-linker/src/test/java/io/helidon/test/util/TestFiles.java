@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import io.helidon.linker.Application;
 import io.helidon.linker.util.Log;
 import io.helidon.linker.util.ProcessMonitor;
 
@@ -64,6 +65,17 @@ public class TestFiles {
      */
     public static Version latestHelidonVersion() {
         return LATEST_HELIDON_VERSION.instance();
+    }
+
+    /**
+     * Returns the value required for the {@code -Dexit.on.started} property to trigger on
+     * the latest Helidon version.
+     *
+     * @return The value.
+     */
+    public static String exitOnStartedValue() {
+        final Runtime.Version version = Runtime.Version.parse(latestHelidonVersion().toString());
+        return Application.exitOnStartedValue(version);
     }
 
     /**

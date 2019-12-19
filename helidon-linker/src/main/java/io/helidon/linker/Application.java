@@ -40,10 +40,13 @@ import static io.helidon.linker.util.Constants.DIR_SEP;
 public final class Application implements ResourceContainer {
     static final Path APP_DIR = Paths.get("app");
     private static final Path ARCHIVE_PATH = Paths.get("lib" + DIR_SEP + "start.jsa");
-    private static final String MP_FILE_PREFIX = "helidon-microprofile";
+    private static final String HELIDON_JAR_NAME_PREFIX = "helidon-";
+    private static final String MP_FILE_PREFIX = HELIDON_JAR_NAME_PREFIX + "microprofile";
+    private static final String UNKNOWN_VERSION = "0.0.0";
     private final Jar mainJar;
     private final List<Jar> classPath;
     private final boolean isMicroprofile;
+    private final Runtime.Version version;
 
     /**
      * Returns a new instance with the given main jar.
@@ -59,6 +62,7 @@ public final class Application implements ResourceContainer {
         this.mainJar = Jar.open(mainJar);
         this.classPath = collectClassPath();
         this.isMicroprofile = classPath.stream().anyMatch(jar -> jar.name().startsWith(MP_FILE_PREFIX));
+        this.version = extractHelidonVersion();
     }
 
     /**
@@ -139,6 +143,41 @@ public final class Application implements ResourceContainer {
                      .sum();
     }
 
+    /**
+     * Returns the Helidon version in use by this application.
+     *
+     * @return The version.
+     */
+    public Runtime.Version helidonVersion() {
+        return version;
+    }
+
+    /**
+     * Returns the value required for the {@code -Dexit.on.started} property to trigger.
+     *
+     * @return The value.
+     */
+    public String exitOnStartedValue() {
+        return exitOnStartedValue(version);
+    }
+
+    /**
+     * Returns the value required for the {@code -Dexit.on.started} property to trigger on
+     * the given Helidon version.
+     *
+     * @param helidonVersion The Helidon version.
+     * @return The value.
+     */
+    public static String exitOnStartedValue(Runtime.Version helidonVersion) {
+        if (helidonVersion.major() == 1
+            && helidonVersion.minor() == 4
+            && helidonVersion.security() < 2) {
+            return "✅";
+        } else {
+            return "!";
+        }
+    }
+
     @Override
     public boolean containsResource(String resourcePath) {
         return jars().anyMatch(jar -> jar.containsResource(resourcePath));
@@ -179,6 +218,21 @@ public final class Application implements ResourceContainer {
         } else if (Files.isDirectory(classPathEntry)) {
             // This won't happen from a normal Helidon app build, but handle it for the custom case.
             FileUtils.list(classPathEntry).forEach(path -> addClassPath(jar, path, visited, classPath));
+        }
+    }
+
+    private Runtime.Version extractHelidonVersion() {
+        final String fileName = classPath.stream()
+                                         .map(Jar::name)
+                                         .filter(name -> name.startsWith(HELIDON_JAR_NAME_PREFIX))
+                                         .findFirst()
+                                         .orElseThrow(() -> new IllegalStateException("No helidon jars found!"));
+        final int lastDash = fileName.lastIndexOf('-');
+        final int lastDot = fileName.lastIndexOf('.');
+        if (lastDash > 0 && lastDot > 0) {
+            return Runtime.Version.parse(fileName.substring(lastDash + 1, lastDot));
+        } else {
+            return Runtime.Version.parse(UNKNOWN_VERSION);
         }
     }
 }

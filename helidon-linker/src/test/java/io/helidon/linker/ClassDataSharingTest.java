@@ -38,16 +38,18 @@ import static org.hamcrest.Matchers.nullValue;
 class ClassDataSharingTest {
     private static final Path JAVA_HOME = Paths.get(System.getProperty("java.home"));
     private static final String APP_CLASS = "org/jboss/weld/environment/deployment/discovery/BeanArchiveScanner";
-    
+
     @Test
     void testQuickstartMp() throws Exception {
         Path mainJar = TestFiles.helidonMpJar();
         Path archiveFile = Files.createTempFile("start","jsa");
+        String exitOnStarted = TestFiles.exitOnStartedValue();
         ClassDataSharing cds = ClassDataSharing.builder()
                                                .jri(JAVA_HOME)
                                                .applicationJar(mainJar)
                                                .createArchive(false)
                                                .logOutput(false)
+                                               .exitOnStartedValue(exitOnStarted)
                                                .build();
         assertThat(cds, is(not(nullValue())));
         assertThat(cds.classList(), is(not(nullValue())));
@@ -68,6 +70,7 @@ class ClassDataSharingTest {
                               .classListFile(cds.classListFile())
                               .archiveFile(archiveFile)
                               .logOutput(false)
+                              .exitOnStartedValue(exitOnStarted)
                               .build();
 
         Path archive = cds.archiveFile();

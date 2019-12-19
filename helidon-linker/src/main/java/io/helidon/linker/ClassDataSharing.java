@@ -135,7 +135,9 @@ public final class ClassDataSharing {
         private static final String XX_DUMP_LOADED_CLASS_LIST = "-XX:DumpLoadedClassList=";
         private static final String XX_SHARED_ARCHIVE_FILE = "-XX:SharedArchiveFile=";
         private static final String XX_SHARED_CLASS_LIST_FILE = "-XX:SharedClassListFile=";
-        private static final String EXIT_ON_STARTED = "-Dexit.on.started=✅";
+        private static final String EXIT_ON_STARTED = "-Dexit.on.started=";
+        private static final String EXIT_ON_STARTED_VALUE = "!";
+        private static final String UTF_8_ENCODING = "-Dfile.encoding=UTF-8";
         private static final String SKIPPED_CLASS_PREFIX = "skip writing class";
         private static final String CANNOT_FIND_PREFIX = "Preload Warning: Cannot find";
         private static final String LIB_DIR_NAME = "lib";
@@ -153,12 +155,14 @@ public final class ClassDataSharing {
         private boolean logOutput;
         private List<String> jvmOptions;
         private List<String> args;
+        private String exitOnStartedValue;
 
         private Builder() {
             this.createArchive = true;
             this.archiveDir = LIB_DIR_NAME;
             this.jvmOptions = emptyList();
             this.args = emptyList();
+            this.exitOnStartedValue = EXIT_ON_STARTED_VALUE;
         }
 
         /**
@@ -271,6 +275,17 @@ public final class ClassDataSharing {
         }
 
         /**
+         * Sets the {@code -Dexit.on.started} property value.
+         *
+         * @param exitOnStartedValue The value
+         * @return The builder.
+         */
+        public Builder exitOnStartedValue(String exitOnStartedValue) {
+            this.exitOnStartedValue = requireNonNull(exitOnStartedValue);
+            return this;
+        }
+
+        /**
          * Build the instance.
          *
          * @return The instance.
@@ -314,7 +329,7 @@ public final class ClassDataSharing {
 
         private List<String> buildClassList() throws Exception {
             execute("Creating startup class list for " + targetDescription,
-                    XSHARE_OFF, XX_DUMP_LOADED_CLASS_LIST + classListFile);
+                    XSHARE_OFF, XX_DUMP_LOADED_CLASS_LIST + classListFile, UTF_8_ENCODING);
             return loadClassList();
         }
 
@@ -322,10 +337,10 @@ public final class ClassDataSharing {
             final String action = "Creating Class Data Sharing archive for " + targetDescription;
             if (Constants.CDS_REQUIRES_UNLOCK_OPTION) {
                 execute(action, Constants.CDS_UNLOCK_OPTIONS, XSHARE_DUMP, XX_SHARED_ARCHIVE_FILE + archiveFile,
-                        XX_SHARED_CLASS_LIST_FILE + classListFile);
+                        XX_SHARED_CLASS_LIST_FILE + classListFile, UTF_8_ENCODING);
             } else {
                 execute(action, XSHARE_DUMP, XX_SHARED_ARCHIVE_FILE + archiveFile,
-                        XX_SHARED_CLASS_LIST_FILE + classListFile);
+                        XX_SHARED_CLASS_LIST_FILE + classListFile, UTF_8_ENCODING);
             }
         }
 
@@ -341,7 +356,7 @@ public final class ClassDataSharing {
 
             command.add(javaPath().toString());
             command.addAll(jvmOptions);
-            command.add(EXIT_ON_STARTED);
+            command.add(EXIT_ON_STARTED + exitOnStartedValue);
             command.addAll(Arrays.asList(jvmArgs));
             command.add(targetOption);
             command.add(target);

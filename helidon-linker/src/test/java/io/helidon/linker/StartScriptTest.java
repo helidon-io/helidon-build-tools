@@ -48,9 +48,14 @@ class StartScriptTest {
     private static final Path INSTALLED_JAR_FILE = TestFiles.ensureMockFile(APP_DIR.resolve("main.jar"));
     private static final Path INSTALLED_MODULES_FILE = TestFiles.ensureMockFile(LIB_DIR.resolve("modules"));
     private static final String JAR_NAME = INSTALLED_JAR_FILE.getFileName().toString();
+    private static final String EXIT_ON_STARTED_VALUE = TestFiles.exitOnStartedValue();
+    private static final String EXIT_ON_STARTED = "-Dexit.on.started=" + EXIT_ON_STARTED_VALUE;
 
     private StartScript.Builder builder() {
-        return StartScript.builder().mainJar(INSTALLED_JAR_FILE).installHomeDirectory(INSTALL_DIR);
+        return StartScript.builder()
+                          .mainJar(INSTALLED_JAR_FILE)
+                          .installHomeDirectory(INSTALL_DIR)
+                          .exitOnStartedValue(EXIT_ON_STARTED_VALUE);
     }
 
     private static String modulesTimeStampComparison() {
@@ -64,6 +69,12 @@ class StartScriptTest {
     private static String timeStampComparison(String name, Path file) {
         final String timestamp = Long.toString(lastModifiedTime(file));
         return "${" + name + "TimeStamp} != \"" + timestamp + "\"";
+    }
+
+    @Test
+    void testExitOnStarted() {
+        String script = builder().build().toString();
+        assertThat(script, containsString(EXIT_ON_STARTED));
     }
 
     @Test
@@ -128,6 +139,8 @@ class StartScriptTest {
         assertThat(script, containsString(modulesTimeStampComparison()));
         assertThat(script, containsString(jarTimeStampComparison()));
         assertThat(script, containsString("timeStamp"));
+
+        assertThat(script, containsString(EXIT_ON_STARTED));
     }
 
     @Test
@@ -151,6 +164,8 @@ class StartScriptTest {
         assertThat(script, not(containsString(modulesTimeStampComparison())));
         assertThat(script, not(containsString(jarTimeStampComparison())));
         assertThat(script, not(containsString("timeStamp")));
+
+        assertThat(script, containsString(EXIT_ON_STARTED));
     }
 
     @Test
@@ -174,6 +189,8 @@ class StartScriptTest {
         assertThat(script, containsString(modulesTimeStampComparison()));
         assertThat(script, containsString(jarTimeStampComparison()));
         assertThat(script, containsString("timeStamp"));
+
+        assertThat(script, containsString(EXIT_ON_STARTED));
     }
 
     @Test
@@ -197,6 +214,8 @@ class StartScriptTest {
         assertThat(script, not(containsString(modulesTimeStampComparison())));
         assertThat(script, not(containsString(jarTimeStampComparison())));
         assertThat(script, not(containsString("timeStamp")));
+
+        assertThat(script, containsString(EXIT_ON_STARTED));
     }
 
     @Test

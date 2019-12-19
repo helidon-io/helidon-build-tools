@@ -41,6 +41,7 @@ public class BashStartScriptTemplate extends StartScript.SimpleTemplate {
     private static final String DEFAULT_ARGS_DESC_VAR = "<DEFAULT_APP_ARGS_DESC>";
     private static final String DEFAULT_JVM_DESC_VAR = "<DEFAULT_APP_JVM_DESC>";
     private static final String DEFAULT_DEBUG_DESC_VAR = "<DEFAULT_APP_DEBUG_DESC>";
+    private static final String EXIT_ON_STARTED_VAR = "<EXIT_ON_STARTED>";
     private static final String STAT_FORMAT_VAR = "<STAT_FORMAT>";
     private static final String STAT_FORMAT_MAC = "-f %m";
     private static final String STAT_FORMAT_LINUX = "-c %Y";
@@ -113,6 +114,7 @@ public class BashStartScriptTemplate extends StartScript.SimpleTemplate {
         replace(MODULES_TIME_STAMP_VAR, modulesModTime);
         replace(JAR_TIME_STAMP_VAR, jarModTime);
         replace(COPY_INSTRUCTIONS_VAR, copyInstructions);
+        replace(EXIT_ON_STARTED_VAR, config.exitOnStartedValue());
 
         return toString();
     }
