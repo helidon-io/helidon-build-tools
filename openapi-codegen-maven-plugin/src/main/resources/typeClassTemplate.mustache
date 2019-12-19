@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+package io.helidon.openapi;
+
+{{#javaImports}}
+import {{#isStatic}} static {{/isStatic}}{{name}};
+{{/javaImports}}
+
+{{#implImports}}
+import {{#isStatic}} static {{/isStatic}}{{name}};
+{{/implImports}}
+
+{{#openAPIImports}}
+import {{#isStatic}} static {{/isStatic}}{{name}};
+{{/openAPIImports}}
+
+import org.yaml.snakeyaml.TypeDescription;
+
+class Types {
+
+    private final Map<Class<?>, TypeDescription> types = new HashMap<>();
+
+    static Types create() {
+        return new Types();
+    }
+
+    Set<Map.Entry<Class<?>, TypeDescription>> entrySet() {
+        return types.entrySet();
+    }
+
+    Set<Class<?>> keySet() {
+        return types.keySet();
+    }
+
+    boolean containsKey(Class<?> type) {
+        return types.containsKey(type);
+    }
+
+    TypeDescription get(Class<?> clazz) {
+        return types.get(clazz);
+    }
+
+    private Types() {
+{{#types}}
+        TypeDescription td_{{simpleName}} = ExpandedTypeDescription.create({{simpleName}}.class, {{implementationType}}.class);
+        {{#typeEnums}}
+        td_{{simpleName}}.addEnum("{{enumName}}", {{enumType}}::valueOf);
+        {{/typeEnums}}
+        {{#ref}}
+        td_{{simpleName}}.addRef();
+        {{/ref}}
+        {{#propertyParameters}}
+            td_{{simpleName}}.addPropertyParameters("{{parameterName}}"{{#parameterTypes}}, {{parameterType}}.class{{/parameterTypes}});
+        {{/propertyParameters}}
+        {{#substitutions}}
+        td_{{simpleName}}.substituteProperty("{{propertySubName}}", {{propertySubType}}.class, "{{getter}}", "{{setter}}");
+        {{/substitutions}}
+        types.put(td_{{simpleName}}.getType(), td_{{simpleName}});
+
+{{/types}}
+    }
+}
+
