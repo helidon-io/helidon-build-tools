@@ -31,10 +31,7 @@ import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
-import io.smallrye.openapi.api.models.OpenAPIImpl;
-import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -43,7 +40,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
-import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.eclipse.microprofile.openapi.models.Operation;
 import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.media.Schema;
@@ -57,21 +53,16 @@ import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
-import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -79,14 +70,13 @@ import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -99,7 +89,8 @@ import java.util.stream.Stream;
  * </p>
  * <p>
  *     It analyzes Java sources in a specified location and generates a SnakeYAML
- *     {@code TypeDefinition} for each class.
+ *     {@code TypeDefinition} for each class. It also uses a second location to locate implementations of interfaces from the
+ *     first area for use in setting the impl classes in those {@code TypeDefinition} instances.
  * </p>
  * <p>
  *     Here is an example from the maven dependency plug-in showing how to extract the sources so
@@ -153,16 +144,18 @@ import java.util.stream.Stream;
  *
  * </pre>
  */
-@Mojo( name = "generate",
-        requiresProject = true,
-        defaultPhase = LifecyclePhase.GENERATE_SOURCES,
-        requiresDependencyResolution = ResolutionScope.RUNTIME)
+@Mojo(name = "generate",
+      requiresProject = true,
+      defaultPhase = LifecyclePhase.GENERATE_SOURCES,
+      requiresDependencyResolution = ResolutionScope.RUNTIME)
 public class SnakeYAMLMojo extends AbstractMojo {
 
-    private static final String TYPE_PREFIX = OpenAPI.class.getPackage().getName() + ".";
-    private static final String TYPE_PREFIX_REPLACEMENT = OpenAPIImpl.class.getPackage().getName() + ".";
-
     private static final String PROPERTY_PREFIX = "openapigen.";
+
+    private final Map<String, Type> types = new HashMap<>();
+    private final Map<String, Type> implementations = new HashMap<>();
+    private final Set<Import> imports = preloadedImports();
+    private final Map<String, List<String>> interfaces = new HashMap<>();
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject mavenProject;
@@ -181,23 +174,48 @@ public class SnakeYAMLMojo extends AbstractMojo {
     @Parameter(property = PROPERTY_PREFIX + "generatedClass", required = true)
     private String generatedClass;
 
-    /**
-     * Directory within the current Maven project containing Java sources to analyze.
-     */
-    @Parameter(property = PROPERTY_PREFIX + "inputDirectory")
-    String inputDirectory;
+//    /**
+//     * Directory within the current Maven project containing Java sources to analyze.
+//     */
+//    @Parameter(property = PROPERTY_PREFIX + "inputDirectory")
+//    String inputDirectory;
+//
+//    /**
+//     * Directory within the current Maven project containing Java sources that provide implementations for interfaces found in
+//     * the @{code inputDirectory}.
+//     */
+//    @Parameter(property = PROPERTY_PREFIX + "implementationDirectory")
+//    String implementationDirectory;
+//
+//    /**
+//     * Selector for which Java sources to analyze.
+//     */
+//    @Parameter(property= PROPERTY_PREFIX + "includes", defaultValue = "**/*.java")
+//    List<String> includes;
 
-    /**
-     * Selector for which Java sources to analyze.
-     */
-    @Parameter(property= PROPERTY_PREFIX + "includes", defaultValue = "**/*.java")
-    List<String> includes;
+    @Parameter(property = PROPERTY_PREFIX + "interfacesConfig", required = true)
+    CompilerConfig interfacesConfig;
 
-    /**
-     * Deselector to identify Java sources to ignore during the analysis.
-     */
-    @Parameter(property = PROPERTY_PREFIX + "excludes")
-    List<String> excludes;
+    @Parameter(property = PROPERTY_PREFIX + "implementationsConfig", required = true)
+    CompilerConfig implementationsConfig;
+
+//    /**
+//     * Deselector to identify Java sources to ignore during the analysis.
+//     */
+//    @Parameter(property = PROPERTY_PREFIX + "excludes")
+//    List<String> excludes;
+
+    public static class CompilerConfig {
+        String inputDirectory = ".";
+        List<String> includes = defaultIncludes();
+        List<String> excludes = Collections.emptyList();
+
+        private static List<String> defaultIncludes() {
+            final List<String> result = new ArrayList<>();
+            result.add("**/*.java");
+            return result;
+        }
+    }
 
     public void execute()
         throws MojoExecutionException
@@ -213,40 +231,19 @@ public class SnakeYAMLMojo extends AbstractMojo {
             }
         }
 
-        JavaCompiler jc = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = jc.getStandardFileManager(null, null, null);
         try {
-            DiagnosticListener<JavaFileObject> diagListener = new DiagnosticListener<JavaFileObject>() {
-                @Override
-                public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-                    if (getLog().isDebugEnabled()) {
-                        getLog().debug(diagnostic.toString());
-                    }
-                }
-            };
-
-            JavaCompiler.CompilationTask task = jc.getTask(null, fm, diagListener, null, null,
-                    javaFilesToCompile(fm));
-            List<Processor> procs = new ArrayList<>();
-            EndpointProcessor ep = new EndpointProcessor(new EndpointScanner());
-            procs.add(ep);
-            task.setProcessors(procs);
-            task.call();
-
-            Map<String, Type> types = ep.types();
-            Set<Import> imports = ep.imports();
+            analyzeInterfaces(types, imports);
 
             /*
-             * The parsing builds most of the data model, but we need to add property substitutions explicitly
-             * because there is no way to determine them automatically.
+             * The parsing builds most of the data model, but we need to add some additional information that is not available
+             * to the compiler processor.
              */
             addPropertySubstitutions(types);
             addImportsForTypes(types, imports);
-            addImplementationTypes(types, imports);
 
-            getLog().info("Types prepared: " + types.size());
-            getLog().debug("Types: " + types);
-            getLog().debug("Imports: " + ep.imports().stream().sorted().map(Import::toString).collect(Collectors.joining(",")));
+            analyzeImplementations(implementations, imports, interfaces);
+
+            associateImplementationsWithInterfaces(types, interfaces);
 
             generateParserClass(types, imports);
 
@@ -255,6 +252,9 @@ public class SnakeYAMLMojo extends AbstractMojo {
         }
     }
 
+    /**
+     * An import required in the generated source.
+     */
     static class Import implements Comparable<Import> {
         String name;
         boolean isStatic;
@@ -306,12 +306,82 @@ public class SnakeYAMLMojo extends AbstractMojo {
         }
     }
 
-    private void validateParameters() throws MojoExecutionException {
+    /**
+     * Preloads the set of imports with items needed by the code in the class template so
+     * we do not accidentally repeat imports which are triggered by the classes analyzed.
+     *
+     * @return Set of Import instances used by hard-coded methods in the template
+     */
+    private static Set<Import> preloadedImports() {
+        Set<Import> result = new HashSet<>();
+        result.add(new Import(java.util.List.class));
+        result.add(new Import(java.util.HashMap.class));
+        result.add(new Import(java.util.Map.class));
+        return result;
+    }
 
-        Path inputDirPath = resolvedInputDirectory();
+    private void validateParameters() throws MojoExecutionException {
+        validateInputDirectory(interfacesConfig.inputDirectory);
+        validateInputDirectory(implementationsConfig.inputDirectory);
+    }
+
+    private void validateInputDirectory(String dir) throws MojoExecutionException {
+        Path inputDirPath = resolveDirectory(dir);
         if (!Files.exists(inputDirPath)) {
             throw new MojoExecutionException("Cannot find specified inputDirectory " + inputDirPath.toString());
         }
+    }
+
+    private void analyzeInterfaces(Map<String, Type> types, Set<Import> imports) throws IOException {
+        analyzeClasses(types, imports, null, inputs(interfacesConfig), "interfaces");
+    }
+
+    private void analyzeImplementations(Map<String, Type> types, Set<Import> imports, Map<String, List<String>> interfaces) throws IOException {
+        analyzeClasses(types, imports, interfaces, inputs(implementationsConfig), "implementations");
+    }
+
+    private void associateImplementationsWithInterfaces(Map<String, Type> types, Map<String, List<String>> interfaces) {
+        types.values()
+                .forEach(t -> {
+                    List<String> impls = interfaces.get(t.simpleName);
+                    if (impls != null) {
+                        if (impls.size() > 1) {
+                            getLog().warn(String.format("Multiple implementations found for %s: %s",
+                                    t.simpleName, impls));
+                        }
+                        t.implementationType(impls.get(0));
+                    }
+                });
+    }
+
+    private void analyzeClasses(Map<String, Type> types, Set<Import> imports, Map<String, List<String>> interfaces,
+            Collection<Path> pathsToCommpile, String note) {
+        /*
+         * There should not be compilation errors, but without our own diagnostic listener any compilation errors will
+         * appear in the build output.
+         */
+        DiagnosticListener<JavaFileObject> diagListener = diagnostic -> {
+            if (getLog().isDebugEnabled()) {
+                getLog().debug(diagnostic.toString());
+            }
+        };
+
+        JavaCompiler jc = ToolProvider.getSystemJavaCompiler();
+        StandardJavaFileManager fm = jc.getStandardFileManager(null, null, null);
+
+        JavaCompiler.CompilationTask task = jc.getTask(null, fm, diagListener, null, null,
+                javaFilesToCompile(fm, pathsToCommpile));
+        List<Processor> procs = new ArrayList<>();
+        EndpointProcessor ep = new EndpointProcessor(new EndpointScanner(types, imports, interfaces));
+        procs.add(ep);
+        task.setProcessors(procs);
+        task.call();
+
+        getLog().info(String.format("Types prepared for %s: %d", note, types.size()));
+        getLog().debug(String.format("Types prepared for %s: %s", note, types));
+        getLog().debug(String.format("Imports after analyzing %s: %s", note,
+                imports.stream().sorted().map(Import::toString).collect(Collectors.joining(","))));
+        getLog().debug(String.format("Interface impls after analyzing %s: %s", note, interfaces));
     }
 
     private void addPropertySubstitutions(Map<String, Type> types) {
@@ -332,17 +402,6 @@ public class SnakeYAMLMojo extends AbstractMojo {
 
     private void addImportsForTypes(Map<String, Type> types, Set<Import> imports) {
         types.forEach((name, type) -> imports.add(new Import(type.fullName, false)));
-    }
-
-    private void addImplementationTypes(Map<String, Type> types, Set<Import> imports) {
-        types.forEach((name, type) -> {
-            String implName = type.simpleName + "Impl";
-            type.implementationType(implName);
-            if (type.fullName.startsWith(TYPE_PREFIX)) {
-                imports.add(new Import(TYPE_PREFIX_REPLACEMENT + type.simpleName + "Impl", false));
-            }
-        });
-
     }
 
     private void generateParserClass(Map<String, Type> types, Set<Import> imports) throws IOException {
@@ -386,16 +445,16 @@ public class SnakeYAMLMojo extends AbstractMojo {
 //        }
 //    }
 
-    private Path resolvedInputDirectory() {
+    private Path resolveDirectory(String directoryWithinProject) {
         Path baseDirPath = mavenProject.getBasedir().toPath();
-        return (inputDirectory != null) ? baseDirPath.resolve(inputDirectory) : baseDirPath;
+        return (directoryWithinProject != null) ? baseDirPath.resolve(directoryWithinProject) : baseDirPath;
     }
 
-    private Iterable<? extends JavaFileObject> javaFilesToCompile(StandardJavaFileManager fm) throws IOException {
+    private Iterable<? extends JavaFileObject> javaFilesToCompile(StandardJavaFileManager fm, Collection<Path> paths) {
         List<? extends File> files =
-                inputs(resolvedInputDirectory(), includes, excludes).stream()
-                .map(Path::toFile)
-                .collect(Collectors.toList());
+                paths.stream()
+                        .map(Path::toFile)
+                        .collect(Collectors.toList());
         getLog().debug("Files to be compiled: " + files.toString());
         return fm.getJavaFileObjectsFromFiles(files);
     }
@@ -404,20 +463,17 @@ public class SnakeYAMLMojo extends AbstractMojo {
      * Computes paths to be processed as inputs, based on an input directory
      * and glob-style include and exclude expressions identifying paths within
      * that input directory.
-     * @param inputDirectory the directory within which to search for files
-     * @param includes glob-style include expressions
-     * @param excludes glob-style exclude expressions
-     * @return Paths within the input directory tree that match the includes and
-     * are not ruled out by the excludes
+     * @param compilerConfig conveys the directory, includes, and excludes to compile
      * @throws IOException in case of errors matching candidate paths
      */
-    static Collection<Path> inputs(Path inputDirectory, List<String> includes, List<String> excludes) throws IOException {
-        Collection<Path> result = Files.find(inputDirectory, Integer.MAX_VALUE, (path, attrs) ->
-                matches(path, pathMatchers(inputDirectory, includes))
-                        && !matches(path, pathMatchers(inputDirectory, excludes)))
+    Collection<Path> inputs(CompilerConfig compilerConfig) throws IOException {
+        Path inputPath = resolveDirectory(compilerConfig.inputDirectory);
+        Collection<Path> result = Files.find(inputPath, Integer.MAX_VALUE, (path, attrs) ->
+                matches(path, pathMatchers(inputPath, compilerConfig.includes))
+                        && !matches(path, pathMatchers(inputPath, compilerConfig.excludes)))
                 .collect(Collectors.toSet());
         if (result.isEmpty()) {
-            throw new IllegalArgumentException("No input files selected from " + inputDirectory);
+            throw new IllegalArgumentException("No input files selected from " + compilerConfig.inputDirectory);
         }
         return result;
     }
@@ -430,9 +486,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
      */
     private static Stream<PathMatcher> pathMatchers(Path inputDirectory, List<String> globs) {
         return globs.stream()
-                .map(glob -> {
-                    return FileSystems.getDefault().getPathMatcher("glob:" + inputDirectory + "/" + glob);
-                });
+                .map(glob -> FileSystems.getDefault().getPathMatcher("glob:" + inputDirectory + "/" + glob));
     }
 
     private static boolean matches(Path candidate, Stream<PathMatcher> matchers) {
@@ -445,30 +499,30 @@ public class SnakeYAMLMojo extends AbstractMojo {
      */
     private static class EndpointScanner extends TreePathScanner<Type, Type> {
 
-        private final Map<String, Type> types = new TreeMap<>();
-        private final Set<Import> imports = preloadedImports();
+        private final Map<String, Type> types;
+        private final Set<Import> imports;
+        private final Map<String, List<String>> interfacesToImpls;
 
-        /**
-         * Preloads the set of imports with items needed by the code in the class template so
-         * we do not accidentally repeat imports which are triggered by the classes analyzed.
-         *
-         * @return Set of Import instances used by hard-coded methods in the template
-         */
-        private static Set<Import> preloadedImports() {
-            Set<Import> result = new HashSet<>();
-            result.add(new Import(java.util.List.class));
-            result.add(new Import(java.util.HashMap.class));
-            result.add(new Import(java.util.Map.class));
-            return result;
+        EndpointScanner(Map<String, Type> types, Set<Import> imports, Map<String, List<String>> interfacesToImpls) {
+            this.types = types;
+            this.imports = imports;
+            this.interfacesToImpls = interfacesToImpls;
         }
-
         @Override
         public Type visitClass(ClassTree node, Type type) {
             String typeName = fullyQualifiedPath(getCurrentPath());
-            if (node.getKind() == Tree.Kind.CLASS || node.getKind() == Tree.Kind.INTERFACE) {
-                final Type newType = new Type(typeName, node.getSimpleName().toString());
-                type = newType;
+            Tree.Kind kind = node.getKind();
+            if (kind == Tree.Kind.CLASS || kind == Tree.Kind.INTERFACE) {
+                List<String> interfaces = SnakeYAMLMojo.treesToStrings(node.getImplementsClause());
+                final Type newType = new Type(typeName, node.getSimpleName().toString(), kind == Tree.Kind.INTERFACE,
+                        interfaces);
+                if (interfacesToImpls != null) {
+                    interfaces.stream()
+                            .map(intf -> interfacesToImpls.computeIfAbsent(intf, key -> new ArrayList<>()))
+                            .forEach(list -> list.add(newType.simpleName));
+                }
                 types.put(typeName, newType);
+                imports.add(new Import(newType.fullName, false));
                 updateRef(node, newType);
                 /*
                  * Define enums now to make sure they are defined before they are referenced in
@@ -477,7 +531,9 @@ public class SnakeYAMLMojo extends AbstractMojo {
                 node.getMembers().stream()
                         .filter(member -> member.getKind() == Tree.Kind.ENUM)
                         .map(member -> ((ClassTree) member).getSimpleName().toString())
-                        .forEach(type::typeEnumByType);
+                        .forEach(newType::typeEnumByType);
+
+                type = newType;
             }
 
             return super.visitClass(node, type);
@@ -506,14 +562,6 @@ public class SnakeYAMLMojo extends AbstractMojo {
                 addPropertyParametersIfNeeded(propertyTree, type, propName);
             }
             return super.visitMethod(node, type);
-        }
-
-        Map<String, Type> types() {
-            return types;
-        }
-
-        Set<Import> imports() {
-            return imports;
         }
 
         private void updateEnumIfNeeded(VariableTree node, Type type, String propName) {
@@ -564,14 +612,12 @@ public class SnakeYAMLMojo extends AbstractMojo {
             }
             return true;
         }
+    }
 
-        Map<String, Type> types() {
-            return scanner.types();
-        }
-
-        Set<Import> imports() {
-            return scanner.imports();
-        }
+    private static List<String> treesToStrings(List<? extends Tree> trees) {
+        return trees.stream()
+                .map(Tree::toString)
+                .collect(Collectors.toList());
     }
 
     private static String fullyQualifiedPath(TreePath path) {

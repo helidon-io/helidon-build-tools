@@ -42,6 +42,9 @@ class Type {
 
     final String fullName;
     final String simpleName;
+    final List<String> interfacesImplemented;
+    final boolean isInterface;
+
     String implementationType;
     boolean isRef = false;
     final Map<String, TypeEnum> typeEnumsByType = new HashMap<>();
@@ -50,9 +53,11 @@ class Type {
     // Prop subs are recorded here but are set from the caller, not by the compilation/analysis.
     final List<PropertySubstitution> substitutions = new ArrayList<>();
 
-    Type(String fullName, String simpleName) {
+    Type(String fullName, String simpleName, boolean isInterface, List<String> interfacesImplemented) {
         this.fullName = fullName;
         this.simpleName = simpleName;
+        this.isInterface = isInterface;
+        this.interfacesImplemented = interfacesImplemented;
     }
 
     Type typeEnumByType(String type) {
@@ -89,9 +94,11 @@ class Type {
         return "Type{" +
                 "fullName='" + fullName + '\'' +
                 ", simpleName='" + simpleName + '\'' +
+                ", interfacesImplemented=" + interfacesImplemented +
+                ", isInterface=" + isInterface +
                 ", implementationType='" + implementationType + '\'' +
                 ", isRef=" + isRef +
-                ", typeEnums=" + typeEnumsByType +
+                ", typeEnumsByType=" + typeEnumsByType +
                 ", propertyParameters=" + propertyParameters +
                 ", substitutions=" + substitutions +
                 '}';

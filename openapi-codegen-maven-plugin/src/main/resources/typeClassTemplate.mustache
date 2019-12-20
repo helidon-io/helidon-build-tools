@@ -55,7 +55,7 @@ class Types {
     }
 
     private Types() {
-{{#types}}
+{{#typesToAugment}}
         TypeDescription td_{{simpleName}} = ExpandedTypeDescription.create({{simpleName}}.class, {{implementationType}}.class);
         {{#typeEnums}}
         td_{{simpleName}}.addEnum("{{enumName}}", {{enumType}}::valueOf);
@@ -64,14 +64,14 @@ class Types {
         td_{{simpleName}}.addRef();
         {{/ref}}
         {{#propertyParameters}}
-            td_{{simpleName}}.addPropertyParameters("{{parameterName}}"{{#parameterTypes}}, {{parameterType}}.class{{/parameterTypes}});
+        td_{{simpleName}}.addPropertyParameters("{{parameterName}}"{{#parameterTypes}}, {{parameterType}}.class{{/parameterTypes}});
         {{/propertyParameters}}
         {{#substitutions}}
         td_{{simpleName}}.substituteProperty("{{propertySubName}}", {{propertySubType}}.class, "{{getter}}", "{{setter}}");
         {{/substitutions}}
         types.put(td_{{simpleName}}.getType(), td_{{simpleName}});
 
-{{/types}}
+{{/typesToAugment}}
     }
 }
 
