@@ -44,15 +44,14 @@
                 <artifactId>openapi-codegen-maven-plugin</artifactId>
                 <version>${version.plugin.openapicodegen}</version>
                 <configuration>
-                    <interfacesConfig>
-                        <inputDirectory>openapi</inputDirectory>
-                        <includes>**/*.java</includes>
-                    </interfacesConfig>
-                    <implementationsConfig>
-                        <inputDirectory>smallrye</inputDirectory>
-                        <includes>**/*.java</includes>
-                    </implementationsConfig>
-                    <!-- inputDirectory defaults to the directory containing the pom -->
+<!--                    <interfacesConfig>-->
+<!--                        <inputDirectory>openapi</inputDirectory>-->
+<!--                        <includes>**/*.java</includes>-->
+<!--                    </interfacesConfig>-->
+<!--                    <implementationsConfig>-->
+<!--                        <inputDirectory>smallrye</inputDirectory>-->
+<!--                        <includes>**/*.java</includes>-->
+<!--                    </implementationsConfig>-->
                     <generatedClass>io.helidon.codegen.openapi.test.GeneratedForParser</generatedClass>
                 </configuration>
             </plugin>

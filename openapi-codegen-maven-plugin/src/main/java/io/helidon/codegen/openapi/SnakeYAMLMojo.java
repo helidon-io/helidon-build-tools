@@ -31,6 +31,7 @@ import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 
@@ -92,7 +93,15 @@ import java.util.stream.Stream;
  *     {@code TypeDefinition} for each class. It also uses a second location to locate implementations of interfaces from the
  *     first area for use in setting the impl classes in those {@code TypeDefinition} instances.
  * </p>
- * <p>
+ *
+ */
+@Mojo(name = "generate",
+      requiresProject = true,
+      defaultPhase = LifecyclePhase.GENERATE_SOURCES,
+      requiresDependencyResolution = ResolutionScope.RUNTIME)
+public class SnakeYAMLMojo extends AbstractMojo {
+/*
+ *<p>
  *     Here is an example from the maven dependency plug-in showing how to extract the sources so
  *     they are available for this plug-in to consume:
  * </p>
@@ -111,7 +120,7 @@ import java.util.stream.Stream;
  *             <phase>package</phase>
  *             <goals>
  *               <!-- use copy-dependencies instead if you don't want to explode the sources -->
- *               <goal>unpack-dependencies</goal>
+                *               <goal>unpack-dependencies</goal>
  *             </goals>
  *             <configuration>
  *               <artifactItems>
@@ -143,14 +152,16 @@ import java.util.stream.Stream;
  * }
  *
  * </pre>
+ *
  */
-@Mojo(name = "generate",
-      requiresProject = true,
-      defaultPhase = LifecyclePhase.GENERATE_SOURCES,
-      requiresDependencyResolution = ResolutionScope.RUNTIME)
-public class SnakeYAMLMojo extends AbstractMojo {
 
-    private static final String PROPERTY_PREFIX = "openapigen.";
+    private static final String PROPERTY_PREFIX = "snakeyamlgen.";
+    private static final String PARAM_DUMP_FORMAT = "Code generation for SnakeYAML parsing helper:%n"
+            + "  %s:%n"
+            + "    Read from directory %s%n"
+            + "    Matching %s%n"
+            + "    Excluding %s%n";
+
 
     private final Map<String, Type> types = new HashMap<>();
     private final Map<String, Type> implementations = new HashMap<>();
@@ -174,39 +185,23 @@ public class SnakeYAMLMojo extends AbstractMojo {
     @Parameter(property = PROPERTY_PREFIX + "generatedClass", required = true)
     private String generatedClass;
 
-//    /**
-//     * Directory within the current Maven project containing Java sources to analyze.
-//     */
-//    @Parameter(property = PROPERTY_PREFIX + "inputDirectory")
-//    String inputDirectory;
-//
-//    /**
-//     * Directory within the current Maven project containing Java sources that provide implementations for interfaces found in
-//     * the @{code inputDirectory}.
-//     */
-//    @Parameter(property = PROPERTY_PREFIX + "implementationDirectory")
-//    String implementationDirectory;
-//
-//    /**
-//     * Selector for which Java sources to analyze.
-//     */
-//    @Parameter(property= PROPERTY_PREFIX + "includes", defaultValue = "**/*.java")
-//    List<String> includes;
-
+    /**
+     * Configuration for compiling the interfaces for which SnakeYAML will need to parse.
+     */
     @Parameter(property = PROPERTY_PREFIX + "interfacesConfig", required = true)
     CompilerConfig interfacesConfig;
 
+    /**
+     * Configuration for compiling the implementations SnakeYAML will use to instantiate parsed interfaces.
+     */
     @Parameter(property = PROPERTY_PREFIX + "implementationsConfig", required = true)
     CompilerConfig implementationsConfig;
 
-//    /**
-//     * Deselector to identify Java sources to ignore during the analysis.
-//     */
-//    @Parameter(property = PROPERTY_PREFIX + "excludes")
-//    List<String> excludes;
+    @Parameter(property = PROPERTY_PREFIX + "debug", defaultValue = "false")
+    boolean debug;
 
     public static class CompilerConfig {
-        String inputDirectory = ".";
+        String inputDirectory = null; // defaults to "interfaces" or "implementations"
         List<String> includes = defaultIncludes();
         List<String> excludes = Collections.emptyList();
 
@@ -217,17 +212,34 @@ public class SnakeYAMLMojo extends AbstractMojo {
         }
     }
 
+    public void setInterfacesConfig(CompilerConfig config) {
+        this.interfacesConfig = fillInConfig(config, "interfaces");
+    }
+
+    public void setImplementationsConfig(CompilerConfig config) {
+        this.implementationsConfig = fillInConfig(config, "implementations");
+    }
+
+    private CompilerConfig fillInConfig(CompilerConfig config, String defaultInputDirectory) {
+        if (config.inputDirectory == null) {
+            config.inputDirectory = defaultInputDirectory;
+        }
+        return config;
+    }
+
     public void execute()
         throws MojoExecutionException
     {
         validateParameters();
 
+        dumpParams();
+
         File f = outputDirectory;
         if (!f.exists()) {
             if (f.mkdirs()) {
-                getLog().debug("Created output directory " + f.getAbsolutePath());
+                debugLog("Created output directory " + f.getAbsolutePath());
             } else {
-                getLog().debug("Using existing output directory " + f.getAbsolutePath());
+                debugLog("Using existing output directory " + f.getAbsolutePath());
             }
         }
 
@@ -250,6 +262,24 @@ public class SnakeYAMLMojo extends AbstractMojo {
         } catch (Throwable e) {
             throw new MojoExecutionException("Error compiling and analyzing source files", e);
         }
+    }
+
+    private void debugLog(String msg) {
+        if (getLog().isDebugEnabled() || debug) {
+            getLog().debug(msg);
+        }
+    }
+
+    private void dumpParams() {
+        if (!getLog().isDebugEnabled()) {
+            return;
+        }
+        debugLog(dumpConfig(interfacesConfig, "interfaces"));
+        debugLog(dumpConfig(implementationsConfig, "implementations"));
+    }
+
+    private String dumpConfig(CompilerConfig config, String category) {
+        return String.format(PARAM_DUMP_FORMAT, category, config.inputDirectory, config.includes, config.excludes);
     }
 
     /**
@@ -361,9 +391,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
          * appear in the build output.
          */
         DiagnosticListener<JavaFileObject> diagListener = diagnostic -> {
-            if (getLog().isDebugEnabled()) {
-                getLog().debug(diagnostic.toString());
-            }
+            debugLog(diagnostic.toString());
         };
 
         JavaCompiler jc = ToolProvider.getSystemJavaCompiler();
@@ -378,10 +406,10 @@ public class SnakeYAMLMojo extends AbstractMojo {
         task.call();
 
         getLog().info(String.format("Types prepared for %s: %d", note, types.size()));
-        getLog().debug(String.format("Types prepared for %s: %s", note, types));
-        getLog().debug(String.format("Imports after analyzing %s: %s", note,
+        debugLog(String.format("Types prepared for %s: %s", note, types));
+        debugLog(String.format("Imports after analyzing %s: %s", note,
                 imports.stream().sorted().map(Import::toString).collect(Collectors.joining(","))));
-        getLog().debug(String.format("Interface impls after analyzing %s: %s", note, interfaces));
+        debugLog(String.format("Interface impls after analyzing %s: %s", note, interfaces));
     }
 
     private void addPropertySubstitutions(Map<String, Type> types) {
@@ -455,7 +483,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
                 paths.stream()
                         .map(Path::toFile)
                         .collect(Collectors.toList());
-        getLog().debug("Files to be compiled: " + files.toString());
+        debugLog("Files to be compiled: " + files.toString());
         return fm.getJavaFileObjectsFromFiles(files);
     }
 
