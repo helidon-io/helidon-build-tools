@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Set;
 
+import io.helidon.linker.util.Constants;
 import io.helidon.linker.util.FileUtils;
 import io.helidon.test.util.TestFiles;
 
@@ -126,7 +127,7 @@ class LinkerTest {
 
     private static void assertScript(Path jri) throws IOException {
         Path binDir = FileUtils.assertDir(jri.resolve("bin"));
-        Path scriptFile = FileUtils.assertFile(binDir.resolve("start"));
+        Path scriptFile = FileUtils.assertFile(binDir.resolve(Constants.OS_TYPE.withScriptExtension("start")));
         assertExecutable(scriptFile);
     }
 
@@ -137,21 +138,25 @@ class LinkerTest {
     }
 
     private static void assertReadOnly(Path file) throws IOException {
-        Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
-        assertThat(file.toString(), perms, is(Set.of(PosixFilePermission.OWNER_READ,
-                                                     PosixFilePermission.OWNER_WRITE,
-                                                     PosixFilePermission.GROUP_READ,
-                                                     PosixFilePermission.OTHERS_READ)));
+        if (Constants.OS_TYPE.isPosix()) {
+            Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
+            assertThat(file.toString(), perms, is(Set.of(PosixFilePermission.OWNER_READ,
+                                                         PosixFilePermission.OWNER_WRITE,
+                                                         PosixFilePermission.GROUP_READ,
+                                                         PosixFilePermission.OTHERS_READ)));
+        }
     }
 
     private static void assertExecutable(Path file) throws IOException {
-        Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
-        assertThat(file.toString(), perms, is(Set.of(PosixFilePermission.OWNER_READ,
-                                                     PosixFilePermission.OWNER_EXECUTE,
-                                                     PosixFilePermission.OWNER_WRITE,
-                                                     PosixFilePermission.GROUP_READ,
-                                                     PosixFilePermission.GROUP_EXECUTE,
-                                                     PosixFilePermission.OTHERS_READ,
-                                                     PosixFilePermission.OTHERS_EXECUTE)));
+        if (Constants.OS_TYPE.isPosix()) {
+            Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
+            assertThat(file.toString(), perms, is(Set.of(PosixFilePermission.OWNER_READ,
+                                                         PosixFilePermission.OWNER_EXECUTE,
+                                                         PosixFilePermission.OWNER_WRITE,
+                                                         PosixFilePermission.GROUP_READ,
+                                                         PosixFilePermission.GROUP_EXECUTE,
+                                                         PosixFilePermission.OTHERS_READ,
+                                                         PosixFilePermission.OTHERS_EXECUTE)));
+        }
     }
 }

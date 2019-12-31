@@ -21,16 +21,16 @@ import java.util.List;
 import io.helidon.linker.StartScript.TemplateConfig;
 
 import static io.helidon.linker.util.Constants.CDS_UNLOCK_OPTIONS;
-import static io.helidon.linker.util.Constants.OSType.MacOS;
+import static io.helidon.linker.util.Constants.OSType.Windows;
 import static io.helidon.linker.util.Constants.OS_TYPE;
 import static io.helidon.linker.util.FileUtils.fileName;
 import static java.util.Collections.emptyList;
 
 /**
- * Template for bash start script.
+ * Template for start script.
  */
-public class BashStartScriptTemplate extends StartScript.SimpleTemplate {
-    private static final String TEMPLATE_RESOURCE_PATH = "start-template.sh";
+public class StartScriptTemplate extends StartScript.SimpleTemplate {
+    private static final String TEMPLATE_RESOURCE_PATH = OS_TYPE == Windows ? "start-template.ps1" : "start-template.sh";
     private static final String JAR_NAME_VAR = "<JAR_NAME>";
     private static final String DEFAULT_ARGS_VAR = "<DEFAULT_APP_ARGS>";
     private static final String DEFAULT_JVM_VAR = "<DEFAULT_APP_JVM>";
@@ -43,14 +43,11 @@ public class BashStartScriptTemplate extends StartScript.SimpleTemplate {
     private static final String DEFAULT_DEBUG_DESC_VAR = "<DEFAULT_APP_DEBUG_DESC>";
     private static final String EXIT_ON_STARTED_VAR = "<EXIT_ON_STARTED>";
     private static final String STAT_FORMAT_VAR = "<STAT_FORMAT>";
-    private static final String STAT_FORMAT_MAC = "-f %m";
-    private static final String STAT_FORMAT_LINUX = "-c %Y";
     private static final String MODULES_TIME_STAMP_VAR = "<MODULES_TIME_STAMP>";
     private static final String JAR_TIME_STAMP_VAR = "<JAR_TIME_STAMP>";
     private static final String MODULES_FILE = "lib/modules";
     private static final String OVERRIDES = "Overrides \\\"${default%s}\\\".";
-    private static final String CHECK_TIME_STAMPS = "checkTimeStamps()";
-    private static final String CDS_WARNING = "WARNING: CDS";
+    private static final String CHECK_TIME_STAMPS = OS_TYPE == Windows ? "function checkTimeStamps" : "checkTimeStamps()";
     private static final String SETS = "Sets default %s.";
     private static final String CDS = "cds";
     private static final String DEBUG = "debug";
@@ -62,7 +59,7 @@ public class BashStartScriptTemplate extends StartScript.SimpleTemplate {
     /**
      * Constructor.
      */
-    public BashStartScriptTemplate() {
+    public StartScriptTemplate() {
         super(TEMPLATE_RESOURCE_PATH);
         removeLines((index, line) -> isComment(line));
     }
@@ -95,7 +92,8 @@ public class BashStartScriptTemplate extends StartScript.SimpleTemplate {
         final String hasDebug = config.debugInstalled() ? "yes" : "";
         final String cdsUnlock = config.cdsRequiresUnlock() ? CDS_UNLOCK_OPTIONS + " " : "";
 
-        final String statFormat = OS_TYPE == MacOS ? STAT_FORMAT_MAC : STAT_FORMAT_LINUX;
+        final String statFormat = OS_TYPE.statFormat();
+
         final String modulesModTime = lastModifiedTime(config.installHomeDirectory().resolve(MODULES_FILE));
         final String jarModTime = lastModifiedTime(config.mainJar());
         final String copyInstructions = config.cdsSupportsImageCopy() ? COPY_SUPPORTED : COPY_NOT_SUPPORTED;
@@ -129,9 +127,8 @@ public class BashStartScriptTemplate extends StartScript.SimpleTemplate {
 
     private void removeCheckTimeStampFunction() {
         final int startIndex = indexOf(0, CHECK_TIME_STAMPS, false);
-        final int warningIndex = indexOf(startIndex + 1, CDS_WARNING, false);
-        final int closingBraceIndex = indexOf(warningIndex + 1, "}", false) + 1;
-        removeLines((index, line) -> index >= startIndex && index <= closingBraceIndex);
+        final int endIndex = indexOfEquals(startIndex, "}") + 1;
+        removeLines((index, line) -> index >= startIndex && index <= endIndex);
     }
 
     private static boolean isComment(String line) {

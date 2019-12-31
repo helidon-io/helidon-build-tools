@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
+import io.helidon.linker.util.Constants;
 import io.helidon.linker.util.FileUtils;
 import io.helidon.linker.util.Log;
 import io.helidon.linker.util.ProcessMonitor;
@@ -43,7 +44,7 @@ import static io.helidon.linker.util.Constants.CDS_SUPPORTS_IMAGE_COPY;
 import static io.helidon.linker.util.Constants.CDS_UNLOCK_OPTIONS;
 import static io.helidon.linker.util.Constants.DIR_SEP;
 import static io.helidon.linker.util.Constants.EOL;
-import static io.helidon.linker.util.Constants.OSType.Windows;
+import static io.helidon.linker.util.Constants.OSType.Unknown;
 import static io.helidon.linker.util.Constants.OS_TYPE;
 import static io.helidon.linker.util.FileUtils.assertDir;
 import static java.util.Collections.emptyList;
@@ -53,7 +54,7 @@ import static java.util.Objects.requireNonNull;
  * Installs a start script for a main jar.
  */
 public class StartScript {
-    private static final String INSTALL_PATH = "start";
+    private static final String INSTALL_PATH = Constants.OS_TYPE.withScriptExtension("start");
     private final Path installDirectory;
     private final Path scriptFile;
     private final String script;
@@ -90,15 +91,17 @@ public class StartScript {
     Path install() {
         try {
             Files.copy(new ByteArrayInputStream(script.getBytes(StandardCharsets.UTF_8)), scriptFile);
-            Files.setPosixFilePermissions(scriptFile, Set.of(
-                PosixFilePermission.OWNER_READ,
-                PosixFilePermission.OWNER_WRITE,
-                PosixFilePermission.OWNER_EXECUTE,
-                PosixFilePermission.GROUP_READ,
-                PosixFilePermission.GROUP_EXECUTE,
-                PosixFilePermission.OTHERS_READ,
-                PosixFilePermission.OTHERS_EXECUTE
-            ));
+            if (OS_TYPE.isPosix()) {
+                Files.setPosixFilePermissions(scriptFile, Set.of(
+                        PosixFilePermission.OWNER_READ,
+                        PosixFilePermission.OWNER_WRITE,
+                        PosixFilePermission.OWNER_EXECUTE,
+                        PosixFilePermission.GROUP_READ,
+                        PosixFilePermission.GROUP_EXECUTE,
+                        PosixFilePermission.OTHERS_READ,
+                        PosixFilePermission.OTHERS_EXECUTE
+                ));
+            }
             return scriptFile;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -116,8 +119,12 @@ public class StartScript {
         final ProcessBuilder processBuilder = new ProcessBuilder();
         final List<String> command = new ArrayList<>();
         final Path root = requireNonNull(requireNonNull(scriptFile.getParent()).getParent());
+        if (Constants.OS_TYPE.scriptExecutor() != null) {
+            command.add(Constants.OS_TYPE.scriptExecutor());
+        }
         command.add(scriptFile.toString());
         command.addAll(Arrays.asList(args));
+        Log.debug("Commands: %s", command.toString());
         processBuilder.command(command);
         processBuilder.directory(root.toFile());
         try {
@@ -367,6 +374,17 @@ public class StartScript {
         }
 
         /**
+         * Returns the index of the first line that is equals to the given str.
+         * @param startIndex The start index.
+         * @param str The string.
+         * @return The index.
+         * @throws IllegalStateException if no matching line is found.
+         */
+        protected int indexOfEquals(int startIndex, String str) {
+            return indexOf(startIndex, (index, line) -> line.equals(str));
+        }
+
+        /**
          * Returns the index of the first line that matches the given predicate.
          *
          * @param startIndex The start index.
@@ -580,10 +598,10 @@ public class StartScript {
 
         private Template template() {
             if (template == null) {
-                if (OS_TYPE.equals(Windows)) {
+                if (OS_TYPE == Unknown) {
                     throw new PlatformNotSupportedError(config.toCommand());
                 } else {
-                    return new BashStartScriptTemplate();
+                    return new StartScriptTemplate();
                 }
             } else {
                 return template;

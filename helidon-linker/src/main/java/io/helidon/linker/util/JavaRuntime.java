@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,8 @@ public final class JavaRuntime implements ResourceContainer {
     private static final String JMOD_MODULE_INFO_PATH = JMOD_CLASSES_PREFIX + "module-info.class";
     private static final String JRI_SUFFIX = "-jri";
     private static final String FILE_SEP = File.separator;
-    private static final String JAVA_CMD_PATH = "bin" + FILE_SEP + "java";
+    private static final String JAVA_EXEC = Constants.OS_TYPE.javaExecutable();
+    private static final String JAVA_CMD_PATH = "bin" + FILE_SEP + JAVA_EXEC;
     private final Path javaHome;
     private final Runtime.Version version;
     private final boolean isJdk;

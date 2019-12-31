@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.linker.util.Constants;
 import io.helidon.linker.util.StreamUtils;
 import io.helidon.test.util.TestFiles;
 
@@ -50,6 +51,7 @@ class StartScriptTest {
     private static final String JAR_NAME = INSTALLED_JAR_FILE.getFileName().toString();
     private static final String EXIT_ON_STARTED_VALUE = TestFiles.exitOnStartedValue();
     private static final String EXIT_ON_STARTED = "-Dexit.on.started=" + EXIT_ON_STARTED_VALUE;
+    private static final String NOT = Constants.OS_TYPE == Constants.OSType.Windows ? "-ne" : "!=";
 
     private StartScript.Builder builder() {
         return StartScript.builder()
@@ -68,7 +70,7 @@ class StartScriptTest {
 
     private static String timeStampComparison(String name, Path file) {
         final String timestamp = Long.toString(lastModifiedTime(file));
-        return "${" + name + "TimeStamp} != \"" + timestamp + "\"";
+        return "${" + name + "TimeStamp} "+NOT+" \"" + timestamp + "\"";
     }
 
     @Test
@@ -125,20 +127,20 @@ class StartScriptTest {
         assertThat(script, containsString("--debug         Add JVM debug options."));
         assertThat(script, containsString("DEFAULT_APP_DEBUG"));
 
-        assertThat(script, containsString("local -r defaultDebug="));
-        assertThat(script, containsString("local -r cdsOption="));
-        assertThat(script, containsString("local useCds="));
-        assertThat(script, containsString("local debug"));
+        assertThat(script, containsString("defaultDebug="));
+        assertThat(script, containsString("cdsOption="));
+        assertThat(script, containsString("useCds="));
+        assertThat(script, containsString("debug"));
 
-        assertThat(script, containsString("--noCds)"));
-        assertThat(script, containsString("--debug)"));
+        assertThat(script, containsString("--noCds"));
+        assertThat(script, containsString("--debug"));
 
         assertThat(script, containsString("${useCds}"));
         assertThat(script, containsString("${debug}"));
 
         assertThat(script, containsString(modulesTimeStampComparison()));
         assertThat(script, containsString(jarTimeStampComparison()));
-        assertThat(script, containsString("timeStamp"));
+        assertThat(script, containsString("TimeStamp"));
 
         assertThat(script, containsString(EXIT_ON_STARTED));
     }
@@ -150,13 +152,13 @@ class StartScriptTest {
         assertThat(script, containsString("--debug         Add JVM debug options."));
         assertThat(script, containsString("DEFAULT_APP_DEBUG"));
 
-        assertThat(script, containsString("local -r defaultDebug="));
-        assertThat(script, not(containsString("local -r cdsOption=")));
-        assertThat(script, not(containsString("local useCds=")));
-        assertThat(script, containsString("local debug"));
+        assertThat(script, containsString("defaultDebug="));
+        assertThat(script, not(containsString("cdsOption=")));
+        assertThat(script, not(containsString("useCds=")));
+        assertThat(script, containsString("debug"));
 
-        assertThat(script, not(containsString("--noCds)")));
-        assertThat(script, containsString("--debug)"));
+        assertThat(script, not(containsString("--noCds")));
+        assertThat(script, containsString("--debug"));
 
         assertThat(script, not(containsString("${useCds}")));
         assertThat(script, containsString("${debug}"));
@@ -175,20 +177,20 @@ class StartScriptTest {
         assertThat(script, not(containsString("--debug         Add JVM debug options.")));
         assertThat(script, not(containsString("DEFAULT_APP_DEBUG")));
 
-        assertThat(script, not(containsString("local -r defaultDebug=")));
-        assertThat(script, containsString("local -r cdsOption="));
-        assertThat(script, containsString("local useCds="));
-        assertThat(script, not(containsString("local debug")));
+        assertThat(script, not(containsString("defaultDebug=")));
+        assertThat(script, containsString("cdsOption="));
+        assertThat(script, containsString("useCds="));
+        assertThat(script, not(containsString("debug")));
 
-        assertThat(script, containsString("--noCds)"));
-        assertThat(script, not(containsString("--debug)")));
+        assertThat(script, containsString("--noCds"));
+        assertThat(script, not(containsString("--debug")));
 
         assertThat(script, containsString("${useCds}"));
         assertThat(script, not(containsString("${debug}")));
 
         assertThat(script, containsString(modulesTimeStampComparison()));
         assertThat(script, containsString(jarTimeStampComparison()));
-        assertThat(script, containsString("timeStamp"));
+        assertThat(script, containsString("TimeStamp"));
 
         assertThat(script, containsString(EXIT_ON_STARTED));
     }
@@ -200,13 +202,13 @@ class StartScriptTest {
         assertThat(script, not(containsString("--debug         Add JVM debug options.")));
         assertThat(script, not(containsString("DEFAULT_APP_DEBUG")));
 
-        assertThat(script, not(containsString("local -r defaultDebug=")));
-        assertThat(script, not(containsString("local -r cdsOption=")));
-        assertThat(script, not(containsString("local useCds=")));
-        assertThat(script, not(containsString("local debug")));
+        assertThat(script, not(containsString("defaultDebug=")));
+        assertThat(script, not(containsString("cdsOption=")));
+        assertThat(script, not(containsString("useCds=")));
+        assertThat(script, not(containsString("debug")));
 
-        assertThat(script, not(containsString("--noCds)")));
-        assertThat(script, not(containsString("--debug)")));
+        assertThat(script, not(containsString("--noCds")));
+        assertThat(script, not(containsString("--debug")));
 
         assertThat(script, not(containsString("${useCds}")));
         assertThat(script, not(containsString("${debug}")));
@@ -220,7 +222,7 @@ class StartScriptTest {
 
     @Test
     void testInstall() throws Exception {
-        Path installedScript = BIN_DIR.resolve("start");
+        Path installedScript = BIN_DIR.resolve(Constants.OS_TYPE.withScriptExtension("start"));
         Files.deleteIfExists(installedScript);
         StartScript script = builder().build();
         Path scriptFile = script.install();
@@ -232,13 +234,15 @@ class StartScriptTest {
     }
 
     private static void assertExecutable(Path file) throws IOException {
-        Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
-        assertThat(file.toString(), perms, is(Set.of(PosixFilePermission.OWNER_READ,
-                                                     PosixFilePermission.OWNER_EXECUTE,
-                                                     PosixFilePermission.OWNER_WRITE,
-                                                     PosixFilePermission.GROUP_READ,
-                                                     PosixFilePermission.GROUP_EXECUTE,
-                                                     PosixFilePermission.OTHERS_READ,
-                                                     PosixFilePermission.OTHERS_EXECUTE)));
+        if (Constants.OS_TYPE.isPosix()) {
+            Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
+            assertThat(file.toString(), perms, is(Set.of(PosixFilePermission.OWNER_READ,
+                                                         PosixFilePermission.OWNER_EXECUTE,
+                                                         PosixFilePermission.OWNER_WRITE,
+                                                         PosixFilePermission.GROUP_READ,
+                                                         PosixFilePermission.GROUP_EXECUTE,
+                                                         PosixFilePermission.OTHERS_READ,
+                                                         PosixFilePermission.OTHERS_EXECUTE)));
+        }
     }
 }
