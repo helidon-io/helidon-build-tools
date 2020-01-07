@@ -188,13 +188,32 @@ public class GraalNativeMojo extends AbstractMojo {
         if (noServer) {
             command.add("--no-server");
         }
-        command.add("-classpath");
-        command.add(getClasspath());
+
+        /*
+         * this is only useful when using a main class. Leaving here for future reference, if we want
+         * to make it an option
+         */
+        //command.add("-classpath");
+        //command.add(getClasspath());
+
         if (additionalArgs != null) {
             command.addAll(additionalArgs);
         }
+
+        /*
+         * when using a main class, the following two lines must not be used
+         * when using a jar, the jar itself and whole `Class-Path` from manifest are added to the
+         * classpath automatically. Adding the classpath once more causes issues with libraries
+         * doing classpath scanning (slf4j, CDI)
+         */
         command.add("-jar");
         command.add(artifact.getAbsolutePath());
+
+        /*
+         * this is only useful when using a main class. Leaving here for future reference
+         */
+        // command.add(effectiveMainClass);
+
         getLog().debug("Executing command: " + command);
 
         // execute the command process
@@ -259,7 +278,7 @@ public class GraalNativeMojo extends AbstractMojo {
      * resources.
      * @return String as comma separated list
      */
-    private String getResources(){
+    private String getResources() {
         // scan all resources
         getLog().debug("Building resources string");
         List<String> resources = new ArrayList<>();
@@ -342,7 +361,6 @@ public class GraalNativeMojo extends AbstractMojo {
     /**
      * Find the {@code native-image} command file.
      *
-     * @param graalVmHome the configured {@code GRAALVM_HOME}
      * @return File
      * @throws MojoExecutionException if unable to find the command file
      */
