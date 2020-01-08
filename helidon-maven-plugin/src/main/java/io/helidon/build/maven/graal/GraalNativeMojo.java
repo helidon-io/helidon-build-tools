@@ -47,9 +47,9 @@ import org.sonatype.plexus.build.incremental.BuildContext;
       requiresDependencyResolution = ResolutionScope.RUNTIME,
       requiresProject = true)
 public class GraalNativeMojo extends AbstractMojo {
-    private static final String COMPILE_TYPE_MAIN_CLASS = "main";
-    private static final String COMPILE_TYPE_JAR = "jar";
-    private static final String COMPILE_TYPE_JAR_WITH_CP = "jar-cp";
+    private static final String EXEC_MODE_MAIN_CLASS = "main";
+    private static final String EXEC_MODE_JAR = "jar";
+    private static final String EXEC_MODE_JAR_WITH_CP = "jar-cp";
 
     /**
      * Constant for the {@code native-image} command file name.
@@ -108,9 +108,9 @@ public class GraalNativeMojo extends AbstractMojo {
     @Parameter(defaultValue = "true")
     private boolean addProjectResources;
 
-    @Parameter(defaultValue = COMPILE_TYPE_JAR,
-               property = "native.image.compileType")
-    private String compileType;
+    @Parameter(defaultValue = EXEC_MODE_JAR,
+               property = "native.image.execMode")
+    private String execMode;
 
     @Parameter(defaultValue = "${mainClass}",
                property = "native.image.mainClass")
@@ -155,7 +155,7 @@ public class GraalNativeMojo extends AbstractMojo {
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         getLog().debug("Skip: " + skipNativeImage);
-        getLog().debug("Type: " + compileType);
+        getLog().debug("Type: " + execMode);
         getLog().debug("Main class: " + mainClass);
 
         if (skipNativeImage) {
@@ -163,7 +163,7 @@ public class GraalNativeMojo extends AbstractMojo {
             return;
         }
 
-        NativeContext context = new NativeContext(compileType, mainClass);
+        NativeContext context = new NativeContext(execMode, mainClass);
         context.artifact(project, buildDirectory);
         context.validate();
 
@@ -443,7 +443,7 @@ public class GraalNativeMojo extends AbstractMojo {
         return cmd;
     }
 
-    private static class NativeContext {
+    private static final class NativeContext {
         private final boolean useJar;
         private final boolean useMain;
         private final boolean addClasspath;
@@ -451,29 +451,29 @@ public class GraalNativeMojo extends AbstractMojo {
 
         private File artifact;
 
-        private NativeContext(String compileType, String mainClass) throws MojoFailureException {
+        private NativeContext(String execMode, String mainClass) throws MojoFailureException {
             this.mainClass = mainClass;
-            switch (compileType) {
-            case COMPILE_TYPE_JAR:
+            switch (execMode) {
+            case EXEC_MODE_JAR:
                 useJar = true;
                 useMain = false;
                 addClasspath = false;
                 break;
-            case COMPILE_TYPE_JAR_WITH_CP:
+            case EXEC_MODE_JAR_WITH_CP:
                 useJar = true;
                 useMain = false;
                 addClasspath = true;
                 break;
-            case COMPILE_TYPE_MAIN_CLASS:
+            case EXEC_MODE_MAIN_CLASS:
                 useJar = false;
                 useMain = true;
                 addClasspath = true;
                 break;
             default:
-                throw new MojoFailureException("Invalid configuration of \"buildType\". Has to be one of: "
-                                                       + COMPILE_TYPE_JAR + ", "
-                                                       + COMPILE_TYPE_JAR_WITH_CP + ", or "
-                                                       + COMPILE_TYPE_MAIN_CLASS);
+                throw new MojoFailureException("Invalid configuration of \"execMode\". Has to be one of: "
+                                                       + EXEC_MODE_JAR + ", "
+                                                       + EXEC_MODE_JAR_WITH_CP + ", or "
+                                                       + EXEC_MODE_MAIN_CLASS);
             }
         }
 
