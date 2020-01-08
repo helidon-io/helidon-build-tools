@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.maven;
+package io.helidon.build.maven.graal;
 
 import java.io.BufferedReader;
 import java.io.File;

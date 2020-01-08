@@ -51,6 +51,11 @@
             <groupId>org.sonatype.plexus</groupId>
             <artifactId>plexus-build-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools</groupId>
+            <artifactId>helidon-linker</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -60,7 +65,7 @@
                 <artifactId>maven-plugin-plugin</artifactId>
                 <configuration>
                     <goalPrefix>helidon</goalPrefix>
-                    <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
+                    <skipErrorNoDescriptorsFound>false</skipErrorNoDescriptorsFound>
                 </configuration>
                 <executions>
                     <execution>
