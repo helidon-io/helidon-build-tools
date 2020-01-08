@@ -453,7 +453,7 @@ public class GraalNativeMojo extends AbstractMojo {
 
         private NativeContext(String compileType, String mainClass) throws MojoFailureException {
             this.mainClass = mainClass;
-            switch(compileType) {
+            switch (compileType) {
             case COMPILE_TYPE_JAR:
                 useJar = true;
                 useMain = false;
@@ -471,7 +471,9 @@ public class GraalNativeMojo extends AbstractMojo {
                 break;
             default:
                 throw new MojoFailureException("Invalid configuration of \"buildType\". Has to be one of: "
-                                                       + COMPILE_TYPE_JAR + ", " + COMPILE_TYPE_JAR_WITH_CP + ", or " + COMPILE_TYPE_MAIN_CLASS);
+                                                       + COMPILE_TYPE_JAR + ", "
+                                                       + COMPILE_TYPE_JAR_WITH_CP + ", or "
+                                                       + COMPILE_TYPE_MAIN_CLASS);
             }
         }
 
