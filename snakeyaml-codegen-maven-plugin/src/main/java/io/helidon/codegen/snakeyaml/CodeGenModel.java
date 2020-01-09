@@ -32,7 +32,7 @@ class CodeGenModel {
     }
 
     Collection<Type> typesToAugment() {
-        return types.stream().filter(t -> t.implementationType != null).collect(Collectors.toList());
+        return types.stream().filter(t -> t.implementationType() != null).collect(Collectors.toList());
     }
 
     List<SnakeYAMLMojo.Import> javaImports() {
@@ -48,6 +48,6 @@ class CodeGenModel {
     }
 
     private List<SnakeYAMLMojo.Import> filteredImports(String namePrefix) {
-        return imports.stream().filter(i -> i.name.startsWith(namePrefix)).sorted().collect(Collectors.toList());
+        return imports.stream().filter(i -> i.name().startsWith(namePrefix)).sorted().collect(Collectors.toList());
     }
 }

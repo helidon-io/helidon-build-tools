@@ -40,18 +40,18 @@ import java.util.stream.Stream;
  */
 class Type {
 
-    final String fullName;
-    final String simpleName;
-    final List<String> interfacesImplemented;
-    final boolean isInterface;
+    private final String fullName;
+    private final String simpleName;
+    private final List<String> interfacesImplemented;
+    private final boolean isInterface;
 
-    String implementationType;
-    boolean isRef = false;
-    final Map<String, TypeEnum> typeEnumsByType = new HashMap<>();
-    final List<PropertyParameter> propertyParameters = new ArrayList<>();
+    private String implementationType;
+    private boolean isRef = false;
+    private final Map<String, TypeEnum> typeEnumsByType = new HashMap<>();
+    private final List<PropertyParameter> propertyParameters = new ArrayList<>();
 
     // Prop subs are recorded here but are set from the caller, not by the compilation/analysis.
-    final List<PropertySubstitution> substitutions = new ArrayList<>();
+    private final List<PropertySubstitution> substitutions = new ArrayList<>();
 
     Type(String fullName, String simpleName, boolean isInterface, List<String> interfacesImplemented) {
         this.fullName = fullName;
@@ -63,6 +63,42 @@ class Type {
     Type typeEnumByType(String type) {
         typeEnumsByType.computeIfAbsent(type, TypeEnum::byType);
         return this;
+    }
+
+    String fullName() {
+        return fullName;
+    }
+
+    String simpleName() {
+        return simpleName;
+    }
+
+    List<String> interfacesImplemented() {
+        return interfacesImplemented;
+    }
+
+    boolean isInterface() {
+        return isInterface;
+    }
+
+    String implementationType() {
+        return implementationType;
+    }
+
+    boolean isRef() {
+        return isRef;
+    }
+
+    Map<String, TypeEnum> typeEnumsByType() {
+        return typeEnumsByType;
+    }
+
+    List<PropertyParameter> propertyParameters() {
+        return propertyParameters;
+    }
+
+    List<PropertySubstitution> substitutions() {
+        return substitutions;
     }
 
     Optional<TypeEnum> getTypeEnum(String type) {

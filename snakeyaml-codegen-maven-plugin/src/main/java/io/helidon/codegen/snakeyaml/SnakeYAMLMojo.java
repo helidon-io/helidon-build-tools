@@ -317,7 +317,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
      * An import required in the generated source.
      */
     static class Import implements Comparable<Import> {
-        String name;
+        private String name;
         boolean isStatic;
 
         Import(String name, boolean isStatic) {
@@ -327,6 +327,10 @@ public class SnakeYAMLMojo extends AbstractMojo {
 
         Import(Class<?> c) {
             this(c.getName(), false);
+        }
+
+        String name() {
+            return name;
         }
 
         @Override
@@ -404,11 +408,11 @@ public class SnakeYAMLMojo extends AbstractMojo {
     private void associateImplementationsWithInterfaces(Map<String, Type> types, Map<String, List<String>> interfaces) {
         types.values()
                 .forEach(t -> {
-                    List<String> impls = interfaces.get(t.simpleName);
+                    List<String> impls = interfaces.get(t.simpleName());
                     if (impls != null) {
                         if (impls.size() > 1) {
                             getLog().warn(String.format("Multiple implementations found for %s: %s",
-                                    t.simpleName, impls));
+                                    t.simpleName(), impls));
                         }
                         t.implementationType(impls.get(0));
                     }
@@ -461,7 +465,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
 //    }
 
     private void addImportsForTypes(Map<String, Type> types, Set<Import> imports) {
-        types.forEach((name, type) -> imports.add(new Import(type.fullName, false)));
+        types.forEach((name, type) -> imports.add(new Import(type.fullName(), false)));
     }
 
     private void generateHelperClass(Map<String, Type> types, Set<Import> imports) throws IOException {
@@ -561,10 +565,10 @@ public class SnakeYAMLMojo extends AbstractMojo {
                 if (interfacesToImpls != null) {
                     interfaces.stream()
                             .map(intf -> interfacesToImpls.computeIfAbsent(intf, key -> new ArrayList<>()))
-                            .forEach(list -> list.add(newType.simpleName));
+                            .forEach(list -> list.add(newType.simpleName()));
                 }
                 types.put(typeName, newType);
-                imports.add(new Import(newType.fullName, false));
+                imports.add(new Import(newType.fullName(), false));
                 updateRef(node, newType);
                 /*
                  * Define enums now to make sure they are defined before they are referenced in
