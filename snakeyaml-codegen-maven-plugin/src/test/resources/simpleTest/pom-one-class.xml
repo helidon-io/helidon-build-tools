@@ -26,7 +26,6 @@
     <properties>
         <version.plugin.openapicodegen>1.0.11-SNAPSHOT</version.plugin.openapicodegen>
         <version.lib.microprofile.openapi>1.1.2</version.lib.microprofile.openapi>
-<!--        <openapi-source-dir>${project.build.directory}/extracted</openapi-source-dir>-->
     </properties>
 
     <dependencies>
@@ -41,7 +40,7 @@
 
             <plugin>
                 <groupId>io.helidon.build-tools</groupId>
-                <artifactId>openapi-codegen-maven-plugin</artifactId>
+                <artifactId>snakeyaml-codegen-maven-plugin</artifactId>
                 <version>${version.plugin.openapicodegen}</version>
                 <configuration>
                     <interfacesConfig>
