@@ -44,15 +44,15 @@
                 <artifactId>openapi-codegen-maven-plugin</artifactId>
                 <version>${version.plugin.openapicodegen}</version>
                 <configuration>
-<!--                    <interfacesConfig>-->
-<!--                        <inputDirectory>openapi</inputDirectory>-->
-<!--                        <includes>**/*.java</includes>-->
-<!--                    </interfacesConfig>-->
-<!--                    <implementationsConfig>-->
-<!--                        <inputDirectory>smallrye</inputDirectory>-->
-<!--                        <includes>**/*.java</includes>-->
-<!--                    </implementationsConfig>-->
-                    <generatedClass>io.helidon.codegen.openapi.test.GeneratedForParser</generatedClass>
+                    <interfacesConfig>
+                        <inputDirectory>interfaces</inputDirectory>
+                        <includes>**/*.java</includes>
+                    </interfacesConfig>
+                    <implementationsConfig>
+                        <inputDirectory>implementations</inputDirectory>
+                        <includes>**/*.java</includes>
+                    </implementationsConfig>
+                    <outputClass>io.helidon.codegen.openapi.test.GeneratedForParser</outputClass>
                 </configuration>
             </plugin>
         </plugins>

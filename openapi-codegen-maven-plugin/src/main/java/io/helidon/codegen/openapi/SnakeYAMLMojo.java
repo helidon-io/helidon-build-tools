@@ -15,50 +15,6 @@
  */
 package io.helidon.codegen.openapi;
 
-import com.github.mustachejava.DefaultMustacheFactory;
-import com.github.mustachejava.Mustache;
-import com.github.mustachejava.MustacheFactory;
-
-import com.sun.source.tree.ClassTree;
-import com.sun.source.tree.ExpressionTree;
-import com.sun.source.tree.IdentifierTree;
-import com.sun.source.tree.ImportTree;
-import com.sun.source.tree.MemberSelectTree;
-import com.sun.source.tree.MethodTree;
-import com.sun.source.tree.ParameterizedTypeTree;
-import com.sun.source.tree.Tree;
-import com.sun.source.tree.VariableTree;
-import com.sun.source.util.TreePath;
-import com.sun.source.util.TreePathScanner;
-import com.sun.source.util.Trees;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-
-import org.apache.maven.plugins.annotations.LifecyclePhase;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.plugins.annotations.ResolutionScope;
-import org.apache.maven.project.MavenProject;
-
-import org.eclipse.microprofile.openapi.models.Operation;
-import org.eclipse.microprofile.openapi.models.PathItem;
-import org.eclipse.microprofile.openapi.models.media.Schema;
-
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.Processor;
-import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
-import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.TypeElement;
-import javax.tools.DiagnosticListener;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.ToolProvider;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -78,8 +34,53 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.annotation.processing.Processor;
+import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedSourceVersion;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.tools.DiagnosticListener;
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
+
+import com.github.mustachejava.DefaultMustacheFactory;
+import com.github.mustachejava.Mustache;
+import com.github.mustachejava.MustacheFactory;
+
+import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.IdentifierTree;
+import com.sun.source.tree.ImportTree;
+import com.sun.source.tree.MemberSelectTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.ParameterizedTypeTree;
+import com.sun.source.tree.Tree;
+import com.sun.source.tree.VariableTree;
+import com.sun.source.util.TreePath;
+import com.sun.source.util.TreePathScanner;
+import com.sun.source.util.Trees;
+
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.project.MavenProject;
+
+import org.eclipse.microprofile.openapi.models.Operation;
+import org.eclipse.microprofile.openapi.models.PathItem;
+import org.eclipse.microprofile.openapi.models.media.Schema;
 
 /**
  * Goal which generates code to help with parsing YAML and JSON using SnakeYAML.
@@ -92,6 +93,10 @@ import java.util.stream.Stream;
  *     It analyzes Java sources in a specified location and generates a SnakeYAML
  *     {@code TypeDefinition} for each class. It also uses a second location to locate implementations of interfaces from the
  *     first area for use in setting the impl classes in those {@code TypeDefinition} instances.
+ * </p>
+ * <p>
+ *     Often, builds will use the maven dependency plug-in to extract sources into those
+ *     two locations and then invoke the plug-in to analyze the code and generate the helper class.
  * </p>
  *
  */
@@ -120,7 +125,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
  *             <phase>package</phase>
  *             <goals>
  *               <!-- use copy-dependencies instead if you don't want to explode the sources -->
-                *               <goal>unpack-dependencies</goal>
+ *               <goal>unpack-dependencies</goal>
  *             </goals>
  *             <configuration>
  *               <artifactItems>
@@ -182,8 +187,8 @@ public class SnakeYAMLMojo extends AbstractMojo {
     /**
      * Fully-qualified name for the class to generate.
      */
-    @Parameter(property = PROPERTY_PREFIX + "generatedClass", required = true)
-    private String generatedClass;
+    @Parameter(property = PROPERTY_PREFIX + "outputClass", required = true)
+    private String outputClass;
 
     /**
      * Configuration for compiling the interfaces for which SnakeYAML will need to parse.
@@ -197,9 +202,16 @@ public class SnakeYAMLMojo extends AbstractMojo {
     @Parameter(property = PROPERTY_PREFIX + "implementationsConfig", required = true)
     CompilerConfig implementationsConfig;
 
+    /**
+     * Controls debug output from the plug-in.
+     */
     @Parameter(property = PROPERTY_PREFIX + "debug", defaultValue = "false")
     boolean debug;
 
+    /**
+     * Prescribes how the plug-in finds Java classes to analyze for either the interfaces or the
+     * implementations.
+     */
     public static class CompilerConfig {
         String inputDirectory = null; // defaults to "interfaces" or "implementations"
         List<String> includes = defaultIncludes();
@@ -212,21 +224,35 @@ public class SnakeYAMLMojo extends AbstractMojo {
         }
     }
 
+    /**
+     * Sets the compiler config for analyzing the interfaces.
+     *
+     * @param config CompilerConfig for analyzing interfaces
+     */
     public void setInterfacesConfig(CompilerConfig config) {
         this.interfacesConfig = fillInConfig(config, "interfaces");
     }
 
+    /**
+     * Sets the compiler config for analyzing the implementations.
+     *
+     * @param config CompilerConfig for analyzing implementations
+     */
     public void setImplementationsConfig(CompilerConfig config) {
         this.implementationsConfig = fillInConfig(config, "implementations");
     }
 
     private CompilerConfig fillInConfig(CompilerConfig config, String defaultInputDirectory) {
         if (config.inputDirectory == null) {
-            config.inputDirectory = defaultInputDirectory;
+            config.inputDirectory = mavenProject.getBuild().getOutputDirectory().concat("/").concat(defaultInputDirectory);
         }
         return config;
     }
 
+    /**
+     * Runs the goal, analyzing interfaces and implementations and generating the helper class.
+     * @throws MojoExecutionException
+     */
     public void execute()
         throws MojoExecutionException
     {
@@ -237,9 +263,9 @@ public class SnakeYAMLMojo extends AbstractMojo {
         File f = outputDirectory;
         if (!f.exists()) {
             if (f.mkdirs()) {
-                debugLog("Created output directory " + f.getAbsolutePath());
+                debugLog(() -> "Created output directory " + f.getAbsolutePath());
             } else {
-                debugLog("Using existing output directory " + f.getAbsolutePath());
+                debugLog(() -> "Using existing output directory " + f.getAbsolutePath());
             }
         }
 
@@ -257,16 +283,24 @@ public class SnakeYAMLMojo extends AbstractMojo {
 
             associateImplementationsWithInterfaces(types, interfaces);
 
-            generateParserClass(types, imports);
+            generateHelperClass(types, imports);
 
         } catch (Throwable e) {
             throw new MojoExecutionException("Error compiling and analyzing source files", e);
         }
     }
 
-    private void debugLog(String msg) {
+    Set<Import> imports() {
+        return imports;
+    }
+
+    Map<String, List<String>> interfaces() {
+        return interfaces;
+    }
+
+    private void debugLog(Supplier<String> msgSupplier) {
         if (getLog().isDebugEnabled() || debug) {
-            getLog().debug(msg);
+            getLog().debug(msgSupplier.get());
         }
     }
 
@@ -274,8 +308,8 @@ public class SnakeYAMLMojo extends AbstractMojo {
         if (!getLog().isDebugEnabled()) {
             return;
         }
-        debugLog(dumpConfig(interfacesConfig, "interfaces"));
-        debugLog(dumpConfig(implementationsConfig, "implementations"));
+        debugLog(() -> dumpConfig(interfacesConfig, "interfaces"));
+        debugLog(() -> dumpConfig(implementationsConfig, "implementations"));
     }
 
     private String dumpConfig(CompilerConfig config, String category) {
@@ -391,7 +425,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
          * appear in the build output.
          */
         DiagnosticListener<JavaFileObject> diagListener = diagnostic -> {
-            debugLog(diagnostic.toString());
+            debugLog(() -> diagnostic.toString());
         };
 
         JavaCompiler jc = ToolProvider.getSystemJavaCompiler();
@@ -406,10 +440,10 @@ public class SnakeYAMLMojo extends AbstractMojo {
         task.call();
 
         getLog().info(String.format("Types prepared for %s: %d", note, types.size()));
-        debugLog(String.format("Types prepared for %s: %s", note, types));
-        debugLog(String.format("Imports after analyzing %s: %s", note,
+        debugLog(() -> String.format("Types prepared for %s: %s", note, types));
+        debugLog(() -> String.format("Imports after analyzing %s: %s", note,
                 imports.stream().sorted().map(Import::toString).collect(Collectors.joining(","))));
-        debugLog(String.format("Interface impls after analyzing %s: %s", note, interfaces));
+        debugLog(() -> String.format("Interface impls after analyzing %s: %s", note, interfaces));
     }
 
     private void addPropertySubstitutions(Map<String, Type> types) {
@@ -432,7 +466,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
         types.forEach((name, type) -> imports.add(new Import(type.fullName, false)));
     }
 
-    private void generateParserClass(Map<String, Type> types, Set<Import> imports) throws IOException {
+    private void generateHelperClass(Map<String, Type> types, Set<Import> imports) throws IOException {
         Path outputPath = Paths.get(outputDirectory.getAbsolutePath(), "Parser.java");
         Writer writer = new OutputStreamWriter(new FileOutputStream(outputPath.toFile()));
         MustacheFactory mf = new DefaultMustacheFactory();
@@ -483,7 +517,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
                 paths.stream()
                         .map(Path::toFile)
                         .collect(Collectors.toList());
-        debugLog("Files to be compiled: " + files.toString());
+        debugLog(() -> "Files to be compiled: " + files.toString());
         return fm.getJavaFileObjectsFromFiles(files);
     }
 
