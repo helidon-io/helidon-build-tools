@@ -17,12 +17,14 @@
 package io.helidon.test.util;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
 import io.helidon.linker.Application;
+import io.helidon.linker.util.Constants;
 import io.helidon.linker.util.Log;
 import io.helidon.linker.util.ProcessMonitor;
 
@@ -37,6 +39,7 @@ import static io.helidon.linker.util.FileUtils.assertFile;
  */
 public class TestFiles {
     private static final Path OUR_TARGET_DIR = ourTargetDir();
+    private static final String MAVEN_EXEC = Constants.OS_TYPE.mavenExec();
     private static final String HELIDON_GROUP_ID = "io.helidon";
     private static final String HELIDON_PROJECT_ID = "helidon-project";
     private static final String ARCHETYPES_GROUP_ID = "io.helidon.archetypes";
@@ -149,8 +152,12 @@ public class TestFiles {
     }
 
     private static Path ourTargetDir() {
-        final Path ourCodeSource = Paths.get(TestFiles.class.getProtectionDomain().getCodeSource().getLocation().getPath());
-        return ourCodeSource.getParent();
+        try {
+            final Path ourCodeSource = Paths.get(TestFiles.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+            return ourCodeSource.getParent();
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private static Path getOrCreateQuickstartSeJar() {
@@ -181,7 +188,7 @@ public class TestFiles {
         final Path sourceDir = assertDir(ourTargetDir().resolve(id));
         Log.info("Building %s", id);
         execute(new ProcessBuilder().directory(sourceDir.toFile())
-                                    .command(List.of("mvn", "clean", "package", "-DskipTests")));
+                                    .command(List.of(MAVEN_EXEC, "clean", "package", "-DskipTests")));
         return quickstartJar(sourceDir, id);
     }
 
@@ -200,7 +207,7 @@ public class TestFiles {
         final Version archetypeVersion = latestHelidonVersion();
         Log.info("Creating %s from archetype %s", id, archetypeVersion);
         execute(new ProcessBuilder().directory(targetDir.toFile())
-                                    .command(List.of("mvn",
+                                    .command(List.of(MAVEN_EXEC,
                                                      "archetype:generate",
                                                      "-DinteractiveMode=false",
                                                      "-DarchetypeGroupId=" + ARCHETYPES_GROUP_ID,

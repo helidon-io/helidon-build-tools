@@ -50,7 +50,8 @@ public final class JavaRuntime implements ResourceContainer {
     private static final String JMOD_MODULE_INFO_PATH = JMOD_CLASSES_PREFIX + "module-info.class";
     private static final String JRI_SUFFIX = "-jri";
     private static final String FILE_SEP = File.separator;
-    private static final String JAVA_CMD_PATH = "bin" + FILE_SEP + "java";
+    private static final String JAVA_EXEC = Constants.OS_TYPE.javaExecutable();
+    private static final String JAVA_CMD_PATH = "bin" + FILE_SEP + JAVA_EXEC;
     private final Path javaHome;
     private final Runtime.Version version;
     private final boolean isJdk;
