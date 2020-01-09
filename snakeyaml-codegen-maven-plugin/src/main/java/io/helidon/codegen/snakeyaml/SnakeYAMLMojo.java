@@ -56,7 +56,6 @@ import javax.tools.ToolProvider;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
@@ -69,7 +68,6 @@ import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
-
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -190,28 +188,28 @@ public class SnakeYAMLMojo extends AbstractMojo {
      * Configuration for compiling the interfaces for which SnakeYAML will need to parse.
      */
     @Parameter(property = PROPERTY_PREFIX + "interfacesConfig", required = true)
-    CompilerConfig interfacesConfig;
+    private CompilerConfig interfacesConfig;
 
     /**
      * Configuration for compiling the implementations SnakeYAML will use to instantiate parsed interfaces.
      */
     @Parameter(property = PROPERTY_PREFIX + "implementationsConfig", required = true)
-    CompilerConfig implementationsConfig;
+    private CompilerConfig implementationsConfig;
 
     /**
      * Controls debug output from the plug-in.
      */
     @Parameter(property = PROPERTY_PREFIX + "debug", defaultValue = "false")
-    boolean debug;
+    private boolean debug;
 
     /**
      * Prescribes how the plug-in finds Java classes to analyze for either the interfaces or the
      * implementations.
      */
     public static class CompilerConfig {
-        String inputDirectory = null; // defaults to "interfaces" or "implementations"
-        List<String> includes = defaultIncludes();
-        List<String> excludes = Collections.emptyList();
+        private String inputDirectory = null; // defaults to "interfaces" or "implementations"
+        private List<String> includes = defaultIncludes();
+        private List<String> excludes = Collections.emptyList();
 
         private static List<String> defaultIncludes() {
             final List<String> result = new ArrayList<>();
@@ -247,11 +245,10 @@ public class SnakeYAMLMojo extends AbstractMojo {
 
     /**
      * Runs the goal, analyzing interfaces and implementations and generating the helper class.
-     * @throws MojoExecutionException
+     *
+     * @throws MojoExecutionException in case of errors while executing the goal
      */
-    public void execute()
-        throws MojoExecutionException
-    {
+    public void execute() throws MojoExecutionException {
         validateParameters();
 
         dumpParams();
@@ -318,7 +315,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
      */
     static class Import implements Comparable<Import> {
         private String name;
-        boolean isStatic;
+        private boolean isStatic;
 
         Import(String name, boolean isStatic) {
             this.name = name;
@@ -333,12 +330,16 @@ public class SnakeYAMLMojo extends AbstractMojo {
             return name;
         }
 
+        boolean isStatic() {
+            return isStatic;
+        }
+
         @Override
         public String toString() {
-            return "Import{" +
-                    "name='" + name + '\'' +
-                    ", isStatic=" + isStatic +
-                    '}';
+            return "Import{"
+                    + "name='" + name + '\''
+                    + ", isStatic=" + isStatic
+                    + '}';
         }
 
         @Override
@@ -346,8 +347,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Import anImport = (Import) o;
-            return isStatic == anImport.isStatic &&
-                    name.equals(anImport.name);
+            return isStatic == anImport.isStatic && name.equals(anImport.name);
         }
 
         @Override
@@ -602,7 +602,8 @@ public class SnakeYAMLMojo extends AbstractMojo {
             CharSequence methodName = node.getName();
             CharSequence namePrefix = methodName.subSequence(0, Math.min(3, methodName.length()));
             if (namePrefix.equals("set") && methodName.length() > 3 && node.getParameters().size() == 1) {
-                String propName = Character.toLowerCase(methodName.charAt(3)) + methodName.subSequence(4, methodName.length()).toString();
+                String propName = Character.toLowerCase(methodName.charAt(3))
+                        + methodName.subSequence(4, methodName.length()).toString();
                 VariableTree propertyTree = node.getParameters().get(0);
                 updateEnumIfNeeded(propertyTree, type, propName);
                 addPropertyParametersIfNeeded(propertyTree, type, propName);
@@ -668,8 +669,8 @@ public class SnakeYAMLMojo extends AbstractMojo {
 
     private static String fullyQualifiedPath(TreePath path) {
             ExpressionTree packageNameExpr = path.getCompilationUnit().getPackageName();
-            MemberSelectTree packageID = packageNameExpr.getKind() == Tree.Kind.MEMBER_SELECT ?
-                    ((MemberSelectTree) packageNameExpr) : null;
+            MemberSelectTree packageID = packageNameExpr.getKind() == Tree.Kind.MEMBER_SELECT
+                    ? ((MemberSelectTree) packageNameExpr) : null;
 
             StringBuilder result = new StringBuilder();
             if (packageID != null) {
@@ -683,7 +684,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
                 leafName = ((ClassTree) path.getLeaf()).getSimpleName().toString();
             } else if (kind == Tree.Kind.ENUM) {
                 if (path.getParentPath() != null) {
-                    Tree parent= path.getParentPath().getLeaf();
+                    Tree parent = path.getParentPath().getLeaf();
                     if (parent.getKind() == Tree.Kind.CLASS || parent.getKind() == Tree.Kind.INTERFACE) {
                         result.append(((ClassTree) parent).getSimpleName().toString()).append(".");
                     }

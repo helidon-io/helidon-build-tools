@@ -127,22 +127,22 @@ class Type {
 
     @Override
     public String toString() {
-        return "Type{" +
-                "fullName='" + fullName + '\'' +
-                ", simpleName='" + simpleName + '\'' +
-                ", interfacesImplemented=" + interfacesImplemented +
-                ", isInterface=" + isInterface +
-                ", implementationType='" + implementationType + '\'' +
-                ", isRef=" + isRef +
-                ", typeEnumsByType=" + typeEnumsByType +
-                ", propertyParameters=" + propertyParameters +
-                ", substitutions=" + substitutions +
-                '}';
+        return "Type{"
+                + "fullName='" + fullName + '\''
+                + ", simpleName='" + simpleName + '\''
+                + ", interfacesImplemented=" + interfacesImplemented
+                + ", isInterface=" + isInterface
+                + ", implementationType='" + implementationType + '\''
+                + ", isRef=" + isRef
+                + ", typeEnumsByType=" + typeEnumsByType
+                + ", propertyParameters=" + propertyParameters
+                + ", substitutions=" + substitutions
+                + '}';
     }
 
     static class TypeEnum {
-        String enumName;
-        String enumType;
+        private String enumName;
+        private String enumType;
 
         static TypeEnum byType(String enumType) {
             TypeEnum result = new TypeEnum();
@@ -168,31 +168,43 @@ class Type {
             return this;
         }
 
+        String enumName() {
+            return enumName;
+        }
+
+        String enumType() {
+            return enumType;
+        }
+
         @Override
         public String toString() {
-            return "TypeEnum{" +
-                    "enumName='" + enumName + '\'' +
-                    ", enumType='" + enumType + '\'' +
-                    '}';
+            return "TypeEnum{"
+                    + "enumName='" + enumName + '\''
+                    + ", enumType='" + enumType + '\''
+                    + '}';
         }
     }
 
     static class PropertyParameter {
-        final String parameterName;
-        final List<PropertyParameterType> parameterTypes = new ArrayList<>();
+        private final String parameterName;
+        private final List<PropertyParameterType> parameterTypes = new ArrayList<>();
 
         static class PropertyParameterType {
-            final String parameterType;
+            private final String parameterType;
 
             PropertyParameterType(String type) {
                 parameterType = type;
             }
 
+            String parameterType() {
+                return parameterType;
+            }
+
             @Override
             public String toString() {
-                return "PropertyParameterType{" +
-                        "parameterType='" + parameterType + '\'' +
-                        '}';
+                return "PropertyParameterType{"
+                        + "parameterType='" + parameterType + '\''
+                        + '}';
             }
         }
 
@@ -204,12 +216,20 @@ class Type {
             this(name, types.stream());
         }
 
+        String parameterName() {
+            return parameterName;
+        }
+
+        List<PropertyParameterType> parameterTypes() {
+            return parameterTypes;
+        }
+
         @Override
         public String toString() {
-            return "PropertyParameter{" +
-                    "parameterName='" + parameterName + '\'' +
-                    ", parameterTypes=" + parameterTypes +
-                    '}';
+            return "PropertyParameter{"
+                    + "parameterName='" + parameterName + '\''
+                    + ", parameterTypes=" + parameterTypes
+                    + '}';
         }
 
         private PropertyParameter(String name, Stream<String> types) {
@@ -220,10 +240,10 @@ class Type {
     }
 
     static class PropertySubstitution {
-        final String propertySubName;
-        final String propertySubType;
-        final String getter;
-        final String setter;
+        private final String propertySubName;
+        private final String propertySubType;
+        private final String getter;
+        private final String setter;
 
         PropertySubstitution(String name, String type, String getter, String setter) {
             propertySubName = name;
@@ -232,14 +252,30 @@ class Type {
             this.setter = setter;
         }
 
+        String propertySubName() {
+            return propertySubName;
+        }
+
+        String propertySubType() {
+            return propertySubType;
+        }
+
+        String getter() {
+            return getter;
+        }
+
+        String setter() {
+            return setter;
+        }
+
         @Override
         public String toString() {
-            return "PropertySubstitution{" +
-                    "propertySubName='" + propertySubName + '\'' +
-                    ", propertySubType='" + propertySubType + '\'' +
-                    ", getter='" + getter + '\'' +
-                    ", setter='" + setter + '\'' +
-                    '}';
+            return "PropertySubstitution{"
+                    + "propertySubName='" + propertySubName + '\''
+                    + ", propertySubType='" + propertySubType + '\''
+                    + ", getter='" + getter + '\''
+                    + ", setter='" + setter + '\''
+                    + '}';
         }
     }
 
