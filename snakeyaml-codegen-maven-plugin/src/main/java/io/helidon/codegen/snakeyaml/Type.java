@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.codegen.openapi;
+package io.helidon.codegen.snakeyaml;
 
 import java.util.ArrayList;
 import java.util.Arrays;

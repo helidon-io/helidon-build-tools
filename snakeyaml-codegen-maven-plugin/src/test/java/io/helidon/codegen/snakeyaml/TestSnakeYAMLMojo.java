@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.codegen.openapi;
+package io.helidon.codegen.snakeyaml;
 
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static io.helidon.codegen.openapi.TestHelper.getFile;
+import static io.helidon.codegen.snakeyaml.TestHelper.getFile;
 
 public class TestSnakeYAMLMojo {
 
@@ -45,7 +45,7 @@ public class TestSnakeYAMLMojo {
         assertTrue(interfaces.containsKey("TopLevel"), "Implementations does not contain expected entry for TopLevel");
         assertEquals("TopLevelImpl", interfaces.get("TopLevel").get(0), "Unexpected implementation for TopLevel found");
 
-        SnakeYAMLMojo.Import referenceImport = new SnakeYAMLMojo.Import("io.helidon.codegen.openapi.test.Reference", false);
+        SnakeYAMLMojo.Import referenceImport = new SnakeYAMLMojo.Import("io.helidon.codegen.snakeyaml.test.Reference", false);
         SnakeYAMLMojo.Import topLevelImport = new SnakeYAMLMojo.Import("org.eclipse.microprofile.openapi.models.TopLevel", false);
         SnakeYAMLMojo.Import topLevelImplImport = new SnakeYAMLMojo.Import("io.smallrye.openapi.api.models.TopLevelImpl", false);
         assertTrue(imports.contains(referenceImport), "Missing Reference import");

@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.codegen.openapi.test;
+package io.helidon.codegen.snakeyaml.test;
 
 public interface Reference<T extends Reference<T>> {
 

@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-package io.helidon.codegen.openapi;
+package io.helidon.codegen.snakeyaml;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.nio.file.Files;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
