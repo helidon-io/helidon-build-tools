@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,10 +77,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-
-import org.eclipse.microprofile.openapi.models.Operation;
-import org.eclipse.microprofile.openapi.models.PathItem;
-import org.eclipse.microprofile.openapi.models.media.Schema;
 
 /**
  * Goal which generates code to help with parsing YAML and JSON using SnakeYAML.
@@ -276,7 +272,8 @@ public class SnakeYAMLMojo extends AbstractMojo {
              * The parsing builds most of the data model, but we need to add some additional information that is not available
              * to the compiler processor.
              */
-            addPropertySubstitutions(types);
+            // TODO - move to enhanced Helidon OpenAPI module
+//            addPropertySubstitutions(types);
             addImportsForTypes(types, imports);
 
             analyzeImplementations(implementations, imports, interfaces);
@@ -446,21 +443,22 @@ public class SnakeYAMLMojo extends AbstractMojo {
         debugLog(() -> String.format("Interface impls after analyzing %s: %s", note, interfaces));
     }
 
-    private void addPropertySubstitutions(Map<String, Type> types) {
-        Type pathItemType = types.get(PathItem.class.getSimpleName());
-        if (pathItemType != null) { // might be null for tests
-            for (PathItem.HttpMethod m : PathItem.HttpMethod.values()) {
-                pathItemType.propertySubstitution(m.name()
-                        .toLowerCase(), Operation.class.getSimpleName(), getter(m), setter(m));
-            }
-        }
-
-        Type schemaType = types.get(Schema.class.getSimpleName());
-        if (schemaType != null) {
-            schemaType.propertySubstitution("enum", List.class.getSimpleName(), "getEnumeration", "setEnumeration");
-            schemaType.propertySubstitution("default", Object.class.getSimpleName(), "getDefaultValue", "setDefaultValue");
-        }
-    }
+    // TODO Move to enhanced Helidon OpenAPI module
+//    private void addPropertySubstitutions(Map<String, Type> types) {
+//        Type pathItemType = types.get(PathItem.class.getSimpleName());
+//        if (pathItemType != null) { // might be null for tests
+//            for (PathItem.HttpMethod m : PathItem.HttpMethod.values()) {
+//                pathItemType.propertySubstitution(m.name()
+//                        .toLowerCase(), Operation.class.getSimpleName(), getter(m), setter(m));
+//            }
+//        }
+//
+//        Type schemaType = types.get(Schema.class.getSimpleName());
+//        if (schemaType != null) {
+//            schemaType.propertySubstitution("enum", List.class.getSimpleName(), "getEnumeration", "setEnumeration");
+//            schemaType.propertySubstitution("default", Object.class.getSimpleName(), "getDefaultValue", "setDefaultValue");
+//        }
+//    }
 
     private void addImportsForTypes(Map<String, Type> types, Set<Import> imports) {
         types.forEach((name, type) -> imports.add(new Import(type.fullName, false)));
@@ -476,35 +474,17 @@ public class SnakeYAMLMojo extends AbstractMojo {
         writer.close();
     }
 
-    private static String getter(PathItem.HttpMethod method) {
-        return methodName("get", method);
-    }
-
-    private static String setter(PathItem.HttpMethod method) {
-        return methodName("set", method);
-    }
-
-    private static String methodName(String operation, PathItem.HttpMethod method) {
-        return operation + method.name();
-    }
-
-//    private ClassLoader initClassLoader() {
-//        try {
-//            Set<URL> urls = new HashSet<>();
-//            List<String> elements = mavenProject.getRuntimeClasspathElements();
-//            for (String element : elements) {
-//                urls.add(new File(element).toURI().toURL());
-//            }
+    // TODO move to enhanced Helidon OpenAPI module
+//    private static String getter(PathItem.HttpMethod method) {
+//        return methodName("get", method);
+//    }
 //
-//            ClassLoader augmentedClassLoader = URLClassLoader.newInstance(
-//                    urls.toArray(new URL[0]),
-//                    Thread.currentThread().getContextClassLoader());
-//            return augmentedClassLoader;
-////            Thread.currentThread().setContextClassLoader(contextClassLoader);
+//    private static String setter(PathItem.HttpMethod method) {
+//        return methodName("set", method);
+//    }
 //
-//        } catch (DependencyResolutionRequiredException | MalformedURLException e) {
-//            throw new RuntimeException(e);
-//        }
+//    private static String methodName(String operation, PathItem.HttpMethod method) {
+//        return operation + method.name();
 //    }
 
     private Path resolveDirectory(String directoryWithinProject) {
