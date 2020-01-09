@@ -36,22 +36,3 @@ Describes which Java classes to compile for analysis as either interfaces or imp
 
 The `generate` goal runs by default during `generate-sources`. 
 
-You need to declare the plugin as an extension in order to use it:
-
-```xml
-<project>
-    <groupId>com.example</groupId>
-    <artifactId>example-site</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <packaging>site</packaging>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>io.helidon.build-tools</groupId>
-                <artifactId>sitegen-maven-plugin</artifactId>
-                <extensions>true</extensions>
-            </plugin>
-        </plugins>
-    <build>
-</project>
-```
