@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
@@ -46,6 +47,9 @@ import org.sonatype.plexus.build.incremental.BuildContext;
       requiresDependencyResolution = ResolutionScope.RUNTIME,
       requiresProject = true)
 public class GraalNativeMojo extends AbstractMojo {
+    private static final String EXEC_MODE_MAIN_CLASS = "main";
+    private static final String EXEC_MODE_JAR = "jar";
+    private static final String EXEC_MODE_JAR_WITH_CP = "jar-cp";
 
     /**
      * Constant for the {@code native-image} command file name.
@@ -104,6 +108,14 @@ public class GraalNativeMojo extends AbstractMojo {
     @Parameter(defaultValue = "true")
     private boolean addProjectResources;
 
+    @Parameter(defaultValue = EXEC_MODE_JAR,
+               property = "native.image.execMode")
+    private String execMode;
+
+    @Parameter(defaultValue = "${mainClass}",
+               property = "native.image.mainClass")
+    private String mainClass;
+
     /**
      * List of regexp matching names of resources to be included in the image.
      */
@@ -142,59 +154,56 @@ public class GraalNativeMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+        getLog().debug("Skip: " + skipNativeImage);
+        getLog().debug("Type: " + execMode);
+        getLog().debug("Main class: " + mainClass);
+
         if (skipNativeImage) {
             getLog().info("Skipping execution.");
             return;
         }
 
-        File artifact = project.getArtifact().getFile();
-        if (artifact == null) {
-            artifact = new File(buildDirectory,
-                    project.getBuild().getFinalName() + ".jar");
-        }
-        if (!artifact.exists()) {
-            throw new MojoFailureException("Artifact does not exist: "
-                    + artifact.getAbsolutePath());
-        }
-
-        File outputFile = new File(buildDirectory, finalName);
-        getLog().info("Building native image :" + outputFile.getAbsolutePath());
+        NativeContext context = new NativeContext(execMode, mainClass);
+        context.artifact(project, buildDirectory);
+        context.validate();
 
         // create the command
         List<String> command = new ArrayList<>();
-        command.add(findNativeImageCmd().getAbsolutePath());
-        if (buildShared || buildStatic) {
-            if (buildShared && buildShared) {
-                throw new MojoExecutionException(
-                        "static and shared option cannot be used together");
-            }
-            if (buildShared) {
-                getLog().info("Building a shared library");
-                command.add("--shared");
-            }
-            if (buildStatic) {
-                getLog().info("Building a statically linked executable");
-                command.add("--static");
-            }
-        }
-        command.add("-H:Name=" + outputFile.getAbsolutePath());
-        String resources = getResources();
-        if (!resources.isEmpty()) {
-            command.add("-H:IncludeResources=" + resources);
-        }
+
+        addStaticOrShared(command);
+        addNativeImageTarget(command);
+        addResources(command);
+
         if (reportExceptionStackTraces) {
             command.add("-H:+ReportExceptionStackTraces");
         }
         if (noServer) {
             command.add("--no-server");
         }
-        command.add("-classpath");
-        command.add(getClasspath());
+
+        if (context.addClasspath()) {
+            command.add("-classpath");
+            command.add(getClasspath(context));
+        }
+
         if (additionalArgs != null) {
             command.addAll(additionalArgs);
         }
-        command.add("-jar");
-        command.add(artifact.getAbsolutePath());
+
+        /*
+         * when using a main class, the following two lines must not be used
+         * when using a jar, the jar itself and whole `Class-Path` from manifest are added to the
+         * classpath automatically.
+         */
+        if (context.useJar()) {
+            command.add("-jar");
+            command.add(context.artifact().getAbsolutePath());
+        }
+
+        if (context.useMain()) {
+            command.add(mainClass);
+        }
+
         getLog().debug("Executing command: " + command);
 
         // execute the command process
@@ -215,6 +224,37 @@ public class GraalNativeMojo extends AbstractMojo {
             }
         } catch (IOException | InterruptedException ex) {
             throw new MojoExecutionException("Image generation error", ex);
+        }
+    }
+
+    private void addResources(List<String> command) {
+        String resources = getResources();
+        if (!resources.isEmpty()) {
+            command.add("-H:IncludeResources=" + resources);
+        }
+    }
+
+    private void addNativeImageTarget(List<String> command) {
+        File outputFile = new File(buildDirectory, finalName);
+        getLog().info("Building native image :" + outputFile.getAbsolutePath());
+        command.add("-H:Name=" + outputFile.getAbsolutePath());
+    }
+
+    private void addStaticOrShared(List<String> command) throws MojoExecutionException {
+        command.add(findNativeImageCmd().getAbsolutePath());
+        if (buildShared || buildStatic) {
+            if (buildShared && buildShared) {
+                throw new MojoExecutionException(
+                        "static and shared option cannot be used together");
+            }
+            if (buildShared) {
+                getLog().info("Building a shared library");
+                command.add("--shared");
+            }
+            if (buildStatic) {
+                getLog().info("Building a statically linked executable");
+                command.add("--static");
+            }
         }
     }
 
@@ -259,7 +299,7 @@ public class GraalNativeMojo extends AbstractMojo {
      * resources.
      * @return String as comma separated list
      */
-    private String getResources(){
+    private String getResources() {
         // scan all resources
         getLog().debug("Building resources string");
         List<String> resources = new ArrayList<>();
@@ -317,20 +357,32 @@ public class GraalNativeMojo extends AbstractMojo {
      * @return String represented the java class-path
      * @throws MojoExecutionException if an
      * {@link DependencyResolutionRequiredException} occurs
+     * @param context configuration context
      */
-    private String getClasspath() throws MojoExecutionException {
+    private String getClasspath(NativeContext context) throws MojoExecutionException {
         getLog().debug("Building class-path string");
         try {
-            StringBuilder sb = new StringBuilder();
-            Iterator<String> it = project.getRuntimeClasspathElements()
-                    .iterator();
-            while (it.hasNext()) {
-                sb.append(it.next());
-                if (it.hasNext()) {
-                    sb.append(":");
+            List<String> runtimeClasspathElements = project.getRuntimeClasspathElements();
+            File targetClasses = new File(buildDirectory, "classes");
+
+            List<String> classpathElements = new LinkedList<>();
+
+            if (context.useJar()) {
+                // Adding the classpath once more causes issues with libraries
+                // doing classpath scanning (slf4j, CDI) - ergo we must exclude the target when running
+                // from jar
+                for (String element : runtimeClasspathElements) {
+                    File elementFile = new File(element);
+                    if (!targetClasses.equals(elementFile)) {
+                        classpathElements.add(element);
+                    }
                 }
+            } else {
+                // when running using main class, we need the whole classpath
+                classpathElements.addAll(runtimeClasspathElements);
             }
-            String classpath = sb.toString();
+
+            String classpath = String.join(":", classpathElements);
             getLog().debug("Built class-path: " + classpath);
             return classpath;
         } catch (DependencyResolutionRequiredException ex) {
@@ -342,7 +394,6 @@ public class GraalNativeMojo extends AbstractMojo {
     /**
      * Find the {@code native-image} command file.
      *
-     * @param graalVmHome the configured {@code GRAALVM_HOME}
      * @return File
      * @throws MojoExecutionException if unable to find the command file
      */
@@ -390,5 +441,76 @@ public class GraalNativeMojo extends AbstractMojo {
         }
         getLog().debug("Found " + NATIVE_IMAGE_CMD + ": " + cmd);
         return cmd;
+    }
+
+    private static final class NativeContext {
+        private final boolean useJar;
+        private final boolean useMain;
+        private final boolean addClasspath;
+        private final String mainClass;
+
+        private File artifact;
+
+        private NativeContext(String execMode, String mainClass) throws MojoFailureException {
+            this.mainClass = mainClass;
+            switch (execMode) {
+            case EXEC_MODE_JAR:
+                useJar = true;
+                useMain = false;
+                addClasspath = false;
+                break;
+            case EXEC_MODE_JAR_WITH_CP:
+                useJar = true;
+                useMain = false;
+                addClasspath = true;
+                break;
+            case EXEC_MODE_MAIN_CLASS:
+                useJar = false;
+                useMain = true;
+                addClasspath = true;
+                break;
+            default:
+                throw new MojoFailureException("Invalid configuration of \"execMode\". Has to be one of: "
+                                                       + EXEC_MODE_JAR + ", "
+                                                       + EXEC_MODE_JAR_WITH_CP + ", or "
+                                                       + EXEC_MODE_MAIN_CLASS);
+            }
+        }
+
+        boolean useJar() {
+            return useJar;
+        }
+
+        boolean useMain() {
+            return useMain;
+        }
+
+        boolean addClasspath() {
+            return addClasspath;
+        }
+
+        File artifact() {
+            return artifact;
+        }
+
+        void artifact(MavenProject project, File buildDirectory) throws MojoFailureException {
+            if (useJar) {
+                artifact = project.getArtifact().getFile();
+                if (artifact == null) {
+                    artifact = new File(buildDirectory,
+                                        project.getBuild().getFinalName() + ".jar");
+                }
+                if (!artifact.exists()) {
+                    throw new MojoFailureException("Artifact does not exist: "
+                                                           + artifact.getAbsolutePath());
+                }
+            }
+        }
+
+        void validate() throws MojoFailureException {
+            if ((null == mainClass) && useMain) {
+                throw new MojoFailureException("Main class not configured and required. Use option \"mainClass\"");
+            }
+        }
     }
 }
