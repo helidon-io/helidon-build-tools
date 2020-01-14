@@ -279,6 +279,8 @@ public class SnakeYAMLMojo extends AbstractMojo {
 
             generateHelperClass(types, imports);
 
+            addGeneratedCodeToCompilation();
+
         } catch (Throwable e) {
             throw new MojoExecutionException("Error compiling and analyzing source files", e);
         }
@@ -476,6 +478,10 @@ public class SnakeYAMLMojo extends AbstractMojo {
         CodeGenModel model = new CodeGenModel(types.values(), imports);
         m.execute(writer, model);
         writer.close();
+    }
+
+    private void addGeneratedCodeToCompilation() {
+        mavenProject.addCompileSourceRoot(outputDirectory.getPath());
     }
 
     // TODO move to enhanced Helidon OpenAPI module
