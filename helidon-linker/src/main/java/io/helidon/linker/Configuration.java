@@ -23,12 +23,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import io.helidon.linker.util.Constants;
 import io.helidon.linker.util.FileUtils;
 import io.helidon.linker.util.JavaRuntime;
 import io.helidon.linker.util.Log;
 import io.helidon.linker.util.SystemLogWriter;
 
+import static io.helidon.linker.util.Constants.DOCKER_BUILD;
+import static io.helidon.linker.util.Constants.MINIMUM_DOCKER_JDK_VERSION;
+import static io.helidon.linker.util.Constants.MINIMUM_JDK_VERSION;
 import static io.helidon.linker.util.FileUtils.assertFile;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
@@ -410,9 +412,16 @@ public final class Configuration {
                 throw new IllegalArgumentException("applicationJar required");
             }
             jdk = JavaRuntime.current(true);
-            if (jdk.version().major() < Constants.MINIMUM_JDK_VERSION) {
+            if (jdk.version().major() < MINIMUM_JDK_VERSION) {
                 throw new IllegalArgumentException(jdk + " is an unsupported version,"
-                                                   + Constants.MINIMUM_JDK_VERSION + " or higher required");
+                                                   + MINIMUM_JDK_VERSION + " or higher required");
+            }
+            if (cds
+                && DOCKER_BUILD
+                && jdk.version().major() < MINIMUM_DOCKER_JDK_VERSION) {
+                throw new IllegalArgumentException("Class Data Sharing cannot be used in Docker with JDK " + jdk.version().major()
+                                                   + ". Use JDK " + MINIMUM_DOCKER_JDK_VERSION + "+ or disable CDS by setting "
+                                                   + "addClassDataSharingArchive to false in the plugin configuration.");
             }
             jriDirectory = JavaRuntime.prepareJriDirectory(jriDirectory, mainJar, replace);
             if (logWriter == null) {

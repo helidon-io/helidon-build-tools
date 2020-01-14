@@ -37,6 +37,11 @@ public class MavenLogWriter implements io.helidon.linker.util.Log.Writer {
     }
 
     @Override
+    public boolean isDebugEnabled() {
+        return log.isDebugEnabled();
+    }
+
+    @Override
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
     public void write(Level level, Throwable thrown, String message, Object... args) {
         switch (level) {
@@ -92,5 +97,7 @@ public class MavenLogWriter implements io.helidon.linker.util.Log.Writer {
                 throw new Error();
             }
         }
+
+
     }
 }

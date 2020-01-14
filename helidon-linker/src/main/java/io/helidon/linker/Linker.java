@@ -145,7 +145,7 @@ public final class Linker {
     private void buildApplication() {
         this.application = Application.create(config.mainJar());
         this.exitOnStarted = application.exitOnStartedValue();
-        final Runtime.Version version = application.helidonVersion();
+        final String version = application.helidonVersion();
         Log.info("Creating Java Runtime Image %s from %s and %s, built with Helidon %s",
                  Cyan.apply(imageName),
                  Cyan.apply("JDK " + config.jdk().version()),

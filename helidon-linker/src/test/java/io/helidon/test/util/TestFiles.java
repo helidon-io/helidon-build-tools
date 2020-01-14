@@ -77,8 +77,7 @@ public class TestFiles {
      * @return The value.
      */
     public static String exitOnStartedValue() {
-        final Runtime.Version version = Runtime.Version.parse(latestHelidonVersion().toString());
-        return Application.exitOnStartedValue(version);
+        return Application.exitOnStartedValue(latestHelidonVersion().toString());
     }
 
     /**

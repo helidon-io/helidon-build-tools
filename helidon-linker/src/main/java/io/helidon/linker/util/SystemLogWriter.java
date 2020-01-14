@@ -28,6 +28,7 @@ import static io.helidon.linker.util.Constants.EOL;
  */
 public final class SystemLogWriter implements Log.Writer {
     private final int ordinal;
+    private final boolean debugEnabled;
 
     /**
      * Returns a new instance with the given level.
@@ -41,6 +42,12 @@ public final class SystemLogWriter implements Log.Writer {
 
     private SystemLogWriter(Level level) {
         this.ordinal = level.ordinal();
+        this.debugEnabled = Level.DEBUG.ordinal() >= ordinal;
+    }
+
+    @Override
+    public boolean isDebugEnabled() {
+        return debugEnabled;
     }
 
     @Override

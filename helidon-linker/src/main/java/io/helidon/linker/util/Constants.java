@@ -130,6 +130,16 @@ public final class Constants {
     public static final int MINIMUM_JDK_VERSION = 9;
 
     /**
+     * Whether or not this is a Docker build.
+     */
+    public static final boolean DOCKER_BUILD = "true".equals(System.getProperty("docker.build"));
+
+    /**
+     * The minimum supported JDK version when in a Docker env.
+     */
+    public static final int MINIMUM_DOCKER_JDK_VERSION = 10;
+
+    /**
      * End of line string.
      */
     public static final String EOL = System.getProperty("line.separator");

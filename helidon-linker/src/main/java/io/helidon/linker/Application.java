@@ -23,6 +23,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -42,11 +43,13 @@ public final class Application implements ResourceContainer {
     private static final Path ARCHIVE_PATH = Paths.get("lib" + DIR_SEP + "start.jsa");
     private static final String HELIDON_JAR_NAME_PREFIX = "helidon-";
     private static final String MP_FILE_PREFIX = HELIDON_JAR_NAME_PREFIX + "microprofile";
+    private static final String VERSION_1_4_1 = "1.4.1";
     private static final String UNKNOWN_VERSION = "0.0.0";
+    private static final String SNAPSHOT = "-SNAPSHOT";
     private final Jar mainJar;
     private final List<Jar> classPath;
     private final boolean isMicroprofile;
-    private final Runtime.Version version;
+    private final String version;
 
     /**
      * Returns a new instance with the given main jar.
@@ -148,7 +151,7 @@ public final class Application implements ResourceContainer {
      *
      * @return The version.
      */
-    public Runtime.Version helidonVersion() {
+    public String helidonVersion() {
         return version;
     }
 
@@ -168,14 +171,8 @@ public final class Application implements ResourceContainer {
      * @param helidonVersion The Helidon version.
      * @return The value.
      */
-    public static String exitOnStartedValue(Runtime.Version helidonVersion) {
-        if (helidonVersion.major() == 1
-            && helidonVersion.minor() == 4
-            && helidonVersion.security() < 2) {
-            return "✅";
-        } else {
-            return "!";
-        }
+    public static String exitOnStartedValue(String helidonVersion) {
+        return helidonVersion.equals(VERSION_1_4_1) ? "✅" : "!";
     }
 
     @Override
@@ -188,7 +185,12 @@ public final class Application implements ResourceContainer {
     }
 
     private List<Jar> collectClassPath() {
-        return addClassPath(mainJar, new HashSet<>(), new ArrayList<>());
+        final List<Jar> classPath = addClassPath(mainJar, new HashSet<>(), new ArrayList<>());
+        if (Log.isDebugEnabled()) {
+            Log.debug("Application classpath:");
+            classPath.forEach(jar -> Log.debug("    %s", jar));
+        }
+        return classPath;
     }
 
     private List<Jar> addClassPath(Jar jar, Set<Jar> visited, List<Jar> classPath) {
@@ -221,18 +223,26 @@ public final class Application implements ResourceContainer {
         }
     }
 
-    private Runtime.Version extractHelidonVersion() {
-        final String fileName = classPath.stream()
-                                         .map(Jar::name)
-                                         .filter(name -> name.startsWith(HELIDON_JAR_NAME_PREFIX))
-                                         .findFirst()
-                                         .orElseThrow(() -> new IllegalStateException("No helidon jars found!"));
-        final int lastDash = fileName.lastIndexOf('-');
+    private String extractHelidonVersion() {
+        return versionFromFileName(classPath.stream()
+                                            .map(Jar::name)
+                                            .filter(name -> name.startsWith(HELIDON_JAR_NAME_PREFIX))
+                                            .findFirst()
+                                            .orElseThrow(() -> new IllegalStateException("No helidon jars found!")));
+    }
+
+
+    static String versionFromFileName(String fileName) {
         final int lastDot = fileName.lastIndexOf('.');
-        if (lastDash > 0 && lastDot > 0) {
-            return Runtime.Version.parse(fileName.substring(lastDash + 1, lastDot));
-        } else {
-            return Runtime.Version.parse(UNKNOWN_VERSION);
+        if (lastDot >= 0) {
+            final String name = fileName.substring(0, lastDot);
+            final boolean snapshot = name.toUpperCase(Locale.ENGLISH).endsWith(SNAPSHOT);
+            final String nonSnapshotName = snapshot ? name.substring(0, name.length() - SNAPSHOT.length()) : name;
+            final int lastDash = nonSnapshotName.lastIndexOf('-');
+            if (lastDash >= 0 && Character.isDigit(name.charAt(lastDash + 1))) {
+                return name.substring(lastDash + 1);
+            }
         }
+        return UNKNOWN_VERSION;
     }
 }
