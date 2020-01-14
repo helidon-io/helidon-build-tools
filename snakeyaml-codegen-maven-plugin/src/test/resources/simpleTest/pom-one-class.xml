@@ -51,7 +51,7 @@
                         <inputDirectory>implementations</inputDirectory>
                         <includes>**/*.java</includes>
                     </implementationsConfig>
-                    <outputClass>io.helidon.codegen.snakeyaml.test.GeneratedForParser</outputClass>
+                    <outputClass>io.helidon.codegen.snakeyaml.test.Helper</outputClass>
                 </configuration>
             </plugin>
         </plugins>

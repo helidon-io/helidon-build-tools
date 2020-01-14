@@ -161,6 +161,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
             + "    Matching %s%n"
             + "    Excluding %s%n";
 
+    private static final String DEFAULT_OUTPUT_CLASS_NAME = "io.helidon.snakeyaml.SnakeYAMLParserHelper";
 
     private final Map<String, Type> types = new HashMap<>();
     private final Map<String, Type> implementations = new HashMap<>();
@@ -181,7 +182,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
     /**
      * Fully-qualified name for the class to generate.
      */
-    @Parameter(property = PROPERTY_PREFIX + "outputClass", required = true)
+    @Parameter(property = PROPERTY_PREFIX + "outputClass", defaultValue = DEFAULT_OUTPUT_CLASS_NAME, required = true)
     private String outputClass;
 
     /**
@@ -301,9 +302,10 @@ public class SnakeYAMLMojo extends AbstractMojo {
     }
 
     private void dumpParams() {
-        if (!getLog().isDebugEnabled()) {
+        if (!getLog().isDebugEnabled() &&  !debug) {
             return;
         }
+        debugLog(() -> String.format("Output directory: %s%nOutput class: %s%n", outputDirectory, outputClass));
         debugLog(() -> dumpConfig(interfacesConfig, "interfaces"));
         debugLog(() -> dumpConfig(implementationsConfig, "implementations"));
     }
@@ -471,11 +473,21 @@ public class SnakeYAMLMojo extends AbstractMojo {
     }
 
     private void generateHelperClass(Map<String, Type> types, Set<Import> imports) throws IOException {
-        Path outputPath = Paths.get(outputDirectory.getAbsolutePath(), "Parser.java");
+        List<String> pathElementsToGeneratedClass = new ArrayList<>();
+        String outputPackage = outputClass.substring(0, outputClass.lastIndexOf('.'));
+        for (String segment : outputPackage.split("\\.")) {
+            pathElementsToGeneratedClass.add(segment);
+        }
+        Path outputDir = Paths.get(outputDirectory.getAbsolutePath(), pathElementsToGeneratedClass.toArray(new String[0]));
+        Files.createDirectories(outputDir);
+
+        String simpleClassName = outputClass.substring(outputClass.lastIndexOf('.') + 1);
+        Path outputPath = outputDir.resolve( simpleClassName + ".java");
+
         Writer writer = new OutputStreamWriter(new FileOutputStream(outputPath.toFile()));
         MustacheFactory mf = new DefaultMustacheFactory();
         Mustache m = mf.compile("typeClassTemplate.mustache");
-        CodeGenModel model = new CodeGenModel(types.values(), imports);
+        CodeGenModel model = new CodeGenModel(outputPackage, simpleClassName, types.values(), imports);
         m.execute(writer, model);
         writer.close();
     }

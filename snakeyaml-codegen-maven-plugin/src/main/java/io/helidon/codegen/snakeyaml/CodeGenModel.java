@@ -23,12 +23,25 @@ import java.util.stream.Collectors;
 
 class CodeGenModel {
 
+    private String generatedPackageName;
+    private String generatedClassName;
     private Collection<Type> types;
     private Set<SnakeYAMLMojo.Import> imports;
 
-    CodeGenModel(Collection<Type> types, Set<SnakeYAMLMojo.Import> imports) {
+    CodeGenModel(String generatedPackageName, String generatedClassName, Collection<Type> types,
+            Set<SnakeYAMLMojo.Import> imports) {
+        this.generatedClassName = generatedClassName;
+        this.generatedPackageName = generatedPackageName;
         this.types = types;
         this.imports = imports;
+    }
+
+    String generatedPackageName() {
+        return generatedPackageName;
+    }
+
+    String generatedClassName() {
+        return generatedClassName;
     }
 
     Collection<Type> typesToAugment() {

@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.openapi;
+package {{generatedPackageName}};
 
 {{#javaImports}}
 import {{#isStatic}} static {{/isStatic}}{{name}};
@@ -30,12 +30,12 @@ import {{#isStatic}} static {{/isStatic}}{{name}};
 
 import org.yaml.snakeyaml.TypeDescription;
 
-class Types {
+class {{generatedClassName}} {
 
     private final Map<Class<?>, TypeDescription> types = new HashMap<>();
 
-    static Types create() {
-        return new Types();
+    static {{generatedClassName}} create() {
+        return new {{generatedClassName}}();
     }
 
     Set<Map.Entry<Class<?>, TypeDescription>> entrySet() {
@@ -54,7 +54,7 @@ class Types {
         return types.get(clazz);
     }
 
-    private Types() {
+    private {{generatedClassName}}() {
 {{#typesToAugment}}
         TypeDescription td_{{simpleName}} = ExpandedTypeDescription.create({{simpleName}}.class, {{implementationType}}.class);
         {{#typeEnums}}
