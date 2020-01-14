@@ -482,7 +482,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
         Files.createDirectories(outputDir);
 
         String simpleClassName = outputClass.substring(outputClass.lastIndexOf('.') + 1);
-        Path outputPath = outputDir.resolve( simpleClassName + ".java");
+        Path outputPath = outputDir.resolve(simpleClassName + ".java");
 
         Writer writer = new OutputStreamWriter(new FileOutputStream(outputPath.toFile()));
         MustacheFactory mf = new DefaultMustacheFactory();
