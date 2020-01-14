@@ -35,19 +35,87 @@ public final class Constants {
         /**
          * Macintosh.
          */
-        MacOS,
+        MacOS("java", true, null, "-f %m", "mvn"),
         /**
          * Windows.
          */
-        Windows,
+        Windows("java.exe", false, "powershell.exe", "%s", "mvn.cmd") {
+            @Override
+            public String withScriptExtension(String scriptName){
+                return scriptName + ".ps1";
+            }
+        },
         /**
          * Linux.
          */
-        Linux,
+        Linux("java", true, null, "-c %Y", "mvn"),
         /**
-         * Unknon.
+         * Unknown.
          */
-        Unknown
+        Unknown("java", true, null, null, "mvn");
+
+        private final String javaExecutable;
+        private final boolean posix;
+        private final String scriptExecutor;
+        private final String statFormat;
+        private final String mavenExec;
+
+        OSType(String javaExecutable, boolean posix, String scriptExecutor, String statFormat, String mavenExec) {
+            this.javaExecutable = javaExecutable;
+            this.posix = posix;
+            this.scriptExecutor = scriptExecutor;
+            this.statFormat = statFormat;
+            this.mavenExec = mavenExec;
+        }
+
+        /**
+         * Default java executable.
+         * @return java executable name
+         */
+        public String javaExecutable() {
+            return javaExecutable;
+        }
+
+        /**
+         * Returns the scriptName with the SO related extension.
+         * @param scriptName The script file name without file extension
+         * @return The scriptName with SO extension
+         */
+        public String withScriptExtension(String scriptName) {
+            return scriptName;
+        }
+
+        /**
+         * To check that OSType supports posix.
+         * @return true when OSType supports posix or false if not.
+         */
+        public boolean isPosix() {
+            return posix;
+        }
+
+        /**
+         * In some OSType is necessary to specify the program to execute the script.
+         * @return the program name to execute the script or null when it is not necessary.
+         */
+        public String scriptExecutor() {
+            return scriptExecutor;
+        }
+
+        /**
+         * Returns the stat format that depends on SO.
+         * @return the stat format
+         */
+        public String statFormat() {
+            return statFormat;
+        }
+
+        /**
+         * Returns the maven execution file name.
+         * @return the maven exec
+         */
+        public String mavenExec() {
+            return mavenExec;
+        }
     }
 
     /**

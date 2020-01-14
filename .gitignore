@@ -9,6 +9,9 @@
 hs_err_pid*
 target/
 .idea/
+*.project
+*.classpath
+.settings/
 .m2/
 *.iws
 *.ipr
