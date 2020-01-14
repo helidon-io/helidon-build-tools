@@ -1,7 +1,11 @@
 # Helidon SnakeYAML Helper Maven Plugin
 
-This plugin generates code that gives SnakeYAML additional information for parsing JSON and YAML that is unavailable 
-from compiled bytecode at runtime.
+This plug-in generates code that gives SnakeYAML additional information for parsing JSON and YAML that is unavailable 
+from compiled bytecode at runtime. The plug-in adds the code to the current project's compiler sources automatically.
+
+The source code in the consuming project can then use a generated factory method to create an instance of the helper class,
+then access the generated SnakeYAML type descriptions using the helper class instance methods. The application can 
+updates any of these type descriptions before passing them to SnakeYAML.   
 
 * [Goal: generate](#goal-generate
 ## Goal: `generate`
