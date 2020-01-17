@@ -32,6 +32,7 @@ import java.util.zip.ZipFile;
 import io.helidon.linker.Jar;
 import io.helidon.linker.ResourceContainer;
 
+import static io.helidon.linker.util.Constants.OS;
 import static io.helidon.linker.util.FileUtils.CURRENT_JAVA_HOME_DIR;
 import static io.helidon.linker.util.FileUtils.assertDir;
 import static io.helidon.linker.util.FileUtils.assertFile;
@@ -50,7 +51,7 @@ public final class JavaRuntime implements ResourceContainer {
     private static final String JMOD_MODULE_INFO_PATH = JMOD_CLASSES_PREFIX + "module-info.class";
     private static final String JRI_SUFFIX = "-jri";
     private static final String FILE_SEP = File.separator;
-    private static final String JAVA_EXEC = Constants.OS_TYPE.javaExecutable();
+    private static final String JAVA_EXEC = OS.javaExecutable();
     private static final String JAVA_CMD_PATH = "bin" + FILE_SEP + JAVA_EXEC;
     private final Path javaHome;
     private final Runtime.Version version;

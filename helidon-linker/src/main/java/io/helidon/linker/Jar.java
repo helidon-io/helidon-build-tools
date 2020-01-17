@@ -325,7 +325,7 @@ public final class Jar implements ResourceContainer {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        if (Constants.OS_TYPE.isPosix()) {
+        if (Constants.OS.isPosix()) {
             try {
                 Files.setPosixFilePermissions(targetFile, Set.of(
                         PosixFilePermission.OWNER_READ,

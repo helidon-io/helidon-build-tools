@@ -30,6 +30,7 @@ import io.helidon.linker.util.Constants;
 import io.helidon.linker.util.FileUtils;
 import io.helidon.linker.util.JavaRuntime;
 import io.helidon.linker.util.Log;
+import io.helidon.linker.util.OSType;
 import io.helidon.linker.util.ProcessMonitor;
 
 import static io.helidon.linker.util.FileUtils.assertDir;
@@ -333,6 +334,7 @@ public final class ClassDataSharing {
             return loadClassList();
         }
 
+        @SuppressWarnings("ResultOfMethodCallIgnored")
         private void buildCdsArchive() throws Exception {
             final String action = "Creating Class Data Sharing archive for " + targetDescription;
             if (Constants.CDS_REQUIRES_UNLOCK_OPTION) {
@@ -341,6 +343,10 @@ public final class ClassDataSharing {
             } else {
                 execute(action, XSHARE_DUMP, XX_SHARED_ARCHIVE_FILE + archiveFile,
                         XX_SHARED_CLASS_LIST_FILE + classListFile, UTF_8_ENCODING);
+            }
+            if (Constants.OS == OSType.Windows) {
+                // Try to make the archive file writable so that a second run can delete the image
+                archiveFile.toFile().setWritable(true);
             }
         }
 

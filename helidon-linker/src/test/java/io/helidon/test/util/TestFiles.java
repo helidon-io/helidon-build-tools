@@ -39,7 +39,7 @@ import static io.helidon.linker.util.FileUtils.assertFile;
  */
 public class TestFiles {
     private static final Path OUR_TARGET_DIR = ourTargetDir();
-    private static final String MAVEN_EXEC = Constants.OS_TYPE.mavenExec();
+    private static final String MAVEN_EXEC = Constants.OS.mavenExec();
     private static final String HELIDON_GROUP_ID = "io.helidon";
     private static final String HELIDON_PROJECT_ID = "helidon-project";
     private static final String ARCHETYPES_GROUP_ID = "io.helidon.archetypes";
