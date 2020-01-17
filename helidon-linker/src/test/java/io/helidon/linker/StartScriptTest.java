@@ -24,7 +24,6 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.List;
 import java.util.Set;
 
-import io.helidon.linker.util.OSType;
 import io.helidon.linker.util.StreamUtils;
 import io.helidon.test.util.TestFiles;
 
@@ -35,6 +34,8 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.linker.util.Constants.OS;
 import static io.helidon.linker.util.FileUtils.ensureDirectory;
 import static io.helidon.linker.util.FileUtils.lastModifiedTime;
+import static io.helidon.linker.util.OSType.Linux;
+import static io.helidon.linker.util.OSType.Windows;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -53,7 +54,7 @@ class StartScriptTest {
     private static final String JAR_NAME = INSTALLED_JAR_FILE.getFileName().toString();
     private static final String EXIT_ON_STARTED_VALUE = TestFiles.exitOnStartedValue();
     private static final String EXIT_ON_STARTED = "-Dexit.on.started=" + EXIT_ON_STARTED_VALUE;
-    private static final String NOT_EQUAL = OS == OSType.Windows ? "-ne" : "!=";
+    private static final String NOT_EQUAL = OS == Windows ? "-ne" : "!=";
 
     private StartScript.Builder builder() {
         return StartScript.builder()
@@ -76,8 +77,8 @@ class StartScriptTest {
     }
 
     public static Matcher<String> containsString(String substring) {
-        if (OS == OSType.Windows) {
-            substring = substring.replace('\\', '`');
+        if (OS == Windows) {
+            substring = substring.replace(Linux.escapedQuote(), Windows.escapedQuote());
         }
         return StringContains.containsString(substring);
     }
