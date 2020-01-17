@@ -111,9 +111,11 @@ function checkTimeStamps {
 function getLastWriteTotalSeconds {
     param ( [String]$file)
     $statFormat="<STAT_FORMAT>"
-    $seconds = (Get-Date -Date ((Get-ItemProperty -Path $file -Name LastWriteTime).lastwritetime) -UFormat $statFormat).split('.')[0].split(',')[0]
-    # There is one hour gap in epoch when comparing with Java
-    return ($seconds - 3600)
+    $lastModified = (Get-ItemProperty -Path $file -Name LastWriteTime).lastwritetime
+    $seconds = (Get-Date -Date $lastModified -UFormat $statFormat).split('.')[0].split(',')[0]
+    $secondsTimeZone = ([int](Get-Date -Date $lastModified -UFormat %Z)) *60 *60
+    $lastWriteTotalSeconds = ($seconds - $secondsTimeZone)
+    return $lastWriteTotalSeconds
 }
 
 function main {
