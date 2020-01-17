@@ -33,7 +33,6 @@ import static io.helidon.linker.util.Constants.CDS_REQUIRES_UNLOCK_OPTION;
 import static io.helidon.linker.util.Constants.DEBUGGER_MODULE;
 import static io.helidon.linker.util.Constants.DIR_SEP;
 import static io.helidon.linker.util.Constants.INDENT;
-import static io.helidon.linker.util.Constants.INDENT_BOLD;
 import static io.helidon.linker.util.FileUtils.fileName;
 import static io.helidon.linker.util.FileUtils.fromWorking;
 import static io.helidon.linker.util.FileUtils.sizeOf;
@@ -145,7 +144,7 @@ public final class Linker {
     private void buildApplication() {
         this.application = Application.create(config.mainJar());
         this.exitOnStarted = application.exitOnStartedValue();
-        final Runtime.Version version = application.helidonVersion();
+        final String version = application.helidonVersion();
         Log.info("Creating Java Runtime Image %s from %s and %s, built with Helidon %s",
                  Cyan.apply(imageName),
                  Cyan.apply("JDK " + config.jdk().version()),
@@ -297,10 +296,7 @@ public final class Linker {
     private void testImage() {
         if (config.test()) {
             if (startScript != null) {
-                Log.info();
-                Log.info("Executing %s", Cyan.apply(startCommand() + " --test"));
-                Log.info();
-                startScript.execute(INDENT, "--test");
+                executeStartScript("--test");
             } else {
                 Log.info();
                 Log.info("Executing %s", Cyan.apply(startCommand()));
@@ -325,10 +321,15 @@ public final class Linker {
     }
 
     private void displayStartScriptHelp() {
+        executeStartScript("--help");
+    }
+
+    private void executeStartScript(String option) {
         if (startScript != null) {
             Log.info();
-            Log.info("Executing %s", Cyan.apply(startCommand() + " --help"));
-            startScript.execute(INDENT_BOLD, "--help");
+            Log.info("Executing %s", Cyan.apply(startCommand() + " " + option));
+            Log.info();
+            startScript.execute(INDENT, option);
         }
     }
 

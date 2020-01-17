@@ -62,6 +62,13 @@ public abstract class Log {
          * @param args The message args.
          */
         void write(Level level, Throwable thrown, String message, Object... args);
+
+        /**
+         * Returns whether or not debug messages will be written.
+         *
+         * @return {@code true} if enabled.
+         */
+        boolean isDebugEnabled();
     }
 
     /**
@@ -71,6 +78,15 @@ public abstract class Log {
      */
     public static void setWriter(Writer writer) {
         WRITER.set(requireNonNull(writer));
+    }
+
+    /**
+     * Returns whether or not debug messages will be written.
+     *
+     * @return {@code true} if enabled.
+     */
+    public static boolean isDebugEnabled() {
+        return WRITER.get().isDebugEnabled();
     }
 
     /**

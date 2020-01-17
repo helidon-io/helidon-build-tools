@@ -36,7 +36,7 @@ import static org.hamcrest.Matchers.lessThan;
  * Unit test for class {@link Linker}.
  */
 class LinkerTest {
-     
+
     @Test
     void testQuickstartSeNoCDS() throws Exception {
         Path mainJar = TestFiles.helidonSeJar();
@@ -127,7 +127,7 @@ class LinkerTest {
 
     private static void assertScript(Path jri) throws IOException {
         Path binDir = FileUtils.assertDir(jri.resolve("bin"));
-        Path scriptFile = FileUtils.assertFile(binDir.resolve(Constants.OS_TYPE.withScriptExtension("start")));
+        Path scriptFile = FileUtils.assertFile(binDir.resolve(Constants.OS.withScriptExtension("start")));
         assertExecutable(scriptFile);
     }
 
@@ -138,7 +138,7 @@ class LinkerTest {
     }
 
     private static void assertReadOnly(Path file) throws IOException {
-        if (Constants.OS_TYPE.isPosix()) {
+        if (Constants.OS.isPosix()) {
             Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
             assertThat(file.toString(), perms, is(Set.of(PosixFilePermission.OWNER_READ,
                                                          PosixFilePermission.OWNER_WRITE,
@@ -148,7 +148,7 @@ class LinkerTest {
     }
 
     private static void assertExecutable(Path file) throws IOException {
-        if (Constants.OS_TYPE.isPosix()) {
+        if (Constants.OS.isPosix()) {
             Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
             assertThat(file.toString(), perms, is(Set.of(PosixFilePermission.OWNER_READ,
                                                          PosixFilePermission.OWNER_EXECUTE,

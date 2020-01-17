@@ -43,11 +43,14 @@ public final class ProcessMonitor {
     private final String description;
     private final boolean capturing;
     private final List<String> capturedOutput;
+    private final List<String> capturedStdOut;
+    private final List<String> capturedStdErr;
     private final Consumer<String> monitorOut;
     private final Consumer<String> stdOut;
     private final Consumer<String> stdErr;
     private final Predicate<String> filter;
     private final Function<String, String> transform;
+    private int exitCode;
 
     /**
      * Returns a new builder.
@@ -188,6 +191,8 @@ public final class ProcessMonitor {
         this.stdOut = builder.stdOut;
         this.stdErr = builder.stdErr;
         this.capturedOutput = capturing ? new ArrayList<>() : emptyList();
+        this.capturedStdOut = capturing ? new ArrayList<>() : emptyList();
+        this.capturedStdErr = capturing ? new ArrayList<>() : emptyList();
         this.filter = builder.filter;
         this.transform = builder.transform;
     }
@@ -206,29 +211,76 @@ public final class ProcessMonitor {
         final Process process = builder.start();
         final Future<?> out = monitor(process.getInputStream(), filter, transform, capturing ? this::captureStdOut : stdOut);
         final Future<?> err = monitor(process.getErrorStream(), filter, transform, capturing ? this::captureStdErr : stdErr);
-        final int exitCode = process.waitFor();
+        exitCode = process.waitFor();
         out.cancel(true);
         err.cancel(true);
         if (exitCode != 0) {
-            final StringBuilder message = new StringBuilder();
-            message.append(requireNonNullElseGet(description, () -> String.join(" ", builder.command())));
-            message.append(" FAILED with exit code ").append(exitCode);
-            if (capturing) {
-                message.append(EOL);
-                capturedOutput.forEach(line -> message.append("    ").append(line).append(EOL));
-            }
-            throw new IOException(message.toString());
+            throw new ProcessFailedException(this);
         }
         return this;
     }
 
     /**
-     * Returns the captured output.
+     * Returns the combined captured output.
      *
      * @return The output. Empty if capture not enabled.
      */
     public List<String> output() {
         return capturedOutput;
+    }
+
+    /**
+     * Returns any captured stderr output.
+     *
+     * @return The output. Empty if capture not enabled.
+     */
+    public List<String> stdOut() {
+        return capturedStdOut;
+    }
+
+    /**
+     * Returns any captured stderr output.
+     *
+     * @return The output. Empty if capture not enabled.
+     */
+    public List<String> stdErr() {
+        return capturedStdErr;
+    }
+
+    /**
+     * Process failed exception.
+     */
+    public static final class ProcessFailedException extends IOException {
+        private final ProcessMonitor monitor;
+
+        private ProcessFailedException(ProcessMonitor monitor) {
+            this.monitor = monitor;
+        }
+
+        /**
+         * Returns the process monitor.
+         *
+         * @return The monitor.
+         */
+        public ProcessMonitor processMonitor() {
+            return monitor;
+        }
+
+        @Override
+        public String getMessage() {
+            return monitor.toErrorMessage();
+        }
+    }
+
+    private String toErrorMessage() {
+        final StringBuilder message = new StringBuilder();
+        message.append(requireNonNullElseGet(description, () -> String.join(" ", builder.command())));
+        message.append(" FAILED with exit code ").append(exitCode);
+        if (capturing) {
+            message.append(EOL);
+            capturedOutput.forEach(line -> message.append("    ").append(line).append(EOL));
+        }
+        return message.toString();
     }
 
     private static void devNull(String line) {
@@ -238,6 +290,7 @@ public final class ProcessMonitor {
         stdOut.accept(line);
         synchronized (capturedOutput) {
             capturedOutput.add(line);
+            capturedStdOut.add(line);
         }
     }
 
@@ -245,6 +298,7 @@ public final class ProcessMonitor {
         stdErr.accept(line);
         synchronized (capturedOutput) {
             capturedOutput.add(line);
+            capturedStdErr.add(line);
         }
     }
 

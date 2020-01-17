@@ -21,16 +21,16 @@ import java.util.List;
 import io.helidon.linker.StartScript.TemplateConfig;
 
 import static io.helidon.linker.util.Constants.CDS_UNLOCK_OPTIONS;
-import static io.helidon.linker.util.Constants.OSType.Windows;
-import static io.helidon.linker.util.Constants.OS_TYPE;
+import static io.helidon.linker.util.Constants.OS;
 import static io.helidon.linker.util.FileUtils.fileName;
+import static io.helidon.linker.util.OSType.Windows;
 import static java.util.Collections.emptyList;
 
 /**
  * Template for start script.
  */
 public class StartScriptTemplate extends StartScript.SimpleTemplate {
-    private static final String TEMPLATE_RESOURCE_PATH = OS_TYPE == Windows ? "start-template.ps1" : "start-template.sh";
+    private static final String TEMPLATE_RESOURCE_PATH = OS == Windows ? "start-template.ps1" : "start-template.sh";
     private static final String JAR_NAME_VAR = "<JAR_NAME>";
     private static final String DEFAULT_ARGS_VAR = "<DEFAULT_APP_ARGS>";
     private static final String DEFAULT_JVM_VAR = "<DEFAULT_APP_JVM>";
@@ -46,8 +46,8 @@ public class StartScriptTemplate extends StartScript.SimpleTemplate {
     private static final String MODULES_TIME_STAMP_VAR = "<MODULES_TIME_STAMP>";
     private static final String JAR_TIME_STAMP_VAR = "<JAR_TIME_STAMP>";
     private static final String MODULES_FILE = "lib/modules";
-    private static final String OVERRIDES = "Overrides \\\"${default%s}\\\".";
-    private static final String CHECK_TIME_STAMPS = OS_TYPE == Windows ? "function checkTimeStamps" : "checkTimeStamps()";
+    private static final String OVERRIDES = "Overrides %s${default%s}%s.";
+    private static final String CHECK_TIME_STAMPS = OS == Windows ? "function checkTimeStamps" : "checkTimeStamps()";
     private static final String SETS = "Sets default %s.";
     private static final String CDS = "cds";
     private static final String DEBUG = "debug";
@@ -92,7 +92,7 @@ public class StartScriptTemplate extends StartScript.SimpleTemplate {
         final String hasDebug = config.debugInstalled() ? "yes" : "";
         final String cdsUnlock = config.cdsRequiresUnlock() ? CDS_UNLOCK_OPTIONS + " " : "";
 
-        final String statFormat = OS_TYPE.statFormat();
+        final String statFormat = OS.statFormat();
 
         final String modulesModTime = lastModifiedTime(config.installHomeDirectory().resolve(MODULES_FILE));
         final String jarModTime = lastModifiedTime(config.mainJar());
@@ -121,7 +121,8 @@ public class StartScriptTemplate extends StartScript.SimpleTemplate {
         if (defaults.isEmpty()) {
             return String.format(SETS, description);
         } else {
-            return String.format(OVERRIDES, varName);
+            final String escapedQuote = OS.escapedQuote();
+            return String.format(OVERRIDES, escapedQuote, varName, escapedQuote);
         }
     }
 

@@ -25,7 +25,7 @@ function usage {
     Write-Host
     Write-Host "Start <JAR_NAME> from this runtime image."
     Write-Host
-    Write-Host "Usage: ${scriptName} <options> [arg]..."
+    Write-Host "Usage: ${scriptName}.ps1 <options> [arg]..."
     Write-Host
     Write-Host "Options:"
     Write-Host
@@ -84,8 +84,8 @@ function init {
     $jvmOptions = if ($jvm) { $jvm } else { $jvmDefaults }
     if (${useCds}) { $jvmOptions = appendVar "$jvmOptions" "${cdsOption}${share}" }
     if (${debug}) { $jvmOptions = appendVar "$jvmOptions" "$debugDefaults" }
-    if ($test) { 
-    	$jvmOptions = appendVar "$jvmOptions" "$exitOption" 
+    if ($test) {
+    	$jvmOptions = appendVar "$jvmOptions" "$exitOption"
     	if ($useCds) { checkTimeStamps }
     }
     $commandArgs = if ($args) { $args } else { $argDefaults }

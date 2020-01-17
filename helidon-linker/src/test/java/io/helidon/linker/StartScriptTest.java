@@ -24,16 +24,19 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.List;
 import java.util.Set;
 
-import io.helidon.linker.util.Constants;
 import io.helidon.linker.util.StreamUtils;
 import io.helidon.test.util.TestFiles;
 
+import org.hamcrest.Matcher;
+import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.linker.util.Constants.OS;
 import static io.helidon.linker.util.FileUtils.ensureDirectory;
 import static io.helidon.linker.util.FileUtils.lastModifiedTime;
+import static io.helidon.linker.util.OSType.Linux;
+import static io.helidon.linker.util.OSType.Windows;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
@@ -51,7 +54,7 @@ class StartScriptTest {
     private static final String JAR_NAME = INSTALLED_JAR_FILE.getFileName().toString();
     private static final String EXIT_ON_STARTED_VALUE = TestFiles.exitOnStartedValue();
     private static final String EXIT_ON_STARTED = "-Dexit.on.started=" + EXIT_ON_STARTED_VALUE;
-    private static final String NOT = Constants.OS_TYPE == Constants.OSType.Windows ? "-ne" : "!=";
+    private static final String NOT_EQUAL = OS == Windows ? "-ne" : "!=";
 
     private StartScript.Builder builder() {
         return StartScript.builder()
@@ -70,7 +73,14 @@ class StartScriptTest {
 
     private static String timeStampComparison(String name, Path file) {
         final String timestamp = Long.toString(lastModifiedTime(file));
-        return "${" + name + "TimeStamp} "+NOT+" \"" + timestamp + "\"";
+        return "${" + name + "TimeStamp} " + NOT_EQUAL + " \"" + timestamp + "\"";
+    }
+
+    public static Matcher<String> containsString(String substring) {
+        if (OS == Windows) {
+            substring = substring.replace(Linux.escapedQuote(), Windows.escapedQuote());
+        }
+        return StringContains.containsString(substring);
     }
 
     @Test
@@ -222,7 +232,7 @@ class StartScriptTest {
 
     @Test
     void testInstall() throws Exception {
-        Path installedScript = BIN_DIR.resolve(Constants.OS_TYPE.withScriptExtension("start"));
+        Path installedScript = BIN_DIR.resolve(OS.withScriptExtension("start"));
         Files.deleteIfExists(installedScript);
         StartScript script = builder().build();
         Path scriptFile = script.install();
@@ -234,7 +244,7 @@ class StartScriptTest {
     }
 
     private static void assertExecutable(Path file) throws IOException {
-        if (Constants.OS_TYPE.isPosix()) {
+        if (OS.isPosix()) {
             Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
             assertThat(file.toString(), perms, is(Set.of(PosixFilePermission.OWNER_READ,
                                                          PosixFilePermission.OWNER_EXECUTE,

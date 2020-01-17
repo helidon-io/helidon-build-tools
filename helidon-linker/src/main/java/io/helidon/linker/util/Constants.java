@@ -17,11 +17,13 @@
 package io.helidon.linker.util;
 
 import java.io.File;
-import java.util.Locale;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
+import static io.helidon.linker.util.OSType.currentOS;
 import static io.helidon.linker.util.Style.Bold;
+import static io.helidon.linker.util.Style.BoldBrightYellow;
 
 /**
  * Shared constants.
@@ -29,100 +31,9 @@ import static io.helidon.linker.util.Style.Bold;
 public final class Constants {
 
     /**
-     * Operating system types.
+     * The current operating system type.
      */
-    public enum OSType {
-        /**
-         * Macintosh.
-         */
-        MacOS("java", true, null, "-f %m", "mvn"),
-        /**
-         * Windows.
-         */
-        Windows("java.exe", false, "powershell.exe", "%s", "mvn.cmd") {
-            @Override
-            public String withScriptExtension(String scriptName){
-                return scriptName + ".ps1";
-            }
-        },
-        /**
-         * Linux.
-         */
-        Linux("java", true, null, "-c %Y", "mvn"),
-        /**
-         * Unknown.
-         */
-        Unknown("java", true, null, null, "mvn");
-
-        private final String javaExecutable;
-        private final boolean posix;
-        private final String scriptExecutor;
-        private final String statFormat;
-        private final String mavenExec;
-
-        OSType(String javaExecutable, boolean posix, String scriptExecutor, String statFormat, String mavenExec) {
-            this.javaExecutable = javaExecutable;
-            this.posix = posix;
-            this.scriptExecutor = scriptExecutor;
-            this.statFormat = statFormat;
-            this.mavenExec = mavenExec;
-        }
-
-        /**
-         * Default java executable.
-         * @return java executable name
-         */
-        public String javaExecutable() {
-            return javaExecutable;
-        }
-
-        /**
-         * Returns the scriptName with the SO related extension.
-         * @param scriptName The script file name without file extension
-         * @return The scriptName with SO extension
-         */
-        public String withScriptExtension(String scriptName) {
-            return scriptName;
-        }
-
-        /**
-         * To check that OSType supports posix.
-         * @return true when OSType supports posix or false if not.
-         */
-        public boolean isPosix() {
-            return posix;
-        }
-
-        /**
-         * In some OSType is necessary to specify the program to execute the script.
-         * @return the program name to execute the script or null when it is not necessary.
-         */
-        public String scriptExecutor() {
-            return scriptExecutor;
-        }
-
-        /**
-         * Returns the stat format that depends on SO.
-         * @return the stat format
-         */
-        public String statFormat() {
-            return statFormat;
-        }
-
-        /**
-         * Returns the maven execution file name.
-         * @return the maven exec
-         */
-        public String mavenExec() {
-            return mavenExec;
-        }
-    }
-
-    /**
-     * The operating system type.
-     *
-     */
-    public static final OSType OS_TYPE = osType();
+    public static final OSType OS = currentOS();
 
     /**
      * The minimum supported JDK version.
@@ -130,14 +41,14 @@ public final class Constants {
     public static final int MINIMUM_JDK_VERSION = 9;
 
     /**
-     * End of line string.
+     * Whether or not this is a Docker build.
      */
-    public static final String EOL = System.getProperty("line.separator");
+    public static final boolean DOCKER_BUILD = "true".equals(System.getProperty("docker.build"));
 
     /**
-     * File system directory separator.
+     * The minimum supported JDK version when in a Docker env.
      */
-    public static final String DIR_SEP = File.separator;
+    public static final int MINIMUM_DOCKER_JDK_VERSION = 10;
 
     /**
      * Whether or not JDEPS requires the missing deps option.
@@ -160,14 +71,19 @@ public final class Constants {
     public static final boolean CDS_SUPPORTS_IMAGE_COPY = Runtime.version().major() >= 10;
 
     /**
+     * End of line string.
+     */
+    public static final String EOL = System.getProperty("line.separator");
+
+    /**
+     * File system directory separator.
+     */
+    public static final String DIR_SEP = File.separator;
+
+    /**
      * Indent function.
      */
     public static final Function<String, String> INDENT = line -> "    " + line;
-
-    /**
-     * Indent bold function.
-     */
-    public static final Function<String, String> INDENT_BOLD = line -> "    " + Bold.apply(line);
 
     /**
      * Excluded module names.
@@ -179,19 +95,33 @@ public final class Constants {
      */
     public static final String DEBUGGER_MODULE = "jdk.jdwp.agent";
 
+    /**
+     * Identifying substring for a Windows error message when running a script.
+     */
+    public static final String WINDOWS_SCRIPT_EXECUTION_ERROR = "FullyQualifiedErrorId";
 
-    private static OSType osType() {
-        final String name = System.getProperty("os.name", "unknown").toLowerCase(Locale.ENGLISH);
-        if (name.contains("win")) {
-            return OSType.Windows;
-        } else if (name.contains("mac") || name.contains("darwin")) {
-            return OSType.MacOS;
-        } else if (name.contains("nux")) {
-            return OSType.Linux;
-        } else {
-            return OSType.Unknown;
-        }
-    }
+    /**
+     * Identifying substrings for the Windows error message that requires the user to set an execution policy.
+     */
+    public static final List<String> WINDOWS_SCRIPT_EXECUTION_POLICY_ERROR = List.of("UnauthorizedAccess",
+                                                                                     "Execution",
+                                                                                     "Policies");
+
+    /**
+     * The help message to log if the script execution policy error occurs.
+     */
+    public static final String WINDOWS_SCRIPT_EXECUTION_POLICY_ERROR_HELP =
+        EOL
+        + EOL
+        + Bold.apply("To enable script execution, run the following command: ")
+        + EOL
+        + EOL
+        + "    "
+        + BoldBrightYellow.apply("powershell Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned")
+        + EOL
+        + EOL
+        + Bold.apply("and answer 'Y' if prompted.");
+
     private Constants() {
     }
 }

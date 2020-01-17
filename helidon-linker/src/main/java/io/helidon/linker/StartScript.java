@@ -33,9 +33,9 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import io.helidon.linker.util.Constants;
 import io.helidon.linker.util.FileUtils;
 import io.helidon.linker.util.Log;
+import io.helidon.linker.util.OSType;
 import io.helidon.linker.util.ProcessMonitor;
 import io.helidon.linker.util.StreamUtils;
 
@@ -44,9 +44,12 @@ import static io.helidon.linker.util.Constants.CDS_SUPPORTS_IMAGE_COPY;
 import static io.helidon.linker.util.Constants.CDS_UNLOCK_OPTIONS;
 import static io.helidon.linker.util.Constants.DIR_SEP;
 import static io.helidon.linker.util.Constants.EOL;
-import static io.helidon.linker.util.Constants.OSType.Unknown;
-import static io.helidon.linker.util.Constants.OS_TYPE;
+import static io.helidon.linker.util.Constants.OS;
+import static io.helidon.linker.util.Constants.WINDOWS_SCRIPT_EXECUTION_ERROR;
+import static io.helidon.linker.util.Constants.WINDOWS_SCRIPT_EXECUTION_POLICY_ERROR;
+import static io.helidon.linker.util.Constants.WINDOWS_SCRIPT_EXECUTION_POLICY_ERROR_HELP;
 import static io.helidon.linker.util.FileUtils.assertDir;
+import static io.helidon.linker.util.OSType.Unknown;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
@@ -54,7 +57,7 @@ import static java.util.Objects.requireNonNull;
  * Installs a start script for a main jar.
  */
 public class StartScript {
-    private static final String INSTALL_PATH = Constants.OS_TYPE.withScriptExtension("start");
+    private static final String INSTALL_PATH = OS.withScriptExtension("start");
     private final Path installDirectory;
     private final Path scriptFile;
     private final String script;
@@ -91,15 +94,15 @@ public class StartScript {
     Path install() {
         try {
             Files.copy(new ByteArrayInputStream(script.getBytes(StandardCharsets.UTF_8)), scriptFile);
-            if (OS_TYPE.isPosix()) {
+            if (OS.isPosix()) {
                 Files.setPosixFilePermissions(scriptFile, Set.of(
-                        PosixFilePermission.OWNER_READ,
-                        PosixFilePermission.OWNER_WRITE,
-                        PosixFilePermission.OWNER_EXECUTE,
-                        PosixFilePermission.GROUP_READ,
-                        PosixFilePermission.GROUP_EXECUTE,
-                        PosixFilePermission.OTHERS_READ,
-                        PosixFilePermission.OTHERS_EXECUTE
+                    PosixFilePermission.OWNER_READ,
+                    PosixFilePermission.OWNER_WRITE,
+                    PosixFilePermission.OWNER_EXECUTE,
+                    PosixFilePermission.GROUP_READ,
+                    PosixFilePermission.GROUP_EXECUTE,
+                    PosixFilePermission.OTHERS_READ,
+                    PosixFilePermission.OTHERS_EXECUTE
                 ));
             }
             return scriptFile;
@@ -119,25 +122,51 @@ public class StartScript {
         final ProcessBuilder processBuilder = new ProcessBuilder();
         final List<String> command = new ArrayList<>();
         final Path root = requireNonNull(requireNonNull(scriptFile.getParent()).getParent());
-        if (Constants.OS_TYPE.scriptExecutor() != null) {
-            command.add(Constants.OS_TYPE.scriptExecutor());
+        if (OS.scriptExecutor() != null) {
+            command.add(OS.scriptExecutor());
         }
         command.add(scriptFile.toString());
         command.addAll(Arrays.asList(args));
         Log.debug("Commands: %s", command.toString());
         processBuilder.command(command);
         processBuilder.directory(root.toFile());
+        final ProcessMonitor monitor = ProcessMonitor.builder()
+                                                     .processBuilder(processBuilder)
+                                                     .stdOut(Log::info)
+                                                     .stdErr(Log::warn)
+                                                     .transform(transform)
+                                                     .capture(true)
+                                                     .build();
         try {
-            ProcessMonitor.builder()
-                          .processBuilder(processBuilder)
-                          .stdOut(Log::info)
-                          .stdErr(Log::warn)
-                          .transform(transform)
-                          .capture(false)
-                          .build()
-                          .execute();
+            monitor.execute();
+            checkWindowsExecutionPolicyError(monitor, false);
+        } catch (ProcessMonitor.ProcessFailedException e) {
+            checkWindowsExecutionPolicyError(e.processMonitor(), true);
+            throw new UncheckedIOException(e);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void checkWindowsExecutionPolicyError(ProcessMonitor monitor, boolean failed) {
+        if (OS == OSType.Windows) {
+
+            // We might have silently failed (but with warnings), and we have to deal with output that
+            // is split across lines, so join stderr output
+
+            final String stdErr = String.join(" ", monitor.stdErr());
+            if (failed || stdErr.contains(WINDOWS_SCRIPT_EXECUTION_ERROR)) {
+                final StringBuilder msg = new StringBuilder();
+                msg.append("Generated ").append(scriptFile.getFileName()).append(" script failed.");
+
+                // Add help message if this is the execution policy error
+
+                if (containsAll(stdErr, WINDOWS_SCRIPT_EXECUTION_POLICY_ERROR)) {
+                    msg.append(WINDOWS_SCRIPT_EXECUTION_POLICY_ERROR_HELP);
+                }
+
+                throw new RuntimeException(msg.toString());
+            }
         }
     }
 
@@ -167,6 +196,15 @@ public class StartScript {
     @Override
     public String toString() {
         return script;
+    }
+
+    private static boolean containsAll(String message, List<String> words) {
+        for (final String word: words) {
+            if (!message.contains(word)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -375,6 +413,7 @@ public class StartScript {
 
         /**
          * Returns the index of the first line that is equals to the given str.
+         *
          * @param startIndex The start index.
          * @param str The string.
          * @return The index.
@@ -598,7 +637,7 @@ public class StartScript {
 
         private Template template() {
             if (template == null) {
-                if (OS_TYPE == Unknown) {
+                if (OS == Unknown) {
                     throw new PlatformNotSupportedError(config.toCommand());
                 } else {
                     return new StartScriptTemplate();
