@@ -4,6 +4,7 @@ This plugin provides common utilities for Maven based Helidon applications.
 
 * [Goal: native-image](#goal-native-image)
 * [Goal: java-image](#goal-java-image)
+* [Goal: root-dir](#goal-root-dir)
 
 ## Goal: `native-image`
 
@@ -173,4 +174,35 @@ You can also execute this plugin outside of a configured life-cycle, however
 ```bash
 mvn package
 mvn helidon:java-image
+```
+
+## Goal: `root-dir`
+
+Maven goal to find the top level root directory of the project and store it in a property.
+
+This plugin binds to the `validate` phase by default.
+
+The root directory is stored in a property `top.parent.basedir`.
+
+### General usage
+
+Execution of this plugin can be defined in a build of the parent project, if required
+ by every module.
+
+```xml
+ <build>
+    <plugins>
+        <plugin>
+            <groupId>io.helidon.build-tools</groupId>
+            <artifactId>helidon-maven-plugin</artifactId>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>root-dir</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
 ```
