@@ -22,4 +22,5 @@ module helidon.linker {
     requires jandex;
     requires org.fusesource.jansi;
     requires org.objectweb.asm;
+    requires helidon.build.utils;
 }

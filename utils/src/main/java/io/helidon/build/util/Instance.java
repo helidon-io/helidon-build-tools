@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package io.helidon.test.util;
+package io.helidon.build.util;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 /**
  * An instance cache that defers creation until first access.
+ *
+ * @param <T> The type of the instance.
  */
 public class Instance<T> {
     private final AtomicReference<T> cache;

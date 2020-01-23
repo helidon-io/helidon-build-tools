@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.linker.util;
+package io.helidon.build.util;
 
 import java.util.Locale;
 
@@ -112,9 +112,9 @@ public enum OSType {
     }
 
     /**
-     * To check that OSType supports posix.
+     * To check that OS supports posix.
      *
-     * @return true when OSType supports posix or false if not.
+     * @return true when OS supports posix or false if not.
      */
     public boolean isPosix() {
         return posix;
@@ -130,7 +130,7 @@ public enum OSType {
     }
 
     /**
-     * Returns the stat format that depends on SO.
+     * Returns the stat format that depends on OS.
      *
      * @return the stat format
      */

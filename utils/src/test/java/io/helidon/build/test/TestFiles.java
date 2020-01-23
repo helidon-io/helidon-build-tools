@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.test.util;
+package io.helidon.build.test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -23,16 +23,17 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import io.helidon.linker.Application;
-import io.helidon.linker.util.Constants;
-import io.helidon.linker.util.Log;
-import io.helidon.linker.util.ProcessMonitor;
+import io.helidon.build.util.Constants;
+import io.helidon.build.util.Instance;
+import io.helidon.build.util.Log;
+import io.helidon.build.util.Maven;
+import io.helidon.build.util.ProcessMonitor;
 
 import org.eclipse.aether.version.Version;
 
-import static io.helidon.linker.util.Constants.DIR_SEP;
-import static io.helidon.linker.util.FileUtils.assertDir;
-import static io.helidon.linker.util.FileUtils.assertFile;
+import static io.helidon.build.util.Constants.DIR_SEP;
+import static io.helidon.build.util.FileUtils.assertDir;
+import static io.helidon.build.util.FileUtils.assertFile;
 
 /**
  * Test file utilities.
@@ -46,6 +47,7 @@ public class TestFiles {
     private static final String HELIDON_QUICKSTART_PREFIX = "helidon-quickstart-";
     private static final String QUICKSTART_PACKAGE_PREFIX = "io.helidon.examples.quickstart.";
     private static final String SIGNED_JAR_COORDINATES = "org.bouncycastle:bcpkix-jdk15on:1.60";
+    private static final String VERSION_1_4_1 = "1.4.1";
     private static final Instance<Maven> MAVEN = new Instance<>(TestFiles::createMaven);
     private static final Instance<Version> LATEST_HELIDON_VERSION = new Instance<>(TestFiles::lookupLatestHelidonVersion);
     private static final Instance<Path> SE_JAR = new Instance<>(TestFiles::getOrCreateQuickstartSeJar);
@@ -77,7 +79,7 @@ public class TestFiles {
      * @return The value.
      */
     public static String exitOnStartedValue() {
-        return Application.exitOnStartedValue(latestHelidonVersion().toString());
+        return latestHelidonVersion().toString().equals(VERSION_1_4_1) ? "✅" : "!";
     }
 
     /**

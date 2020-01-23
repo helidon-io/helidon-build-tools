@@ -27,9 +27,9 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import io.helidon.linker.util.FileUtils;
+import io.helidon.build.util.FileUtils;
+import io.helidon.build.util.Log;
 import io.helidon.linker.util.JavaRuntime;
-import io.helidon.linker.util.Log;
 
 import static io.helidon.linker.util.Constants.DIR_SEP;
 

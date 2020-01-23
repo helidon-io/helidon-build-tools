@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.linker.util;
+package io.helidon.build.util;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,7 +30,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static io.helidon.linker.util.Constants.EOL;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNullElseGet;
 
@@ -277,8 +276,8 @@ public final class ProcessMonitor {
         message.append(requireNonNullElseGet(description, () -> String.join(" ", builder.command())));
         message.append(" FAILED with exit code ").append(exitCode);
         if (capturing) {
-            message.append(EOL);
-            capturedOutput.forEach(line -> message.append("    ").append(line).append(EOL));
+            message.append(Constants.EOL);
+            capturedOutput.forEach(line -> message.append("    ").append(line).append(Constants.EOL));
         }
         return message.toString();
     }

@@ -21,9 +21,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
-import static io.helidon.linker.util.OSType.currentOS;
-import static io.helidon.linker.util.Style.Bold;
-import static io.helidon.linker.util.Style.BoldBrightYellow;
+import io.helidon.build.util.OSType;
+
+import static io.helidon.build.util.OSType.currentOS;
+import static io.helidon.build.util.Style.Bold;
+import static io.helidon.build.util.Style.BoldBrightYellow;
 
 /**
  * Shared constants.

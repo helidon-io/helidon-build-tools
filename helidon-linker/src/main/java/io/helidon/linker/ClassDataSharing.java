@@ -26,16 +26,16 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
+import io.helidon.build.util.FileUtils;
+import io.helidon.build.util.Log;
+import io.helidon.build.util.OSType;
+import io.helidon.build.util.ProcessMonitor;
 import io.helidon.linker.util.Constants;
-import io.helidon.linker.util.FileUtils;
 import io.helidon.linker.util.JavaRuntime;
-import io.helidon.linker.util.Log;
-import io.helidon.linker.util.OSType;
-import io.helidon.linker.util.ProcessMonitor;
 
-import static io.helidon.linker.util.FileUtils.assertDir;
-import static io.helidon.linker.util.FileUtils.assertFile;
-import static io.helidon.linker.util.FileUtils.fileName;
+import static io.helidon.build.util.FileUtils.assertDir;
+import static io.helidon.build.util.FileUtils.assertFile;
+import static io.helidon.build.util.FileUtils.fileName;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 

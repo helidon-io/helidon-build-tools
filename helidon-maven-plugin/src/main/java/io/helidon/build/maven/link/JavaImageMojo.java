@@ -21,9 +21,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import io.helidon.build.util.Log;
 import io.helidon.linker.Configuration;
 import io.helidon.linker.Linker;
-import io.helidon.linker.util.Log;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;

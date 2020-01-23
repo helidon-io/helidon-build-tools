@@ -21,7 +21,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import io.helidon.test.util.TestFiles;
+import io.helidon.build.test.TestFiles;
 
 import org.junit.jupiter.api.Test;
 
@@ -42,7 +42,7 @@ class ClassDataSharingTest {
     @Test
     void testQuickstartMp() throws Exception {
         Path mainJar = TestFiles.helidonMpJar();
-        Path archiveFile = Files.createTempFile("start","jsa");
+        Path archiveFile = Files.createTempFile("start", "jsa");
         String exitOnStarted = TestFiles.exitOnStartedValue();
         ClassDataSharing cds = ClassDataSharing.builder()
                                                .jri(JAVA_HOME)

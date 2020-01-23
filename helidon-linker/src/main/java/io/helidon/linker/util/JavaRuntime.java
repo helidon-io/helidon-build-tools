@@ -29,15 +29,16 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import io.helidon.build.util.FileUtils;
 import io.helidon.linker.Jar;
 import io.helidon.linker.ResourceContainer;
 
-import static io.helidon.linker.util.Constants.OS;
-import static io.helidon.linker.util.FileUtils.CURRENT_JAVA_HOME_DIR;
-import static io.helidon.linker.util.FileUtils.assertDir;
-import static io.helidon.linker.util.FileUtils.assertFile;
-import static io.helidon.linker.util.FileUtils.fileName;
-import static io.helidon.linker.util.FileUtils.listFiles;
+import static io.helidon.build.util.Constants.OS;
+import static io.helidon.build.util.FileUtils.CURRENT_JAVA_HOME_DIR;
+import static io.helidon.build.util.FileUtils.assertDir;
+import static io.helidon.build.util.FileUtils.assertFile;
+import static io.helidon.build.util.FileUtils.fileName;
+import static io.helidon.build.util.FileUtils.listFiles;
 import static java.util.Objects.requireNonNull;
 
 /**
