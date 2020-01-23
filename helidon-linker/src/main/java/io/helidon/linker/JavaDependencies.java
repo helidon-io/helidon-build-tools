@@ -28,14 +28,14 @@ import java.util.function.BiConsumer;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 
+import io.helidon.build.util.Log;
+import io.helidon.build.util.StreamUtils;
 import io.helidon.linker.util.JavaRuntime;
-import io.helidon.linker.util.Log;
-import io.helidon.linker.util.StreamUtils;
 
+import static io.helidon.build.util.StreamUtils.toPrintStream;
 import static io.helidon.linker.util.Constants.EOL;
 import static io.helidon.linker.util.Constants.EXCLUDED_MODULES;
 import static io.helidon.linker.util.Constants.JDEPS_REQUIRES_MISSING_DEPS_OPTION;
-import static io.helidon.linker.util.StreamUtils.toPrintStream;
 import static java.util.Objects.requireNonNull;
 
 /**

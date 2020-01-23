@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.test.util;
+package io.helidon.build.util;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -25,8 +25,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
-
-import io.helidon.linker.util.Log;
 
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.apache.maven.settings.Profile;
@@ -55,9 +53,9 @@ import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.eclipse.aether.version.Version;
 
-import static io.helidon.linker.util.Constants.DIR_SEP;
-import static io.helidon.linker.util.FileUtils.assertDir;
-import static io.helidon.linker.util.FileUtils.assertFile;
+import static io.helidon.build.util.Constants.DIR_SEP;
+import static io.helidon.build.util.FileUtils.assertDir;
+import static io.helidon.build.util.FileUtils.assertFile;
 import static java.util.Objects.requireNonNull;
 
 /**

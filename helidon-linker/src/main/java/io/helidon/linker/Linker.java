@@ -24,22 +24,22 @@ import java.util.List;
 import java.util.Set;
 import java.util.spi.ToolProvider;
 
+import io.helidon.build.util.Log;
+import io.helidon.build.util.ProcessMonitor;
 import io.helidon.linker.util.JavaRuntime;
-import io.helidon.linker.util.Log;
-import io.helidon.linker.util.ProcessMonitor;
 
+import static io.helidon.build.util.FileUtils.fileName;
+import static io.helidon.build.util.FileUtils.fromWorking;
+import static io.helidon.build.util.FileUtils.sizeOf;
+import static io.helidon.build.util.Style.BoldBlue;
+import static io.helidon.build.util.Style.BoldBrightGreen;
+import static io.helidon.build.util.Style.BoldYellow;
+import static io.helidon.build.util.Style.Cyan;
 import static io.helidon.linker.Application.APP_DIR;
 import static io.helidon.linker.util.Constants.CDS_REQUIRES_UNLOCK_OPTION;
 import static io.helidon.linker.util.Constants.DEBUGGER_MODULE;
 import static io.helidon.linker.util.Constants.DIR_SEP;
 import static io.helidon.linker.util.Constants.INDENT;
-import static io.helidon.linker.util.FileUtils.fileName;
-import static io.helidon.linker.util.FileUtils.fromWorking;
-import static io.helidon.linker.util.FileUtils.sizeOf;
-import static io.helidon.linker.util.Style.BoldBlue;
-import static io.helidon.linker.util.Style.BoldBrightGreen;
-import static io.helidon.linker.util.Style.BoldYellow;
-import static io.helidon.linker.util.Style.Cyan;
 
 /**
  * Create a custom runtime image by finding the Java modules required of a Helidon application and linking them via jlink,

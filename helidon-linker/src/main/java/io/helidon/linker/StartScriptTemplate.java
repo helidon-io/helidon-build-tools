@@ -20,10 +20,10 @@ import java.util.List;
 
 import io.helidon.linker.StartScript.TemplateConfig;
 
+import static io.helidon.build.util.FileUtils.fileName;
+import static io.helidon.build.util.OSType.Windows;
 import static io.helidon.linker.util.Constants.CDS_UNLOCK_OPTIONS;
 import static io.helidon.linker.util.Constants.OS;
-import static io.helidon.linker.util.FileUtils.fileName;
-import static io.helidon.linker.util.OSType.Windows;
 import static java.util.Collections.emptyList;
 
 /**

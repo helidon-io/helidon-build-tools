@@ -17,14 +17,14 @@
 package io.helidon.build.maven.link;
 
 
-import io.helidon.linker.util.Log.Level;
+import io.helidon.build.util.Log.Level;
 
 import org.apache.maven.plugin.logging.Log;
 
 /**
- * {@link io.helidon.linker.util.Log.Writer} that writes to a maven log.
+ * {@link io.helidon.build.util.Log.Writer} that writes to a maven log.
  */
-public class MavenLogWriter implements io.helidon.linker.util.Log.Writer {
+public class MavenLogWriter implements io.helidon.build.util.Log.Writer {
     private final Log log;
 
     /**

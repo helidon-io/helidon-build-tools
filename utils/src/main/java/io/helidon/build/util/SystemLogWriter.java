@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package io.helidon.linker.util;
+package io.helidon.build.util;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import io.helidon.linker.util.Log.Level;
-
-import static io.helidon.linker.util.Constants.EOL;
+import io.helidon.build.util.Log.Level;
 
 /**
  * {@link Log.Writer} that writes to {@link System#out} and {@link System#err}.
@@ -90,7 +88,7 @@ public final class SystemLogWriter implements Log.Writer {
             StringWriter string = new StringWriter();
             PrintWriter print = new PrintWriter(string);
             thrown.printStackTrace(print);
-            return message + EOL + EOL + string.toString();
+            return message + Constants.EOL + Constants.EOL + string.toString();
         }
     }
 }

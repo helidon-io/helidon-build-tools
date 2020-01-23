@@ -46,9 +46,9 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 
+import io.helidon.build.util.Log;
+import io.helidon.build.util.StreamUtils;
 import io.helidon.linker.util.Constants;
-import io.helidon.linker.util.Log;
-import io.helidon.linker.util.StreamUtils;
 
 import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexReader;
@@ -58,9 +58,9 @@ import org.jboss.jandex.UnsupportedVersion;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 
-import static io.helidon.linker.util.FileUtils.assertDir;
-import static io.helidon.linker.util.FileUtils.assertFile;
-import static io.helidon.linker.util.FileUtils.fileName;
+import static io.helidon.build.util.FileUtils.assertDir;
+import static io.helidon.build.util.FileUtils.assertFile;
+import static io.helidon.build.util.FileUtils.fileName;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
@@ -328,10 +328,10 @@ public final class Jar implements ResourceContainer {
         if (Constants.OS.isPosix()) {
             try {
                 Files.setPosixFilePermissions(targetFile, Set.of(
-                        PosixFilePermission.OWNER_READ,
-                        PosixFilePermission.OWNER_WRITE,
-                        PosixFilePermission.GROUP_READ,
-                        PosixFilePermission.OTHERS_READ
+                    PosixFilePermission.OWNER_READ,
+                    PosixFilePermission.OWNER_WRITE,
+                    PosixFilePermission.GROUP_READ,
+                    PosixFilePermission.OTHERS_READ
                 ));
             } catch (IOException e) {
                 Log.warn("Unable to set %s read-only: %s", e.getMessage());

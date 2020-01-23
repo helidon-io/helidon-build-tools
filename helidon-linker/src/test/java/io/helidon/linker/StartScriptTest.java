@@ -24,18 +24,18 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.List;
 import java.util.Set;
 
-import io.helidon.linker.util.StreamUtils;
-import io.helidon.test.util.TestFiles;
+import io.helidon.build.util.StreamUtils;
+import io.helidon.build.test.TestFiles;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.util.FileUtils.ensureDirectory;
+import static io.helidon.build.util.FileUtils.lastModifiedTime;
+import static io.helidon.build.util.OSType.Linux;
+import static io.helidon.build.util.OSType.Windows;
 import static io.helidon.linker.util.Constants.OS;
-import static io.helidon.linker.util.FileUtils.ensureDirectory;
-import static io.helidon.linker.util.FileUtils.lastModifiedTime;
-import static io.helidon.linker.util.OSType.Linux;
-import static io.helidon.linker.util.OSType.Windows;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;

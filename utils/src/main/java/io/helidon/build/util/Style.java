@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.linker.util;
+package io.helidon.build.util;
 
 import java.util.function.Function;
 

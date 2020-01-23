@@ -13,27 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+module helidon.build.utils {
+    exports io.helidon.build.util;
 
-package io.helidon.linker;
-
-import java.nio.file.Path;
-
-import io.helidon.build.test.TestFiles;
-
-import org.junit.jupiter.api.Test;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-
-/**
- * Unit test for class {@link Jar}.
- */
-class JarTest {
-
-    @Test
-    void testSignedJar() {
-        Path signed = TestFiles.signedJar();
-        Jar jar = Jar.open(signed);
-        assertThat(jar.isSigned(), is(true));
-    }
+    requires org.fusesource.jansi;
+    requires maven.resolver.provider;
+    requires maven.settings;
+    requires maven.settings.builder;
+    requires org.apache.maven.resolver;
+    requires org.apache.maven.resolver.connector.basic;
+    requires org.apache.maven.resolver.impl;
+    requires org.apache.maven.resolver.spi;
+    requires org.apache.maven.resolver.transport.file;
+    requires org.apache.maven.resolver.transport.http;
 }

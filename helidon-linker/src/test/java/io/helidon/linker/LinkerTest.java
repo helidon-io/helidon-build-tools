@@ -22,9 +22,9 @@ import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Set;
 
+import io.helidon.build.util.FileUtils;
+import io.helidon.build.test.TestFiles;
 import io.helidon.linker.util.Constants;
-import io.helidon.linker.util.FileUtils;
-import io.helidon.test.util.TestFiles;
 
 import org.junit.jupiter.api.Test;
 

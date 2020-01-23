@@ -33,12 +33,14 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import io.helidon.linker.util.FileUtils;
-import io.helidon.linker.util.Log;
-import io.helidon.linker.util.OSType;
-import io.helidon.linker.util.ProcessMonitor;
-import io.helidon.linker.util.StreamUtils;
+import io.helidon.build.util.FileUtils;
+import io.helidon.build.util.Log;
+import io.helidon.build.util.OSType;
+import io.helidon.build.util.ProcessMonitor;
+import io.helidon.build.util.StreamUtils;
 
+import static io.helidon.build.util.FileUtils.assertDir;
+import static io.helidon.build.util.OSType.Unknown;
 import static io.helidon.linker.util.Constants.CDS_REQUIRES_UNLOCK_OPTION;
 import static io.helidon.linker.util.Constants.CDS_SUPPORTS_IMAGE_COPY;
 import static io.helidon.linker.util.Constants.CDS_UNLOCK_OPTIONS;
@@ -48,8 +50,6 @@ import static io.helidon.linker.util.Constants.OS;
 import static io.helidon.linker.util.Constants.WINDOWS_SCRIPT_EXECUTION_ERROR;
 import static io.helidon.linker.util.Constants.WINDOWS_SCRIPT_EXECUTION_POLICY_ERROR;
 import static io.helidon.linker.util.Constants.WINDOWS_SCRIPT_EXECUTION_POLICY_ERROR_HELP;
-import static io.helidon.linker.util.FileUtils.assertDir;
-import static io.helidon.linker.util.OSType.Unknown;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
@@ -199,7 +199,7 @@ public class StartScript {
     }
 
     private static boolean containsAll(String message, List<String> words) {
-        for (final String word: words) {
+        for (final String word : words) {
             if (!message.contains(word)) {
                 return false;
             }

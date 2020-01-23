@@ -14,26 +14,32 @@
  * limitations under the License.
  */
 
-package io.helidon.linker;
+package io.helidon.build.util;
 
-import java.nio.file.Path;
+import java.io.File;
 
-import io.helidon.build.test.TestFiles;
-
-import org.junit.jupiter.api.Test;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static io.helidon.build.util.OSType.currentOS;
 
 /**
- * Unit test for class {@link Jar}.
+ * Shared constants.
  */
-class JarTest {
+public final class Constants {
 
-    @Test
-    void testSignedJar() {
-        Path signed = TestFiles.signedJar();
-        Jar jar = Jar.open(signed);
-        assertThat(jar.isSigned(), is(true));
+    /**
+     * The current operating system type.
+     */
+    public static final OSType OS = currentOS();
+
+    /**
+     * End of line string.
+     */
+    public static final String EOL = System.getProperty("line.separator");
+
+    /**
+     * File system directory separator.
+     */
+    public static final String DIR_SEP = File.separator;
+
+    private Constants() {
     }
 }

@@ -14,26 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.linker;
-
-import java.nio.file.Path;
-
-import io.helidon.build.test.TestFiles;
-
-import org.junit.jupiter.api.Test;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-
 /**
- * Unit test for class {@link Jar}.
+ * Helidon Build Utilities.
  */
-class JarTest {
-
-    @Test
-    void testSignedJar() {
-        Path signed = TestFiles.signedJar();
-        Jar jar = Jar.open(signed);
-        assertThat(jar.isSigned(), is(true));
-    }
-}
+package io.helidon.build.util;
