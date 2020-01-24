@@ -162,6 +162,7 @@
         <module>helidon-linker</module>
         <module>snakeyaml-codegen-maven-plugin</module>
         <module>utils</module>
+        <module>live-restart</module>
     </modules>
 
     <build>
@@ -416,6 +417,11 @@
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-core</artifactId>
+                <version>${version.lib.maven}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-model</artifactId>
                 <version>${version.lib.maven}</version>
             </dependency>
             <dependency>

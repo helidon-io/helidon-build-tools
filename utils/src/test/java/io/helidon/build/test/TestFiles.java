@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.Instance;
@@ -30,16 +31,18 @@ import io.helidon.build.util.Maven;
 import io.helidon.build.util.ProcessMonitor;
 
 import org.eclipse.aether.version.Version;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.helidon.build.util.Constants.DIR_SEP;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Test file utilities.
  */
-public class TestFiles {
-    private static final Path OUR_TARGET_DIR = ourTargetDir();
+public class TestFiles implements BeforeAllCallback {
     private static final String MAVEN_EXEC = Constants.OS.mavenExec();
     private static final String HELIDON_GROUP_ID = "io.helidon";
     private static final String HELIDON_PROJECT_ID = "helidon-project";
@@ -48,11 +51,19 @@ public class TestFiles {
     private static final String QUICKSTART_PACKAGE_PREFIX = "io.helidon.examples.quickstart.";
     private static final String SIGNED_JAR_COORDINATES = "org.bouncycastle:bcpkix-jdk15on:1.60";
     private static final String VERSION_1_4_1 = "1.4.1";
+    private static final AtomicReference<Path> TARGET_DIR = new AtomicReference<>();
     private static final Instance<Maven> MAVEN = new Instance<>(TestFiles::createMaven);
     private static final Instance<Version> LATEST_HELIDON_VERSION = new Instance<>(TestFiles::lookupLatestHelidonVersion);
     private static final Instance<Path> SE_JAR = new Instance<>(TestFiles::getOrCreateQuickstartSeJar);
     private static final Instance<Path> MP_JAR = new Instance<>(TestFiles::getOrCreateQuickstartMpJar);
     private static final Instance<Path> SIGNED_JAR = new Instance<>(TestFiles::fetchSignedJar);
+
+    @Override
+    public void beforeAll(ExtensionContext ctx) {
+        if (TARGET_DIR.get() == null) {
+            TARGET_DIR.set(targetDir(requireNonNull(ctx.getRequiredTestClass())));
+        }
+    }
 
     /**
      * Returns the target directory.
@@ -60,7 +71,7 @@ public class TestFiles {
      * @return The directory.
      */
     public static Path targetDir() {
-        return OUR_TARGET_DIR;
+        return requireNonNull(TARGET_DIR.get());
     }
 
     /**
@@ -92,12 +103,32 @@ public class TestFiles {
     }
 
     /**
+     * Returns the quickstart SE project directory created from the latest archetype version.
+     *
+     * @return The directory.
+     */
+    public static Path helidonSeProject() {
+        helidonSeJar(); // ensure created.
+        return targetDir().resolve(quickstartId("se"));
+    }
+
+    /**
      * Returns the quickstart MP main jar created from the latest archetype version.
      *
      * @return The jar.
      */
     public static Path helidonMpJar() {
         return MP_JAR.instance();
+    }
+
+    /**
+     * Returns the quickstart MP project directory created from the latest archetype version.
+     *
+     * @return The directory.
+     */
+    public static Path helidonMpProject() {
+        helidonMpJar(); // ensure created.
+        return targetDir().resolve(quickstartId("mp"));
     }
 
     /**
@@ -152,9 +183,9 @@ public class TestFiles {
         return maven().artifact(SIGNED_JAR_COORDINATES);
     }
 
-    private static Path ourTargetDir() {
+    private static Path targetDir(Class<?> testClass) {
         try {
-            final Path ourCodeSource = Paths.get(TestFiles.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+            final Path ourCodeSource = Paths.get(testClass.getProtectionDomain().getCodeSource().getLocation().toURI());
             return ourCodeSource.getParent();
         } catch (URISyntaxException e) {
             throw new IllegalStateException(e);
@@ -171,7 +202,7 @@ public class TestFiles {
 
     private static Path getOrCreateQuickstartJar(String helidonVariant) {
         final String id = quickstartId(helidonVariant);
-        final Path sourceDir = ourTargetDir().resolve(id);
+        final Path sourceDir = targetDir().resolve(id);
         if (Files.exists(sourceDir)) {
             return quickstartJar(sourceDir, id);
         } else {
@@ -186,7 +217,7 @@ public class TestFiles {
 
     private static Path buildQuickstartProject(String helidonVariant) {
         final String id = quickstartId(helidonVariant);
-        final Path sourceDir = assertDir(ourTargetDir().resolve(id));
+        final Path sourceDir = assertDir(targetDir().resolve(id));
         Log.info("Building %s", id);
         execute(new ProcessBuilder().directory(sourceDir.toFile())
                                     .command(List.of(MAVEN_EXEC, "clean", "package", "-DskipTests")));
@@ -202,7 +233,7 @@ public class TestFiles {
     }
 
     private static Path createQuickstartProject(String helidonVariant) {
-        final Path targetDir = ourTargetDir();
+        final Path targetDir = targetDir();
         final String id = quickstartId(helidonVariant);
         final String pkg = QUICKSTART_PACKAGE_PREFIX + helidonVariant;
         final Version archetypeVersion = latestHelidonVersion();
