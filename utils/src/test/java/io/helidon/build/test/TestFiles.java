@@ -37,6 +37,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import static io.helidon.build.util.Constants.DIR_SEP;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
+import static io.helidon.build.util.FileUtils.ensureDirectory;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -66,7 +67,8 @@ public class TestFiles implements BeforeAllCallback {
     }
 
     /**
-     * Returns the target directory.
+     * Returns the target directory, set from the location of the first test class to execute. This approach ensures that
+     * each project using this class will have its own target directory used.
      *
      * @return The directory.
      */
@@ -146,7 +148,7 @@ public class TestFiles implements BeforeAllCallback {
      * @param file The file.
      * @return The file.
      */
-    public static Path ensureMockFile(Path file) {
+    public static Path ensureFile(Path file) {
         if (!Files.exists(file)) {
             try {
                 Files.createFile(file);
@@ -157,7 +159,12 @@ public class TestFiles implements BeforeAllCallback {
         return file;
     }
 
-    private static Maven maven() {
+    /**
+     * Returns the {@link Maven} instance.
+     *
+     * @return The instance.
+     */
+    public static Maven maven() {
         return MAVEN.instance();
     }
 
@@ -185,8 +192,8 @@ public class TestFiles implements BeforeAllCallback {
 
     private static Path targetDir(Class<?> testClass) {
         try {
-            final Path ourCodeSource = Paths.get(testClass.getProtectionDomain().getCodeSource().getLocation().toURI());
-            return ourCodeSource.getParent();
+            final Path codeSource = Paths.get(testClass.getProtectionDomain().getCodeSource().getLocation().toURI());
+            return ensureDirectory(codeSource.getParent());
         } catch (URISyntaxException e) {
             throw new IllegalStateException(e);
         }
