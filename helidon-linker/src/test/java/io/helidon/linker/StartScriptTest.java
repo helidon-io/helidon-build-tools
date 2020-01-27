@@ -49,8 +49,8 @@ class StartScriptTest {
     private static final Path BIN_DIR = ensureDirectory(INSTALL_DIR.resolve("bin"));
     private static final Path LIB_DIR = ensureDirectory(INSTALL_DIR.resolve("lib"));
     private static final Path APP_DIR = ensureDirectory(INSTALL_DIR.resolve("app"));
-    private static final Path INSTALLED_JAR_FILE = TestFiles.ensureMockFile(APP_DIR.resolve("main.jar"));
-    private static final Path INSTALLED_MODULES_FILE = TestFiles.ensureMockFile(LIB_DIR.resolve("modules"));
+    private static final Path INSTALLED_JAR_FILE = TestFiles.ensureFile(APP_DIR.resolve("main.jar"));
+    private static final Path INSTALLED_MODULES_FILE = TestFiles.ensureFile(LIB_DIR.resolve("modules"));
     private static final String JAR_NAME = INSTALLED_JAR_FILE.getFileName().toString();
     private static final String EXIT_ON_STARTED_VALUE = TestFiles.exitOnStartedValue();
     private static final String EXIT_ON_STARTED = "-Dexit.on.started=" + EXIT_ON_STARTED_VALUE;
