@@ -143,7 +143,7 @@
         <version.plugin.glassfish-copyright>1.48</version.plugin.glassfish-copyright>
         <version.plugin.gpg>1.6</version.plugin.gpg>
         <version.plugin.jar>3.0.2</version.plugin.jar>
-        <version.plugin.javadoc>3.0.0</version.plugin.javadoc>
+        <version.plugin.javadoc>3.1.1</version.plugin.javadoc>
         <version.plugin.license>1.16</version.plugin.license>
         <version.plugin.nexus-staging>1.6.8</version.plugin.nexus-staging>
         <version.plugin.resources>2.7</version.plugin.resources>
@@ -184,11 +184,10 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>${version.plugin.javadoc}</version>
                     <configuration>
-                        <doclint>all</doclint>
-                        <additionalJOptions>
-                            <JOption>-source</JOption>
-                            <JOption>8</JOption>
-                        </additionalJOptions>
+                        <source>11</source>
+                        <release>11</release>
+                        <failOnError>false</failOnError>
+                        <quiet>true</quiet>
                         <sourceFileExcludes>
                             <sourceFileExclude>**/module-info.java</sourceFileExclude>
                             <sourceFileExclude>target/**/*.java</sourceFileExclude>
