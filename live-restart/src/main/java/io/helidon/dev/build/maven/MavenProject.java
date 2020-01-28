@@ -26,11 +26,12 @@ import java.util.Collections;
 import java.util.List;
 
 import io.helidon.dev.build.BuildComponent;
+import io.helidon.dev.build.BuildDirectory;
 import io.helidon.dev.build.DirectoryType;
 import io.helidon.dev.build.FileType;
 import io.helidon.dev.build.Project;
 import io.helidon.dev.build.ProjectDirectory;
-import io.helidon.dev.build.ProjectFile;
+import io.helidon.dev.build.BuildFile;
 import io.helidon.dev.build.steps.CompileJavaSources;
 import io.helidon.dev.build.steps.CopyResources;
 
@@ -42,6 +43,7 @@ import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
 import static io.helidon.dev.build.BuildComponent.createBuildComponent;
+import static io.helidon.dev.build.BuildDirectory.createBuildDirectory;
 import static io.helidon.dev.build.DirectoryType.Classes;
 import static io.helidon.dev.build.DirectoryType.JavaSources;
 import static io.helidon.dev.build.DirectoryType.Resources;
@@ -54,10 +56,9 @@ import static io.helidon.dev.build.ProjectDirectory.createProjectDirectory;
  */
 public class MavenProject implements Project {
     private static final String POM_FILE = "pom.xml";
-    private static final String PROJECT_BUILD_SOURCE_ENCODING = "project.build.sourceEncoding";
-    private static final String UTF_8 = "UTF-8";
+
     private final ProjectDirectory root;
-    private final ProjectFile buildFile;
+    private final BuildFile buildFile;
     private final List<BuildComponent> components;
 
     /**
@@ -76,7 +77,7 @@ public class MavenProject implements Project {
     }
 
     @Override
-    public ProjectFile buildFile() {
+    public BuildFile buildSystemFile() {
         return buildFile;
     }
 
@@ -90,6 +91,11 @@ public class MavenProject implements Project {
         return Collections.emptyList(); // TODO
     }
 
+    @Override
+    public List<String> incrementalBuild() {
+        return Collections.emptyList(); // TODO
+    }
+
     /**
      * Constructor.
      *
@@ -100,20 +106,20 @@ public class MavenProject implements Project {
         this.components = new ArrayList<>();
         try {
             final Path pomFile = assertFile(rootDir.resolve(POM_FILE));
-            this.buildFile = ProjectFile.createProjectFile(root, FileType.MavenPom, pomFile);
+            this.buildFile = BuildFile.createBuildFile(root, FileType.MavenPom, pomFile);
             final Model model = readModel(rootDir, pomFile); // Validate.
 
             // TODO: use Maven apis to find and create components!
 
             final Path sourceDir = assertDir(rootDir.resolve("src/main/java"));
             final Path classesDir = ensureDirectory(rootDir.resolve("target/classes"));
-            final ProjectDirectory sources = createProjectDirectory(JavaSources, sourceDir, JavaSource);
-            final ProjectDirectory classes = createProjectDirectory(Classes, classesDir, JavaClass);
+            final BuildDirectory sources = createBuildDirectory(JavaSources, sourceDir, JavaSource);
+            final BuildDirectory classes = createBuildDirectory(Classes, classesDir, JavaClass);
             components.add(createBuildComponent(sources, classes, new CompileJavaSources()));
 
             final Path resourcesDir = rootDir.resolve("src/main/resources");
             if (Files.exists(resourcesDir)) {
-                final ProjectDirectory resources = createProjectDirectory(Resources, resourcesDir);
+                final BuildDirectory resources = createBuildDirectory(Resources, resourcesDir, FileType.Any);
                 components.add(createBuildComponent(resources, classes, new CopyResources()));
             }
         } catch (IOException e) {

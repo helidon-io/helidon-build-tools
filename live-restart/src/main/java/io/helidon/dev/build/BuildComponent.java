@@ -26,8 +26,8 @@ import static java.util.Collections.emptyList;
  * A build source and output directory.
  */
 public class BuildComponent {
-    private final ProjectDirectory sourceDir;
-    private final ProjectDirectory outputDir;
+    private final BuildDirectory sourceDir;
+    private final BuildDirectory outputDir;
     private final List<BuildStep> buildSteps;
 
     /**
@@ -37,13 +37,13 @@ public class BuildComponent {
      * @param outputDir The output directory.
      * @param buildSteps The build steps.
      */
-    public static BuildComponent createBuildComponent(ProjectDirectory sourceDir,
-                                                      ProjectDirectory outputDir,
+    public static BuildComponent createBuildComponent(BuildDirectory sourceDir,
+                                                      BuildDirectory outputDir,
                                                       BuildStep... buildSteps) {
         return new BuildComponent(sourceDir, outputDir, Arrays.asList(buildSteps));
     }
 
-    private BuildComponent(ProjectDirectory sourceDir, ProjectDirectory outputDir, List<BuildStep> buildSteps) {
+    private BuildComponent(BuildDirectory sourceDir, BuildDirectory outputDir, List<BuildStep> buildSteps) {
         this.sourceDir = sourceDir;
         this.outputDir = outputDir;
         this.buildSteps = buildSteps;
@@ -54,7 +54,7 @@ public class BuildComponent {
      *
      * @return The directory.
      */
-    public ProjectDirectory sourceDirectory() {
+    public BuildDirectory sourceDirectory() {
         return sourceDir;
     }
 
@@ -63,7 +63,7 @@ public class BuildComponent {
      *
      * @return The directory.
      */
-    public ProjectDirectory outputDirectory() {
+    public BuildDirectory outputDirectory() {
         return outputDir;
     }
 

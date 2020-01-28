@@ -20,20 +20,11 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
 
 import io.helidon.build.util.FileUtils;
 
 import static io.helidon.build.util.FileUtils.assertDir;
-import static io.helidon.dev.build.ProjectFile.createProjectFile;
-import static java.util.Collections.unmodifiableMap;
-import static java.util.Objects.requireNonNull;
 
 /**
  * A project directory.
@@ -41,22 +32,16 @@ import static java.util.Objects.requireNonNull;
 public class ProjectDirectory {
     private final DirectoryType type;
     private final Path directory;
-    private final List<FileType> fileTypes;
-    private volatile Map<Path, ProjectFile> files;
-    private volatile boolean hasDeletions;
 
     /**
      * Constructor.
      *
      * @param type The directory type.
      * @param directory The directory path.
-     * @param fileTypes The file types to include when listing files.
      */
-    ProjectDirectory(DirectoryType type, Path directory, List<FileType> fileTypes) {
+    ProjectDirectory(DirectoryType type, Path directory) {
         this.type = type;
         this.directory = assertDir(directory);
-        this.fileTypes = requireNonNull(fileTypes);
-        this.files = collectFiles();
     }
 
     /**
@@ -64,10 +49,9 @@ public class ProjectDirectory {
      *
      * @param type The directory type.
      * @param path The directory path.
-     * @param fileTypes The file types to include when listing files.
      */
-    public static ProjectDirectory createProjectDirectory(DirectoryType type, Path path, FileType... fileTypes) {
-        return new ProjectDirectory(type, path, Arrays.asList(fileTypes));
+    public static ProjectDirectory createProjectDirectory(DirectoryType type, Path path) {
+        return new ProjectDirectory(type, path);
     }
 
     /**
@@ -128,65 +112,6 @@ public class ProjectDirectory {
         }
     }
 
-    /**
-     * Returns the list of files.
-     *
-     * @return The list.
-     */
-    public Collection<ProjectFile> list() {
-        return files.values();
-    }
-
-    /**
-     * Tests for any changed files.
-     *
-     * @return The (possibly empty) set of changed files or {@code null} if none. An empty set
-     * will be returned when the only changes were deletions.
-     */
-    public Set<Path> changes() {
-        try {
-            final Set<Path> removed = new HashSet<>(files.keySet());
-            final Set<Path> addedOrModified = new HashSet<>();
-            Files.walk(directory)
-                 .forEach(file -> {
-                     for (final FileType type : fileTypes) {
-                         if (type.test(file)) {
-                             final ProjectFile existing = files.get(file);
-                             if (existing == null) {
-                                 // New
-                                 addedOrModified.add(file);
-                             } else {
-                                 // Existing
-                                 removed.remove(file);
-                                 if (existing.hasChanged()) {
-                                     // Modified
-                                     addedOrModified.add(file);
-                                 }
-                             }
-                             break;
-                         }
-                     }
-                 });
-            if (removed.isEmpty() && addedOrModified.isEmpty()) {
-                return null;
-            } else {
-                return addedOrModified;
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    /**
-     * Updates and returns the files list.
-     *
-     * @return The updated files.
-     */
-    public Collection<ProjectFile> update() {
-        files = collectFiles();
-        return list();
-    }
-
     @Override
     public String toString() {
         return "ProjectDirectory{" +
@@ -195,23 +120,17 @@ public class ProjectDirectory {
                '}';
     }
 
-    private Map<Path, ProjectFile> collectFiles() {
-        final Map<Path, ProjectFile> files = new HashMap<>();
-        if (!fileTypes.isEmpty()) {
-            try {
-                Files.walk(directory)
-                     .forEach(file -> {
-                         for (final FileType type : fileTypes) {
-                             if (type.test(file)) {
-                                 files.put(file, createProjectFile(this, type, file));
-                                 break;
-                             }
-                         }
-                     });
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-        return unmodifiableMap(files);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ProjectDirectory)) return false;
+        final ProjectDirectory that = (ProjectDirectory) o;
+        return type == that.type &&
+               Objects.equals(directory, that.directory);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, directory);
     }
 }

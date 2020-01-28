@@ -26,27 +26,27 @@ import java.util.Objects;
 import static io.helidon.build.util.FileUtils.assertFile;
 
 /**
- * A project file.
+ * A project build file that can detect modification.
  */
-public class ProjectFile {
+public class BuildFile {
     private final ProjectDirectory parent;
     private final FileType type;
     private final Path path;
     private final FileTime lastModified;
 
     /**
-     * Returns a new project file.
+     * Returns a new build file.
      *
      * @param parent The parent.
      * @param type The type.
      * @param path The file path.
      * @return The file.
      */
-    public static ProjectFile createProjectFile(ProjectDirectory parent, FileType type, Path path) {
-        return new ProjectFile(parent, type, path);
+    public static BuildFile createBuildFile(ProjectDirectory parent, FileType type, Path path) {
+        return new BuildFile(parent, type, path);
     }
 
-    private ProjectFile(ProjectDirectory parent, FileType type, Path path) {
+    private BuildFile(ProjectDirectory parent, FileType type, Path path) {
         this.parent = parent;
         this.type = type;
         this.path = assertFile(path);
@@ -94,7 +94,7 @@ public class ProjectFile {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final ProjectFile that = (ProjectFile) o;
+        final BuildFile that = (BuildFile) o;
         return Objects.equals(path, that.path);
     }
 
@@ -105,7 +105,7 @@ public class ProjectFile {
 
     @Override
     public String toString() {
-        return "ProjectFile{" +
+        return "BuildFile{" +
                "type=" + type +
                ", path=" + path +
                '}';

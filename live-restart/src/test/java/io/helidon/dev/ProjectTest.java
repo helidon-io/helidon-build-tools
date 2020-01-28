@@ -17,11 +17,11 @@
 package io.helidon.dev;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Set;
+import java.util.List;
 
 import io.helidon.build.test.TestFiles;
 import io.helidon.dev.build.BuildComponent;
+import io.helidon.dev.build.DirectoryType;
 import io.helidon.dev.build.Project;
 import io.helidon.dev.build.ProjectDirectory;
 
@@ -29,38 +29,30 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.dev.build.ProjectFactory.createProject;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
 /**
- * Unit test for class {@link Project}.
+ * Unit test for class {@link ProjectDirectory}.
  */
 class ProjectTest {
 
     @Test
-    void testSourceFileChangeDetected() {
-        final Project project = createProject(TestFiles.helidonSeProject());
+    void testQuickstartSe() {
+        final Path rootDir = TestFiles.helidonSeProject();
+        final Project project = createProject(rootDir);
         assertThat(project, is(not(nullValue())));
-        final BuildComponent sources = project.components().get(0);
-        assertThat(sources, is(not(nullValue())));
-        final ProjectDirectory sourceDir = sources.sourceDirectory();
-        assertThat(sourceDir, is(not(nullValue())));
-        assertThat(sourceDir.list().isEmpty(), is(false));
-        assertThat(sourceDir.changes(), is(nullValue()));
-        final Path sourceFile = new ArrayList<>(sourceDir.list()).get(0).path();
-
-        TestFiles.touch(sourceFile);
-        Set<Path> changes = sourceDir.changes();
-        assertThat(changes.isEmpty(), is(false));
-        assertThat(changes.contains(sourceFile), is(true));
-
-        sourceDir.update();
-        assertThat(sourceDir.changes(), is(nullValue()));
-    }
-
-    @Test
-    void testSourceFileDeletionDetected() {
-        // TODO, need app clone
+        assertThat(project.root().type(), is(DirectoryType.Project));
+        assertThat(project.root().path(), is(rootDir));
+        final List<BuildComponent> components = project.components();
+        assertThat(components, is(not(nullValue())));
+        assertThat(components.size(), is(2));
+        assertThat(components.get(0).sourceDirectory().path().toString(), endsWith("src/main/java"));
+        assertThat(components.get(0).outputDirectory().path().toString(), endsWith("target/classes"));
+        assertThat(components.get(1).sourceDirectory().path().toString(), endsWith("src/main/resources"));
+        assertThat(components.get(1).outputDirectory().path().toString(), endsWith("target/classes"));
+        assertThat(components.get(1).outputDirectory(), is(components.get(0).outputDirectory()));
     }
 }

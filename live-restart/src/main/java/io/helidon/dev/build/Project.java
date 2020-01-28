@@ -30,11 +30,11 @@ public interface Project {
     ProjectDirectory root();
 
     /**
-     * Returns the build file (e.g. {@code pom.xml}).
+     * Returns the build system file (e.g. {@code pom.xml}).
      *
      * @return The file.
      */
-    ProjectFile buildFile();
+    BuildFile buildSystemFile();
 
     /**
      * Returns all components.
@@ -49,4 +49,11 @@ public interface Project {
      * @return The errors, if any.
      */
     List<String> build();
+
+    /**
+     * Perform an incremental build.
+     *
+     * @return The errors, if any.
+     */
+    List<String> incrementalBuild();
 }

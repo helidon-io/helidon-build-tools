@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -84,6 +85,37 @@ public final class FileUtils {
                 throw new UncheckedIOException(e);
             }
         }
+    }
+
+    /**
+     * Copies the source directory to the destination.
+     *
+     * @param source The source directory.
+     * @param destination The destination directory. Must not exist.
+     * @return The absolute, normalized destination directory.
+     * @throws IllegalArgumentException If the destination exists.
+     */
+    public static Path copyDirectory(Path source, Path destination) {
+        assertDoesNotExist(destination);
+        try {
+            Files.walk(source).forEach(src -> {
+                try {
+                    final Path dst = destination.resolve(source.relativize(src));
+                    if (Files.isDirectory(src)) {
+                        Files.createDirectory(dst);
+                    } else {
+                        Files.copy(src, dst, COPY_ATTRIBUTES);
+                    }
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        } catch (UncheckedIOException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return destination.toAbsolutePath().normalize();
     }
 
     /**
@@ -163,6 +195,39 @@ public final class FileUtils {
         } else {
             throw new IllegalArgumentException(path + " does not exist");
         }
+    }
+
+    /**
+     * Assert that the given path does not exist.
+     *
+     * @param path The path.
+     * @return The normalized, absolute path.
+     * @throws IllegalArgumentException If the path exists.
+     */
+    public static Path assertDoesNotExist(Path path) {
+        if (Files.exists(requireNonNull(path))) {
+            throw new IllegalArgumentException(path + " exists");
+        } else {
+            return path.toAbsolutePath().normalize();
+        }
+    }
+
+    /**
+     * Deletes the given file or directory if it exists.
+     *
+     * @param fileOrDirectory The file or directory.
+     * @return The file or directory.
+     * @throws IOException If an error occurs.
+     */
+    public static Path delete(Path fileOrDirectory) throws IOException {
+        if (Files.exists(fileOrDirectory)) {
+            if (Files.isRegularFile(fileOrDirectory)) {
+                Files.delete(fileOrDirectory);
+            } else {
+                deleteDirectory(fileOrDirectory);
+            }
+        }
+        return fileOrDirectory;
     }
 
     /**

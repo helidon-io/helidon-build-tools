@@ -24,9 +24,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.build.util.Constants;
+import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.Instance;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.Maven;
@@ -61,6 +63,8 @@ public class TestFiles implements BeforeAllCallback {
     private static final Instance<Path> SE_JAR = new Instance<>(TestFiles::getOrCreateQuickstartSeJar);
     private static final Instance<Path> MP_JAR = new Instance<>(TestFiles::getOrCreateQuickstartMpJar);
     private static final Instance<Path> SIGNED_JAR = new Instance<>(TestFiles::fetchSignedJar);
+    private static final AtomicInteger SE_COPY_NUMBER = new AtomicInteger(1);
+    private static final AtomicInteger MP_COPY_NUMBER = new AtomicInteger(1);
 
     @Override
     public void beforeAll(ExtensionContext ctx) {
@@ -118,6 +122,15 @@ public class TestFiles implements BeforeAllCallback {
     }
 
     /**
+     * Returns the directory of a new copy of the quickstart SE project.
+     *
+     * @return The directory.
+     */
+    public static Path helidonSeProjectCopy() {
+        return copyQuickstartProject("se", SE_COPY_NUMBER);
+    }
+
+    /**
      * Returns the quickstart MP main jar created from the latest archetype version.
      *
      * @return The jar.
@@ -134,6 +147,15 @@ public class TestFiles implements BeforeAllCallback {
     public static Path helidonMpProject() {
         helidonMpJar(); // ensure created.
         return targetDir().resolve(quickstartId("mp"));
+    }
+
+    /**
+     * Returns the directory of a new copy of the quickstart MP project.
+     *
+     * @return The directory.
+     */
+    public static Path helidonMpProjectCopy() {
+        return copyQuickstartProject("mp", MP_COPY_NUMBER);
     }
 
     /**
@@ -166,20 +188,22 @@ public class TestFiles implements BeforeAllCallback {
      * Ensure that the given file exists, and update the modified time if it does.
      *
      * @param file The file.
-     * @return The last modified time.
+     * @return The file.
      */
-    public static long touch(Path file) {
+    public static Path touch(Path file) {
         if (Files.exists(file)) {
-            final long lastModified = lastModifiedTime(file) + 2000;
-            final FileTime fileTime = FileTime.fromMillis(lastModified);
+            final long currentTime = System.currentTimeMillis();
+            final long lastModified = lastModifiedTime(file);
+            final long lastModifiedPlusOneSecond = lastModified + 1000;
+            final long newTime = Math.max(currentTime, lastModifiedPlusOneSecond);
             try {
-                Files.setLastModifiedTime(file, fileTime);
-                return lastModified;
+                Files.setLastModifiedTime(file, FileTime.fromMillis(newTime));
+                return file;
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
         } else {
-            return lastModifiedTime(ensureFile(file));
+            return ensureFile(file);
         }
     }
 
@@ -281,6 +305,20 @@ public class TestFiles implements BeforeAllCallback {
                                                      "-Dpackage=" + pkg
                                     )));
         return assertDir(targetDir.resolve(id));
+    }
+
+    private static Path directory(String helidonVariant, int copyNumber) {
+        final String id = quickstartId(helidonVariant) + "-" + copyNumber;
+        return targetDir().resolve(id);
+    }
+
+    private static Path copyQuickstartProject(String helidonVariant, AtomicInteger copyNumber) {
+        final Path sourceDir = helidonSeProject();
+        Path copyDir = directory(helidonVariant, copyNumber.getAndIncrement());
+        while (Files.exists(copyDir)) {
+            copyDir = directory(helidonVariant, copyNumber.getAndIncrement());
+        }
+        return FileUtils.copyDirectory(sourceDir, copyDir);
     }
 
     private static void execute(ProcessBuilder builder) {
