@@ -22,7 +22,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon.build-tools</groupId>
     <artifactId>helidon-build-tools-project</artifactId>
-    <version>1.0.11-SNAPSHOT</version>
+    <version>1.1.2-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Helidon Build Tools Project</name>
 
@@ -143,7 +143,7 @@
         <version.plugin.glassfish-copyright>1.48</version.plugin.glassfish-copyright>
         <version.plugin.gpg>1.6</version.plugin.gpg>
         <version.plugin.jar>3.0.2</version.plugin.jar>
-        <version.plugin.javadoc>3.0.0</version.plugin.javadoc>
+        <version.plugin.javadoc>3.1.1</version.plugin.javadoc>
         <version.plugin.license>1.16</version.plugin.license>
         <version.plugin.nexus-staging>1.6.8</version.plugin.nexus-staging>
         <version.plugin.resources>2.7</version.plugin.resources>
@@ -173,8 +173,8 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${version.plugin.compiler}</version>
                     <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
+                        <source>9</source>
+                        <target>9</target>
                         <compilerArgs>
                             <arg>-Xlint:unchecked</arg>
                         </compilerArgs>
@@ -185,11 +185,10 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>${version.plugin.javadoc}</version>
                     <configuration>
-                        <doclint>all</doclint>
-                        <additionalJOptions>
-                            <JOption>-source</JOption>
-                            <JOption>8</JOption>
-                        </additionalJOptions>
+                        <source>11</source>
+                        <release>11</release>
+                        <failOnError>false</failOnError>
+                        <quiet>true</quiet>
                         <sourceFileExcludes>
                             <sourceFileExclude>**/module-info.java</sourceFileExclude>
                             <sourceFileExclude>target/**/*.java</sourceFileExclude>

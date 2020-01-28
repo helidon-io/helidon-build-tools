@@ -194,7 +194,7 @@ public final class Jar implements ResourceContainer {
     /**
      * Returns whether or not this is a {@code .jmod} file.
      *
-     * @return {@code true} if {@link .jmod}.
+     * @return {@code true} if {@code .jmod}.
      */
     public boolean isJmod() {
         return isJmod;
@@ -279,16 +279,16 @@ public final class Jar implements ResourceContainer {
     }
 
     /**
-     * Returns whether or not this jar contains a {@code module-info.class).
+     * Returns whether or not this jar contains a {@code module-info.class}.
      *
-     * @return {@code true} if a {@code module-info.class) is present.
+     * @return {@code true} if a {@code module-info.class} is present.
      */
     public boolean hasModuleDescriptor() {
         return descriptor != null;
     }
 
     /**
-     * Returns the descriptor if a {@code module-info.class) is present.
+     * Returns the descriptor if a {@code module-info.class} is present.
      *
      * @return The descriptor or {@code null} if not present.
      */

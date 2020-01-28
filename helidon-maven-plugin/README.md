@@ -3,7 +3,7 @@
 This plugin provides common utilities for Maven based Helidon applications.
 
 * [Goal: native-image](#goal-native-image)
-* [Goal: java-image](#goal-java-image)
+* [Goal: jlink-image](#goal-jlink-image)
 * [Goal: root-dir](#goal-root-dir)
 
 ## Goal: `native-image`
@@ -113,11 +113,15 @@ as that is included in the built jar.
 Main class execution mode uses the project classpath and a main class as an
 entry point for native-image build.
 
-## Goal: `java-image`
+## Goal: `jlink-image`
 
 Maven goal to create a custom Java Runtime Image containing the application jars and the JDK modules 
-on which they depend. Enables Class Data Sharing by default to reduce startup time. Generates a 
-custom `start` script.
+on which they depend. In addition, it:
+
+* Enables Class Data Sharing by default to reduce startup time. 
+* Adds any missing `Jandex` indices for MP applications.
+* Generates a custom `start` script to simplify CDS usage and support debug and test modes. 
+
 
 This plugin binds to the `package` phase by default.
 
@@ -137,12 +141,12 @@ This plugin binds to the `package` phase by default.
 
 ### General usage
 
-A good practice would be to define an execution for this goal under a profile named `java-image`.
+A good practice would be to define an execution for this goal under a profile named `jlink-image`.
 
 ```xml
     <profiles>
         <profile>
-            <id>java-image</id>
+            <id>jlink-image</id>
             <build>
                 <plugins>
                     <plugin>
@@ -151,7 +155,7 @@ A good practice would be to define an execution for this goal under a profile na
                         <executions>
                             <execution>
                                 <goals>
-                                    <goal>java-image</goal>
+                                    <goal>jlink-image</goal>
                                 </goals>
                             </execution>
                         </executions>
@@ -165,7 +169,7 @@ A good practice would be to define an execution for this goal under a profile na
 You then build your image with the following command:
 
 ```bash
-mvn package -Pjava-image
+mvn package -Pjlink-image
 ```
 
 You can also execute this plugin outside of a configured life-cycle, however
@@ -173,7 +177,7 @@ You can also execute this plugin outside of a configured life-cycle, however
 
 ```bash
 mvn package
-mvn helidon:java-image
+mvn helidon:jlink-image
 ```
 
 ## Goal: `root-dir`
