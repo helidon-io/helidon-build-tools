@@ -14,26 +14,39 @@
  * limitations under the License.
  */
 
-package io.helidon.dev;
+package io.helidon.dev.build;
 
-import java.nio.file.Path;
-
-import io.helidon.dev.build.BuildComponent;
-import io.helidon.dev.build.Project;
-import io.helidon.dev.build.ProjectFactory;
+import java.util.List;
 
 /**
- * A Helidon application.
+ * Accessor for build project.
  */
-public class Application {
-    private final Project project;
+public interface Project {
+    /**
+     * Returns the root directory.
+     *
+     * @return The root.
+     */
+    ProjectDirectory root();
 
     /**
-     * Constructor.
+     * Returns the build file (e.g. {@code pom.xml}).
      *
-     * @param projectRoot The project root directory.
+     * @return The file.
      */
-    public Application(Path projectRoot) {
-        this.project = ProjectFactory.createProject(projectRoot);
-    }
+    ProjectFile buildFile();
+
+    /**
+     * Returns all components.
+     *
+     * @return The components.
+     */
+    List<BuildComponent> components();
+
+    /**
+     * Perform an initial build.
+     *
+     * @return The errors, if any.
+     */
+    List<String> build();
 }

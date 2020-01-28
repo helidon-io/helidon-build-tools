@@ -14,26 +14,25 @@
  * limitations under the License.
  */
 
-package io.helidon.dev;
+package io.helidon.dev.build.steps;
 
-import java.nio.file.Path;
+import java.util.List;
 
 import io.helidon.dev.build.BuildComponent;
-import io.helidon.dev.build.Project;
-import io.helidon.dev.build.ProjectFactory;
+import io.helidon.dev.build.BuildStep;
 
 /**
- * A Helidon application.
+ * A build step that copies resources.
  */
-public class Application {
-    private final Project project;
+public class CopyResources implements BuildStep {
 
-    /**
-     * Constructor.
-     *
-     * @param projectRoot The project root directory.
-     */
-    public Application(Path projectRoot) {
-        this.project = ProjectFactory.createProject(projectRoot);
+    @Override
+    public List<String> execute(BuildComponent component) {
+        return null;  // TODO
+    }
+
+    @Override
+    public String toString() {
+        return "CopyResources{}";
     }
 }

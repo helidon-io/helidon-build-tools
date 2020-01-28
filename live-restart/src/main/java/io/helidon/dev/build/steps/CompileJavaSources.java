@@ -14,29 +14,25 @@
  * limitations under the License.
  */
 
-package io.helidon.dev;
+package io.helidon.dev.build.steps;
 
-import java.io.IOException;
-import java.nio.file.Path;
+import java.util.List;
 
-import io.helidon.build.test.TestFiles;
-
-import org.junit.jupiter.api.Test;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
+import io.helidon.dev.build.BuildComponent;
+import io.helidon.dev.build.BuildStep;
 
 /**
- * Unit test for class {@link Application}.
+ * A build step that compiles java sources using the ToolProvider API.
  */
-class ApplicationTest {
+public class CompileJavaSources implements BuildStep {
 
-    @Test
-    void testQuickstartSe() throws IOException {
-        final Path projectDir = TestFiles.helidonSeProject();
-        final Application app = new Application(projectDir);
-        assertThat(app, is(not(nullValue())));
+    @Override
+    public List<String> execute(BuildComponent component) {
+        return null;  // TODO
+    }
+
+    @Override
+    public String toString() {
+        return "CompileJavaSources{}";
     }
 }

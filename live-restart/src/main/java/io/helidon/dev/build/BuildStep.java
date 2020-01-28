@@ -14,26 +14,27 @@
  * limitations under the License.
  */
 
-package io.helidon.dev;
+package io.helidon.dev.build;
 
-import java.nio.file.Path;
-
-import io.helidon.dev.build.BuildComponent;
-import io.helidon.dev.build.Project;
-import io.helidon.dev.build.ProjectFactory;
+import java.util.List;
 
 /**
- * A Helidon application.
+ * A project build step.
  */
-public class Application {
-    private final Project project;
+public interface BuildStep {
 
     /**
-     * Constructor.
-     *
-     * @param projectRoot The project root directory.
+     * Remove any output artifacts for the given component.
+     * @param component The component.
      */
-    public Application(Path projectRoot) {
-        this.project = ProjectFactory.createProject(projectRoot);
+    default void clean(BuildComponent component) {
+        component.outputDirectory().clean();
     }
+
+    /**
+     * Execute the build step, skipping any up-to-date result.
+     * @param component The component.
+     * @return A list of build errors, empty on success.
+     */
+    List<String> execute(BuildComponent component);
 }

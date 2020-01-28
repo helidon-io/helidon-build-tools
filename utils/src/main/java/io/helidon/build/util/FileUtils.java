@@ -180,8 +180,35 @@ public final class FileUtils {
                      .forEach(file -> {
                          try {
                              Files.delete(file);
-                         } catch (Exception e) {
-                             throw new Error(e);
+                         } catch (IOException e) {
+                             throw new UncheckedIOException(e);
+                         }
+                     });
+            } else {
+                throw new IllegalArgumentException(directory + " is not a directory");
+            }
+        }
+        return directory;
+    }
+
+    /**
+     * Deletes the content of the given directory, if any.
+     *
+     * @param directory The directory.
+     * @return The directory.
+     * @throws IOException If an error occurs.
+     */
+    public static Path deleteDirectoryContent(Path directory) throws IOException {
+        if (Files.exists(directory)) {
+            if (Files.isDirectory(directory)) {
+                Files.walk(directory)
+                     .sorted(Comparator.reverseOrder())
+                     .filter(file -> !file.equals(directory))
+                     .forEach(file -> {
+                         try {
+                             Files.delete(file);
+                         } catch (IOException e) {
+                             throw new UncheckedIOException(e);
                          }
                      });
             } else {

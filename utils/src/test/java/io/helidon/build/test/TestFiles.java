@@ -17,10 +17,12 @@
 package io.helidon.build.test;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -38,6 +40,7 @@ import static io.helidon.build.util.Constants.DIR_SEP;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
+import static io.helidon.build.util.FileUtils.lastModifiedTime;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -153,10 +156,31 @@ public class TestFiles implements BeforeAllCallback {
             try {
                 Files.createFile(file);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new UncheckedIOException(e);
             }
         }
         return file;
+    }
+
+    /**
+     * Ensure that the given file exists, and update the modified time if it does.
+     *
+     * @param file The file.
+     * @return The last modified time.
+     */
+    public static long touch(Path file) {
+        if (Files.exists(file)) {
+            final long lastModified = lastModifiedTime(file) + 2000;
+            final FileTime fileTime = FileTime.fromMillis(lastModified);
+            try {
+                Files.setLastModifiedTime(file, fileTime);
+                return lastModified;
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        } else {
+            return lastModifiedTime(ensureFile(file));
+        }
     }
 
     /**

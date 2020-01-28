@@ -14,26 +14,34 @@
  * limitations under the License.
  */
 
-package io.helidon.dev;
-
-import java.nio.file.Path;
-
-import io.helidon.dev.build.BuildComponent;
-import io.helidon.dev.build.Project;
-import io.helidon.dev.build.ProjectFactory;
+package io.helidon.dev.build;
 
 /**
- * A Helidon application.
+ * A directory type.
  */
-public class Application {
-    private final Project project;
+public enum DirectoryType {
+    /**
+     * Project root.
+     */
+    Project,
 
     /**
-     * Constructor.
-     *
-     * @param projectRoot The project root directory.
+     * Java source files.
      */
-    public Application(Path projectRoot) {
-        this.project = ProjectFactory.createProject(projectRoot);
-    }
+    JavaSources,
+
+    /**
+     * Resource files.
+     */
+    Resources,
+
+    /**
+     * Build output root (e.g. "target").
+     */
+    BuildRoot,
+
+    /**
+     * Java classes.
+     */
+    Classes
 }
