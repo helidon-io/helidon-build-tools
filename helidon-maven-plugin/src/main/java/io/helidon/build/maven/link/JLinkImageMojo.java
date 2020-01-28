@@ -35,12 +35,12 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
 /**
- * Maven goal to create a custom Java Runtime Image {@code java-image}.
+ * Maven goal to create a custom Java Runtime Image {@code jlink-image}.
  */
-@Mojo(name = "java-image",
+@Mojo(name = "jlink-image",
     defaultPhase = LifecyclePhase.PACKAGE,
     requiresDependencyResolution = ResolutionScope.RUNTIME)
-public class JavaImageMojo extends AbstractMojo {
+public class JLinkImageMojo extends AbstractMojo {
 
     /**
      * The Maven project this mojo executes on.
