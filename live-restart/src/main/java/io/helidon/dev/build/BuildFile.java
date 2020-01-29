@@ -32,7 +32,7 @@ public class BuildFile {
     private final ProjectDirectory parent;
     private final FileType type;
     private final Path path;
-    private final FileTime lastModified;
+    private volatile FileTime lastModified;
 
     /**
      * Returns a new build file.
@@ -96,6 +96,13 @@ public class BuildFile {
         if (o == null || getClass() != o.getClass()) return false;
         final BuildFile that = (BuildFile) o;
         return Objects.equals(path, that.path);
+    }
+
+    /**
+     * Updates the last modified time.
+     */
+    public void update() {
+        lastModified = lastModifiedTime();
     }
 
     @Override

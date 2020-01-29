@@ -16,6 +16,7 @@
 
 package io.helidon.dev;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -44,15 +45,18 @@ class ProjectTest {
         final Path rootDir = TestFiles.helidonSeProject();
         final Project project = createProject(rootDir);
         assertThat(project, is(not(nullValue())));
-        assertThat(project.root().type(), is(DirectoryType.Project));
+        assertThat(project.root().directoryType(), is(DirectoryType.Project));
         assertThat(project.root().path(), is(rootDir));
         final List<BuildComponent> components = project.components();
         assertThat(components, is(not(nullValue())));
         assertThat(components.size(), is(2));
-        assertThat(components.get(0).sourceDirectory().path().toString(), endsWith("src/main/java"));
-        assertThat(components.get(0).outputDirectory().path().toString(), endsWith("target/classes"));
-        assertThat(components.get(1).sourceDirectory().path().toString(), endsWith("src/main/resources"));
-        assertThat(components.get(1).outputDirectory().path().toString(), endsWith("target/classes"));
-        assertThat(components.get(1).outputDirectory(), is(components.get(0).outputDirectory()));
+        assertThat(components.get(0).sourceRoot().path().toString(), endsWith("src/main/java"));
+        assertThat(components.get(0).outputRoot().path().toString(), endsWith("target/classes"));
+        assertThat(components.get(1).sourceRoot().path().toString(), endsWith("src/main/resources"));
+        assertThat(components.get(1).outputRoot().path().toString(), endsWith("target/classes"));
+        assertThat(components.get(1).outputRoot(), is(components.get(0).outputRoot()));
+
+        final String expectedClassPath = rootDir.resolve("target/classes") + File.pathSeparator + rootDir.resolve("target/libs");
+        assertThat(project.classpath(), is(expectedClassPath));
     }
 }

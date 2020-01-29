@@ -17,21 +17,27 @@
 package io.helidon.dev.build.maven;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import io.helidon.dev.build.BuildComponent;
-import io.helidon.dev.build.BuildDirectory;
+import io.helidon.dev.build.BuildFile;
+import io.helidon.dev.build.BuildRoot;
+import io.helidon.dev.build.BuildType;
 import io.helidon.dev.build.DirectoryType;
 import io.helidon.dev.build.FileType;
 import io.helidon.dev.build.Project;
 import io.helidon.dev.build.ProjectDirectory;
-import io.helidon.dev.build.BuildFile;
 import io.helidon.dev.build.steps.CompileJavaSources;
 import io.helidon.dev.build.steps.CopyResources;
 
@@ -43,23 +49,27 @@ import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
 import static io.helidon.dev.build.BuildComponent.createBuildComponent;
-import static io.helidon.dev.build.BuildDirectory.createBuildDirectory;
-import static io.helidon.dev.build.DirectoryType.Classes;
-import static io.helidon.dev.build.DirectoryType.JavaSources;
-import static io.helidon.dev.build.DirectoryType.Resources;
-import static io.helidon.dev.build.FileType.JavaClass;
-import static io.helidon.dev.build.FileType.JavaSource;
+import static io.helidon.dev.build.BuildFile.createBuildFile;
+import static io.helidon.dev.build.BuildRoot.createBuildRoot;
 import static io.helidon.dev.build.ProjectDirectory.createProjectDirectory;
 
 /**
  * A Maven build project.
+ *
+ * TODO: If multiple threads will access, methods that return collections may need to be converted to visitors invoked
+ *       under an internal lock, or an acquire/release mechanism must be created and used externally and internally
  */
 public class MavenProject implements Project {
     private static final String POM_FILE = "pom.xml";
+    private static final char CLASS_PATH_SEP = File.pathSeparatorChar;
 
     private final ProjectDirectory root;
+    private final Path pomFile;
     private final BuildFile buildFile;
+    private final List<Path> dependencies;
     private final List<BuildComponent> components;
+    private final StringBuilder classpath;
+    private final Map<BuildType, List<BuildRoot>> byType;
 
     /**
      * Returns whether or not the given directory contains a {@code pom.xml} file.
@@ -69,6 +79,22 @@ public class MavenProject implements Project {
      */
     public static boolean isMavenProject(Path rootDir) {
         return Files.exists(rootDir.resolve(POM_FILE));
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param rootDir The root directory.
+     */
+    public MavenProject(Path rootDir) {
+        this.root = createProjectDirectory(DirectoryType.Project, rootDir);
+        this.pomFile = assertFile(rootDir.resolve(POM_FILE));
+        this.buildFile = createBuildFile(root, FileType.MavenPom, pomFile);
+        this.classpath = new StringBuilder();
+        this.dependencies = new ArrayList<>();
+        this.components = new ArrayList<>();
+        this.byType = new HashMap<>();
+        update(true);
     }
 
     @Override
@@ -82,8 +108,23 @@ public class MavenProject implements Project {
     }
 
     @Override
+    public List<Path> dependencies() {
+        return dependencies;
+    }
+
+    @Override
+    public String classpath() {
+        return classpath.toString();
+    }
+
+    @Override
     public List<BuildComponent> components() {
         return components;
+    }
+
+    @Override
+    public List<BuildRoot> buildRoots(BuildType type) {
+        return byType.computeIfAbsent(type, key -> new ArrayList<>());
     }
 
     @Override
@@ -96,34 +137,34 @@ public class MavenProject implements Project {
         return Collections.emptyList(); // TODO
     }
 
-    /**
-     * Constructor.
-     *
-     * @param rootDir The root directory.
-     */
-    public MavenProject(Path rootDir) {
-        this.root = createProjectDirectory(DirectoryType.Project, rootDir);
-        this.components = new ArrayList<>();
-        try {
-            final Path pomFile = assertFile(rootDir.resolve(POM_FILE));
-            this.buildFile = BuildFile.createBuildFile(root, FileType.MavenPom, pomFile);
-            final Model model = readModel(rootDir, pomFile); // Validate.
+    @Override
+    public void update(boolean force) {
+        if (force || buildFile.hasChanged()) {
 
-            // TODO: use Maven apis to find and create components!
+            // Update everything
 
-            final Path sourceDir = assertDir(rootDir.resolve("src/main/java"));
-            final Path classesDir = ensureDirectory(rootDir.resolve("target/classes"));
-            final BuildDirectory sources = createBuildDirectory(JavaSources, sourceDir, JavaSource);
-            final BuildDirectory classes = createBuildDirectory(Classes, classesDir, JavaClass);
-            components.add(createBuildComponent(sources, classes, new CompileJavaSources()));
+            final Path rootDir = root.path();
+            final Model model = readModel(rootDir, pomFile);
+            collectDependencies(rootDir, model);
+            collectComponents(rootDir, model);
+            byType.clear();
+            classpath.setLength(0);
+            components.forEach(c -> {
+                buildRoots(c.sourceRoot().buildType()).add(c.sourceRoot());
+                buildRoots(c.outputRoot().buildType()).add(c.outputRoot());
+            });
+            final Set<Path> classPath = new LinkedHashSet<>();
+            buildRoots(BuildType.JavaClasses).forEach(root -> classPath.add(root.path()));
+            classPath.addAll(dependencies);
+            classPath.forEach(this::appendClassPath);
 
-            final Path resourcesDir = rootDir.resolve("src/main/resources");
-            if (Files.exists(resourcesDir)) {
-                final BuildDirectory resources = createBuildDirectory(Resources, resourcesDir, FileType.Any);
-                components.add(createBuildComponent(resources, classes, new CopyResources()));
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            buildFile.update();
+
+        } else {
+
+            // Just update the component file time stamps
+
+            components.forEach(BuildComponent::update);
         }
     }
 
@@ -134,13 +175,50 @@ public class MavenProject implements Project {
                '}';
     }
 
-    private static Model readModel(Path rootDir, Path pomFile) throws IOException {
-        try (BufferedReader reader = Files.newBufferedReader(pomFile)) {
-            final Model model = new MavenXpp3Reader().read(reader);
-            model.getBuild().setDirectory(rootDir.toString());
-            return model;
-        } catch (XmlPullParserException e) {
-            throw new IOException("Error parsing " + pomFile, e);
+    private void collectDependencies(Path rootDir, Model model) {
+        dependencies.clear();
+
+        // TODO: use model (and parents) to find and create result!
+
+        dependencies.add(rootDir.resolve("target/libs"));
+    }
+
+    private void collectComponents(Path rootDir, Model model) {
+        components.clear();
+
+        // TODO: use model (and parents) to find and create result!
+
+        final Path sourceDir = assertDir(rootDir.resolve("src/main/java"));
+        final Path classesDir = ensureDirectory(rootDir.resolve("target/classes"));
+        final BuildRoot sources = createBuildRoot(BuildType.JavaSources, sourceDir);
+        final BuildRoot classes = createBuildRoot(BuildType.JavaClasses, classesDir);
+        components.add(createBuildComponent(this, sources, classes, new CompileJavaSources()));
+
+        final Path resourcesDir = rootDir.resolve("src/main/resources");
+        if (Files.exists(resourcesDir)) {
+            final BuildRoot resources = createBuildRoot(BuildType.Resources, resourcesDir);
+            components.add(createBuildComponent(this, resources, classes, new CopyResources()));
+        }
+    }
+
+    private void appendClassPath(Path path) {
+        if (classpath.length() > 0) {
+            classpath.append(CLASS_PATH_SEP);
+        }
+        classpath.append(path);
+    }
+
+    private static Model readModel(Path rootDir, Path pomFile) {
+        try {
+            try (BufferedReader reader = Files.newBufferedReader(pomFile)) {
+                final Model model = new MavenXpp3Reader().read(reader);
+                model.getBuild().setDirectory(rootDir.toString());
+                return model;
+            } catch (XmlPullParserException e) {
+                throw new IllegalArgumentException("Error parsing " + pomFile, e);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 }

@@ -16,6 +16,7 @@
 
 package io.helidon.dev.build;
 
+import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -37,11 +38,42 @@ public interface Project {
     BuildFile buildSystemFile();
 
     /**
+     * Update the project if needed.
+     *
+     * @param force {@code true} if update should be done regardless of any actual changes.
+     */
+    void update(boolean force);
+
+    /**
+     * Returns a list of paths to all external dependencies. A path may point
+     * to a directory, in which case all contained jar files should be considered
+     * dependencies.
+     *
+     * @return The paths.
+     */
+    List<Path> dependencies();
+
+    /**
      * Returns all components.
      *
      * @return The components.
      */
     List<BuildComponent> components();
+
+    /**
+     * Returns the project classpath.
+     *
+     * @return The classpath.
+     */
+    String classpath();
+
+    /**
+     * Returns a list of build roots of the given type.
+     *
+     * @param type The type.
+     * @return The roots. May be empty.
+     */
+    List<BuildRoot> buildRoots(BuildType type);
 
     /**
      * Perform an initial build.

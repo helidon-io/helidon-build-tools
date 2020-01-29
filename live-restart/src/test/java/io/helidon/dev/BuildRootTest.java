@@ -23,15 +23,14 @@ import java.util.List;
 
 import io.helidon.build.test.TestFiles;
 import io.helidon.build.util.FileUtils;
-import io.helidon.dev.build.BuildDirectory;
-import io.helidon.dev.build.DirectoryType;
-import io.helidon.dev.build.FileType;
 import io.helidon.dev.build.BuildFile;
+import io.helidon.dev.build.BuildRoot;
+import io.helidon.dev.build.BuildType;
 
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.util.FileUtils.assertDir;
-import static io.helidon.dev.build.BuildDirectory.createBuildDirectory;
+import static io.helidon.dev.build.BuildRoot.createBuildRoot;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
@@ -39,14 +38,14 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
 /**
- * Unit test for class {@link BuildDirectory}.
+ * Unit test for class {@link BuildRoot}.
  */
-class BuildDirectoryTest {
+class BuildRootTest {
 
-    private static BuildDirectory sourceDirectory(boolean willModify) {
+    private static BuildRoot sourceDirectory(boolean willModify) {
         final Path project = willModify ? TestFiles.helidonSeProjectCopy() : TestFiles.helidonSeProject();
         final Path sources = assertDir(project.resolve("src/main/java"));
-        final BuildDirectory result = createBuildDirectory(DirectoryType.JavaSources, sources, FileType.JavaSource);
+        final BuildRoot result = createBuildRoot(BuildType.JavaSources, sources);
         assertThat(result, is(not(nullValue())));
         assertThat(result.list().isEmpty(), is(false));
         assertThat(result.changes().isEmpty(), is(true));
@@ -55,11 +54,11 @@ class BuildDirectoryTest {
 
     @Test
     void testFileChangeDetected() {
-        final BuildDirectory sourceDir = sourceDirectory(true);
+        final BuildRoot sourceDir = sourceDirectory(true);
         final Path sourceFile = new ArrayList<>(sourceDir.list()).get(0).path();
 
         TestFiles.touch(sourceFile);
-        BuildDirectory.Changes changes = sourceDir.changes();
+        BuildRoot.Changes changes = sourceDir.changes();
         assertThat(changes.isEmpty(), is(false));
         assertThat(changes.isEmpty(), is(false));
         assertThat(changes.size(), is(1));
@@ -71,11 +70,11 @@ class BuildDirectoryTest {
 
     @Test
     void testFileRemovedDetected() throws IOException {
-        final BuildDirectory sourceDir = sourceDirectory(true);
+        final BuildRoot sourceDir = sourceDirectory(true);
         final Path sourceFile = new ArrayList<>(sourceDir.list()).get(0).path();
 
         FileUtils.delete(sourceFile);
-        BuildDirectory.Changes changes = sourceDir.changes();
+        BuildRoot.Changes changes = sourceDir.changes();
         assertThat(changes, is(not(nullValue())));
         assertThat(changes.isEmpty(), is(false));
         assertThat(changes.size(), is(1));
@@ -87,10 +86,10 @@ class BuildDirectoryTest {
 
     @Test
     void testFileAdditionDetected() {
-        final BuildDirectory sourceDir = sourceDirectory(true);
+        final BuildRoot sourceDir = sourceDirectory(true);
 
         final Path newSourceFile = TestFiles.ensureFile(sourceDir.path().resolve("NewSource.java"));
-        BuildDirectory.Changes changes = sourceDir.changes();
+        BuildRoot.Changes changes = sourceDir.changes();
         assertThat(changes, is(not(nullValue())));
         assertThat(changes.isEmpty(), is(false));
         assertThat(changes.size(), is(1));
@@ -102,7 +101,7 @@ class BuildDirectoryTest {
 
     @Test
     void testMultipleChangesDetected() throws IOException {
-        final BuildDirectory sourceDir = sourceDirectory(true);
+        final BuildRoot sourceDir = sourceDirectory(true);
         final List<BuildFile> sources = new ArrayList<>(sourceDir.list());
         assertThat(sources.size(), is(greaterThanOrEqualTo(3)));
         final Path newPackageDir = FileUtils.ensureDirectory(sourceDir.path().resolve("foo"));
@@ -112,7 +111,7 @@ class BuildDirectoryTest {
         final Path modified2 = TestFiles.touch(sources.get(1).path());
         final Path deleted = FileUtils.delete(sources.get(2).path());
 
-        BuildDirectory.Changes changes = sourceDir.changes();
+        BuildRoot.Changes changes = sourceDir.changes();
         assertThat(changes, is(not(nullValue())));
         assertThat(changes.isEmpty(), is(false));
         assertThat(changes.size(), is(5));

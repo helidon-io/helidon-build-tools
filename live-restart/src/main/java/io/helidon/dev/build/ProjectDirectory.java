@@ -59,7 +59,7 @@ public class ProjectDirectory {
      *
      * @return The type.
      */
-    public DirectoryType type() {
+    public DirectoryType directoryType() {
         return type;
     }
 

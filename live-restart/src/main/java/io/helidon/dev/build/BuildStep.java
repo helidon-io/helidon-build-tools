@@ -17,24 +17,68 @@
 package io.helidon.dev.build;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * A project build step.
  */
-public interface BuildStep {
+public interface BuildStep extends Predicate<BuildComponent> {
 
     /**
-     * Remove any output artifacts for the given component.
-     * @param component The component.
+     * Returns the name of this build step.
+     *
+     * @return the name.
      */
-    default void clean(BuildComponent component) {
-        component.outputDirectory().clean();
+    default String name() {
+        return getClass().getSimpleName();
     }
 
     /**
-     * Execute the build step, skipping any up-to-date result.
+     * Returns the input type to which this step will apply.
+     *
+     * @return The type.
+     */
+    BuildType inputType();
+
+    /**
+     * Returns the output type that this step will produce.
+     *
+     * @return The type.
+     */
+    BuildType outputType();
+
+    @Override
+    default boolean test(BuildComponent component) {
+        return component.sourceRoot().buildType() == inputType()
+               && component.outputRoot().buildType() == outputType();
+    }
+
+    /**
+     * Remove any output artifacts for the given component.
+     *
      * @param component The component.
+     */
+    default void clean(BuildComponent component) {
+        if (test(component)) {
+            component.outputRoot().clean();
+        }
+    }
+
+    /**
+     * Execute the build step for the given components, skipping any up-to-date result. Any component
+     * that does not match this predicate is ignored.
+     *
+     * @param components The components.
      * @return A list of build errors, empty on success.
      */
-    List<String> execute(BuildComponent component);
+    List<String> build(List<BuildComponent> components);
+
+    /**
+     * Execute the build step for the given changed files only, skipping any up-to-date result. Any component
+     * that does not match this predicate is ignored.
+     *
+     * @param changes The changes.
+     * @return A list of build errors, empty on success.
+     */
+    List<String> incrementalBuild(List<BuildRoot.Changes> changes);
 }

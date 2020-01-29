@@ -17,68 +17,80 @@
 package io.helidon.dev.build;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-
-import static java.util.Collections.emptyList;
 
 /**
  * A build source and output directory.
  */
 public class BuildComponent {
-    private final BuildDirectory sourceDir;
-    private final BuildDirectory outputDir;
+    private final Project project;
+    private final BuildRoot sourceRoot;
+    private final BuildRoot outputRoot;
     private final List<BuildStep> buildSteps;
 
     /**
      * Returns a new build component.
      *
-     * @param sourceDir The source directory.
-     * @param outputDir The output directory.
+     * @param project The project to which this component belongs.
+     * @param sourceRoot The source root.
+     * @param outputRoot The output root.
      * @param buildSteps The build steps.
      */
-    public static BuildComponent createBuildComponent(BuildDirectory sourceDir,
-                                                      BuildDirectory outputDir,
+    public static BuildComponent createBuildComponent(Project project,
+                                                      BuildRoot sourceRoot,
+                                                      BuildRoot outputRoot,
                                                       BuildStep... buildSteps) {
-        return new BuildComponent(sourceDir, outputDir, Arrays.asList(buildSteps));
+        return new BuildComponent(project, sourceRoot, outputRoot, Arrays.asList(buildSteps));
     }
 
-    private BuildComponent(BuildDirectory sourceDir, BuildDirectory outputDir, List<BuildStep> buildSteps) {
-        this.sourceDir = sourceDir;
-        this.outputDir = outputDir;
+    private BuildComponent(Project project, BuildRoot sourceRoot, BuildRoot outputRoot, List<BuildStep> buildSteps) {
+        this.project = project;
+        this.sourceRoot = sourceRoot.component(this);
+        this.outputRoot = outputRoot.component(this);
         this.buildSteps = buildSteps;
     }
 
     /**
-     * Returns the source directory.
+     * Returns the project containing this component..
      *
-     * @return The directory.
+     * @return The project.
      */
-    public BuildDirectory sourceDirectory() {
-        return sourceDir;
+    public Project project() {
+        return project;
     }
 
     /**
-     * Returns the output directory.
+     * Returns the source root.
      *
-     * @return The directory.
+     * @return The root.
      */
-    public BuildDirectory outputDirectory() {
-        return outputDir;
+    public BuildRoot sourceRoot() {
+        return sourceRoot;
     }
 
     /**
-     * Execute the build.
+     * Returns the output root.
      *
-     * @return A list of build errors, empty on success.
+     * @return The root.
      */
-    public Collection<String> build() {
-        for (final BuildStep step : buildSteps) {
-            final List<String> errors = step.execute(this);
-            if (!errors.isEmpty()) {
-                return errors;
-            }
-        }
-        return emptyList();
+    public BuildRoot outputRoot() {
+        return outputRoot;
+    }
+
+    /**
+     * Returns the list of build steps.
+     *
+     * @return The steps.
+     */
+    public List<BuildStep> buildSteps() {
+        return buildSteps;
+    }
+
+    /**
+     * Updates the components.
+     */
+    public void update() {
+        sourceRoot().update();
+        outputRoot().update();
     }
 }
