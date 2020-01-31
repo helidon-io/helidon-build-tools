@@ -18,6 +18,7 @@ package io.helidon.dev.build;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Accessor for build project.
@@ -76,16 +77,40 @@ public interface Project {
     List<BuildRoot> buildRoots(BuildType type);
 
     /**
-     * Perform an initial build.
+     * Returns a list of source changes since the last update, if any.
      *
-     * @return The errors, if any.
+     * @return The changes.
      */
-    List<String> build();
+    List<BuildRoot.Changes> sourceChanges();
 
     /**
-     * Perform an incremental build.
+     * Returns a list of binary changes since the last update, if any.
      *
-     * @return The errors, if any.
+     * @return The changes.
      */
-    List<String> incrementalBuild();
+    List<BuildRoot.Changes> binaryChanges();
+
+    /**
+     * Perform a full build.
+     *
+     * @param stdOut A consumer for stdout.
+     * @param stdErr A consumer for stderr.
+     * @param clean {@code true} if the build should be cleaned first.
+     * @return The captured stdout and stderr lines.
+     * @throws Exception on error.
+     */
+    List<String> fullBuild(Consumer<String> stdOut, Consumer<String> stdErr, boolean clean) throws Exception;
+
+    /**
+     * Perform an incremental build for the given changes.
+     *
+     * @param changes The changes.
+     * @param stdOut A consumer for stdout.
+     * @param stdErr A consumer for stderr.
+     * @return The captured stdout and stderr lines.
+     * @throws Exception on error.
+     */
+    List<String> incrementalBuild(List<BuildRoot.Changes> changes,
+                                  Consumer<String> stdOut,
+                                  Consumer<String> stdErr) throws Exception;
 }

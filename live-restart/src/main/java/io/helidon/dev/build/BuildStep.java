@@ -16,7 +16,7 @@
 
 package io.helidon.dev.build;
 
-import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -54,31 +54,14 @@ public interface BuildStep extends Predicate<BuildComponent> {
     }
 
     /**
-     * Remove any output artifacts for the given component.
-     *
-     * @param component The component.
-     */
-    default void clean(BuildComponent component) {
-        if (test(component)) {
-            component.outputRoot().clean();
-        }
-    }
-
-    /**
-     * Execute the build step for the given components, skipping any up-to-date result. Any component
-     * that does not match this predicate is ignored.
-     *
-     * @param components The components.
-     * @return A list of build errors, empty on success.
-     */
-    List<String> build(List<BuildComponent> components);
-
-    /**
-     * Execute the build step for the given changed files only, skipping any up-to-date result. Any component
-     * that does not match this predicate is ignored.
+     * Execute the build step for the given changed files only. Any component that does not match this predicate is ignored.
      *
      * @param changes The changes.
-     * @return A list of build errors, empty on success.
+     * @param stdOut A consumer for stdout.
+     * @param stdErr A consumer for stderr.
+     * @throws Exception on error.
      */
-    List<String> incrementalBuild(List<BuildRoot.Changes> changes);
+    void incrementalBuild(BuildRoot.Changes changes,
+                          Consumer<String> stdOut,
+                          Consumer<String> stdErr) throws Exception;
 }

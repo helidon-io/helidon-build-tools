@@ -19,7 +19,7 @@ package io.helidon.dev.build;
 /**
  * A build type.
  */
-public enum BuildType {
+public enum BuildType  {
 
     /**
      * Java source files.
@@ -27,14 +27,14 @@ public enum BuildType {
     JavaSources(DirectoryType.JavaSources, FileType.JavaSource),
 
     /**
-     * Resource files.
-     */
-    Resources(DirectoryType.Resources, FileType.Any),
-
-    /**
      * Java classes.
      */
-    JavaClasses(DirectoryType.Classes, FileType.JavaClass);
+    JavaClasses(DirectoryType.Classes, FileType.JavaClass),
+
+    /**
+     * Resource source files.
+     */
+    Resources(DirectoryType.Resources, FileType.NotJavaClass);
 
     private final DirectoryType directoryType;
     private final FileType fileType;

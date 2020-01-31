@@ -16,10 +16,8 @@
 
 package io.helidon.dev.build.steps;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.function.Consumer;
 
-import io.helidon.dev.build.BuildComponent;
 import io.helidon.dev.build.BuildRoot;
 import io.helidon.dev.build.BuildStep;
 import io.helidon.dev.build.BuildType;
@@ -40,15 +38,9 @@ public class CompileJavaSources implements BuildStep {
     }
 
     @Override
-    public List<String> build(List<BuildComponent> components) {
-        // TODO
-        return Collections.emptyList();
-    }
-
-    @Override
-    public List<String> incrementalBuild(List<BuildRoot.Changes> changes) {
-        // TODO
-        return Collections.emptyList();
+    public void incrementalBuild(BuildRoot.Changes changes,
+                                 Consumer<String> stdOut,
+                                 Consumer<String> stdErr) throws Exception {
     }
 
     @Override

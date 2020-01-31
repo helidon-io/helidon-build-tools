@@ -43,7 +43,11 @@ public enum FileType implements Predicate<Path> {
     /**
      * Any file.
      */
-    Any(null);
+    NotJavaClass(null) {
+        protected boolean matchesExtension(Path path) {
+            return !path.getFileName().toString().endsWith(".class");
+        }
+    };
 
     private final String extension;
 
@@ -63,12 +67,12 @@ public enum FileType implements Predicate<Path> {
     @Override
     public boolean test(Path path) {
         if (Files.isRegularFile(path)) {
-            if (extension == null) {
-                return true;
-            } else {
-                return path.getFileName().toString().endsWith(extension);
-            }
+            return matchesExtension(path);
         }
         return false;
+    }
+
+    protected boolean matchesExtension(Path path) {
+        return path.getFileName().toString().endsWith(extension);
     }
 }

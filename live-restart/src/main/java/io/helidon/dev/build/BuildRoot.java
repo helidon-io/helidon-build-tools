@@ -23,10 +23,14 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static io.helidon.dev.build.BuildFile.createBuildFile;
 import static java.util.Collections.unmodifiableMap;
@@ -35,7 +39,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * A project directory that tracks file changes.
  */
-public class BuildRoot extends ProjectDirectory {
+public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
     private final BuildType type;
     private final FileType fileType;
     private final AtomicReference<Map<Path, BuildFile>> files;
@@ -90,6 +94,44 @@ public class BuildRoot extends ProjectDirectory {
      */
     public Collection<BuildFile> list() {
         return files.get().values();
+    }
+
+    /**
+     * Returns the stream of files.
+     *
+     * @return The stream.
+     */
+    public Stream<BuildFile> stream() {
+        return list().stream();
+    }
+
+    /**
+     * Returns the first file whose path matches the given filter.
+     *
+     * @param filter The filter.
+     * @return The build file.
+     * @throws NoSuchElementException If not found.
+     */
+    public BuildFile findFirst(Predicate<Path> filter) {
+        return stream().filter(file -> filter.test(file.path()))
+                       .findFirst()
+                       .orElseThrow(() -> new NoSuchElementException("No match found in " + path()));
+    }
+
+    /**
+     * Returns the first file whose file name matches the given filter.
+     *
+     * @param filter The filter.
+     * @return The build file.
+     * @throws NoSuchElementException If not found.
+     */
+    public BuildFile findFirstNamed(Predicate<String> filter) {
+        return findFirst(path -> filter.test(path.getFileName().toString()));
+    }
+
+    @Override
+    public Iterator<BuildFile> iterator() {
+        return list().iterator();
     }
 
     /**
@@ -162,6 +204,18 @@ public class BuildRoot extends ProjectDirectory {
             return removed;
         }
 
+        /**
+         * Returns the added or modified files.
+         *
+         * @return The files.
+         */
+        public Set<Path> addedOrModified() {
+            final Set<Path> result = new HashSet<>(added.size() + modified.size());
+            result.addAll(added());
+            result.addAll(modified());
+            return result;
+        }
+
         private void update(Path file, BuildFile existing) {
             if (existing == null) {
                 added.add(file);
@@ -205,7 +259,8 @@ public class BuildRoot extends ProjectDirectory {
     @Override
     public String toString() {
         return "BuildRoot{" +
-               "type=" + directoryType() +
+               "directoryType=" + directoryType() +
+               ", fileType=" + fileType +
                ", path=" + path() +
                '}';
     }

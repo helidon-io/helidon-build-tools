@@ -18,6 +18,7 @@ package io.helidon.dev.build;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * A build source and output directory.
@@ -84,6 +85,27 @@ public class BuildComponent {
      */
     public List<BuildStep> buildSteps() {
         return buildSteps;
+    }
+
+
+    /**
+     * Execute the build step for the given changed files only.
+     *
+     * @param changes The changes.
+     * @param stdOut A consumer for stdout.
+     * @param stdErr A consumer for stderr.
+     * @throws Exception on error.
+     */
+    public void incrementalBuild(BuildRoot.Changes changes,
+                                 Consumer<String> stdOut,
+                                 Consumer<String> stdErr) throws Exception {
+        if (changes.root().component() == this) {
+            for (BuildStep step : buildSteps) {
+                step.incrementalBuild(changes, stdOut, stdErr);
+            }
+        } else {
+            throw new IllegalArgumentException("Changed component != this");
+        }
     }
 
     /**

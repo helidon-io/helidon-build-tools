@@ -16,13 +16,17 @@
 
 package io.helidon.dev.build.steps;
 
-import java.util.Collections;
-import java.util.List;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.function.Consumer;
 
 import io.helidon.dev.build.BuildComponent;
 import io.helidon.dev.build.BuildRoot;
 import io.helidon.dev.build.BuildStep;
 import io.helidon.dev.build.BuildType;
+
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * A build step that copies resources.
@@ -40,15 +44,26 @@ public class CopyResources implements BuildStep {
     }
 
     @Override
-    public List<String> build(List<BuildComponent> components) {
-        // TODO
-        return Collections.emptyList();
+    public void incrementalBuild(BuildRoot.Changes changes, Consumer<String> stdOut, Consumer<String> stdErr) throws Exception {
+        if (!changes.isEmpty()) {
+            stdOut.accept("Copying changed resources");
+            final BuildRoot sources = changes.root();
+            final BuildComponent component = sources.component();
+            if (test(component)) {
+                final Path srcDir = sources.path();
+                final Path outDir = component.outputRoot().path();
+                for (final Path srcFile : changes.addedOrModified()) {
+                    copy(srcDir, outDir, srcFile, stdOut);
+                }
+            }
+        }
     }
 
-    @Override
-    public List<String> incrementalBuild(List<BuildRoot.Changes> changes) {
-        // TODO
-        return Collections.emptyList();
+    private void copy(Path srcDir, Path outDir, Path srcPath, Consumer<String> stdOut) throws IOException {
+        final Path relativePath = srcDir.relativize(srcPath);
+        final Path outPath = outDir.resolve(relativePath);
+        stdOut.accept("Copying resource " + srcPath);
+        Files.copy(srcPath, outPath, REPLACE_EXISTING);
     }
 
     @Override

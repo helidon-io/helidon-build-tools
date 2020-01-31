@@ -23,13 +23,15 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
+import io.helidon.build.util.Constants;
+import io.helidon.build.util.ProcessMonitor;
 import io.helidon.dev.build.BuildComponent;
 import io.helidon.dev.build.BuildFile;
 import io.helidon.dev.build.BuildRoot;
@@ -52,16 +54,20 @@ import static io.helidon.dev.build.BuildComponent.createBuildComponent;
 import static io.helidon.dev.build.BuildFile.createBuildFile;
 import static io.helidon.dev.build.BuildRoot.createBuildRoot;
 import static io.helidon.dev.build.ProjectDirectory.createProjectDirectory;
+import static java.util.Collections.emptyList;
 
 /**
  * A Maven build project.
  *
  * TODO: If multiple threads will access, methods that return collections may need to be converted to visitors invoked
- *       under an internal lock, or an acquire/release mechanism must be created and used externally and internally
+ * under an internal lock, or an acquire/release mechanism must be created and used externally and internally
  */
 public class MavenProject implements Project {
     private static final String POM_FILE = "pom.xml";
+    private static final String MAVEN_EXEC = Constants.OS.mavenExec();
     private static final char CLASS_PATH_SEP = File.pathSeparatorChar;
+    private static final List<String> CLEAN_BUILD_COMMAND = List.of(MAVEN_EXEC, "clean", "process-classes", "-DskipTests");
+    private static final List<String> BUILD_COMMAND = List.of(MAVEN_EXEC, "process-classes", "-DskipTests");
 
     private final ProjectDirectory root;
     private final Path pomFile;
@@ -128,13 +134,63 @@ public class MavenProject implements Project {
     }
 
     @Override
-    public List<String> build() {
-        return Collections.emptyList(); // TODO
+    public List<BuildRoot.Changes> sourceChanges() {
+        final List<BuildRoot.Changes> result = new ArrayList<>();
+        for (final BuildComponent component : components) {
+            final BuildRoot.Changes changes = component.sourceRoot().changes();
+            if (!changes.isEmpty()) {
+                result.add(changes);
+            }
+        }
+        return result;
     }
 
     @Override
-    public List<String> incrementalBuild() {
-        return Collections.emptyList(); // TODO
+    public List<BuildRoot.Changes> binaryChanges() {
+        final List<BuildRoot.Changes> result = new ArrayList<>();
+        for (final BuildComponent component : components) {
+            final BuildRoot.Changes changes = component.outputRoot().changes();
+            if (!changes.isEmpty()) {
+                result.add(changes);
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public List<String> fullBuild(Consumer<String> stdOut, Consumer<String> stdErr, boolean clean) throws Exception {
+        return ProcessMonitor.builder()
+                             .processBuilder(new ProcessBuilder().directory(root.path().toFile())
+                                                                 .command(clean ? CLEAN_BUILD_COMMAND : BUILD_COMMAND))
+                             .stdOut(stdOut)
+                             .stdErr(stdErr)
+                             .capture(true)
+                             .build()
+                             .execute()
+                             .output();
+    }
+
+    @Override
+    public List<String> incrementalBuild(List<BuildRoot.Changes> changes,
+                                         Consumer<String> stdOut,
+                                         Consumer<String> stdErr) throws Exception {
+        if (!changes.isEmpty()) {
+            final List<String> output = new ArrayList<>();
+            final Consumer<String> out = line -> {
+                output.add(line);
+                stdOut.accept(line);
+            };
+            final Consumer<String> err = line -> {
+                output.add(line);
+                stdErr.accept(line);
+            };
+            for (final BuildRoot.Changes changed : changes) {
+                changed.root().component().incrementalBuild(changed, out, err);
+            }
+            return output;
+        } else {
+            return emptyList();
+        }
     }
 
     @Override
@@ -197,7 +253,8 @@ public class MavenProject implements Project {
         final Path resourcesDir = rootDir.resolve("src/main/resources");
         if (Files.exists(resourcesDir)) {
             final BuildRoot resources = createBuildRoot(BuildType.Resources, resourcesDir);
-            components.add(createBuildComponent(this, resources, classes, new CopyResources()));
+            final BuildRoot binaries = createBuildRoot(BuildType.Resources, classesDir);
+            components.add(createBuildComponent(this, resources, binaries, new CopyResources()));
         }
     }
 
