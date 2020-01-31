@@ -110,7 +110,7 @@
         -->
         <version.lib.asciidoctorj>1.6.0-RC.2</version.lib.asciidoctorj>
         <version.lib.asciidoctorj-diagram>1.5.4.1</version.lib.asciidoctorj-diagram>
-        <version.lib.checkstyle>8.18</version.lib.checkstyle>
+        <version.lib.checkstyle>8.29</version.lib.checkstyle>
         <version.lib.diffutils>2.2</version.lib.diffutils>
         <version.lib.freemarker>2.3.23</version.lib.freemarker>
         <version.lib.helidon>0.9.0</version.lib.helidon>
