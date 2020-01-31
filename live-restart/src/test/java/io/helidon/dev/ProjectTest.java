@@ -16,7 +16,6 @@
 
 package io.helidon.dev;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +24,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import io.helidon.build.test.TestFiles;
 import io.helidon.dev.build.BuildComponent;
 import io.helidon.dev.build.BuildFile;
 import io.helidon.dev.build.BuildMonitor;
@@ -54,10 +54,13 @@ class ProjectTest {
     private static TestMonitor build(Project project,
                                      boolean initialClean,
                                      boolean watchBinaries) throws InterruptedException {
-        final TestMonitor monitor = new TestMonitor(initialClean, watchBinaries, true);
+        return build(project, new TestMonitor(initialClean, watchBinaries, 1));
+    }
+
+    private static TestMonitor build(Project project, TestMonitor monitor) throws InterruptedException {
         final Future<?> future = project.build(monitor);
-        System.out.println("Waiting up to 20 seconds for build cycle completion");
-        if (!monitor.waitForStopped(20)) {
+        System.out.println("Waiting up to 30 seconds for build completion");
+        if (!monitor.waitForStopped(30)) {
             future.cancel(true);
             fail("Timeout");
         }
@@ -69,9 +72,10 @@ class ProjectTest {
         private final List<String> output;
         private final boolean initialClean;
         private final boolean watchBinaries;
-        private final boolean continueCycle;
+        private final int cycleCount;
         private boolean started;
         private boolean cycleStart;
+        private int cycleNumber;
         private boolean changed;
         private boolean binariesOnly;
         private boolean buildStart;
@@ -81,12 +85,12 @@ class ProjectTest {
         private boolean cycleEnd;
         private boolean stopped;
 
-        TestMonitor(boolean initialClean, boolean watchBinaries, boolean stopOnCycleEnd) {
+        TestMonitor(boolean initialClean, boolean watchBinaries, int cycleCount) {
             this.stoppedLatch = new CountDownLatch(1);
             this.output = new ArrayList<>();
             this.initialClean = initialClean;
             this.watchBinaries = watchBinaries;
-            this.continueCycle = !stopOnCycleEnd;
+            this.cycleCount = cycleCount;
         }
 
         @Override
@@ -112,8 +116,16 @@ class ProjectTest {
         }
 
         @Override
-        public boolean onCycleStart() {
+        public boolean onCycleStart(int cycleNumber) {
             cycleStart = true;
+            this.cycleNumber = cycleNumber;
+            changed = false;
+            binariesOnly = false;
+            buildStart = false;
+            incremental = false;
+            buildFailed = null;
+            ready = false;
+            cycleEnd = false;
             return watchBinaries;
         }
 
@@ -144,7 +156,7 @@ class ProjectTest {
         @Override
         public boolean onCycleEnd() {
             cycleEnd = true;
-            return continueCycle;
+            return cycleNumber < cycleCount;
         }
 
         @Override
@@ -173,13 +185,75 @@ class ProjectTest {
         assertThat(components.get(1).sourceRoot().path().toString(), endsWith("src/main/resources"));
         assertThat(components.get(1).outputRoot().path().toString(), endsWith("target/classes"));
         assertThat(components.get(1).outputRoot(), is(not(components.get(0).outputRoot())));
-
-        final String expectedClassPath = rootDir.resolve("target/classes") + File.pathSeparator + rootDir.resolve("target/libs");
-        assertThat(project.classpath(), is(expectedClassPath));
     }
 
     @Test
-    void testQuickstartSeCleanBuild() throws Exception {
+    void testQuickstartSeUpToDateInitialBuild() throws Exception {
+        final Path rootDir = helidonSeProjectCopy();
+        final Project project = createProject(rootDir);
+        final List<BuildComponent> components = project.components();
+        assertThat(components, is(not(nullValue())));
+        assertThat(components.isEmpty(), is(false));
+        assertThat(components.get(0).outputRoot().path().toString(), endsWith("target/classes"));
+        final BuildRoot classes = components.get(0).outputRoot();
+        final BuildFile mainClass = classes.findFirstNamed(name -> name.equals("Main.class"));
+        assertThat(mainClass.hasChanged(), is(false));
+
+        final TestMonitor monitor = build(project, false, false);
+        assertThat(monitor.started, is(true));
+        assertThat(monitor.cycleStart, is(true));
+        assertThat(monitor.changed, is(false));
+        assertThat(monitor.binariesOnly, is(false));
+        assertThat(monitor.buildStart, is(false));
+        assertThat(monitor.incremental, is(false));
+        assertThat(monitor.buildFailed, is(nullValue()));
+        assertThat(monitor.ready, is(true));
+        assertThat(monitor.cycleEnd, is(true));
+        assertThat(monitor.stopped, is(true));
+
+        assertThat(mainClass.hasChanged(), is(false));
+        final String allOutput = String.join(" ", monitor.output);
+        assertThat(allOutput, containsString("Build is up to date"));
+    }
+
+    @Test
+    void testQuickstartSeOutOfDateInitialBuild() throws Exception {
+        final Path rootDir = helidonSeProjectCopy();
+        final Project project = createProject(rootDir);
+        final List<BuildComponent> components = project.components();
+        assertThat(components, is(not(nullValue())));
+        assertThat(components.isEmpty(), is(false));
+        assertThat(components.get(0).outputRoot().path().toString(), endsWith("target/classes"));
+        final BuildRoot sources = components.get(0).sourceRoot();
+        final BuildRoot classes = components.get(0).outputRoot();
+        final BuildFile mainSource = sources.findFirstNamed(name -> name.equals("Main.java"));
+        final BuildFile mainClass = classes.findFirstNamed(name -> name.equals("Main.class"));
+        assertThat(mainSource.hasChanged(), is(false));
+        assertThat(mainClass.hasChanged(), is(false));
+
+        TestFiles.touch(mainSource.path());
+        assertThat(mainSource.hasChanged(), is(true));
+        assertThat(mainClass.hasChanged(), is(false));
+
+        final TestMonitor monitor = build(project, false, false);
+        assertThat(monitor.started, is(true));
+        assertThat(monitor.cycleStart, is(true));
+        assertThat(monitor.changed, is(false));
+        assertThat(monitor.binariesOnly, is(false));
+        assertThat(monitor.buildStart, is(true));
+        assertThat(monitor.incremental, is(false));
+        assertThat(monitor.buildFailed, is(nullValue()));
+        assertThat(monitor.ready, is(true));
+        assertThat(monitor.cycleEnd, is(true));
+        assertThat(monitor.stopped, is(true));
+
+        assertThat(mainClass.hasChanged(), is(true));
+        final String allOutput = String.join(" ", monitor.output);
+        assertThat(allOutput, containsString("Changes detected - recompiling the module!"));
+    }
+
+    @Test
+    void testQuickstartSeCleanInitialBuild() throws Exception {
         final Path rootDir = helidonSeProjectCopy();
         final Project project = createProject(rootDir);
         final List<BuildComponent> components = project.components();
@@ -195,7 +269,7 @@ class ProjectTest {
         assertThat(monitor.cycleStart, is(true));
         assertThat(monitor.changed, is(false));
         assertThat(monitor.binariesOnly, is(false));
-        assertThat(monitor.started, is(true));
+        assertThat(monitor.buildStart, is(true));
         assertThat(monitor.incremental, is(false));
         assertThat(monitor.buildFailed, is(nullValue()));
         assertThat(monitor.ready, is(true));
@@ -209,31 +283,54 @@ class ProjectTest {
         assertThat(allOutput, containsString("Changes detected - recompiling the module!"));
     }
 
-//    @Test
-//    void testQuickstartSeIncrementalBuild() throws Exception {
-//        final Path rootDir = helidonSeProjectCopy();
-//        final Project project = createProject(rootDir);
-//        final List<BuildComponent> components = project.components();
-//        assertThat(components, is(not(nullValue())));
-//        assertThat(components.isEmpty(), is(false));
-//        final BuildComponent component = components.get(1);
-//        assertThat(component.sourceRoot().buildType(), is(BuildType.Resources));
-//        assertThat(component.outputRoot().path().toString(), endsWith("target/classes"));
-//        final BuildRoot resourceSources = component.sourceRoot();
-//        final BuildRoot resourceBinaries = component.outputRoot();
-//        final BuildFile resource = resourceSources.findFirstNamed(name -> name.endsWith("application.yaml"));
-//        final BuildFile binary = resourceBinaries.findFirstNamed(name -> name.endsWith("application.yaml"));
-//        assertThat(resource.hasChanged(), is(false));
-//        assertThat(binary.hasChanged(), is(false));
-//
-//        TestFiles.touch(resource.path());
-//        assertThat(resource.hasChanged(), is(true));
-//        assertThat(binary.hasChanged(), is(false));
-//
-//        final List<BuildRoot.Changes> changes = project.sourceChanges();
-//        final List<String> output = project.incrementalBuild(changes, STD_OUT, STD_ERR);
-//        assertThat(binary.hasChanged(), is(true));
-//        final String allOutput = String.join(" ", output);
-//        assertThat(allOutput, containsString("Copying resource " + resource.path()));
-//    }
+    @Test
+    void testQuickstartSeIncrementalBuild() throws Exception {
+        final Path rootDir = helidonSeProjectCopy();
+        final Project project = createProject(rootDir);
+        final List<BuildComponent> components = project.components();
+        assertThat(components, is(not(nullValue())));
+        assertThat(components.isEmpty(), is(false));
+        assertThat(components.get(0).outputRoot().path().toString(), endsWith("target/classes"));
+        final BuildRoot sources = components.get(0).sourceRoot();
+        final BuildRoot classes = components.get(0).outputRoot();
+        final BuildFile mainSource = sources.findFirstNamed(name -> name.equals("Main.java"));
+        final BuildFile mainClass = classes.findFirstNamed(name -> name.equals("Main.class"));
+        assertThat(mainSource.hasChanged(), is(false));
+        assertThat(mainClass.hasChanged(), is(false));
+
+        final TestMonitor monitor = new TestMonitor(true, false, 2) {
+            @Override
+            public boolean onCycleStart(int cycleNumber) {
+                System.out.println("begin cycle " + cycleNumber + " start");
+                if (cycleNumber == 2) {
+                    TestFiles.touch(mainSource.path());
+                    System.out.println("touched" + mainSource.path());
+                }
+                System.out.println("end cycle " + cycleNumber + " start");
+                return super.onCycleStart(cycleNumber);
+            }
+        };
+
+        final Future<?> future = project.build(monitor);
+        System.out.println("Waiting up to 30 seconds for build completion");
+        if (!monitor.waitForStopped(30)) {
+            future.cancel(true);
+            fail("Timeout");
+        }
+
+        assertThat(monitor.started, is(true));
+        assertThat(monitor.cycleStart, is(true));
+        assertThat(monitor.cycleNumber, is(2));
+        assertThat(monitor.changed, is(true));
+        assertThat(monitor.binariesOnly, is(false));
+        assertThat(monitor.started, is(true));
+        assertThat(monitor.incremental, is(true));
+        assertThat(monitor.buildFailed, is(nullValue()));
+        assertThat(monitor.ready, is(true));
+        assertThat(monitor.cycleEnd, is(true));
+        assertThat(monitor.stopped, is(true));
+        assertThat(mainClass.hasChanged(), is(true));
+        final String allOutput = String.join(" ", monitor.output);
+        assertThat(allOutput, containsString("Compiling 1 source file"));
+    }
 }

@@ -16,6 +16,7 @@
 
 package io.helidon.dev.build;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +58,14 @@ public abstract class Project {
      *
      * @return The classpath.
      */
-    public abstract String classpath();
+    public abstract List<File> classpath();
+
+    /**
+     * Returns the compiler flags.
+     *
+     * @return The flags.
+     */
+    public abstract List<String> compilerFlags();
 
     /**
      * Returns a list of paths to all external dependencies. A path may point
@@ -187,10 +195,10 @@ public abstract class Project {
      * @throws Exception on error.
      */
     protected void incrementalBuild(List<BuildRoot.Changes> changes,
-                                            Consumer<String> stdOut,
-                                            Consumer<String> stdErr) throws Exception {
+                                    Consumer<String> stdOut,
+                                    Consumer<String> stdErr) throws Exception {
         if (!changes.isEmpty()) {
-             for (final BuildRoot.Changes changed : changes) {
+            for (final BuildRoot.Changes changed : changes) {
                 changed.root().component().incrementalBuild(changed, stdOut, stdErr);
             }
         }
@@ -208,25 +216,26 @@ public abstract class Project {
         @Override
         public void run() {
             final boolean clean = monitor.onStarted();
+            int cycleNumber = 1;
             while (true) {
                 try {
                     if (delay > 0) {
                         Thread.sleep(delay);
                     }
+                    final boolean checkBinaries = monitor.onCycleStart(cycleNumber++);
                     if (!initialBuildCompleted) {
                         initialBuild(clean);
                         initialBuildCompleted = true;
                     }
-                    final boolean checkBinaries = monitor.onCycleStart();
                     final List<BuildRoot.Changes> sourceChanges = sourceChanges();
                     if (!sourceChanges.isEmpty()) {
-                        monitor.onChanged(true);
+                        monitor.onChanged(false);
                         monitor.onBuildStart(true);
                         incrementalBuild(sourceChanges, monitor.stdOutConsumer(), monitor.stdErrConsumer());
                         update(true);
                     } else if (checkBinaries) {
                         if (!binaryChanges().isEmpty()) {
-                            monitor.onChanged(false);
+                            monitor.onChanged(true);
                             update(true);
                         }
                     }
@@ -250,6 +259,8 @@ public abstract class Project {
                 fullBuild(monitor.stdOutConsumer(), monitor.stdErrConsumer(), clean);
                 update(true);
                 delay = monitor.onReady();
+            } else if (!clean) {
+                monitor.stdOutConsumer().accept("Build is up to date");
             }
         }
     }

@@ -20,17 +20,18 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.build.util.Constants;
+import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.ProcessMonitor;
 import io.helidon.dev.build.BuildComponent;
 import io.helidon.dev.build.BuildFile;
@@ -58,22 +59,22 @@ import static io.helidon.dev.build.ProjectDirectory.createProjectDirectory;
 /**
  * A Maven build project.
  *
- * TODO: If multiple threads will access, methods that return collections may need to be converted to visitors invoked
- * under an internal lock, or an acquire/release mechanism must be created and used externally and internally
+ * TODO: add a locking model if multi-threaded use
  */
 public class MavenProject extends Project {
     private static final String POM_FILE = "pom.xml";
+    private static final String JAR_FILE_SUFFIX = ".jar";
     private static final String MAVEN_EXEC = Constants.OS.mavenExec();
-    private static final char CLASS_PATH_SEP = File.pathSeparatorChar;
-    private static final List<String> CLEAN_BUILD_COMMAND = List.of(MAVEN_EXEC, "clean", "process-classes", "-DskipTests");
-    private static final List<String> BUILD_COMMAND = List.of(MAVEN_EXEC, "process-classes", "-DskipTests");
+    private static final List<String> CLEAN_BUILD_COMMAND = List.of(MAVEN_EXEC, "clean", "prepare-package", "-DskipTests");
+    private static final List<String> BUILD_COMMAND = List.of(MAVEN_EXEC, "prepare-package", "-DskipTests");
 
     private final ProjectDirectory root;
     private final Path pomFile;
     private final BuildFile buildFile;
     private final List<Path> dependencies;
     private final List<BuildComponent> components;
-    private final StringBuilder classpath;
+    private final List<File> classpath;
+    private final List<String> compilerFlags;
     private final Map<BuildType, List<BuildRoot>> byType;
 
     /**
@@ -95,7 +96,8 @@ public class MavenProject extends Project {
         this.root = createProjectDirectory(DirectoryType.Project, rootDir);
         this.pomFile = assertFile(rootDir.resolve(POM_FILE));
         this.buildFile = createBuildFile(root, FileType.MavenPom, pomFile);
-        this.classpath = new StringBuilder();
+        this.classpath = new ArrayList<>();
+        this.compilerFlags = new ArrayList<>();
         this.dependencies = new ArrayList<>();
         this.components = new ArrayList<>();
         this.byType = new HashMap<>();
@@ -118,8 +120,13 @@ public class MavenProject extends Project {
     }
 
     @Override
-    public String classpath() {
-        return classpath.toString();
+    public List<File> classpath() {
+        return classpath;
+    }
+
+    @Override
+    public List<String> compilerFlags() {
+        return compilerFlags;
     }
 
     @Override
@@ -152,26 +159,34 @@ public class MavenProject extends Project {
 
             final Path rootDir = root.path();
             final Model model = readModel(rootDir, pomFile);
-            collectDependencies(rootDir, model);
-            collectComponents(rootDir, model);
+            buildFile.update();
+            updateDependencies(rootDir, model);
+            updateComponents(rootDir, model);
+            updateCompilerFlags(model);
+
             byType.clear();
-            classpath.setLength(0);
             components.forEach(c -> {
                 buildRoots(c.sourceRoot().buildType()).add(c.sourceRoot());
                 buildRoots(c.outputRoot().buildType()).add(c.outputRoot());
             });
-            final Set<Path> classPath = new LinkedHashSet<>();
-            buildRoots(BuildType.JavaClasses).forEach(root -> classPath.add(root.path()));
-            classPath.addAll(dependencies());
-            classPath.forEach(this::appendClassPath);
 
-            buildFile.update();
+            classpath.clear();
+            buildRoots(BuildType.JavaClasses).forEach(root -> classpath.add(root.path().toFile()));
+            dependencies().forEach(this::addToClasspath);
 
         } else {
 
             // Just update the component file time stamps
 
             components.forEach(BuildComponent::update);
+        }
+    }
+
+    private void addToClasspath(Path path) {
+        if (Files.isRegularFile(path)) {
+            classpath.add(path.toFile());
+        } else if (Files.isDirectory(path)) {
+            FileUtils.listFiles(path, name -> name.endsWith(JAR_FILE_SUFFIX)).forEach(file -> classpath.add(file.toFile()));
         }
     }
 
@@ -182,7 +197,7 @@ public class MavenProject extends Project {
                '}';
     }
 
-    private void collectDependencies(Path rootDir, Model model) {
+    private void updateDependencies(Path rootDir, Model model) {
         dependencies.clear();
 
         // TODO: use model (and parents) to find and create result!
@@ -190,7 +205,7 @@ public class MavenProject extends Project {
         dependencies.add(rootDir.resolve("target/libs"));
     }
 
-    private void collectComponents(Path rootDir, Model model) {
+    private void updateComponents(Path rootDir, Model model) {
         components.clear();
 
         // TODO: use model (and parents) to find and create result!
@@ -199,7 +214,8 @@ public class MavenProject extends Project {
         final Path classesDir = ensureDirectory(rootDir.resolve("target/classes"));
         final BuildRoot sources = createBuildRoot(BuildType.JavaSources, sourceDir);
         final BuildRoot classes = createBuildRoot(BuildType.JavaClasses, classesDir);
-        components.add(createBuildComponent(this, sources, classes, new CompileJavaSources()));
+        final Charset sourceEncoding = StandardCharsets.UTF_8;
+        components.add(createBuildComponent(this, sources, classes, new CompileJavaSources(sourceEncoding)));
 
         final Path resourcesDir = rootDir.resolve("src/main/resources");
         if (Files.exists(resourcesDir)) {
@@ -209,11 +225,9 @@ public class MavenProject extends Project {
         }
     }
 
-    private void appendClassPath(Path path) {
-        if (classpath.length() > 0) {
-            classpath.append(CLASS_PATH_SEP);
-        }
-        classpath.append(path);
+    private void updateCompilerFlags(Model model) {
+        compilerFlags.clear();
+        // TODO: use model (and parents) to find and create result!
     }
 
     private static Model readModel(Path rootDir, Path pomFile) {

@@ -46,9 +46,10 @@ public interface BuildMonitor {
     /**
      * Called when build cycle is starting a scan.
      *
+     * @param cycleNumber The cycle number.
      * @return {@code true} if binaries should be watched for changes.
      */
-    boolean onCycleStart();
+    boolean onCycleStart(int cycleNumber);
 
     /**
      * Called when project changes have been detected.
