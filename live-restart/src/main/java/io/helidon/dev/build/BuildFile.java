@@ -51,7 +51,7 @@ public class BuildFile {
         this.parent = parent;
         this.type = type;
         this.path = assertFile(path);
-        this.lastModified = lastModifiedTime();
+        this.lastModified = getLastModifiedTime();
     }
 
     /**
@@ -107,8 +107,17 @@ public class BuildFile {
      * @return {@code true} if changed.
      */
     public boolean hasChanged() {
-        final FileTime current = lastModifiedTime();
+        final FileTime current = getLastModifiedTime();
         return !lastModified.equals(current);
+    }
+
+    /**
+     * Returns the last modified time.
+     *
+     * @return The last modified time.
+     */
+    public long lastModifiedTime() {
+        return lastModified.toMillis();
     }
 
     @Override
@@ -123,7 +132,7 @@ public class BuildFile {
      * Updates the last modified time.
      */
     public void update() {
-        lastModified = lastModifiedTime();
+        lastModified = getLastModifiedTime();
     }
 
     @Override
@@ -139,7 +148,7 @@ public class BuildFile {
                '}';
     }
 
-    private FileTime lastModifiedTime() {
+    private FileTime getLastModifiedTime() {
         try {
             return Files.getLastModifiedTime(path);
         } catch (IOException e) {

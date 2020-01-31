@@ -54,7 +54,6 @@ import static io.helidon.dev.build.BuildComponent.createBuildComponent;
 import static io.helidon.dev.build.BuildFile.createBuildFile;
 import static io.helidon.dev.build.BuildRoot.createBuildRoot;
 import static io.helidon.dev.build.ProjectDirectory.createProjectDirectory;
-import static java.util.Collections.emptyList;
 
 /**
  * A Maven build project.
@@ -62,7 +61,7 @@ import static java.util.Collections.emptyList;
  * TODO: If multiple threads will access, methods that return collections may need to be converted to visitors invoked
  * under an internal lock, or an acquire/release mechanism must be created and used externally and internally
  */
-public class MavenProject implements Project {
+public class MavenProject extends Project {
     private static final String POM_FILE = "pom.xml";
     private static final String MAVEN_EXEC = Constants.OS.mavenExec();
     private static final char CLASS_PATH_SEP = File.pathSeparatorChar;
@@ -129,68 +128,20 @@ public class MavenProject implements Project {
     }
 
     @Override
-    public List<BuildRoot> buildRoots(BuildType type) {
+    protected List<BuildRoot> buildRoots(BuildType type) {
         return byType.computeIfAbsent(type, key -> new ArrayList<>());
     }
 
     @Override
-    public List<BuildRoot.Changes> sourceChanges() {
-        final List<BuildRoot.Changes> result = new ArrayList<>();
-        for (final BuildComponent component : components) {
-            final BuildRoot.Changes changes = component.sourceRoot().changes();
-            if (!changes.isEmpty()) {
-                result.add(changes);
-            }
-        }
-        return result;
-    }
-
-    @Override
-    public List<BuildRoot.Changes> binaryChanges() {
-        final List<BuildRoot.Changes> result = new ArrayList<>();
-        for (final BuildComponent component : components) {
-            final BuildRoot.Changes changes = component.outputRoot().changes();
-            if (!changes.isEmpty()) {
-                result.add(changes);
-            }
-        }
-        return result;
-    }
-
-    @Override
-    public List<String> fullBuild(Consumer<String> stdOut, Consumer<String> stdErr, boolean clean) throws Exception {
-        return ProcessMonitor.builder()
-                             .processBuilder(new ProcessBuilder().directory(root.path().toFile())
-                                                                 .command(clean ? CLEAN_BUILD_COMMAND : BUILD_COMMAND))
-                             .stdOut(stdOut)
-                             .stdErr(stdErr)
-                             .capture(true)
-                             .build()
-                             .execute()
-                             .output();
-    }
-
-    @Override
-    public List<String> incrementalBuild(List<BuildRoot.Changes> changes,
-                                         Consumer<String> stdOut,
-                                         Consumer<String> stdErr) throws Exception {
-        if (!changes.isEmpty()) {
-            final List<String> output = new ArrayList<>();
-            final Consumer<String> out = line -> {
-                output.add(line);
-                stdOut.accept(line);
-            };
-            final Consumer<String> err = line -> {
-                output.add(line);
-                stdErr.accept(line);
-            };
-            for (final BuildRoot.Changes changed : changes) {
-                changed.root().component().incrementalBuild(changed, out, err);
-            }
-            return output;
-        } else {
-            return emptyList();
-        }
+    public void fullBuild(Consumer<String> stdOut, Consumer<String> stdErr, boolean clean) throws Exception {
+        ProcessMonitor.builder()
+                      .processBuilder(new ProcessBuilder().directory(root.path().toFile())
+                                                          .command(clean ? CLEAN_BUILD_COMMAND : BUILD_COMMAND))
+                      .stdOut(stdOut)
+                      .stdErr(stdErr)
+                      .capture(true)
+                      .build()
+                      .execute();
     }
 
     @Override
@@ -211,7 +162,7 @@ public class MavenProject implements Project {
             });
             final Set<Path> classPath = new LinkedHashSet<>();
             buildRoots(BuildType.JavaClasses).forEach(root -> classPath.add(root.path()));
-            classPath.addAll(dependencies);
+            classPath.addAll(dependencies());
             classPath.forEach(this::appendClassPath);
 
             buildFile.update();
