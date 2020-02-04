@@ -63,43 +63,43 @@ public class JLinkImageMojo extends AbstractMojo {
     /**
      * Add a Class Data Sharing archive to reduce startup time.
      */
-    @Parameter(defaultValue = "true", property = "java.image.addClassDataSharingArchive")
+    @Parameter(defaultValue = "true", property = "jlink.image.addClassDataSharingArchive")
     private boolean addClassDataSharingArchive;
 
     /**
      * Test the image after creation.
      */
-    @Parameter(defaultValue = "true", property = "java.image.testImage")
+    @Parameter(defaultValue = "true", property = "jlink.image.testImage")
     private boolean testImage;
 
     /**
      * Default JVM options to use when starting the application.
      */
-    @Parameter(property = "java.image.defaultJvmOptions")
+    @Parameter(property = "jlink.image.defaultJvmOptions")
     private List<String> defaultJvmOptions;
 
     /**
      * Default JVM debug options to use when starting the application with {@code --debug}.
      */
-    @Parameter(property = "java.image.defaultDebugOptions")
+    @Parameter(property = "jlink.image.defaultDebugOptions")
     private List<String> defaultDebugOptions;
 
     /**
      * Default arguments to use when starting the application.
      */
-    @Parameter(property = "java.image.defaultArgs")
+    @Parameter(property = "jlink.image.defaultArgs")
     private List<String> defaultArgs;
 
     /**
      * Strip debug information from all classes and exclude {@code jdk.jdwp.agent} module.
      */
-    @Parameter(defaultValue = "false", property = "java.image.stripDebug")
+    @Parameter(defaultValue = "false", property = "jlink.image.stripDebug")
     private boolean stripDebug;
 
     /**
      * Skip execution for this plugin.
      */
-    @Parameter(defaultValue = "false", property = "java.image.skip")
+    @Parameter(defaultValue = "false", property = "jlink.image.skip")
     private boolean skipJavaImage;
 
     @Override
