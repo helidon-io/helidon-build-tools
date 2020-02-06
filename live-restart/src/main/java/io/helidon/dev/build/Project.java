@@ -39,6 +39,7 @@ public class Project {
     private final List<String> compilerFlags;
     private final List<Path> dependencies;
     private final List<BuildComponent> components;
+    private final String mainClassName;
 
     private Project(Builder builder) {
         this.root = builder.root;
@@ -47,6 +48,7 @@ public class Project {
         this.compilerFlags = builder.compilerFlags;
         this.dependencies = builder.dependencies;
         this.components = builder.components;
+        this.mainClassName = builder.mainClassName;
         components.forEach(c -> c.project(this));
     }
 
@@ -70,6 +72,8 @@ public class Project {
         private List<Path> dependencies;
         private List<BuildComponent> components;
         private Set<Path> classpath;
+        private String mainClassName;
+
 
         private Builder() {
             this.buildSystemFiles = new ArrayList<>();
@@ -135,6 +139,17 @@ public class Project {
         }
 
         /**
+         * Sets the main class name.
+         *
+         * @param mainClassName The name.
+         * @return This instance, for chaining.
+         */
+        public Builder mainClassName(String mainClassName) {
+            this.mainClassName = mainClassName;
+            return this;
+        }
+
+        /**
          * Returns a new project.
          *
          * @return The project.
@@ -142,6 +157,9 @@ public class Project {
         public Project build() {
             if (root == null) {
                 throw new IllegalStateException("rootDirectory required");
+            }
+            if (mainClassName == null) {
+                throw new IllegalStateException("mainClassName required");
             }
             assertNotEmpty(buildSystemFiles, "buildSystemFile");
             assertNotEmpty(dependencies, "dependency");
@@ -231,6 +249,15 @@ public class Project {
     }
 
     /**
+     * Returns the main class name.
+     *
+     * @return The name.
+     */
+    public String mainClassName() {
+        return mainClassName;
+    }
+
+    /**
      * Returns whether or not any build system file has changed.
      *
      * @return {@code true} if any build system file has changed.
@@ -260,8 +287,9 @@ public class Project {
         return result;
     }
 
-    /** TODO: This doesn't watch dependencies, and it must. It would be nice not to spend any time collecting
-     *        info if this will never be used, however, so... maybe make project modal?
+    /**
+     * TODO: This doesn't watch dependencies, and it must. It would be nice not to spend any time collecting
+     * info if this will never be used, however, so... maybe make project modal?
      * Returns a list of binary changes since the last update, if any.
      *
      * @return The changes.

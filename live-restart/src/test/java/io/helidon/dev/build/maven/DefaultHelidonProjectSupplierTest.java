@@ -62,6 +62,7 @@ class DefaultHelidonProjectSupplierTest {
         assertThat(components.get(1).outputRoot(), is(not(components.get(0).outputRoot())));
 
         assertThat(project.classpath().size(), is(greaterThan(2)));
+        assertThat(project.mainClassName(), is("io.helidon.examples.quickstart.se.Main"));
     }
 
     @Test
@@ -87,5 +88,6 @@ class DefaultHelidonProjectSupplierTest {
         assertThat(components.get(1).outputRoot(), is(not(components.get(0).outputRoot())));
 
         assertThat(project.classpath().size(), is(greaterThan(2)));
+        assertThat(project.mainClassName(), is("io.helidon.examples.quickstart.se.Main"));
     }
 }

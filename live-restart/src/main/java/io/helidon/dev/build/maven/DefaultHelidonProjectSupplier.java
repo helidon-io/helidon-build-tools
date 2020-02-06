@@ -17,6 +17,7 @@
 package io.helidon.dev.build.maven;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -92,7 +93,7 @@ public class DefaultHelidonProjectSupplier implements ProjectSupplier {
                       .execute();
     }
 
-    private Project createProject(Path projectDir) {
+    private Project createProject(Path projectDir) throws IOException {
         final Project.Builder builder = Project.builder();
         final Path pomFile = assertFile(projectDir.resolve(POM_FILE));
         final ProjectDirectory root = createProjectDirectory(DirectoryType.Project, projectDir);
@@ -113,6 +114,20 @@ public class DefaultHelidonProjectSupplier implements ProjectSupplier {
             final BuildRoot binaries = createBuildRoot(BuildType.Resources, classesDir);
             builder.component(createBuildComponent(resources, binaries, new CopyResources()));
         }
+
+        builder.mainClassName(findMainClassName(pomFile));
         return builder.build();
+    }
+
+    private static String findMainClassName(Path pomFile) throws IOException {
+        return Files.readAllLines(pomFile).stream()
+                    .filter(line -> line.contains("<mainClass>"))
+                    .map(line -> {
+                        final int close = line.indexOf(">");
+                        final int open = line.indexOf("</", close + 1);
+                        return line.substring(close + 1, open);
+                    })
+                    .findFirst()
+                    .orElseThrow(() -> new IOException("<mainClass> element not found in " + pomFile));
     }
 }
