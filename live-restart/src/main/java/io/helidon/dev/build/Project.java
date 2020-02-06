@@ -260,7 +260,8 @@ public class Project {
         return result;
     }
 
-    /**
+    /** TODO: This doesn't watch dependencies, and it must. It would be nice not to spend any time collecting
+     *        info if this will never be used, however, so... maybe make project modal?
      * Returns a list of binary changes since the last update, if any.
      *
      * @return The changes.
