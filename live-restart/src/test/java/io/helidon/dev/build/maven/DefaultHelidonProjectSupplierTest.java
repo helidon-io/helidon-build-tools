@@ -17,8 +17,11 @@
 package io.helidon.dev.build.maven;
 
 import java.nio.file.Path;
+import java.util.List;
 
 import io.helidon.build.test.TestFiles;
+import io.helidon.dev.build.BuildComponent;
+import io.helidon.dev.build.DirectoryType;
 import io.helidon.dev.build.Project;
 import io.helidon.dev.build.ProjectSupplier;
 import io.helidon.dev.build.TestMonitor;
@@ -26,6 +29,7 @@ import io.helidon.dev.build.TestMonitor;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -37,13 +41,51 @@ import static org.hamcrest.Matchers.nullValue;
 class DefaultHelidonProjectSupplierTest {
 
     @Test
-    void testGet() throws Exception {
+    void testUpToDate() throws Exception {
         final Path projectDir = TestFiles.helidonSeProject();
         final ProjectSupplier supplier = new DefaultHelidonProjectSupplier();
-        final TestMonitor monitor = new TestMonitor(false, 1);
-        final Project project = supplier.get(projectDir, false, monitor.stdOutConsumer(), monitor.stdErrConsumer());
+        final TestMonitor monitor = new TestMonitor(1);
+        final Project project = supplier.get(projectDir, monitor, false, 0);
         assertThat(project, is(not(nullValue())));
-        assertThat(project.components().size(), is(2));
+        assertThat(project.isBuildUpToDate(), is(true));
+        assertThat(monitor.buildStart(0), is(false));
+        assertThat(project, is(not(nullValue())));
+        assertThat(project.root().directoryType(), is(DirectoryType.Project));
+        assertThat(project.root().path(), is(projectDir));
+        final List<BuildComponent> components = project.components();
+        assertThat(components, is(not(nullValue())));
+        assertThat(components.size(), is(2));
+        assertThat(components.get(0).sourceRoot().path().toString(), endsWith("src/main/java"));
+        assertThat(components.get(0).outputRoot().path().toString(), endsWith("target/classes"));
+        assertThat(components.get(1).sourceRoot().path().toString(), endsWith("src/main/resources"));
+        assertThat(components.get(1).outputRoot().path().toString(), endsWith("target/classes"));
+        assertThat(components.get(1).outputRoot(), is(not(components.get(0).outputRoot())));
+
+        assertThat(project.classpath().size(), is(greaterThan(2)));
+    }
+
+    @Test
+    void testCleanBuild() throws Exception {
+        final Path projectDir = TestFiles.helidonSeProjectCopy();
+        final ProjectSupplier supplier = new DefaultHelidonProjectSupplier();
+        final TestMonitor monitor = new TestMonitor(1);
+        final Project project = supplier.get(projectDir, monitor, true, 0);
+        assertThat(project, is(not(nullValue())));
+        assertThat(project.isBuildUpToDate(), is(true));
+        assertThat(monitor.buildStart(0), is(true));
+        assertThat(monitor.incremental(0), is(false));
+        assertThat(project, is(not(nullValue())));
+        assertThat(project.root().directoryType(), is(DirectoryType.Project));
+        assertThat(project.root().path(), is(projectDir));
+        final List<BuildComponent> components = project.components();
+        assertThat(components, is(not(nullValue())));
+        assertThat(components.size(), is(2));
+        assertThat(components.get(0).sourceRoot().path().toString(), endsWith("src/main/java"));
+        assertThat(components.get(0).outputRoot().path().toString(), endsWith("target/classes"));
+        assertThat(components.get(1).sourceRoot().path().toString(), endsWith("src/main/resources"));
+        assertThat(components.get(1).outputRoot().path().toString(), endsWith("target/classes"));
+        assertThat(components.get(1).outputRoot(), is(not(components.get(0).outputRoot())));
+
         assertThat(project.classpath().size(), is(greaterThan(2)));
     }
 }

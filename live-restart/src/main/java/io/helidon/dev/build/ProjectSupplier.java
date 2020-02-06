@@ -17,7 +17,6 @@
 package io.helidon.dev.build;
 
 import java.nio.file.Path;
-import java.util.function.Consumer;
 
 /**
  * A {@code Project} supplier.
@@ -25,15 +24,16 @@ import java.util.function.Consumer;
 public interface ProjectSupplier {
 
     /**
-     * Returns a new {@code Project} instance from the given directory.
+     * Returns a new {@code Project} instance from the given directory that has been successfully built.
      *
      * @param projectDir The project directory.
+     * @param monitor The build monitor. Implementations must call {@link BuildMonitor#onBuildStart(int, boolean)} if a build
+     * is performed.
      * @param clean {@code true} if the project should be cleaned and built.
-     * @param stdOut A consumer for messages written to stdout.
-     * @param stdErr A consumer for messages written to stderr.
+     * @param cycleNumber The cycle number.
      * @return The project instance, guaranteed to have been successfully built.
      * @throws IllegalArgumentException if the project directory is not a valid.
      * @throws Exception if the build fails.
      */
-    Project get(Path projectDir, boolean clean, Consumer<String> stdOut, Consumer<String> stdErr) throws Exception;
+    Project get(Path projectDir, BuildMonitor monitor, boolean clean, int cycleNumber) throws Exception;
 }

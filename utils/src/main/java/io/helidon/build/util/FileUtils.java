@@ -142,8 +142,19 @@ public final class FileUtils {
      * @return The normalized, absolute file paths.
      */
     public static List<Path> list(Path directory) {
+        return list(directory, 1);
+    }
+
+    /**
+     * List all files and directories in the given directory, recursively if maxDepth > 1.
+     *
+     * @param directory The directory.
+     * @param maxDepth The maximum recursion depth.
+     * @return The normalized, absolute file paths.
+     */
+    public static List<Path> list(Path directory, final int maxDepth) {
         try {
-            return Files.find(assertDir(directory), 1, (path, attrs) -> true)
+            return Files.find(assertDir(directory), maxDepth, (path, attrs) -> true)
                         .collect(Collectors.toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);

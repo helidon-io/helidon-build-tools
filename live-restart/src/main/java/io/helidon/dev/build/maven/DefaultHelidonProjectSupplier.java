@@ -23,10 +23,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.ProcessMonitor;
+import io.helidon.dev.build.BuildMonitor;
 import io.helidon.dev.build.BuildRoot;
 import io.helidon.dev.build.BuildType;
 import io.helidon.dev.build.DirectoryType;
@@ -59,16 +59,17 @@ public class DefaultHelidonProjectSupplier implements ProjectSupplier {
     private static final String CLASSES_DIR = "target/classes";
 
     @Override
-    public Project get(Path projectDir, boolean clean, Consumer<String> stdOut, Consumer<String> stdErr) throws Exception {
+    public Project get(Path projectDir, BuildMonitor monitor, boolean clean, int cycleNumber) throws Exception {
         final Project project = createProject(projectDir);
-        if (!project.isBuildUpToDate()) {
-            build(projectDir, clean, stdOut, stdErr);
+        if (clean || !project.isBuildUpToDate()) {
+            monitor.onBuildStart(cycleNumber, !clean);
+            build(projectDir, monitor, clean);
             project.update();
         }
         return project;
     }
 
-    private void build(Path projectDir, boolean clean, Consumer<String> stdOut, Consumer<String> stdErr) throws Exception {
+    private void build(Path projectDir, BuildMonitor monitor, boolean clean) throws Exception {
 
         // Make sure we use the current JDK by forcing it first in the path and setting JAVA_HOME. This might be required
         // if we're in an IDE whose process was started with a different JDK.
@@ -84,8 +85,8 @@ public class DefaultHelidonProjectSupplier implements ProjectSupplier {
 
         ProcessMonitor.builder()
                       .processBuilder(processBuilder)
-                      .stdOut(stdOut)
-                      .stdErr(stdErr)
+                      .stdOut(monitor.stdOutConsumer())
+                      .stdErr(monitor.stdErrConsumer())
                       .capture(true)
                       .build()
                       .execute();

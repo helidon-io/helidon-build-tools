@@ -19,8 +19,11 @@ package io.helidon.dev.build;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+
+import io.helidon.build.util.Log;
+
+import static io.helidon.build.util.Constants.EOL;
 
 /**
  * A build monitor used for testing.
@@ -28,23 +31,31 @@ import java.util.function.Consumer;
 public class TestMonitor implements BuildMonitor {
     private final CountDownLatch stoppedLatch;
     private final List<String> output;
-    private final int cycleCount;
+    private final int stopCycle;
+    private int lastCycle;
     private boolean started;
-    private boolean cycleStart;
-    private int cycleNumber;
-    private boolean changed;
-    private boolean binariesOnly;
-    private boolean buildStart;
-    private boolean incremental;
-    private Throwable buildFailed;
-    private boolean ready;
-    private boolean cycleEnd;
+    private boolean[] cycleStart;
+    private boolean[] changed;
+    private boolean[] binariesOnly;
+    private boolean[] buildStart;
+    private boolean[] incremental;
+    private Throwable[] buildFailed;
+    private boolean[] ready;
+    private boolean[] cycleEnd;
     private boolean stopped;
 
-    public TestMonitor(boolean initialClean, int cycleCount) {
+    public TestMonitor(int stopCycle) {
         this.stoppedLatch = new CountDownLatch(1);
         this.output = new ArrayList<>();
-        this.cycleCount = cycleCount;
+        this.stopCycle = stopCycle;
+        this.cycleStart = new boolean[stopCycle + 1];
+        this.changed = new boolean[stopCycle + 1];
+        this.binariesOnly = new boolean[stopCycle + 1];
+        this.buildStart = new boolean[stopCycle + 1];
+        this.incremental = new boolean[stopCycle + 1];
+        this.buildFailed = new Throwable[stopCycle + 1];
+        this.ready = new boolean[stopCycle + 1];
+        this.cycleEnd = new boolean[stopCycle + 1];
     }
 
     public Consumer<String> stdOutConsumer() {
@@ -63,58 +74,120 @@ public class TestMonitor implements BuildMonitor {
 
     @Override
     public void onStarted() {
+        log("onStarted");
         started = true;
     }
 
     @Override
     public void onCycleStart(int cycleNumber) {
-        cycleStart = true;
-        this.cycleNumber = cycleNumber;
-        changed = false;
-        binariesOnly = false;
-        buildStart = false;
-        incremental = false;
-        buildFailed = null;
-        ready = false;
-        cycleEnd = false;
+        logCycle("onCycleStart", cycleNumber);
+        cycleStart[cycleNumber] = true;
     }
 
     @Override
-    public void onChanged(boolean binariesOnly) {
-        changed = true;
-        this.binariesOnly = binariesOnly;
+    public void onChanged(int cycleNumber, boolean binariesOnly) {
+        logCycle("onChanged", cycleNumber, "binariesOnly=" + binariesOnly);
+        changed[cycleNumber] = true;
+        this.binariesOnly[cycleNumber] = binariesOnly;
     }
 
     @Override
-    public void onBuildStart(boolean incremental) {
-        buildStart = true;
-        this.incremental = incremental;
+    public void onBuildStart(int cycleNumber, boolean incremental) {
+        logCycle("onBuildStart", cycleNumber, "incremental=" + incremental);
+        buildStart[cycleNumber] = true;
+        this.incremental[cycleNumber] = incremental;
     }
 
     @Override
-    public long onBuildFail(Throwable error) {
-        buildFailed = error;
+    public long onBuildFail(int cycleNumber, Throwable error) {
+        logCycle("onBuildFail", cycleNumber, error);
+        buildFailed[cycleNumber] = error;
         return 0;
     }
 
     @Override
-    public long onReady() {
-        ready = true;
+    public long onReady(int cycleNumber) {
+        logCycle("onReady", cycleNumber);
+        ready[cycleNumber] = true;
         return 0;
     }
 
     @Override
     public boolean onCycleEnd(int cycleNumber) {
-        return cycleNumber < cycleCount;
+        logCycle("onCycleEnd", cycleNumber);
+        cycleEnd[cycleNumber] = true;
+        return cycleNumber < stopCycle;
     }
 
     @Override
     public void onStopped() {
+        log("onStopped");
         stopped = true;
         stoppedLatch.countDown();
     }
 
-    boolean waitForStopped(long maxWaitSeconds) throws InterruptedException {
-        return stoppedLatch.await(maxWaitSeconds, TimeUnit.SECONDS);
+    public List<String> output() {
+        return output;
+    }
+
+    public String outputAsString() {
+        return String.join(EOL, output());
+    }
+
+    public int lastCycle() {
+        return lastCycle;
+    }
+
+    public boolean started() {
+        return started;
+    }
+
+    public boolean cycleStart(int cycleNumber) {
+        return cycleStart[cycleNumber];
+    }
+
+    public boolean changed(int cycleNumber) {
+        return changed[cycleNumber];
+    }
+
+    public boolean binariesOnly(int cycleNumber) {
+        return binariesOnly[cycleNumber];
+    }
+
+    public boolean buildStart(int cycleNumber) {
+        return buildStart[cycleNumber];
+    }
+
+    public boolean incremental(int cycleNumber) {
+        return incremental[cycleNumber];
+    }
+
+    public Throwable buildFailed(int cycleNumber) {
+        return buildFailed[cycleNumber];
+    }
+
+    public boolean ready(int cycleNumber) {
+        return ready[cycleNumber];
+    }
+
+    public boolean cycleEnd(int cycleNumber) {
+        return cycleEnd[cycleNumber];
+    }
+
+    public boolean stopped() {
+        return stopped;
+    }
+
+    private void log(String eventName) {
+        Log.info("loop: %s", eventName);
+    }
+
+    private void logCycle(String eventName, int cycleNumber) {
+        logCycle(eventName, cycleNumber, "");
+    }
+
+    private void logCycle(String eventName, int cycleNumber, Object message) {
+        lastCycle = cycleNumber;
+        Log.info("loop %d: %s %s", cycleNumber, eventName, message);
     }
 }

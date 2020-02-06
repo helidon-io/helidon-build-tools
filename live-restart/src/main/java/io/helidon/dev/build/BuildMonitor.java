@@ -16,10 +16,30 @@
 
 package io.helidon.dev.build;
 
+import java.util.function.Consumer;
+
 /**
- * A receiver of incremental build loop events.
+ * A receiver of build loop messages and events.
  */
 public interface BuildMonitor {
+
+    /**
+     * Returns a consumer for messages written to stdout.
+     *
+     * @return The consumer.
+     */
+    default Consumer<String> stdOutConsumer() {
+        return System.out::println;
+    }
+
+    /**
+     * Returns a consumer for messages written to stderr.
+     *
+     * @return The consumer.
+     */
+    default Consumer<String> stdErrConsumer() {
+        return System.err::println;
+    }
 
     /**
      * Called when the build loop has started.
@@ -36,31 +56,34 @@ public interface BuildMonitor {
     /**
      * Called when project changes have been detected.
      *
+     * @param cycleNumber The cycle number.
      * @param binariesOnly {@code true} if only binaries are being watched and only binary changes were detected.
      */
-    void onChanged(boolean binariesOnly);
+    void onChanged(int cycleNumber, boolean binariesOnly);
 
     /**
      * Called when a build is about to start.
      *
      * @param incremental {@code true} if this is an incremental build, {@code false} if full.
      */
-    void onBuildStart(boolean incremental);
+    void onBuildStart(int cycleNumber, boolean incremental);
 
     /**
      * Called when a build has failed.
      *
+     * @param cycleNumber The cycle number.
      * @param error The error.
      * @return The number of milliseconds to delay before retrying build.
      */
-    long onBuildFail(Throwable error);
+    long onBuildFail(int cycleNumber, Throwable error);
 
     /**
      * Called when a build has succeeded or initial build was not required.
      *
+     * @param cycleNumber The cycle number.
      * @return The number of milliseconds to delay before restarting the build cycle.
      */
-    long onReady();
+    long onReady(int cycleNumber);
 
     /**
      * Called when a build cycle has completed.

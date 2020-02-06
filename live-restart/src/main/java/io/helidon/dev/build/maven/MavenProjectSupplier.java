@@ -19,8 +19,8 @@ package io.helidon.dev.build.maven;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
+import io.helidon.dev.build.BuildMonitor;
 import io.helidon.dev.build.Project;
 import io.helidon.dev.build.ProjectSupplier;
 import io.helidon.dev.build.util.ConsumerPrintStream;
@@ -45,32 +45,25 @@ public class MavenProjectSupplier implements ProjectSupplier {
     }
 
     @Override
-    public Project get(Path projectDir, boolean clean, Consumer<String> stdOut, Consumer<String> stdErr) throws Exception {
-        try {
-            final Path pomFile = assertFile(projectDir.resolve(POM_FILE));
-            final MavenCli maven = new MavenCli();
-            final String[] args = clean ? CLEAN_BUILD_ARGS : BUILD_ARGS;
-            final PrintStream stdOutStream = ConsumerPrintStream.newStream(stdOut);
-            final PrintStream stdErrStream = ConsumerPrintStream.newStream(stdErr);
-            System.getProperties().put(PROJECT_DIRECTORY_PROPERTY, projectDir.toString());
+    public Project get(Path projectDir, BuildMonitor monitor, boolean clean, int cycleNumber) throws Exception {
+        final Path pomFile = assertFile(projectDir.resolve(POM_FILE));
+        final MavenCli maven = new MavenCli();
+        final String[] args = clean ? CLEAN_BUILD_ARGS : BUILD_ARGS;
+        final PrintStream stdOutStream = ConsumerPrintStream.newStream(monitor.stdOutConsumer());
+        final PrintStream stdErrStream = ConsumerPrintStream.newStream(monitor.stdErrConsumer());
+        System.getProperties().put(PROJECT_DIRECTORY_PROPERTY, projectDir.toString());
 
-            // TODO: this fails, looks like it may be a missing dependency (if we're lucky)
-            if (maven.doMain(args, projectDir.toString(), stdOutStream, stdErrStream) != 0) {
-                throw new Exception("Build failed.");
-            }
-            final MavenProject mavenProject = PROJECT.get();
-            if (mavenProject == null) {
-                throw new IllegalStateException("Maven project not found.");
-            }
+        monitor.onBuildStart(cycleNumber, !clean);
 
-            return null; // TODO use Project.builder()
-
-        } catch (Exception e) {
-            stdErr.accept(e.getMessage());
-            throw e;
-        } catch (Throwable e) {
-            stdErr.accept(e.getMessage());
-            throw new RuntimeException(e);
+        // TODO: this fails, looks like it may be a missing dependency (if we're lucky)
+        if (maven.doMain(args, projectDir.toString(), stdOutStream, stdErrStream) != 0) {
+            throw new Exception("Build failed.");
         }
+        final MavenProject mavenProject = PROJECT.get();
+        if (mavenProject == null) {
+            throw new IllegalStateException("Maven project not found.");
+        }
+
+        return null; // TODO use Project.builder()
     }
 }
