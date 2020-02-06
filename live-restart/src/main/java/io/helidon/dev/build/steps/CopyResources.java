@@ -19,6 +19,7 @@ package io.helidon.dev.build.steps;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.dev.build.BuildComponent;
@@ -46,13 +47,14 @@ public class CopyResources implements BuildStep {
     @Override
     public void incrementalBuild(BuildRoot.Changes changes, Consumer<String> stdOut, Consumer<String> stdErr) throws Exception {
         if (!changes.isEmpty()) {
-            stdOut.accept("Copying changed resources");
             final BuildRoot sources = changes.root();
             final BuildComponent component = sources.component();
             if (test(component)) {
+                final Set<Path> changed = changes.addedOrModified();
+                stdOut.accept("Copying " + changed.size() + " resource files");
                 final Path srcDir = sources.path();
                 final Path outDir = component.outputRoot().path();
-                for (final Path srcFile : changes.addedOrModified()) {
+                for (final Path srcFile : changed) {
                     copy(srcDir, outDir, srcFile, stdOut);
                 }
             }

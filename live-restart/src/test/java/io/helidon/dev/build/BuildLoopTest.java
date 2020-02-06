@@ -16,6 +16,7 @@
 
 package io.helidon.dev.build;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -39,7 +40,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Unit test for class {@link ProjectDirectory}.
+ * Unit test for class {@link BuildLoop}.
  */
 class BuildLoopTest {
 
@@ -234,5 +235,80 @@ class BuildLoopTest {
 
         final String allOutput = String.join(" ", monitor.outputAsString());
         assertThat(allOutput, containsString("Compiling " + sourceFilesTouched.get() + " source files"));
+    }
+
+    @Test
+    void testQuickstartSeResourceChangeWhileRunning() throws Exception {
+        final Path rootDir = helidonSeProjectCopy();
+        final AtomicInteger resourceFilesTouched = new AtomicInteger();
+        final TestMonitor monitor = new TestMonitor(3) {
+            @Override
+            public void onCycleStart(int cycleNumber) {
+                super.onCycleStart(cycleNumber);
+                if (cycleNumber == 2) {
+                    Log.info("sleeping 1.25 second before touching resource files");
+                    try {
+                        Thread.sleep(1250);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    Log.info("touching resource files");
+                    FileUtils.list(rootDir.resolve("src/main/resources"), 16).forEach(file -> {
+                        if (Files.isRegularFile(file)) {
+                            touch(file);
+                            resourceFilesTouched.incrementAndGet();
+                        }
+                    });
+                }
+            }
+        };
+
+        final BuildLoop loop = newLoop(rootDir, false, false, monitor);
+        run(loop);
+
+        final Project project = loop.project();
+        assertThat(project, is(not(nullValue())));
+        assertThat(monitor.started(), is(true));
+        assertThat(monitor.stopped(), is(true));
+        assertThat(monitor.lastCycle(), is(3));
+
+        assertThat(monitor.cycleStart(0), is(true));
+        assertThat(monitor.changed(0), is(false));
+        assertThat(monitor.binariesOnly(0), is(false));
+        assertThat(monitor.buildStart(0), is(false));
+        assertThat(monitor.incremental(0), is(false));
+        assertThat(monitor.buildFailed(0), is(nullValue()));
+        assertThat(monitor.ready(0), is(true));
+        assertThat(monitor.cycleEnd(0), is(true));
+
+        assertThat(monitor.cycleStart(1), is(true));
+        assertThat(monitor.changed(1), is(false));
+        assertThat(monitor.binariesOnly(1), is(false));
+        assertThat(monitor.buildStart(1), is(false));
+        assertThat(monitor.incremental(1), is(false));
+        assertThat(monitor.buildFailed(1), is(nullValue()));
+        assertThat(monitor.ready(1), is(true));
+        assertThat(monitor.cycleEnd(1), is(true));
+
+        assertThat(monitor.cycleStart(2), is(true));
+        assertThat(monitor.changed(2), is(true));
+        assertThat(monitor.binariesOnly(2), is(false));
+        assertThat(monitor.buildStart(2), is(true));
+        assertThat(monitor.incremental(2), is(true));
+        assertThat(monitor.buildFailed(2), is(nullValue()));
+        assertThat(monitor.ready(2), is(true));
+        assertThat(monitor.cycleEnd(2), is(true));
+
+        assertThat(monitor.cycleStart(3), is(true));
+        assertThat(monitor.changed(3), is(false));
+        assertThat(monitor.binariesOnly(3), is(false));
+        assertThat(monitor.buildStart(3), is(false));
+        assertThat(monitor.incremental(3), is(false));
+        assertThat(monitor.buildFailed(3), is(nullValue()));
+        assertThat(monitor.ready(3), is(true));
+        assertThat(monitor.cycleEnd(3), is(true));
+
+        final String allOutput = String.join(" ", monitor.outputAsString());
+        assertThat(allOutput, containsString("Copying " + resourceFilesTouched.get() + " resource files"));
     }
 }
