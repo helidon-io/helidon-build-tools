@@ -106,7 +106,7 @@ public class TestMonitor implements BuildMonitor {
     }
 
     @Override
-    public long onReady(int cycleNumber) {
+    public long onReady(int cycleNumber, Project project) {
         logCycle("onReady", cycleNumber);
         ready[cycleNumber] = true;
         return 0;

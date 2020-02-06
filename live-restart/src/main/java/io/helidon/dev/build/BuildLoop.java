@@ -153,7 +153,7 @@ public class BuildLoop {
                 try {
                     setProject(projectSupplier.get(projectDirectory, monitor, clean, cycleNumber));
                     clean = false;
-                    delay = monitor.onReady(cycleNumber);
+                    delay = monitor.onReady(cycleNumber, project);
                 } catch (IllegalArgumentException | InterruptedException e) {
                     break;
                 } catch (Throwable e) {
@@ -167,7 +167,7 @@ public class BuildLoop {
                 // we must recreate the project.
 
                 if (project.binaryChanges().isEmpty()) {
-                    delay = monitor.onReady(cycleNumber);
+                    delay = monitor.onReady(cycleNumber, project);
                 } else {
                     setProject(null);
                     monitor.onChanged(cycleNumber, true);
@@ -187,14 +187,14 @@ public class BuildLoop {
 
                 final List<BuildRoot.Changes> sourceChanges = project.sourceChanges();
                 if (sourceChanges.isEmpty()) {
-                    delay = monitor.onReady(cycleNumber);
+                    delay = monitor.onReady(cycleNumber, project);
                 } else {
                     try {
                         monitor.onChanged(cycleNumber, false);
                         monitor.onBuildStart(cycleNumber, true);
                         project.incrementalBuild(sourceChanges, stdOut, stdErr);
                         project.update();
-                        delay = monitor.onReady(cycleNumber);
+                        delay = monitor.onReady(cycleNumber, project);
                     } catch (InterruptedException e) {
                         break;
                     } catch (Throwable e) {

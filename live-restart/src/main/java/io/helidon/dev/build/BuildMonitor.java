@@ -78,12 +78,13 @@ public interface BuildMonitor {
     long onBuildFail(int cycleNumber, Throwable error);
 
     /**
-     * Called when a build has succeeded or initial build was not required.
+     * Called when a build has succeeded or when an initial build was not required.
      *
      * @param cycleNumber The cycle number.
+     * @param project The project.
      * @return The number of milliseconds to delay before restarting the build cycle.
      */
-    long onReady(int cycleNumber);
+    long onReady(int cycleNumber, Project project);
 
     /**
      * Called when a build cycle has completed.
