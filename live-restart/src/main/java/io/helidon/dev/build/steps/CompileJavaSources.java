@@ -39,6 +39,7 @@ import io.helidon.dev.build.Project;
 
 /**
  * A build step that compiles java sources using the ToolProvider API.
+ * TODO: See configuration https://github.com/apache/maven-compiler-plugin/blob/master/src/main/java/org/apache/maven/plugin/compiler/AbstractCompilerMojo.java#L612
  */
 public class CompileJavaSources implements BuildStep {
     private final JavaCompiler compiler;

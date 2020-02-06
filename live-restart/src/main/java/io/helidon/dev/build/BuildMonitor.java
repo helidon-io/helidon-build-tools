@@ -16,57 +16,39 @@
 
 package io.helidon.dev.build;
 
-import java.util.function.Consumer;
-
 /**
- * A receiver of build messages and status.
+ * A receiver of incremental build loop events.
  */
 public interface BuildMonitor {
-    /**
-     * Returns a consumer for stdout.
-     *
-     * @return The consumer.
-     */
-    Consumer<String> stdOutConsumer();
 
     /**
-     * Returns a consumer for stderr.
-     *
-     * @return The consumer.
+     * Called when the build loop has started.
      */
-    Consumer<String> stdErrConsumer();
+    void onStarted();
 
     /**
-     * Called when build has started.
-     *
-     * @return {@code true} if the build should be cleaned prior to first scan.
-     */
-    boolean onStarted();
-
-    /**
-     * Called when build cycle is starting a scan.
+     * Called when a new build cycle is starting.
      *
      * @param cycleNumber The cycle number.
-     * @return {@code true} if binaries should be watched for changes.
      */
-    boolean onCycleStart(int cycleNumber);
+    void onCycleStart(int cycleNumber);
 
     /**
      * Called when project changes have been detected.
      *
-     * @param binariesOnly {@code true} if binaries are being watched and only binary changes were detected.
+     * @param binariesOnly {@code true} if only binaries are being watched and only binary changes were detected.
      */
     void onChanged(boolean binariesOnly);
 
     /**
-     * Called when build is about to start.
+     * Called when a build is about to start.
      *
-     * @param incremental {@code true} if build is increments, {@code false} if full.
+     * @param incremental {@code true} if this is an incremental build, {@code false} if full.
      */
     void onBuildStart(boolean incremental);
 
     /**
-     * Called when build has failed.
+     * Called when a build has failed.
      *
      * @param error The error.
      * @return The number of milliseconds to delay before retrying build.
@@ -74,21 +56,22 @@ public interface BuildMonitor {
     long onBuildFail(Throwable error);
 
     /**
-     * Called when build has succeeded or initial build was not required.
+     * Called when a build has succeeded or initial build was not required.
      *
-     * @return The number of milliseconds to delay before restarting build cycle.
+     * @return The number of milliseconds to delay before restarting the build cycle.
      */
     long onReady();
 
     /**
-     * Called when build cycle has finished
+     * Called when a build cycle has completed.
      *
-     * @return {@code true} if should continue, {@code false} if should stop.
+     * @param cycleNumber The cycle number.
+     * @return {@code true} to continue to next build cycle, {@code false} to stop.
      */
-    boolean onCycleEnd();
+    boolean onCycleEnd(int cycleNumber);
 
     /**
-     * Called when build cycle has stopped.
+     * Called when build loop has stopped.
      */
     void onStopped();
 }

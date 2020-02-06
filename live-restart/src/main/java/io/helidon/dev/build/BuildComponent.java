@@ -18,13 +18,16 @@ package io.helidon.dev.build;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A build source and output directory.
  */
 public class BuildComponent {
-    private final Project project;
+    private final AtomicReference<Project> project;
     private final BuildRoot sourceRoot;
     private final BuildRoot outputRoot;
     private final List<BuildStep> buildSteps;
@@ -32,23 +35,21 @@ public class BuildComponent {
     /**
      * Returns a new build component.
      *
-     * @param project The project to which this component belongs.
      * @param sourceRoot The source root.
      * @param outputRoot The output root.
      * @param buildSteps The build steps.
      */
-    public static BuildComponent createBuildComponent(Project project,
-                                                      BuildRoot sourceRoot,
+    public static BuildComponent createBuildComponent(BuildRoot sourceRoot,
                                                       BuildRoot outputRoot,
                                                       BuildStep... buildSteps) {
-        return new BuildComponent(project, sourceRoot, outputRoot, Arrays.asList(buildSteps));
+        return new BuildComponent(sourceRoot, outputRoot, Arrays.asList(buildSteps));
     }
 
-    private BuildComponent(Project project, BuildRoot sourceRoot, BuildRoot outputRoot, List<BuildStep> buildSteps) {
-        this.project = project;
-        this.sourceRoot = sourceRoot.component(this);
-        this.outputRoot = outputRoot.component(this);
-        this.buildSteps = buildSteps;
+    private BuildComponent(BuildRoot sourceRoot, BuildRoot outputRoot, List<BuildStep> buildSteps) {
+        this.project = new AtomicReference<>();
+        this.sourceRoot = requireNonNull(sourceRoot).component(this);
+        this.outputRoot = requireNonNull(outputRoot).component(this);
+        this.buildSteps = requireNonNull(buildSteps);
     }
 
     /**
@@ -57,7 +58,7 @@ public class BuildComponent {
      * @return The project.
      */
     public Project project() {
-        return project;
+        return requireNonNull(project.get());
     }
 
     /**
@@ -87,7 +88,6 @@ public class BuildComponent {
         return buildSteps;
     }
 
-
     /**
      * Execute the build step for the given changed files only.
      *
@@ -114,5 +114,9 @@ public class BuildComponent {
     public void update() {
         sourceRoot().update();
         outputRoot().update();
+    }
+
+    void project(Project project) {
+        this.project.set(project);
     }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.dev;
+package io.helidon.dev.build;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -23,9 +23,6 @@ import java.util.List;
 
 import io.helidon.build.test.TestFiles;
 import io.helidon.build.util.FileUtils;
-import io.helidon.dev.build.BuildFile;
-import io.helidon.dev.build.BuildRoot;
-import io.helidon.dev.build.BuildType;
 
 import org.junit.jupiter.api.Test;
 

@@ -16,6 +16,7 @@
 
 package io.helidon.build.test;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
@@ -24,6 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -274,8 +276,20 @@ public class TestFiles implements BeforeAllCallback {
         final String id = quickstartId(helidonVariant);
         final Path sourceDir = assertDir(targetDir().resolve(id));
         Log.info("Building %s", id);
-        execute(new ProcessBuilder().directory(sourceDir.toFile())
-                                    .command(List.of(MAVEN_EXEC, "clean", "package", "-DskipTests")));
+
+        // Make sure we use the current JDK by forcing it first in the path and setting JAVA_HOME. This might be required
+        // if we're in an IDE whose process was started with a different JDK.
+
+        final ProcessBuilder builder = new ProcessBuilder().directory(sourceDir.toFile())
+                                                           .command(List.of(MAVEN_EXEC, "clean", "package", "-DskipTests"));
+        final String javaHome = System.getProperty("java.home");
+        final String javaHomeBin = javaHome + File.separator + "bin";
+        final Map<String, String> env = builder.environment();
+        final String path = javaHomeBin + File.pathSeparatorChar + env.get("PATH");
+        env.put("PATH", path);
+        env.put("JAVA_HOME", javaHome);
+
+        execute(builder);
         return quickstartJar(sourceDir, id);
     }
 

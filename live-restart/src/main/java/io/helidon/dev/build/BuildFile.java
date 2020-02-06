@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 import static io.helidon.build.util.FileUtils.assertFile;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A project build file that can detect modification.
@@ -48,8 +49,8 @@ public class BuildFile {
     }
 
     private BuildFile(ProjectDirectory parent, FileType type, Path path) {
-        this.parent = parent;
-        this.type = type;
+        this.parent = requireNonNull(parent);
+        this.type = requireNonNull(type);
         this.path = assertFile(path);
         this.lastModified = getLastModifiedTime();
     }

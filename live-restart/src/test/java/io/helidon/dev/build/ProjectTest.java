@@ -14,43 +14,13 @@
  * limitations under the License.
  */
 
-package io.helidon.dev;
-
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-
-import io.helidon.build.test.TestFiles;
-import io.helidon.dev.build.BuildComponent;
-import io.helidon.dev.build.BuildFile;
-import io.helidon.dev.build.BuildMonitor;
-import io.helidon.dev.build.BuildRoot;
-import io.helidon.dev.build.DirectoryType;
-import io.helidon.dev.build.Project;
-import io.helidon.dev.build.ProjectDirectory;
-
-import org.junit.jupiter.api.Test;
-
-import static io.helidon.build.test.TestFiles.helidonSeProject;
-import static io.helidon.build.test.TestFiles.helidonSeProjectCopy;
-import static io.helidon.dev.build.ProjectFactory.createProject;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.endsWith;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.fail;
+package io.helidon.dev.build;
 
 /**
  * Unit test for class {@link ProjectDirectory}.
  */
 class ProjectTest {
-
+/*
     private static TestMonitor build(Project project,
                                      boolean initialClean,
                                      boolean watchBinaries) throws InterruptedException {
@@ -65,109 +35,6 @@ class ProjectTest {
             fail("Timeout");
         }
         return monitor;
-    }
-
-    private static class TestMonitor implements BuildMonitor {
-        private final CountDownLatch stoppedLatch;
-        private final List<String> output;
-        private final boolean initialClean;
-        private final boolean watchBinaries;
-        private final int cycleCount;
-        private boolean started;
-        private boolean cycleStart;
-        private int cycleNumber;
-        private boolean changed;
-        private boolean binariesOnly;
-        private boolean buildStart;
-        private boolean incremental;
-        private Throwable buildFailed;
-        private boolean ready;
-        private boolean cycleEnd;
-        private boolean stopped;
-
-        TestMonitor(boolean initialClean, boolean watchBinaries, int cycleCount) {
-            this.stoppedLatch = new CountDownLatch(1);
-            this.output = new ArrayList<>();
-            this.initialClean = initialClean;
-            this.watchBinaries = watchBinaries;
-            this.cycleCount = cycleCount;
-        }
-
-        @Override
-        public Consumer<String> stdOutConsumer() {
-            return line -> {
-                output.add(line);
-                System.out.println(line);
-            };
-        }
-
-        @Override
-        public Consumer<String> stdErrConsumer() {
-            return line -> {
-                output.add(line);
-                System.err.println(line);
-            };
-        }
-
-        @Override
-        public boolean onStarted() {
-            started = true;
-            return initialClean;
-        }
-
-        @Override
-        public boolean onCycleStart(int cycleNumber) {
-            cycleStart = true;
-            this.cycleNumber = cycleNumber;
-            changed = false;
-            binariesOnly = false;
-            buildStart = false;
-            incremental = false;
-            buildFailed = null;
-            ready = false;
-            cycleEnd = false;
-            return watchBinaries;
-        }
-
-        @Override
-        public void onChanged(boolean binariesOnly) {
-            changed = true;
-            this.binariesOnly = binariesOnly;
-        }
-
-        @Override
-        public void onBuildStart(boolean incremental) {
-            buildStart = true;
-            this.incremental = incremental;
-        }
-
-        @Override
-        public long onBuildFail(Throwable error) {
-            buildFailed = error;
-            return 0;
-        }
-
-        @Override
-        public long onReady() {
-            ready = true;
-            return 0;
-        }
-
-        @Override
-        public boolean onCycleEnd() {
-            cycleEnd = true;
-            return cycleNumber < cycleCount;
-        }
-
-        @Override
-        public void onStopped() {
-            stopped = true;
-            stoppedLatch.countDown();
-        }
-
-        boolean waitForStopped(long maxWaitSeconds) throws InterruptedException {
-            return stoppedLatch.await(maxWaitSeconds, TimeUnit.SECONDS);
-        }
     }
 
     @Test
@@ -333,4 +200,5 @@ class ProjectTest {
         final String allOutput = String.join(" ", monitor.output);
         assertThat(allOutput, containsString("Compiling 1 source file"));
     }
+    */
 }

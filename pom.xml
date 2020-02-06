@@ -17,7 +17,8 @@
 
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon.build-tools</groupId>
@@ -98,7 +99,7 @@
         <java.version>8</java.version>
 
         <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF-8</surefire.argLine>
-        <surefire.coverage.argline />
+        <surefire.coverage.argline/>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -129,10 +130,10 @@
         <version.lib.jansi>1.18</version.lib.jansi>
         <version.lib.asm>7.2</version.lib.asm>
         <version.lib.maven-resolver>1.4.1</version.lib.maven-resolver>
-        <version.lib.maven-settings>3.6.2</version.lib.maven-settings>
+        <version.lib.plexus.component>2.0.0</version.lib.plexus.component>
         <!--
-          !Version statement! - end
-          -->
+            !Version statement! - end
+            -->
 
         <!-- maven plugin versions -->
         <version.plugin.checkstyle>2.17</version.plugin.checkstyle>
@@ -344,6 +345,11 @@
                     <artifactId>maven-plugin-plugin</artifactId>
                     <version>${version.plugin.plugin-plugin}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.codehaus.plexus</groupId>
+                    <artifactId>plexus-component-metadata</artifactId>
+                    <version>${version.lib.plexus.component}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -464,6 +470,14 @@
                 <version>${version.lib.plexus-utils}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-embedder</artifactId>
+                <version>3.6.3</version>
+<!--
+                <version>${version.lib.maven}</version> // TODO
+-->
+            </dependency>
+            <dependency>
                 <groupId>org.asciidoctor</groupId>
                 <artifactId>asciidoctorj-api</artifactId>
                 <version>${version.lib.asciidoctorj}</version>
@@ -571,17 +585,22 @@
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-settings</artifactId>
-                <version>${version.lib.maven-settings}</version>
+                <version>${version.lib.maven}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-settings-builder</artifactId>
-                <version>${version.lib.maven-settings}</version>
+                <version>${version.lib.maven}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-resolver-provider</artifactId>
                 <version>${version.lib.maven}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-component-annotations</artifactId>
+                <version>${version.lib.plexus.component}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.build-tools</groupId>
@@ -651,7 +670,8 @@
                                 <phase>validate</phase>
                                 <configuration>
                                     <configLocation>${top.parent.basedir}/etc/checkstyle.xml</configLocation>
-                                    <suppressionsLocation>${top.parent.basedir}/etc/checkstyle-suppressions.xml</suppressionsLocation>
+                                    <suppressionsLocation>${top.parent.basedir}/etc/checkstyle-suppressions.xml
+                                    </suppressionsLocation>
                                 </configuration>
                             </execution>
                         </executions>

@@ -17,26 +17,161 @@
 package io.helidon.dev.build;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import io.helidon.build.util.FileUtils;
 
 /**
- * A continuous build project.
+ * A continuous build project. New instances must have been successfully built.
  */
-public abstract class Project {
-    private static ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
-    private volatile BuildCycle buildCycle;
-    private volatile Future<?> buildFuture;
+public class Project {
+    private final ProjectDirectory root;
+    private final List<BuildFile> buildSystemFiles;
+    private final List<File> classPath;
+    private final List<String> compilerFlags;
+    private final List<Path> dependencies;
+    private final List<BuildComponent> components;
+
+    private Project(Builder builder) {
+        this.root = builder.root;
+        this.buildSystemFiles = builder.buildSystemFiles;
+        this.classPath = builder.classpath.stream().map(Path::toFile).collect(Collectors.toList());
+        this.compilerFlags = builder.compilerFlags;
+        this.dependencies = builder.dependencies;
+        this.components = builder.components;
+        components.forEach(c -> c.project(this));
+    }
 
     /**
-     * Constructor,
+     * Returns a new builder.
+     *
+     * @return The builder.
      */
-    protected Project() {
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * A {@code Project} builder.
+     */
+    public static class Builder {
+        private static final String JAR_FILE_SUFFIX = ".jar";
+        private ProjectDirectory root;
+        private List<BuildFile> buildSystemFiles;
+        private List<String> compilerFlags;
+        private List<Path> dependencies;
+        private List<BuildComponent> components;
+        private Set<Path> classpath;
+
+        private Builder() {
+            this.buildSystemFiles = new ArrayList<>();
+            this.compilerFlags = new ArrayList<>();
+            this.dependencies = new ArrayList<>();
+            this.components = new ArrayList<>();
+            this.classpath = new LinkedHashSet<>();
+        }
+
+        /**
+         * Sets the project root directory.
+         *
+         * @param rootDirectory Thd directory.
+         * @return This instance, for chaining.
+         */
+        public Builder rootDirectory(ProjectDirectory rootDirectory) {
+            this.root = rootDirectory;
+            return this;
+        }
+
+        /**
+         * Add a build system file.
+         *
+         * @param buildSystemFile The file.
+         * @return This instance, for chaining.
+         */
+        public Builder buildSystemFile(BuildFile buildSystemFile) {
+            buildSystemFiles.add(buildSystemFile);
+            return this;
+        }
+
+        /**
+         * Add a compiler flag.
+         *
+         * @param compilerFlag The flag.
+         * @return This instance, for chaining.
+         */
+        public Builder compilerFlags(String compilerFlag) {
+            compilerFlags.add(compilerFlag);
+            return this;
+        }
+
+        /**
+         * Add a component.
+         *
+         * @param component The component.
+         * @return This instance, for chaining.
+         */
+        public Builder component(BuildComponent component) {
+            components.add(component);
+            return this;
+        }
+
+        /**
+         * Add a dependency.
+         *
+         * @param dependency The dependency.
+         * @return This instance, for chaining.
+         */
+        public Builder dependency(Path dependency) {
+            dependencies.add(dependency);
+            return this;
+        }
+
+        /**
+         * Returns a new project.
+         *
+         * @return The project.
+         */
+        public Project build() {
+            if (root == null) {
+                throw new IllegalStateException("rootDirectory required");
+            }
+            assertNotEmpty(buildSystemFiles, "buildSystemFile");
+            assertNotEmpty(dependencies, "dependency");
+            assertNotEmpty(components, "component");
+
+            components.forEach(component -> {
+                if (component.outputRoot().buildType() == BuildType.JavaClasses) {
+                    addToClasspath(component.outputRoot().path());
+                }
+            });
+            dependencies.forEach(this::addToClasspath);
+            return new Project(this);
+        }
+
+        private void assertNotEmpty(Collection<?> collection, String description) {
+            if (collection.isEmpty()) {
+                throw new IllegalStateException("At least 1 " + description + " is required");
+            }
+        }
+
+        private void addToClasspath(Path path) {
+            if (!classpath.contains(path)) {
+                if (Files.isRegularFile(path)) {
+                    classpath.add(path);
+                } else if (Files.isDirectory(path)) {
+                    classpath.add(path);
+                    classpath.addAll(FileUtils.listFiles(path, name -> name.endsWith(JAR_FILE_SUFFIX)));
+                }
+            }
+        }
     }
 
     /**
@@ -44,28 +179,36 @@ public abstract class Project {
      *
      * @return The root.
      */
-    public abstract ProjectDirectory root();
+    public ProjectDirectory root() {
+        return root;
+    }
 
     /**
-     * Returns the build system file (e.g. {@code pom.xml}).
+     * Returns the build system files (e.g. {@code pom.xml}).
      *
-     * @return The file.
+     * @return The files.
      */
-    public abstract BuildFile buildSystemFile();
+    public List<BuildFile> buildSystemFiles() {
+        return buildSystemFiles;
+    }
 
     /**
      * Returns the project classpath.
      *
      * @return The classpath.
      */
-    public abstract List<File> classpath();
+    public List<File> classpath() {
+        return classPath;
+    }
 
     /**
      * Returns the compiler flags.
      *
      * @return The flags.
      */
-    public abstract List<String> compilerFlags();
+    public List<String> compilerFlags() {
+        return compilerFlags;
+    }
 
     /**
      * Returns a list of paths to all external dependencies. A path may point
@@ -74,25 +217,31 @@ public abstract class Project {
      *
      * @return The paths.
      */
-    public abstract List<Path> dependencies();
+    public List<Path> dependencies() {
+        return dependencies;
+    }
 
     /**
      * Returns all components.
      *
      * @return The components.
      */
-    public abstract List<BuildComponent> components();
+    public List<BuildComponent> components() {
+        return components;
+    }
 
     /**
-     * Start the build cycle.
+     * Returns whether or not any build system file has changed.
      *
-     * @param monitor The monitor.
-     * @return A future to enable cancellation.
+     * @return {@code true} if any build system file has changed.
      */
-    public Future<?> build(BuildMonitor monitor) {
-        this.buildCycle = new BuildCycle(monitor);
-        this.buildFuture = EXECUTOR.submit(buildCycle);
-        return buildFuture;
+    public boolean haveBuildSystemFilesChanged() {
+        for (final BuildFile file : buildSystemFiles()) {
+            if (file.hasChanged()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -132,12 +281,18 @@ public abstract class Project {
      *
      * @return {@code true} if up to date, {@code false} if not.
      */
-    protected boolean isBuildUpToDate() {
-        if (buildSystemFile().hasChanged()) {
-            return false;
-        }
-        long latestSource = buildSystemFile().lastModifiedTime();
+    public boolean isBuildUpToDate() {
+        long latestSource = 0;
         long oldestBinary = 0;
+        for (final BuildFile file : buildSystemFiles()) {
+            if (file.hasChanged()) {
+                return false;
+            }
+            final long lastModified = file.lastModifiedTime();
+            if (lastModified > latestSource) {
+                latestSource = lastModified;
+            }
+        }
         for (BuildComponent component : components()) {
             for (final BuildFile file : component.sourceRoot().list()) {
                 if (file.hasChanged()) {
@@ -162,29 +317,11 @@ public abstract class Project {
     }
 
     /**
-     * Update the project if needed.
-     *
-     * @param force {@code true} if update should be done regardless of any actual changes.
+     * Update the project time stamps.
      */
-    protected abstract void update(boolean force);
-
-    /**
-     * Returns a list of build roots of the given type.
-     *
-     * @param type The type.
-     * @return The roots. May be empty.
-     */
-    protected abstract List<BuildRoot> buildRoots(BuildType type);
-
-    /**
-     * Perform a full build.
-     *
-     * @param stdOut A consumer for stdout.
-     * @param stdErr A consumer for stderr.
-     * @param clean {@code true} if the build should be cleaned first.
-     * @throws Exception on error.
-     */
-    protected abstract void fullBuild(Consumer<String> stdOut, Consumer<String> stdErr, boolean clean) throws Exception;
+    public void update() {
+        components().forEach(BuildComponent::update);
+    }
 
     /**
      * Perform an incremental build for the given changes.
@@ -200,67 +337,6 @@ public abstract class Project {
         if (!changes.isEmpty()) {
             for (final BuildRoot.Changes changed : changes) {
                 changed.root().component().incrementalBuild(changed, stdOut, stdErr);
-            }
-        }
-    }
-
-    private class BuildCycle implements Runnable {
-        private final BuildMonitor monitor;
-        private boolean initialBuildCompleted;
-        private long delay;
-
-        BuildCycle(BuildMonitor monitor) {
-            this.monitor = monitor;
-        }
-
-        @Override
-        public void run() {
-            final boolean clean = monitor.onStarted();
-            int cycleNumber = 1;
-            while (true) {
-                try {
-                    if (delay > 0) {
-                        Thread.sleep(delay);
-                    }
-                    final boolean checkBinaries = monitor.onCycleStart(cycleNumber++);
-                    if (!initialBuildCompleted) {
-                        initialBuild(clean);
-                        initialBuildCompleted = true;
-                    }
-                    final List<BuildRoot.Changes> sourceChanges = sourceChanges();
-                    if (!sourceChanges.isEmpty()) {
-                        monitor.onChanged(false);
-                        monitor.onBuildStart(true);
-                        incrementalBuild(sourceChanges, monitor.stdOutConsumer(), monitor.stdErrConsumer());
-                        update(true);
-                    } else if (checkBinaries) {
-                        if (!binaryChanges().isEmpty()) {
-                            monitor.onChanged(true);
-                            update(true);
-                        }
-                    }
-                    delay = monitor.onReady();
-                } catch (InterruptedException e) {
-                    monitor.onStopped();
-                    return;
-                } catch (Throwable e) {
-                    delay = monitor.onBuildFail(e);
-                }
-                if (!monitor.onCycleEnd()) {
-                    monitor.onStopped();
-                    return;
-                }
-            }
-        }
-
-        void initialBuild(boolean clean) throws Exception {
-            if (clean || !isBuildUpToDate()) {
-                monitor.onBuildStart(false);
-                fullBuild(monitor.stdOutConsumer(), monitor.stdErrConsumer(), clean);
-                update(true);
-                delay = monitor.onReady();
-            } else if (!clean) {
-                monitor.stdOutConsumer().accept("Build is up to date");
             }
         }
     }

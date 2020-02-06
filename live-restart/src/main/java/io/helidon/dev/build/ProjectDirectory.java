@@ -25,6 +25,7 @@ import java.util.Objects;
 import io.helidon.build.util.FileUtils;
 
 import static io.helidon.build.util.FileUtils.assertDir;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A project directory.
@@ -40,7 +41,7 @@ public class ProjectDirectory {
      * @param directory The directory path.
      */
     ProjectDirectory(DirectoryType type, Path directory) {
-        this.type = type;
+        this.type = requireNonNull(type);
         this.directory = assertDir(directory);
     }
 
