@@ -386,6 +386,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
         result.add(new Import(java.util.List.class));
         result.add(new Import(java.util.HashMap.class));
         result.add(new Import(java.util.Map.class));
+        result.add(new Import(java.util.Set.class));
         return result;
     }
 
@@ -574,9 +575,9 @@ public class SnakeYAMLMojo extends AbstractMojo {
         }
         @Override
         public Type visitClass(ClassTree node, Type type) {
-            String typeName = fullyQualifiedPath(getCurrentPath());
+            String typeName = fullyQualifiedPath(getCurrentPath()); // null for anon. inner class
             Tree.Kind kind = node.getKind();
-            if (kind == Tree.Kind.CLASS || kind == Tree.Kind.INTERFACE) {
+            if ((kind == Tree.Kind.CLASS || kind == Tree.Kind.INTERFACE) && typeName != null) {
                 List<String> interfaces = SnakeYAMLMojo.treesToStrings(node.getImplementsClause());
                 final Type newType = new Type(typeName, node.getSimpleName().toString(), kind == Tree.Kind.INTERFACE,
                         interfaces);
@@ -709,9 +710,12 @@ public class SnakeYAMLMojo extends AbstractMojo {
                     leafName = ((ClassTree) path.getLeaf()).getSimpleName().toString();
                 }
             }
-            if (leafName != null) {
+
+            // leafName can be empty for anonymous inner classes, for example.
+            boolean isUsefulLeaf = leafName != null && !leafName.isEmpty();
+            if (isUsefulLeaf) {
                 result.append(".").append(leafName);
             }
-            return leafName != null ? result.toString() : null;
+            return isUsefulLeaf ? result.toString() : null;
         }
 }
