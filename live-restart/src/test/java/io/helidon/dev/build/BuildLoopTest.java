@@ -95,7 +95,7 @@ class BuildLoopTest {
         assertThat(monitor.changed(0), is(false));
         assertThat(monitor.binariesOnly(0), is(false));
         assertThat(monitor.buildStart(0), is(false));
-        assertThat(monitor.incremental(0), is(false));
+        assertThat(monitor.buildType(0), is(nullValue()));
         assertThat(monitor.buildFailed(0), is(nullValue()));
         assertThat(monitor.ready(0), is(true));
         assertThat(monitor.cycleEnd(0), is(true));
@@ -104,7 +104,7 @@ class BuildLoopTest {
         assertThat(monitor.changed(1), is(false));
         assertThat(monitor.binariesOnly(1), is(false));
         assertThat(monitor.buildStart(1), is(false));
-        assertThat(monitor.incremental(1), is(false));
+        assertThat(monitor.buildType(1), is(nullValue()));
         assertThat(monitor.buildFailed(1), is(nullValue()));
         assertThat(monitor.ready(1), is(true));
         assertThat(monitor.cycleEnd(1), is(true));
@@ -135,7 +135,7 @@ class BuildLoopTest {
         assertThat(monitor.changed(0), is(false));
         assertThat(monitor.binariesOnly(0), is(false));
         assertThat(monitor.buildStart(0), is(true));
-        assertThat(monitor.incremental(0), is(false));
+        assertThat(monitor.buildType(0), is(BuildType.CleanComplete));
         assertThat(monitor.buildFailed(0), is(nullValue()));
         assertThat(monitor.ready(0), is(true));
         assertThat(monitor.cycleEnd(0), is(true));
@@ -144,7 +144,7 @@ class BuildLoopTest {
         assertThat(monitor.changed(1), is(false));
         assertThat(monitor.binariesOnly(1), is(false));
         assertThat(monitor.buildStart(1), is(false));
-        assertThat(monitor.incremental(1), is(false));
+        assertThat(monitor.buildType(1), is(nullValue()));
         assertThat(monitor.buildFailed(1), is(nullValue()));
         assertThat(monitor.ready(1), is(true));
         assertThat(monitor.cycleEnd(1), is(true));
@@ -201,7 +201,7 @@ class BuildLoopTest {
         assertThat(monitor.changed(0), is(false));
         assertThat(monitor.binariesOnly(0), is(false));
         assertThat(monitor.buildStart(0), is(false));
-        assertThat(monitor.incremental(0), is(false));
+        assertThat(monitor.buildType(0), is(nullValue()));
         assertThat(monitor.buildFailed(0), is(nullValue()));
         assertThat(monitor.ready(0), is(true));
         assertThat(monitor.cycleEnd(0), is(true));
@@ -210,7 +210,7 @@ class BuildLoopTest {
         assertThat(monitor.changed(1), is(false));
         assertThat(monitor.binariesOnly(1), is(false));
         assertThat(monitor.buildStart(1), is(false));
-        assertThat(monitor.incremental(1), is(false));
+        assertThat(monitor.buildType(1), is(nullValue()));
         assertThat(monitor.buildFailed(1), is(nullValue()));
         assertThat(monitor.ready(1), is(true));
         assertThat(monitor.cycleEnd(1), is(true));
@@ -219,7 +219,7 @@ class BuildLoopTest {
         assertThat(monitor.changed(2), is(true));
         assertThat(monitor.binariesOnly(2), is(false));
         assertThat(monitor.buildStart(2), is(true));
-        assertThat(monitor.incremental(2), is(true));
+        assertThat(monitor.buildType(2), is(BuildType.Incremental));
         assertThat(monitor.buildFailed(2), is(nullValue()));
         assertThat(monitor.ready(2), is(true));
         assertThat(monitor.cycleEnd(2), is(true));
@@ -228,7 +228,7 @@ class BuildLoopTest {
         assertThat(monitor.changed(3), is(false));
         assertThat(monitor.binariesOnly(3), is(false));
         assertThat(monitor.buildStart(3), is(false));
-        assertThat(monitor.incremental(3), is(false));
+        assertThat(monitor.buildType(3), is(nullValue()));
         assertThat(monitor.buildFailed(3), is(nullValue()));
         assertThat(monitor.ready(3), is(true));
         assertThat(monitor.cycleEnd(3), is(true));
@@ -276,7 +276,7 @@ class BuildLoopTest {
         assertThat(monitor.changed(0), is(false));
         assertThat(monitor.binariesOnly(0), is(false));
         assertThat(monitor.buildStart(0), is(false));
-        assertThat(monitor.incremental(0), is(false));
+        assertThat(monitor.buildType(0), is(nullValue()));
         assertThat(monitor.buildFailed(0), is(nullValue()));
         assertThat(monitor.ready(0), is(true));
         assertThat(monitor.cycleEnd(0), is(true));
@@ -285,7 +285,7 @@ class BuildLoopTest {
         assertThat(monitor.changed(1), is(false));
         assertThat(monitor.binariesOnly(1), is(false));
         assertThat(monitor.buildStart(1), is(false));
-        assertThat(monitor.incremental(1), is(false));
+        assertThat(monitor.buildType(1), is(nullValue()));
         assertThat(monitor.buildFailed(1), is(nullValue()));
         assertThat(monitor.ready(1), is(true));
         assertThat(monitor.cycleEnd(1), is(true));
@@ -294,7 +294,7 @@ class BuildLoopTest {
         assertThat(monitor.changed(2), is(true));
         assertThat(monitor.binariesOnly(2), is(false));
         assertThat(monitor.buildStart(2), is(true));
-        assertThat(monitor.incremental(2), is(true));
+        assertThat(monitor.buildType(2), is(BuildType.Incremental));
         assertThat(monitor.buildFailed(2), is(nullValue()));
         assertThat(monitor.ready(2), is(true));
         assertThat(monitor.cycleEnd(2), is(true));
@@ -303,12 +303,82 @@ class BuildLoopTest {
         assertThat(monitor.changed(3), is(false));
         assertThat(monitor.binariesOnly(3), is(false));
         assertThat(monitor.buildStart(3), is(false));
-        assertThat(monitor.incremental(3), is(false));
+        assertThat(monitor.buildType(3), is(nullValue()));
         assertThat(monitor.buildFailed(3), is(nullValue()));
         assertThat(monitor.ready(3), is(true));
         assertThat(monitor.cycleEnd(3), is(true));
 
         final String allOutput = String.join(" ", monitor.outputAsString());
         assertThat(allOutput, containsString("Copying " + resourceFilesTouched.get() + " resource files"));
+    }
+
+    @Test
+    void testQuickstartSePomFileChangeWhileRunning() throws Exception {
+        final Path rootDir = helidonSeProjectCopy();
+        final AtomicInteger resourceFilesTouched = new AtomicInteger();
+        final TestMonitor monitor = new TestMonitor(3) {
+            @Override
+            public void onCycleStart(int cycleNumber) {
+                super.onCycleStart(cycleNumber);
+                if (cycleNumber == 2) {
+                    Log.info("sleeping 1.25 second before touching pom file");
+                    try {
+                        Thread.sleep(1250);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    Log.info("touching pom file");
+                    touch(rootDir.resolve("pom.xml"));
+                }
+            }
+        };
+
+        final BuildLoop loop = newLoop(rootDir, false, false, monitor);
+        run(loop);
+
+        final Project project = loop.project();
+        assertThat(project, is(not(nullValue())));
+        assertThat(monitor.started(), is(true));
+        assertThat(monitor.stopped(), is(true));
+        assertThat(monitor.lastCycle(), is(3));
+
+        assertThat(monitor.cycleStart(0), is(true));
+        assertThat(monitor.changed(0), is(false));
+        assertThat(monitor.binariesOnly(0), is(false));
+        assertThat(monitor.buildStart(0), is(false));
+        assertThat(monitor.buildType(0), is(nullValue()));
+        assertThat(monitor.buildFailed(0), is(nullValue()));
+        assertThat(monitor.ready(0), is(true));
+        assertThat(monitor.cycleEnd(0), is(true));
+
+        assertThat(monitor.cycleStart(1), is(true));
+        assertThat(monitor.changed(1), is(false));
+        assertThat(monitor.binariesOnly(1), is(false));
+        assertThat(monitor.buildStart(1), is(false));
+        assertThat(monitor.buildType(1), is(nullValue()));
+        assertThat(monitor.buildFailed(1), is(nullValue()));
+        assertThat(monitor.ready(1), is(true));
+        assertThat(monitor.cycleEnd(1), is(true));
+
+        assertThat(monitor.cycleStart(2), is(true));
+        assertThat(monitor.changed(2), is(true));
+        assertThat(monitor.binariesOnly(2), is(false));
+        assertThat(monitor.buildStart(2), is(false));
+        assertThat(monitor.buildType(2), is(nullValue()));
+        assertThat(monitor.buildFailed(2), is(nullValue()));
+        assertThat(monitor.ready(2), is(false));
+        assertThat(monitor.cycleEnd(2), is(true));
+
+        assertThat(monitor.cycleStart(3), is(true));
+        assertThat(monitor.changed(3), is(false));
+        assertThat(monitor.binariesOnly(3), is(false));
+        assertThat(monitor.buildStart(3), is(true));
+        assertThat(monitor.buildType(3), is(BuildType.Complete));
+        assertThat(monitor.buildFailed(3), is(nullValue()));
+        assertThat(monitor.ready(3), is(true));
+        assertThat(monitor.cycleEnd(3), is(true));
+
+        final String allOutput = String.join(" ", monitor.outputAsString());
+        assertThat(allOutput, containsString("BUILD SUCCESS"));
     }
 }

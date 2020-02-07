@@ -64,9 +64,9 @@ public interface BuildMonitor {
     /**
      * Called when a build is about to start.
      *
-     * @param incremental {@code true} if this is an incremental build, {@code false} if full.
+     * @param type The build type.
      */
-    void onBuildStart(int cycleNumber, boolean incremental);
+    void onBuildStart(int cycleNumber, BuildType type);
 
     /**
      * Called when a build has failed.

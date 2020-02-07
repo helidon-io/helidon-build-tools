@@ -21,6 +21,7 @@ import java.util.List;
 
 import io.helidon.build.test.TestFiles;
 import io.helidon.dev.build.BuildComponent;
+import io.helidon.dev.build.BuildType;
 import io.helidon.dev.build.DirectoryType;
 import io.helidon.dev.build.Project;
 import io.helidon.dev.build.ProjectSupplier;
@@ -74,7 +75,7 @@ class DefaultHelidonProjectSupplierTest {
         assertThat(project, is(not(nullValue())));
         assertThat(project.isBuildUpToDate(), is(true));
         assertThat(monitor.buildStart(0), is(true));
-        assertThat(monitor.incremental(0), is(false));
+        assertThat(monitor.buildType(0), is(BuildType.CleanComplete));
         assertThat(project, is(not(nullValue())));
         assertThat(project.root().directoryType(), is(DirectoryType.Project));
         assertThat(project.root().path(), is(projectDir));

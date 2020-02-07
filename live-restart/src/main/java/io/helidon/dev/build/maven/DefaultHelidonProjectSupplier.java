@@ -29,6 +29,7 @@ import io.helidon.build.util.Constants;
 import io.helidon.build.util.ProcessMonitor;
 import io.helidon.dev.build.BuildMonitor;
 import io.helidon.dev.build.BuildRoot;
+import io.helidon.dev.build.BuildRootType;
 import io.helidon.dev.build.BuildType;
 import io.helidon.dev.build.DirectoryType;
 import io.helidon.dev.build.FileType;
@@ -63,7 +64,7 @@ public class DefaultHelidonProjectSupplier implements ProjectSupplier {
     public Project get(Path projectDir, BuildMonitor monitor, boolean clean, int cycleNumber) throws Exception {
         final Project project = createProject(projectDir);
         if (clean || !project.isBuildUpToDate()) {
-            monitor.onBuildStart(cycleNumber, !clean);
+            monitor.onBuildStart(cycleNumber, clean ? BuildType.CleanComplete : BuildType.Complete);
             build(projectDir, monitor, clean);
             project.update();
         }
@@ -103,15 +104,15 @@ public class DefaultHelidonProjectSupplier implements ProjectSupplier {
 
         final Path sourceDir = assertDir(projectDir.resolve(JAVA_DIR));
         final Path classesDir = ensureDirectory(projectDir.resolve(CLASSES_DIR));
-        final BuildRoot sources = createBuildRoot(BuildType.JavaSources, sourceDir);
-        final BuildRoot classes = createBuildRoot(BuildType.JavaClasses, classesDir);
+        final BuildRoot sources = createBuildRoot(BuildRootType.JavaSources, sourceDir);
+        final BuildRoot classes = createBuildRoot(BuildRootType.JavaClasses, classesDir);
         final Charset sourceEncoding = StandardCharsets.UTF_8;
         builder.component(createBuildComponent(sources, classes, new CompileJavaSources(sourceEncoding)));
 
         final Path resourcesDir = projectDir.resolve(RESOURCES_DIR);
         if (Files.exists(resourcesDir)) {
-            final BuildRoot resources = createBuildRoot(BuildType.Resources, resourcesDir);
-            final BuildRoot binaries = createBuildRoot(BuildType.Resources, classesDir);
+            final BuildRoot resources = createBuildRoot(BuildRootType.Resources, resourcesDir);
+            final BuildRoot binaries = createBuildRoot(BuildRootType.Resources, classesDir);
             builder.component(createBuildComponent(resources, binaries, new CopyResources()));
         }
 

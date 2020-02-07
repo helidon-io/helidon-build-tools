@@ -19,46 +19,19 @@ package io.helidon.dev.build;
 /**
  * A build type.
  */
-public enum BuildType  {
+public enum BuildType {
+    /**
+     * A complete build that is cleaned first.
+     */
+    CleanComplete,
 
     /**
-     * Java source files.
+     * A complete build.
      */
-    JavaSources(DirectoryType.JavaSources, FileType.JavaSource),
+    Complete,
 
     /**
-     * Java classes.
+     * An incremental build.
      */
-    JavaClasses(DirectoryType.Classes, FileType.JavaClass),
-
-    /**
-     * Resource source files.
-     */
-    Resources(DirectoryType.Resources, FileType.NotJavaClass);
-
-    private final DirectoryType directoryType;
-    private final FileType fileType;
-
-    BuildType(DirectoryType directoryType, FileType fileType) {
-        this.directoryType = directoryType;
-        this.fileType = fileType;
-    }
-
-    /**
-     * Returns the associated directory type.
-     *
-     * @return The directory type.
-     */
-    public DirectoryType directoryType() {
-        return directoryType;
-    }
-
-    /**
-     * Returns the associated file type.
-     *
-     * @return The file type.
-     */
-    public FileType fileType() {
-        return fileType;
-    }
+    Incremental
 }

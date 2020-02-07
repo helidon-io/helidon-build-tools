@@ -43,5 +43,10 @@ public enum DirectoryType {
     /**
      * Java classes.
      */
-    Classes
+    Classes,
+
+    /**
+     * Dependencies.
+     */
+    Depencencies
 }

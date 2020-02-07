@@ -38,14 +38,14 @@ public interface BuildStep extends Predicate<BuildComponent> {
      *
      * @return The type.
      */
-    BuildType inputType();
+    BuildRootType inputType();
 
     /**
      * Returns the output type that this step will produce.
      *
      * @return The type.
      */
-    BuildType outputType();
+    BuildRootType outputType();
 
     @Override
     default boolean test(BuildComponent component) {

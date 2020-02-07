@@ -25,7 +25,7 @@ import java.util.function.Consumer;
 import io.helidon.dev.build.BuildComponent;
 import io.helidon.dev.build.BuildRoot;
 import io.helidon.dev.build.BuildStep;
-import io.helidon.dev.build.BuildType;
+import io.helidon.dev.build.BuildRootType;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -35,13 +35,13 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 public class CopyResources implements BuildStep {
 
     @Override
-    public BuildType inputType() {
-        return BuildType.Resources;
+    public BuildRootType inputType() {
+        return BuildRootType.Resources;
     }
 
     @Override
-    public BuildType outputType() {
-        return BuildType.Resources;
+    public BuildRootType outputType() {
+        return BuildRootType.Resources;
     }
 
     @Override

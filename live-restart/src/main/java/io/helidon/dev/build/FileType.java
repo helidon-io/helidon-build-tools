@@ -41,6 +41,11 @@ public enum FileType implements Predicate<Path> {
     MavenPom(".xml"),
 
     /**
+     * A jar file.
+     */
+    Jar(".jar"),
+
+    /**
      * Any file.
      */
     NotJavaClass(null) {

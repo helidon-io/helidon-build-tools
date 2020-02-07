@@ -21,13 +21,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import io.helidon.build.util.FileUtils;
+import static io.helidon.build.util.FileUtils.listFiles;
+import static io.helidon.dev.build.DirectoryType.Depencencies;
+import static io.helidon.dev.build.ProjectDirectory.createProjectDirectory;
 
 /**
  * A continuous build project. New instances must have been successfully built.
@@ -37,7 +41,7 @@ public class Project {
     private final List<BuildFile> buildSystemFiles;
     private final List<File> classPath;
     private final List<String> compilerFlags;
-    private final List<Path> dependencies;
+    private final List<BuildFile> dependencies;
     private final List<BuildComponent> components;
     private final String mainClassName;
 
@@ -69,18 +73,22 @@ public class Project {
         private ProjectDirectory root;
         private List<BuildFile> buildSystemFiles;
         private List<String> compilerFlags;
-        private List<Path> dependencies;
+        private List<Path> dependencyPaths;
+        private List<BuildFile> dependencies;
         private List<BuildComponent> components;
         private Set<Path> classpath;
         private String mainClassName;
+        private final Map<Path, ProjectDirectory> parents;
 
 
         private Builder() {
             this.buildSystemFiles = new ArrayList<>();
             this.compilerFlags = new ArrayList<>();
+            this.dependencyPaths = new ArrayList<>();
             this.dependencies = new ArrayList<>();
             this.components = new ArrayList<>();
             this.classpath = new LinkedHashSet<>();
+            this.parents = new HashMap<>();
         }
 
         /**
@@ -134,7 +142,7 @@ public class Project {
          * @return This instance, for chaining.
          */
         public Builder dependency(Path dependency) {
-            dependencies.add(dependency);
+            dependencyPaths.add(dependency);
             return this;
         }
 
@@ -162,15 +170,24 @@ public class Project {
                 throw new IllegalStateException("mainClassName required");
             }
             assertNotEmpty(buildSystemFiles, "buildSystemFile");
-            assertNotEmpty(dependencies, "dependency");
+            assertNotEmpty(dependencyPaths, "dependency");
             assertNotEmpty(components, "component");
 
+            // Build dependencies
+
+            dependencyPaths.forEach(this::addDependency);
+
+            // Build classpath
+
             components.forEach(component -> {
-                if (component.outputRoot().buildType() == BuildType.JavaClasses) {
-                    addToClasspath(component.outputRoot().path());
+                if (component.outputRoot().buildType() == BuildRootType.JavaClasses) {
+                    classpath.add(component.outputRoot().path());
                 }
             });
-            dependencies.forEach(this::addToClasspath);
+            dependencies.forEach(dependency -> {
+                classpath.add(dependency.path());
+            });
+
             return new Project(this);
         }
 
@@ -180,15 +197,20 @@ public class Project {
             }
         }
 
-        private void addToClasspath(Path path) {
-            if (!classpath.contains(path)) {
-                if (Files.isRegularFile(path)) {
-                    classpath.add(path);
-                } else if (Files.isDirectory(path)) {
-                    classpath.add(path);
-                    classpath.addAll(FileUtils.listFiles(path, name -> name.endsWith(JAR_FILE_SUFFIX)));
+        private void addDependency(Path path) {
+            if (FileType.Jar.test(path)) {
+                dependencies.add(toJar(path));
+            } else if (Files.isDirectory(path)) {
+                for (Path file : listFiles(path, name -> name.endsWith(JAR_FILE_SUFFIX))) {
+                    addDependency(file);
                 }
             }
+        }
+
+        private BuildFile toJar(Path path) {
+            final Path parent = path.getParent();
+            final ProjectDirectory parentDir = parents.computeIfAbsent(parent, p -> createProjectDirectory(Depencencies, parent));
+            return BuildFile.createBuildFile(parentDir, FileType.Jar, path);
         }
     }
 
@@ -229,13 +251,11 @@ public class Project {
     }
 
     /**
-     * Returns a list of paths to all external dependencies. A path may point
-     * to a directory, in which case all contained jar files should be considered
-     * dependencies.
+     * Returns a list of all external dependencies.
      *
      * @return The paths.
      */
-    public List<Path> dependencies() {
+    public List<BuildFile> dependencies() {
         return dependencies;
     }
 
@@ -276,7 +296,7 @@ public class Project {
      *
      * @return The changes.
      */
-    protected List<BuildRoot.Changes> sourceChanges() {
+    public List<BuildRoot.Changes> sourceChanges() {
         final List<BuildRoot.Changes> result = new ArrayList<>();
         for (final BuildComponent component : components()) {
             final BuildRoot.Changes changes = component.sourceRoot().changes();
@@ -288,21 +308,23 @@ public class Project {
     }
 
     /**
-     * TODO: This doesn't watch dependencies, and it must. It would be nice not to spend any time collecting
-     * info if this will never be used, however, so... maybe make project modal?
-     * Returns a list of binary changes since the last update, if any.
+     * Returns whether or not any binaries have changed.
      *
      * @return The changes.
      */
-    protected List<BuildRoot.Changes> binaryChanges() {
-        final List<BuildRoot.Changes> result = new ArrayList<>();
+    public boolean hasBinaryChanges() {
         for (final BuildComponent component : components()) {
             final BuildRoot.Changes changes = component.outputRoot().changes();
             if (!changes.isEmpty()) {
-                result.add(changes);
+                return true;
             }
         }
-        return result;
+        for (BuildFile dependency : dependencies()) {
+            if (dependency.hasChanged()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -339,6 +361,15 @@ public class Project {
                     if (oldestBinary < latestSource) {
                         return false;
                     }
+                }
+            }
+        }
+        for (final BuildFile file : dependencies()) {
+            final long lastModified = file.lastModifiedTime();
+            if (lastModified > oldestBinary) {
+                oldestBinary = lastModified;
+                if (oldestBinary < latestSource) {
+                    return false;
                 }
             }
         }

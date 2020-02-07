@@ -38,7 +38,7 @@ public class TestMonitor implements BuildMonitor {
     private boolean[] changed;
     private boolean[] binariesOnly;
     private boolean[] buildStart;
-    private boolean[] incremental;
+    private BuildType[] buildType;
     private Throwable[] buildFailed;
     private boolean[] ready;
     private boolean[] cycleEnd;
@@ -52,7 +52,7 @@ public class TestMonitor implements BuildMonitor {
         this.changed = new boolean[stopCycle + 1];
         this.binariesOnly = new boolean[stopCycle + 1];
         this.buildStart = new boolean[stopCycle + 1];
-        this.incremental = new boolean[stopCycle + 1];
+        this.buildType = new BuildType[stopCycle + 1];
         this.buildFailed = new Throwable[stopCycle + 1];
         this.ready = new boolean[stopCycle + 1];
         this.cycleEnd = new boolean[stopCycle + 1];
@@ -92,10 +92,10 @@ public class TestMonitor implements BuildMonitor {
     }
 
     @Override
-    public void onBuildStart(int cycleNumber, boolean incremental) {
-        logCycle("onBuildStart", cycleNumber, "incremental=" + incremental);
+    public void onBuildStart(int cycleNumber, BuildType type) {
+        logCycle("onBuildStart", cycleNumber, "type=" + type);
         buildStart[cycleNumber] = true;
-        this.incremental[cycleNumber] = incremental;
+        this.buildType[cycleNumber] = type;
     }
 
     @Override
@@ -158,8 +158,8 @@ public class TestMonitor implements BuildMonitor {
         return buildStart[cycleNumber];
     }
 
-    public boolean incremental(int cycleNumber) {
-        return incremental[cycleNumber];
+    public BuildType buildType(int cycleNumber) {
+        return buildType[cycleNumber];
     }
 
     public Throwable buildFailed(int cycleNumber) {

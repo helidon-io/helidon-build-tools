@@ -166,12 +166,12 @@ public class BuildLoop {
                 // do a build. If we see any changes, we have not idea what they might be, so
                 // we must recreate the project.
 
-                if (project.binaryChanges().isEmpty()) {
-                    delay = monitor.onReady(cycleNumber, project);
-                } else {
+                if (project.hasBinaryChanges()) {
                     setProject(null);
                     monitor.onChanged(cycleNumber, true);
                     delay = 0;
+                } else {
+                    delay = monitor.onReady(cycleNumber, project);
                 }
             } else if (project.haveBuildSystemFilesChanged()) {
 
@@ -191,7 +191,7 @@ public class BuildLoop {
                 } else {
                     try {
                         monitor.onChanged(cycleNumber, false);
-                        monitor.onBuildStart(cycleNumber, true);
+                        monitor.onBuildStart(cycleNumber, BuildType.Incremental);
                         project.incrementalBuild(sourceChanges, stdOut, stdErr);
                         project.update();
                         delay = monitor.onReady(cycleNumber, project);

@@ -34,7 +34,7 @@ import javax.tools.ToolProvider;
 import io.helidon.dev.build.BuildComponent;
 import io.helidon.dev.build.BuildRoot;
 import io.helidon.dev.build.BuildStep;
-import io.helidon.dev.build.BuildType;
+import io.helidon.dev.build.BuildRootType;
 import io.helidon.dev.build.Project;
 
 /**
@@ -57,13 +57,13 @@ public class CompileJavaSources implements BuildStep {
     }
 
     @Override
-    public BuildType inputType() {
-        return BuildType.JavaSources;
+    public BuildRootType inputType() {
+        return BuildRootType.JavaSources;
     }
 
     @Override
-    public BuildType outputType() {
-        return BuildType.JavaClasses;
+    public BuildRootType outputType() {
+        return BuildRootType.JavaClasses;
     }
 
     @Override

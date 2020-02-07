@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.dev.build.BuildMonitor;
+import io.helidon.dev.build.BuildType;
 import io.helidon.dev.build.Project;
 import io.helidon.dev.build.ProjectSupplier;
 import io.helidon.dev.build.util.ConsumerPrintStream;
@@ -53,7 +54,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
         final PrintStream stdErrStream = ConsumerPrintStream.newStream(monitor.stdErrConsumer());
         System.getProperties().put(PROJECT_DIRECTORY_PROPERTY, projectDir.toString());
 
-        monitor.onBuildStart(cycleNumber, !clean);
+        monitor.onBuildStart(cycleNumber, clean ? BuildType.CleanComplete : BuildType.Complete);
 
         // TODO: this fails, looks like it may be a missing dependency (if we're lucky)
         if (maven.doMain(args, projectDir.toString(), stdOutStream, stdErrStream) != 0) {

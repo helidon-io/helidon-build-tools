@@ -40,7 +40,7 @@ import static java.util.Objects.requireNonNull;
  * A project directory that tracks file changes.
  */
 public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
-    private final BuildType type;
+    private final BuildRootType type;
     private final FileType fileType;
     private final AtomicReference<Map<Path, BuildFile>> files;
     private final AtomicReference<BuildComponent> component;
@@ -48,13 +48,13 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
     /**
      * Constructor.
      *
-     * @param buildType The type.
+     * @param type The type.
      * @param directory The directory path.
      */
-    BuildRoot(BuildType buildType, Path directory) {
-        super(requireNonNull(buildType).directoryType(), requireNonNull(directory));
-        this.type = buildType;
-        this.fileType = buildType.fileType();
+    BuildRoot(BuildRootType type, Path directory) {
+        super(requireNonNull(type).directoryType(), requireNonNull(directory));
+        this.type = type;
+        this.fileType = type.fileType();
         this.files = new AtomicReference<>(collectFiles());
         this.component = new AtomicReference<>();
     }
@@ -62,11 +62,11 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
     /**
      * Returns a new project directory.
      *
-     * @param buildType The type.
+     * @param type The type.
      * @param path The directory path.
      */
-    public static BuildRoot createBuildRoot(BuildType buildType, Path path) {
-        return new BuildRoot(buildType, path);
+    public static BuildRoot createBuildRoot(BuildRootType type, Path path) {
+        return new BuildRoot(type, path);
     }
 
     /**
@@ -83,7 +83,7 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
      *
      * @return The type.
      */
-    public BuildType buildType() {
+    public BuildRootType buildType() {
         return type;
     }
 
