@@ -46,7 +46,6 @@ import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.resolution.VersionRangeRequest;
-import org.eclipse.aether.resolution.VersionRangeResult;
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
@@ -95,7 +94,6 @@ public class Maven {
         return latestVersion(toCoordinates(groupId, artifactId, LATEST_VERSION), allowSnapshot);
     }
 
-
     /**
      * Returns the latest version for the given artifact.
      *
@@ -104,21 +102,37 @@ public class Maven {
      * @return The latest version.
      */
     public Version latestVersion(String coordinates, boolean allowSnapshot) {
+        final List<Version> versions = versions(coordinates);
+        final int lastIndex = versions.size() - 1;
+        return IntStream.rangeClosed(0, lastIndex)
+                        .mapToObj(index -> versions.get(lastIndex - index))
+                        .filter(version -> !version.toString().endsWith(SNAPSHOT_SUFFIX))
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalStateException("no non-snapshot version found!"));
+    }
+
+    /**
+     * Returns the versions for the given artifact.
+     *
+     * @param groupId The artifact group id.
+     * @param artifactId The artifact id.
+     * @return The versions.
+     */
+    public List<Version> versions(String groupId, String artifactId) {
+        return versions(toCoordinates(groupId, artifactId, LATEST_VERSION));
+    }
+
+    /**
+     * Returns the versions for the given artifact.
+     *
+     * @param coordinates The artifact coordinates.
+     * @return The versions.
+     */
+    public List<Version> versions(String coordinates) {
         final Artifact artifact = new DefaultArtifact(coordinates);
         final VersionRangeRequest request = new VersionRangeRequest(artifact, repositories, null);
         try {
-            final VersionRangeResult result = system.resolveVersionRange(session, request);
-            if (allowSnapshot) {
-                return result.getHighestVersion();
-            } else {
-                final List<Version> versions = result.getVersions();
-                final int lastIndex = versions.size() - 1;
-                return IntStream.rangeClosed(0, lastIndex)
-                                .mapToObj(index -> versions.get(lastIndex - index))
-                                .filter(version -> !version.toString().endsWith(SNAPSHOT_SUFFIX))
-                                .findFirst()
-                                .orElseThrow(() -> new IllegalStateException("no non-snapshot version found!"));
-            }
+            return system.resolveVersionRange(session, request).getVersions();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
