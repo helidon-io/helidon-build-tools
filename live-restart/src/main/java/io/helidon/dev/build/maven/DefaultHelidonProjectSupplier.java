@@ -118,7 +118,7 @@ public class DefaultHelidonProjectSupplier implements ProjectSupplier {
         final BuildRoot sources = createBuildRoot(BuildRootType.JavaSources, sourceDir);
         final BuildRoot classes = createBuildRoot(BuildRootType.JavaClasses, classesDir);
         final Charset sourceEncoding = StandardCharsets.UTF_8;
-        builder.component(createBuildComponent(sources, classes, new CompileJavaSources(sourceEncoding)));
+        builder.component(createBuildComponent(sources, classes, new CompileJavaSources(sourceEncoding, false)));
 
         final Path resourcesDir = projectDir.resolve(RESOURCES_DIR);
         if (Files.exists(resourcesDir)) {
