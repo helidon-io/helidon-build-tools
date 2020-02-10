@@ -38,6 +38,9 @@ import static java.util.Objects.requireNonNullElseGet;
  * Executes a process and waits for completion, monitoring the output.
  */
 public final class ProcessMonitor {
+    private static final int DESTROY_DELAY_SECONDS = 2;
+    private static final int DESTROY_RETRIES = 5;
+    private static final int DESTROY_FORCE_RETRY = 3;
     private static final ExecutorService EXECUTOR = ForkJoinPool.commonPool();
     private final ProcessBuilder builder;
     private final String description;
@@ -206,11 +209,15 @@ public final class ProcessMonitor {
      * @param unit The time unit of the {@code timeout} argument.
      * @return This instance.
      * @throws IOException If an I/O error occurs.
-     * @throws ProcessMonitor.ProcessTimeoutException If the process does not complete in the specified time.
-     * @throws ProcessMonitor.ProcessFailedException If the process fails.
+     * @throws ProcessTimeoutException If the process does not complete in the specified time.
+     * @throws ProcessFailedException If the process fails.
      * @throws InterruptedException If the a thread is interrupted.
      */
-    public ProcessMonitor execute(long timeout, TimeUnit unit) throws IOException, InterruptedException {
+    @SuppressWarnings({"checkstyle:JavadocMethod", "checkstyle:ThrowsCount"})
+    public ProcessMonitor execute(long timeout, TimeUnit unit) throws IOException,
+                                                                      ProcessTimeoutException,
+                                                                      ProcessFailedException,
+                                                                      InterruptedException {
         return start().waitForCompletion(timeout, unit);
     }
 
@@ -255,8 +262,9 @@ public final class ProcessMonitor {
      * @throws ProcessFailedException If the process fails.
      * @throws InterruptedException If the a thread is interrupted.
      */
-    public ProcessMonitor waitForCompletion(long timeout, TimeUnit unit) throws ProcessFailedException,
-                                                                                ProcessTimeoutException,
+    @SuppressWarnings("checkstyle:JavadocMethod")
+    public ProcessMonitor waitForCompletion(long timeout, TimeUnit unit) throws ProcessTimeoutException,
+                                                                                ProcessFailedException,
                                                                                 InterruptedException {
         assertRunning();
         final boolean completed = process.waitFor(timeout, unit);
@@ -270,8 +278,7 @@ public final class ProcessMonitor {
             }
             return this;
         } else {
-            process.destroyForcibly();
-            process.waitFor(10, TimeUnit.SECONDS);
+            destroy();
             throw new ProcessTimeoutException(this);
         }
     }
@@ -312,7 +319,7 @@ public final class ProcessMonitor {
     /**
      * Process exception.
      */
-    public static class ProcessException extends IOException {
+    public static class ProcessException extends Exception {
         private final ProcessMonitor monitor;
         private final boolean timeout;
 
@@ -359,6 +366,23 @@ public final class ProcessMonitor {
         return process;
     }
 
+    private void destroy() throws InterruptedException {
+        if (process.isAlive()) {
+            process.destroy();
+            for (int retry = 1; retry <= DESTROY_RETRIES; retry++) {
+                if (process.waitFor(DESTROY_DELAY_SECONDS, TimeUnit.SECONDS)) {
+                    return;
+                } else if (retry == DESTROY_FORCE_RETRY) {
+                    Log.info("%s forcibly destroying", describe());
+                    process.destroyForcibly();
+                } else {
+                    Log.info("%s timed out and was destroyed. Waiting for exit, retry %d of %d",
+                             describe(), retry, DESTROY_RETRIES);
+                }
+            }
+        }
+    }
+
     private void assertRunning() {
         if (process == null) {
             throw new IllegalStateException("not started");
@@ -370,7 +394,7 @@ public final class ProcessMonitor {
 
     private String toErrorMessage(boolean timeout) {
         final StringBuilder message = new StringBuilder();
-        message.append(requireNonNullElseGet(description, () -> String.join(" ", builder.command())));
+        message.append(describe());
         if (timeout) {
             message.append(" timed out");
         } else {
@@ -381,6 +405,10 @@ public final class ProcessMonitor {
             capturedOutput.forEach(line -> message.append("    ").append(line).append(Constants.EOL));
         }
         return message.toString();
+    }
+
+    private String describe() {
+        return requireNonNullElseGet(description, () -> String.join(" ", builder.command()));
     }
 
     private static void devNull(String line) {
