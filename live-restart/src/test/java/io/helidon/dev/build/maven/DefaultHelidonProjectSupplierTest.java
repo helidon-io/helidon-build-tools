@@ -44,7 +44,7 @@ class DefaultHelidonProjectSupplierTest {
     @Test
     void testUpToDate() throws Exception {
         final Path projectDir = TestFiles.helidonSeProject();
-        final ProjectSupplier supplier = new DefaultHelidonProjectSupplier();
+        final ProjectSupplier supplier = new DefaultHelidonProjectSupplier(30);
         final TestMonitor monitor = new TestMonitor(1);
         final Project project = supplier.get(projectDir, monitor, false, 0);
         assertThat(project, is(not(nullValue())));
@@ -69,7 +69,7 @@ class DefaultHelidonProjectSupplierTest {
     @Test
     void testCleanBuild() throws Exception {
         final Path projectDir = TestFiles.helidonSeProjectCopy();
-        final ProjectSupplier supplier = new DefaultHelidonProjectSupplier();
+        final ProjectSupplier supplier = new DefaultHelidonProjectSupplier(30);
         final TestMonitor monitor = new TestMonitor(1);
         final Project project = supplier.get(projectDir, monitor, true, 0);
         assertThat(project, is(not(nullValue())));

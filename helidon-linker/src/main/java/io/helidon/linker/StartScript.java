@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -61,6 +62,7 @@ public class StartScript {
     private final Path installDirectory;
     private final Path scriptFile;
     private final String script;
+    private final int maxAppStartSeconds;
 
     /**
      * Returns a new builder.
@@ -75,6 +77,7 @@ public class StartScript {
         this.installDirectory = builder.scriptInstallDirectory;
         this.scriptFile = builder.scriptFile;
         this.script = builder.script;
+        this.maxAppStartSeconds = builder.maxAppStartSeconds;
     }
 
     /**
@@ -138,10 +141,10 @@ public class StartScript {
                                                      .capture(true)
                                                      .build();
         try {
-            monitor.execute();
+            monitor.execute(maxAppStartSeconds, TimeUnit.SECONDS);
             checkWindowsExecutionPolicyError(monitor, false);
         } catch (ProcessMonitor.ProcessFailedException e) {
-            checkWindowsExecutionPolicyError(e.processMonitor(), true);
+            checkWindowsExecutionPolicyError(e.monitor(), true);
             throw new UncheckedIOException(e);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -500,6 +503,7 @@ public class StartScript {
         private TemplateConfig config;
         private Path scriptFile;
         private String script;
+        private int maxAppStartSeconds;
 
         private Builder() {
             this.defaultJvmOptions = emptyList();
@@ -508,6 +512,7 @@ public class StartScript {
             this.debugInstalled = true;
             this.exitOnStartedValue = "!";
             this.defaultArgs = emptyList();
+            this.maxAppStartSeconds = Configuration.Builder.DEFAULT_MAX_APP_START_SECONDS;
         }
 
         /**
@@ -613,6 +618,17 @@ public class StartScript {
          */
         public Builder template(Template template) {
             this.template = template;
+            return this;
+        }
+
+        /**
+         * Sets the maximum number of seconds to wait for the application to start.
+         *
+         * @param maxAppStartSeconds The number of seconds.
+         * @return The builder.
+         */
+        public Builder maxAppStartSeconds(int maxAppStartSeconds) {
+            this.maxAppStartSeconds = maxAppStartSeconds;
             return this;
         }
 

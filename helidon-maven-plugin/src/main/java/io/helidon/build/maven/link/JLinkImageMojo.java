@@ -91,6 +91,12 @@ public class JLinkImageMojo extends AbstractMojo {
     private List<String> defaultArgs;
 
     /**
+     * The maximum number of seconds to wait for the application to start.
+     */
+    @Parameter(defaultValue = "60", property = "jlink.image.maxAppStartSeconds")
+    private int maxAppStartSeconds;
+
+    /**
      * Strip debug information from all classes and exclude {@code jdk.jdwp.agent} module.
      */
     @Parameter(defaultValue = "false", property = "jlink.image.stripDebug")
@@ -124,6 +130,7 @@ public class JLinkImageMojo extends AbstractMojo {
                                                 .stripDebug(stripDebug)
                                                 .test(testImage)
                                                 .jriDirectory(outputDir)
+                                                .maxAppStartSeconds(maxAppStartSeconds)
                                                 .replace(true)
                                                 .build();
             Linker.linker(config).link();

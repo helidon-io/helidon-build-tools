@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.ProcessMonitor;
@@ -59,6 +60,16 @@ public class DefaultHelidonProjectSupplier implements ProjectSupplier {
     private static final String RESOURCES_DIR = "src/main/resources";
     private static final String LIB_DIR = "target/libs";
     private static final String CLASSES_DIR = "target/classes";
+    private final int maxBuildWaitSeconds;
+
+    /**
+     * Constructor.
+     *
+     * @param maxBuildWaitSeconds The maximum number of seconds to wait for a build to complete.
+     */
+    public DefaultHelidonProjectSupplier(int maxBuildWaitSeconds) {
+        this.maxBuildWaitSeconds = maxBuildWaitSeconds;
+    }
 
     @Override
     public Project get(Path projectDir, BuildMonitor monitor, boolean clean, int cycleNumber) throws Exception {
@@ -91,7 +102,7 @@ public class DefaultHelidonProjectSupplier implements ProjectSupplier {
                       .stdErr(monitor.stdErrConsumer())
                       .capture(true)
                       .build()
-                      .execute();
+                      .execute(maxBuildWaitSeconds, TimeUnit.SECONDS);
     }
 
     private Project createProject(Path projectDir) throws IOException {

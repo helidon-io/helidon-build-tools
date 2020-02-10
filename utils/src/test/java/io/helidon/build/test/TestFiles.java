@@ -26,8 +26,10 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.FileUtils;
@@ -229,10 +231,23 @@ public class TestFiles implements BeforeAllCallback {
     }
 
     private static Version lookupLatestHelidonVersion() {
+        // TODO 2.0.0-M1 doesn't exit MP with -Dexit.on.started
+        final List<Version> versions = maven().versions(HELIDON_GROUP_ID, HELIDON_PROJECT_ID);
+        final int lastIndex = versions.size() - 1;
+        return IntStream.rangeClosed(0, lastIndex)
+                        .mapToObj(index -> versions.get(lastIndex - index))
+                        .filter(version -> !version.toString().endsWith("-SNAPSHOT"))
+                        .filter(version -> !version.toString().startsWith("2"))   //
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalStateException("no non-snapshot version found!"));
+
+        /* TODO
         Log.info("Looking up latest Helidon release version");
         final Version version = maven().latestVersion(HELIDON_GROUP_ID, HELIDON_PROJECT_ID, false);
         Log.info("Latest Helidon release version is %s", version);
         return version;
+
+         */
     }
 
     private static Path fetchSignedJar() {
@@ -341,7 +356,7 @@ public class TestFiles implements BeforeAllCallback {
                           .processBuilder(builder)
                           .capture(true)
                           .build()
-                          .execute();
+                          .execute(5, TimeUnit.MINUTES);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

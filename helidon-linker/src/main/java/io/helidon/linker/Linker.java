@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.spi.ToolProvider;
 
 import io.helidon.build.util.Log;
@@ -217,6 +218,7 @@ public final class Linker {
                                                              .args((config.defaultArgs()))
                                                              .archiveFile(application.archivePath())
                                                              .exitOnStartedValue(exitOnStarted)
+                                                             .maxWaitSeconds(config.maxAppStartSeconds())
                                                              .logOutput(config.verbose())
                                                              .build();
 
@@ -312,7 +314,7 @@ public final class Linker {
                                   .transform(INDENT)
                                   .capture(false)
                                   .build()
-                                  .execute();
+                                  .execute(config.maxAppStartSeconds(), TimeUnit.SECONDS);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

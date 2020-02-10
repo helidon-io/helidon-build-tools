@@ -59,7 +59,7 @@ class BuildLoopTest {
                         .projectDirectory(projectRoot)
                         .clean(initialClean)
                         .watchBinariesOnly(watchBinariesOnly)
-                        .projectSupplier(new DefaultHelidonProjectSupplier())
+                        .projectSupplier(new DefaultHelidonProjectSupplier(60))
                         .stdOut(monitor.stdOutConsumer())
                         .stdErr(monitor.stdErrConsumer())
                         .buildMonitor(monitor)
