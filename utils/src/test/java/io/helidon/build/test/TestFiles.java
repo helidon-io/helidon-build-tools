@@ -180,7 +180,9 @@ public class TestFiles implements BeforeAllCallback {
 
     private static Version lookupLatestHelidonVersion() {
         Log.info("Looking up latest Helidon release version");
-        final Version version = maven().latestVersion(HELIDON_GROUP_ID, HELIDON_PROJECT_ID, false);
+        // quick fix for build issues on top of 2.0.0-M1 - only use Helidon 1.x
+        String coordinates = Maven.toCoordinates(HELIDON_GROUP_ID, HELIDON_PROJECT_ID, "[1.0,1.9.999]");
+        final Version version = maven().latestVersion(coordinates, false);
         Log.info("Latest Helidon release version is %s", version);
         return version;
     }
