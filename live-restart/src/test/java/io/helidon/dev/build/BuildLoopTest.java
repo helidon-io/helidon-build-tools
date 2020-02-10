@@ -44,17 +44,17 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 class BuildLoopTest {
 
-    private static BuildLoop newLoop(Path projectRoot,
-                                     boolean initialClean,
-                                     boolean watchBinariesOnly,
-                                     int stopCycleNumber) {
+    static BuildLoop newLoop(Path projectRoot,
+                             boolean initialClean,
+                             boolean watchBinariesOnly,
+                             int stopCycleNumber) {
         return newLoop(projectRoot, initialClean, watchBinariesOnly, new TestMonitor(stopCycleNumber));
     }
 
-    private static BuildLoop newLoop(Path projectRoot,
-                                     boolean initialClean,
-                                     boolean watchBinariesOnly,
-                                     TestMonitor monitor) {
+    static BuildLoop newLoop(Path projectRoot,
+                             boolean initialClean,
+                             boolean watchBinariesOnly,
+                             BuildMonitor monitor) {
         return BuildLoop.builder()
                         .projectDirectory(projectRoot)
                         .clean(initialClean)
@@ -66,18 +66,19 @@ class BuildLoopTest {
                         .build();
     }
 
-    private static TestMonitor run(BuildLoop loop) throws InterruptedException {
+    static <T extends BuildMonitor> T run(BuildLoop loop) throws InterruptedException {
         return run(loop, 30);
     }
 
-    private static TestMonitor run(BuildLoop loop, int maxWaitSeconds) throws InterruptedException {
+    @SuppressWarnings("unchecked")
+    static <T extends BuildMonitor> T run(BuildLoop loop, int maxWaitSeconds) throws InterruptedException {
         loop.start();
         Log.info("Waiting up to %d seconds for build loop completion", maxWaitSeconds);
         if (!loop.waitForStopped(maxWaitSeconds, TimeUnit.SECONDS)) {
             loop.stop(0L);
             fail("Timeout");
         }
-        return (TestMonitor) loop.monitor();
+        return (T) loop.monitor();
     }
 
     @Test

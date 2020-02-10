@@ -143,7 +143,7 @@ public class BuildLoop {
         monitor.onStarted();
         boolean clean = this.clean; // Only do this once
         while (run.get()) {
-            final Project project = this.project.get();
+            Project project = this.project.get();
             final int cycleNumber = this.cycleNumber.get();
             monitor.onCycleStart(cycleNumber);
             if (project == null) {
@@ -152,6 +152,7 @@ public class BuildLoop {
 
                 try {
                     setProject(projectSupplier.get(projectDirectory, monitor, clean, cycleNumber));
+                    project = this.project.get();
                     clean = false;
                     delay = monitor.onReady(cycleNumber, project);
                 } catch (IllegalArgumentException | InterruptedException e) {

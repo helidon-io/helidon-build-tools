@@ -33,8 +33,8 @@ import javax.tools.ToolProvider;
 
 import io.helidon.dev.build.BuildComponent;
 import io.helidon.dev.build.BuildRoot;
-import io.helidon.dev.build.BuildStep;
 import io.helidon.dev.build.BuildRootType;
+import io.helidon.dev.build.BuildStep;
 import io.helidon.dev.build.Project;
 
 /**
@@ -44,16 +44,18 @@ import io.helidon.dev.build.Project;
 public class CompileJavaSources implements BuildStep {
     private final JavaCompiler compiler;
     private final Charset sourceEncoding;
+    private final boolean verbose;
 
     /**
      * Constructor.
      */
-    public CompileJavaSources(Charset sourceEncoding) {
+    public CompileJavaSources(Charset sourceEncoding, boolean verbose) {
         this.compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) {
             throw new RuntimeException("System java compiler not available");
         }
         this.sourceEncoding = sourceEncoding;
+        this.verbose = verbose;
     }
 
     @Override
@@ -77,7 +79,9 @@ public class CompileJavaSources implements BuildStep {
             final List<String> compilerFlags = project.compilerFlags();
             final List<File> sourceFiles = changes.addedOrModified().stream().map(Path::toFile).collect(Collectors.toList());
             stdOut.accept("Compiling " + sourceFiles.size() + " source file" + (sourceFiles.size() == 1 ? "" : "s"));
-            stdOut.accept("Classpath: " + project.classpath());
+            if (verbose) {
+                stdOut.accept("Classpath: " + project.classpath());
+            }
             try (StandardJavaFileManager manager = compiler.getStandardFileManager(diagnostics, null, sourceEncoding)) {
                 manager.setLocation(StandardLocation.CLASS_PATH, project.classpath());
                 manager.setLocation(StandardLocation.CLASS_OUTPUT, List.of(component.outputRoot().path().toFile()));
