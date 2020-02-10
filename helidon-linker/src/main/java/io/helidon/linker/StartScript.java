@@ -145,7 +145,7 @@ public class StartScript {
             checkWindowsExecutionPolicyError(monitor, false);
         } catch (ProcessMonitor.ProcessFailedException e) {
             checkWindowsExecutionPolicyError(e.monitor(), true);
-            throw new UncheckedIOException(e);
+            throw new RuntimeException(e);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

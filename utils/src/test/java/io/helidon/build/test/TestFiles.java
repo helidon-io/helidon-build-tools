@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.IntStream;
 
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.FileUtils;
@@ -231,23 +230,12 @@ public class TestFiles implements BeforeAllCallback {
     }
 
     private static Version lookupLatestHelidonVersion() {
-        // TODO 2.0.0-M1 doesn't exit MP with -Dexit.on.started
-        final List<Version> versions = maven().versions(HELIDON_GROUP_ID, HELIDON_PROJECT_ID);
-        final int lastIndex = versions.size() - 1;
-        return IntStream.rangeClosed(0, lastIndex)
-                        .mapToObj(index -> versions.get(lastIndex - index))
-                        .filter(version -> !version.toString().endsWith("-SNAPSHOT"))
-                        .filter(version -> !version.toString().startsWith("2"))   //
-                        .findFirst()
-                        .orElseThrow(() -> new IllegalStateException("no non-snapshot version found!"));
-
-        /* TODO
-        Log.info("Looking up latest Helidon release version");
-        final Version version = maven().latestVersion(HELIDON_GROUP_ID, HELIDON_PROJECT_ID, false);
-        Log.info("Latest Helidon release version is %s", version);
+        Log.info("Looking up latest Helidon 1.x release version (2.0.0-M1 doesn't exit.on.started)");
+        // final Version version = maven().latestVersion(HELIDON_GROUP_ID, HELIDON_PROJECT_ID, false);
+        final String coordinates = Maven.toCoordinates(HELIDON_GROUP_ID, HELIDON_PROJECT_ID, "[1.0,1.9.999]");
+        final Version version = maven().latestVersion(coordinates, false);
+        Log.info("Using Helidon release version %s", version);
         return version;
-
-         */
     }
 
     private static Path fetchSignedJar() {
