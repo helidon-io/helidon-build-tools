@@ -206,14 +206,11 @@ public final class ProcessMonitor {
      * @param unit The time unit of the {@code timeout} argument.
      * @return This instance.
      * @throws IOException If an I/O error occurs.
-     * @throws ProcessTimeoutException If the process does not complete in the specified time.
-     * @throws ProcessFailedException If the process fails.
+     * @throws ProcessMonitor.ProcessTimeoutException If the process does not complete in the specified time.
+     * @throws ProcessMonitor.ProcessFailedException If the process fails.
      * @throws InterruptedException If the a thread is interrupted.
      */
-    public ProcessMonitor execute(long timeout, TimeUnit unit) throws IOException,
-                                                                      ProcessFailedException,
-                                                                      ProcessTimeoutException,
-                                                                      InterruptedException {
+    public ProcessMonitor execute(long timeout, TimeUnit unit) throws IOException, InterruptedException {
         return start().waitForCompletion(timeout, unit);
     }
 
