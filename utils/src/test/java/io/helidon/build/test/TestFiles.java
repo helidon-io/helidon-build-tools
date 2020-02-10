@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.build.util.Constants;
@@ -179,11 +180,11 @@ public class TestFiles implements BeforeAllCallback {
     }
 
     private static Version lookupLatestHelidonVersion() {
-        Log.info("Looking up latest Helidon release version");
-        // quick fix for build issues on top of 2.0.0-M1 - only use Helidon 1.x
-        String coordinates = Maven.toCoordinates(HELIDON_GROUP_ID, HELIDON_PROJECT_ID, "[1.0,1.9.999]");
+        Log.info("Looking up latest Helidon 1.x release version (2.0.0-M1 doesn't exit.on.started)");
+        // final Version version = maven().latestVersion(HELIDON_GROUP_ID, HELIDON_PROJECT_ID, false);
+        final String coordinates = Maven.toCoordinates(HELIDON_GROUP_ID, HELIDON_PROJECT_ID, "[1.0,1.9.999]");
         final Version version = maven().latestVersion(coordinates, false);
-        Log.info("Latest Helidon release version is %s", version);
+        Log.info("Using Helidon release version %s", version);
         return version;
     }
 
@@ -267,7 +268,7 @@ public class TestFiles implements BeforeAllCallback {
                           .processBuilder(builder)
                           .capture(true)
                           .build()
-                          .execute();
+                          .execute(5, TimeUnit.MINUTES); // May need to download a lot of dependencies.
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

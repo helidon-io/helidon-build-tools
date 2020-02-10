@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -37,6 +38,9 @@ import static java.util.Objects.requireNonNullElseGet;
  * Executes a process and waits for completion, monitoring the output.
  */
 public final class ProcessMonitor {
+    private static final int DESTROY_DELAY_SECONDS = 2;
+    private static final int DESTROY_RETRIES = 5;
+    private static final int DESTROY_FORCE_RETRY = 3;
     private static final ExecutorService EXECUTOR = ForkJoinPool.commonPool();
     private final ProcessBuilder builder;
     private final String description;
@@ -49,7 +53,9 @@ public final class ProcessMonitor {
     private final Consumer<String> stdErr;
     private final Predicate<String> filter;
     private final Function<String, String> transform;
-    private int exitCode;
+    private volatile Process process;
+    private volatile Future<?> out;
+    private volatile Future<?> err;
 
     /**
      * Returns a new builder.
@@ -197,34 +203,94 @@ public final class ProcessMonitor {
     }
 
     /**
-     * Executes the process and waits for completion.
+     * Starts the process and waits for completion.
      *
+     * @param timeout The maximum time to wait.
+     * @param unit The time unit of the {@code timeout} argument.
      * @return This instance.
-     * @throws IOException If the process fails.
+     * @throws IOException If an I/O error occurs.
+     * @throws ProcessTimeoutException If the process does not complete in the specified time.
+     * @throws ProcessFailedException If the process fails.
      * @throws InterruptedException If the a thread is interrupted.
      */
-    public ProcessMonitor execute() throws IOException, InterruptedException {
+    @SuppressWarnings({"checkstyle:JavadocMethod", "checkstyle:ThrowsCount"})
+    public ProcessMonitor execute(long timeout, TimeUnit unit) throws IOException,
+                                                                      ProcessTimeoutException,
+                                                                      ProcessFailedException,
+                                                                      InterruptedException {
+        return start().waitForCompletion(timeout, unit);
+    }
+
+    /**
+     * Starts the process.
+     *
+     * @return This instance.
+     * @throws IllegalStateException If the process was already started.
+     * @throws IOException If an I/O error occurs.
+     */
+    public ProcessMonitor start() throws IOException {
+        if (process != null) {
+            throw new IllegalStateException("already started");
+        }
         if (description != null) {
             monitorOut.accept(description);
         }
-        final Process process = builder.start();
-        final Future<?> out = monitor(process.getInputStream(), filter, transform, capturing ? this::captureStdOut : stdOut);
-        final Future<?> err = monitor(process.getErrorStream(), filter, transform, capturing ? this::captureStdErr : stdErr);
-        exitCode = process.waitFor();
+        process = builder.start();
+        out = monitor(process.getInputStream(), filter, transform, capturing ? this::captureStdOut : stdOut);
+        err = monitor(process.getErrorStream(), filter, transform, capturing ? this::captureStdErr : stdErr);
+        return this;
+    }
+
+    /**
+     * Returns the process handle.
+     *
+     * @return The handle.
+     * @throws IllegalStateException If the process was not started.
+     */
+    public ProcessHandle toHandle() {
+        return process().toHandle();
+    }
+
+    /**
+     * Waits for the process to complete. If the process does not complete in the given time it is destroyed.
+     *
+     * @param timeout The maximum time to wait.
+     * @param unit The time unit of the {@code timeout} argument.
+     * @return This instance.
+     * @throws IllegalStateException If the process was not started or has already been completed.
+     * @throws ProcessTimeoutException If the process does not complete in the specified time.
+     * @throws ProcessFailedException If the process fails.
+     * @throws InterruptedException If the a thread is interrupted.
+     */
+    @SuppressWarnings("checkstyle:JavadocMethod")
+    public ProcessMonitor waitForCompletion(long timeout, TimeUnit unit) throws ProcessTimeoutException,
+                                                                                ProcessFailedException,
+                                                                                InterruptedException {
+        assertRunning();
+        final boolean completed = process.waitFor(timeout, unit);
         out.cancel(true);
         err.cancel(true);
-        if (exitCode != 0) {
-            throw new ProcessFailedException(this);
+        out = null;
+        err = null;
+        if (completed) {
+            if (process.exitValue() != 0) {
+                throw new ProcessFailedException(this);
+            }
+            return this;
+        } else {
+            destroy();
+            throw new ProcessTimeoutException(this);
         }
-        return this;
     }
 
     /**
      * Returns the combined captured output.
      *
      * @return The output. Empty if capture not enabled.
+     * @throws IllegalStateException If the process was not started.
      */
     public List<String> output() {
+        assertRunning();
         return capturedOutput;
     }
 
@@ -232,8 +298,10 @@ public final class ProcessMonitor {
      * Returns any captured stderr output.
      *
      * @return The output. Empty if capture not enabled.
+     * @throws IllegalStateException If the process was not started.
      */
     public List<String> stdOut() {
+        assertRunning();
         return capturedStdOut;
     }
 
@@ -241,19 +309,23 @@ public final class ProcessMonitor {
      * Returns any captured stderr output.
      *
      * @return The output. Empty if capture not enabled.
+     * @throws IllegalStateException If the process was not started.
      */
     public List<String> stdErr() {
+        assertRunning();
         return capturedStdErr;
     }
 
     /**
-     * Process failed exception.
+     * Process exception.
      */
-    public static final class ProcessFailedException extends IOException {
+    public static class ProcessException extends Exception {
         private final ProcessMonitor monitor;
+        private final boolean timeout;
 
-        private ProcessFailedException(ProcessMonitor monitor) {
+        private ProcessException(ProcessMonitor monitor, boolean timeout) {
             this.monitor = monitor;
+            this.timeout = timeout;
         }
 
         /**
@@ -261,25 +333,82 @@ public final class ProcessMonitor {
          *
          * @return The monitor.
          */
-        public ProcessMonitor processMonitor() {
+        public ProcessMonitor monitor() {
             return monitor;
         }
 
         @Override
         public String getMessage() {
-            return monitor.toErrorMessage();
+            return monitor().toErrorMessage(timeout);
         }
     }
 
-    private String toErrorMessage() {
+    /**
+     * Process timeout exception.
+     */
+    public static final class ProcessTimeoutException extends ProcessException {
+        private ProcessTimeoutException(ProcessMonitor monitor) {
+            super(monitor, true);
+        }
+    }
+
+    /**
+     * Process failed exception.
+     */
+    public static final class ProcessFailedException extends ProcessException {
+        private ProcessFailedException(ProcessMonitor monitor) {
+            super(monitor, false);
+        }
+    }
+
+    private Process process() {
+        assertRunning();
+        return process;
+    }
+
+    private void destroy() throws InterruptedException {
+        if (process.isAlive()) {
+            process.destroy();
+            for (int retry = 1; retry <= DESTROY_RETRIES; retry++) {
+                if (process.waitFor(DESTROY_DELAY_SECONDS, TimeUnit.SECONDS)) {
+                    return;
+                } else if (retry == DESTROY_FORCE_RETRY) {
+                    Log.info("%s forcibly destroying", describe());
+                    process.destroyForcibly();
+                } else {
+                    Log.info("%s timed out and was destroyed. Waiting for exit, retry %d of %d",
+                             describe(), retry, DESTROY_RETRIES);
+                }
+            }
+        }
+    }
+
+    private void assertRunning() {
+        if (process == null) {
+            throw new IllegalStateException("not started");
+        }
+        if (out == null) {
+            throw new IllegalStateException("already completed");
+        }
+    }
+
+    private String toErrorMessage(boolean timeout) {
         final StringBuilder message = new StringBuilder();
-        message.append(requireNonNullElseGet(description, () -> String.join(" ", builder.command())));
-        message.append(" FAILED with exit code ").append(exitCode);
+        message.append(describe());
+        if (timeout) {
+            message.append(" timed out");
+        } else {
+            message.append(" failed with exit code ").append(process.exitValue());
+        }
         if (capturing) {
             message.append(Constants.EOL);
             capturedOutput.forEach(line -> message.append("    ").append(line).append(Constants.EOL));
         }
         return message.toString();
+    }
+
+    private String describe() {
+        return requireNonNullElseGet(description, () -> String.join(" ", builder.command()));
     }
 
     private static void devNull(String line) {

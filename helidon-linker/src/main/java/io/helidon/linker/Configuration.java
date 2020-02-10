@@ -49,6 +49,7 @@ public final class Configuration {
     private final boolean stripDebug;
     private final boolean cds;
     private final boolean test;
+    private final int maxAppStartSeconds;
 
     /**
      * Returns a new configuration builder.
@@ -70,6 +71,7 @@ public final class Configuration {
         this.stripDebug = builder.stripDebug;
         this.cds = builder.cds;
         this.test = builder.test;
+        this.maxAppStartSeconds = builder.maxAppStartSeconds;
     }
 
     /**
@@ -163,10 +165,20 @@ public final class Configuration {
     }
 
     /**
+     * Returns the maximum number of seconds to wait for the application to start.
+     *
+     * @return The number of seconds.
+     */
+    public int maxAppStartSeconds() {
+        return maxAppStartSeconds;
+    }
+
+    /**
      * A {@link Configuration} builder.
      */
     public static final class Builder {
         static final String DEFAULT_DEBUG = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005";
+        static final int DEFAULT_MAX_APP_START_SECONDS = 60;
         private JavaRuntime jdk;
         private Path mainJar;
         private List<String> defaultJvm;
@@ -179,11 +191,13 @@ public final class Configuration {
         private boolean cds;
         private boolean test;
         private Log.Writer logWriter;
+        private int maxAppStartSeconds;
 
         private Builder() {
             defaultJvm = emptyList();
             defaultArgs = emptyList();
             defaultDebug = List.of(DEFAULT_DEBUG);
+            maxAppStartSeconds = DEFAULT_MAX_APP_START_SECONDS;
             cds = true;
             test = true;
         }
@@ -196,6 +210,7 @@ public final class Configuration {
          *     --defaultJvmOptions options    Default JVM options to use when starting the application.
          *     --defaultDebugOptions options  Default JVM debug options to use when starting the application with {@code --debug}.
          *     --defaultArgs args             Default arguments to use when starting the application.
+         *     --maxAppStartSeconds seconds   The maximum number of seconds to wait for the application to start.
          *     --jri directory                The directory at which to create the JRI.
          *     --replace                      Delete the JRI directory if it exists.
          *     --skipCds                      Do not create a CDS archive.
@@ -217,6 +232,8 @@ public final class Configuration {
                         defaultDebugOptions(argAt(++i, args));
                     } else if (arg.equalsIgnoreCase("--defaultArgs")) {
                         defaultArgs(argAt(++i, args));
+                    } else if (arg.equalsIgnoreCase("--maxAppStartSeconds")) {
+                        maxAppStartSeconds(Integer.parseInt(argAt(++i, args)));
                     } else if (arg.equalsIgnoreCase("--replace")) {
                         replace(true);
                     } else if (arg.equalsIgnoreCase("--skipCds")) {
@@ -398,6 +415,17 @@ public final class Configuration {
          */
         public Builder stripDebug(boolean stripDebug) {
             this.stripDebug = stripDebug;
+            return this;
+        }
+
+        /**
+         * Sets the maximum number of seconds to wait for application startup.
+         *
+         * @param maxAppStartSeconds The number of seconds.
+         * @return The builder.
+         */
+        public Builder maxAppStartSeconds(int maxAppStartSeconds) {
+            this.maxAppStartSeconds = maxAppStartSeconds;
             return this;
         }
 

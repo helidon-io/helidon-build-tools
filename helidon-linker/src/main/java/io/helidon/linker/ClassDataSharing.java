@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import io.helidon.build.util.FileUtils;
@@ -36,6 +37,7 @@ import io.helidon.linker.util.JavaRuntime;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.fileName;
+import static io.helidon.linker.Configuration.Builder.DEFAULT_MAX_APP_START_SECONDS;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
@@ -157,6 +159,7 @@ public final class ClassDataSharing {
         private List<String> jvmOptions;
         private List<String> args;
         private String exitOnStartedValue;
+        private int maxWaitSeconds;
 
         private Builder() {
             this.createArchive = true;
@@ -164,6 +167,7 @@ public final class ClassDataSharing {
             this.jvmOptions = emptyList();
             this.args = emptyList();
             this.exitOnStartedValue = EXIT_ON_STARTED_VALUE;
+            this.maxWaitSeconds = DEFAULT_MAX_APP_START_SECONDS;
         }
 
         /**
@@ -261,6 +265,17 @@ public final class ClassDataSharing {
          */
         public Builder logOutput(boolean logOutput) {
             this.logOutput = logOutput;
+            return this;
+        }
+
+        /**
+         * Sets the maximum number of seconds to wait for completion.
+         *
+         * @param maxWaitSeconds The number of seconds.
+         * @return The builder.
+         */
+        public Builder maxWaitSeconds(int maxWaitSeconds) {
+            this.maxWaitSeconds = maxWaitSeconds;
             return this;
         }
 
@@ -378,7 +393,7 @@ public final class ClassDataSharing {
                           .stdErr(stdErr)
                           .filter(Builder::filter)
                           .build()
-                          .execute();
+                          .execute(maxWaitSeconds, TimeUnit.SECONDS);
         }
 
         private static boolean filter(String line) {
