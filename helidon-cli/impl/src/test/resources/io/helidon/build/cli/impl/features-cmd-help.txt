@@ -1,0 +1,13 @@
+
+Usage:	helidon features [OPTIONS] [--project PATH] [--add VALUE[,VALUE]] [--list] [--all]
+
+List or add features to the project
+
+Options:
+  -D<name>=<value>    Define a system property
+  --verbose           Produce verbose output
+  --debug             Produce debug output
+  --project           The project directory
+  --add               Add features to the project
+  --list              List the features used in the project
+  --all               List all available features
