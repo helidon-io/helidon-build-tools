@@ -19,67 +19,28 @@ package io.helidon.dev.build;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.Log;
-import io.helidon.dev.build.maven.DefaultHelidonProjectSupplier;
-
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.test.TestFiles.helidonSeProject;
 import static io.helidon.build.test.TestFiles.helidonSeProjectCopy;
 import static io.helidon.build.test.TestFiles.touch;
+import static io.helidon.dev.build.TestUtils.newLoop;
+import static io.helidon.dev.build.TestUtils.run;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Unit test for class {@link BuildLoop}.
  */
 class BuildLoopTest {
-
-    static BuildLoop newLoop(Path projectRoot,
-                                     boolean initialClean,
-                                     boolean watchBinariesOnly,
-                                     int stopCycleNumber) {
-        return newLoop(projectRoot, initialClean, watchBinariesOnly, new TestMonitor(stopCycleNumber));
-    }
-
-    static BuildLoop newLoop(Path projectRoot,
-                                     boolean initialClean,
-                                     boolean watchBinariesOnly,
-                                     BuildMonitor monitor) {
-        return BuildLoop.builder()
-                        .projectDirectory(projectRoot)
-                        .clean(initialClean)
-                        .watchBinariesOnly(watchBinariesOnly)
-                        .projectSupplier(new DefaultHelidonProjectSupplier(60))
-                        .stdOut(monitor.stdOutConsumer())
-                        .stdErr(monitor.stdErrConsumer())
-                        .buildMonitor(monitor)
-                        .build();
-    }
-
-    static <T extends BuildMonitor> T run(BuildLoop loop) throws InterruptedException {
-        return run(loop, 30);
-    }
-
-    @SuppressWarnings("unchecked")
-    static <T extends BuildMonitor> T run(BuildLoop loop, int maxWaitSeconds) throws InterruptedException {
-        loop.start();
-        Log.info("Waiting up to %d seconds for build loop completion", maxWaitSeconds);
-        if (!loop.waitForStopped(maxWaitSeconds, TimeUnit.SECONDS)) {
-            loop.stop(0L);
-            fail("Timeout");
-        }
-        return (T) loop.monitor();
-    }
 
     @Test
     void testQuickstartSeUpToDate() throws Exception {
@@ -316,7 +277,6 @@ class BuildLoopTest {
     @Test
     void testQuickstartSePomFileChangeWhileRunning() throws Exception {
         final Path rootDir = helidonSeProjectCopy();
-        final AtomicInteger resourceFilesTouched = new AtomicInteger();
         final TestMonitor monitor = new TestMonitor(3) {
             @Override
             public void onCycleStart(int cycleNumber) {

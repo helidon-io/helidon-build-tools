@@ -16,23 +16,14 @@
 
 package io.helidon.dev.build;
 
-import java.io.File;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import io.helidon.build.test.TestFiles;
-import io.helidon.build.util.Constants;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.ProcessMonitor;
+import io.helidon.dev.mode.ProjectExecutor;
 
 import static io.helidon.build.test.TestFiles.helidonSeProject;
-import static io.helidon.dev.build.BuildLoopTest.newLoop;
-import static io.helidon.dev.build.BuildLoopTest.run;
+import static io.helidon.dev.build.TestUtils.newLoop;
+import static io.helidon.dev.build.TestUtils.run;
 
 /**
  * DevModeDemo class.
@@ -43,20 +34,17 @@ class DevModeDemo {
         TestFiles.targetDirFromClass(DevModeDemo.class);
         Path rootDir = helidonSeProject();
         DevModeMonitor monitor = new DevModeMonitor();
-        Runtime.getRuntime().addShutdownHook(new Thread(monitor::killProcessMaybe));
+        Runtime.getRuntime().addShutdownHook(new Thread(monitor::onStopped));
         BuildLoop loop = newLoop(rootDir, false, false, monitor);
         run(loop, 60 * 60);
     }
 
     static class DevModeMonitor implements BuildMonitor {
         private static final int DELAY = 1;
-        private static final String MAVEN_EXEC = Constants.OS.mavenExec();
-        private static final List<String> EXEC_COMMAND = List.of(MAVEN_EXEC, "exec:java");
-        private static final String JAVA_EXEC = Constants.OS.javaExecutable();
 
         private boolean start;
         private boolean restart;
-        private ProcessHandle processHandle;
+        private ProjectExecutor projectExecutor;
 
         @Override
         public void onStarted() {
@@ -84,10 +72,13 @@ class DevModeDemo {
 
         @Override
         public long onReady(int cycleNumber, Project project) {
-            if (start || restart) {
-                killProcessMaybe();
-                startProcessJava(project);
-                start = restart = false;
+            ensureProjectExecutor(project);
+            if (start) {
+                projectExecutor.start();
+                start = false;
+            } else if (restart) {
+                projectExecutor.restart();
+                restart = false;
             }
             return DELAY;
         }
@@ -99,90 +90,15 @@ class DevModeDemo {
 
         @Override
         public void onStopped() {
-            killProcessMaybe();
-        }
-
-        private void killProcessMaybe() {
-            if (processHandle != null) {
-                CompletableFuture<ProcessHandle> future = processHandle.onExit();
-                processHandle.destroy();
-                try {
-                    future.get(5L, TimeUnit.SECONDS);
-                } catch (Exception e) {
-                    Log.error("Error stopping process " + e.getMessage());
-                    throw new RuntimeException(e);
-                }
-                Log.info("Process with PID " + processHandle.pid() + " stopped");
-                processHandle = null;
+            if (projectExecutor != null) {
+                projectExecutor.stop();
             }
         }
 
-        private void startProcessMvn(Project project) {
-            String javaHome = System.getProperty("java.home");
-            String javaHomeBin = javaHome + File.separator + "bin";
-            ProcessBuilder processBuilder = new ProcessBuilder()
-                    .directory(project.root().path().toFile())
-                    .command(EXEC_COMMAND);
-            Map<String, String> env = processBuilder.environment();
-            String path = javaHomeBin + File.pathSeparatorChar + env.get("PATH");
-            env.put("PATH", path);
-            env.put("JAVA_HOME", javaHome);
-
-            try {
-                ProcessMonitor processMonitor = ProcessMonitor.builder()
-                        .processBuilder(processBuilder)
-                        .stdOut(System.out::println)
-                        .stdErr(System.err::println)
-                        .capture(true)
-                        .build()
-                        .start();
-
-                processHandle = processMonitor.toHandle();
-                Log.info("Process with PID " + processHandle.pid() + " is starting");
-            } catch (Exception e) {
-                Log.error("Error starting process " + e.getMessage());
-                throw new RuntimeException(e);
+        private void ensureProjectExecutor(Project project) {
+            if (projectExecutor == null) {
+                projectExecutor = new ProjectExecutor(project);
             }
-        }
-
-        private void startProcessJava(Project project) {
-            String javaHome = System.getProperty("java.home");
-            String javaHomeBin = javaHome + File.separator + "bin";
-
-            List<String> command = new ArrayList<>();
-            command.add(JAVA_EXEC);
-            command.add("-cp");
-            command.add(classPathString(project));
-            command.add(project.mainClassName());
-            ProcessBuilder processBuilder = new ProcessBuilder()
-                    .directory(project.root().path().toFile())
-                    .command(command);
-
-            Map<String, String> env = processBuilder.environment();
-            String path = javaHomeBin + File.pathSeparatorChar + env.get("PATH");
-            env.put("PATH", path);
-            env.put("JAVA_HOME", javaHome);
-
-            try {
-                ProcessMonitor processMonitor = ProcessMonitor.builder()
-                        .processBuilder(processBuilder)
-                        .stdOut(System.out::println)
-                        .stdErr(System.err::println)
-                        .capture(true)
-                        .build()
-                        .start();
-
-                processHandle = processMonitor.toHandle();
-                Log.info("Process with PID " + processHandle.pid() + " is starting");
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        private String classPathString(Project project) {
-            List<String> paths = project.classpath().stream()
-                    .map(File::getAbsolutePath).collect(Collectors.toList());
-            return paths.stream().reduce("", (s1, s2) -> s1 + ":" + s2);
         }
     }
 }
