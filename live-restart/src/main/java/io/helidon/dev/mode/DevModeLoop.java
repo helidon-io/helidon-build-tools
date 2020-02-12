@@ -14,33 +14,40 @@
  * limitations under the License.
  */
 
-package io.helidon.dev.build;
+package io.helidon.dev.mode;
 
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-import io.helidon.build.test.TestFiles;
-import io.helidon.dev.mode.ProjectExecutor;
-
-import static io.helidon.build.test.TestFiles.helidonSeProject;
-import static io.helidon.dev.build.TestUtils.newLoop;
-import static io.helidon.dev.build.TestUtils.run;
+import io.helidon.build.util.Log;
+import io.helidon.dev.build.BuildLoop;
+import io.helidon.dev.build.BuildMonitor;
+import io.helidon.dev.build.BuildType;
+import io.helidon.dev.build.Project;
+import io.helidon.dev.build.maven.DefaultHelidonProjectSupplier;
 
 /**
- * DevModeDemo class.
+ * Class DevModeLoop.
  */
-class DevModeDemo {
+public class DevModeLoop {
 
-    public static void main(String[] args) throws Exception {
-        TestFiles.targetDirFromClass(DevModeDemo.class);
-        Path rootDir = helidonSeProject();
+    private final Path rootDir;
+
+    public DevModeLoop(Path rootDir) {
+        this.rootDir = rootDir;
+    }
+
+    public void start(int maxWaitInSeconds) throws Exception {
         DevModeMonitor monitor = new DevModeMonitor();
         Runtime.getRuntime().addShutdownHook(new Thread(monitor::onStopped));
         BuildLoop loop = newLoop(rootDir, false, false, monitor);
-        run(loop, 60 * 60);
+        run(loop, maxWaitInSeconds);
     }
 
     static class DevModeMonitor implements BuildMonitor {
-        private static final int DELAY = 1;
+        private static final int ON_READY_DELAY = 1000;
+        private static final int ON_BUILD_FAIL_DELAY = 10000;
 
         private boolean start;
         private boolean restart;
@@ -67,7 +74,7 @@ class DevModeDemo {
         @Override
         public long onBuildFail(int cycleNumber, Throwable error) {
             restart = false;
-            return 0;
+            return ON_BUILD_FAIL_DELAY;
         }
 
         @Override
@@ -80,7 +87,7 @@ class DevModeDemo {
                 projectExecutor.restart();
                 restart = false;
             }
-            return DELAY;
+            return ON_READY_DELAY;
         }
 
         @Override
@@ -101,4 +108,32 @@ class DevModeDemo {
             }
         }
     }
+
+    private static BuildLoop newLoop(Path projectRoot,
+                                    boolean initialClean,
+                                    boolean watchBinariesOnly,
+                                    BuildMonitor monitor) {
+        return BuildLoop.builder()
+                .projectDirectory(projectRoot)
+                .clean(initialClean)
+                .watchBinariesOnly(watchBinariesOnly)
+                .projectSupplier(new DefaultHelidonProjectSupplier(60))
+                .stdOut(monitor.stdOutConsumer())
+                .stdErr(monitor.stdErrConsumer())
+                .buildMonitor(monitor)
+                .build();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends BuildMonitor> T run(BuildLoop loop, int maxWaitSeconds)
+            throws InterruptedException, TimeoutException {
+        loop.start();
+        Log.info("Waiting up to %d seconds for build loop completion", maxWaitSeconds);
+        if (!loop.waitForStopped(maxWaitSeconds, TimeUnit.SECONDS)) {
+            loop.stop(0L);
+            throw new TimeoutException("While waiting for loop completion");
+        }
+        return (T) loop.monitor();
+    }
+
 }
