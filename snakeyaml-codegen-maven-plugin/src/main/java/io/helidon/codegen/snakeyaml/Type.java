@@ -18,6 +18,7 @@ package io.helidon.codegen.snakeyaml;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,15 +90,15 @@ class Type {
         return isRef;
     }
 
-    Map<String, TypeEnum> typeEnumsByType() {
-        return typeEnumsByType;
+    Collection<TypeEnum> typeEnumsByType() {
+        return typeEnumsByType.values();
     }
 
     List<PropertyParameter> propertyParameters() {
         return propertyParameters;
     }
 
-    List<PropertySubstitution> substitutions() {
+    List<PropertySubstitution> propertySubstitutions() {
         return substitutions;
     }
 

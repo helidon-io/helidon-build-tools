@@ -39,5 +39,9 @@ public interface TopLevel extends Reference {
 
     public void setStuffMap(Map<String, Stuff> map);
 
+    public void setThing(String thing);
+
+    public String getThing();
+
 
 }

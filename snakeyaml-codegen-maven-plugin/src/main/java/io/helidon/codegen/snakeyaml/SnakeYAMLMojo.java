@@ -203,6 +203,15 @@ public class SnakeYAMLMojo extends AbstractMojo {
     @Parameter(property = PROPERTY_PREFIX + "debug", defaultValue = "false")
     private boolean debug;
 
+    @Parameter(property = PROPERTY_PREFIX + "typeRefinements")
+    private List<TypeRefinement> typeRefinements;
+
+    @Parameter(property = PROPERTY_PREFIX + "implementationPrefix", required = true)
+    private String implementationPrefix;
+
+    @Parameter(property = PROPERTY_PREFIX + "interfacePrefix", required = true)
+    private String interfacePrefix;
+
     /**
      * Prescribes how the plug-in finds Java classes to analyze for either the interfaces or the
      * implementations.
@@ -218,6 +227,57 @@ public class SnakeYAMLMojo extends AbstractMojo {
             return result;
         }
     }
+
+    public static class TypeRefinement {
+        private String typeName;
+        private List<PropertyRefinement> propertyRefinements;
+
+        String typeName() {
+            return typeName;
+        }
+
+        List<PropertyRefinement> propertyRefinements() {
+            return propertyRefinements;
+        }
+    }
+
+    public static class PropertyRefinement {
+        private String propertyName;
+        private List<PropertySubstitution> propertySubstitutions;
+
+        String propertyName() {
+            return propertyName;
+        }
+
+        List<PropertySubstitution> propertySubstitutions() {
+            return propertySubstitutions;
+        }
+    }
+
+    public static class PropertySubstitution {
+
+        private String propertyName;
+        private String propertyType;
+        private String getter;
+        private String setter;
+
+        String propertyName() {
+            return propertyName;
+        }
+
+        String propertyType() {
+            return propertyType;
+        }
+
+        String getter() {
+            return getter;
+        }
+
+        String setter() {
+            return setter;
+        }
+    }
+    /// name, type, getter, setter
 
     /**
      * Sets the compiler config for analyzing the interfaces.
@@ -270,8 +330,8 @@ public class SnakeYAMLMojo extends AbstractMojo {
              * The parsing builds most of the data model, but we need to add some additional information that is not available
              * to the compiler processor.
              */
-            // TODO - move to enhanced Helidon OpenAPI module
-//            addPropertySubstitutions(types);
+            applyTypeRefinements(types, typeRefinements);
+
             addImportsForTypes(types, imports);
 
             analyzeImplementations(implementations, imports, interfaces);
@@ -293,6 +353,10 @@ public class SnakeYAMLMojo extends AbstractMojo {
 
     Map<String, List<String>> interfaces() {
         return interfaces;
+    }
+
+    Map<String, Type> types() {
+        return types;
     }
 
     private void debugLog(Supplier<String> msgSupplier) {
@@ -452,22 +516,25 @@ public class SnakeYAMLMojo extends AbstractMojo {
         debugLog(() -> String.format("Interface impls after analyzing %s: %s", note, interfaces));
     }
 
-    // TODO Move to enhanced Helidon OpenAPI module
-//    private void addPropertySubstitutions(Map<String, Type> types) {
-//        Type pathItemType = types.get(PathItem.class.getSimpleName());
-//        if (pathItemType != null) { // might be null for tests
-//            for (PathItem.HttpMethod m : PathItem.HttpMethod.values()) {
-//                pathItemType.propertySubstitution(m.name()
-//                        .toLowerCase(), Operation.class.getSimpleName(), getter(m), setter(m));
-//            }
-//        }
-//
-//        Type schemaType = types.get(Schema.class.getSimpleName());
-//        if (schemaType != null) {
-//            schemaType.propertySubstitution("enum", List.class.getSimpleName(), "getEnumeration", "setEnumeration");
-//            schemaType.propertySubstitution("default", Object.class.getSimpleName(), "getDefaultValue", "setDefaultValue");
-//        }
-//    }
+    private void applyTypeRefinements(Map<String, Type> types, List<TypeRefinement> typeRefinements) {
+        List<String> unmatchedTypes = new ArrayList<>();
+        for (TypeRefinement typeRefinement : typeRefinements) {
+            Type t = types.get(typeRefinement.typeName());
+            if (t == null) {
+                unmatchedTypes.add(typeRefinement.typeName);
+                continue;
+            }
+            for (PropertyRefinement propertyRefinement : typeRefinement.propertyRefinements()) {
+                for (PropertySubstitution propertySubsitution : propertyRefinement.propertySubstitutions()) {
+                    t.propertySubstitution(propertyRefinement.propertyName(), propertySubsitution.propertyType(),
+                            propertySubsitution.getter(), propertySubsitution.setter());
+                }
+            }
+        }
+        if (!unmatchedTypes.isEmpty()) {
+            throw new IllegalArgumentException("Specified refined types were not found: " + unmatchedTypes.toString());
+        }
+    }
 
     private void addImportsForTypes(Map<String, Type> types, Set<Import> imports) {
         types.forEach((name, type) -> imports.add(new Import(type.fullName(), false)));
@@ -488,7 +555,8 @@ public class SnakeYAMLMojo extends AbstractMojo {
         Writer writer = new OutputStreamWriter(new FileOutputStream(outputPath.toFile()));
         MustacheFactory mf = new DefaultMustacheFactory();
         Mustache m = mf.compile("typeClassTemplate.mustache");
-        CodeGenModel model = new CodeGenModel(outputPackage, simpleClassName, types.values(), imports);
+        CodeGenModel model = new CodeGenModel(outputPackage, simpleClassName, types.values(), imports, interfacePrefix,
+                implementationPrefix);
         m.execute(writer, model);
         writer.close();
     }
@@ -496,19 +564,6 @@ public class SnakeYAMLMojo extends AbstractMojo {
     private void addGeneratedCodeToCompilation() {
         mavenProject.addCompileSourceRoot(outputDirectory.getPath());
     }
-
-    // TODO move to enhanced Helidon OpenAPI module
-//    private static String getter(PathItem.HttpMethod method) {
-//        return methodName("get", method);
-//    }
-//
-//    private static String setter(PathItem.HttpMethod method) {
-//        return methodName("set", method);
-//    }
-//
-//    private static String methodName(String operation, PathItem.HttpMethod method) {
-//        return operation + method.name();
-//    }
 
     private Path resolveDirectory(String directoryWithinProject) {
         Path baseDirPath = mavenProject.getBasedir().toPath();
@@ -632,9 +687,14 @@ public class SnakeYAMLMojo extends AbstractMojo {
 
         private void updateEnumIfNeeded(VariableTree node, Type type, String propName) {
             Tree propertyType = node.getType();
+            String referencedTypeName = null;
             if (propertyType.getKind() == Tree.Kind.IDENTIFIER) {
-                String referencedTypeName = ((IdentifierTree) propertyType).getName().toString();
+                referencedTypeName = ((IdentifierTree) propertyType).getName().toString();
+            } else if (propertyType.getKind() == Tree.Kind.MEMBER_SELECT) {
+                referencedTypeName = ((MemberSelectTree) propertyType).getIdentifier().toString();
+            }
 
+            if (referencedTypeName != null) {
                 type.getTypeEnum(referencedTypeName).ifPresent(typeEnum -> typeEnum.name(propName));
             }
         }

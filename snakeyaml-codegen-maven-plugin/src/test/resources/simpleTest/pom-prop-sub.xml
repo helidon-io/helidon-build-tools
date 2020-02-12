@@ -51,9 +51,26 @@
                         <inputDirectory>implementations</inputDirectory>
                         <includes>**/*.java</includes>
                     </implementationsConfig>
-                    <outputClass>io.helidon.codegen.snakeyaml.test.Helper</outputClass>
+                    <outputClass>io.helidon.codegen.snakeyaml.test.PropSubHelper</outputClass>
                     <implementationPrefix>io.smallrye</implementationPrefix>
                     <interfacePrefix>org.eclipse.microprofile.openapi</interfacePrefix>
+                    <typeRefinements>
+                        <typeRefinement>
+                            <typeName>org.eclipse.microprofile.openapi.models.TopLevel</typeName>
+                            <propertyRefinements>
+                                <propertyRefinement>
+                                    <propertyName>item</propertyName>
+                                    <propertySubstitutions>
+                                        <propertySubstitution>
+                                            <propertyType>java.lang.String</propertyType>
+                                            <getter>getThing</getter>
+                                            <setter>setThing</setter>
+                                        </propertySubstitution>
+                                    </propertySubstitutions>
+                                </propertyRefinement>
+                            </propertyRefinements>
+                        </typeRefinement>
+                    </typeRefinements>
                 </configuration>
             </plugin>
         </plugins>

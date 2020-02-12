@@ -27,13 +27,17 @@ class CodeGenModel {
     private String generatedClassName;
     private Collection<Type> types;
     private Set<SnakeYAMLMojo.Import> imports;
+    private String interfacePrefix;
+    private String implementationPrefix;
 
     CodeGenModel(String generatedPackageName, String generatedClassName, Collection<Type> types,
-            Set<SnakeYAMLMojo.Import> imports) {
+            Set<SnakeYAMLMojo.Import> imports, String interfacePrefix, String implementationPrefix) {
         this.generatedClassName = generatedClassName;
         this.generatedPackageName = generatedPackageName;
         this.types = types;
         this.imports = imports;
+        this.interfacePrefix = interfacePrefix;
+        this.implementationPrefix = implementationPrefix;
     }
 
     String generatedPackageName() {
@@ -53,11 +57,11 @@ class CodeGenModel {
     }
 
     List<SnakeYAMLMojo.Import> implImports() {
-        return filteredImports("io.smallrye");
+        return filteredImports(implementationPrefix);
     }
 
     List<SnakeYAMLMojo.Import> openAPIImports() {
-        return filteredImports("org.eclipse.microprofile.openapi");
+        return filteredImports(interfacePrefix);
     }
 
     private List<SnakeYAMLMojo.Import> filteredImports(String namePrefix) {

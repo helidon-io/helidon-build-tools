@@ -56,19 +56,19 @@ class {{generatedClassName}} {
 
     private {{generatedClassName}}() {
 {{#typesToAugment}}
-        TypeDescription td_{{simpleName}} = ExpandedTypeDescription.create({{simpleName}}.class, {{implementationType}}.class);
-        {{#typeEnums}}
-        td_{{simpleName}}.addEnum("{{enumName}}", {{enumType}}::valueOf);
-        {{/typeEnums}}
+        ExpandedTypeDescription td_{{simpleName}} = ExpandedTypeDescription.create({{simpleName}}.class, {{implementationType}}.class);
+        {{#typeEnumsByType}}
+        td_{{simpleName}}.addEnum("{{enumName}}", {{simpleName}}.{{enumType}}::valueOf);
+        {{/typeEnumsByType}}
         {{#ref}}
         td_{{simpleName}}.addRef();
         {{/ref}}
         {{#propertyParameters}}
         td_{{simpleName}}.addPropertyParameters("{{parameterName}}"{{#parameterTypes}}, {{parameterType}}.class{{/parameterTypes}});
         {{/propertyParameters}}
-        {{#substitutions}}
+        {{#propertySubstitutions}}
         td_{{simpleName}}.substituteProperty("{{propertySubName}}", {{propertySubType}}.class, "{{getter}}", "{{setter}}");
-        {{/substitutions}}
+        {{/propertySubstitutions}}
         types.put(td_{{simpleName}}.getType(), td_{{simpleName}});
 
 {{/typesToAugment}}
