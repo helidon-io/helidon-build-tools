@@ -87,6 +87,15 @@ public class TestFiles implements BeforeAllCallback {
     }
 
     /**
+     * Sets the target directory.
+     *
+     * @param testClass Test class.
+     */
+    public static void targetDirFromClass(Class<?> testClass) {
+        TARGET_DIR.set(targetDir(testClass));
+    }
+
+    /**
      * Returns the latest Helidon version.
      *
      * @return The version.

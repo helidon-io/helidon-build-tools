@@ -16,13 +16,6 @@
 
 package io.helidon.dev.build.steps;
 
-import java.io.File;
-import java.nio.charset.Charset;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaCompiler;
@@ -30,6 +23,12 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
+import java.io.File;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import io.helidon.dev.build.BuildComponent;
 import io.helidon.dev.build.BuildRoot;
