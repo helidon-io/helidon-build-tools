@@ -98,9 +98,6 @@ class {{generatedClassName}}<T extends TypeDescription> {
         {{#typeEnumsByType}}
         addEnum(td_{{simpleName}}, "{{enumName}}", {{simpleName}}.{{enumType}}.class);
         {{/typeEnumsByType}}
-        {{#hasDefaultProperty}}
-        markHasDefaultProperty(td_{{simpleName}});
-        {{/hasDefaultProperty}}
         {{#propertyParameters}}
         td_{{simpleName}}.addPropertyParameters("{{parameterName}}"{{#parameterTypes}}, {{parameterType}}.class{{/parameterTypes}});
         {{/propertyParameters}}
@@ -118,9 +115,5 @@ class {{generatedClassName}}<T extends TypeDescription> {
 
     private <E extends Enum<E>> void addEnum(T td, String propertyName, Class<E> enumType) {
         enumAdder.apply(td, EnumType.create(propertyName, enumType));
-    }
-
-    private void markHasDefaultProperty(T td) {
-        hasDefaultPropertyMarker.apply(td);
     }
 }

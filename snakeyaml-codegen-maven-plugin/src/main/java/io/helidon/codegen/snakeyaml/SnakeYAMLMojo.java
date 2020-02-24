@@ -642,16 +642,9 @@ public class SnakeYAMLMojo extends AbstractMojo {
                         + methodName.subSequence(4, methodName.length()).toString();
                 VariableTree propertyTree = node.getParameters().get(0);
                 updateEnumIfNeeded(propertyTree, type, propName);
-                updateHasDefaultPropertyIfNeeded(type, propName);
                 addPropertyParametersIfNeeded(propertyTree, type, propName);
             }
             return super.visitMethod(node, type);
-        }
-
-        private void updateHasDefaultPropertyIfNeeded(Type type, String propName) {
-            if ("defaultValue".equals(propName)) {
-                type.hasDefaultProperty(true);
-            }
         }
 
         private void updateEnumIfNeeded(VariableTree node, Type type, String propName) {

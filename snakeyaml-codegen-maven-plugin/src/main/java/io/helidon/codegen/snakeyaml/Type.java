@@ -49,7 +49,6 @@ class Type {
     private String implementationType;
     private boolean isRef = false;
     private boolean isExtensible = false;
-    private boolean hasDefaultProperty = false;
 
     private final Map<String, TypeEnum> typeEnumsByType = new HashMap<>();
     private final List<PropertyParameter> propertyParameters = new ArrayList<>();
@@ -142,15 +141,6 @@ class Type {
         return this;
     }
 
-    Type hasDefaultProperty(boolean value) {
-        this.hasDefaultProperty = value;
-        return this;
-    }
-
-    boolean hasDefaultProperty() {
-        return hasDefaultProperty;
-    }
-
     @Override
     public String toString() {
         return "Type{"
@@ -164,7 +154,6 @@ class Type {
                 + ", typeEnumsByType=" + typeEnumsByType
                 + ", propertyParameters=" + propertyParameters
                 + ", substitutions=" + substitutions
-                + ", hasDefaultProperty=" + hasDefaultProperty
                 + '}';
     }
 
