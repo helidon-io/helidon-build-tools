@@ -34,7 +34,6 @@ class {{generatedClassName}}<T extends TypeDescription> {
 
     private final Map<Class<?>, T> types = new HashMap<>();
     private final BiFunction<T, EnumType<?>, T> enumAdder;
-    private final Function<T, T> hasDefaultPropertyMarker;
 
     static class EnumType<E extends Enum<E>> {
         private final String propertyName;
@@ -64,9 +63,8 @@ class {{generatedClassName}}<T extends TypeDescription> {
 
     static <T extends TypeDescription> {{generatedClassName}}<T> create(
                                 BiFunction<Class<?>, Class<?>, T> factoryFunction,
-                                BiFunction<T, EnumType<?>, T> enumAdder,
-                                Function<T, T> hasDefaultPropertyMarker) {
-            return new {{generatedClassName}}<T>(factoryFunction, enumAdder, hasDefaultPropertyMarker);
+                                BiFunction<T, EnumType<?>, T> enumAdder) {
+            return new {{generatedClassName}}<T>(factoryFunction, enumAdder);
         }
 
         Map<Class<?>, T> types() {
@@ -90,9 +88,8 @@ class {{generatedClassName}}<T extends TypeDescription> {
     }
 
     private {{generatedClassName}}(BiFunction<Class<?>, Class<?>, T> factoryFunction,
-            BiFunction<T, EnumType<?>, T> enumAdder, Function<T, T> hasDefaultPropertyMarker) {
+            BiFunction<T, EnumType<?>, T> enumAdder) {
         this.enumAdder = enumAdder;
-        this.hasDefaultPropertyMarker = hasDefaultPropertyMarker;
 {{#typesToAugment}}
         T td_{{simpleName}} = factoryFunction.apply({{simpleName}}.class, {{implementationType}}.class);
         {{#typeEnumsByType}}
