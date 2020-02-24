@@ -60,6 +60,9 @@ public class TestSnakeYAMLMojo {
         Type topLevelType = mojo.types().get("org.eclipse.microprofile.openapi.models.TopLevel");
         assertNotNull(topLevelType, "Expected Type for org.eclipse.microprofile.openapi.models.TopLevel not found");
 
+        // Test the ability to set property subs after the type defs have been built.
+        topLevelType.propertySubstitution("item", String.class.getName(), "getThing", "setThing");
+
         Type.PropertySubstitution sub = null;
         for (Type.PropertySubstitution s : topLevelType.propertySubstitutions()) {
             if (s.propertySubName().equals("item")) {

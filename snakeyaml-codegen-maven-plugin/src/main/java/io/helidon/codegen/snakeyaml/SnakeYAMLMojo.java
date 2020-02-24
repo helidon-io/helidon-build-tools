@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -203,9 +204,6 @@ public class SnakeYAMLMojo extends AbstractMojo {
     @Parameter(property = PROPERTY_PREFIX + "debug", defaultValue = "false")
     private boolean debug;
 
-    @Parameter(property = PROPERTY_PREFIX + "typeRefinements")
-    private List<TypeRefinement> typeRefinements;
-
     @Parameter(property = PROPERTY_PREFIX + "implementationPrefix", required = true)
     private String implementationPrefix;
 
@@ -326,12 +324,6 @@ public class SnakeYAMLMojo extends AbstractMojo {
         try {
             analyzeInterfaces(types, imports);
 
-            /*
-             * The parsing builds most of the data model, but we need to add some additional information that is not available
-             * to the compiler processor.
-             */
-            applyTypeRefinements(types, typeRefinements);
-
             addImportsForTypes(types, imports);
 
             analyzeImplementations(implementations, imports, interfaces);
@@ -451,6 +443,9 @@ public class SnakeYAMLMojo extends AbstractMojo {
         result.add(new Import(java.util.HashMap.class));
         result.add(new Import(java.util.Map.class));
         result.add(new Import(java.util.Set.class));
+        result.add(new Import(java.util.function.Function.class));
+        result.add(new Import(java.util.function.BiFunction.class));
+        result.add(new Import(java.util.AbstractMap.class));
         return result;
     }
 
@@ -514,27 +509,55 @@ public class SnakeYAMLMojo extends AbstractMojo {
         debugLog(() -> String.format("Imports after analyzing %s: %s", note,
                 imports.stream().sorted().map(Import::toString).collect(Collectors.joining(","))));
         debugLog(() -> String.format("Interface impls after analyzing %s: %s", note, interfaces));
+
+        checkEnums(types);
     }
 
-    private void applyTypeRefinements(Map<String, Type> types, List<TypeRefinement> typeRefinements) {
-        List<String> unmatchedTypes = new ArrayList<>();
-        for (TypeRefinement typeRefinement : typeRefinements) {
-            Type t = types.get(typeRefinement.typeName());
-            if (t == null) {
-                unmatchedTypes.add(typeRefinement.typeName);
-                continue;
-            }
-            for (PropertyRefinement propertyRefinement : typeRefinement.propertyRefinements()) {
-                for (PropertySubstitution propertySubsitution : propertyRefinement.propertySubstitutions()) {
-                    t.propertySubstitution(propertyRefinement.propertyName(), propertySubsitution.propertyType(),
-                            propertySubsitution.getter(), propertySubsitution.setter());
+    private void checkEnums(Map<String, Type> types) {
+        /*
+         * We assume that enums in analyzed classes are properties (with getters and setters). If any enum type lacks a name
+         * then we will treat it as a non-property enum and remove it from the type but display a warning.
+         */
+        Map<String, List<String>> typeToIncompleteEnums = new HashMap<>();
+        types.entrySet().forEach(typeEntry -> {
+            List<Type.TypeEnum> typeEnumsToRemove = new ArrayList<>();
+            for (Type.TypeEnum typeEnum : typeEntry.getValue().typeEnumsByType()) {
+                if (typeEnum.enumName() == null || typeEnum.enumName().isEmpty()) {
+                    List<String> incompleteEnums = typeToIncompleteEnums.computeIfAbsent(typeEntry.getKey(),
+                            key -> new ArrayList<>());
+                    incompleteEnums.add(typeEnum.enumType());
+                    typeEnumsToRemove.add(typeEnum);
                 }
             }
-        }
-        if (!unmatchedTypes.isEmpty()) {
-            throw new IllegalArgumentException("Specified refined types were not found: " + unmatchedTypes.toString());
+            for (Type.TypeEnum typeEnumToRemove : typeEnumsToRemove) {
+                typeEntry.getValue().removeTypeEnum(typeEnumToRemove);
+            }
+        });
+        if (!typeToIncompleteEnums.isEmpty()) {
+            debugLog(() -> "Some enum types treated as non-properties because no setters/getters were found: "
+                    + typeToIncompleteEnums.toString());
         }
     }
+
+//    private void applyTypeRefinements(Map<String, Type> types, List<TypeRefinement> typeRefinements) {
+//        List<String> unmatchedTypes = new ArrayList<>();
+//        for (TypeRefinement typeRefinement : typeRefinements) {
+//            Type t = types.get(typeRefinement.typeName());
+//            if (t == null) {
+//                unmatchedTypes.add(typeRefinement.typeName);
+//                continue;
+//            }
+//            for (PropertyRefinement propertyRefinement : typeRefinement.propertyRefinements()) {
+//                for (PropertySubstitution propertySubsitution : propertyRefinement.propertySubstitutions()) {
+//                    t.propertySubstitution(propertyRefinement.propertyName(), propertySubsitution.propertyType(),
+//                            propertySubsitution.getter(), propertySubsitution.setter());
+//                }
+//            }
+//        }
+//        if (!unmatchedTypes.isEmpty()) {
+//            throw new IllegalArgumentException("Specified refined types were not found: " + unmatchedTypes.toString());
+//        }
+//    }
 
     private void addImportsForTypes(Map<String, Type> types, Set<Import> imports) {
         types.forEach((name, type) -> imports.add(new Import(type.fullName(), false)));
@@ -643,7 +666,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
                 }
                 types.put(typeName, newType);
                 imports.add(new Import(newType.fullName(), false));
-                updateRef(node, newType);
+                updateSpecials(node, newType);
                 /*
                  * Define enums now to make sure they are defined before they are referenced in
                  * methods handled by visitMethod.
@@ -665,10 +688,20 @@ public class SnakeYAMLMojo extends AbstractMojo {
             return super.visitImport(node, type);
         }
 
-        private void updateRef(ClassTree node, Type type) {
-            type.ref(node.getImplementsClause().stream()
-                    .filter(tree -> tree.getKind() == Tree.Kind.IDENTIFIER)
-                    .anyMatch(tree -> ((IdentifierTree) tree).getName().toString().equals("Reference")));
+        private void updateSpecials(ClassTree node, Type type) {
+            node.getImplementsClause()
+                    .forEach(tree -> {
+                        if (IdentifierTree.class.isInstance(tree)
+                                && (IdentifierTree.class.cast(tree).getName().equals("Reference"))) {
+                                    type.ref(true);
+                        } else if (ParameterizedTypeTree.class.isInstance(tree)) {
+                            Tree t = ((ParameterizedTypeTree.class.cast(tree))).getType();
+                            if (IdentifierTree.class.isInstance(t)
+                                    && (IdentifierTree.class.cast(t).getName().toString().equals("Extensible"))) {
+                                type.extensible(true);
+                            }
+                        }
+                    });
         }
 
         @Override
@@ -680,9 +713,16 @@ public class SnakeYAMLMojo extends AbstractMojo {
                         + methodName.subSequence(4, methodName.length()).toString();
                 VariableTree propertyTree = node.getParameters().get(0);
                 updateEnumIfNeeded(propertyTree, type, propName);
+                updateHasDefaultPropertyIfNeeded(type, propName);
                 addPropertyParametersIfNeeded(propertyTree, type, propName);
             }
             return super.visitMethod(node, type);
+        }
+
+        private void updateHasDefaultPropertyIfNeeded(Type type, String propName) {
+            if ("defaultValue".equals(propName)) {
+                type.hasDefaultProperty(true);
+            }
         }
 
         private void updateEnumIfNeeded(VariableTree node, Type type, String propName) {

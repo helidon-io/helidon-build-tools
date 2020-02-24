@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,9 @@ class Type {
 
     private String implementationType;
     private boolean isRef = false;
+    private boolean isExtensible = false;
+    private boolean hasDefaultProperty = false;
+
     private final Map<String, TypeEnum> typeEnumsByType = new HashMap<>();
     private final List<PropertyParameter> propertyParameters = new ArrayList<>();
 
@@ -90,8 +93,16 @@ class Type {
         return isRef;
     }
 
+    boolean isExtensible() {
+        return isExtensible;
+    }
+
     Collection<TypeEnum> typeEnumsByType() {
         return typeEnumsByType.values();
+    }
+
+    void removeTypeEnum(TypeEnum typeEnum) {
+        typeEnumsByType.remove(typeEnum.enumType());
     }
 
     List<PropertyParameter> propertyParameters() {
@@ -121,9 +132,23 @@ class Type {
         return this;
     }
 
+    Type extensible(boolean isExtensible) {
+        this.isExtensible = isExtensible;
+        return this;
+    }
+
     Type implementationType(String implType) {
         implementationType = implType;
         return this;
+    }
+
+    Type hasDefaultProperty(boolean value) {
+        this.hasDefaultProperty = value;
+        return this;
+    }
+
+    boolean hasDefaultProperty() {
+        return hasDefaultProperty;
     }
 
     @Override
@@ -133,11 +158,13 @@ class Type {
                 + ", simpleName='" + simpleName + '\''
                 + ", interfacesImplemented=" + interfacesImplemented
                 + ", isInterface=" + isInterface
+                + ", isExtensible=" + isExtensible
                 + ", implementationType='" + implementationType + '\''
                 + ", isRef=" + isRef
                 + ", typeEnumsByType=" + typeEnumsByType
                 + ", propertyParameters=" + propertyParameters
                 + ", substitutions=" + substitutions
+                + ", hasDefaultProperty=" + hasDefaultProperty
                 + '}';
     }
 
