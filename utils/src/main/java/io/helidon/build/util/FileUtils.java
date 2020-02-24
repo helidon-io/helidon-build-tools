@@ -95,6 +95,7 @@ public final class FileUtils {
      * @return The absolute, normalized destination directory.
      * @throws IllegalArgumentException If the destination exists.
      */
+    @SuppressWarnings("CaughtExceptionImmediatelyRethrown")
     public static Path copyDirectory(Path source, Path destination) {
         assertDoesNotExist(destination);
         try {
@@ -126,8 +127,20 @@ public final class FileUtils {
      * @return The normalized, absolute file paths.
      */
     public static List<Path> listFiles(Path directory, Predicate<String> fileNameFilter) {
+        return listFiles(directory, fileNameFilter, 1);
+    }
+
+    /**
+     * List all files in the given directory that match the given filter, recursively if maxDepth > 1.
+     *
+     * @param directory The directory.
+     * @param fileNameFilter The filter.
+     * @param maxDepth The maximum recursion depth.
+     * @return The normalized, absolute file paths.
+     */
+    public static List<Path> listFiles(Path directory, Predicate<String> fileNameFilter, int maxDepth) {
         try {
-            return Files.find(assertDir(directory), 1, (path, attrs) ->
+            return Files.find(assertDir(directory), maxDepth, (path, attrs) ->
                 attrs.isRegularFile() && fileNameFilter.test(path.getFileName().toString())
             ).collect(Collectors.toList());
         } catch (IOException e) {

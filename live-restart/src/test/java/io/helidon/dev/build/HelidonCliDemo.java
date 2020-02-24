@@ -22,19 +22,17 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.nio.file.Path;
-import java.util.Locale;
 import java.util.Optional;
 
+import io.helidon.build.util.HelidonVariant;
+import io.helidon.build.util.QuickstartGenerator;
 import io.helidon.dev.mode.DevModeLoop;
-import io.helidon.dev.mode.QuickstartGenerator;
-
-import static io.helidon.dev.mode.QuickstartGenerator.HelidonVariant;
 
 /**
  * Class HelidonCli.
  */
 public class HelidonCliDemo {
-    private static final String USAGE = "Usage: helidon init [se | mp] [--version <version>]| dev [--clean]";
+    private static final String USAGE = "Usage: helidon init [se | mp] [--version <version>] | dev [--clean]";
     private static final String DOT_HELIDON = ".helidon";
     private static final Path CWD = Path.of(".");
 
@@ -59,7 +57,7 @@ public class HelidonCliDemo {
             } else if (command == null) {
                 command = arg;
             } else if (command.equals("init")) {
-                variant = HelidonVariant.valueOf(argAt(++i, args).toUpperCase(Locale.ENGLISH));
+                variant = HelidonVariant.parse(argAt(++i, args));
             } else {
                 displayHelpAndExit(1);
             }
@@ -89,7 +87,7 @@ public class HelidonCliDemo {
         Optional<Path> rootDir = readRootDir();
         if (rootDir.isEmpty()) {
             storeRootDir(QuickstartGenerator.generator()
-                                            .projectDirectory(CWD)
+                                            .parentDirectory(CWD)
                                             .helidonVariant(variant)
                                             .helidonVersion(version)
                                             .generate());

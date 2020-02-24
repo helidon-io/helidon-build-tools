@@ -24,25 +24,28 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.FileUtils;
+import io.helidon.build.util.HelidonVariant;
 import io.helidon.build.util.Instance;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.Maven;
 import io.helidon.build.util.ProcessMonitor;
+import io.helidon.build.util.QuickstartGenerator;
 
 import org.eclipse.aether.version.Version;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.helidon.build.util.Constants.DIR_SEP;
-import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
 import static io.helidon.build.util.FileUtils.lastModifiedTime;
@@ -55,13 +58,12 @@ public class TestFiles implements BeforeAllCallback {
     private static final String MAVEN_EXEC = Constants.OS.mavenExec();
     private static final String HELIDON_GROUP_ID = "io.helidon";
     private static final String HELIDON_PROJECT_ID = "helidon-project";
-    private static final String ARCHETYPES_GROUP_ID = "io.helidon.archetypes";
     private static final String HELIDON_QUICKSTART_PREFIX = "helidon-quickstart-";
-    private static final String QUICKSTART_PACKAGE_PREFIX = "io.helidon.examples.quickstart.";
     private static final String SIGNED_JAR_COORDINATES = "org.bouncycastle:bcpkix-jdk15on:1.60";
     private static final String VERSION_1_4_1 = "1.4.1";
+    private static final String SNAPSHOT_SUFFIX = "-SNAPSHOT";
+    private static final Set<String> EXCLUDED_VERSIONS = Collections.singleton("2.0.0-M1");
     private static final AtomicReference<Path> TARGET_DIR = new AtomicReference<>();
-    private static final Instance<Maven> MAVEN = new Instance<>(TestFiles::createMaven);
     private static final Instance<Version> LATEST_HELIDON_VERSION = new Instance<>(TestFiles::lookupLatestHelidonVersion);
     private static final Instance<Path> SE_JAR = new Instance<>(TestFiles::getOrCreateQuickstartSeJar);
     private static final Instance<Path> MP_JAR = new Instance<>(TestFiles::getOrCreateQuickstartMpJar);
@@ -84,15 +86,6 @@ public class TestFiles implements BeforeAllCallback {
      */
     public static Path targetDir() {
         return requireNonNull(TARGET_DIR.get());
-    }
-
-    /**
-     * Sets the target directory.
-     *
-     * @param testClass Test class.
-     */
-    public static void targetDirFromClass(Class<?> testClass) {
-        TARGET_DIR.set(targetDir(testClass));
     }
 
     /**
@@ -130,7 +123,7 @@ public class TestFiles implements BeforeAllCallback {
      */
     public static Path helidonSeProject() {
         helidonSeJar(); // ensure created.
-        return targetDir().resolve(quickstartId("se"));
+        return targetDir().resolve(quickstartId(HelidonVariant.SE));
     }
 
     /**
@@ -139,7 +132,7 @@ public class TestFiles implements BeforeAllCallback {
      * @return The directory.
      */
     public static Path helidonSeProjectCopy() {
-        return copyQuickstartProject("se", SE_COPY_NUMBER);
+        return copyQuickstartProject(HelidonVariant.SE, SE_COPY_NUMBER);
     }
 
     /**
@@ -158,7 +151,7 @@ public class TestFiles implements BeforeAllCallback {
      */
     public static Path helidonMpProject() {
         helidonMpJar(); // ensure created.
-        return targetDir().resolve(quickstartId("mp"));
+        return targetDir().resolve(quickstartId(HelidonVariant.MP));
     }
 
     /**
@@ -167,7 +160,7 @@ public class TestFiles implements BeforeAllCallback {
      * @return The directory.
      */
     public static Path helidonMpProjectCopy() {
-        return copyQuickstartProject("mp", MP_COPY_NUMBER);
+        return copyQuickstartProject(HelidonVariant.MP, MP_COPY_NUMBER);
     }
 
     /**
@@ -225,26 +218,24 @@ public class TestFiles implements BeforeAllCallback {
      * @return The instance.
      */
     public static Maven maven() {
-        return MAVEN.instance();
-    }
-
-    private static Maven createMaven() {
-        if (System.getProperty("dump.env") != null) {
-            Log.info("\n--- Environment ---- \n");
-            System.getenv().forEach((key, value) -> Log.info("    %s = %s", key, value));
-            Log.info("\n--- System Properties ---- \n");
-            System.getProperties().forEach((key, value) -> Log.info("    %s = %s", key, value));
-        }
-        return Maven.builder().build();
+        return Maven.instance();
     }
 
     private static Version lookupLatestHelidonVersion() {
-        Log.info("Looking up latest Helidon 1.x release version (2.0.0-M1 doesn't exit.on.started)");
-        // final Version version = maven().latestVersion(HELIDON_GROUP_ID, HELIDON_PROJECT_ID, false);
-        final String coordinates = Maven.toCoordinates(HELIDON_GROUP_ID, HELIDON_PROJECT_ID, "[1.0,1.9.999]");
-        final Version version = maven().latestVersion(coordinates, false);
+        Log.info("Looking up latest release version (excluding %s)", EXCLUDED_VERSIONS);
+        final Version version = maven().latestVersion(HELIDON_GROUP_ID, HELIDON_PROJECT_ID, TestFiles::isAcceptableRelease);
         Log.info("Using Helidon release version %s", version);
         return version;
+    }
+
+    private static boolean isAcceptableRelease(Version version) {
+        final String v = version.toString();
+        return !v.endsWith(SNAPSHOT_SUFFIX) && !EXCLUDED_VERSIONS.contains(v);
+    }
+
+    private static boolean isSelectedVersion(Version version) {
+        final Version selected = latestHelidonVersion();
+        return selected.equals(version);
     }
 
     private static Path fetchSignedJar() {
@@ -262,37 +253,44 @@ public class TestFiles implements BeforeAllCallback {
     }
 
     private static Path getOrCreateQuickstartSeJar() {
-        return getOrCreateQuickstartJar("se");
+        return getOrCreateQuickstartJar(HelidonVariant.SE);
     }
 
     private static Path getOrCreateQuickstartMpJar() {
-        return getOrCreateQuickstartJar("mp");
+        return getOrCreateQuickstartJar(HelidonVariant.MP);
     }
 
-    private static Path getOrCreateQuickstartJar(String helidonVariant) {
-        final String id = quickstartId(helidonVariant);
+    private static Path getOrCreateQuickstartJar(HelidonVariant variant) {
+        final String id = quickstartId(variant);
         final Path sourceDir = targetDir().resolve(id);
         if (Files.exists(sourceDir)) {
             return quickstartJar(sourceDir, id);
         } else {
-            return createQuickstartJar(helidonVariant);
+            return createQuickstartJar(variant);
         }
     }
 
-    private static Path createQuickstartJar(String helidonVariant) {
-        createQuickstartProject(helidonVariant);
-        return buildQuickstartProject(helidonVariant);
+    private static Path createQuickstartJar(HelidonVariant variant) {
+        final Path projectDir = createQuickstartProject(variant);
+        return buildQuickstartProject(variant, projectDir);
     }
 
-    private static Path buildQuickstartProject(String helidonVariant) {
-        final String id = quickstartId(helidonVariant);
-        final Path sourceDir = assertDir(targetDir().resolve(id));
+    private static Path createQuickstartProject(HelidonVariant variant) {
+        return QuickstartGenerator.generator()
+                                  .helidonVariant(variant)
+                                  .parentDirectory(targetDir())
+                                  .helidonVersion(TestFiles::isSelectedVersion)
+                                  .generate();
+    }
+
+    private static Path buildQuickstartProject(HelidonVariant variant, Path projectDir) {
+        final String id = quickstartId(variant);
         Log.info("Building %s", id);
 
         // Make sure we use the current JDK by forcing it first in the path and setting JAVA_HOME. This might be required
         // if we're in an IDE whose process was started with a different JDK.
 
-        final ProcessBuilder builder = new ProcessBuilder().directory(sourceDir.toFile())
+        final ProcessBuilder builder = new ProcessBuilder().directory(projectDir.toFile())
                                                            .command(List.of(MAVEN_EXEC, "clean", "package", "-DskipTests"));
         final String javaHome = System.getProperty("java.home");
         final String javaHomeBin = javaHome + File.separator + "bin";
@@ -302,47 +300,27 @@ public class TestFiles implements BeforeAllCallback {
         env.put("JAVA_HOME", javaHome);
 
         execute(builder);
-        return quickstartJar(sourceDir, id);
+        return quickstartJar(projectDir, id);
     }
 
-    private static Path quickstartJar(Path sourceDir, String id) {
-        return assertFile(sourceDir.resolve("target" + DIR_SEP + id + ".jar"));
+    private static Path quickstartJar(Path projectDir, String id) {
+        return assertFile(projectDir.resolve("target" + DIR_SEP + id + ".jar"));
     }
 
-    private static String quickstartId(String helidonVariant) {
-        return HELIDON_QUICKSTART_PREFIX + helidonVariant;
+    private static String quickstartId(HelidonVariant variant) {
+        return HELIDON_QUICKSTART_PREFIX + variant;
     }
 
-    private static Path createQuickstartProject(String helidonVariant) {
-        final Path targetDir = targetDir();
-        final String id = quickstartId(helidonVariant);
-        final String pkg = QUICKSTART_PACKAGE_PREFIX + helidonVariant;
-        final Version archetypeVersion = latestHelidonVersion();
-        Log.info("Creating %s from archetype %s", id, archetypeVersion);
-        execute(new ProcessBuilder().directory(targetDir.toFile())
-                                    .command(List.of(MAVEN_EXEC,
-                                                     "archetype:generate",
-                                                     "-DinteractiveMode=false",
-                                                     "-DarchetypeGroupId=" + ARCHETYPES_GROUP_ID,
-                                                     "-DarchetypeArtifactId=" + id,
-                                                     "-DarchetypeVersion=" + archetypeVersion,
-                                                     "-DgroupId=test",
-                                                     "-DartifactId=" + id,
-                                                     "-Dpackage=" + pkg
-                                    )));
-        return assertDir(targetDir.resolve(id));
-    }
-
-    private static Path directory(String helidonVariant, int copyNumber) {
-        final String id = quickstartId(helidonVariant) + "-" + copyNumber;
+    private static Path directory(HelidonVariant variant, int copyNumber) {
+        final String id = quickstartId(variant) + "-" + copyNumber;
         return targetDir().resolve(id);
     }
 
-    private static Path copyQuickstartProject(String helidonVariant, AtomicInteger copyNumber) {
+    private static Path copyQuickstartProject(HelidonVariant variant, AtomicInteger copyNumber) {
         final Path sourceDir = helidonSeProject();
-        Path copyDir = directory(helidonVariant, copyNumber.getAndIncrement());
+        Path copyDir = directory(variant, copyNumber.getAndIncrement());
         while (Files.exists(copyDir)) {
-            copyDir = directory(helidonVariant, copyNumber.getAndIncrement());
+            copyDir = directory(variant, copyNumber.getAndIncrement());
         }
         return FileUtils.copyDirectory(sourceDir, copyDir);
     }
