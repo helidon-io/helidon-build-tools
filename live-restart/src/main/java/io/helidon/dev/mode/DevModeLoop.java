@@ -31,17 +31,18 @@ import io.helidon.dev.build.maven.DefaultHelidonProjectSupplier;
  * Class DevModeLoop.
  */
 public class DevModeLoop {
-
     private final Path rootDir;
+    private final boolean initialClean;
 
-    public DevModeLoop(Path rootDir) {
+    public DevModeLoop(Path rootDir, boolean initialClean) {
         this.rootDir = rootDir;
+        this.initialClean = initialClean;
     }
 
     public void start(int maxWaitInSeconds) throws Exception {
         DevModeMonitor monitor = new DevModeMonitor();
         Runtime.getRuntime().addShutdownHook(new Thread(monitor::onStopped));
-        BuildLoop loop = newLoop(rootDir, false, false, monitor);
+        BuildLoop loop = newLoop(rootDir, initialClean, false, monitor);
         run(loop, maxWaitInSeconds);
     }
 
@@ -49,13 +50,10 @@ public class DevModeLoop {
         private static final int ON_READY_DELAY = 1000;
         private static final int ON_BUILD_FAIL_DELAY = 10000;
 
-        private boolean start;
-        private boolean restart;
         private ProjectExecutor projectExecutor;
 
         @Override
         public void onStarted() {
-            start = true;
         }
 
         @Override
@@ -64,28 +62,26 @@ public class DevModeLoop {
 
         @Override
         public void onChanged(int cycleNumber, boolean binariesOnly) {
+            ensureStop();
         }
 
         @Override
         public void onBuildStart(int cycleNumber, BuildType type) {
-            restart = true;
         }
 
         @Override
         public long onBuildFail(int cycleNumber, Throwable error) {
-            restart = false;
+            ensureStop();
             return ON_BUILD_FAIL_DELAY;
         }
 
         @Override
         public long onReady(int cycleNumber, Project project) {
-            ensureProjectExecutor(project);
-            if (start) {
+            if (projectExecutor == null) {
+                projectExecutor = new ProjectExecutor(project);
                 projectExecutor.start();
-                start = false;
-            } else if (restart) {
-                projectExecutor.restart();
-                restart = false;
+            } else if (!projectExecutor.isRunning()) {
+                projectExecutor.start();
             }
             return ON_READY_DELAY;
         }
@@ -97,14 +93,12 @@ public class DevModeLoop {
 
         @Override
         public void onStopped() {
-            if (projectExecutor != null) {
-                projectExecutor.stop();
-            }
+            ensureStop();
         }
 
-        private void ensureProjectExecutor(Project project) {
-            if (projectExecutor == null) {
-                projectExecutor = new ProjectExecutor(project);
+        private void ensureStop() {
+            if (projectExecutor != null) {
+                projectExecutor.stop();
             }
         }
     }
@@ -135,5 +129,4 @@ public class DevModeLoop {
         }
         return (T) loop.monitor();
     }
-
 }

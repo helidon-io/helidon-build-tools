@@ -106,7 +106,7 @@ public class Maven {
         final int lastIndex = versions.size() - 1;
         return IntStream.rangeClosed(0, lastIndex)
                         .mapToObj(index -> versions.get(lastIndex - index))
-                        .filter(version -> !version.toString().endsWith(SNAPSHOT_SUFFIX))
+                        .filter(version -> allowSnapshot || !version.toString().endsWith(SNAPSHOT_SUFFIX))
                         .findFirst()
                         .orElseThrow(() -> new IllegalStateException("no non-snapshot version found!"));
     }

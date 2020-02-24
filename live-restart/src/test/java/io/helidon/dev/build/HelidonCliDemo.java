@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.Optional;
 
 import io.helidon.dev.mode.DevModeLoop;
@@ -31,50 +32,77 @@ import static io.helidon.dev.mode.QuickstartGenerator.HelidonVariant;
 
 /**
  * Class HelidonCli.
- *
- * Usage: helidon (init [se | mp] | dev)
  */
 public class HelidonCliDemo {
-
+    private static final String USAGE = "Usage: helidon init [se | mp] [--version <version>]| dev [--clean]";
     private static final String DOT_HELIDON = ".helidon";
     private static final Path CWD = Path.of(".");
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 1) {
-            displayHelpAndExit();
-        }
-        if (args[0].equalsIgnoreCase("init")) {
-            HelidonVariant variant = HelidonVariant.SE;
-            if (args.length > 1) {
-                try {
-                    variant = HelidonVariant.valueOf(args[1]);
-                } catch (IllegalArgumentException e) {
-                    displayHelpAndExit();
+        String command = null;
+        HelidonVariant variant = HelidonVariant.SE;
+        String version = null;
+        boolean clean = false;
+
+        for (int i = 0; i < args.length; i++) {
+            final String arg = args[i];
+            if (arg.startsWith("--")) {
+                if ("init".equals(command) && arg.equals("--version")) {
+                    version = argAt(++i, args);
+                } else if ("dev".equals(command) && arg.equalsIgnoreCase("--clean")) {
+                    clean = true;
+                } else if (arg.equals("--help")) {
+                    displayHelpAndExit(0);
+                } else {
+                    displayHelpAndExit(1);
                 }
+            } else if (command == null) {
+                command = arg;
+            } else if (command.equals("init")) {
+                variant = HelidonVariant.valueOf(argAt(++i, args).toUpperCase(Locale.ENGLISH));
+            } else {
+                displayHelpAndExit(1);
             }
-            helidonInit(variant);
-        } else if (args[0].equalsIgnoreCase("dev")) {
-            helidonDev();
+        }
+        if (command == null) {
+            displayHelpAndExit(1);
+        } else if (command.equals("init")) {
+            helidonInit(variant, version);
+        } else if (command.equals("dev")) {
+            helidonDev(clean);
         } else {
-            displayHelpAndExit();
+            displayHelpAndExit(1);
         }
     }
 
-    private static void helidonInit(HelidonVariant variant) throws Exception {
+    private static String argAt(int index, String[] args) {
+        if (index < args.length) {
+            return args[index];
+        } else {
+            System.err.println(args[index - 1] + ": missing required argument");
+            displayHelpAndExit(1);
+            return "";
+        }
+    }
+
+    private static void helidonInit(HelidonVariant variant, String version) throws Exception {
         Optional<Path> rootDir = readRootDir();
         if (rootDir.isEmpty()) {
-            QuickstartGenerator generator = new QuickstartGenerator(CWD);
-            storeRootDir(generator.generate(variant));
+            storeRootDir(QuickstartGenerator.generator()
+                                            .projectDirectory(CWD)
+                                            .helidonVariant(variant)
+                                            .helidonVersion(version)
+                                            .generate());
         } else {
             System.err.println("Project '" + rootDir.get() + "' already exists");
             System.exit(2);
         }
     }
 
-    private static void helidonDev() throws Exception {
+    private static void helidonDev(boolean clean) throws Exception {
         Optional<Path> rootDir = readRootDir();
         if (rootDir.isPresent()) {
-            DevModeLoop loop = new DevModeLoop(rootDir.get());
+            DevModeLoop loop = new DevModeLoop(rootDir.get(), clean);
             loop.start(60 * 60);
         } else {
             System.err.println("Please run init command first");
@@ -82,9 +110,9 @@ public class HelidonCliDemo {
         }
     }
 
-    private static void displayHelpAndExit() {
-        System.out.println("Usage: helidon (init [se | mp] | dev)");
-        System.exit(1);
+    private static void displayHelpAndExit(int status) {
+        System.out.println(USAGE);
+        System.exit(status);
     }
 
     private static void storeRootDir(Path rootDir) throws Exception {

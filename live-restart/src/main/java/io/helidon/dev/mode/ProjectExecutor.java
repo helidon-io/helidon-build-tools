@@ -44,7 +44,7 @@ public class ProjectExecutor {
     public enum ExecutionMode {
         JAVA,
         MAVEN
-    };
+    }
 
     private final ExecutionMode mode;
     private final Project project;
@@ -89,6 +89,10 @@ public class ProjectExecutor {
             Log.info("Process with PID " + processHandle.pid() + " stopped");
             processHandle = null;
         }
+    }
+
+    public boolean isRunning() {
+        return processHandle != null;
     }
 
     public void restart() {

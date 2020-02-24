@@ -184,9 +184,7 @@ public class Project {
                     classpath.add(component.outputRoot().path());
                 }
             });
-            dependencies.forEach(dependency -> {
-                classpath.add(dependency.path());
-            });
+            dependencies.forEach(dependency -> classpath.add(dependency.path()));
 
             return new Project(this);
         }
@@ -363,6 +361,9 @@ public class Project {
                     }
                 }
             }
+        }
+        if (oldestBinary == 0) {
+            return false;   // Not yet built.
         }
         for (final BuildFile file : dependencies()) {
             final long lastModified = file.lastModifiedTime();
