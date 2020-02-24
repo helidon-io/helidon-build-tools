@@ -33,47 +33,18 @@ import org.yaml.snakeyaml.TypeDescription;
 class {{generatedClassName}}<T extends TypeDescription> {
 
     private final Map<Class<?>, T> types = new HashMap<>();
-    private final BiFunction<T, EnumType<?>, T> enumAdder;
-
-    static class EnumType<E extends Enum<E>> {
-        private final String propertyName;
-        private final Class<E> enumType;
-
-        static <E extends Enum<E>> EnumType create(String propertyName, Class<E> enumType) {
-            return new EnumType<E>(propertyName, enumType);
-        }
-
-        String propertyName() {
-            return propertyName;
-        }
-
-        Class<E> enumType() {
-            return enumType;
-        }
-
-        E valueOf(String value) {
-            return Enum.valueOf(enumType, value);
-        }
-
-        private EnumType(String propertyName, Class<E> enumType) {
-            this.propertyName = propertyName;
-            this.enumType = enumType;
-        }
+    static <T extends TypeDescription> {{generatedClassName}}<T> create(
+                            BiFunction<Class<?>, Class<?>, T> factoryFunction) {
+        return new {{generatedClassName}}<T>(factoryFunction);
     }
 
-    static <T extends TypeDescription> {{generatedClassName}}<T> create(
-                                BiFunction<Class<?>, Class<?>, T> factoryFunction,
-                                BiFunction<T, EnumType<?>, T> enumAdder) {
-            return new {{generatedClassName}}<T>(factoryFunction, enumAdder);
-        }
+    Map<Class<?>, T> types() {
+        return types;
+    }
 
-        Map<Class<?>, T> types() {
-            return types;
-        }
-
-        Set<Map.Entry<Class<?>, T>> entrySet() {
-            return types.entrySet();
-        }
+    Set<Map.Entry<Class<?>, T>> entrySet() {
+        return types.entrySet();
+    }
 
     Set<Class<?>> keySet() {
         return types.keySet();
@@ -87,14 +58,9 @@ class {{generatedClassName}}<T extends TypeDescription> {
         return types.get(clazz);
     }
 
-    private {{generatedClassName}}(BiFunction<Class<?>, Class<?>, T> factoryFunction,
-            BiFunction<T, EnumType<?>, T> enumAdder) {
-        this.enumAdder = enumAdder;
+    private {{generatedClassName}}(BiFunction<Class<?>, Class<?>, T> factoryFunction) {
 {{#typesToAugment}}
         T td_{{simpleName}} = factoryFunction.apply({{simpleName}}.class, {{implementationType}}.class);
-        {{#typeEnumsByType}}
-        addEnum(td_{{simpleName}}, "{{enumName}}", {{simpleName}}.{{enumType}}.class);
-        {{/typeEnumsByType}}
         {{#propertyParameters}}
         td_{{simpleName}}.addPropertyParameters("{{parameterName}}"{{#parameterTypes}}, {{parameterType}}.class{{/parameterTypes}});
         {{/propertyParameters}}
@@ -108,9 +74,5 @@ class {{generatedClassName}}<T extends TypeDescription> {
         types.put(td_{{simpleName}}.getType(), td_{{simpleName}});
 
 {{/typesToAugment}}
-    }
-
-    private <E extends Enum<E>> void addEnum(T td, String propertyName, Class<E> enumType) {
-        enumAdder.apply(td, EnumType.create(propertyName, enumType));
     }
 }

@@ -50,7 +50,7 @@ class Type {
     private boolean isRef = false;
     private boolean isExtensible = false;
 
-    private final Map<String, TypeEnum> typeEnumsByType = new HashMap<>();
+//    private final Map<String, TypeEnum> typeEnumsByType = new HashMap<>();
     private final List<PropertyParameter> propertyParameters = new ArrayList<>();
 
     // Prop subs are recorded here but are set from the caller, not by the compilation/analysis.
@@ -63,10 +63,10 @@ class Type {
         this.interfacesImplemented = interfacesImplemented;
     }
 
-    Type typeEnumByType(String type) {
-        typeEnumsByType.computeIfAbsent(type, TypeEnum::byType);
-        return this;
-    }
+//    Type typeEnumByType(String type) {
+//        typeEnumsByType.computeIfAbsent(type, TypeEnum::byType);
+//        return this;
+//    }
 
     String fullName() {
         return fullName;
@@ -96,13 +96,9 @@ class Type {
         return isExtensible;
     }
 
-    Collection<TypeEnum> typeEnumsByType() {
-        return typeEnumsByType.values();
-    }
-
-    void removeTypeEnum(TypeEnum typeEnum) {
-        typeEnumsByType.remove(typeEnum.enumType());
-    }
+//    void removeTypeEnum(TypeEnum typeEnum) {
+//        typeEnumsByType.remove(typeEnum.enumType());
+//    }
 
     List<PropertyParameter> propertyParameters() {
         return propertyParameters;
@@ -112,9 +108,9 @@ class Type {
         return substitutions;
     }
 
-    Optional<TypeEnum> getTypeEnum(String type) {
-        return Optional.ofNullable(typeEnumsByType.get(type));
-    }
+//    Optional<TypeEnum> getTypeEnum(String type) {
+//        return Optional.ofNullable(typeEnumsByType.get(type));
+//    }
 
     Type propertyParameter(String name, List<String> types) {
         propertyParameters.add(new PropertyParameter(name, types));
@@ -151,56 +147,56 @@ class Type {
                 + ", isExtensible=" + isExtensible
                 + ", implementationType='" + implementationType + '\''
                 + ", isRef=" + isRef
-                + ", typeEnumsByType=" + typeEnumsByType
+//                + ", typeEnumsByType=" + typeEnumsByType
                 + ", propertyParameters=" + propertyParameters
                 + ", substitutions=" + substitutions
                 + '}';
     }
 
-    static class TypeEnum {
-        private String enumName;
-        private String enumType;
-
-        static TypeEnum byType(String enumType) {
-            TypeEnum result = new TypeEnum();
-            result.enumType = enumType;
-            return result;
-        }
-
-        static TypeEnum fromName(String name) {
-            TypeEnum result = new TypeEnum();
-            result.enumName = name;
-            return result;
-        }
-
-        private TypeEnum() {}
-
-        TypeEnum name(String name) {
-            enumName = name;
-            return this;
-        }
-
-        TypeEnum type(String type) {
-            enumType = type;
-            return this;
-        }
-
-        String enumName() {
-            return enumName;
-        }
-
-        String enumType() {
-            return enumType;
-        }
-
-        @Override
-        public String toString() {
-            return "TypeEnum{"
-                    + "enumName='" + enumName + '\''
-                    + ", enumType='" + enumType + '\''
-                    + '}';
-        }
-    }
+//    static class TypeEnum {
+//        private String enumName;
+//        private String enumType;
+//
+//        static TypeEnum byType(String enumType) {
+//            TypeEnum result = new TypeEnum();
+//            result.enumType = enumType;
+//            return result;
+//        }
+//
+//        static TypeEnum fromName(String name) {
+//            TypeEnum result = new TypeEnum();
+//            result.enumName = name;
+//            return result;
+//        }
+//
+//        private TypeEnum() {}
+//
+//        TypeEnum name(String name) {
+//            enumName = name;
+//            return this;
+//        }
+//
+//        TypeEnum type(String type) {
+//            enumType = type;
+//            return this;
+//        }
+//
+//        String enumName() {
+//            return enumName;
+//        }
+//
+//        String enumType() {
+//            return enumType;
+//        }
+//
+//        @Override
+//        public String toString() {
+//            return "TypeEnum{"
+//                    + "enumName='" + enumName + '\''
+//                    + ", enumType='" + enumType + '\''
+//                    + '}';
+//        }
+//    }
 
     static class PropertyParameter {
         private final String parameterName;
