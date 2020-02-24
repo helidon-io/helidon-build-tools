@@ -25,6 +25,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -41,14 +42,16 @@ public class BuildLoop {
     private final Consumer<String> stdErr;
     private final ProjectSupplier projectSupplier;
     private final BuildMonitor monitor;
-    private final boolean clean;
     private final boolean watchBinariesOnly;
+    private final AtomicBoolean clean;
     private final AtomicBoolean run;
     private final AtomicInteger cycleNumber;
     private final AtomicReference<Future<?>> task;
     private final AtomicReference<CountDownLatch> running;
     private final AtomicReference<CountDownLatch> stopped;
     private final AtomicReference<Project> project;
+    private final AtomicBoolean ready;
+    private final AtomicLong delay;
 
     /**
      * Returns a new builder.
@@ -65,14 +68,16 @@ public class BuildLoop {
         this.stdErr = builder.stdErr;
         this.projectSupplier = builder.projectSupplier;
         this.monitor = builder.monitor;
-        this.clean = builder.clean;
         this.watchBinariesOnly = builder.watchBinariesOnly;
+        this.clean = new AtomicBoolean(builder.clean);
         this.run = new AtomicBoolean();
         this.cycleNumber = new AtomicInteger(0);
         this.task = new AtomicReference<>();
         this.running = new AtomicReference<>(new CountDownLatch(1));
         this.stopped = new AtomicReference<>(new CountDownLatch(1));
         this.project = new AtomicReference<>();
+        this.ready = new AtomicBoolean();
+        this.delay = new AtomicLong();
     }
 
     /**
@@ -133,32 +138,26 @@ public class BuildLoop {
      * @return {@code true} if the loop stopped, {@code false} if a timeout occurred.
      * @throws InterruptedException If interrupted.
      */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean waitForStopped(long timeout, TimeUnit unit) throws InterruptedException {
         return stopped.get().await(timeout, unit);
     }
 
     private void loop() {
-        long delay;
-        running.get().countDown();
-        monitor.onStarted();
-        boolean clean = this.clean; // Only do this once
+        started();
         while (run.get()) {
-            Project project = this.project.get();
-            final int cycleNumber = this.cycleNumber.get();
-            monitor.onCycleStart(cycleNumber);
+            final Project project = cycleStarted();
             if (project == null) {
 
-                // Need to create/recreate the project
+                // Need to create/recreate the project. Note that supplier calls onBuildStart().
 
                 try {
-                    setProject(projectSupplier.get(projectDirectory, monitor, clean, cycleNumber));
-                    project = this.project.get();
-                    clean = false;
-                    delay = monitor.onReady(cycleNumber, project);
+                    setProject(projectSupplier.get(projectDirectory, monitor, clean.getAndSet(false), cycleNumber.get()));
+                    ready();
                 } catch (IllegalArgumentException | InterruptedException e) {
                     break;
                 } catch (Throwable e) {
-                    delay = monitor.onBuildFail(cycleNumber, e);
+                    buildFailed(e);
                 }
 
             } else if (watchBinariesOnly) {
@@ -168,19 +167,15 @@ public class BuildLoop {
                 // we must recreate the project.
 
                 if (project.hasBinaryChanges()) {
-                    setProject(null);
-                    monitor.onChanged(cycleNumber, true);
-                    delay = 0;
+                    changed(true, true);
                 } else {
-                    delay = monitor.onReady(cycleNumber, project);
+                    ready();
                 }
             } else if (project.haveBuildSystemFilesChanged()) {
 
                 // A build system file (e.g. pom.xml) has changed, so recreate the project
 
-                clearProject();
-                monitor.onChanged(cycleNumber, false);
-                delay = 0;
+                changed(true, false);
 
             } else {
 
@@ -188,44 +183,81 @@ public class BuildLoop {
 
                 final List<BuildRoot.Changes> sourceChanges = project.sourceChanges();
                 if (sourceChanges.isEmpty()) {
-                    delay = monitor.onReady(cycleNumber, project);
+                    ready();
                 } else {
                     try {
-                        monitor.onChanged(cycleNumber, false);
-                        monitor.onBuildStart(cycleNumber, BuildType.Incremental);
+                        changed(false, false);
+                        buildStarting(BuildType.Incremental);
                         project.incrementalBuild(sourceChanges, stdOut, stdErr);
                         project.update();
-                        delay = monitor.onReady(cycleNumber, project);
+                        ready();
                     } catch (InterruptedException e) {
                         break;
                     } catch (Throwable e) {
-                        delay = monitor.onBuildFail(cycleNumber, e);
+                        buildFailed(e);
                     }
                 }
             }
 
             // Delay if needed
 
-            if (delay > 0) {
+            if (delay.get() > 0) {
                 try {
-                    Thread.sleep(delay);
+                    Thread.sleep(delay.get());
                 } catch (InterruptedException e) {
                     break;
                 }
             }
-            run.set(monitor.onCycleEnd(cycleNumber));
-            this.cycleNumber.addAndGet(1);
+            run.set(cycleEnded());
         }
+        stopped();
+    }
+
+    private void started() {
+        running.get().countDown();
+        monitor.onStarted();
+    }
+
+    private Project cycleStarted() {
+        monitor.onCycleStart(cycleNumber.get());
+        return project.get();
+    }
+
+    private void buildStarting(BuildType type) {
+        ready.set(false);
+        monitor.onBuildStart(cycleNumber.get(), type);
+    }
+
+    private void ready() {
+        if (!ready.getAndSet(true)) {
+            delay.set(monitor.onReady(cycleNumber.get(), project.get()));
+        }
+    }
+
+    private void changed(boolean clearProject, boolean binariesOnly) {
+        monitor.onChanged(cycleNumber.get(), binariesOnly);
+        delay.set(0);
+        if (clearProject) {
+            project.set(null);
+        }
+    }
+
+    private void buildFailed(Throwable e) {
+        delay.set(monitor.onBuildFail(cycleNumber.get(), e));
+    }
+
+    private boolean cycleEnded() {
+        return monitor.onCycleEnd(cycleNumber.getAndAdd(1));
+    }
+
+    private void stopped() {
         monitor.onStopped();
         stopped.get().countDown();
     }
 
-    private void clearProject() {
-        this.project.set(null);
-    }
-
     private void setProject(Project project) {
         this.project.set(project);
+        ready.set(false);
     }
 
     /**

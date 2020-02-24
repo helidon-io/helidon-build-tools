@@ -20,7 +20,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -48,7 +47,8 @@ public class ProjectExecutor {
 
     private final ExecutionMode mode;
     private final Project project;
-    private ProcessHandle processHandle;
+    private ProcessMonitor processMonitor;
+    private long pid;
 
     public ProjectExecutor(Project project) {
         this(project, ExecutionMode.JAVA);
@@ -77,22 +77,20 @@ public class ProjectExecutor {
     }
 
     public void stop() {
-        if (processHandle != null) {
-            CompletableFuture<ProcessHandle> future = processHandle.onExit();
-            processHandle.destroy();
+        if (processMonitor != null) {
             try {
-                future.get(WAIT_TERMINATION, TimeUnit.SECONDS);
+                processMonitor.stop(WAIT_TERMINATION, TimeUnit.SECONDS);
             } catch (Exception e) {
-                Log.error("Error stopping process " + e.getMessage());
+                Log.error("Error stopping process: %s", e.getMessage());
                 throw new RuntimeException(e);
             }
-            Log.info("Process with PID " + processHandle.pid() + " stopped");
-            processHandle = null;
+            Log.info("Process with PID %d stopped", pid);
+            processMonitor = null;
         }
     }
 
     public boolean isRunning() {
-        return processHandle != null;
+        return processMonitor != null;
     }
 
     public void restart() {
@@ -101,29 +99,7 @@ public class ProjectExecutor {
     }
 
     private void startMaven() {
-        ProcessBuilder processBuilder = new ProcessBuilder()
-                .directory(project.root().path().toFile())
-                .command(EXEC_COMMAND);
-        Map<String, String> env = processBuilder.environment();
-        String path = JAVA_HOME_BIN + File.pathSeparatorChar + env.get("PATH");
-        env.put("PATH", path);
-        env.put("JAVA_HOME", JAVA_HOME);
-
-        try {
-            ProcessMonitor processMonitor = ProcessMonitor.builder()
-                    .processBuilder(processBuilder)
-                    .stdOut(System.out::println)
-                    .stdErr(System.err::println)
-                    .capture(true)
-                    .build()
-                    .start();
-
-            processHandle = processMonitor.toHandle();
-            Log.info("Process with PID " + processHandle.pid() + " is starting");
-        } catch (Exception e) {
-            Log.error("Error starting process " + e.getMessage());
-            throw new RuntimeException(e);
-        }
+        start(EXEC_COMMAND);
     }
 
     private void startJava() {
@@ -132,9 +108,13 @@ public class ProjectExecutor {
         command.add("-cp");
         command.add(classPathString());
         command.add(project.mainClassName());
+        start(command);
+    }
+
+    private void start(List<String> command) {
         ProcessBuilder processBuilder = new ProcessBuilder()
-                .directory(project.root().path().toFile())
-                .command(command);
+            .directory(project.root().path().toFile())
+            .command(command);
 
         Map<String, String> env = processBuilder.environment();
         String path = JAVA_HOME_BIN + File.pathSeparatorChar + env.get("PATH");
@@ -142,16 +122,15 @@ public class ProjectExecutor {
         env.put("JAVA_HOME", JAVA_HOME);
 
         try {
-            ProcessMonitor processMonitor = ProcessMonitor.builder()
-                    .processBuilder(processBuilder)
-                    .stdOut(System.out::println)
-                    .stdErr(System.err::println)
-                    .capture(true)
-                    .build()
-                    .start();
-
-            processHandle = processMonitor.toHandle();
-            Log.info("Process with PID " + processHandle.pid() + " is starting");
+            this.processMonitor = ProcessMonitor.builder()
+                                                .processBuilder(processBuilder)
+                                                .stdOut(System.out::println)
+                                                .stdErr(System.err::println)
+                                                .capture(true)
+                                                .build()
+                                                .start();
+            this.pid = processMonitor.toHandle().pid();
+            Log.info("Process with PID %d is starting", pid);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -159,7 +138,7 @@ public class ProjectExecutor {
 
     private String classPathString() {
         List<String> paths = project.classpath().stream()
-                .map(File::getAbsolutePath).collect(Collectors.toList());
+                                    .map(File::getAbsolutePath).collect(Collectors.toList());
         return paths.stream().reduce("", (s1, s2) -> s1 + ":" + s2);
     }
 }

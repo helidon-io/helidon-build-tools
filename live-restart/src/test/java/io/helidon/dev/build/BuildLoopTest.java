@@ -68,7 +68,7 @@ class BuildLoopTest {
         assertThat(monitor.buildStart(1), is(false));
         assertThat(monitor.buildType(1), is(nullValue()));
         assertThat(monitor.buildFailed(1), is(nullValue()));
-        assertThat(monitor.ready(1), is(true));
+        assertThat(monitor.ready(1), is(false));
         assertThat(monitor.cycleEnd(1), is(true));
 
         final List<BuildComponent> components = project.components();
@@ -108,7 +108,7 @@ class BuildLoopTest {
         assertThat(monitor.buildStart(1), is(false));
         assertThat(monitor.buildType(1), is(nullValue()));
         assertThat(monitor.buildFailed(1), is(nullValue()));
-        assertThat(monitor.ready(1), is(true));
+        assertThat(monitor.ready(1), is(false));
         assertThat(monitor.cycleEnd(1), is(true));
 
         final List<BuildComponent> components = project.components();
@@ -174,7 +174,7 @@ class BuildLoopTest {
         assertThat(monitor.buildStart(1), is(false));
         assertThat(monitor.buildType(1), is(nullValue()));
         assertThat(monitor.buildFailed(1), is(nullValue()));
-        assertThat(monitor.ready(1), is(true));
+        assertThat(monitor.ready(1), is(false));
         assertThat(monitor.cycleEnd(1), is(true));
 
         assertThat(monitor.cycleStart(2), is(true));
@@ -192,7 +192,7 @@ class BuildLoopTest {
         assertThat(monitor.buildStart(3), is(false));
         assertThat(monitor.buildType(3), is(nullValue()));
         assertThat(monitor.buildFailed(3), is(nullValue()));
-        assertThat(monitor.ready(3), is(true));
+        assertThat(monitor.ready(3), is(false));
         assertThat(monitor.cycleEnd(3), is(true));
 
         final String allOutput = String.join(" ", monitor.outputAsString());
@@ -249,7 +249,7 @@ class BuildLoopTest {
         assertThat(monitor.buildStart(1), is(false));
         assertThat(monitor.buildType(1), is(nullValue()));
         assertThat(monitor.buildFailed(1), is(nullValue()));
-        assertThat(monitor.ready(1), is(true));
+        assertThat(monitor.ready(1), is(false));
         assertThat(monitor.cycleEnd(1), is(true));
 
         assertThat(monitor.cycleStart(2), is(true));
@@ -267,7 +267,7 @@ class BuildLoopTest {
         assertThat(monitor.buildStart(3), is(false));
         assertThat(monitor.buildType(3), is(nullValue()));
         assertThat(monitor.buildFailed(3), is(nullValue()));
-        assertThat(monitor.ready(3), is(true));
+        assertThat(monitor.ready(3), is(false));
         assertThat(monitor.cycleEnd(3), is(true));
 
         final String allOutput = String.join(" ", monitor.outputAsString());
@@ -319,7 +319,7 @@ class BuildLoopTest {
         assertThat(monitor.buildStart(1), is(false));
         assertThat(monitor.buildType(1), is(nullValue()));
         assertThat(monitor.buildFailed(1), is(nullValue()));
-        assertThat(monitor.ready(1), is(true));
+        assertThat(monitor.ready(1), is(false));
         assertThat(monitor.cycleEnd(1), is(true));
 
         assertThat(monitor.cycleStart(2), is(true));
