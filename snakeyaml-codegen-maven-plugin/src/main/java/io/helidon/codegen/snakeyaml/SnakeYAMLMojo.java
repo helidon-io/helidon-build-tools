@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -225,57 +224,6 @@ public class SnakeYAMLMojo extends AbstractMojo {
             return result;
         }
     }
-
-    public static class TypeRefinement {
-        private String typeName;
-        private List<PropertyRefinement> propertyRefinements;
-
-        String typeName() {
-            return typeName;
-        }
-
-        List<PropertyRefinement> propertyRefinements() {
-            return propertyRefinements;
-        }
-    }
-
-    public static class PropertyRefinement {
-        private String propertyName;
-        private List<PropertySubstitution> propertySubstitutions;
-
-        String propertyName() {
-            return propertyName;
-        }
-
-        List<PropertySubstitution> propertySubstitutions() {
-            return propertySubstitutions;
-        }
-    }
-
-    public static class PropertySubstitution {
-
-        private String propertyName;
-        private String propertyType;
-        private String getter;
-        private String setter;
-
-        String propertyName() {
-            return propertyName;
-        }
-
-        String propertyType() {
-            return propertyType;
-        }
-
-        String getter() {
-            return getter;
-        }
-
-        String setter() {
-            return setter;
-        }
-    }
-    /// name, type, getter, setter
 
     /**
      * Sets the compiler config for analyzing the interfaces.
@@ -487,7 +435,8 @@ public class SnakeYAMLMojo extends AbstractMojo {
             Collection<Path> pathsToCommpile, String note) {
         /*
          * There should not be compilation errors, but without our own diagnostic listener any compilation errors will
-         * appear in the build output.
+         * appear in the build output. We want to suppress those because we want to gather information about the interfaces
+         * and classes, not actually compile them into .class files.
          */
         DiagnosticListener<JavaFileObject> diagListener = diagnostic -> {
             debugLog(() -> diagnostic.toString());
@@ -538,26 +487,6 @@ public class SnakeYAMLMojo extends AbstractMojo {
                     + typeToIncompleteEnums.toString());
         }
     }
-
-//    private void applyTypeRefinements(Map<String, Type> types, List<TypeRefinement> typeRefinements) {
-//        List<String> unmatchedTypes = new ArrayList<>();
-//        for (TypeRefinement typeRefinement : typeRefinements) {
-//            Type t = types.get(typeRefinement.typeName());
-//            if (t == null) {
-//                unmatchedTypes.add(typeRefinement.typeName);
-//                continue;
-//            }
-//            for (PropertyRefinement propertyRefinement : typeRefinement.propertyRefinements()) {
-//                for (PropertySubstitution propertySubsitution : propertyRefinement.propertySubstitutions()) {
-//                    t.propertySubstitution(propertyRefinement.propertyName(), propertySubsitution.propertyType(),
-//                            propertySubsitution.getter(), propertySubsitution.setter());
-//                }
-//            }
-//        }
-//        if (!unmatchedTypes.isEmpty()) {
-//            throw new IllegalArgumentException("Specified refined types were not found: " + unmatchedTypes.toString());
-//        }
-//    }
 
     private void addImportsForTypes(Map<String, Type> types, Set<Import> imports) {
         types.forEach((name, type) -> imports.add(new Import(type.fullName(), false)));
