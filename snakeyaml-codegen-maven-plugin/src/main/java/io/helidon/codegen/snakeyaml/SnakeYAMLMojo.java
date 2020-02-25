@@ -99,60 +99,61 @@ import org.apache.maven.project.MavenProject;
       defaultPhase = LifecyclePhase.GENERATE_SOURCES,
       requiresDependencyResolution = ResolutionScope.RUNTIME)
 public class SnakeYAMLMojo extends AbstractMojo {
-/*
- *<p>
- *     Here is an example from the maven dependency plug-in showing how to extract the sources so
- *     they are available for this plug-in to consume:
- * </p>
- * <pre>{@code
- * <project>
- *   [...]
- *   <build>
- *     <plugins>
- *       <plugin>
- *         <groupId>org.apache.maven.plugins</groupId>
- *         <artifactId>maven-dependency-plugin</artifactId>
- *         <version>3.1.1</version>
- *         <executions>
- *           <execution>
- *             <id>src-dependencies</id>
- *             <phase>package</phase>
- *             <goals>
- *               <!-- use copy-dependencies instead if you don't want to explode the sources -->
- *               <goal>unpack-dependencies</goal>
- *             </goals>
- *             <configuration>
- *               <artifactItems>
- *                 <artifactItem>
- *                   <groupId>junit</groupId>
- *                   <artifactId>junit</artifactId>
- *                   <version>3.8.1</version>
- *                   <type>jar</type>
- *                   <overWrite>false</overWrite>
- *                   <outputDirectory>${project.build.directory}/alternateLocation</outputDirectory>
- *                   <destFileName>optional-new-name.jar</destFileName>
- *                   <includes>**&quot;/*.class,**&quot;/*.xml</includes>
- *                   <excludes>**&quot;/*test.class</excludes>
- *                 </artifactItem>
- *               </artifactItems>
- *               <includes>**&quot;/*.java</includes>
- *               <excludes>**&quot;/*.properties</excludes>
- *               <classifier>sources</classifier>
- *               <failOnMissingClassifierArtifact>false</failOnMissingClassifierArtifact>
- *               <outputDirectory>${project.build.directory}/sources</outputDirectory>
- *             </configuration>
- *           </execution>
- *         </executions>
- *       </plugin>
- *     </plugins>
- *   </build>
- *   [...]
- * </project>
- * }
- *
- * </pre>
- *
- */
+//
+//<p>
+//     Here is an example from the maven dependency plug-in showing how to extract the sources so
+//     they are available for this plug-in to consume:
+// </p>
+// <pre>{@code
+// <project>
+//     [...]
+//     <build>
+//         <plugins>
+//         <plugin>
+//             <groupId>org.apache.maven.plugins</groupId>
+//             <artifactId>maven-dependency-plugin</artifactId>
+//              <executions>
+//                  <execution>
+//                      <id>unpack-openapi-interfaces</id>
+//                      <goals>
+//                          <goal>unpack-dependencies</goal>
+//                      </goals>
+//                      <phase>generate-sources</phase>
+//                      <configuration>
+//                          <classifier>sources</classifier>
+//                          <failOnMissingClassifierArtifact>true</failOnMissingClassifierArtifact>
+//                          <outputDirectory>${openapi-interfaces-dir}</outputDirectory>
+//                          <includeGroupIds>org.eclipse.microprofile.openapi</includeGroupIds>
+//                          <includeArtifactIds>microprofile-openapi-api</includeArtifactIds>
+//                          <includes>org/eclipse/microprofile/openapi/models/**/*.java</includes>
+//                      </configuration>
+//                  </execution>
+//                  <execution>
+//                      <id>unpack-openapi-impls</id>
+//                      <goals>
+//                          <goal>unpack-dependencies</goal>
+//                      </goals>
+//                      <phase>generate-sources</phase>
+//                      <configuration>
+//                          <classifier>sources</classifier>
+//                          <failOnMissingClassifierArtifact>true</failOnMissingClassifierArtifact>
+//                          <outputDirectory>${openapi-impls-dir}</outputDirectory>
+//                          <includeGroupIds>io.smallrye</includeGroupIds>
+//                          <includeArtifactIds>smallrye-open-api</includeArtifactIds>
+//                          <includes>io/smallrye/openapi/api/models/**/*.java</includes>
+//                      </configuration>
+//                  </execution>
+//              </executions>
+//          </plugin>
+//     </plugins>
+//   </build>
+//   [...]
+// </project>
+// }
+//
+// </pre>
+//
+//
 
     private static final String PROPERTY_PREFIX = "snakeyamlgen.";
     private static final String PARAM_DUMP_FORMAT = "Code generation for SnakeYAML parsing helper:%n"
@@ -203,9 +204,16 @@ public class SnakeYAMLMojo extends AbstractMojo {
     @Parameter(property = PROPERTY_PREFIX + "debug", defaultValue = "false")
     private boolean debug;
 
+    /**
+     * Prefix common to all implementation classes submitted for analysis. Used for grouping import statements in the generated
+     * code.
+     */
     @Parameter(property = PROPERTY_PREFIX + "implementationPrefix", required = true)
     private String implementationPrefix;
 
+    /**
+     * Prefix common to all interfaces submitted for analysis. Used for grouping import statements in the generated code.
+     */
     @Parameter(property = PROPERTY_PREFIX + "interfacePrefix", required = true)
     private String interfacePrefix;
 
@@ -214,8 +222,20 @@ public class SnakeYAMLMojo extends AbstractMojo {
      * implementations.
      */
     public static class CompilerConfig {
+
+        /**
+         * Directory where the source files to be compiled are located.
+         */
         private String inputDirectory = null; // defaults to "interfaces" or "implementations"
+
+        /**
+         * Java file path expressions indicating which files to include in analysis.
+         */
         private List<String> includes = defaultIncludes();
+
+        /**
+         * Java file path expressions indicating which files to exclude from analysis.
+         */
         private List<String> excludes = Collections.emptyList();
 
         private static List<String> defaultIncludes() {
@@ -560,14 +580,14 @@ public class SnakeYAMLMojo extends AbstractMojo {
                 List<String> interfaces = SnakeYAMLMojo.treesToStrings(node.getImplementsClause());
                 final Type newType = new Type(typeName, node.getSimpleName().toString(), kind == Tree.Kind.INTERFACE,
                         interfaces);
-                if (interfacesToImpls != null) {
+                if (interfacesToImpls != null && kind == Tree.Kind.CLASS) {
+                    // Add this class to our map from each interface to all of its implementations.
                     interfaces.stream()
                             .map(intf -> interfacesToImpls.computeIfAbsent(intf, key -> new ArrayList<>()))
                             .forEach(list -> list.add(newType.simpleName()));
                 }
                 types.put(typeName, newType);
                 imports.add(new Import(newType.fullName(), false));
-                updateSpecials(node, newType);
                 type = newType;
             }
 
@@ -578,22 +598,6 @@ public class SnakeYAMLMojo extends AbstractMojo {
         public Type visitImport(ImportTree node, Type type) {
             imports.add(new Import(node.getQualifiedIdentifier().toString(), node.isStatic()));
             return super.visitImport(node, type);
-        }
-
-        private void updateSpecials(ClassTree node, Type type) {
-            node.getImplementsClause()
-                    .forEach(tree -> {
-                        if (IdentifierTree.class.isInstance(tree)
-                                && (IdentifierTree.class.cast(tree).getName().equals("Reference"))) {
-                                    type.ref(true);
-                        } else if (ParameterizedTypeTree.class.isInstance(tree)) {
-                            Tree t = ((ParameterizedTypeTree.class.cast(tree))).getType();
-                            if (IdentifierTree.class.isInstance(t)
-                                    && (IdentifierTree.class.cast(t).getName().toString().equals("Extensible"))) {
-                                type.extensible(true);
-                            }
-                        }
-                    });
         }
 
         @Override

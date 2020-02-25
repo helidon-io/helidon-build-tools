@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Data model used from the code generation template.
+ */
 class CodeGenModel {
 
     private String generatedPackageName;

@@ -67,10 +67,6 @@ class {{generatedClassName}}<T extends TypeDescription> {
         {{#propertySubstitutions}}
         td_{{simpleName}}.substituteProperty("{{propertySubName}}", {{propertySubType}}.class, "{{getter}}", "{{setter}}");
         {{/propertySubstitutions}}
-        {{#isExtensible}}
-        td_{{simpleName}}.substituteProperty("extensions", Map.class, "setExtensions", "getExtensions");
-        td_{{simpleName}}.addPropertyParameters("extensions", String.class, Object.class);
-        {{/isExtensible}}
         types.put(td_{{simpleName}}.getType(), td_{{simpleName}});
 
 {{/typesToAugment}}
