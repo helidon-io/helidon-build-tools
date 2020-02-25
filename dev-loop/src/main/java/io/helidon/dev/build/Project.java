@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static io.helidon.build.util.FileUtils.listFiles;
 import static io.helidon.dev.build.DirectoryType.Depencencies;
@@ -37,23 +36,29 @@ import static io.helidon.dev.build.ProjectDirectory.createProjectDirectory;
  * A continuous build project. New instances must have been successfully built.
  */
 public class Project {
+    private static final String JAR_FILE_SUFFIX = ".jar";
     private final ProjectDirectory root;
     private final List<BuildFile> buildSystemFiles;
     private final List<File> classPath;
     private final List<String> compilerFlags;
+    private final List<Path> dependencyPaths;
     private final List<BuildFile> dependencies;
     private final List<BuildComponent> components;
     private final String mainClassName;
+    private final Map<Path, ProjectDirectory> parents;
 
     private Project(Builder builder) {
         this.root = builder.root;
         this.buildSystemFiles = builder.buildSystemFiles;
-        this.classPath = builder.classpath.stream().map(Path::toFile).collect(Collectors.toList());
+        this.classPath = new ArrayList<>();
         this.compilerFlags = builder.compilerFlags;
+        this.dependencyPaths = builder.dependencyPaths;
         this.dependencies = builder.dependencies;
         this.components = builder.components;
         this.mainClassName = builder.mainClassName;
+        this.parents = new HashMap<>();
         components.forEach(c -> c.project(this));
+        updateDependencies();
     }
 
     /**
@@ -69,17 +74,13 @@ public class Project {
      * A {@code Project} builder.
      */
     public static class Builder {
-        private static final String JAR_FILE_SUFFIX = ".jar";
         private ProjectDirectory root;
         private List<BuildFile> buildSystemFiles;
         private List<String> compilerFlags;
         private List<Path> dependencyPaths;
         private List<BuildFile> dependencies;
         private List<BuildComponent> components;
-        private Set<Path> classpath;
         private String mainClassName;
-        private final Map<Path, ProjectDirectory> parents;
-
 
         private Builder() {
             this.buildSystemFiles = new ArrayList<>();
@@ -87,8 +88,6 @@ public class Project {
             this.dependencyPaths = new ArrayList<>();
             this.dependencies = new ArrayList<>();
             this.components = new ArrayList<>();
-            this.classpath = new LinkedHashSet<>();
-            this.parents = new HashMap<>();
         }
 
         /**
@@ -172,20 +171,6 @@ public class Project {
             assertNotEmpty(buildSystemFiles, "buildSystemFile");
             assertNotEmpty(dependencyPaths, "dependency");
             assertNotEmpty(components, "component");
-
-            // Build dependencies
-
-            dependencyPaths.forEach(this::addDependency);
-
-            // Build classpath
-
-            components.forEach(component -> {
-                if (component.outputRoot().buildType() == BuildRootType.JavaClasses) {
-                    classpath.add(component.outputRoot().path());
-                }
-            });
-            dependencies.forEach(dependency -> classpath.add(dependency.path()));
-
             return new Project(this);
         }
 
@@ -193,22 +178,6 @@ public class Project {
             if (collection.isEmpty()) {
                 throw new IllegalStateException("At least 1 " + description + " is required");
             }
-        }
-
-        private void addDependency(Path path) {
-            if (FileType.Jar.test(path)) {
-                dependencies.add(toJar(path));
-            } else if (Files.isDirectory(path)) {
-                for (Path file : listFiles(path, name -> name.endsWith(JAR_FILE_SUFFIX))) {
-                    addDependency(file);
-                }
-            }
-        }
-
-        private BuildFile toJar(Path path) {
-            final Path parent = path.getParent();
-            final ProjectDirectory parentDir = parents.computeIfAbsent(parent, p -> createProjectDirectory(Depencencies, parent));
-            return BuildFile.createBuildFile(parentDir, FileType.Jar, path);
         }
     }
 
@@ -379,9 +348,14 @@ public class Project {
 
     /**
      * Update the project time stamps.
+     *
+     * @param updateDepenencies {@code true} if dependencies should be updated.
      */
-    public void update() {
+    public void update(boolean updateDepenencies) {
         components().forEach(BuildComponent::update);
+        if (updateDepenencies) {
+            updateDependencies();
+        }
     }
 
     /**
@@ -400,5 +374,42 @@ public class Project {
                 changed.root().component().incrementalBuild(changed, stdOut, stdErr);
             }
         }
+    }
+
+    private void updateDependencies() {
+
+        // Build/rebuild dependencies
+
+        dependencies.clear();
+        dependencyPaths.forEach(this::addDependency);
+
+        // Build/rebuild classPath, weeding out any duplicates
+
+        final Set<Path> paths = new LinkedHashSet<>();
+        components.forEach(component -> {
+            if (component.outputRoot().buildType() == BuildRootType.JavaClasses) {
+                paths.add(component.outputRoot().path());
+            }
+        });
+        dependencies.forEach(dependency -> paths.add(dependency.path()));
+
+        classPath.clear();
+        paths.forEach(path -> classPath.add(path.toFile()));
+    }
+
+    private void addDependency(Path path) {
+        if (FileType.Jar.test(path)) {
+            dependencies.add(toJar(path));
+        } else if (Files.isDirectory(path)) {
+            for (Path file : listFiles(path, name -> name.endsWith(JAR_FILE_SUFFIX))) {
+                addDependency(file);
+            }
+        }
+    }
+
+    private BuildFile toJar(Path path) {
+        final Path parent = path.getParent();
+        final ProjectDirectory parentDir = parents.computeIfAbsent(parent, p -> createProjectDirectory(Depencencies, parent));
+        return BuildFile.createBuildFile(parentDir, FileType.Jar, path);
     }
 }

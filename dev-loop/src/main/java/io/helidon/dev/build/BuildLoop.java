@@ -189,7 +189,7 @@ public class BuildLoop {
                         changed(false, false);
                         buildStarting(BuildType.Incremental);
                         project.incrementalBuild(sourceChanges, stdOut, stdErr);
-                        project.update();
+                        project.update(false);
                         ready();
                     } catch (InterruptedException e) {
                         break;

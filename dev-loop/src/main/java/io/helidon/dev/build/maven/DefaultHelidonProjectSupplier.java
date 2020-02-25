@@ -77,7 +77,7 @@ public class DefaultHelidonProjectSupplier implements ProjectSupplier {
         if (clean || !project.isBuildUpToDate()) {
             monitor.onBuildStart(cycleNumber, clean ? BuildType.CleanComplete : BuildType.Complete);
             build(projectDir, monitor, clean);
-            project.update();
+            project.update(true);
         }
         return project;
     }
