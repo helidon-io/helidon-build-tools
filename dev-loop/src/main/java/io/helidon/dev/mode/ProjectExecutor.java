@@ -80,11 +80,15 @@ public class ProjectExecutor {
         if (processMonitor != null) {
             try {
                 processMonitor.stop(WAIT_TERMINATION, TimeUnit.SECONDS);
+                Log.info("Process with PID %d stopped", pid);
+            } catch (IllegalStateException ignore) {
+            } catch (ProcessMonitor.ProcessFailedException e) {
+                final int exitCode = e.exitCode();
+                Log.info("Process with PID %d stopped (exit code %d)", pid, exitCode);
             } catch (Exception e) {
                 Log.error("Error stopping process: %s", e.getMessage());
                 throw new RuntimeException(e);
             }
-            Log.info("Process with PID %d stopped", pid);
             processMonitor = null;
         }
     }

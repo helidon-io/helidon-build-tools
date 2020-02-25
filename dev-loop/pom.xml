@@ -24,8 +24,8 @@
         <version>1.1.2-SNAPSHOT</version>
     </parent>
 
-    <artifactId>live-restart</artifactId>
-    <name>Helidon Live Restart</name>
+    <artifactId>helidon-dev-loop</artifactId>
+    <name>Helidon Dev Loop</name>
 
     <dependencies>
         <dependency>

@@ -82,6 +82,7 @@ public class ConsumerPrintStream extends PrintStream {
     }
 
     @Override
+    @SuppressWarnings("NullableProblems")
     public void write(byte[] bytes, int offset, int length) {
         if (length >= 0) {
             for (int index = 0; index < length; ++index) {

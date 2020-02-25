@@ -26,7 +26,7 @@ import java.util.Optional;
 
 import io.helidon.build.util.HelidonVariant;
 import io.helidon.build.util.QuickstartGenerator;
-import io.helidon.dev.mode.DevModeLoop;
+import io.helidon.dev.mode.DevLoop;
 
 /**
  * Class HelidonCli.
@@ -38,26 +38,30 @@ public class HelidonCliDemo {
 
     public static void main(String[] args) throws Exception {
         String command = null;
-        HelidonVariant variant = HelidonVariant.SE;
+        HelidonVariant variant = null;
         String version = null;
         boolean clean = false;
 
         for (int i = 0; i < args.length; i++) {
             final String arg = args[i];
-            if (arg.startsWith("--")) {
+            if (command == null) {
+                if (arg.equals("init") || arg.equals("dev")) {
+                    command = arg;
+                } else {
+                    displayHelpAndExit(1);
+                }
+            } else if (arg.startsWith("-")) {
                 if ("init".equals(command) && arg.equals("--version")) {
                     version = argAt(++i, args);
-                } else if ("dev".equals(command) && arg.equalsIgnoreCase("--clean")) {
+                } else if ("dev".equals(command) && arg.equals("--clean")) {
                     clean = true;
-                } else if (arg.equals("--help")) {
+                } else if (arg.equals("-h") || arg.equals("--help")) {
                     displayHelpAndExit(0);
                 } else {
                     displayHelpAndExit(1);
                 }
-            } else if (command == null) {
-                command = arg;
-            } else if (command.equals("init")) {
-                variant = HelidonVariant.parse(argAt(++i, args));
+            } else if (command.equals("init") && variant == null) {
+                variant = HelidonVariant.parse(arg);
             } else {
                 displayHelpAndExit(1);
             }
@@ -65,11 +69,9 @@ public class HelidonCliDemo {
         if (command == null) {
             displayHelpAndExit(1);
         } else if (command.equals("init")) {
-            helidonInit(variant, version);
-        } else if (command.equals("dev")) {
-            helidonDev(clean);
+            helidonInit(variant == null ? HelidonVariant.SE : variant, version);
         } else {
-            displayHelpAndExit(1);
+            helidonDev(clean);
         }
     }
 
@@ -100,7 +102,7 @@ public class HelidonCliDemo {
     private static void helidonDev(boolean clean) throws Exception {
         Optional<Path> rootDir = readRootDir();
         if (rootDir.isPresent()) {
-            DevModeLoop loop = new DevModeLoop(rootDir.get(), clean);
+            DevLoop loop = new DevLoop(rootDir.get(), clean);
             loop.start(60 * 60);
         } else {
             System.err.println("Please run init command first");

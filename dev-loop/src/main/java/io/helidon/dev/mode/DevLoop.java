@@ -28,13 +28,13 @@ import io.helidon.dev.build.Project;
 import io.helidon.dev.build.maven.DefaultHelidonProjectSupplier;
 
 /**
- * Class DevModeLoop.
+ * The "dev" loop that manages application lifcycle based on events from a {@link BuildLoop}.
  */
-public class DevModeLoop {
+public class DevLoop {
     private final Path rootDir;
     private final boolean initialClean;
 
-    public DevModeLoop(Path rootDir, boolean initialClean) {
+    public DevLoop(Path rootDir, boolean initialClean) {
         this.rootDir = rootDir;
         this.initialClean = initialClean;
     }
@@ -104,25 +104,25 @@ public class DevModeLoop {
     }
 
     private static BuildLoop newLoop(Path projectRoot,
-                                    boolean initialClean,
-                                    boolean watchBinariesOnly,
-                                    BuildMonitor monitor) {
+                                     boolean initialClean,
+                                     boolean watchBinariesOnly,
+                                     BuildMonitor monitor) {
         return BuildLoop.builder()
-                .projectDirectory(projectRoot)
-                .clean(initialClean)
-                .watchBinariesOnly(watchBinariesOnly)
-                .projectSupplier(new DefaultHelidonProjectSupplier(60))
-                .stdOut(monitor.stdOutConsumer())
-                .stdErr(monitor.stdErrConsumer())
-                .buildMonitor(monitor)
-                .build();
+                        .projectDirectory(projectRoot)
+                        .clean(initialClean)
+                        .watchBinariesOnly(watchBinariesOnly)
+                        .projectSupplier(new DefaultHelidonProjectSupplier(60))
+                        .stdOut(monitor.stdOutConsumer())
+                        .stdErr(monitor.stdErrConsumer())
+                        .buildMonitor(monitor)
+                        .build();
     }
 
     @SuppressWarnings("unchecked")
-    private static <T extends BuildMonitor> T run(BuildLoop loop, int maxWaitSeconds)
-            throws InterruptedException, TimeoutException {
+    private static <T extends BuildMonitor> T run(BuildLoop loop, int maxWaitSeconds) throws InterruptedException,
+                                                                                             TimeoutException {
         loop.start();
-        Log.info("Waiting up to %d seconds for build loop completion", maxWaitSeconds);
+        Log.debug("Waiting up to %d seconds for build loop completion", maxWaitSeconds);
         if (!loop.waitForStopped(maxWaitSeconds, TimeUnit.SECONDS)) {
             loop.stop(0L);
             throw new TimeoutException("While waiting for loop completion");

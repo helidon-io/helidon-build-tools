@@ -27,7 +27,7 @@ public interface ProjectSupplier {
      * Returns a new {@code Project} instance from the given directory that has been successfully built.
      *
      * @param projectDir The project directory.
-     * @param monitor The build monitor. Implementations must call {@link BuildMonitor#onBuildStart(int, boolean)} if a build
+     * @param monitor The build monitor. Implementations must call {@link BuildMonitor#onBuildStart(int, BuildType)} if a build
      * is performed.
      * @param clean {@code true} if the project should be cleaned and built.
      * @param cycleNumber The cycle number.

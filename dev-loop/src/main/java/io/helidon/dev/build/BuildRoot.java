@@ -130,6 +130,7 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
     }
 
     @Override
+    @SuppressWarnings("NullableProblems")
     public Iterator<BuildFile> iterator() {
         return list().iterator();
     }

@@ -391,8 +391,20 @@ public final class ProcessMonitor {
      * Process failed exception.
      */
     public static final class ProcessFailedException extends ProcessException {
+        private int exitCode;
+
         private ProcessFailedException(ProcessMonitor monitor) {
             super(monitor, false);
+            this.exitCode = monitor.process.exitValue();
+        }
+
+        /**
+         * Returns the exit code.
+         *
+         * @return The code.
+         */
+        public int exitCode() {
+            return exitCode;
         }
     }
 

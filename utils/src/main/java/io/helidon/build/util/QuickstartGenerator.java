@@ -25,6 +25,7 @@ import java.util.function.Predicate;
 import org.eclipse.aether.version.Version;
 
 import static io.helidon.build.util.FileUtils.assertDir;
+import static io.helidon.build.util.Maven.LATEST_RELEASE;
 
 /**
  * Generator for a quickstart project.
@@ -54,27 +55,27 @@ public class QuickstartGenerator {
     }
 
     private QuickstartGenerator() {
-        this.versionSelector = Maven.LATEST_RELEASE;
+        this.versionSelector = LATEST_RELEASE;
     }
 
     /**
      * Sets the Helidon version to use. The latest release is selected if not set.
      *
-     * @param helidonVersion The version.
+     * @param helidonVersion The version. May be {@code null}.
      * @return This instance, for chaining.
      */
     public QuickstartGenerator helidonVersion(String helidonVersion) {
-        return helidonVersion(v -> v.toString().equals(helidonVersion));
+        return helidonVersion(helidonVersion == null ? LATEST_RELEASE : v -> v.toString().equals(helidonVersion));
     }
 
     /**
      * Sets a selector for the Helidon version to use. The latest release is selected if not set.
      *
-     * @param helidonVersionSelector The version.
+     * @param helidonVersionSelector The version. May be {@code null}.
      * @return This instance, for chaining.
      */
     public QuickstartGenerator helidonVersion(Predicate<Version> helidonVersionSelector) {
-        this.versionSelector = helidonVersionSelector;
+        this.versionSelector = helidonVersionSelector == null ? LATEST_RELEASE : helidonVersionSelector;
         return this;
     }
 
