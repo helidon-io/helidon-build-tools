@@ -28,6 +28,7 @@ import java.util.Properties;
 import io.helidon.build.util.HelidonVariant;
 import io.helidon.build.util.QuickstartGenerator;
 import io.helidon.dev.mode.DevLoop;
+
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
@@ -118,22 +119,29 @@ public class HelidonCliDemo {
         Optional<Path> projectDir = cliConfig.projectDir();
         if (projectDir.isEmpty()) {
             // Generate project
-            Path dir = QuickstartGenerator.generator()
-                    .parentDirectory(CWD)
-                    .helidonVariant(variant)
-                    .helidonVersion(version)
-                    .generate();
+            Path dir = null;
+            try {
+                dir = QuickstartGenerator.generator()
+                        .parentDirectory(CWD)
+                        .helidonVariant(variant)
+                        .helidonVersion(version)
+                        .generate();
+            } catch (IllegalStateException e) {
+                System.err.println(e.getMessage());
+                System.exit(2);
+            }
+            Objects.requireNonNull(dir);
 
             // Copy properties files into project directory
             File sourceFile = new File(Objects.requireNonNull(
                     HelidonCliDemo.class.getClassLoader().getResource(HELIDON_PROPERTIES)).getFile());
-            File destFile = Path.of(DOT_HELIDON).toFile();
+            File destFile = Path.of(dir.toString(), DOT_HELIDON).toFile();
             try (FileReader fr = new FileReader(sourceFile)) {
                 Properties sourceProps = new Properties();
                 sourceProps.load(fr);
                 try (FileWriter fw = new FileWriter(destFile)) {
                     Properties destProps = new Properties();
-                    destProps.setProperty(PROJECT_DIRECTORY, dir.toString());
+                    destProps.setProperty(PROJECT_DIRECTORY, ".");
                     destProps.setProperty(HELIDON_VARIANT, variant.toString());
                     sourceProps.entrySet().forEach(e -> {
                         String propName = (String) e.getKey();
@@ -148,8 +156,10 @@ public class HelidonCliDemo {
                     destProps.store(fw, "Helidon CLI config");
                 }
             }
+
+            System.out.println("Switch directory to ./" + dir.getFileName() + " to use CLI");
         } else {
-            System.err.println("Error: Project '" + projectDir.get() + "' already exists");
+            System.err.println("Error: A project already exists in this directory");
             System.exit(2);
         }
     }
@@ -183,12 +193,24 @@ public class HelidonCliDemo {
             try (FileReader fr = new FileReader(pomFile)) {
                 MavenXpp3Reader mvnReader = new MavenXpp3Reader();
                 model = mvnReader.read(fr);
+                List<Dependency> existingDeps = model.getDependencies();
                 featureDeps.forEach(fd -> {
-                    Dependency newDep = new Dependency();
-                    newDep.setGroupId(fd.groupId());
-                    newDep.setArtifactId(fd.artifactId());
-                    newDep.setVersion(fd.version());
-                    model.addDependency(newDep);
+                    // Check if dependency already there
+                    Optional<Dependency> found = existingDeps.stream().filter(d ->
+                            d.getGroupId().equals(fd.groupId())
+                            && d.getArtifactId().equals(fd.artifactId())
+                            && Objects.equals(d.getVersion(), fd.version())).findFirst();
+
+                    // Now add dependency if necessary
+                    if (found.isEmpty()) {
+                        Dependency newDep = new Dependency();
+                        newDep.setGroupId(fd.groupId());
+                        newDep.setArtifactId(fd.artifactId());
+                        newDep.setVersion(fd.version());                        model.addDependency(newDep);
+                        System.out.println("Adding '" + fd + "' to the project's pom");
+                    } else {
+                        System.out.println("Dependency '" + fd + "' already in project's pom");
+                    }
                 });
             }
 
