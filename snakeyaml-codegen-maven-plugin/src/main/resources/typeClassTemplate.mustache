@@ -33,6 +33,10 @@ import org.yaml.snakeyaml.TypeDescription;
 class {{generatedClassName}}<T extends TypeDescription> {
 
     private final Map<Class<?>, T> types = new HashMap<>();
+    private final Map<String, List<ParameterizedGrouping>> parameterizedProperties = new HashMap<>();
+    private final Map<Class<?>, Class<?>> mapImplementingTypes = new HashMap<>();
+    private final Map<Class<?>, Class<?>> listImplementingTypes = new HashMap<>();
+
     static <T extends TypeDescription> {{generatedClassName}}<T> create(
                             BiFunction<Class<?>, Class<?>, T> factoryFunction) {
         return new {{generatedClassName}}<T>(factoryFunction);
@@ -40,6 +44,14 @@ class {{generatedClassName}}<T extends TypeDescription> {
 
     Map<Class<?>, T> types() {
         return types;
+    }
+
+    List<String> parameterizedParameter(String parentTypeName) {
+        List<ParameterizedGrouping> groups = parameterizedProperties.get(parentTypeName);
+        if (groups == null || groups.size() == 0) {
+            return null;
+        }
+        return groups.get(0).typeParameters();
     }
 
     Set<Map.Entry<Class<?>, T>> entrySet() {
@@ -58,6 +70,38 @@ class {{generatedClassName}}<T extends TypeDescription> {
         return types.get(clazz);
     }
 
+    static class ParameterizedGrouping {
+
+        private final String propertyName;
+        private final Class<?> groupingType;
+        private final List<String> typeParameters;;
+
+        ParameterizedGrouping(String propertyName, Class<?> groupingType, String... typeParameters) {
+            this.propertyName = propertyName;
+            this.groupingType = groupingType;
+            this.typeParameters = java.util.Arrays.asList(typeParameters);;
+        }
+
+        String propertyName() {
+            return propertyName;
+        }
+
+        Class<?> groupingType() {
+            return groupingType;
+        }
+
+        List<String> typeParameters() {
+            return typeParameters;
+        }
+    }
+
+    private void addParameterizedParameter(String parentTypeName, String propertyName, Class<?> groupingType,
+                String... typeParameters) {
+        List<ParameterizedGrouping> groupings = parameterizedProperties.computeIfAbsent(parentTypeName, k -> new ArrayList<>());
+        ParameterizedGrouping newGrouping = new ParameterizedGrouping(propertyName, groupingType, typeParameters);
+        groupings.add(newGrouping);
+    }
+
     private {{generatedClassName}}(BiFunction<Class<?>, Class<?>, T> factoryFunction) {
 {{#typesToAugment}}
         T td_{{simpleName}} = factoryFunction.apply({{simpleName}}.class, {{implementationType}}.class);
@@ -68,6 +112,9 @@ class {{generatedClassName}}<T extends TypeDescription> {
         td_{{simpleName}}.substituteProperty("{{propertySubName}}", {{propertySubType}}.class, "{{getter}}", "{{setter}}");
         {{/propertySubstitutions}}
         types.put(td_{{simpleName}}.getType(), td_{{simpleName}});
+        {{#parameterizedProperties}}
+        addParameterizedParameter("{{fullName}}", "{{parameterizedPropertyName}}", {{parameterizedGroupingType}}.class {{#parameterizedTypes}}, "{{{toString}}}"{{/parameterizedTypes}});
+        {{/parameterizedProperties}}
 
 {{/typesToAugment}}
     }
