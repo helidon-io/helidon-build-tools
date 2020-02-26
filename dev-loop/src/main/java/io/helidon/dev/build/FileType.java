@@ -50,7 +50,11 @@ public enum FileType implements Predicate<Path> {
      */
     NotJavaClass(null) {
         protected boolean matchesExtension(Path path) {
-            return !path.getFileName().toString().endsWith(".class");
+            String fileName = path.getFileName().toString();
+            return !fileName.endsWith(".class")
+                    && !fileName.endsWith(".swp")
+                    && !fileName.endsWith("~")
+                    && !fileName.startsWith(".");
         }
     };
 
