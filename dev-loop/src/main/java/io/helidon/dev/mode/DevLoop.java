@@ -99,6 +99,7 @@ public class DevLoop {
         private void ensureStop() {
             if (projectExecutor != null) {
                 projectExecutor.stop();
+                projectExecutor = null;
             }
         }
     }
