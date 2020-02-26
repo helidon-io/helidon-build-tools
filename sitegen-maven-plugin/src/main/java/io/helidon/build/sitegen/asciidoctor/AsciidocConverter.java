@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,6 @@ import static io.helidon.build.sitegen.asciidoctor.CardBlockProcessor.BLOCKLINK_
  * An asciidoctor converter that supports backends implemented with Freemarker.
  *
  * The Freemarker templates are loaded from classpath, see {@link io.helidon.build.sitegen.freemarker.TemplateLoader}
- *
- * @author rgrecour
  */
 public class AsciidocConverter extends AbstractConverter<String> {
 
