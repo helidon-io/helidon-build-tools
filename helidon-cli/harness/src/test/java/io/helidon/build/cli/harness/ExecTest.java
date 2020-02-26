@@ -106,8 +106,8 @@ public class ExecTest {
 
         public TestCommandRegistry() {
             super(/* pkg */"");
-            register(new SimpleCommand());
             register(new CommandWithCommonOptions());
+            register(new SimpleCommand());
         }
     }
 

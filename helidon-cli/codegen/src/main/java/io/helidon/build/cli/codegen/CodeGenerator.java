@@ -16,12 +16,20 @@
 package io.helidon.build.cli.codegen;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 
+import io.helidon.build.cli.codegen.MetaModel.ArgumentMetaModel;
+import io.helidon.build.cli.codegen.MetaModel.CommandMetaModel;
+import io.helidon.build.cli.codegen.MetaModel.FlagMetaModel;
+import io.helidon.build.cli.codegen.MetaModel.KeyValueMetaModel;
+import io.helidon.build.cli.codegen.MetaModel.KeyValuesMetaModel;
+import io.helidon.build.cli.codegen.MetaModel.ParametersMetaModel;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.CommandModel;
@@ -84,7 +92,7 @@ final class CodeGenerator {
      * @param params parameters models
      * @return source code for the generated class
      */
-    static String generateCommandRegistry(String pkg, String name, List<MetaModel.CommandMetaModel> models) {
+    static String generateCommandRegistry(String pkg, String name, List<CommandMetaModel> models) {
         return "package " + pkg + ";\n"
                 + "\n"
                 + "import " + CommandRegistry.class.getName() + ";\n"
@@ -138,7 +146,7 @@ final class CodeGenerator {
         Iterator<MetaModel<?>> it = params.iterator();
         for (int i = 1; it.hasNext(); i++) {
             MetaModel param = it.next();
-            if (param instanceof MetaModel.ParametersMetaModel) {
+            if (param instanceof ParametersMetaModel) {
                 s += indent + "OPTION" + i + ".resolve(parser)";
             } else {
                 s += indent + "parser.resolve(OPTION" + i + ")";
@@ -150,9 +158,11 @@ final class CodeGenerator {
         return s;
     }
 
-    private static String registerModels(List<MetaModel.CommandMetaModel> commands, String indent) {
+    private static String registerModels(List<CommandMetaModel> commands, String indent) {
         String s = "";
-        Iterator<MetaModel.CommandMetaModel> it = commands.iterator();
+        List<CommandMetaModel> sortedCommands = new ArrayList<>(commands);
+        Collections.sort(sortedCommands);
+        Iterator<CommandMetaModel> it = sortedCommands.iterator();
         while (it.hasNext()) {
             String modelSimpleName = it.next().type().getSimpleName() + MODEL_IMPL_SUFFIX;
             s += indent + "register(new " + modelSimpleName + "());";
@@ -172,26 +182,26 @@ final class CodeGenerator {
                 continue;
             }
             s += indent + "static final ";
-            if (param instanceof MetaModel.KeyValuesMetaModel) {
-                String paramType = ((MetaModel.KeyValuesMetaModel) param).paramType().getQualifiedName().toString();
-                Option.KeyValues option = ((MetaModel.KeyValuesMetaModel) param).annotation();
+            if (param instanceof KeyValuesMetaModel) {
+                String paramType = ((KeyValuesMetaModel) param).paramType().getQualifiedName().toString();
+                Option.KeyValues option = ((KeyValuesMetaModel) param).annotation();
                 s += "CommandModel.KeyValuesInfo<" + paramType + "> OPTION" + i + " = new CommandModel.KeyValuesInfo<>("
                         + paramType + ".class, \"" + option.name() + "\", \"" + option.description() + "\", "
                         + String.valueOf(option.required()) + ");";
-            } else if (param instanceof MetaModel.FlagMetaModel) {
-                Option.Flag option = ((MetaModel.FlagMetaModel) param).annotation();
+            } else if (param instanceof FlagMetaModel) {
+                Option.Flag option = ((FlagMetaModel) param).annotation();
                 s += "CommandModel.FlagInfo OPTION" + i + " = new CommandModel.FlagInfo(\""
                         + option.name() + "\", \"" + option.description() + "\");";
             } else if (param.type() != null) {
                 String typeQualifedName = param.type().getQualifiedName().toString();
-                if (param instanceof MetaModel.KeyValueMetaModel) {
-                    Option.KeyValue option = ((MetaModel.KeyValueMetaModel) param).annotation();
+                if (param instanceof KeyValueMetaModel) {
+                    Option.KeyValue option = ((KeyValueMetaModel) param).annotation();
                     s += "CommandModel.KeyValueInfo<" + typeQualifedName + "> OPTION" + i + " = new CommandModel.KeyValueInfo<>("
                             + typeQualifedName + ".class, \"" + option.name() + "\", \"" + option.description()
                             + "\", " + defaultValue(param.type(), option.defaultValue())
                             + ", " + String.valueOf(option.required()) + ");";
-                } else if (param instanceof MetaModel.ArgumentMetaModel) {
-                    Option.Argument option = ((MetaModel.ArgumentMetaModel) param).annotation();
+                } else if (param instanceof ArgumentMetaModel) {
+                    Option.Argument option = ((ArgumentMetaModel) param).annotation();
                     s += "CommandModel.ArgumentInfo<" + typeQualifedName + "> OPTION" + i + " = new CommandModel.ArgumentInfo<>("
                             + typeQualifedName + ".class, \"" + option.description() + "\", "
                             + String.valueOf(option.required()) + ");";

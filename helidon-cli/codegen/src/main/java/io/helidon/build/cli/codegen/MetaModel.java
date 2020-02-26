@@ -277,7 +277,7 @@ abstract class MetaModel<T> {
     /**
      * Meta-model for {@link io.helidon.build.cli.harness.Command}.
      */
-    static final class CommandMetaModel extends ParametersMetaModel<Command> {
+    static final class CommandMetaModel extends ParametersMetaModel<Command> implements Comparable<CommandMetaModel> {
 
         /**
          * Create a new command meta-model.
@@ -286,6 +286,11 @@ abstract class MetaModel<T> {
          */
         CommandMetaModel(TypeElement typeElt, String pkg, List<MetaModel<?>> params, Command annotation) {
             super(annotation, typeElt, pkg, params);
+        }
+
+        @Override
+        public int compareTo(CommandMetaModel cmd) {
+            return annotation().name().compareTo(cmd.annotation().name());
         }
     }
 }

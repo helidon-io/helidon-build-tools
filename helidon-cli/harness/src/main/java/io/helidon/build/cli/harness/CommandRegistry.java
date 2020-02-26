@@ -16,7 +16,7 @@
 package io.helidon.build.cli.harness;
 
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -43,7 +43,7 @@ public class CommandRegistry {
      */
     protected CommandRegistry(String pkg) {
         this.pkg = Objects.requireNonNull(pkg, "pkg is null");
-        commandsByName = new HashMap<>();
+        commandsByName = new LinkedHashMap<>();
         // built-in commands
         register(new UsageCommand());
         register(new HelpCommand());

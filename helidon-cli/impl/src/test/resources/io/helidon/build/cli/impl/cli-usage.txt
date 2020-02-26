@@ -9,11 +9,11 @@ Options:
   --debug             Produce debug output
 
 Commands:
-  features    List or add features to the project
-  init        Generate a new project
-  dev         Continuous application development
   build       Build the application
-  version     Print version information
+  dev         Continuous application development
+  features    List or add features to the project
   info        Print project information
+  init        Generate a new project
+  version     Print version information
 
 Run 'helidon COMMAND --help' for more information on a command.
