@@ -35,8 +35,6 @@ import static io.helidon.build.sitegen.Helper.getRelativePath;
 
 /**
  * Utility class to parse and match path segments.
- *
- * @author rgrecour
  */
 public class SourcePath {
 

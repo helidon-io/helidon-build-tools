@@ -22,8 +22,6 @@ import io.helidon.build.sitegen.Page.Metadata;
 
 /**
  * Capability to render and read metadata for specific type of document.
- *
- * @author rgrecour
  */
 public interface PageRenderer {
 

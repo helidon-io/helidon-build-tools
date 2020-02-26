@@ -18,8 +18,6 @@ package io.helidon.build.sitegen;
 
 /**
  * Search index entry model.
- *
- * @author rgrecour
  */
 public class SearchEntry {
 

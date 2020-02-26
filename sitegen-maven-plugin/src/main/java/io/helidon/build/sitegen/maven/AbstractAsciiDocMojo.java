@@ -194,7 +194,8 @@ public abstract class AbstractAsciiDocMojo extends AbstractMojo {
      * @throws MojoExecutionException in case the post-processing encounters a system error
      */
     void postProcessFile(Path adocFilePath, Path outputPath) throws
-            IOException, MojoFailureException, MojoExecutionException {}
+            IOException, MojoFailureException, MojoExecutionException {
+    }
 
     /**
      * Processes the AsciiDoctor file using a previously-created Asciidoctor

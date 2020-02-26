@@ -48,8 +48,6 @@ import static io.helidon.build.sitegen.Helper.checkNonNullNonEmpty;
 
 /**
  * A facade over freemarker.
- *
- * @author rgrecour
  */
 public class FreemarkerEngine {
 

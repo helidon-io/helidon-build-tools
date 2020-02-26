@@ -27,8 +27,6 @@ import org.asciidoctor.internal.RubyAttributesMapDecorator;
 /**
  * A Freemarker {@code ObjectMapper} to wrap and unwrap objects to and
  * from {@code TemplateModel}.
- *
- * @author rgrecour
  */
 public class ObjectWrapper extends DefaultObjectWrapper {
 

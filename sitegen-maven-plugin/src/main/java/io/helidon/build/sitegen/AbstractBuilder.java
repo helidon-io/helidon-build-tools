@@ -25,8 +25,6 @@ import java.util.Map.Entry;
 /**
  * Base builder class.
  * @param <T> the type built by the builder
- *
- * @author rgrecour
  */
 public abstract class AbstractBuilder<T> {
 

@@ -29,8 +29,6 @@ import freemarker.cache.URLTemplateLoader;
 
 /**
  * A Freemarker template loader used for loading templates from classpath.
- *
- * @author rgrecour
  */
 public class TemplateLoader extends URLTemplateLoader {
 

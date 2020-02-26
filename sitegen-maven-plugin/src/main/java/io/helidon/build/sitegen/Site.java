@@ -35,8 +35,6 @@ import static io.helidon.build.sitegen.Helper.checkNonNull;
 
 /**
  * Yet another site generator.
- *
- * @author rgrecour
  */
 public class Site {
 

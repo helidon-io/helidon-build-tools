@@ -30,8 +30,6 @@ import org.asciidoctor.ast.ContentNode;
  *
  * This provides properties style references on {@link ContentNode} objects
  * inside Freemarker templates.
- *
- * @author rgrecour
  */
 public class ContentNodeHashModel implements TemplateHashModel {
 

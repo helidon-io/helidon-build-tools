@@ -24,7 +24,6 @@ import io.helidon.config.Config;
 
 /**
  * Configuration for {@link SourcePath} filter.
- * @author rgrecour
  */
 public class SourcePathFilter {
 

@@ -30,8 +30,6 @@ import org.asciidoctor.ast.ContentNode;
 
 /**
  * A Freemarker template model for method invocations on {@link ContentNode}.
- *
- * @author rgrecour
  */
 public class SimpleMethodModel implements TemplateMethodModelEx {
 

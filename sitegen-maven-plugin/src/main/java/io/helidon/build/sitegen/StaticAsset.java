@@ -29,8 +29,6 @@ import static io.helidon.build.sitegen.Helper.checkNonNullNonEmpty;
  *
  * Static assets are resources to be scanned in the site source directory
  * and copied in the generated directory.
- *
- * @author rgrecour
  */
 public class StaticAsset implements Model {
 

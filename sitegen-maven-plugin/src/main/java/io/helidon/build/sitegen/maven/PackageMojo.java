@@ -40,8 +40,6 @@ import static io.helidon.build.sitegen.maven.Constants.PROPERTY_PREFIX;
 
 /**
  * Goal that creates the site archive.
- *
- * @author rgrecour
  */
 @Mojo(name = "package",
       defaultPhase = LifecyclePhase.PACKAGE,

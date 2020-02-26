@@ -20,8 +20,6 @@ import freemarker.template.TemplateModel;
 
 /**
  * A simple {@code TemplateModel} to pass objects from templates.
- *
- * @author rgrecour
  */
 public class SimpleObjectModel implements TemplateModel {
 

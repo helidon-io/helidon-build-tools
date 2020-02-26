@@ -36,8 +36,6 @@ import static io.helidon.build.sitegen.maven.Constants.PROPERTY_PREFIX;
 
 /**
  * Goal that generates the site files.
- *
- * @author rgrecour
  */
 @Mojo(name = "generate",
       defaultPhase = LifecyclePhase.COMPILE,

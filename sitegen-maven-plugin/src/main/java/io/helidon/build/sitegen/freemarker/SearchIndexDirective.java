@@ -37,8 +37,6 @@ import org.asciidoctor.ast.StructuralNode;
 
 /**
  * A freemarker directive to accumulate entries for the search index.
- *
- * @author rgrecour
  */
 public class SearchIndexDirective implements TemplateDirectiveModel {
 

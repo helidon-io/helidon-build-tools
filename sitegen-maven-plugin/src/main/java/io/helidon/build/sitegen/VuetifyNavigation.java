@@ -32,8 +32,6 @@ import static io.helidon.build.sitegen.Helper.checkNonNullNonEmpty;
 
 /**
  * Configuration and mapping for vuetify navigation.
- *
- * @author rgrecour
  */
 public class VuetifyNavigation implements Model {
 

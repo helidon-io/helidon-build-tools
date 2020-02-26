@@ -27,8 +27,6 @@ import static io.helidon.common.CollectionsHelper.listOf;
 
 /**
  * Service Provider Interface (SPI) for site backend.
- *
- * @author rgrecour
  */
 public interface BackendProvider {
 

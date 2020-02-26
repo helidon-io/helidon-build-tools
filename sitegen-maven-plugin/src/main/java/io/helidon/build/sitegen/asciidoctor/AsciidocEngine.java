@@ -50,8 +50,6 @@ import static io.helidon.build.sitegen.Helper.getRelativePath;
 
 /**
  * A facade over Asciidoctorj.
- *
- * @author rgrecour
  */
 public class AsciidocEngine {
 

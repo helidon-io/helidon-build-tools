@@ -30,8 +30,6 @@ import static io.helidon.build.sitegen.Helper.copyResources;
 
 /**
  * Represents a site processing invocation.
- *
- * @author rgrecour
  */
 public class RenderingContext {
 

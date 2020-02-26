@@ -30,8 +30,6 @@ import org.asciidoctor.extension.Reader;
 /**
  * A {@link BlockProcessor} implementation that provides custom asciidoc syntax
  * for creating cards.
- *
- * @author rgrecour
  */
 public class CardBlockProcessor extends BlockProcessor {
 

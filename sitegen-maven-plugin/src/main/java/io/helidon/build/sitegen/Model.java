@@ -18,8 +18,6 @@ package io.helidon.build.sitegen;
 
 /**
  * Exposes attributes to freemarker.
- *
- * @author rgrecour
  */
 public interface Model {
 

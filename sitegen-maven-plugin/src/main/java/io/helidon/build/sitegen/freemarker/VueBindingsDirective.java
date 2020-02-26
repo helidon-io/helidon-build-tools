@@ -33,8 +33,6 @@ import org.asciidoctor.ast.ContentNode;
 
 /**
  * A freemarker directive to accumulate custom vue bindings.
- *
- * @author rgrecour
  */
 public class VueBindingsDirective implements TemplateDirectiveModel {
 

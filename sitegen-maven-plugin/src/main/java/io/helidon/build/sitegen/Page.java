@@ -31,8 +31,6 @@ import static io.helidon.build.sitegen.Helper.replaceFileExt;
 
 /**
  * A page represents a document to be rendered.
- *
- * @author rgrecour
  */
 public class Page implements Model {
 

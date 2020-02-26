@@ -122,7 +122,8 @@ public class PreprocessAsciiDocMojo extends AbstractAsciiDocMojo {
         byte[] buffer = new byte[256];
         try (InputStream is = new BufferedInputStream(Files.newInputStream(path));
              DigestInputStream dis = new DigestInputStream(is, md)) {
-            while (dis.read(buffer) != -1) {}
+            while (dis.read(buffer) != -1) {
+            }
         }
         return md.digest();
     }

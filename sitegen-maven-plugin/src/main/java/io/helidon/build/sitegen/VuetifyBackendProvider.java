@@ -20,8 +20,6 @@ import io.helidon.config.Config;
 
 /**
  * Backend provider for {@link VuetifyBackend}.
- *
- * @author rgrecour
  */
 public class VuetifyBackendProvider implements BackendProvider {
 

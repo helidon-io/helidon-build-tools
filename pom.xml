@@ -110,7 +110,7 @@
         -->
         <version.lib.asciidoctorj>1.6.0-RC.2</version.lib.asciidoctorj>
         <version.lib.asciidoctorj-diagram>1.5.4.1</version.lib.asciidoctorj-diagram>
-        <version.lib.checkstyle>8.18</version.lib.checkstyle>
+        <version.lib.checkstyle>8.29</version.lib.checkstyle>
         <version.lib.diffutils>2.2</version.lib.diffutils>
         <version.lib.freemarker>2.3.23</version.lib.freemarker>
         <version.lib.helidon>0.9.0</version.lib.helidon>
@@ -137,7 +137,7 @@
 
         <!-- maven plugin versions -->
         <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
-        <version.plugin.checkstyle>2.17</version.plugin.checkstyle>
+        <version.plugin.checkstyle>3.1.0</version.plugin.checkstyle>
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
         <version.plugin.dependency>3.0.0</version.plugin.dependency>
         <version.plugin.deploy>2.8.2</version.plugin.deploy>
@@ -287,7 +287,9 @@
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>${version.plugin.checkstyle}</version>
                     <configuration>
-                        <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+                        <sourceDirectories>
+                            <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+                        </sourceDirectories>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -369,7 +371,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>buildnumber-maven-plugin</artifactId>
-                <version>${version.plugin.buildnumber}</version>
                 <executions>
                     <execution>
                         <phase>validate</phase>

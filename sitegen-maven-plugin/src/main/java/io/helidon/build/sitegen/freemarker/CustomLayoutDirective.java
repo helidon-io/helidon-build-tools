@@ -33,8 +33,6 @@ import org.asciidoctor.ast.ContentNode;
 
 /**
  * A freemarker directive to accumulate custom layout mappings.
- *
- * @author rgrecour
  */
 public class CustomLayoutDirective implements TemplateDirectiveModel {
 

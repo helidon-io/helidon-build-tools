@@ -31,8 +31,6 @@ import org.asciidoctor.ast.ContentNode;
 
 /**
  * A freemarker directive to fix asciidoctor passthrough not being substituted.
- *
- * @author rgrecour
  */
 public class PassthroughFixDirective implements TemplateDirectiveModel {
 
