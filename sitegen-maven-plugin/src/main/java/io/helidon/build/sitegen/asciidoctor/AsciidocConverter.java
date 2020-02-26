@@ -35,8 +35,6 @@ import static io.helidon.build.sitegen.asciidoctor.CardBlockProcessor.BLOCKLINK_
  * An asciidoctor converter that supports backends implemented with Freemarker.
  *
  * The Freemarker templates are loaded from classpath, see {@link io.helidon.build.sitegen.freemarker.TemplateLoader}
- *
- * @author rgrecour
  */
 public class AsciidocConverter extends AbstractConverter<String> {
 

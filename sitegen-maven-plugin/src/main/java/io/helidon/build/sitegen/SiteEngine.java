@@ -29,8 +29,6 @@ import static io.helidon.build.sitegen.Helper.checkNonNullNonEmpty;
 /**
  * Configuration of pair of {@link FreemarkerEngine} and {@link AsciidocEngine}
  * indexed by backend names in a static registry.
- *
- * @author rgrecour
  */
 public class SiteEngine {
 

@@ -24,8 +24,6 @@ import org.asciidoctor.extension.spi.ExtensionRegistry;
 /**
  * An implementation of {@link ExtensionRegistry} to register custom extensions
  * to Asciidoctorj.
- *
- * @author rgrecour
  */
 public class AsciidocExtensionRegistry implements ExtensionRegistry {
 

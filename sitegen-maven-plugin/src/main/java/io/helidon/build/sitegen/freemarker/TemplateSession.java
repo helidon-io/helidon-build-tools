@@ -27,8 +27,6 @@ import freemarker.template.TemplateDirectiveModel;
  *
  * This is especially useful for asciidoc rendering where many templates are
  * recursively invoked to render a single document.
- *
- * @author rgrecour
  */
 public class TemplateSession {
 

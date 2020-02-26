@@ -33,8 +33,6 @@ import static io.helidon.common.CollectionsHelper.mapOf;
 
 /**
  * Implementation of a {@link PageRenderer} for asciidoc documents.
- *
- * @author rgrecour
  */
 public class AsciidocPageRenderer implements PageRenderer {
 

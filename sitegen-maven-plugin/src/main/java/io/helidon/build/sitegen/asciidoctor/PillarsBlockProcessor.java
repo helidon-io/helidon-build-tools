@@ -30,8 +30,6 @@ import org.asciidoctor.extension.Reader;
 /**
  * A {@link BlockProcessor} implementation that provides custom asciidoc syntax
  * for creating pillars.
- *
- * @author rgrecour
  */
 public class PillarsBlockProcessor extends BlockProcessor {
 

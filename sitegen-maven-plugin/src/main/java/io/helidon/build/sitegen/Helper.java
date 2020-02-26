@@ -40,8 +40,6 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * A helper class to help with class-path resources.
- *
- * @author rgrecour
  */
 public abstract class Helper {
 

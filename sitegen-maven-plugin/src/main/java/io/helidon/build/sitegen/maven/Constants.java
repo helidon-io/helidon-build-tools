@@ -18,7 +18,6 @@ package io.helidon.build.sitegen.maven;
 
 /**
  * Constants shared by Maven goals.
- * @author rgrecour
  */
 abstract class Constants {
     static final String PROPERTY_PREFIX = "sitegen.";

@@ -43,8 +43,6 @@ import static io.helidon.common.CollectionsHelper.mapOf;
 /**
  * A backend implementation for vuetifyjs.
  * @see <a href="https://vuetifyjs.com">https://vuetifyjs.com</a>
- *
- * @author rgrecour
  */
 public class VuetifyBackend extends Backend {
 

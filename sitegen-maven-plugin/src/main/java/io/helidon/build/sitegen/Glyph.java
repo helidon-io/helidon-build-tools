@@ -24,8 +24,6 @@ import static io.helidon.build.sitegen.Helper.checkNonNullNonEmpty;
 
 /**
  * Configuration for image or icon.
- *
- * @author rgrecour
  */
 public class Glyph implements Model {
 

@@ -26,8 +26,6 @@ import static io.helidon.build.sitegen.Helper.checkNonNullNonEmpty;
 
 /**
  * Backend base class.
- *
- * @author rgrecour
  */
 public abstract class Backend implements Model {
 

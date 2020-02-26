@@ -26,8 +26,6 @@ import io.helidon.config.Config;
 
 /**
  * Configuration for default header values.
- *
- * @author rgrecour
  */
 public class Header implements Model {
 

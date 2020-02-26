@@ -28,8 +28,6 @@ import org.asciidoctor.internal.RubyAttributesMapDecorator;
  *
  * This provides normal freemarker dotted notation access to the map as well
  * as invoking methods.
- *
- * @author rgrecour
  */
 public class ContentNodeAttributesModel implements TemplateHashModel {
 

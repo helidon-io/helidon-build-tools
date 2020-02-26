@@ -156,7 +156,8 @@ class Type {
             return result;
         }
 
-        private TypeEnum() {}
+        private TypeEnum() {
+        }
 
         TypeEnum name(String name) {
             enumName = name;

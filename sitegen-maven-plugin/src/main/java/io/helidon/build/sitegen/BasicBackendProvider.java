@@ -20,8 +20,6 @@ import io.helidon.config.Config;
 
 /**
  * Backend provider for {@link BasicBackend}.
- *
- * @author rgrecour
  */
 public class BasicBackendProvider implements BackendProvider {
 

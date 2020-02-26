@@ -25,8 +25,6 @@ import static io.helidon.common.CollectionsHelper.mapOf;
 
 /**
  * A basic backend implementation.
- *
- * @author rgrecour
  */
 public class BasicBackend extends Backend {
 

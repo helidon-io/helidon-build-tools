@@ -18,8 +18,6 @@ package io.helidon.build.sitegen;
 
 /**
  * An exception to represents any error occurring as part of site processing.
- *
- * @author rgrecour
  */
 public class RenderingException extends RuntimeException {
 

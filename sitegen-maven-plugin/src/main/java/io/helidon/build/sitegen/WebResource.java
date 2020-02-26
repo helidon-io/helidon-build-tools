@@ -26,8 +26,6 @@ import static io.helidon.build.sitegen.Helper.checkNonNullNonEmpty;
 
 /**
  * Configuration for different type of web resources such as css stylesheets or scripts.
- *
- * @author rgrecour
  */
 public class WebResource implements Model {
 
