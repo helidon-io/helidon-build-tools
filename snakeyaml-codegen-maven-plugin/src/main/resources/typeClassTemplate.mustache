@@ -71,6 +71,7 @@ class {{generatedClassName}}<T extends TypeDescription> {
         td_{{simpleName}}.substituteProperty("{{propertySubName}}", {{propertySubType}}.class, "{{getter}}", "{{setter}}");
         {{/propertySubstitutions}}
         types.put(td_{{simpleName}}.getType(), td_{{simpleName}});
+
 {{/typesToAugment}}
     }
 }

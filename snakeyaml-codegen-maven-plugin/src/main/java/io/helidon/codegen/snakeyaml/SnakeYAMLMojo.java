@@ -595,7 +595,6 @@ public class SnakeYAMLMojo extends AbstractMojo {
             return super.visitClass(node, type);
         }
 
-
         @Override
         public Type visitImport(ImportTree node, Type type) {
             imports.add(new Import(node.getQualifiedIdentifier().toString(), node.isStatic()));

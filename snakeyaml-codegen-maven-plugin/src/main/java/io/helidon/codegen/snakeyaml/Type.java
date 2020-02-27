@@ -49,8 +49,6 @@ class Type {
     // Prop subs are recorded here but are set from the caller, not by the compilation/analysis.
     private final List<PropertySubstitution> substitutions = new ArrayList<>();
 
-    private final List<ParameterizedProperty> parameterizedProperties = new ArrayList<>();
-
     /**
      * Creates a new {@code Type}.
      *
@@ -110,15 +108,6 @@ class Type {
         return this;
     }
 
-    Type addParameterizedProperty(String propertyName, Class<?> groupingType, List<String> typeParameters) {
-        parameterizedProperties.add(new ParameterizedProperty(propertyName, groupingType.getName(), typeParameters));
-        return this;
-    }
-
-    List<ParameterizedProperty> parameterizedProperties() {
-        return parameterizedProperties;
-    }
-
     @Override
     public String toString() {
         return "Type{"
@@ -129,7 +118,6 @@ class Type {
                 + ", implementationType='" + implementationType + '\''
                 + ", propertyParameters=" + propertyParameters
                 + ", substitutions=" + substitutions
-                + ", parameterized parameters" + parameterizedProperties
                 + '}';
     }
 
@@ -239,31 +227,6 @@ class Type {
                     + ", getter='" + getter + '\''
                     + ", setter='" + setter + '\''
                     + '}';
-        }
-    }
-
-    static class ParameterizedProperty {
-
-        private final String parameterizedPropertyName;
-        private final String parameterizedGroupingType; // java.util.Map or java.util.List
-        private final List<String> typeParameters;
-
-        ParameterizedProperty(String propertyName, String groupingType, List<String> typeParameters) {
-            parameterizedPropertyName = propertyName;
-            parameterizedGroupingType = groupingType;
-            this.typeParameters = typeParameters;
-        }
-
-        String parameterizedPropertyName() {
-            return parameterizedPropertyName;
-        }
-
-        String parameterizedGroupingType() {
-            return parameterizedGroupingType;
-        }
-
-        List<String> parameterizedTypes() {
-            return typeParameters;
         }
     }
 }
