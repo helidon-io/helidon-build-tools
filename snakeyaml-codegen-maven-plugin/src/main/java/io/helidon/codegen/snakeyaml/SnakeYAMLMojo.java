@@ -169,7 +169,6 @@ public class SnakeYAMLMojo extends AbstractMojo {
     private final Map<String, Type> implementations = new HashMap<>();
     private final Set<Import> imports = preloadedImports();
     private final Map<String, List<String>> interfaces = new HashMap<>();
-    private final ParameterizedPropertyManager parameterizedPropertyManager = new ParameterizedPropertyManager();
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject mavenProject;
@@ -299,8 +298,6 @@ public class SnakeYAMLMojo extends AbstractMojo {
             analyzeImplementations(implementations, imports, interfaces);
 
             associateImplementationsWithInterfaces(types, interfaces);
-
-            addParameterizedGroupings(types, parameterizedPropertyManager);
 
             generateHelperClass(types, imports);
 
@@ -455,19 +452,6 @@ public class SnakeYAMLMojo extends AbstractMojo {
                 });
     }
 
-    private void addParameterizedGroupings(Map<String, Type> types, ParameterizedPropertyManager manager) {
-        types.values().stream()
-                .forEach(type -> {
-                    manager.stream()
-                            .filter(entry -> entry.getKey().equals(type.simpleName()))
-                            .forEach(entry ->
-                                entry.getValue().forEach(grouping ->
-                                        type.addParameterizedProperty(grouping.propertyName(), grouping.groupingType(),
-                                                grouping.parameterizedTypes()))
-                            );
-                });
-    }
-
     private void analyzeClasses(Map<String, Type> types, Set<Import> imports, Map<String, List<String>> interfaces,
             Collection<Path> pathsToCommpile, String note) {
         /*
@@ -485,7 +469,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
         JavaCompiler.CompilationTask task = jc.getTask(null, fm, diagListener, null, null,
                 javaFilesToCompile(fm, pathsToCommpile));
         List<Processor> procs = new ArrayList<>();
-        EndpointProcessor ep = new EndpointProcessor(new EndpointScanner(types, imports, interfaces, parameterizedPropertyManager));
+        EndpointProcessor ep = new EndpointProcessor(new EndpointScanner(types, imports, interfaces));
         procs.add(ep);
         task.setProcessors(procs);
         task.call();
@@ -583,14 +567,11 @@ public class SnakeYAMLMojo extends AbstractMojo {
         private final Map<String, Type> types;
         private final Set<Import> imports;
         private final Map<String, List<String>> interfacesToImpls;
-        private final ParameterizedPropertyManager parameterizedPropertyManager;
 
-        EndpointScanner(Map<String, Type> types, Set<Import> imports, Map<String, List<String>> interfacesToImpls,
-                ParameterizedPropertyManager parameterizedPropertyManager) {
+        EndpointScanner(Map<String, Type> types, Set<Import> imports, Map<String, List<String>> interfacesToImpls) {
             this.types = types;
             this.imports = imports;
             this.interfacesToImpls = interfacesToImpls;
-            this.parameterizedPropertyManager = parameterizedPropertyManager;
         }
         @Override
         public Type visitClass(ClassTree node, Type type) {
@@ -630,18 +611,6 @@ public class SnakeYAMLMojo extends AbstractMojo {
                         + methodName.subSequence(4, methodName.length()).toString();
                 VariableTree propertyTree = node.getParameters().get(0);
                 addPropertyParametersIfNeeded(propertyTree, type, propName);
-
-                Tree candidateClassTree = getCurrentPath().getParentPath().getLeaf();
-                if (candidateClassTree.getKind() == Tree.Kind.CLASS || candidateClassTree.getKind() == Tree.Kind.INTERFACE) {
-                    ClassTree classTree = ClassTree.class.cast(candidateClassTree);
-                    Name parentName = classTree.getSimpleName();
-                    if (implementsMapOrList(classTree)) {
-                        ParameterizedGrouping parameterizedGrouping = ParameterizedGrouping.create(propName, propertyTree);
-                        if (parameterizedGrouping != null) {
-                            parameterizedPropertyManager.add(parentName.toString(), parameterizedGrouping);
-                        }
-                    }
-                }
             }
 
             return super.visitMethod(node, type);
@@ -740,86 +709,5 @@ public class SnakeYAMLMojo extends AbstractMojo {
             result.append(".").append(leafName);
         }
         return isUsefulLeaf ? result.toString() : null;
-    }
-
-    private static class ParameterizedPropertyManager {
-        /*
-         * Map from a parent type name to an inner map. That inner map's keys are property names and its entries are
-         * parameterized lists or maps, with the key being either Map or List and the value being a list of parameterized
-         * types (2 for maps, 1 for lists).
-         */
-        private final Map<String, List<ParameterizedGrouping>> parameterizedProperties = new HashMap<>();
-
-        private void add(String parentTypeName, ParameterizedGrouping parameterizedGrouping) {
-            List<ParameterizedGrouping> groupings = parameterizedProperties.computeIfAbsent(parentTypeName,
-                    k -> new ArrayList<>());
-            groupings.add(parameterizedGrouping);
-        }
-
-        Stream<Map.Entry<String, List<ParameterizedGrouping>>> stream() {
-            return parameterizedProperties.entrySet().stream();
-        }
-    }
-
-    private static class ParameterizedGrouping {
-
-        private final String propertyName;
-        private final Class<?> groupingType;
-        private final List<String> parameterizedTypes;
-
-        ParameterizedGrouping(String propertyName, Class<?> groupingType, List<String> parameterizedTypes) {
-            this.propertyName = propertyName;
-            this.groupingType = groupingType;
-            this.parameterizedTypes = parameterizedTypes;
-        }
-
-        static ParameterizedGrouping create(String propertyName, Tree tree) {
-            if (tree.getKind() != Tree.Kind.VARIABLE) {
-                return null;
-            }
-            VariableTree vTree = VariableTree.class.cast(tree);
-            Tree candidateParameterizedTypeTree = vTree.getType();
-            if (candidateParameterizedTypeTree.getKind() != Tree.Kind.PARAMETERIZED_TYPE) {
-                return null;
-            }
-            ParameterizedTypeTree pTypeTree = ParameterizedTypeTree.class.cast(candidateParameterizedTypeTree);
-
-            Tree candidateIDTree = pTypeTree.getType();
-            if (candidateIDTree.getKind() != Tree.Kind.IDENTIFIER) {
-                return null;
-            }
-            IdentifierTree idTree = IdentifierTree.class.cast(candidateIDTree);
-            Name idName = idTree.getName();
-            List<? extends Tree> typeArgTrees = pTypeTree.getTypeArguments();
-
-            Class<?> collectionClass;
-            Tree parameterizedTypeTree;
-            if ((idName.contentEquals("Map") || idName.contentEquals("java.util.Map")) && typeArgTrees.size() == 2) {
-                collectionClass = Map.class;
-                parameterizedTypeTree = typeArgTrees.get(1);
-            } else if ((idName.contentEquals("List") || idName.contentEquals("java.util.List")) && typeArgTrees.size() == 1) {
-                collectionClass = List.class;
-                parameterizedTypeTree = typeArgTrees.get(0);
-            } else {
-                return null;
-            }
-
-            if (parameterizedTypeTree.getKind() != Tree.Kind.IDENTIFIER && parameterizedTypeTree.getKind() != Tree.Kind.PARAMETERIZED_TYPE) {
-                return null;
-            }
-            return new ParameterizedGrouping(propertyName, collectionClass, treesToStrings(typeArgTrees));
-        }
-
-        String propertyName() {
-            return propertyName;
-        }
-
-        Class<?> groupingType() {
-            return groupingType;
-        }
-
-        List<String> parameterizedTypes() {
-            return parameterizedTypes;
-        }
     }
 }
