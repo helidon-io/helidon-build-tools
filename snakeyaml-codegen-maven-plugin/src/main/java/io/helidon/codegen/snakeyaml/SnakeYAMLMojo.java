@@ -611,23 +611,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
                 VariableTree propertyTree = node.getParameters().get(0);
                 addPropertyParametersIfNeeded(propertyTree, type, propName);
             }
-
             return super.visitMethod(node, type);
-        }
-
-        private static boolean implementsMapOrList(ClassTree classTree) {
-            for (Tree t : classTree.getImplementsClause()) {
-                if (!(t instanceof ParameterizedTypeTree)) {
-                    continue;
-                }
-                ParameterizedTypeTree pTree = ParameterizedTypeTree.class.cast(t);
-                String typeString = pTree.getType().toString();
-                if ("Map".equals(typeString) || "java.util.Map".equals(typeString) || "List".equals(typeString)
-                            || "java.util.List".equals(typeString)) {
-                    return true;
-                }
-            }
-            return false;
         }
 
         private static void addPropertyParametersIfNeeded(VariableTree node, Type type, String propName) {

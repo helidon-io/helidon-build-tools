@@ -19,12 +19,18 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.helidon.build-tools</groupId>
+        <artifactId>snakeyaml-codegen-maven-plugin</artifactId>
+        <version>1.1.2-SNAPSHOT</version>
+    </parent>
+
     <groupId>test.group</groupId>
     <artifactId>test-artifact</artifactId>
-    <version>test-version</version>
 
     <properties>
-        <version.plugin.openapicodegen>1.0.11-SNAPSHOT</version.plugin.openapicodegen>
+        <version.plugin.snakeyamlcodegen>${project.version}</version.plugin.snakeyamlcodegen>
         <version.lib.microprofile.openapi>1.1.2</version.lib.microprofile.openapi>
     </properties>
 
@@ -41,7 +47,7 @@
             <plugin>
                 <groupId>io.helidon.build-tools</groupId>
                 <artifactId>snakeyaml-codegen-maven-plugin</artifactId>
-                <version>${version.plugin.openapicodegen}</version>
+                <version>${version.plugin.snakeyamlcodegen}</version>
                 <configuration>
                     <interfacesConfig>
                         <inputDirectory>interfaces</inputDirectory>
