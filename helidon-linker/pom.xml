@@ -31,6 +31,7 @@
         <dependency>
             <groupId>io.helidon.build-tools</groupId>
             <artifactId>utils</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>
@@ -60,6 +61,7 @@
             <artifactId>utils</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
