@@ -28,7 +28,7 @@ import io.helidon.dev.build.Project;
 import io.helidon.dev.build.maven.DefaultHelidonProjectSupplier;
 
 /**
- * The "dev" loop that manages application lifcycle based on events from a {@link BuildLoop}.
+ * A development loop that manages application lifecycle based on events from a {@link BuildLoop}.
  */
 public class DevLoop {
     private final Path rootDir;
@@ -98,8 +98,9 @@ public class DevLoop {
 
         private void ensureStop() {
             if (projectExecutor != null) {
-                projectExecutor.stop();
+                final ProjectExecutor executor = projectExecutor;
                 projectExecutor = null;
+                executor.stop();
             }
         }
     }

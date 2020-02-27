@@ -24,8 +24,8 @@ import java.util.function.Consumer;
 
 import io.helidon.dev.build.BuildComponent;
 import io.helidon.dev.build.BuildRoot;
-import io.helidon.dev.build.BuildStep;
 import io.helidon.dev.build.BuildRootType;
+import io.helidon.dev.build.BuildStep;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -50,22 +50,48 @@ public class CopyResources implements BuildStep {
             final BuildRoot sources = changes.root();
             final BuildComponent component = sources.component();
             if (test(component)) {
-                final Set<Path> changed = changes.addedOrModified();
-                stdOut.accept("Copying " + changed.size() + " resource files");
                 final Path srcDir = sources.path();
                 final Path outDir = component.outputRoot().path();
-                for (final Path srcFile : changed) {
-                    copy(srcDir, outDir, srcFile, stdOut);
+
+                // Copy any changes
+
+                final Set<Path> changed = changes.addedOrModified();
+                if (!changed.isEmpty()) {
+                    stdOut.accept("Copying " + changed.size() + " resource files");
+                    for (final Path srcFile : changed) {
+                        final Path outFile = toOutputFile(srcDir, srcFile, outDir);
+                        copy(srcFile, outFile, stdOut);
+                    }
+                }
+
+                // Remove any removed files
+
+                final Set<Path> removed = changes.removed();
+                if (!removed.isEmpty()) {
+                    for (final Path srcFile : removed) {
+                        final Path outFile = toOutputFile(srcDir, srcFile, outDir);
+                        remove(outFile, stdOut);
+                    }
                 }
             }
         }
     }
 
-    private void copy(Path srcDir, Path outDir, Path srcPath, Consumer<String> stdOut) throws IOException {
-        final Path relativePath = srcDir.relativize(srcPath);
-        final Path outPath = outDir.resolve(relativePath);
-        stdOut.accept("Copying resource " + srcPath);
-        Files.copy(srcPath, outPath, REPLACE_EXISTING);
+    private void copy(Path srcFile, Path outFile, Consumer<String> stdOut) throws IOException {
+        stdOut.accept("Copying resource " + srcFile);
+        Files.copy(srcFile, outFile, REPLACE_EXISTING);
+    }
+
+    private void remove(Path outFile, Consumer<String> stdOut) throws IOException {
+        if (Files.exists(outFile)) {
+            stdOut.accept("Removing resource " + outFile);
+            Files.delete(outFile);
+        }
+    }
+
+    private Path toOutputFile(Path srcDir, Path srcFile, Path outDir) {
+        final Path relativePath = srcDir.relativize(srcFile);
+        return outDir.resolve(relativePath);
     }
 
     @Override

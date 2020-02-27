@@ -39,6 +39,8 @@ public class ProjectExecutor {
     private static final String JAVA_EXEC = Constants.OS.javaExecutable();
     private static final String JAVA_HOME = System.getProperty("java.home");
     private static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
+    private static final String JIT_LEVEL_ONE="-XX:TieredStopAtLevel=1";
+    private static final String JIT_TWO_COMPILER_THREADS="-XX:CICompilerCount=2";
 
     public enum ExecutionMode {
         JAVA,
@@ -109,6 +111,8 @@ public class ProjectExecutor {
     private void startJava() {
         List<String> command = new ArrayList<>();
         command.add(JAVA_EXEC);
+// TODO        command.add(JIT_LEVEL_ONE);             // Faster startup but longer warmup to peak perf
+// TODO        command.add(JIT_TWO_COMPILER_THREADS);  // Faster startup but longer warmup to peak perf
         command.add("-cp");
         command.add(classPathString());
         command.add(project.mainClassName());

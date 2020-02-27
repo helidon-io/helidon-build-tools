@@ -28,6 +28,15 @@ public class MavenLogWriter implements io.helidon.build.util.Log.Writer {
     private final Log log;
 
     /**
+     * Binds the given maven log to the {@code io.helidon.build.util.Log} so that
+     * calls to the latter will be written to the maven log.
+     * @param mavenLog The maven log.
+     */
+    public static void bind(Log mavenLog) {
+        io.helidon.build.util.Log.setWriter(new MavenLogWriter(mavenLog));
+    }
+
+    /**
      * Constructor.
      *
      * @param log The maven log.
@@ -97,7 +106,5 @@ public class MavenLogWriter implements io.helidon.build.util.Log.Writer {
                 throw new Error();
             }
         }
-
-
     }
 }
