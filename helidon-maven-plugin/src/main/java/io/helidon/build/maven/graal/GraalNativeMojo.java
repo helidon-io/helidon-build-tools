@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -74,6 +75,9 @@ public class GraalNativeMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.build.directory}",
             readonly = true, required = true)
     private File buildDirectory;
+
+    @Parameter(defaultValue = "${project.basedir}", required = true, property = "native.image.currentDir")
+    private File currentDir;
 
     /**
      * GraalVM home.
@@ -208,7 +212,7 @@ public class GraalNativeMojo extends AbstractMojo {
 
         // execute the command process
         ProcessBuilder pb = new ProcessBuilder(command.toArray(new String[0]));
-        pb.directory(buildDirectory);
+        pb.directory(currentDir);
         Thread stdoutReader = new Thread(this::logStdout);
         Thread stderrReader = new Thread(this::logStderr);
         try {
@@ -235,15 +239,20 @@ public class GraalNativeMojo extends AbstractMojo {
     }
 
     private void addNativeImageTarget(List<String> command) {
-        File outputFile = new File(buildDirectory, finalName);
-        getLog().info("Building native image :" + outputFile.getAbsolutePath());
-        command.add("-H:Name=" + outputFile.getAbsolutePath());
+        Path outputPath = buildDirectory.toPath().resolve(finalName);
+        getLog().info("Building native image :" + outputPath.toAbsolutePath());
+
+        // Path is the directory
+        command.add("-H:Path=" + buildDirectory.getAbsolutePath());
+
+        // Name is the filename
+        command.add("-H:Name=" + finalName);
     }
 
     private void addStaticOrShared(List<String> command) throws MojoExecutionException {
         command.add(findNativeImageCmd().getAbsolutePath());
         if (buildShared || buildStatic) {
-            if (buildShared && buildShared) {
+            if (buildShared && buildStatic) {
                 throw new MojoExecutionException(
                         "static and shared option cannot be used together");
             }

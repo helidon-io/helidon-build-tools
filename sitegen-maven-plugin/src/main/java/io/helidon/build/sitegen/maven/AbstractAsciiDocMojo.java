@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -194,7 +194,8 @@ public abstract class AbstractAsciiDocMojo extends AbstractMojo {
      * @throws MojoExecutionException in case the post-processing encounters a system error
      */
     void postProcessFile(Path adocFilePath, Path outputPath) throws
-            IOException, MojoFailureException, MojoExecutionException {}
+            IOException, MojoFailureException, MojoExecutionException {
+    }
 
     /**
      * Processes the AsciiDoctor file using a previously-created Asciidoctor

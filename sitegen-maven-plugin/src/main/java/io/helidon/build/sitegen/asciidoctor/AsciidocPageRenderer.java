@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,6 @@ import static io.helidon.common.CollectionsHelper.mapOf;
 
 /**
  * Implementation of a {@link PageRenderer} for asciidoc documents.
- *
- * @author rgrecour
  */
 public class AsciidocPageRenderer implements PageRenderer {
 

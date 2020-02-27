@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,6 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * A helper class to help with class-path resources.
- *
- * @author rgrecour
  */
 public abstract class Helper {
 
