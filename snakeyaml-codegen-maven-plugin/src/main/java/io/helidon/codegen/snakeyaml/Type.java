@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,7 @@ package io.helidon.codegen.snakeyaml;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -46,23 +43,26 @@ class Type {
     private final boolean isInterface;
 
     private String implementationType;
-    private boolean isRef = false;
-    private final Map<String, TypeEnum> typeEnumsByType = new HashMap<>();
+
     private final List<PropertyParameter> propertyParameters = new ArrayList<>();
 
     // Prop subs are recorded here but are set from the caller, not by the compilation/analysis.
     private final List<PropertySubstitution> substitutions = new ArrayList<>();
 
+    /**
+     * Creates a new {@code Type}.
+     *
+     * @param fullName fully-qualified name of the type
+     * @param simpleName short name of the type
+     * @param isInterface whether the type represents an interface
+     * @param interfacesImplemented names of all interfaces directly implemented (if the type is a class) or extended (if the
+     *                              type is an interface)
+     */
     Type(String fullName, String simpleName, boolean isInterface, List<String> interfacesImplemented) {
         this.fullName = fullName;
         this.simpleName = simpleName;
         this.isInterface = isInterface;
         this.interfacesImplemented = interfacesImplemented;
-    }
-
-    Type typeEnumByType(String type) {
-        typeEnumsByType.computeIfAbsent(type, TypeEnum::byType);
-        return this;
     }
 
     String fullName() {
@@ -85,24 +85,12 @@ class Type {
         return implementationType;
     }
 
-    boolean isRef() {
-        return isRef;
-    }
-
-    Map<String, TypeEnum> typeEnumsByType() {
-        return typeEnumsByType;
-    }
-
     List<PropertyParameter> propertyParameters() {
         return propertyParameters;
     }
 
-    List<PropertySubstitution> substitutions() {
+    List<PropertySubstitution> propertySubstitutions() {
         return substitutions;
-    }
-
-    Optional<TypeEnum> getTypeEnum(String type) {
-        return Optional.ofNullable(typeEnumsByType.get(type));
     }
 
     Type propertyParameter(String name, List<String> types) {
@@ -112,11 +100,6 @@ class Type {
 
     Type propertySubstitution(String name, String type, String getter, String setter) {
         substitutions.add(new PropertySubstitution(name, type, getter, setter));
-        return this;
-    }
-
-    Type ref(boolean isRef) {
-        this.isRef = isRef;
         return this;
     }
 
@@ -133,59 +116,18 @@ class Type {
                 + ", interfacesImplemented=" + interfacesImplemented
                 + ", isInterface=" + isInterface
                 + ", implementationType='" + implementationType + '\''
-                + ", isRef=" + isRef
-                + ", typeEnumsByType=" + typeEnumsByType
                 + ", propertyParameters=" + propertyParameters
                 + ", substitutions=" + substitutions
                 + '}';
     }
 
-    static class TypeEnum {
-        private String enumName;
-        private String enumType;
-
-        static TypeEnum byType(String enumType) {
-            TypeEnum result = new TypeEnum();
-            result.enumType = enumType;
-            return result;
-        }
-
-        static TypeEnum fromName(String name) {
-            TypeEnum result = new TypeEnum();
-            result.enumName = name;
-            return result;
-        }
-
-        private TypeEnum() {
-        }
-
-        TypeEnum name(String name) {
-            enumName = name;
-            return this;
-        }
-
-        TypeEnum type(String type) {
-            enumType = type;
-            return this;
-        }
-
-        String enumName() {
-            return enumName;
-        }
-
-        String enumType() {
-            return enumType;
-        }
-
-        @Override
-        public String toString() {
-            return "TypeEnum{"
-                    + "enumName='" + enumName + '\''
-                    + ", enumType='" + enumType + '\''
-                    + '}';
-        }
-    }
-
+    /**
+     * Models the need for a SnakeYAML {@code PropertyParameter} to be added to a {@code TypeDescription}.
+     * <p>
+     *     A property parameter allows us to specify the type parameter(s) for a parameterized type such as a {@code List} or
+     *     {@code Map}.
+     * </p>
+     */
     static class PropertyParameter {
         private final String parameterName;
         private final List<PropertyParameterType> parameterTypes = new ArrayList<>();
@@ -240,6 +182,14 @@ class Type {
         }
     }
 
+    /**
+     * Models the need for a property substitution on a type description.
+     * <p>
+     *     If the serialized property name (in YAML or JSON) does not match the property name derived from the type according
+     *     to the bean pattern, then SnakeYAML provides a {@code PropertySubstitution} to prescribe the name of the property,
+     *     its type, and its getter and setter method names.
+     * </p>
+     */
     static class PropertySubstitution {
         private final String propertySubName;
         private final String propertySubType;
@@ -279,5 +229,4 @@ class Type {
                     + '}';
         }
     }
-
 }

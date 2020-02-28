@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,15 +30,22 @@ import {{#isStatic}} static {{/isStatic}}{{name}};
 
 import org.yaml.snakeyaml.TypeDescription;
 
-class {{generatedClassName}} {
+class {{generatedClassName}}<T extends TypeDescription> {
 
-    private final Map<Class<?>, TypeDescription> types = new HashMap<>();
+    private final Map<Class<?>, T> types = new HashMap<>();
+    private final Map<Class<?>, Class<?>> mapImplementingTypes = new HashMap<>();
+    private final Map<Class<?>, Class<?>> listImplementingTypes = new HashMap<>();
 
-    static {{generatedClassName}} create() {
-        return new {{generatedClassName}}();
+    static <T extends TypeDescription> {{generatedClassName}}<T> create(
+                            BiFunction<Class<?>, Class<?>, T> factoryFunction) {
+        return new {{generatedClassName}}<T>(factoryFunction);
     }
 
-    Set<Map.Entry<Class<?>, TypeDescription>> entrySet() {
+    Map<Class<?>, T> types() {
+        return types;
+    }
+
+    Set<Map.Entry<Class<?>, T>> entrySet() {
         return types.entrySet();
     }
 
@@ -50,28 +57,21 @@ class {{generatedClassName}} {
         return types.containsKey(type);
     }
 
-    TypeDescription get(Class<?> clazz) {
+    T get(Class<?> clazz) {
         return types.get(clazz);
     }
 
-    private {{generatedClassName}}() {
+    private {{generatedClassName}}(BiFunction<Class<?>, Class<?>, T> factoryFunction) {
 {{#typesToAugment}}
-        TypeDescription td_{{simpleName}} = ExpandedTypeDescription.create({{simpleName}}.class, {{implementationType}}.class);
-        {{#typeEnums}}
-        td_{{simpleName}}.addEnum("{{enumName}}", {{enumType}}::valueOf);
-        {{/typeEnums}}
-        {{#ref}}
-        td_{{simpleName}}.addRef();
-        {{/ref}}
+        T td_{{simpleName}} = factoryFunction.apply({{simpleName}}.class, {{implementationType}}.class);
         {{#propertyParameters}}
         td_{{simpleName}}.addPropertyParameters("{{parameterName}}"{{#parameterTypes}}, {{parameterType}}.class{{/parameterTypes}});
         {{/propertyParameters}}
-        {{#substitutions}}
+        {{#propertySubstitutions}}
         td_{{simpleName}}.substituteProperty("{{propertySubName}}", {{propertySubType}}.class, "{{getter}}", "{{setter}}");
-        {{/substitutions}}
+        {{/propertySubstitutions}}
         types.put(td_{{simpleName}}.getType(), td_{{simpleName}});
 
 {{/typesToAugment}}
     }
 }
-

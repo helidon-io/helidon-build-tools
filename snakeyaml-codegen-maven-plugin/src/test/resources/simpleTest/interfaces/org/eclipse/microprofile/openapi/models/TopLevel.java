@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,10 @@ public interface TopLevel extends Reference {
     public Map<String, Stuff> getStuffMap();
 
     public void setStuffMap(Map<String, Stuff> map);
+
+    public void setThing(String thing);
+
+    public String getThing();
 
 
 }

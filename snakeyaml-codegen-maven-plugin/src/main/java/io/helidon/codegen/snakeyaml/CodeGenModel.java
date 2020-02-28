@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,19 +21,26 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Data model used from the code generation template.
+ */
 class CodeGenModel {
 
     private String generatedPackageName;
     private String generatedClassName;
     private Collection<Type> types;
     private Set<SnakeYAMLMojo.Import> imports;
+    private String interfacePrefix;
+    private String implementationPrefix;
 
     CodeGenModel(String generatedPackageName, String generatedClassName, Collection<Type> types,
-            Set<SnakeYAMLMojo.Import> imports) {
+            Set<SnakeYAMLMojo.Import> imports, String interfacePrefix, String implementationPrefix) {
         this.generatedClassName = generatedClassName;
         this.generatedPackageName = generatedPackageName;
         this.types = types;
         this.imports = imports;
+        this.interfacePrefix = interfacePrefix;
+        this.implementationPrefix = implementationPrefix;
     }
 
     String generatedPackageName() {
@@ -53,11 +60,11 @@ class CodeGenModel {
     }
 
     List<SnakeYAMLMojo.Import> implImports() {
-        return filteredImports("io.smallrye");
+        return filteredImports(implementationPrefix);
     }
 
     List<SnakeYAMLMojo.Import> openAPIImports() {
-        return filteredImports("org.eclipse.microprofile.openapi");
+        return filteredImports(interfacePrefix);
     }
 
     private List<SnakeYAMLMojo.Import> filteredImports(String namePrefix) {
