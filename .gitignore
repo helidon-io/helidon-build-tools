@@ -24,3 +24,5 @@ node_modules/
 node/
 *.swp
 /sitegen/nbproject/
+.helidon
+

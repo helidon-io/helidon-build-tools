@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
@@ -63,9 +64,20 @@ import static java.util.Objects.requireNonNull;
 public class Maven {
     private static final String LATEST_VERSION = "[0,)";
     private static final String SNAPSHOT_SUFFIX = "-SNAPSHOT";
+    private static final Instance<Maven> DEFAULT_INSTANCE = new Instance<>(Maven::defaultInstance);
     private final RepositorySystem system;
     private final DefaultRepositorySystemSession session;
     private final List<RemoteRepository> repositories;
+
+    /**
+     * A version filter that does not allow snapshots.
+     */
+    public static final Predicate<Version> LATEST_RELEASE = Maven::notSnapshot;
+
+    /**
+     * A version filter that allows any version.
+     */
+    public static final Predicate<Version> LATEST = version -> true;
 
     private Maven(Builder builder) {
         this.system = builder.system;
@@ -83,32 +95,43 @@ public class Maven {
     }
 
     /**
+     * Returns an instance constructed with default configuration.
+     *
+     * @return The instance.
+     */
+    public static Maven instance() {
+        return DEFAULT_INSTANCE.instance();
+    }
+
+
+    /**
      * Returns the latest version for the given artifact.
      *
      * @param groupId The artifact group id.
      * @param artifactId The artifact id.
-     * @param allowSnapshot {@code true} if snapshot versions are allowed.
+     * @param filter The filter. May be {@code null}.
      * @return The latest version.
      */
-    public Version latestVersion(String groupId, String artifactId, boolean allowSnapshot) {
-        return latestVersion(toCoordinates(groupId, artifactId, LATEST_VERSION), allowSnapshot);
+    public Version latestVersion(String groupId, String artifactId, Predicate<Version> filter) {
+        return latestVersion(toCoordinates(groupId, artifactId, LATEST_VERSION), filter);
     }
 
     /**
      * Returns the latest version for the given artifact.
      *
      * @param coordinates The artifact coordinates.
-     * @param allowSnapshot {@code true} if snapshot versions are allowed.
+     * @param filter The filter. May be {@code null}.
      * @return The latest version.
      */
-    public Version latestVersion(String coordinates, boolean allowSnapshot) {
+    public Version latestVersion(String coordinates, Predicate<Version> filter) {
         final List<Version> versions = versions(coordinates);
         final int lastIndex = versions.size() - 1;
+        final Predicate<Version> predicate = filter == null ? LATEST : filter;
         return IntStream.rangeClosed(0, lastIndex)
                         .mapToObj(index -> versions.get(lastIndex - index))
-                        .filter(version -> !version.toString().endsWith(SNAPSHOT_SUFFIX))
+                        .filter(predicate)
                         .findFirst()
-                        .orElseThrow(() -> new IllegalStateException("no non-snapshot version found!"));
+                        .orElseThrow(() -> new IllegalStateException("no matching version found!"));
     }
 
     /**
@@ -177,6 +200,10 @@ public class Maven {
      */
     public static String toCoordinates(String groupId, String artifactId, String version) {
         return groupId + ":" + artifactId + ":" + version;
+    }
+
+    private static boolean notSnapshot(Version version) {
+        return !version.toString().endsWith(SNAPSHOT_SUFFIX);
     }
 
     /**
@@ -382,4 +409,15 @@ public class Maven {
                          .orElseThrow(() -> new IllegalStateException(executableName + " not found in " + PATH_VAR));
         }
     }
+
+    private static Maven defaultInstance() {
+        if (System.getProperty("dump.env") != null) {
+            Log.info("\n--- Environment ---- \n");
+            System.getenv().forEach((key, value) -> Log.info("    %s = %s", key, value));
+            Log.info("\n--- System Properties ---- \n");
+            System.getProperties().forEach((key, value) -> Log.info("    %s = %s", key, value));
+        }
+        return Maven.builder().build();
+    }
+
 }

@@ -252,7 +252,45 @@ public final class ProcessMonitor {
     }
 
     /**
-     * Waits for the process to complete. If the process does not complete in the given time it is destroyed.
+     * Stops the process and waits for it to exit.
+     *
+     * @param timeout The maximum time to wait.
+     * @param unit The time unit of the {@code timeout} argument.
+     * @return This instance.
+     * @throws IllegalStateException If the process was not started or has already been completed.
+     * @throws ProcessTimeoutException If the process does not complete in the specified time.
+     * @throws ProcessFailedException If the process fails.
+     * @throws InterruptedException If the a thread is interrupted.
+     */
+    @SuppressWarnings("checkstyle:JavadocMethod")
+    public ProcessMonitor stop(long timeout, TimeUnit unit) throws ProcessTimeoutException,
+                                                                   ProcessFailedException,
+                                                                   InterruptedException {
+        assertRunning();
+        process.destroy();
+        return waitForCompletion(timeout, unit);
+    }
+
+    /**
+     * Stops the process and does not wait for it to exit.
+     *
+     * @param force {@code true} if the process should not be allowed to exit normally.
+     * @return This instance.
+     */
+    public ProcessMonitor destroy(boolean force) {
+        assertRunning();
+        if (force) {
+            process.destroy();
+        } else {
+            process.destroyForcibly();
+        }
+        cancelTasks();
+        return this;
+    }
+
+    /**
+     * Waits for the process to complete. If the process does not complete in the given time {@code destroy(false)} is called
+     * and a {@link ProcessTimeoutException} thrown.
      *
      * @param timeout The maximum time to wait.
      * @param unit The time unit of the {@code timeout} argument.
@@ -268,17 +306,14 @@ public final class ProcessMonitor {
                                                                                 InterruptedException {
         assertRunning();
         final boolean completed = process.waitFor(timeout, unit);
-        out.cancel(true);
-        err.cancel(true);
-        out = null;
-        err = null;
+        cancelTasks();
         if (completed) {
             if (process.exitValue() != 0) {
                 throw new ProcessFailedException(this);
             }
             return this;
         } else {
-            destroy();
+            destroy(false);
             throw new ProcessTimeoutException(this);
         }
     }
@@ -356,8 +391,20 @@ public final class ProcessMonitor {
      * Process failed exception.
      */
     public static final class ProcessFailedException extends ProcessException {
+        private int exitCode;
+
         private ProcessFailedException(ProcessMonitor monitor) {
             super(monitor, false);
+            this.exitCode = monitor.process.exitValue();
+        }
+
+        /**
+         * Returns the exit code.
+         *
+         * @return The code.
+         */
+        public int exitCode() {
+            return exitCode;
         }
     }
 
@@ -366,20 +413,12 @@ public final class ProcessMonitor {
         return process;
     }
 
-    private void destroy() throws InterruptedException {
-        if (process.isAlive()) {
-            process.destroy();
-            for (int retry = 1; retry <= DESTROY_RETRIES; retry++) {
-                if (process.waitFor(DESTROY_DELAY_SECONDS, TimeUnit.SECONDS)) {
-                    return;
-                } else if (retry == DESTROY_FORCE_RETRY) {
-                    Log.info("%s forcibly destroying", describe());
-                    process.destroyForcibly();
-                } else {
-                    Log.info("%s timed out and was destroyed. Waiting for exit, retry %d of %d",
-                             describe(), retry, DESTROY_RETRIES);
-                }
-            }
+    private void cancelTasks() {
+        if (out != null) {
+            out.cancel(true);
+            err.cancel(true);
+            out = null;
+            err = null;
         }
     }
 

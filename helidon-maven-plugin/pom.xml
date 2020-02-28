@@ -60,6 +60,11 @@
             <artifactId>helidon-linker</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools</groupId>
+            <artifactId>helidon-dev-loop</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
