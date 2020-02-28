@@ -25,18 +25,28 @@ import io.helidon.dev.build.BuildLoop;
 import io.helidon.dev.build.BuildMonitor;
 import io.helidon.dev.build.BuildType;
 import io.helidon.dev.build.Project;
+import io.helidon.dev.build.ProjectSupplier;
 import io.helidon.dev.build.maven.DefaultHelidonProjectSupplier;
 
 /**
  * A development loop that manages application lifecycle based on events from a {@link BuildLoop}.
  */
 public class DevLoop {
+
+    private static final int MAX_BUILD_WAIT_SECONDS = 5 * 60;
+
     private final Path rootDir;
     private final boolean initialClean;
+    private final ProjectSupplier projectSupplier;
 
     public DevLoop(Path rootDir, boolean initialClean) {
+        this(rootDir, initialClean, new DefaultHelidonProjectSupplier(MAX_BUILD_WAIT_SECONDS));
+    }
+
+    public DevLoop(Path rootDir, boolean initialClean, ProjectSupplier projectSupplier) {
         this.rootDir = rootDir;
         this.initialClean = initialClean;
+        this.projectSupplier = projectSupplier;
     }
 
     public void start(int maxWaitInSeconds) throws Exception {
@@ -105,24 +115,22 @@ public class DevLoop {
         }
     }
 
-    private static BuildLoop newLoop(Path projectRoot,
-                                     boolean initialClean,
-                                     boolean watchBinariesOnly,
-                                     BuildMonitor monitor) {
+    private BuildLoop newLoop(Path projectRoot, boolean initialClean, boolean watchBinariesOnly,
+                              BuildMonitor monitor) {
         return BuildLoop.builder()
-                        .projectDirectory(projectRoot)
-                        .clean(initialClean)
-                        .watchBinariesOnly(watchBinariesOnly)
-                        .projectSupplier(new DefaultHelidonProjectSupplier(60))
-                        .stdOut(monitor.stdOutConsumer())
-                        .stdErr(monitor.stdErrConsumer())
-                        .buildMonitor(monitor)
-                        .build();
+                .projectDirectory(projectRoot)
+                .clean(initialClean)
+                .watchBinariesOnly(watchBinariesOnly)
+                .projectSupplier(projectSupplier)
+                .stdOut(monitor.stdOutConsumer())
+                .stdErr(monitor.stdErrConsumer())
+                .buildMonitor(monitor)
+                .build();
     }
 
     @SuppressWarnings("unchecked")
-    private static <T extends BuildMonitor> T run(BuildLoop loop, int maxWaitSeconds) throws InterruptedException,
-                                                                                             TimeoutException {
+    private static <T extends BuildMonitor> T run(BuildLoop loop, int maxWaitSeconds)
+            throws InterruptedException, TimeoutException {
         loop.start();
         Log.debug("Waiting up to %d seconds for build loop completion", maxWaitSeconds);
         if (!loop.waitForStopped(maxWaitSeconds, TimeUnit.SECONDS)) {

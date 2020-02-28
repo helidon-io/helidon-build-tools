@@ -21,14 +21,17 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
+import io.helidon.build.util.Constants;
 import io.helidon.build.util.HelidonVariant;
+import io.helidon.build.util.Log;
+import io.helidon.build.util.ProcessMonitor;
 import io.helidon.build.util.QuickstartGenerator;
-import io.helidon.dev.mode.DevLoop;
-
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
@@ -53,6 +56,14 @@ public class HelidonCliDemo {
     private static final String DEFAULT_VERSION = "1.4.1";
     private static final Path CWD = Path.of(".");
     private static final CliConfig cliConfig = new CliConfig(new File(DOT_HELIDON));
+
+    private static final String MAVEN_EXEC = Constants.OS.mavenExec();
+    private static final String MAVEN_PLUGIN_GOAL = "io.helidon.build-tools:helidon-maven-plugin:1.1.2-SNAPSHOT:dev";
+    private static final String JAVA_HOME = System.getProperty("java.home");
+    private static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
+
+    private static long pid;
+    private static ProcessMonitor processMonitor;
 
     public static void main(String[] args) throws Exception {
         String command = null;
@@ -165,9 +176,30 @@ public class HelidonCliDemo {
     }
 
     private static void helidonDev(boolean clean) throws Exception {
-        Path projectDir = ensureProject();
-        DevLoop loop = new DevLoop(projectDir, clean);
-        loop.start(60 * 60);
+        // Execute Helidon maven plugin to enter dev loop
+        String cleanProp = "-Ddev.clean=" + clean;
+        ProcessBuilder processBuilder = new ProcessBuilder()
+                .directory(CWD.toFile())
+                .command(MAVEN_EXEC, MAVEN_PLUGIN_GOAL, cleanProp);
+        Map<String, String> env = processBuilder.environment();
+        String path = JAVA_HOME_BIN + File.pathSeparatorChar + env.get("PATH");
+        env.put("PATH", path);
+        env.put("JAVA_HOME", JAVA_HOME);
+        try {
+            // Fork process and wait for its completion
+            processMonitor = ProcessMonitor.builder()
+                    .processBuilder(processBuilder)
+                    .stdOut(System.out::println)
+                    .stdErr(System.err::println)
+                    .capture(false)
+                    .build()
+                    .start();
+            pid = processMonitor.toHandle().pid();
+            Log.info("Process with PID %d is starting", pid);
+            processMonitor.waitForCompletion(Long.MAX_VALUE, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static void helidonFeatureList() {
