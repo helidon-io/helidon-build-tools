@@ -129,7 +129,7 @@
         <version.plugin.deploy>2.8.2</version.plugin.deploy>
         <version.plugin.directory>0.1</version.plugin.directory>
         <version.plugin.enforcer>3.0.0-M1</version.plugin.enforcer>
-        <version.plugin.glassfish-copyright>1.48</version.plugin.glassfish-copyright>
+        <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
         <version.plugin.gpg>1.6</version.plugin.gpg>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.javadoc>3.0.0</version.plugin.javadoc>

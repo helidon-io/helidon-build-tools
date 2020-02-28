@@ -99,60 +99,61 @@ import org.apache.maven.project.MavenProject;
       defaultPhase = LifecyclePhase.GENERATE_SOURCES,
       requiresDependencyResolution = ResolutionScope.RUNTIME)
 public class SnakeYAMLMojo extends AbstractMojo {
-/*
- *<p>
- *     Here is an example from the maven dependency plug-in showing how to extract the sources so
- *     they are available for this plug-in to consume:
- * </p>
- * <pre>{@code
- * <project>
- *   [...]
- *   <build>
- *     <plugins>
- *       <plugin>
- *         <groupId>org.apache.maven.plugins</groupId>
- *         <artifactId>maven-dependency-plugin</artifactId>
- *         <version>3.1.1</version>
- *         <executions>
- *           <execution>
- *             <id>src-dependencies</id>
- *             <phase>package</phase>
- *             <goals>
- *               <!-- use copy-dependencies instead if you don't want to explode the sources -->
- *               <goal>unpack-dependencies</goal>
- *             </goals>
- *             <configuration>
- *               <artifactItems>
- *                 <artifactItem>
- *                   <groupId>junit</groupId>
- *                   <artifactId>junit</artifactId>
- *                   <version>3.8.1</version>
- *                   <type>jar</type>
- *                   <overWrite>false</overWrite>
- *                   <outputDirectory>${project.build.directory}/alternateLocation</outputDirectory>
- *                   <destFileName>optional-new-name.jar</destFileName>
- *                   <includes>**&quot;/*.class,**&quot;/*.xml</includes>
- *                   <excludes>**&quot;/*test.class</excludes>
- *                 </artifactItem>
- *               </artifactItems>
- *               <includes>**&quot;/*.java</includes>
- *               <excludes>**&quot;/*.properties</excludes>
- *               <classifier>sources</classifier>
- *               <failOnMissingClassifierArtifact>false</failOnMissingClassifierArtifact>
- *               <outputDirectory>${project.build.directory}/sources</outputDirectory>
- *             </configuration>
- *           </execution>
- *         </executions>
- *       </plugin>
- *     </plugins>
- *   </build>
- *   [...]
- * </project>
- * }
- *
- * </pre>
- *
- */
+//
+//<p>
+//     Here is an example from the maven dependency plug-in showing how to extract the sources so
+//     they are available for this plug-in to consume:
+// </p>
+// <pre>{@code
+// <project>
+//     [...]
+//     <build>
+//         <plugins>
+//         <plugin>
+//             <groupId>org.apache.maven.plugins</groupId>
+//             <artifactId>maven-dependency-plugin</artifactId>
+//              <executions>
+//                  <execution>
+//                      <id>unpack-openapi-interfaces</id>
+//                      <goals>
+//                          <goal>unpack-dependencies</goal>
+//                      </goals>
+//                      <phase>generate-sources</phase>
+//                      <configuration>
+//                          <classifier>sources</classifier>
+//                          <failOnMissingClassifierArtifact>true</failOnMissingClassifierArtifact>
+//                          <outputDirectory>${openapi-interfaces-dir}</outputDirectory>
+//                          <includeGroupIds>org.eclipse.microprofile.openapi</includeGroupIds>
+//                          <includeArtifactIds>microprofile-openapi-api</includeArtifactIds>
+//                          <includes>org/eclipse/microprofile/openapi/models/**/*.java</includes>
+//                      </configuration>
+//                  </execution>
+//                  <execution>
+//                      <id>unpack-openapi-impls</id>
+//                      <goals>
+//                          <goal>unpack-dependencies</goal>
+//                      </goals>
+//                      <phase>generate-sources</phase>
+//                      <configuration>
+//                          <classifier>sources</classifier>
+//                          <failOnMissingClassifierArtifact>true</failOnMissingClassifierArtifact>
+//                          <outputDirectory>${openapi-impls-dir}</outputDirectory>
+//                          <includeGroupIds>io.smallrye</includeGroupIds>
+//                          <includeArtifactIds>smallrye-open-api</includeArtifactIds>
+//                          <includes>io/smallrye/openapi/api/models/**/*.java</includes>
+//                      </configuration>
+//                  </execution>
+//              </executions>
+//          </plugin>
+//     </plugins>
+//   </build>
+//   [...]
+// </project>
+// }
+//
+// </pre>
+//
+//
 
     private static final String PROPERTY_PREFIX = "snakeyamlgen.";
     private static final String PARAM_DUMP_FORMAT = "Code generation for SnakeYAML parsing helper:%n"
@@ -204,12 +205,37 @@ public class SnakeYAMLMojo extends AbstractMojo {
     private boolean debug;
 
     /**
+     * Prefix common to all implementation classes submitted for analysis. Used for grouping import statements in the generated
+     * code.
+     */
+    @Parameter(property = PROPERTY_PREFIX + "implementationPrefix", required = true)
+    private String implementationPrefix;
+
+    /**
+     * Prefix common to all interfaces submitted for analysis. Used for grouping import statements in the generated code.
+     */
+    @Parameter(property = PROPERTY_PREFIX + "interfacePrefix", required = true)
+    private String interfacePrefix;
+
+    /**
      * Prescribes how the plug-in finds Java classes to analyze for either the interfaces or the
      * implementations.
      */
     public static class CompilerConfig {
+
+        /**
+         * Directory where the source files to be compiled are located.
+         */
         private String inputDirectory = null; // defaults to "interfaces" or "implementations"
+
+        /**
+         * Java file path expressions indicating which files to include in analysis.
+         */
         private List<String> includes = defaultIncludes();
+
+        /**
+         * Java file path expressions indicating which files to exclude from analysis.
+         */
         private List<String> excludes = Collections.emptyList();
 
         private static List<String> defaultIncludes() {
@@ -266,12 +292,6 @@ public class SnakeYAMLMojo extends AbstractMojo {
         try {
             analyzeInterfaces(types, imports);
 
-            /*
-             * The parsing builds most of the data model, but we need to add some additional information that is not available
-             * to the compiler processor.
-             */
-            // TODO - move to enhanced Helidon OpenAPI module
-//            addPropertySubstitutions(types);
             addImportsForTypes(types, imports);
 
             analyzeImplementations(implementations, imports, interfaces);
@@ -293,6 +313,10 @@ public class SnakeYAMLMojo extends AbstractMojo {
 
     Map<String, List<String>> interfaces() {
         return interfaces;
+    }
+
+    Map<String, Type> types() {
+        return types;
     }
 
     private void debugLog(Supplier<String> msgSupplier) {
@@ -386,6 +410,10 @@ public class SnakeYAMLMojo extends AbstractMojo {
         result.add(new Import(java.util.List.class));
         result.add(new Import(java.util.HashMap.class));
         result.add(new Import(java.util.Map.class));
+        result.add(new Import(java.util.Set.class));
+        result.add(new Import(java.util.function.Function.class));
+        result.add(new Import(java.util.function.BiFunction.class));
+        result.add(new Import(java.util.AbstractMap.class));
         return result;
     }
 
@@ -427,7 +455,8 @@ public class SnakeYAMLMojo extends AbstractMojo {
             Collection<Path> pathsToCommpile, String note) {
         /*
          * There should not be compilation errors, but without our own diagnostic listener any compilation errors will
-         * appear in the build output.
+         * appear in the build output. We want to suppress those because we want to gather information about the interfaces
+         * and classes, not actually compile them into .class files.
          */
         DiagnosticListener<JavaFileObject> diagListener = diagnostic -> {
             debugLog(() -> diagnostic.toString());
@@ -451,23 +480,6 @@ public class SnakeYAMLMojo extends AbstractMojo {
         debugLog(() -> String.format("Interface impls after analyzing %s: %s", note, interfaces));
     }
 
-    // TODO Move to enhanced Helidon OpenAPI module
-//    private void addPropertySubstitutions(Map<String, Type> types) {
-//        Type pathItemType = types.get(PathItem.class.getSimpleName());
-//        if (pathItemType != null) { // might be null for tests
-//            for (PathItem.HttpMethod m : PathItem.HttpMethod.values()) {
-//                pathItemType.propertySubstitution(m.name()
-//                        .toLowerCase(), Operation.class.getSimpleName(), getter(m), setter(m));
-//            }
-//        }
-//
-//        Type schemaType = types.get(Schema.class.getSimpleName());
-//        if (schemaType != null) {
-//            schemaType.propertySubstitution("enum", List.class.getSimpleName(), "getEnumeration", "setEnumeration");
-//            schemaType.propertySubstitution("default", Object.class.getSimpleName(), "getDefaultValue", "setDefaultValue");
-//        }
-//    }
-
     private void addImportsForTypes(Map<String, Type> types, Set<Import> imports) {
         types.forEach((name, type) -> imports.add(new Import(type.fullName(), false)));
     }
@@ -487,7 +499,8 @@ public class SnakeYAMLMojo extends AbstractMojo {
         Writer writer = new OutputStreamWriter(new FileOutputStream(outputPath.toFile()));
         MustacheFactory mf = new DefaultMustacheFactory();
         Mustache m = mf.compile("typeClassTemplate.mustache");
-        CodeGenModel model = new CodeGenModel(outputPackage, simpleClassName, types.values(), imports);
+        CodeGenModel model = new CodeGenModel(outputPackage, simpleClassName, types.values(), imports, interfacePrefix,
+                implementationPrefix);
         m.execute(writer, model);
         writer.close();
     }
@@ -495,19 +508,6 @@ public class SnakeYAMLMojo extends AbstractMojo {
     private void addGeneratedCodeToCompilation() {
         mavenProject.addCompileSourceRoot(outputDirectory.getPath());
     }
-
-    // TODO move to enhanced Helidon OpenAPI module
-//    private static String getter(PathItem.HttpMethod method) {
-//        return methodName("get", method);
-//    }
-//
-//    private static String setter(PathItem.HttpMethod method) {
-//        return methodName("set", method);
-//    }
-//
-//    private static String methodName(String operation, PathItem.HttpMethod method) {
-//        return operation + method.name();
-//    }
 
     private Path resolveDirectory(String directoryWithinProject) {
         Path baseDirPath = mavenProject.getBasedir().toPath();
@@ -574,29 +574,20 @@ public class SnakeYAMLMojo extends AbstractMojo {
         }
         @Override
         public Type visitClass(ClassTree node, Type type) {
-            String typeName = fullyQualifiedPath(getCurrentPath());
+            String typeName = fullyQualifiedPath(getCurrentPath()); // null for anon. inner class
             Tree.Kind kind = node.getKind();
-            if (kind == Tree.Kind.CLASS || kind == Tree.Kind.INTERFACE) {
+            if ((kind == Tree.Kind.CLASS || kind == Tree.Kind.INTERFACE) && typeName != null) {
                 List<String> interfaces = SnakeYAMLMojo.treesToStrings(node.getImplementsClause());
                 final Type newType = new Type(typeName, node.getSimpleName().toString(), kind == Tree.Kind.INTERFACE,
                         interfaces);
-                if (interfacesToImpls != null) {
+                if (interfacesToImpls != null && kind == Tree.Kind.CLASS) {
+                    // Add this class to our map from each interface to all of its implementations.
                     interfaces.stream()
                             .map(intf -> interfacesToImpls.computeIfAbsent(intf, key -> new ArrayList<>()))
                             .forEach(list -> list.add(newType.simpleName()));
                 }
                 types.put(typeName, newType);
                 imports.add(new Import(newType.fullName(), false));
-                updateRef(node, newType);
-                /*
-                 * Define enums now to make sure they are defined before they are referenced in
-                 * methods handled by visitMethod.
-                 */
-                node.getMembers().stream()
-                        .filter(member -> member.getKind() == Tree.Kind.ENUM)
-                        .map(member -> ((ClassTree) member).getSimpleName().toString())
-                        .forEach(newType::typeEnumByType);
-
                 type = newType;
             }
 
@@ -609,12 +600,6 @@ public class SnakeYAMLMojo extends AbstractMojo {
             return super.visitImport(node, type);
         }
 
-        private void updateRef(ClassTree node, Type type) {
-            type.ref(node.getImplementsClause().stream()
-                    .filter(tree -> tree.getKind() == Tree.Kind.IDENTIFIER)
-                    .anyMatch(tree -> ((IdentifierTree) tree).getName().toString().equals("Reference")));
-        }
-
         @Override
         public Type visitMethod(MethodTree node, Type type) {
             CharSequence methodName = node.getName();
@@ -623,19 +608,9 @@ public class SnakeYAMLMojo extends AbstractMojo {
                 String propName = Character.toLowerCase(methodName.charAt(3))
                         + methodName.subSequence(4, methodName.length()).toString();
                 VariableTree propertyTree = node.getParameters().get(0);
-                updateEnumIfNeeded(propertyTree, type, propName);
                 addPropertyParametersIfNeeded(propertyTree, type, propName);
             }
             return super.visitMethod(node, type);
-        }
-
-        private void updateEnumIfNeeded(VariableTree node, Type type, String propName) {
-            Tree propertyType = node.getType();
-            if (propertyType.getKind() == Tree.Kind.IDENTIFIER) {
-                String referencedTypeName = ((IdentifierTree) propertyType).getName().toString();
-
-                type.getTypeEnum(referencedTypeName).ifPresent(typeEnum -> typeEnum.name(propName));
-            }
         }
 
         private static void addPropertyParametersIfNeeded(VariableTree node, Type type, String propName) {
@@ -686,32 +661,35 @@ public class SnakeYAMLMojo extends AbstractMojo {
     }
 
     private static String fullyQualifiedPath(TreePath path) {
-            ExpressionTree packageNameExpr = path.getCompilationUnit().getPackageName();
-            MemberSelectTree packageID = packageNameExpr.getKind() == Tree.Kind.MEMBER_SELECT
-                    ? ((MemberSelectTree) packageNameExpr) : null;
+        ExpressionTree packageNameExpr = path.getCompilationUnit().getPackageName();
+        MemberSelectTree packageID = packageNameExpr.getKind() == Tree.Kind.MEMBER_SELECT
+                ? ((MemberSelectTree) packageNameExpr) : null;
 
-            StringBuilder result = new StringBuilder();
-            if (packageID != null) {
-                result.append(packageID.getExpression().toString())
-                        .append(".")
-                        .append(packageID.getIdentifier().toString());
-            }
-            Tree.Kind kind = path.getLeaf().getKind();
-            String leafName = null;
-            if (kind == Tree.Kind.CLASS || kind == Tree.Kind.INTERFACE) {
-                leafName = ((ClassTree) path.getLeaf()).getSimpleName().toString();
-            } else if (kind == Tree.Kind.ENUM) {
-                if (path.getParentPath() != null) {
-                    Tree parent = path.getParentPath().getLeaf();
-                    if (parent.getKind() == Tree.Kind.CLASS || parent.getKind() == Tree.Kind.INTERFACE) {
-                        result.append(((ClassTree) parent).getSimpleName().toString()).append(".");
-                    }
-                    leafName = ((ClassTree) path.getLeaf()).getSimpleName().toString();
-                }
-            }
-            if (leafName != null) {
-                result.append(".").append(leafName);
-            }
-            return leafName != null ? result.toString() : null;
+        StringBuilder result = new StringBuilder();
+        if (packageID != null) {
+            result.append(packageID.getExpression().toString())
+                    .append(".")
+                    .append(packageID.getIdentifier().toString());
         }
+        Tree.Kind kind = path.getLeaf().getKind();
+        String leafName = null;
+        if (kind == Tree.Kind.CLASS || kind == Tree.Kind.INTERFACE) {
+            leafName = ((ClassTree) path.getLeaf()).getSimpleName().toString();
+        } else if (kind == Tree.Kind.ENUM) {
+            if (path.getParentPath() != null) {
+                Tree parent = path.getParentPath().getLeaf();
+                if (parent.getKind() == Tree.Kind.CLASS || parent.getKind() == Tree.Kind.INTERFACE) {
+                    result.append(((ClassTree) parent).getSimpleName().toString()).append(".");
+                }
+                leafName = ((ClassTree) path.getLeaf()).getSimpleName().toString();
+            }
+        }
+
+        // leafName can be empty for anonymous inner classes, for example.
+        boolean isUsefulLeaf = leafName != null && !leafName.isEmpty();
+        if (isUsefulLeaf) {
+            result.append(".").append(leafName);
+        }
+        return isUsefulLeaf ? result.toString() : null;
+    }
 }
