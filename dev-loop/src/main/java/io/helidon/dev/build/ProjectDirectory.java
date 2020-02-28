@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ public class ProjectDirectory {
      *
      * @param type The directory type.
      * @param path The directory path.
+     * @return The project directory.
      */
     public static ProjectDirectory createProjectDirectory(DirectoryType type, Path path) {
         return new ProjectDirectory(type, path);
@@ -115,10 +116,10 @@ public class ProjectDirectory {
 
     @Override
     public String toString() {
-        return "ProjectDirectory{" +
-               "type=" + type +
-               ", path=" + directory +
-               '}';
+        return "ProjectDirectory{"
+                + "type=" + type
+                + ", path=" + directory
+                + '}';
     }
 
     @Override
@@ -126,8 +127,8 @@ public class ProjectDirectory {
         if (this == o) return true;
         if (!(o instanceof ProjectDirectory)) return false;
         final ProjectDirectory that = (ProjectDirectory) o;
-        return type == that.type &&
-               Objects.equals(directory, that.directory);
+        return type == that.type
+                && Objects.equals(directory, that.directory);
     }
 
     @Override

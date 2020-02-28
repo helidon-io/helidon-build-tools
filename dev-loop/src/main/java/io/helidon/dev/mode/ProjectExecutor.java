@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,11 +39,21 @@ public class ProjectExecutor {
     private static final String JAVA_EXEC = Constants.OS.javaExecutable();
     private static final String JAVA_HOME = System.getProperty("java.home");
     private static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
-    private static final String JIT_LEVEL_ONE="-XX:TieredStopAtLevel=1";
-    private static final String JIT_TWO_COMPILER_THREADS="-XX:CICompilerCount=2";
+    private static final String JIT_LEVEL_ONE = "-XX:TieredStopAtLevel=1";
+    private static final String JIT_TWO_COMPILER_THREADS = "-XX:CICompilerCount=2";
 
+    /**
+     * Execution mode.
+     */
     public enum ExecutionMode {
+        /**
+         * Execute project via java.
+         */
         JAVA,
+
+        /**
+         * Execute project via maven.
+         */
         MAVEN
     }
 
@@ -52,19 +62,38 @@ public class ProjectExecutor {
     private ProcessMonitor processMonitor;
     private long pid;
 
+    /**
+     * Create an executor from a project.
+     *
+     * @param project The project.
+     */
     public ProjectExecutor(Project project) {
         this(project, ExecutionMode.JAVA);
     }
 
+    /**
+     * Create an executor from a project specifying an execution mode.
+     *
+     * @param project The project.
+     * @param mode The execution mode.
+     */
     public ProjectExecutor(Project project, ExecutionMode mode) {
         this.project = project;
         this.mode = mode;
     }
 
+    /**
+     * Get project instance.
+     *
+     * @return The project.
+     */
     public Project project() {
         return project;
     }
 
+    /**
+     * Start execution.
+     */
     public void start() {
         switch (mode) {
             case JAVA:
@@ -78,6 +107,9 @@ public class ProjectExecutor {
         }
     }
 
+    /**
+     * Stop execution.
+     */
     public void stop() {
         if (processMonitor != null) {
             try {
@@ -95,10 +127,18 @@ public class ProjectExecutor {
         }
     }
 
+    /**
+     * Check if project is running.
+     *
+     * @return Outcome of test.
+     */
     public boolean isRunning() {
         return processMonitor != null;
     }
 
+    /**
+     * Restart project.
+     */
     public void restart() {
         stop();
         start();

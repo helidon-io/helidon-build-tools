@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,14 @@ import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.component.annotations.Component;
 
 /**
- * TODO: Describe
+ * Class LifecycleParticipant.
  */
 @Component(role = AbstractMavenLifecycleParticipant.class)
 public class LifecycleParticipant extends AbstractMavenLifecycleParticipant {
 
+    /**
+     * Constructor.
+     */
     public LifecycleParticipant() {
         System.out.println("LifecycleParticipant: ctor");
     }

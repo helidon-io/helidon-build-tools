@@ -14,24 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.dev.build;
-
 /**
- * A build type.
+ * Helidon build mode.
  */
-public enum BuildType {
-    /**
-     * A complete build that is cleaned first.
-     */
-    CleanComplete,
-
-    /**
-     * A complete build.
-     */
-    Complete,
-
-    /**
-     * An incremental build.
-     */
-    Incremental
-}
+package io.helidon.dev.build;

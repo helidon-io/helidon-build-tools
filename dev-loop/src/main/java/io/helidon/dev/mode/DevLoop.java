@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,16 +39,35 @@ public class DevLoop {
     private final boolean initialClean;
     private final ProjectSupplier projectSupplier;
 
+    /**
+     * Create a dev loop.
+     *
+     * @param rootDir Project's root.
+     * @param initialClean Clean flag.
+     */
     public DevLoop(Path rootDir, boolean initialClean) {
         this(rootDir, initialClean, new DefaultHelidonProjectSupplier(MAX_BUILD_WAIT_SECONDS));
     }
 
+    /**
+     * Create a dev loop.
+     *
+     * @param rootDir Project's root.
+     * @param initialClean Clean flag.
+     * @param projectSupplier Project supplier.
+     */
     public DevLoop(Path rootDir, boolean initialClean, ProjectSupplier projectSupplier) {
         this.rootDir = rootDir;
         this.initialClean = initialClean;
         this.projectSupplier = projectSupplier;
     }
 
+    /**
+     * Start the dev loop.
+     *
+     * @param maxWaitInSeconds Max seconds to wait.
+     * @throws Exception If a problem is found.
+     */
     public void start(int maxWaitInSeconds) throws Exception {
         DevModeMonitor monitor = new DevModeMonitor();
         Runtime.getRuntime().addShutdownHook(new Thread(monitor::onStopped));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ import io.helidon.dev.build.Project;
 
 /**
  * A build step that compiles java sources using the ToolProvider API.
- * TODO: See configuration https://github.com/apache/maven-compiler-plugin/blob/master/src/main/java/org/apache/maven/plugin/compiler/AbstractCompilerMojo.java#L612
+ * See configuration https://github.com/apache/maven-compiler-plugin/blob/master/src/main/java/org/apache/maven/plugin/compiler/AbstractCompilerMojo.java#L612
  */
 public class CompileJavaSources implements BuildStep {
     private static final int JAVA_SUFFIX_LENGTH = ".java".length();
@@ -54,6 +54,9 @@ public class CompileJavaSources implements BuildStep {
 
     /**
      * Constructor.
+     *
+     * @param sourceEncoding The source encoding.
+     * @param verbose Verbose flag.
      */
     public CompileJavaSources(Charset sourceEncoding, boolean verbose) {
         this.compiler = ToolProvider.getSystemJavaCompiler();

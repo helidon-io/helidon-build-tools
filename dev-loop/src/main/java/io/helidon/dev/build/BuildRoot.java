@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,7 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
      *
      * @param type The type.
      * @param path The directory path.
+     * @return The build root.
      */
     public static BuildRoot createBuildRoot(BuildRootType type, Path path) {
         return new BuildRoot(type, path);
@@ -259,11 +260,11 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
 
     @Override
     public String toString() {
-        return "BuildRoot{" +
-               "directoryType=" + directoryType() +
-               ", fileType=" + fileType +
-               ", path=" + path() +
-               '}';
+        return "BuildRoot{"
+                + "directoryType=" + directoryType()
+                + ", fileType=" + fileType
+                + ", path=" + path()
+                + '}';
     }
 
     @Override
@@ -272,8 +273,8 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
         if (!(o instanceof BuildRoot)) return false;
         if (!super.equals(o)) return false;
         final BuildRoot that = (BuildRoot) o;
-        return Objects.equals(fileType, that.fileType) &&
-               Objects.equals(files, that.files);
+        return Objects.equals(fileType, that.fileType)
+                && Objects.equals(files, that.files);
     }
 
     @Override

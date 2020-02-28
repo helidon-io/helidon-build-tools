@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static java.util.Objects.requireNonNull;
  * A continuous incremental build loop.
  */
 public class BuildLoop {
-    private static ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
+    private static ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Path projectDirectory;
     private final Consumer<String> stdOut;
     private final Consumer<String> stdErr;
@@ -90,7 +90,7 @@ public class BuildLoop {
             stopped.get().countDown(); // In case any previous waiters.
             running.set(new CountDownLatch(1));
             stopped.set(new CountDownLatch(1));
-            task.set(EXECUTOR.submit(this::loop));
+            task.set(executor.submit(this::loop));
         }
         return this;
     }
