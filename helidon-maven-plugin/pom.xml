@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.build-tools</groupId>
         <artifactId>helidon-build-tools-project</artifactId>
-        <version>1.1.2-SNAPSHOT</version>
+        <version>1.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-maven-plugin</artifactId>
     <name>Helidon Maven Plugin</name>
