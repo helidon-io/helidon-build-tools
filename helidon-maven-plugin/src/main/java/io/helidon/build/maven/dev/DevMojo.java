@@ -56,6 +56,12 @@ public class DevMojo extends AbstractMojo {
     private boolean clean;
 
     /**
+     * Fork builds.
+     */
+    @Parameter(defaultValue = "false", property = "dev.fork")
+    private boolean fork;
+
+    /**
      * Skip execution for this plugin.
      */
     @Parameter(defaultValue = "false", property = "dev.skip")
@@ -69,7 +75,7 @@ public class DevMojo extends AbstractMojo {
         }
         try {
             MavenLogWriter.bind(getLog());
-            DevLoop loop = new DevLoop(devProjectDir.toPath(), clean);
+            DevLoop loop = new DevLoop(devProjectDir.toPath(), clean, fork);
             loop.start(Integer.MAX_VALUE);
         } catch (Exception e) {
             throw new MojoExecutionException("Error", e);

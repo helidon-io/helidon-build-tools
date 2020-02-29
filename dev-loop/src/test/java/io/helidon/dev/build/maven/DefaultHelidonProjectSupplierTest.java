@@ -21,6 +21,7 @@ import java.util.List;
 
 import io.helidon.build.test.TestFiles;
 import io.helidon.dev.build.BuildComponent;
+import io.helidon.dev.build.BuildExecutor;
 import io.helidon.dev.build.BuildType;
 import io.helidon.dev.build.DirectoryType;
 import io.helidon.dev.build.Project;
@@ -44,9 +45,10 @@ class DefaultHelidonProjectSupplierTest {
     @Test
     void testUpToDate() throws Exception {
         final Path projectDir = TestFiles.helidonSeProject();
-        final ProjectSupplier supplier = new DefaultHelidonProjectSupplier(30);
         final TestMonitor monitor = new TestMonitor(1);
-        final Project project = supplier.get(projectDir, monitor, false, 0);
+        final BuildExecutor executor = new ForkedMavenExecutor(projectDir, monitor, 30);
+        final ProjectSupplier supplier = new DefaultHelidonProjectSupplier();
+        final Project project = supplier.get(executor, false, 0);
         assertThat(project, is(not(nullValue())));
         assertThat(project.isBuildUpToDate(), is(true));
         assertThat(monitor.buildStart(0), is(false));
@@ -69,9 +71,10 @@ class DefaultHelidonProjectSupplierTest {
     @Test
     void testCleanBuild() throws Exception {
         final Path projectDir = TestFiles.helidonSeProjectCopy();
-        final ProjectSupplier supplier = new DefaultHelidonProjectSupplier(30);
         final TestMonitor monitor = new TestMonitor(1);
-        final Project project = supplier.get(projectDir, monitor, true, 0);
+        final BuildExecutor executor = new ForkedMavenExecutor(projectDir, monitor, 30);
+        final ProjectSupplier supplier = new DefaultHelidonProjectSupplier();
+        final Project project = supplier.get(executor, true, 0);
         assertThat(project, is(not(nullValue())));
         assertThat(project.isBuildUpToDate(), is(true));
         assertThat(monitor.buildStart(0), is(true));

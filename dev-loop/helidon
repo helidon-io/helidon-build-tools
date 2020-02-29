@@ -35,7 +35,8 @@ init() {
 
     while (( ${#} > 0 )); do
         case "${1}" in
-            --debug) jvm="${debug}" ;;
+            --debug) appendVar jvm "${debug}" ;;
+            --fork) appendVar jvm "-Ddev.fork=true" ;;
             --dryRun) action=echo ;;
             *) appendVar args "${1}" ;;
         esac

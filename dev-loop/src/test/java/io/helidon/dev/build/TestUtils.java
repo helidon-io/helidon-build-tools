@@ -21,6 +21,8 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.build.util.Log;
 import io.helidon.dev.build.maven.DefaultHelidonProjectSupplier;
+import io.helidon.dev.build.maven.EmbeddedMavenExecutor;
+import io.helidon.dev.build.maven.ForkedMavenExecutor;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -44,14 +46,22 @@ class TestUtils {
                              boolean watchBinariesOnly,
                              BuildMonitor monitor) {
         return BuildLoop.builder()
-                .projectDirectory(projectRoot)
-                .clean(initialClean)
-                .watchBinariesOnly(watchBinariesOnly)
-                .projectSupplier(new DefaultHelidonProjectSupplier(60))
-                .stdOut(monitor.stdOutConsumer())
-                .stdErr(monitor.stdErrConsumer())
-                .buildMonitor(monitor)
-                .build();
+                        .buildExecutor(buildExecutor(projectRoot, monitor))
+                        .clean(initialClean)
+                        .watchBinariesOnly(watchBinariesOnly)
+                        .projectSupplier(new DefaultHelidonProjectSupplier())
+                        .build();
+    }
+
+    static BuildExecutor buildExecutor(Path projectRoot, BuildMonitor monitor) {
+        if ("true".equals(System.getProperty("use.embedded.maven.executor"))) {
+            Log.info("Using embedded maven executor");
+            return new EmbeddedMavenExecutor(projectRoot, monitor);
+        } else {
+            Log.info("Using forked maven executor");
+            return new ForkedMavenExecutor(projectRoot, monitor, 60);
+
+        }
     }
 
     static <T extends BuildMonitor> T run(BuildLoop loop) throws InterruptedException {

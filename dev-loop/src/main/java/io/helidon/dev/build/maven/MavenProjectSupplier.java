@@ -16,55 +16,35 @@
 
 package io.helidon.dev.build.maven;
 
-import java.io.PrintStream;
-import java.nio.file.Path;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.List;
 
-import io.helidon.dev.build.BuildMonitor;
-import io.helidon.dev.build.BuildType;
+import io.helidon.dev.build.BuildExecutor;
 import io.helidon.dev.build.Project;
 import io.helidon.dev.build.ProjectSupplier;
-import io.helidon.dev.build.util.ConsumerPrintStream;
-
-import org.apache.maven.cli.MavenCli;
-import org.apache.maven.project.MavenProject;
-
-import static io.helidon.build.util.FileUtils.assertFile;
 
 /**
  * A {@code ProjectSupplier} for Maven projects.
  */
 public class MavenProjectSupplier implements ProjectSupplier {
-    private static final String POM_FILE = "pom.xml";
-    private static final String PROJECT_DIRECTORY_PROPERTY = "maven.multiModuleProjectDirectory";
-    private static final String[] CLEAN_BUILD_ARGS = {"clean", "prepare-package", "-DskipTests"};
-    private static final String[] BUILD_ARGS = {"prepare-package", "-DskipTests"};
-    private static final AtomicReference<MavenProject> PROJECT = new AtomicReference<>();
-
-    static void setProject(MavenProject project) {
-        PROJECT.set(project);
-    }
+    private static final List<String> CLEAN_BUILD_COMMAND = List.of("clean", "prepare-package", "-DskipTests");
+    private static final List<String> BUILD_COMMAND = List.of("prepare-package", "-DskipTests");
 
     @Override
-    public Project get(Path projectDir, BuildMonitor monitor, boolean clean, int cycleNumber) throws Exception {
-        final Path pomFile = assertFile(projectDir.resolve(POM_FILE));
-        final MavenCli maven = new MavenCli();
-        final String[] args = clean ? CLEAN_BUILD_ARGS : BUILD_ARGS;
-        final PrintStream stdOutStream = ConsumerPrintStream.newStream(monitor.stdOutConsumer());
-        final PrintStream stdErrStream = ConsumerPrintStream.newStream(monitor.stdErrConsumer());
-        System.getProperties().put(PROJECT_DIRECTORY_PROPERTY, projectDir.toString());
-
-        monitor.onBuildStart(cycleNumber, clean ? BuildType.CleanComplete : BuildType.Complete);
-
-        // This fails, looks like it may be a missing dependency (if we're lucky)
-        if (maven.doMain(args, projectDir.toString(), stdOutStream, stdErrStream) != 0) {
-            throw new Exception("Build failed.");
+    public Project get(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception {
+        if (clean) {
+            executor.execute(CLEAN_BUILD_COMMAND);
         }
-        final MavenProject mavenProject = PROJECT.get();
-        if (mavenProject == null) {
-            throw new IllegalStateException("Maven project not found.");
+        if (!configurationExists()) {
+            executor.execute(BUILD_COMMAND);
         }
 
-        return null; // TODO use Project.builder()
+        // TODO 1. read configuration
+        //      2. construct result from configuration using Project.builder();
+
+        throw new Error("not implemented");
+    }
+
+    private boolean configurationExists() {
+        return false; // TODO
     }
 }

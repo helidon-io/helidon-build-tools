@@ -50,7 +50,7 @@ public class LifecycleParticipant extends AbstractMavenLifecycleParticipant {
     @Override
     public void afterSessionEnd(MavenSession session) throws MavenExecutionException {
         final MavenProject project = session.getCurrentProject();
-        MavenProjectSupplier.setProject(project);
+        // TODO Store project configuration file
         System.out.println("LifecycleParticipant: session end, project " + project.getArtifactId() + "cached");
         super.afterSessionEnd(session);
     }

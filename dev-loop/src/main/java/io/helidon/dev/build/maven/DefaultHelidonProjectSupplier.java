@@ -16,19 +16,14 @@
 
 package io.helidon.dev.build.maven;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
-import io.helidon.build.util.Constants;
-import io.helidon.build.util.ProcessMonitor;
-import io.helidon.dev.build.BuildMonitor;
+import io.helidon.dev.build.BuildExecutor;
 import io.helidon.dev.build.BuildRoot;
 import io.helidon.dev.build.BuildRootType;
 import io.helidon.dev.build.BuildType;
@@ -52,57 +47,29 @@ import static io.helidon.dev.build.ProjectDirectory.createProjectDirectory;
  * Builds a project assuming a default pom.xml.
  */
 public class DefaultHelidonProjectSupplier implements ProjectSupplier {
-    private static final String MAVEN_EXEC = Constants.OS.mavenExec();
-    private static final List<String> CLEAN_BUILD_COMMAND = List.of(MAVEN_EXEC, "clean", "prepare-package", "-DskipTests");
-    private static final List<String> BUILD_COMMAND = List.of(MAVEN_EXEC, "prepare-package", "-DskipTests");
+    private static final List<String> CLEAN_BUILD_COMMAND = List.of("clean", "prepare-package", "-DskipTests");
+    private static final List<String> BUILD_COMMAND = List.of("prepare-package", "-DskipTests");
     private static final String POM_FILE = "pom.xml";
     private static final String JAVA_DIR = "src/main/java";
     private static final String RESOURCES_DIR = "src/main/resources";
     private static final String LIB_DIR = "target/libs";
     private static final String CLASSES_DIR = "target/classes";
-    private final int maxBuildWaitSeconds;
 
     /**
      * Constructor.
-     *
-     * @param maxBuildWaitSeconds The maximum number of seconds to wait for a build to complete.
      */
-    public DefaultHelidonProjectSupplier(int maxBuildWaitSeconds) {
-        this.maxBuildWaitSeconds = maxBuildWaitSeconds;
+    public DefaultHelidonProjectSupplier() {
     }
 
     @Override
-    public Project get(Path projectDir, BuildMonitor monitor, boolean clean, int cycleNumber) throws Exception {
-        final Project project = createProject(projectDir);
+    public Project get(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception {
+        final Project project = createProject(executor.projectDirectory());
         if (clean || !project.isBuildUpToDate()) {
-            monitor.onBuildStart(cycleNumber, clean ? BuildType.CleanComplete : BuildType.Complete);
-            build(projectDir, monitor, clean);
+            executor.monitor().onBuildStart(cycleNumber, clean ? BuildType.CleanComplete : BuildType.Complete);
+            executor.execute(clean ? CLEAN_BUILD_COMMAND : BUILD_COMMAND);
             project.update(true);
         }
         return project;
-    }
-
-    private void build(Path projectDir, BuildMonitor monitor, boolean clean) throws Exception {
-
-        // Make sure we use the current JDK by forcing it first in the path and setting JAVA_HOME. This might be required
-        // if we're in an IDE whose process was started with a different JDK.
-
-        final String javaHome = System.getProperty("java.home");
-        final String javaHomeBin = javaHome + File.separator + "bin";
-        final ProcessBuilder processBuilder = new ProcessBuilder().directory(projectDir.toFile())
-                                                                  .command(clean ? CLEAN_BUILD_COMMAND : BUILD_COMMAND);
-        final Map<String, String> env = processBuilder.environment();
-        final String path = javaHomeBin + File.pathSeparatorChar + env.get("PATH");
-        env.put("PATH", path);
-        env.put("JAVA_HOME", javaHome);
-
-        ProcessMonitor.builder()
-                      .processBuilder(processBuilder)
-                      .stdOut(monitor.stdOutConsumer())
-                      .stdErr(monitor.stdErrConsumer())
-                      .capture(true)
-                      .build()
-                      .execute(maxBuildWaitSeconds, TimeUnit.SECONDS);
     }
 
     private Project createProject(Path projectDir) throws IOException {

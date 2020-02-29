@@ -151,8 +151,8 @@ public class ProjectExecutor {
     private void startJava() {
         List<String> command = new ArrayList<>();
         command.add(JAVA_EXEC);
-// TODO        command.add(JIT_LEVEL_ONE);             // Faster startup but longer warmup to peak perf
-// TODO        command.add(JIT_TWO_COMPILER_THREADS);  // Faster startup but longer warmup to peak perf
+        command.add(JIT_LEVEL_ONE);             // Faster startup but longer warmup to peak perf
+        command.add(JIT_TWO_COMPILER_THREADS);  // Faster startup but longer warmup to peak perf
         command.add("-cp");
         command.add(classPathString());
         command.add(project.mainClassName());

@@ -16,7 +16,6 @@
 
 package io.helidon.dev.build;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -27,19 +26,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
-import static io.helidon.build.util.FileUtils.assertDir;
 import static java.util.Objects.requireNonNull;
 
 /**
  * A continuous incremental build loop.
  */
 public class BuildLoop {
-    private static ExecutorService executor = Executors.newSingleThreadExecutor();
-    private final Path projectDirectory;
-    private final Consumer<String> stdOut;
-    private final Consumer<String> stdErr;
+    private static ExecutorService loopExecutor = Executors.newSingleThreadExecutor();
+    private final BuildExecutor buildExecutor;
     private final ProjectSupplier projectSupplier;
     private final BuildMonitor monitor;
     private final boolean watchBinariesOnly;
@@ -63,11 +58,9 @@ public class BuildLoop {
     }
 
     private BuildLoop(Builder builder) {
-        this.projectDirectory = builder.projectDirectory;
-        this.stdOut = builder.stdOut;
-        this.stdErr = builder.stdErr;
+        this.buildExecutor = builder.buildExecutor;
         this.projectSupplier = builder.projectSupplier;
-        this.monitor = builder.monitor;
+        this.monitor = buildExecutor.monitor();
         this.watchBinariesOnly = builder.watchBinariesOnly;
         this.clean = new AtomicBoolean(builder.clean);
         this.run = new AtomicBoolean();
@@ -90,7 +83,7 @@ public class BuildLoop {
             stopped.get().countDown(); // In case any previous waiters.
             running.set(new CountDownLatch(1));
             stopped.set(new CountDownLatch(1));
-            task.set(executor.submit(this::loop));
+            task.set(loopExecutor.submit(this::loop));
         }
         return this;
     }
@@ -152,7 +145,7 @@ public class BuildLoop {
                 // Need to create/recreate the project. Note that supplier calls onBuildStart().
 
                 try {
-                    setProject(projectSupplier.get(projectDirectory, monitor, clean.getAndSet(false), cycleNumber.get()));
+                    setProject(projectSupplier.get(buildExecutor, clean.getAndSet(false), cycleNumber.get()));
                     ready();
                 } catch (IllegalArgumentException | InterruptedException e) {
                     break;
@@ -188,7 +181,7 @@ public class BuildLoop {
                     try {
                         changed(false, false);
                         buildStarting(BuildType.Incremental);
-                        project.incrementalBuild(sourceChanges, stdOut, stdErr);
+                        project.incrementalBuild(sourceChanges, monitor.stdOutConsumer(), monitor.stdErrConsumer());
                         project.update(false);
                         ready();
                     } catch (InterruptedException e) {
@@ -264,49 +257,22 @@ public class BuildLoop {
      * A {@code BuildLoop} builder.
      */
     public static class Builder {
-        private Path projectDirectory;
-        private Consumer<String> stdOut;
-        private Consumer<String> stdErr;
+        private BuildExecutor buildExecutor;
         private ProjectSupplier projectSupplier;
-        private BuildMonitor monitor;
         private boolean clean;
         private boolean watchBinariesOnly;
 
         private Builder() {
-            this.stdOut = System.out::println;
-            this.stdErr = System.err::println;
         }
 
         /**
-         * Sets the project directory.
+         * Sets the build executor.
          *
-         * @param projectDirectory The directory.
+         * @param buildExecutor The executor.
          * @return The builder, for chaining.
          */
-        public Builder projectDirectory(Path projectDirectory) {
-            this.projectDirectory = assertDir(projectDirectory);
-            return this;
-        }
-
-        /**
-         * Sets a consumer for build messages written to stdout.
-         *
-         * @param stdOut The consumer.
-         * @return The builder, for chaining.
-         */
-        public Builder stdOut(Consumer<String> stdOut) {
-            this.stdOut = requireNonNull(stdOut);
-            return this;
-        }
-
-        /**
-         * Sets a consumer for build messages written to stderr.
-         *
-         * @param stdErr The consumer.
-         * @return The consumer.
-         */
-        public Builder stdErr(Consumer<String> stdErr) {
-            this.stdErr = requireNonNull(stdErr);
+        public Builder buildExecutor(BuildExecutor buildExecutor) {
+            this.buildExecutor = requireNonNull(buildExecutor);
             return this;
         }
 
@@ -344,24 +310,13 @@ public class BuildLoop {
         }
 
         /**
-         * Sets the build monitor.
-         *
-         * @param buildMonitor The monitor.
-         * @return The builder, for chaining.
-         */
-        public Builder buildMonitor(BuildMonitor buildMonitor) {
-            this.monitor = requireNonNull(buildMonitor);
-            return this;
-        }
-
-        /**
          * Returns the new {@code BuildLoop}.
          *
          * @return The loop.
          */
         public BuildLoop build() {
-            if (projectDirectory == null) {
-                throw new IllegalStateException("projectDirectory is required");
+            if (buildExecutor == null) {
+                throw new IllegalStateException("buildExecutor is required");
             }
             if (projectSupplier == null) {
                 throw new IllegalStateException("projectSupplier is required");

@@ -21,12 +21,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import io.helidon.build.util.Log;
+import io.helidon.dev.build.BuildExecutor;
 import io.helidon.dev.build.BuildLoop;
 import io.helidon.dev.build.BuildMonitor;
 import io.helidon.dev.build.BuildType;
 import io.helidon.dev.build.Project;
 import io.helidon.dev.build.ProjectSupplier;
 import io.helidon.dev.build.maven.DefaultHelidonProjectSupplier;
+import io.helidon.dev.build.maven.EmbeddedMavenExecutor;
+import io.helidon.dev.build.maven.ForkedMavenExecutor;
 
 /**
  * A development loop that manages application lifecycle based on events from a {@link BuildLoop}.
@@ -35,29 +38,33 @@ public class DevLoop {
 
     private static final int MAX_BUILD_WAIT_SECONDS = 5 * 60;
 
-    private final Path rootDir;
-    private final boolean initialClean;
+    private final BuildExecutor buildExecutor;
     private final ProjectSupplier projectSupplier;
+    private final boolean initialClean;
 
     /**
      * Create a dev loop.
      *
      * @param rootDir Project's root.
      * @param initialClean Clean flag.
+     * @param forkBuilds {@code true} if builds should be forked.
      */
-    public DevLoop(Path rootDir, boolean initialClean) {
-        this(rootDir, initialClean, new DefaultHelidonProjectSupplier(MAX_BUILD_WAIT_SECONDS));
+    public DevLoop(Path rootDir, boolean initialClean, boolean forkBuilds) {
+        this(rootDir, new DefaultHelidonProjectSupplier(), initialClean, forkBuilds);
     }
 
     /**
      * Create a dev loop.
      *
      * @param rootDir Project's root.
-     * @param initialClean Clean flag.
      * @param projectSupplier Project supplier.
+     * @param initialClean Clean flag.
+     * @param forkBuilds {@code true} if builds should be forked.
      */
-    public DevLoop(Path rootDir, boolean initialClean, ProjectSupplier projectSupplier) {
-        this.rootDir = rootDir;
+    public DevLoop(Path rootDir, ProjectSupplier projectSupplier, boolean initialClean, boolean forkBuilds) {
+        final BuildMonitor monitor = new DevModeMonitor();
+        this.buildExecutor = forkBuilds ? new ForkedMavenExecutor(rootDir, monitor, MAX_BUILD_WAIT_SECONDS)
+                                        : new EmbeddedMavenExecutor(rootDir, monitor);
         this.initialClean = initialClean;
         this.projectSupplier = projectSupplier;
     }
@@ -71,7 +78,7 @@ public class DevLoop {
     public void start(int maxWaitInSeconds) throws Exception {
         DevModeMonitor monitor = new DevModeMonitor();
         Runtime.getRuntime().addShutdownHook(new Thread(monitor::onStopped));
-        BuildLoop loop = newLoop(rootDir, initialClean, false, monitor);
+        BuildLoop loop = newLoop(buildExecutor, initialClean, false);
         run(loop, maxWaitInSeconds);
     }
 
@@ -134,22 +141,18 @@ public class DevLoop {
         }
     }
 
-    private BuildLoop newLoop(Path projectRoot, boolean initialClean, boolean watchBinariesOnly,
-                              BuildMonitor monitor) {
+    private BuildLoop newLoop(BuildExecutor executor, boolean initialClean, boolean watchBinariesOnly) {
         return BuildLoop.builder()
-                .projectDirectory(projectRoot)
-                .clean(initialClean)
-                .watchBinariesOnly(watchBinariesOnly)
-                .projectSupplier(projectSupplier)
-                .stdOut(monitor.stdOutConsumer())
-                .stdErr(monitor.stdErrConsumer())
-                .buildMonitor(monitor)
-                .build();
+                        .buildExecutor(executor)
+                        .clean(initialClean)
+                        .watchBinariesOnly(watchBinariesOnly)
+                        .projectSupplier(projectSupplier)
+                        .build();
     }
 
     @SuppressWarnings("unchecked")
     private static <T extends BuildMonitor> T run(BuildLoop loop, int maxWaitSeconds)
-            throws InterruptedException, TimeoutException {
+    throws InterruptedException, TimeoutException {
         loop.start();
         Log.debug("Waiting up to %d seconds for build loop completion", maxWaitSeconds);
         if (!loop.waitForStopped(maxWaitSeconds, TimeUnit.SECONDS)) {

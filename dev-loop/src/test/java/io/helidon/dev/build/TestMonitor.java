@@ -16,6 +16,7 @@
 
 package io.helidon.dev.build;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -29,6 +30,9 @@ import static io.helidon.build.util.Constants.EOL;
  * A build monitor used for testing.
  */
 public class TestMonitor implements BuildMonitor {
+    // Use copies here in case we use embedded maven and they get reset.
+    private static final PrintStream OUT = System.out;
+    private static final PrintStream ERR = System.err;
     private final CountDownLatch stoppedLatch;
     private final List<String> output;
     private final int stopCycle;
@@ -61,14 +65,14 @@ public class TestMonitor implements BuildMonitor {
     public Consumer<String> stdOutConsumer() {
         return line -> {
             output.add(line);
-            System.out.println(line);
+            OUT.println(line.charAt(0) == '[' ? "   " + line : line);
         };
     }
 
     public Consumer<String> stdErrConsumer() {
         return line -> {
             output.add(line);
-            System.err.println(line);
+            ERR.println(line.charAt(0) == '[' ? "   " + line : line);
         };
     }
 

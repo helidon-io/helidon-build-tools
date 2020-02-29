@@ -16,24 +16,21 @@
 
 package io.helidon.dev.build;
 
-import java.nio.file.Path;
-
 /**
  * A {@code Project} supplier.
  */
 public interface ProjectSupplier {
 
     /**
-     * Returns a new {@code Project} instance from the given directory that has been successfully built.
+     * Returns a new {@code Project} instance from the given directory that has been successfully built. Implementations
+     * must call {@link BuildMonitor#onBuildStart(int, BuildType)} if a build is performed.
      *
-     * @param projectDir The project directory.
-     * @param monitor The build monitor. Implementations must call {@link BuildMonitor#onBuildStart(int, BuildType)} if a build
-     * is performed.
+     * @param executor The build executor.
      * @param clean {@code true} if the project should be cleaned and built.
      * @param cycleNumber The cycle number.
      * @return The project instance, guaranteed to have been successfully built.
      * @throws IllegalArgumentException if the project directory is not a valid.
      * @throws Exception if the build fails.
      */
-    Project get(Path projectDir, BuildMonitor monitor, boolean clean, int cycleNumber) throws Exception;
+    Project get(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception;
 }

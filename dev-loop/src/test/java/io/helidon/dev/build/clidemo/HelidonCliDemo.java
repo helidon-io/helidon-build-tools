@@ -61,6 +61,8 @@ public class HelidonCliDemo {
     private static final String MAVEN_PLUGIN_GOAL = "io.helidon.build-tools:helidon-maven-plugin:1.1.2-SNAPSHOT:dev";
     private static final String JAVA_HOME = System.getProperty("java.home");
     private static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
+    private static final long SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
+    private static final boolean FORK_MAVEN = "true".equals(System.getProperty("dev.fork"));
 
     private static long pid;
     private static ProcessMonitor processMonitor;
@@ -154,14 +156,14 @@ public class HelidonCliDemo {
                     Properties destProps = new Properties();
                     destProps.setProperty(PROJECT_DIRECTORY, ".");
                     destProps.setProperty(HELIDON_VARIANT, variant.toString());
-                    sourceProps.entrySet().forEach(e -> {
-                        String propName = (String) e.getKey();
+                    sourceProps.forEach((key, value) -> {
+                        String propName = (String) key;
                         if (propName.startsWith(FEATURE_PREFIX)) {      // Applies to both SE or MP
-                            destProps.setProperty(propName, (String) e.getValue());
+                            destProps.setProperty(propName, (String) value);
                         } else if (propName.startsWith(variant.toString())) {       // Project's variant
                             destProps.setProperty(
-                                    propName.substring(variant.toString().length() + 1),
-                                    (String) e.getValue());
+                                propName.substring(variant.toString().length() + 1),
+                                (String) value);
                         }
                     });
                     destProps.store(fw, "Helidon CLI config");
@@ -175,12 +177,13 @@ public class HelidonCliDemo {
         }
     }
 
-    private static void helidonDev(boolean clean) throws Exception {
+    private static void helidonDev(boolean clean) {
         // Execute Helidon maven plugin to enter dev loop
         String cleanProp = "-Ddev.clean=" + clean;
+        String forkProp = "-Ddev.fork=" + FORK_MAVEN;
         ProcessBuilder processBuilder = new ProcessBuilder()
                 .directory(CWD.toFile())
-                .command(MAVEN_EXEC, MAVEN_PLUGIN_GOAL, cleanProp);
+                .command(MAVEN_EXEC, MAVEN_PLUGIN_GOAL, cleanProp, forkProp);
         Map<String, String> env = processBuilder.environment();
         String path = JAVA_HOME_BIN + File.pathSeparatorChar + env.get("PATH");
         env.put("PATH", path);
@@ -196,7 +199,7 @@ public class HelidonCliDemo {
                     .start();
             pid = processMonitor.toHandle().pid();
             Log.info("Process with PID %d is starting", pid);
-            processMonitor.waitForCompletion(Long.MAX_VALUE, TimeUnit.SECONDS);
+            processMonitor.waitForCompletion(SECONDS_PER_YEAR, TimeUnit.SECONDS);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

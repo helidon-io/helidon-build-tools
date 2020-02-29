@@ -226,6 +226,9 @@
                         <!-- DO NOT override argLine instead use surefire.argLine -->
                         <argLine>${surefire.argLine} ${surefire.coverage.argline}</argLine>
                         <trimStackTrace>false</trimStackTrace>
+                        <systemPropertyVariables>
+                            <use.embedded.maven.executor>false</use.embedded.maven.executor>
+                        </systemPropertyVariables>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -503,14 +506,6 @@
                 <groupId>org.codehaus.plexus</groupId>
                 <artifactId>plexus-utils</artifactId>
                 <version>${version.lib.plexus-utils}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.maven</groupId>
-                <artifactId>maven-embedder</artifactId>
-                <version>3.6.3</version>
-<!--
-                <version>${version.lib.maven}</version> // TODO
--->
             </dependency>
             <dependency>
                 <groupId>org.asciidoctor</groupId>
