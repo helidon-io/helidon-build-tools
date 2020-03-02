@@ -16,6 +16,10 @@
 pages:
     - includes:
         - "**/*.adoc"
+assets:
+  - target: "/"
+    includes:
+      - "**/*.jpg"
 backend:
     name: "vuetify"
     homePage: "home.adoc"
