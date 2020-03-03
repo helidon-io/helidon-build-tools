@@ -14,34 +14,8 @@
  * limitations under the License.
  *
  */
-package org.eclipse.microprofile.openapi.models;
 
-import java.util.List;
-import java.util.Map;
-
-public interface TopLevel extends Reference {
-
-    public enum MyEnum {OFF, ON}
-
-    public String getStuff();
-
-    public void setStuff(String stuff);
-
-    public MyEnum getState();
-
-    public void setState(MyEnum state);
-
-    public List<String> getNames();
-
-    public void setNames(List<String> names);
-
-    public Map<String, Stuff> getStuffMap();
-
-    public void setStuffMap(Map<String, Stuff> map);
-
-    public void setThing(String thing);
-
-    public String getThing();
-
-
-}
+/**
+ * Test package.
+ */
+package com.example;

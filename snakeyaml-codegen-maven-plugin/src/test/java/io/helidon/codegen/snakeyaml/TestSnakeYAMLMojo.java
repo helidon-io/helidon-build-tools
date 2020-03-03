@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,13 @@ package io.helidon.codegen.snakeyaml;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static io.helidon.codegen.snakeyaml.TestHelper.getFile;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestSnakeYAMLMojo {
 
@@ -51,5 +49,33 @@ public class TestSnakeYAMLMojo {
         assertTrue(imports.contains(referenceImport), "Missing Reference import");
         assertTrue(imports.contains(topLevelImplImport), "Missing TopLevelImpl import");
         assertTrue(imports.contains(topLevelImport), "Missing TopLevel import");
+    }
+
+    @Test
+    public void testPropSub() throws Exception {
+        SnakeYAMLMojo mojo = MavenPluginHelper.getInstance().getMojo("simpleTest/pom-prop-sub.xml",
+                OUTPUT_DIR, "generate", SnakeYAMLMojo.class);
+        mojo.execute();
+
+        Type topLevelType = mojo.types().get("org.eclipse.microprofile.openapi.models.TopLevel");
+        assertNotNull(topLevelType, "Expected Type for org.eclipse.microprofile.openapi.models.TopLevel not found");
+
+        // Test the ability to set property subs after the type defs have been built.
+        topLevelType.propertySubstitution("item", String.class.getName(), "getThing", "setThing");
+
+        Type.PropertySubstitution sub = null;
+        for (Type.PropertySubstitution s : topLevelType.propertySubstitutions()) {
+            if (s.propertySubName().equals("item")) {
+                sub = s;
+                break;
+            }
+        }
+        assertNotNull(sub, "Expected property substitution for 'item' not found");
+        assertEquals("java.lang.String", sub.propertySubType(),
+                "Expected replacement property type 'java.lang.String'; found '" + sub.propertySubType() + "' instead");
+        assertEquals("getThing", sub.getter(),
+                "Expected replacement getter 'getThing'; found '" + sub.getter() + "' instead");
+        assertEquals("setThing", sub.setter(),
+                "Expected replacement setter 'getThing'; found '" + sub.setter() + "' instead");
     }
 }
