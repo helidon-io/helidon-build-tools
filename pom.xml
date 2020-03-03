@@ -112,6 +112,7 @@
         <version.lib.asciidoctorj-diagram>1.5.4.1</version.lib.asciidoctorj-diagram>
         <version.lib.checkstyle>8.29</version.lib.checkstyle>
         <version.lib.diffutils>2.2</version.lib.diffutils>
+        <version.lib.doxia>1.9.1</version.lib.doxia>
         <version.lib.freemarker>2.3.23</version.lib.freemarker>
         <version.lib.helidon>0.9.0</version.lib.helidon>
         <version.lib.junit>5.1.0</version.lib.junit>
@@ -130,6 +131,7 @@
         <version.lib.asm>7.2</version.lib.asm>
         <version.lib.maven-resolver>1.4.1</version.lib.maven-resolver>
         <version.lib.maven-settings>3.6.2</version.lib.maven-settings>
+        <version.lib.site-plugin>3.8.2</version.lib.site-plugin>
         <!--
           !Version statement! - end
           -->
@@ -145,15 +147,16 @@
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.javadoc>3.1.1</version.plugin.javadoc>
         <version.plugin.license>1.16</version.plugin.license>
+        <version.plugin.plexus>2.1.0</version.plugin.plexus>
+        <version.plugin.plugin-plugin>3.6.0</version.plugin.plugin-plugin>
         <version.plugin.nexus-staging>1.6.8</version.plugin.nexus-staging>
+        <version.plugin.release-plugin>2.5.3</version.plugin.release-plugin>
         <version.plugin.resources>2.7</version.plugin.resources>
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>3.1.3.1</version.plugin.spotbugs>
         <version.plugin.surefire.provider.junit>1.0.3</version.plugin.surefire.provider.junit>
         <version.plugin.surefire>2.19.1</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
-        <version.plugin.release-plugin>2.5.3</version.plugin.release-plugin>
-        <version.plugin.plugin-plugin>3.6.0</version.plugin.plugin-plugin>
     </properties>
 
     <modules>
@@ -345,6 +348,11 @@
                     <artifactId>maven-plugin-plugin</artifactId>
                     <version>${version.plugin.plugin-plugin}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.codehaus.plexus</groupId>
+                    <artifactId>plexus-component-metadata</artifactId>
+                    <version>${version.plugin.plexus}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -500,6 +508,11 @@
                 <version>${version.lib.slf4j}</version>
             </dependency>
             <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>log4j-over-slf4j</artifactId>
+                <version>${version.lib.slf4j}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
                 <version>${version.lib.junit}</version>
@@ -580,16 +593,14 @@
                 <version>${version.lib.maven}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.build-tools</groupId>
-                <artifactId>utils</artifactId>
-                <version>${project.version}</version>
+                <groupId>org.apache.maven.doxia</groupId>
+                <artifactId>doxia-site-renderer</artifactId>
+                <version>${version.lib.doxia}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.build-tools</groupId>
-                <artifactId>utils</artifactId>
-                <version>${project.version}</version>
-                <type>test-jar</type>
-                <scope>test</scope>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>${version.lib.site-plugin}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

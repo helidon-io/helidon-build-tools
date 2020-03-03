@@ -36,6 +36,7 @@
         <dependency>
             <groupId>io.helidon.build-tools</groupId>
             <artifactId>utils</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
