@@ -16,11 +16,30 @@
 
 package io.helidon.dev.build.maven;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
+import io.helidon.build.util.ConfigProperties;
 import io.helidon.dev.build.BuildExecutor;
+import io.helidon.dev.build.BuildRoot;
+import io.helidon.dev.build.BuildRootType;
+import io.helidon.dev.build.DirectoryType;
+import io.helidon.dev.build.FileType;
 import io.helidon.dev.build.Project;
+import io.helidon.dev.build.ProjectDirectory;
 import io.helidon.dev.build.ProjectSupplier;
+import io.helidon.dev.build.steps.CompileJavaSources;
+import io.helidon.dev.build.steps.CopyResources;
+
+import static io.helidon.build.util.FileUtils.assertDir;
+import static io.helidon.build.util.FileUtils.assertFile;
+import static io.helidon.build.util.FileUtils.ensureDirectory;
+import static io.helidon.dev.build.BuildComponent.createBuildComponent;
+import static io.helidon.dev.build.BuildFile.createBuildFile;
+import static io.helidon.dev.build.BuildRoot.createBuildRoot;
+import static io.helidon.dev.build.ProjectDirectory.createProjectDirectory;
 
 /**
  * A {@code ProjectSupplier} for Maven projects.
@@ -29,22 +48,72 @@ public class MavenProjectSupplier implements ProjectSupplier {
     private static final List<String> CLEAN_BUILD_COMMAND = List.of("clean", "prepare-package", "-DskipTests");
     private static final List<String> BUILD_COMMAND = List.of("prepare-package", "-DskipTests");
 
+    static final String POM_FILE = "pom.xml";
+    static final String DOT_HELIDON = ".helidon";
+    static final String PROJECT_CLASSPATH = "project.classpath";
+    static final String PROJECT_SOURCEDIRS = "project.sourcedirs";
+    static final String PROJECT_CLASSESDIRS = "project.classesdirs";
+    static final String PROJECT_RESOURCESDIRS = "project.resourcesdirs";
+    static final String PROJECT_MAINCLASS = "project.mainclass";
+
     @Override
     public Project get(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception {
         if (clean) {
             executor.execute(CLEAN_BUILD_COMMAND);
         }
-        if (!configurationExists()) {
+
+        ConfigProperties properties = new ConfigProperties(DOT_HELIDON);
+        if (!properties.contains(PROJECT_CLASSPATH)) {
             executor.execute(BUILD_COMMAND);
+            properties.load();
         }
 
-        // TODO 1. read configuration
-        //      2. construct result from configuration using Project.builder();
+        Path projectDir = executor.projectDirectory();
+        Project.Builder builder = Project.builder();
 
-        throw new Error("not implemented");
-    }
+        // Root directory
+        ProjectDirectory root = createProjectDirectory(DirectoryType.Project, projectDir);
+        builder.rootDirectory(root);
 
-    private boolean configurationExists() {
-        return false; // TODO
+        // POM file
+        final Path pomFile = assertFile(projectDir.resolve(POM_FILE));
+        builder.buildSystemFile(createBuildFile(root, FileType.MavenPom, pomFile));
+
+        // Dependencies - Should we consider the classes/lib?
+        List<String> classpath = properties.propertyAsList(PROJECT_CLASSPATH);
+        classpath.stream().map(s -> Path.of(s)).forEach(builder::dependency);
+
+        // Build components
+        List<String> sourceDirs = properties.propertyAsList(PROJECT_SOURCEDIRS);
+        List<String> classesDirs = properties.propertyAsList(PROJECT_CLASSESDIRS);
+        List<String> resourcesDirs = properties.propertyAsList(PROJECT_RESOURCESDIRS);
+
+        for (String sourceDir : sourceDirs) {
+            for (String classesDir : classesDirs) {
+                Path sourceDirPath = assertDir(projectDir.resolve(sourceDir));
+                Path classesDirPath = ensureDirectory(projectDir.resolve(classesDir));
+                BuildRoot sources = createBuildRoot(BuildRootType.JavaSources, sourceDirPath);
+                BuildRoot classes = createBuildRoot(BuildRootType.JavaClasses, classesDirPath);
+                builder.component(createBuildComponent(sources, classes,
+                        new CompileJavaSources(StandardCharsets.UTF_8, false)));
+            }
+        }
+
+        for (String resourcesDir : resourcesDirs) {
+            for (String classesDir : classesDirs) {
+                Path resourcesDirPath = projectDir.resolve(resourcesDir);
+                if (Files.exists(resourcesDirPath)) {
+                    Path classesDirPath = ensureDirectory(projectDir.resolve(classesDir));
+                    BuildRoot sources = createBuildRoot(BuildRootType.Resources, resourcesDirPath);
+                    BuildRoot classes = createBuildRoot(BuildRootType.Resources, classesDirPath);
+                    builder.component(createBuildComponent(sources, classes, new CopyResources()));
+                }
+            }
+        }
+
+        // Main class
+        builder.mainClassName(properties.property(PROJECT_MAINCLASS));
+
+        return builder.build();
     }
 }

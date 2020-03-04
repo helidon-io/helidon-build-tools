@@ -16,11 +16,26 @@
 
 package io.helidon.dev.build.maven;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import io.helidon.build.util.ConfigProperties;
+import io.helidon.build.util.Log;
+
 import org.apache.maven.AbstractMavenLifecycleParticipant;
 import org.apache.maven.MavenExecutionException;
+import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Resource;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.component.annotations.Component;
+
+import static io.helidon.dev.build.maven.MavenProjectSupplier.DOT_HELIDON;
+import static io.helidon.dev.build.maven.MavenProjectSupplier.PROJECT_CLASSESDIRS;
+import static io.helidon.dev.build.maven.MavenProjectSupplier.PROJECT_CLASSPATH;
+import static io.helidon.dev.build.maven.MavenProjectSupplier.PROJECT_MAINCLASS;
+import static io.helidon.dev.build.maven.MavenProjectSupplier.PROJECT_RESOURCESDIRS;
+import static io.helidon.dev.build.maven.MavenProjectSupplier.PROJECT_SOURCEDIRS;
 
 /**
  * Class LifecycleParticipant.
@@ -28,30 +43,41 @@ import org.codehaus.plexus.component.annotations.Component;
 @Component(role = AbstractMavenLifecycleParticipant.class)
 public class LifecycleParticipant extends AbstractMavenLifecycleParticipant {
 
-    /**
-     * Constructor.
-     */
-    public LifecycleParticipant() {
-        System.out.println("LifecycleParticipant: ctor");
-    }
+    private static final String MAINCLASS_PROPERTY = "mainClass";
 
-    @Override
-    public void afterProjectsRead(MavenSession session) throws MavenExecutionException {
-        super.afterProjectsRead(session);
-        System.out.println("LifecycleParticipant: projects read");
-    }
-
-    @Override
-    public void afterSessionStart(MavenSession session) throws MavenExecutionException {
-        super.afterSessionStart(session);
-        System.out.println("LifecycleParticipant: session start");
-    }
+    private ConfigProperties properties = new ConfigProperties(DOT_HELIDON);
 
     @Override
     public void afterSessionEnd(MavenSession session) throws MavenExecutionException {
-        final MavenProject project = session.getCurrentProject();
-        // TODO Store project configuration file
-        System.out.println("LifecycleParticipant: session end, project " + project.getArtifactId() + "cached");
-        super.afterSessionEnd(session);
+        Log.debug("LifecycleParticipant: session end");
+
+        List<MavenProject> projects = session.getProjects();
+        if (projects.size() != 1) {
+            throw new RuntimeException("Unable to process Maven project(s)");
+        }
+
+        MavenProject mavenProject = projects.get(0);
+        try {
+            properties.property(PROJECT_CLASSPATH, mavenProject.getRuntimeClasspathElements());
+            properties.property(PROJECT_SOURCEDIRS, mavenProject.getCompileSourceRoots());
+            List<String> classesDirs = mavenProject.getCompileClasspathElements()
+                    .stream()
+                    .filter(d -> !d.endsWith(".jar"))
+                    .collect(Collectors.toList());
+            properties.property(PROJECT_CLASSESDIRS, classesDirs);
+            List<String> resourceDirs = mavenProject.getResources()
+                    .stream()
+                    .map(Resource::getDirectory)
+                    .collect(Collectors.toList());
+            properties.property(PROJECT_RESOURCESDIRS, resourceDirs);
+            String mainClass = mavenProject.getProperties().getProperty(MAINCLASS_PROPERTY);
+            if (mainClass == null) {
+                throw new RuntimeException("Unable to find property " + MAINCLASS_PROPERTY);
+            }
+            properties.property(PROJECT_MAINCLASS, mainClass);
+            properties.store();
+        } catch (DependencyResolutionRequiredException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

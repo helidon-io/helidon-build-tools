@@ -19,6 +19,7 @@ package io.helidon.build.maven.dev;
 import java.io.File;
 
 import io.helidon.build.maven.link.MavenLogWriter;
+import io.helidon.dev.build.maven.MavenProjectSupplier;
 import io.helidon.dev.mode.DevLoop;
 
 import org.apache.maven.plugin.AbstractMojo;
@@ -75,7 +76,7 @@ public class DevMojo extends AbstractMojo {
         }
         try {
             MavenLogWriter.bind(getLog());
-            DevLoop loop = new DevLoop(devProjectDir.toPath(), clean, fork);
+            DevLoop loop = new DevLoop(devProjectDir.toPath(), new MavenProjectSupplier(), clean, fork);
             loop.start(Integer.MAX_VALUE);
         } catch (Exception e) {
             throw new MojoExecutionException("Error", e);
