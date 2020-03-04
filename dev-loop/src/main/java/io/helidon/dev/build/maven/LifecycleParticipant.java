@@ -38,14 +38,15 @@ import static io.helidon.dev.build.maven.MavenProjectSupplier.PROJECT_RESOURCESD
 import static io.helidon.dev.build.maven.MavenProjectSupplier.PROJECT_SOURCEDIRS;
 
 /**
- * Class LifecycleParticipant.
+ * Collects settings from a maven project and stores them in the a config file for later use
+ * by {@link MavenProjectSupplier}. Must be installed as a maven extension to run.
  */
 @Component(role = AbstractMavenLifecycleParticipant.class)
 public class LifecycleParticipant extends AbstractMavenLifecycleParticipant {
 
     private static final String MAINCLASS_PROPERTY = "mainClass";
 
-    private ConfigProperties properties = new ConfigProperties(DOT_HELIDON);
+    private final ConfigProperties properties = new ConfigProperties(DOT_HELIDON);
 
     @Override
     public void afterSessionEnd(MavenSession session) throws MavenExecutionException {

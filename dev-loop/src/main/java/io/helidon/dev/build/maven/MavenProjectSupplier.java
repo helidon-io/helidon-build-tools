@@ -56,14 +56,24 @@ public class MavenProjectSupplier implements ProjectSupplier {
     static final String PROJECT_RESOURCESDIRS = "project.resourcesdirs";
     static final String PROJECT_MAINCLASS = "project.mainclass";
 
+    private final ConfigProperties properties = new ConfigProperties(DOT_HELIDON);
+
+    /**
+     * Gets a project instance.
+     *
+     * @param executor The build executor.
+     * @param clean {@code true} if the project should be cleaned and built.
+     * @param cycleNumber The cycle number.
+     * @return A project.
+     * @throws Exception If a problem is found.
+     */
     @Override
     public Project get(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception {
         if (clean) {
             executor.execute(CLEAN_BUILD_COMMAND);
         }
 
-        ConfigProperties properties = new ConfigProperties(DOT_HELIDON);
-        if (!properties.contains(PROJECT_CLASSPATH)) {
+        if (!configurationExists()) {
             executor.execute(BUILD_COMMAND);
             properties.load();
         }
@@ -115,5 +125,15 @@ public class MavenProjectSupplier implements ProjectSupplier {
         builder.mainClassName(properties.property(PROJECT_MAINCLASS));
 
         return builder.build();
+    }
+
+    /**
+     * Check if we have the necessary properties. For now we just check
+     * that classpath is there.
+     *
+     * @return Outcome of test.
+     */
+    private boolean configurationExists() {
+        return properties.contains(PROJECT_CLASSPATH);
     }
 }
