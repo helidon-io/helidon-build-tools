@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module helidon.live.restart {
-    exports io.helidon.dev;
+module helidon.build.dev {
+    exports io.helidon.build.dev;
 
     requires maven.resolver.provider;
-    requires maven.settings;
+    // requires maven.settings;
     requires maven.settings.builder;
     requires org.apache.maven.resolver;
     requires org.apache.maven.resolver.impl;
     requires org.apache.maven.resolver.spi;
-    requires maven.model.builder;
+    // requires maven.model.builder;
     requires maven.core;
     requires maven.model;
     requires helidon.build.utils;

@@ -106,7 +106,7 @@ public class MainTest {
         assertThat(res.output, is(equalTo(CLI_USAGE)));
     }
 
-    @Test
+    // @Test
     public void testHelp() throws IOException, InterruptedException {
         ExecResult res = exec("build" ,"--help");
         assertThat(res.code, is(equalTo(0)));

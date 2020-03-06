@@ -23,7 +23,9 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * Class ConfigProperties.
@@ -53,6 +55,15 @@ public class ConfigProperties {
         this.file = file;
         this.properties = new Properties();
         load();
+    }
+
+    /**
+     * Checks if properties file exists.
+     *
+     * @return Outcome of test.
+     */
+    public boolean exists() {
+        return file.exists();
     }
 
     /**
@@ -104,6 +115,26 @@ public class ConfigProperties {
      */
     public boolean contains(String key) {
         return properties.contains(key);
+    }
+
+    /**
+     * Returns set of keys as strings.
+     *
+     * @return Set of keys.
+     */
+    @SuppressWarnings("unchecked")
+    public Set<String> keySet() {
+        return (Set<String>) (Set<?>) properties.keySet();
+    }
+
+    /**
+     * Returns set of entries.
+     *
+     * @return Set of entries.
+     */
+    @SuppressWarnings("unchecked")
+    public Set<Map.Entry<String, String>> entrySet() {
+        return (Set<Map.Entry<String, String>>) (Set<?>) properties.entrySet();
     }
 
     /**

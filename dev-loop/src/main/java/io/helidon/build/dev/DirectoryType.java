@@ -14,12 +14,39 @@
  * limitations under the License.
  */
 
+package io.helidon.build.dev;
+
 /**
- * Helidon CLI harness.
+ * A directory type.
  */
-module io.helidon.build.cli.harness {
-    requires java.logging;
-    requires com.github.spotbugs.annotations;
-    exports io.helidon.build.cli.harness;
-    uses io.helidon.build.cli.harness.CommandRegistry;
+public enum DirectoryType {
+    /**
+     * Project root.
+     */
+    Project,
+
+    /**
+     * Java source files.
+     */
+    JavaSources,
+
+    /**
+     * Resource files.
+     */
+    Resources,
+
+    /**
+     * Build output root (e.g. "target").
+     */
+    BuildRoot,
+
+    /**
+     * Java classes.
+     */
+    Classes,
+
+    /**
+     * Dependencies.
+     */
+    Depencencies
 }

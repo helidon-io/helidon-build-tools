@@ -37,7 +37,7 @@ public final class CommandRunner {
      * Execute the command.
      */
     public void execute() {
-        System.setProperties(parser.properties());
+        parser.properties().forEach((key, value) -> System.setProperty((String) key, (String) value));
         parser.error().ifPresentOrElse(context::error, this::doExecute);
     }
 

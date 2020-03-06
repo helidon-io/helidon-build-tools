@@ -18,9 +18,9 @@ package io.helidon.build.maven.dev;
 
 import java.io.File;
 
+import io.helidon.build.dev.maven.MavenProjectSupplier;
+import io.helidon.build.dev.mode.DevLoop;
 import io.helidon.build.maven.link.MavenLogWriter;
-import io.helidon.dev.build.maven.MavenProjectSupplier;
-import io.helidon.dev.mode.DevLoop;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;

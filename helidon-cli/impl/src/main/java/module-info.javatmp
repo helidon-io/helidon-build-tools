@@ -15,11 +15,11 @@
  */
 
 /**
- * Helidon CLI harness.
+ * Helidon CLI implementation.
  */
-module io.helidon.build.cli.harness {
-    requires java.logging;
-    requires com.github.spotbugs.annotations;
-    exports io.helidon.build.cli.harness;
-    uses io.helidon.build.cli.harness.CommandRegistry;
+module io.helidon.build.cli.impl {
+    requires io.helidon.build.cli.harness;
+    requires helidon.build.utils;
+    provides io.helidon.build.cli.harness.CommandRegistry
+            with io.helidon.build.cli.impl.CommandRegistryImpl;
 }

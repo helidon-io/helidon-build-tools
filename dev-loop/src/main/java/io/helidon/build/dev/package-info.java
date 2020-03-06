@@ -15,11 +15,6 @@
  */
 
 /**
- * Helidon CLI harness.
+ * Helidon build mode.
  */
-module io.helidon.build.cli.harness {
-    requires java.logging;
-    requires com.github.spotbugs.annotations;
-    exports io.helidon.build.cli.harness;
-    uses io.helidon.build.cli.harness.CommandRegistry;
-}
+package io.helidon.build.dev;

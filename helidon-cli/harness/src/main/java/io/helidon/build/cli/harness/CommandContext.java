@@ -292,7 +292,7 @@ public final class CommandContext {
             error(String.format("'%s' is not a valid command.%nDid you mean '%s'?%nSee '%s --help' for more information",
                     command, match, cliName));
         } else {
-            error(String.format("'%s' is not a valid command.%Snee '%s --help' for more information", command, cliName));
+            error(String.format("'%s' is not a valid command.%nSee '%s --help' for more information", command, cliName));
         }
     }
 

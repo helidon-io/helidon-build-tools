@@ -14,12 +14,24 @@
  * limitations under the License.
  */
 
+package io.helidon.build.dev;
+
 /**
- * Helidon CLI harness.
+ * A build type.
  */
-module io.helidon.build.cli.harness {
-    requires java.logging;
-    requires com.github.spotbugs.annotations;
-    exports io.helidon.build.cli.harness;
-    uses io.helidon.build.cli.harness.CommandRegistry;
+public enum BuildType {
+    /**
+     * A complete build that is cleaned first.
+     */
+    CleanComplete,
+
+    /**
+     * A complete build.
+     */
+    Complete,
+
+    /**
+     * An incremental build.
+     */
+    Incremental
 }
