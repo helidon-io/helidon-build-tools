@@ -17,6 +17,8 @@ package io.helidon.build.cli.impl;
 
 import java.io.File;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.build.cli.harness.Command;
@@ -28,16 +30,14 @@ import io.helidon.build.util.Constants;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.ProcessMonitor;
 
-import static io.helidon.build.cli.impl.InitCommand.CWD;
-
 /**
  * The {@code dev} command.
  */
 @Command(name = "dev", description = "Continuous application development")
-public final class DevCommand implements CommandExecution {
+public final class DevCommand extends BaseCommand implements CommandExecution {
 
     private static final String MAVEN_EXEC = Constants.OS.mavenExec();
-    private static final String MAVEN_PLUGIN_GOAL = "io.helidon.build-tools:helidon-maven-plugin:2.0.0-SNAPSHOT:dev";
+    private static final String MAVEN_PLUGIN_GOAL = "maven.plugin.goal";
     private static final String JAVA_HOME = System.getProperty("java.home");
     private static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
     private static final long SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
@@ -58,12 +58,16 @@ public final class DevCommand implements CommandExecution {
 
     @Override
     public void execute(CommandContext context) {
-        // Execute Helidon maven plugin to enter dev loop
+        Properties cliConfig = cliConfig();
         String cleanProp = "-Ddev.clean=" + clean;
         String forkProp = "-Ddev.fork=" + fork;
+        String pluginGoal = cliConfig.getProperty(MAVEN_PLUGIN_GOAL);
+        Objects.requireNonNull(pluginGoal);
+
+        // Execute Helidon maven plugin to enter dev loop
         ProcessBuilder processBuilder = new ProcessBuilder()
-                .directory(CWD.toFile())
-                .command(MAVEN_EXEC, MAVEN_PLUGIN_GOAL, cleanProp, forkProp);
+                .directory(commonOptions.project())
+                .command(MAVEN_EXEC, cliConfig.getProperty(MAVEN_PLUGIN_GOAL), cleanProp, forkProp);
         Map<String, String> env = processBuilder.environment();
         String path = JAVA_HOME_BIN + File.pathSeparatorChar + env.get("PATH");
         env.put("PATH", path);

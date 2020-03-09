@@ -27,11 +27,13 @@ import io.helidon.build.cli.harness.Option.KeyValue;
 @CommandFragment
 final class CommonOptions {
 
+    private static final File CWD = new File(".");
+
     private final File project;
 
     @Creator
     CommonOptions(@KeyValue(name = "project", description = "The project directory") File project) {
-        this.project = project;
+        this.project = project != null ? project : CWD;
     }
 
     File project() {

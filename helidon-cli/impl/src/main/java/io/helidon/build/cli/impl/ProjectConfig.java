@@ -28,49 +28,14 @@ import io.helidon.build.util.ConfigProperties;
 /**
  * Class ConfigFile.
  */
-class ConfigFile extends ConfigProperties {
+class ProjectConfig extends ConfigProperties {
 
     static final String DOT_HELIDON = ".helidon";
     static final String PROJECT_DIRECTORY = "project.directory";
     static final String HELIDON_FLAVOR = "helidon.flavor";
     static final String FEATURE_PREFIX = "feature.";
 
-    static class Dependency {
-        private String groupId;
-        private String artifactId;
-        private String version;
-
-        public String groupId() {
-            return groupId;
-        }
-
-        public void groupId(String groupId) {
-            this.groupId = groupId;
-        }
-
-        public String artifactId() {
-            return artifactId;
-        }
-
-        public void artifactId(String artifactId) {
-            this.artifactId = artifactId;
-        }
-
-        public String version() {
-            return version;
-        }
-
-        public void version(String version) {
-            this.version = version;
-        }
-
-        @Override
-        public String toString() {
-            return groupId + ":" + artifactId + (version != null ? ":" + version : "");
-        }
-    }
-
-    ConfigFile(File file) {
+    ProjectConfig(File file) {
         super(file);
     }
 
@@ -94,7 +59,7 @@ class ConfigFile extends ConfigProperties {
                 .collect(Collectors.toList());
     }
 
-    List<Dependency> featureDeps(String feature) {
+    List<ProjectDependency> featureDeps(String feature) {
         return entrySet()
                 .stream()
                 .filter(e -> {
@@ -106,12 +71,8 @@ class ConfigFile extends ConfigProperties {
                     return Arrays.stream(v.split(","))
                             .map(d -> {
                                 String[] ds = d.split(":");
-                                Dependency dep = new Dependency();
-                                dep.groupId(ds[0]);
-                                dep.artifactId(ds[1]);
-                                if (ds.length > 2) {
-                                    dep.version(ds[2]);
-                                }
+                                ProjectDependency dep = new ProjectDependency(ds[0], ds[1],
+                                        ds.length > 2 ? ds[2] : null);
                                 return dep;
                             });
                 }).collect(Collectors.toList());
