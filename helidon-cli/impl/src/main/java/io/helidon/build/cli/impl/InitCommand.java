@@ -17,9 +17,14 @@ package io.helidon.build.cli.impl;
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 
 import io.helidon.build.cli.harness.Command;
@@ -30,6 +35,11 @@ import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
 import io.helidon.build.util.HelidonVariant;
 import io.helidon.build.util.QuickstartGenerator;
+
+import org.apache.maven.model.Extension;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 
 import static io.helidon.build.cli.impl.ConfigFile.DOT_HELIDON;
 import static io.helidon.build.cli.impl.ConfigFile.FEATURE_PREFIX;
@@ -42,15 +52,18 @@ import static io.helidon.build.cli.impl.ConfigFile.PROJECT_DIRECTORY;
 @Command(name = "init", description = "Generate a new project")
 public final class InitCommand implements CommandExecution {
 
-    static final String HELIDON_PROPERTIES = "helidon.properties";
-    static final String DEFAULT_VERSION = "1.4.1";
+    static final String HELIDON_PROPERTIES = "/helidon.properties";
+    static final String ARCHETYPE_VERSION = "archetype.version";
+    static final String DEVLOOP_EXTENSION = "devloop.extension";
+
     static final Path CWD = Path.of(".");
 
     private final CommonOptions commonOptions;
     private final boolean batch;
     private final Flavor flavor;
     private final Build build;
-    private final String version;
+    private final Properties properties;
+    private String version;
 
     /**
      * Helidon flavors.
@@ -73,18 +86,31 @@ public final class InitCommand implements CommandExecution {
             CommonOptions commonOptions,
             @KeyValue(name = "flavor", description = "Helidon flavor", defaultValue = "SE") Flavor flavor,
             @KeyValue(name = "build", description = "Build type", defaultValue = "MAVEN") Build build,
-            @KeyValue(name = "version", description = "Helidon version", defaultValue = DEFAULT_VERSION) String version,
+            @KeyValue(name = "version", description = "Helidon version") String version,
             @Flag(name = "batch", description = "Non interactive, user input is passed as system properties") boolean batch) {
         this.commonOptions = commonOptions;
         this.flavor = flavor;
         this.build = build;
         this.batch = batch;
         this.version = version;
+        this.properties = readProperties();
     }
 
     @Override
     public void execute(CommandContext context) {
-        // Generate project
+        // Check build type
+        if (build == Build.GRADLE) {
+            context.logError("Gradle support is not implemented");
+            System.exit(3);
+        }
+
+        // Ensure archetype version
+        if (version == null || version.isEmpty()) {
+            version = properties.getProperty(ARCHETYPE_VERSION);
+            Objects.requireNonNull(version);
+        }
+
+        // Generate project using Maven archetype
         Path dir = null;
         try {
             dir = QuickstartGenerator.generator()
@@ -98,31 +124,75 @@ public final class InitCommand implements CommandExecution {
         }
         Objects.requireNonNull(dir);
 
+        // Archetype pom needs an extension for devloop
+        File pomFile = dir.resolve("pom.xml").toFile();
+        ensurePomExtension(pomFile);
+
         // Create config file that includes feature information
-        File sourceFile = new File(Objects.requireNonNull(
-                getClass().getClassLoader().getResource(HELIDON_PROPERTIES)).getFile());
-        File dotHelidon = Path.of(dir.toString(), DOT_HELIDON).toFile();
+        File dotHelidon = dir.resolve(DOT_HELIDON).toFile();
         ConfigFile configFile = new ConfigFile(dotHelidon);
-        try (FileReader fr = new FileReader(sourceFile)) {
-            Properties sourceProps = new Properties();
-            sourceProps.load(fr);
-            configFile.property(PROJECT_DIRECTORY, ".");
-            configFile.property(HELIDON_FLAVOR, flavor.toString());
-            sourceProps.forEach((key, value) -> {
-                String propName = (String) key;
-                if (propName.startsWith(FEATURE_PREFIX)) {      // Applies to both SE or MP
-                    configFile.property(propName, (String) value);
-                } else if (propName.startsWith(flavor.toString())) {       // Project's variant
-                    configFile.property(
-                            propName.substring(flavor.toString().length() + 1),
-                            (String) value);
+        configFile.property(PROJECT_DIRECTORY, ".");
+        configFile.property(HELIDON_FLAVOR, flavor.toString());
+        properties.forEach((key, value) -> {
+            String propName = (String) key;
+            if (propName.startsWith(FEATURE_PREFIX)) {      // Applies to both SE or MP
+                configFile.property(propName, (String) value);
+            } else if (propName.startsWith(flavor.toString())) {       // Project's variant
+                configFile.property(
+                        propName.substring(flavor.toString().length() + 1),
+                        (String) value);
+            }
+        });
+        configFile.store();
+
+        context.logInfo("Switch directory to ./" + dir.getFileName() + " to use CLI");
+    }
+
+    private void ensurePomExtension(File pomFile) {
+        try {
+            Model model;
+
+            // Read pom and check for extension
+            try (FileReader fr = new FileReader(pomFile)) {
+                MavenXpp3Reader mvnReader = new MavenXpp3Reader();
+                model = mvnReader.read(fr);
+                ProjectDependency ext = ProjectDependency.fromString(properties.getProperty(DEVLOOP_EXTENSION));
+                Objects.requireNonNull(ext);
+                List<Extension> extensions = model.getBuild().getExtensions();
+                Optional<Extension> found = extensions.stream().filter(
+                        e -> e.getGroupId().equals(ext.groupId())
+                                && e.getArtifactId().equals(ext.artifactId())
+                                && Objects.equals(e.getVersion(), ext.version())).findFirst();
+                if (found.isPresent()) {
+                    return;
                 }
-            });
-            configFile.store();
+                Extension newExt = new Extension();
+                newExt.setGroupId(ext.groupId());
+                newExt.setArtifactId(ext.artifactId());
+                newExt.setVersion(ext.version());
+                extensions.add(newExt);
+            }
+
+            // Write pom with new extension
+            try (FileWriter fw = new FileWriter(pomFile)) {
+                MavenXpp3Writer mvnWriter = new MavenXpp3Writer();
+                mvnWriter.write(fw, model);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Properties readProperties() {
+        try {
+            InputStream sourceStream = getClass().getResourceAsStream(HELIDON_PROPERTIES);
+            try (InputStreamReader isr = new InputStreamReader(sourceStream)) {
+                Properties props = new Properties();
+                props.load(isr);
+                return props;
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-        context.logInfo("Switch directory to ./" + dir.getFileName() + " to use CLI");
     }
 }
