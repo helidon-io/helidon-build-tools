@@ -56,8 +56,19 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
      * Helidon flavors.
      */
     enum Flavor {
-        MP,
-        SE
+        MP("mp"),
+        SE("se");
+
+        private final String flavor;
+
+        Flavor(String flavor) {
+            this.flavor = flavor;
+        }
+
+        @Override
+        public String toString() {
+            return flavor;
+        }
     }
 
     /**
