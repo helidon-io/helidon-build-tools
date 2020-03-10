@@ -15,16 +15,26 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.util.Arrays;
+
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
+import io.helidon.build.util.ProjectConfig;
+
+import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
+import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
+import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
+import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
+import static io.helidon.build.util.ProjectConfig.PROJECT_RESOURCEDIRS;
+import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCEDIRS;
 
 /**
  * The {@code info} command.
  */
 @Command(name = "info", description = "Print project information")
-public final class InfoCommand implements CommandExecution {
+public final class InfoCommand extends BaseCommand implements CommandExecution {
 
     private final CommonOptions commonOptions;
 
@@ -35,6 +45,30 @@ public final class InfoCommand implements CommandExecution {
 
     @Override
     public void execute(CommandContext context) {
-        context.logInfo(String.format("%n// TODO exec info, project=%s", commonOptions.project()));
+        ProjectConfig projectConfig = projectConfig(commonOptions.project().toPath());
+        if (!projectConfig.exists()) {
+            context.exitAction(CommandContext.ExitStatus.FAILURE, "Unable to find project");
+            return;
+        }
+        context.logInfo("");
+        context.logInfo("project:");
+        context.logInfo("  flavor: " + projectConfig.property(PROJECT_FLAVOR).toUpperCase());
+        context.logInfo("  directory: " + projectConfig.property(PROJECT_DIRECTORY));
+        if (projectConfig.contains(PROJECT_MAINCLASS)) {
+            context.logInfo("  mainClass: " + projectConfig.property(PROJECT_MAINCLASS));
+            context.logInfo("  sourceDirs: " + formatList(projectConfig.property(PROJECT_SOURCEDIRS)));
+            context.logInfo("  classesDirs: " + formatList(projectConfig.property(PROJECT_CLASSDIRS)));
+            context.logInfo("  resourceDirs: " + formatList(projectConfig.property(PROJECT_RESOURCEDIRS)));
+        }
+        context.logInfo("");
+    }
+
+    private static String formatList(String value) {
+        if (value == null || value.isEmpty()) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder();
+        Arrays.stream(value.split(",")).forEach(s -> builder.append("\n    - " + s));
+        return builder.toString();
     }
 }

@@ -114,7 +114,7 @@ public class ConfigProperties {
      * @return Outcome of test.
      */
     public boolean contains(String key) {
-        return properties.contains(key);
+        return properties.containsKey(key);
     }
 
     /**

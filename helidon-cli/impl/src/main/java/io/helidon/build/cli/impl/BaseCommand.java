@@ -22,14 +22,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+
+import io.helidon.build.cli.harness.CommandContext;
+import io.helidon.build.util.Constants;
+import io.helidon.build.util.Log;
+import io.helidon.build.util.ProcessMonitor;
+import io.helidon.build.util.ProjectConfig;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
-import static io.helidon.build.cli.impl.ProjectConfig.DOT_HELIDON;
+import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 
 /**
  * Class BaseCommand.
@@ -37,6 +45,10 @@ import static io.helidon.build.cli.impl.ProjectConfig.DOT_HELIDON;
 public abstract class BaseCommand {
 
     static final String HELIDON_PROPERTIES = "/helidon.properties";
+    static final String MAVEN_EXEC = Constants.OS.mavenExec();
+    static final String JAVA_HOME = System.getProperty("java.home");
+    static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
+    static final long SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
 
     private Properties cliConfig;
     private ProjectConfig projectConfig;
@@ -86,6 +98,28 @@ public abstract class BaseCommand {
                 mvnWriter.write(fw, model);
             }
         } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected void executeProcess(CommandContext context, ProcessBuilder processBuilder) {
+        Map<String, String> env = processBuilder.environment();
+        String path = JAVA_HOME_BIN + File.pathSeparatorChar + env.get("PATH");
+        env.put("PATH", path);
+        env.put("JAVA_HOME", JAVA_HOME);
+        try {
+            // Fork process and wait for its completion
+            ProcessMonitor processMonitor = ProcessMonitor.builder()
+                    .processBuilder(processBuilder)
+                    .stdOut(context::logInfo)
+                    .stdErr(context::logError)
+                    .capture(false)
+                    .build()
+                    .start();
+            long pid = processMonitor.toHandle().pid();
+            Log.info("Process with PID %d is starting", pid);
+            processMonitor.waitForCompletion(SECONDS_PER_YEAR, TimeUnit.SECONDS);
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

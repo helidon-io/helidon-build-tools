@@ -28,15 +28,17 @@ import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.KeyValue;
 import io.helidon.build.util.HelidonVariant;
+import io.helidon.build.util.ProjectConfig;
+import io.helidon.build.util.ProjectDependency;
 import io.helidon.build.util.QuickstartGenerator;
 
 import org.apache.maven.model.Extension;
 import org.apache.maven.model.Model;
 
 import static io.helidon.build.cli.harness.CommandContext.ExitStatus;
-import static io.helidon.build.cli.impl.ProjectConfig.FEATURE_PREFIX;
-import static io.helidon.build.cli.impl.ProjectConfig.HELIDON_FLAVOR;
-import static io.helidon.build.cli.impl.ProjectConfig.PROJECT_DIRECTORY;
+import static io.helidon.build.util.ProjectConfig.FEATURE_PREFIX;
+import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
+import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
 
 /**
  * The {@code init} command.
@@ -96,6 +98,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         // Check build type
         if (build == Build.GRADLE) {
             context.exitAction(ExitStatus.FAILURE, "Gradle support is not implemented");
+            return;
         }
 
         Properties cliConfig = cliConfig();
@@ -116,6 +119,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
                     .generate();
         } catch (IllegalStateException e) {
             context.exitAction(ExitStatus.FAILURE, e.getMessage());
+            return;
         }
         Objects.requireNonNull(dir);
 
@@ -126,12 +130,12 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         // Create config file that includes feature information
         ProjectConfig configFile = projectConfig(dir);
         configFile.property(PROJECT_DIRECTORY, dir.toString());
-        configFile.property(HELIDON_FLAVOR, flavor.toString());
+        configFile.property(PROJECT_FLAVOR, flavor.toString());
         cliConfig.forEach((key, value) -> {
             String propName = (String) key;
             if (propName.startsWith(FEATURE_PREFIX)) {      // Applies to both SE or MP
                 configFile.property(propName, (String) value);
-            } else if (propName.startsWith(flavor.toString())) {       // Project's variant
+            } else if (propName.startsWith(flavor.toString())) {       // Project's flavor
                 configFile.property(
                         propName.substring(flavor.toString().length() + 1),
                         (String) value);

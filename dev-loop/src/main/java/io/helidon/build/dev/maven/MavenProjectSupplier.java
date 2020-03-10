@@ -40,6 +40,13 @@ import static io.helidon.build.dev.ProjectDirectory.createProjectDirectory;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
+import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
+import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
+import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSPATH;
+import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
+import static io.helidon.build.util.ProjectConfig.PROJECT_RESOURCEDIRS;
+import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCEDIRS;
+
 /**
  * A {@code ProjectSupplier} for Maven projects.
  */
@@ -48,12 +55,6 @@ public class MavenProjectSupplier implements ProjectSupplier {
     private static final List<String> BUILD_COMMAND = List.of("prepare-package", "-DskipTests");
 
     static final String POM_FILE = "pom.xml";
-    static final String DOT_HELIDON = ".helidon";
-    static final String PROJECT_CLASSPATH = "project.classpath";
-    static final String PROJECT_SOURCEDIRS = "project.sourcedirs";
-    static final String PROJECT_CLASSESDIRS = "project.classesdirs";
-    static final String PROJECT_RESOURCESDIRS = "project.resourcesdirs";
-    static final String PROJECT_MAINCLASS = "project.mainclass";
 
     private final ConfigProperties properties = new ConfigProperties(DOT_HELIDON);
 
@@ -94,8 +95,8 @@ public class MavenProjectSupplier implements ProjectSupplier {
 
         // Build components
         List<String> sourceDirs = properties.propertyAsList(PROJECT_SOURCEDIRS);
-        List<String> classesDirs = properties.propertyAsList(PROJECT_CLASSESDIRS);
-        List<String> resourcesDirs = properties.propertyAsList(PROJECT_RESOURCESDIRS);
+        List<String> classesDirs = properties.propertyAsList(PROJECT_CLASSDIRS);
+        List<String> resourcesDirs = properties.propertyAsList(PROJECT_RESOURCEDIRS);
 
         for (String sourceDir : sourceDirs) {
             for (String classesDir : classesDirs) {

@@ -17,6 +17,7 @@ package io.helidon.build.cli.impl;
 
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
+import io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
@@ -26,7 +27,7 @@ import io.helidon.build.cli.harness.Option.KeyValue;
  * The {@code build} command.
  */
 @Command(name = "build", description = "Build the application")
-public final class BuildCommand implements CommandExecution {
+public final class BuildCommand extends BaseCommand implements CommandExecution {
 
     private final CommonOptions commonOptions;
     private final boolean clean;
@@ -43,7 +44,6 @@ public final class BuildCommand implements CommandExecution {
             CommonOptions commonOptions,
             @Flag(name = "clean", description = "Perform a clean before the build") boolean clean,
             @KeyValue(name = "mode", description = "Build mode", defaultValue = "PLAIN") BuildMode buildMode) {
-
         this.commonOptions = commonOptions;
         this.clean = clean;
         this.buildMode = buildMode;
@@ -51,7 +51,19 @@ public final class BuildCommand implements CommandExecution {
 
     @Override
     public void execute(CommandContext context) {
-        context.logInfo(String.format("%n// TODO exec build, project=%s, clean=%s, buildMode=%s",
-                commonOptions.project(), String.valueOf(clean), buildMode));
+        if (buildMode != BuildMode.PLAIN) {
+            context.exitAction(ExitStatus.FAILURE, "Only " + BuildMode.PLAIN
+                    + " build mode is supported at this time");
+            return;
+        }
+
+        ProcessBuilder processBuilder = new ProcessBuilder()
+                .directory(commonOptions.project());
+        if (clean) {
+            processBuilder.command(MAVEN_EXEC, "clean", "install");
+        } else {
+            processBuilder.command(MAVEN_EXEC, "install");
+        }
+        executeProcess(context, processBuilder);
     }
 }

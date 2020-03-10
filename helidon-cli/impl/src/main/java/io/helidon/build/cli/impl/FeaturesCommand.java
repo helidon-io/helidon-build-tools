@@ -29,6 +29,8 @@ import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValues;
+import io.helidon.build.util.ProjectConfig;
+import io.helidon.build.util.ProjectDependency;
 
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
@@ -62,8 +64,9 @@ public final class FeaturesCommand extends BaseCommand implements CommandExecuti
         if (!add.isEmpty()) {
             if (list || all) {
                 exitAction(context);
+            } else {
+                addFeatures(context);
             }
-            addFeatures(context);
         } else if (list ^ all) {
             if (list) {
                 listProjectFeatures(context);
@@ -96,6 +99,7 @@ public final class FeaturesCommand extends BaseCommand implements CommandExecuti
             List<ProjectDependency> featureDeps = projectConfig.featureDeps(featureName);
             if (featureDeps.isEmpty()) {
                 context.exitAction(ExitStatus.FAILURE, "Feature '" + featureName + "' does not exist");
+                return;
             }
 
             List<Dependency> existingDeps = model.getDependencies();

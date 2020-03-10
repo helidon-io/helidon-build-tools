@@ -30,12 +30,12 @@ import org.apache.maven.model.Resource;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.component.annotations.Component;
 
-import static io.helidon.build.dev.maven.MavenProjectSupplier.DOT_HELIDON;
-import static io.helidon.build.dev.maven.MavenProjectSupplier.PROJECT_CLASSESDIRS;
-import static io.helidon.build.dev.maven.MavenProjectSupplier.PROJECT_CLASSPATH;
-import static io.helidon.build.dev.maven.MavenProjectSupplier.PROJECT_MAINCLASS;
-import static io.helidon.build.dev.maven.MavenProjectSupplier.PROJECT_RESOURCESDIRS;
-import static io.helidon.build.dev.maven.MavenProjectSupplier.PROJECT_SOURCEDIRS;
+import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
+import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
+import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSPATH;
+import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
+import static io.helidon.build.util.ProjectConfig.PROJECT_RESOURCEDIRS;
+import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCEDIRS;
 
 /**
  * Collects settings from a maven project and stores them in the a config file for later use
@@ -65,12 +65,12 @@ public class LifecycleParticipant extends AbstractMavenLifecycleParticipant {
                     .stream()
                     .filter(d -> !d.endsWith(".jar"))
                     .collect(Collectors.toList());
-            properties.property(PROJECT_CLASSESDIRS, classesDirs);
+            properties.property(PROJECT_CLASSDIRS, classesDirs);
             List<String> resourceDirs = mavenProject.getResources()
                     .stream()
                     .map(Resource::getDirectory)
                     .collect(Collectors.toList());
-            properties.property(PROJECT_RESOURCESDIRS, resourceDirs);
+            properties.property(PROJECT_RESOURCEDIRS, resourceDirs);
             String mainClass = mavenProject.getProperties().getProperty(MAINCLASS_PROPERTY);
             if (mainClass == null) {
                 throw new RuntimeException("Unable to find property " + MAINCLASS_PROPERTY);

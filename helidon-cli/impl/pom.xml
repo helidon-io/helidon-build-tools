@@ -39,11 +39,6 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.build-tools</groupId>
-            <artifactId>helidon-dev-loop</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.build-tools</groupId>
             <artifactId>helidon-utils</artifactId>
             <version>${project.version}</version>
         </dependency>

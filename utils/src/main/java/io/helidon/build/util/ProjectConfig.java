@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.cli.impl;
+package io.helidon.build.util;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -23,43 +23,103 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.helidon.build.util.ConfigProperties;
-
 /**
  * Class ConfigFile.
  */
-class ProjectConfig extends ConfigProperties {
+public class ProjectConfig extends ConfigProperties {
 
-    static final String DOT_HELIDON = ".helidon";
-    static final String PROJECT_DIRECTORY = "project.directory";
-    static final String HELIDON_FLAVOR = "helidon.flavor";
-    static final String FEATURE_PREFIX = "feature.";
+    /**
+     * Helidon CLI config file.
+     */
+    public static final String DOT_HELIDON = ".helidon";
 
-    ProjectConfig(File file) {
+    /**
+     * Project's directory property.
+     */
+    public static final String PROJECT_DIRECTORY = "project.directory";
+
+    /**
+     * Project's flavor.
+     */
+    public static final String PROJECT_FLAVOR = "project.flavor";
+
+    /**
+     * Prefix for all feature properties.
+     */
+    public static final String FEATURE_PREFIX = "feature.";
+
+    /**
+     * Project's classpath property.
+     */
+    public static final String PROJECT_CLASSPATH = "project.classpath";
+
+    /**
+     * Project's source directories property.
+     */
+    public static final String PROJECT_SOURCEDIRS = "project.sourcedirs";
+
+    /**
+     * Project's class directories property.
+     */
+    public static final String PROJECT_CLASSDIRS = "project.classdirs";
+
+    /**
+     * Project's resource directories property.
+     */
+    public static final String PROJECT_RESOURCEDIRS = "project.resourcedirs";
+
+    /**
+     * Project's main class.
+     */
+    public static final String PROJECT_MAINCLASS = "project.mainclass";
+
+    /**
+     * Constructor.
+     *
+     * @param file The file.
+     */
+    public ProjectConfig(File file) {
         super(file);
     }
 
-    Optional<Path> projectDir() {
+    /**
+     * Project's directory.
+     *
+     * @return Project's directory as optional.
+     */
+    public Optional<Path> projectDir() {
         String dir = property(PROJECT_DIRECTORY);
         return dir == null ? Optional.empty() : Optional.of(Path.of(dir));
     }
 
-    void projectDir(Path projectDir) {
+    /**
+     * Set project's directory.
+     *
+     * @param projectDir The directory.
+     */
+    public void projectDir(Path projectDir) {
         property(PROJECT_DIRECTORY, projectDir.toString());
     }
 
-    void clearProjectDir() {
-        property(PROJECT_DIRECTORY);
-    }
-
-    List<String> listFeatures() {
+    /**
+     * List of features available to this project.
+     *
+     * @return List of features.
+     */
+    public List<String> listFeatures() {
         return keySet().stream()
                 .filter(k -> ((String) k).startsWith(FEATURE_PREFIX))
                 .map(k -> ((String) k).substring(FEATURE_PREFIX.length()))
                 .collect(Collectors.toList());
     }
 
-    List<ProjectDependency> featureDeps(String feature) {
+    /**
+     * List of dependencies for a certain feature.
+     *
+     * @param feature The feature.
+     * @return List of deps.
+     */
+    public List<ProjectDependency> featureDeps(String feature) {
         return entrySet()
                 .stream()
                 .filter(e -> {
@@ -78,4 +138,3 @@ class ProjectConfig extends ConfigProperties {
                 }).collect(Collectors.toList());
     }
 }
-
