@@ -17,6 +17,7 @@ package io.helidon.build.cli.impl;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -34,6 +35,8 @@ import io.helidon.build.util.ProjectDependency;
 
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
+
+import static io.helidon.build.util.ProjectConfig.PROJECT_FEATURES;
 
 /**
  * The {@code features} command.
@@ -84,7 +87,8 @@ public final class FeaturesCommand extends BaseCommand implements CommandExecuti
     }
 
     private void listProjectFeatures(CommandContext context) {
-        context.exitAction(ExitStatus.WARNING, "Option --list not implemented");
+        ProjectConfig projectConfig = projectConfig(commonOptions.project().toPath());
+        projectConfig.propertyAsList(PROJECT_FEATURES).forEach(context::logInfo);
     }
 
     private void addFeatures(CommandContext context) {
@@ -92,6 +96,10 @@ public final class FeaturesCommand extends BaseCommand implements CommandExecuti
         File pomFile = projectDir.resolve("pom.xml").toFile();
         Model model = readPomModel(pomFile);
         ProjectConfig projectConfig = projectConfig(commonOptions.project().toPath());
+
+        // Get info of features already added
+        List<String> features = new ArrayList<>(projectConfig.propertyAsList(PROJECT_FEATURES));
+        int featuresSize = features.size();
 
         // Update pom model adding dependencies for each feature
         add.forEach(featureName -> {
@@ -102,27 +110,38 @@ public final class FeaturesCommand extends BaseCommand implements CommandExecuti
                 return;
             }
 
-            List<Dependency> existingDeps = model.getDependencies();
-            featureDeps.forEach(fd -> {
-                // Check if dependency already there
-                Optional<Dependency> found = existingDeps.stream().filter(d ->
-                        d.getGroupId().equals(fd.groupId())
-                                && d.getArtifactId().equals(fd.artifactId())
-                                && Objects.equals(d.getVersion(), fd.version())).findFirst();
+            if (!features.contains(featureName)) {
+                List<Dependency> existingDeps = model.getDependencies();
+                featureDeps.forEach(fd -> {
+                    // Check if dependency already there
+                    Optional<Dependency> found = existingDeps.stream().filter(d ->
+                            d.getGroupId().equals(fd.groupId())
+                                    && d.getArtifactId().equals(fd.artifactId())
+                                    && Objects.equals(d.getVersion(), fd.version())).findFirst();
 
-                // Now add dependency if necessary
-                if (found.isEmpty()) {
-                    Dependency newDep = new Dependency();
-                    newDep.setGroupId(fd.groupId());
-                    newDep.setArtifactId(fd.artifactId());
-                    newDep.setVersion(fd.version());
-                    model.addDependency(newDep);
-                    context.logInfo("Adding '" + fd + "' to the project's pom");
-                } else {
-                    context.logInfo("Dependency '" + fd + "' already in project's pom");
-                }
-            });
+                    // Now add dependency if necessary
+                    if (found.isEmpty()) {
+                        Dependency newDep = new Dependency();
+                        newDep.setGroupId(fd.groupId());
+                        newDep.setArtifactId(fd.artifactId());
+                        newDep.setVersion(fd.version());
+                        model.addDependency(newDep);
+                        context.logInfo("Adding '" + fd + "' to the project's pom");
+                    } else {
+                        context.logInfo("Dependency '" + fd + "' already in project's pom");
+                    }
+                });
+                features.add(featureName);
+            } else {
+                context.logInfo("Feature '" + featureName + "' already added to project");
+            }
         });
+
+        // Update project config if necessary
+        if (features.size() > featuresSize) {
+            projectConfig.property(PROJECT_FEATURES, features);
+            projectConfig.store();
+        }
 
         // Write model back to pom file
         writePomModel(pomFile, model);

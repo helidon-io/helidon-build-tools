@@ -74,6 +74,11 @@ public class ProjectConfig extends ConfigProperties {
     public static final String PROJECT_MAINCLASS = "project.mainclass";
 
     /**
+     * Project's features.
+     */
+    public static final String PROJECT_FEATURES = "project.features";
+
+    /**
      * Constructor.
      *
      * @param file The file.
