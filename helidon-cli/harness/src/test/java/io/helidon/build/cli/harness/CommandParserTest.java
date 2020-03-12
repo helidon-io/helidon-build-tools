@@ -69,7 +69,7 @@ public class CommandParserTest {
         assertThat(parser.params().size(), is(1));
         assertThat(parser.params(), hasKey("foo"));
         assertThat(parser.params().get("foo"), is(instanceOf(CommandParser.KeyValueParam.class)));
-        assertThat(((CommandParser.KeyValueParam) parser.params().get("foo")).value(), is("bar"));
+        assertThat(((CommandParser.KeyValueParam) parser.params().get("foo")).value(), is("bAR"));
     }
 
     @Test
