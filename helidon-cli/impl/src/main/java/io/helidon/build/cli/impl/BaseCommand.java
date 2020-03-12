@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -122,5 +124,40 @@ public abstract class BaseCommand {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static final String SPACES = "                                                        ";
+
+    protected static String formatMapAsYaml(String top, Map<String, Object> map) {
+        Map<String, Object> topLevel = new LinkedHashMap<>();
+        topLevel.put(top, map);
+        String yaml = formatMapAsYaml(topLevel, 0);
+        return yaml.substring(0, yaml.length() - 1);        // remove last \n
+    }
+
+    @SuppressWarnings("unchecked")
+    private static String formatMapAsYaml(Map<String, Object> map, int level) {
+        StringBuilder builder = new StringBuilder();
+        map.entrySet().forEach(e -> {
+            builder.append(SPACES, 0, 2 * level);
+            Object v = e.getValue();
+            if (v instanceof Map<?, ?>) {
+                builder.append(e.getKey()).append(":\n");
+                builder.append(formatMapAsYaml((Map<String, Object>) v, level + 1));
+            } else if (v instanceof List<?>) {
+                List<String> l = (List<String>) v;
+                if (l.size() > 0) {
+                    builder.append(e.getKey()).append(":");
+                    l.forEach(s -> builder.append("\n")
+                            .append(SPACES, 0, 2 * (level + 1))
+                            .append("- ").append(s));
+                    builder.append("\n");
+                }
+            } else if (v != null) {     // ignore key if value is null
+                builder.append(e.getKey()).append(":").append(" ")
+                        .append(v.toString()).append("\n");
+            }
+        });
+        return builder.toString();
     }
 }
