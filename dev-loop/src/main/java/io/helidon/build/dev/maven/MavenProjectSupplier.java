@@ -73,15 +73,13 @@ public class MavenProjectSupplier implements ProjectSupplier {
             executor.execute(CLEAN_BUILD_COMMAND);
         }
 
-        if (!configurationExists()) {
-            executor.execute(BUILD_COMMAND);
-            properties.load();
-        }
-
-        Path projectDir = executor.projectDirectory();
-        Project.Builder builder = Project.builder();
+        // Build and load properties
+        executor.execute(BUILD_COMMAND);
+        properties.load();
 
         // Root directory
+        Path projectDir = executor.projectDirectory();
+        Project.Builder builder = Project.builder();
         ProjectDirectory root = createProjectDirectory(DirectoryType.Project, projectDir);
         builder.rootDirectory(root);
 
@@ -125,15 +123,5 @@ public class MavenProjectSupplier implements ProjectSupplier {
         builder.mainClassName(properties.property(PROJECT_MAINCLASS));
 
         return builder.build();
-    }
-
-    /**
-     * Check if we have the necessary properties. For now we just check
-     * that classpath is there.
-     *
-     * @return Outcome of test.
-     */
-    private boolean configurationExists() {
-        return properties.contains(PROJECT_CLASSPATH);
     }
 }

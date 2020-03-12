@@ -79,6 +79,11 @@ public class ProjectConfig extends ConfigProperties {
     public static final String PROJECT_FEATURES = "project.features";
 
     /**
+     * Project's version.
+     */
+    public static final String PROJECT_VERSION = "project.version";
+
+    /**
      * Constructor.
      *
      * @param file The file.

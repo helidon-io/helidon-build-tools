@@ -60,9 +60,9 @@ public final class BuildCommand extends BaseCommand implements CommandExecution 
         ProcessBuilder processBuilder = new ProcessBuilder()
                 .directory(commonOptions.project());
         if (clean) {
-            processBuilder.command(MAVEN_EXEC, "clean", "install");
+            processBuilder.command(MAVEN_EXEC, "clean", "compile");
         } else {
-            processBuilder.command(MAVEN_EXEC, "install");
+            processBuilder.command(MAVEN_EXEC, "compile");
         }
         executeProcess(context, processBuilder);
     }

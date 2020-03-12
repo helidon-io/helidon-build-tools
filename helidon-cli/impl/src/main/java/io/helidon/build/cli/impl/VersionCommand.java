@@ -25,16 +25,18 @@ import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
-import io.helidon.build.cli.harness.OutputHelper;
+import io.helidon.build.util.ProjectConfig;
+
+import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
 
 /**
  * The {@code version} command.
  */
 @Command(name = "version", description = "Print version information")
-final class VersionCommand implements CommandExecution {
+final class VersionCommand extends BaseCommand implements CommandExecution {
 
     private static final String CLI_VERSION_PROPS_RESOURCE = "version.properties";
-    private static final String[] CLI_VERSION_PROP_NAMES = new String[] {"Version", "Revision", "Date"};
+    private static final String[] CLI_VERSION_PROP_NAMES = new String[] {"version", "revision", "date"};
     private static final String CLI_KEY_PREFIX = "cli.";
 
     private final CommonOptions commonOptions;
@@ -57,15 +59,23 @@ final class VersionCommand implements CommandExecution {
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
-        Map<String, String> versionProps = new LinkedHashMap<>();
+
+        Map<String, Object> helidonProps = new LinkedHashMap<>();
         for (int i = 0; i < CLI_VERSION_PROP_NAMES.length; i++) {
             String propName = CLI_VERSION_PROP_NAMES[i];
             String propValue = getVersionProperty(props, CLI_KEY_PREFIX + propName.toLowerCase());
-            versionProps.put(propName, propValue);
+            helidonProps.put(propName, propValue);
         }
-        context.logInfo(OutputHelper.table(versionProps));
-        context.logInfo("\nProject:");
-        context.logInfo(String.format("// TODO info from project, project=%s", commonOptions.project()));
+        context.logInfo(formatMapAsYaml("helidon", helidonProps));
+
+        ProjectConfig projectConfig = projectConfig(commonOptions.project().toPath());
+        if (!projectConfig.exists()) {
+            context.exitAction(CommandContext.ExitStatus.FAILURE, "Unable to find project");
+            return;
+        }
+        Map<String, Object> projectProps = new LinkedHashMap<>();
+        projectProps.put("version", projectConfig.property(PROJECT_VERSION));
+        context.logInfo(formatMapAsYaml("project", projectProps));
     }
 
     private static String getVersionProperty(Properties props, String key) {

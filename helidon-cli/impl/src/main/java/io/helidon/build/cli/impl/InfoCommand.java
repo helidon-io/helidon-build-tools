@@ -15,7 +15,8 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
@@ -29,6 +30,7 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
 import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_RESOURCEDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCEDIRS;
+import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
 
 /**
  * The {@code info} command.
@@ -50,25 +52,14 @@ public final class InfoCommand extends BaseCommand implements CommandExecution {
             context.exitAction(CommandContext.ExitStatus.FAILURE, "Unable to find project");
             return;
         }
-        context.logInfo("");
-        context.logInfo("project:");
-        context.logInfo("  flavor: " + projectConfig.property(PROJECT_FLAVOR).toUpperCase());
-        context.logInfo("  directory: " + projectConfig.property(PROJECT_DIRECTORY));
-        if (projectConfig.contains(PROJECT_MAINCLASS)) {
-            context.logInfo("  mainClass: " + projectConfig.property(PROJECT_MAINCLASS));
-            context.logInfo("  sourceDirs: " + formatList(projectConfig.property(PROJECT_SOURCEDIRS)));
-            context.logInfo("  classesDirs: " + formatList(projectConfig.property(PROJECT_CLASSDIRS)));
-            context.logInfo("  resourceDirs: " + formatList(projectConfig.property(PROJECT_RESOURCEDIRS)));
-        }
-        context.logInfo("");
-    }
-
-    private static String formatList(String value) {
-        if (value == null || value.isEmpty()) {
-            return "";
-        }
-        StringBuilder builder = new StringBuilder();
-        Arrays.stream(value.split(",")).forEach(s -> builder.append("\n    - " + s));
-        return builder.toString();
+        Map<String, Object> project = new LinkedHashMap<>();
+        project.put("flavor", projectConfig.property(PROJECT_FLAVOR).toUpperCase());
+        project.put("directory", projectConfig.property(PROJECT_DIRECTORY));
+        project.put("version", projectConfig.property(PROJECT_VERSION));
+        project.put("mainClass", projectConfig.property(PROJECT_MAINCLASS));
+        project.put("sourceDirs", projectConfig.propertyAsList(PROJECT_SOURCEDIRS));
+        project.put("classesDirs", projectConfig.propertyAsList(PROJECT_CLASSDIRS));
+        project.put("resourceDirs", projectConfig.propertyAsList(PROJECT_RESOURCEDIRS));
+        context.logInfo(formatMapAsYaml("project", project));
     }
 }

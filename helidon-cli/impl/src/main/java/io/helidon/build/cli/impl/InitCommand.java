@@ -27,6 +27,7 @@ import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.KeyValue;
+import io.helidon.build.util.Constants;
 import io.helidon.build.util.HelidonVariant;
 import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.ProjectDependency;
@@ -111,9 +112,10 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
 
         // Generate project using Maven archetype
         Path dir = null;
+        Path parentDirectory = commonOptions.project().toPath();
         try {
             dir = QuickstartGenerator.generator()
-                    .parentDirectory(commonOptions.project().toPath())
+                    .parentDirectory(parentDirectory)
                     .helidonVariant(HelidonVariant.parse(flavor.name()))
                     .helidonVersion(version)
                     .generate();
@@ -143,7 +145,8 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         });
         configFile.store();
 
-        context.logInfo("Switch directory to " + dir.getFileName() + " to use CLI");
+        context.logInfo("Switch directory to " + parentDirectory + Constants.DIR_SEP
+                + dir.getFileName() + " to use CLI");
     }
 
     private void ensurePomExtension(File pomFile, Properties properties) {

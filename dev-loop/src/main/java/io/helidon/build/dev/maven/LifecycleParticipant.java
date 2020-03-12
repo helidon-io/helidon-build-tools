@@ -36,6 +36,7 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSPATH;
 import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_RESOURCEDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCEDIRS;
+import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
 
 /**
  * Collects settings from a maven project and stores them in the a config file for later use
@@ -76,6 +77,7 @@ public class LifecycleParticipant extends AbstractMavenLifecycleParticipant {
                 throw new RuntimeException("Unable to find property " + MAINCLASS_PROPERTY);
             }
             properties.property(PROJECT_MAINCLASS, mainClass);
+            properties.property(PROJECT_VERSION, mavenProject.getVersion());
             properties.store();
         } catch (DependencyResolutionRequiredException e) {
             throw new RuntimeException(e);
