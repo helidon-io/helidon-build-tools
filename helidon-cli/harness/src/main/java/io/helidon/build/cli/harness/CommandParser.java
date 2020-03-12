@@ -116,7 +116,7 @@ public final class CommandParser {
                 Parameter param = params.get(optionName);
                 if (i + 1 < rawArgs.length) {
                     // key-value(s)
-                    String value = rawArgs[i + 1].trim().toLowerCase();
+                    String value = rawArgs[i + 1].trim();
                     if (value.charAt(0) != '-') {
                         String[] splitValues = value.split(",");
                         if (param == null && splitValues.length == 1) {
