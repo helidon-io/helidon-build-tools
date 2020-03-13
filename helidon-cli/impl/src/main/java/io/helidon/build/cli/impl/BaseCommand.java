@@ -46,7 +46,7 @@ import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
  */
 public abstract class BaseCommand {
 
-    static final String HELIDON_PROPERTIES = "/helidon.properties";
+    static final String HELIDON_PROPERTIES = "helidon.properties";
     static final String MAVEN_EXEC = Constants.OS.mavenExec();
     static final String JAVA_HOME = System.getProperty("java.home");
     static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";

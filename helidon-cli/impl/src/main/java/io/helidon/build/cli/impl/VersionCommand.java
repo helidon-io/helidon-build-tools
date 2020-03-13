@@ -35,9 +35,9 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
 @Command(name = "version", description = "Print version information")
 final class VersionCommand extends BaseCommand implements CommandExecution {
 
-    private static final String CLI_VERSION_PROPS_RESOURCE = "version.properties";
-    private static final String[] CLI_VERSION_PROP_NAMES = new String[] {"version", "revision", "date"};
-    private static final String CLI_KEY_PREFIX = "cli.";
+    private static final String VERSION_PROPS_RESOURCE = "version.properties";
+    private static final String[] VERSION_PROP_NAMES = new String[] {"version", "revision", "date"};
+    private static final String KEY_PREFIX = "cli.";
 
     private final CommonOptions commonOptions;
 
@@ -48,7 +48,7 @@ final class VersionCommand extends BaseCommand implements CommandExecution {
 
     @Override
     public void execute(CommandContext context) {
-        InputStream is = VersionCommand.class.getResourceAsStream(CLI_VERSION_PROPS_RESOURCE);
+        InputStream is = VersionCommand.class.getResourceAsStream(VERSION_PROPS_RESOURCE);
         if (is == null) {
             throw new IllegalStateException("version.properties resource not found");
         }
@@ -61,9 +61,9 @@ final class VersionCommand extends BaseCommand implements CommandExecution {
         }
 
         Map<String, Object> helidonProps = new LinkedHashMap<>();
-        for (int i = 0; i < CLI_VERSION_PROP_NAMES.length; i++) {
-            String propName = CLI_VERSION_PROP_NAMES[i];
-            String propValue = getVersionProperty(props, CLI_KEY_PREFIX + propName.toLowerCase());
+        for (int i = 0; i < VERSION_PROP_NAMES.length; i++) {
+            String propName = VERSION_PROP_NAMES[i];
+            String propValue = getVersionProperty(props, KEY_PREFIX + propName.toLowerCase());
             helidonProps.put(propName, propValue);
         }
         context.logInfo(formatMapAsYaml("helidon", helidonProps));
