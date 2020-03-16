@@ -15,9 +15,10 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.util.ArrayList;
+
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
-import io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
@@ -28,6 +29,9 @@ import io.helidon.build.cli.harness.Option.KeyValue;
  */
 @Command(name = "build", description = "Build the application")
 public final class BuildCommand extends BaseCommand implements CommandExecution {
+
+    private static final String JLINK_OPTION = "-Pjlink-image";
+    private static final String NATIVE_OPTION = "-Pnative-image";
 
     private final CommonOptions commonOptions;
     private final boolean clean;
@@ -51,19 +55,27 @@ public final class BuildCommand extends BaseCommand implements CommandExecution 
 
     @Override
     public void execute(CommandContext context) {
-        if (buildMode != BuildMode.PLAIN) {
-            context.exitAction(ExitStatus.FAILURE, "Only " + BuildMode.PLAIN
-                    + " build mode is supported at this time");
-            return;
+        ProcessBuilder processBuilder = new ProcessBuilder().directory(commonOptions.project());
+        ArrayList<String> args = new ArrayList<>();
+        args.add(MAVEN_EXEC);
+        switch (buildMode) {
+            case PLAIN:
+                // no-op
+                break;
+            case JLINK:
+                args.add(JLINK_OPTION);
+                break;
+            case NATIVE:
+                args.add(NATIVE_OPTION);
+                break;
+            default:
+                throw new IllegalStateException("Unknown build mode " + buildMode);
         }
-
-        ProcessBuilder processBuilder = new ProcessBuilder()
-                .directory(commonOptions.project());
         if (clean) {
-            processBuilder.command(MAVEN_EXEC, "clean", "compile");
-        } else {
-            processBuilder.command(MAVEN_EXEC, "compile");
+            args.add("clean");
         }
+        args.add("package");
+        processBuilder.command(args.toArray(new String[]{}));
         executeProcess(context, processBuilder);
     }
 }
