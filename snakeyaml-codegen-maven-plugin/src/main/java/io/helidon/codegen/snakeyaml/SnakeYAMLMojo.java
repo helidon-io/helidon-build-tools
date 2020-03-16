@@ -164,6 +164,8 @@ public class SnakeYAMLMojo extends AbstractMojo {
 
     private static final String DEFAULT_OUTPUT_CLASS_NAME = "io.helidon.snakeyaml.SnakeYAMLParserHelper";
 
+    private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
+
     private final Map<String, Type> types = new HashMap<>();
     private final Map<String, Type> implementations = new HashMap<>();
     private final Set<Import> imports = preloadedImports();
@@ -550,7 +552,20 @@ public class SnakeYAMLMojo extends AbstractMojo {
      */
     private static Stream<PathMatcher> pathMatchers(Path inputDirectory, List<String> globs) {
         return globs.stream()
-                .map(glob -> FileSystems.getDefault().getPathMatcher("glob:" + inputDirectory + "/" + glob));
+                .map(glob -> FileSystems.getDefault().getPathMatcher("glob:" + sanitizeWindowsPath(inputDirectory) + "/" + glob));
+    }
+
+    /**
+     * PathMather does not produce correct matching String if directory is not in proper format.
+     *
+     * @param inputDirectory input directory
+     * @return properly escaped formatted path
+     */
+    private static String sanitizeWindowsPath(Path inputDirectory) {
+        if (OS_NAME.contains("win")) {
+            return inputDirectory.toString().replaceAll("\\\\", "/");
+        }
+        return inputDirectory.toString();
     }
 
     private static boolean matches(Path candidate, Stream<PathMatcher> matchers) {
