@@ -221,6 +221,31 @@ public class TestFiles implements BeforeAllCallback {
         return Maven.instance();
     }
 
+    /**
+     * Recursively delete a directory.
+     *
+     * @param dir Directory to delete.
+     * @return Outcome of operation.
+     */
+    public static boolean deleteDirectory(File dir) {
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                deleteDirectory(file);
+            }
+        }
+        return dir.delete();
+    }
+
+    /**
+     * ID or directory for quickstart.
+     *
+     * @param variant The Helidon variant.
+     */
+    public static String quickstartId(HelidonVariant variant) {
+        return HELIDON_QUICKSTART_PREFIX + variant;
+    }
+
     private static Version lookupLatestHelidonVersion() {
         Log.info("Looking up latest release version (excluding %s)", EXCLUDED_VERSIONS);
         final Version version = maven().latestVersion(HELIDON_GROUP_ID, HELIDON_PROJECT_ID, TestFiles::isAcceptableRelease);
@@ -305,10 +330,6 @@ public class TestFiles implements BeforeAllCallback {
 
     private static Path quickstartJar(Path projectDir, String id) {
         return assertFile(projectDir.resolve("target" + DIR_SEP + id + ".jar"));
-    }
-
-    private static String quickstartId(HelidonVariant variant) {
-        return HELIDON_QUICKSTART_PREFIX + variant;
     }
 
     private static Path directory(HelidonVariant variant, int copyNumber) {
