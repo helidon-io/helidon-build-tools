@@ -52,7 +52,7 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
         String forkProp = "-Ddev.fork=" + fork;
         StringBuilder pluginGoal = new StringBuilder(cliConfig.getProperty(MAVEN_PLUGIN));
         pluginGoal.append(":")
-                .append(cliConfig().getProperty(HELIDON_VERSION))
+                .append(helidonVersion())
                 .append(":dev");
 
         // Execute Helidon maven plugin to enter dev loop

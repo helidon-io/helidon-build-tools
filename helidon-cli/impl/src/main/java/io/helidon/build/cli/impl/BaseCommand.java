@@ -127,6 +127,11 @@ public abstract class BaseCommand {
         }
     }
 
+    protected String helidonVersion() {
+        String version = System.getProperty(HELIDON_VERSION);
+        return version != null ? version : cliConfig().getProperty(HELIDON_VERSION);
+    }
+
     private static final String SPACES = "                                                        ";
 
     protected static String formatMapAsYaml(String top, Map<String, Object> map) {

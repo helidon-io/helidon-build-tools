@@ -105,7 +105,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
 
         // Ensure archetype version
         if (version == null || version.isEmpty()) {
-            version = cliConfig().getProperty(HELIDON_VERSION);
+            version = helidonVersion();
             Objects.requireNonNull(version);
             context.logInfo("Using Helidon version " + version);
         }
@@ -153,7 +153,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
     private void ensurePomExtension(File pomFile, Properties properties) {
         Model model = readPomModel(pomFile);
         ProjectDependency ext = ProjectDependency.fromString(properties.getProperty(DEVLOOP_EXTENSION));
-        ext.version(version);
+        ext.version(helidonVersion());
         Objects.requireNonNull(ext);
         List<Extension> extensions = model.getBuild().getExtensions();
         Optional<Extension> found = extensions.stream().filter(

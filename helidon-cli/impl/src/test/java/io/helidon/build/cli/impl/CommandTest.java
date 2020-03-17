@@ -19,11 +19,13 @@ import java.nio.file.Path;
 
 import io.helidon.build.test.TestFiles;
 import io.helidon.build.util.HelidonVariant;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION;
 import static io.helidon.build.cli.impl.TestUtils.exec;
 import static io.helidon.build.test.TestFiles.quickstartId;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -37,11 +39,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class CommandTest {
 
-    // Helidon version under test
-    private static final String HELIDON_VERSION = "2.0.0-M1";
+    private static final String HELIDON_VERSION_TEST = "2.0.0-SNAPSHOT";
+    private static final String HELIDON_VERSION_PREVIOUS = "2.0.0-M1";
 
     private HelidonVariant variant = HelidonVariant.SE;
     private Path targetDir = TestFiles.targetDir();
+
+    /**
+     * Overrides version under test. This property must be propagated to all
+     * forked processes.
+     */
+    @BeforeAll
+    public static void setHelidonVersion() {
+        System.setProperty(HELIDON_VERSION, HELIDON_VERSION_TEST);
+    }
 
     @Test
     @Order(1)
@@ -49,13 +60,13 @@ public class CommandTest {
         TestUtils.ExecResult res = exec("init",
                 "--flavor", variant.toString(),
                 "--project ", targetDir.toString(),
-                "--version ", HELIDON_VERSION);
+                "--version ", HELIDON_VERSION_PREVIOUS);
         assertThat(res.code, is(equalTo(0)));
         System.out.println(res.output);
         TestFiles.ensureFile(targetDir.resolve(quickstartId(variant)));
     }
 
-    // @Test - Uncomment after first release of build tools with devloop
+    @Test
     @Order(2)
     public void testBuild() throws Exception {
         Path projectDir = targetDir.resolve(quickstartId(variant));
