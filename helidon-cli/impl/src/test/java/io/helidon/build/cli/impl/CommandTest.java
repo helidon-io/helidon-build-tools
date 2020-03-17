@@ -24,8 +24,6 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static io.helidon.build.cli.impl.InitCommand.ARCHETYPE_VERSION;
-import static io.helidon.build.cli.impl.TestUtils.cliConfig;
 import static io.helidon.build.cli.impl.TestUtils.exec;
 import static io.helidon.build.test.TestFiles.quickstartId;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -39,23 +37,25 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class CommandTest {
 
+    // Helidon version under test
+    private static final String HELIDON_VERSION = "2.0.0-M1";
+
     private HelidonVariant variant = HelidonVariant.SE;
     private Path targetDir = TestFiles.targetDir();
 
     @Test
     @Order(1)
     public void testInit() throws Exception {
-        String version = cliConfig().getProperty(ARCHETYPE_VERSION);
         TestUtils.ExecResult res = exec("init",
                 "--flavor", variant.toString(),
                 "--project ", targetDir.toString(),
-                "--version ", version);
+                "--version ", HELIDON_VERSION);
         assertThat(res.code, is(equalTo(0)));
         System.out.println(res.output);
         TestFiles.ensureFile(targetDir.resolve(quickstartId(variant)));
     }
 
-    @Test
+    // @Test - Uncomment after first release of build tools with devloop
     @Order(2)
     public void testBuild() throws Exception {
         Path projectDir = targetDir.resolve(quickstartId(variant));

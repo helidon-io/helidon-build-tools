@@ -15,7 +15,6 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.util.Objects;
 import java.util.Properties;
 
 import io.helidon.build.cli.harness.Command;
@@ -30,7 +29,7 @@ import io.helidon.build.cli.harness.Option.Flag;
 @Command(name = "dev", description = "Continuous application development")
 public final class DevCommand extends BaseCommand implements CommandExecution {
 
-    private static final String MAVEN_PLUGIN_GOAL = "maven.plugin.goal";
+    private static final String MAVEN_PLUGIN = "maven.plugin";
 
     private final CommonOptions commonOptions;
     private final boolean clean;
@@ -51,13 +50,15 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
         Properties cliConfig = cliConfig();
         String cleanProp = "-Ddev.clean=" + clean;
         String forkProp = "-Ddev.fork=" + fork;
-        String pluginGoal = cliConfig.getProperty(MAVEN_PLUGIN_GOAL);
-        Objects.requireNonNull(pluginGoal);
+        StringBuilder pluginGoal = new StringBuilder(cliConfig.getProperty(MAVEN_PLUGIN));
+        pluginGoal.append(":")
+                .append(cliConfig().getProperty(HELIDON_VERSION))
+                .append(":dev");
 
         // Execute Helidon maven plugin to enter dev loop
         ProcessBuilder processBuilder = new ProcessBuilder()
                 .directory(commonOptions.project())
-                .command(MAVEN_EXEC, cliConfig.getProperty(MAVEN_PLUGIN_GOAL), cleanProp, forkProp);
+                .command(MAVEN_EXEC, pluginGoal.toString(), cleanProp, forkProp);
         executeProcess(context, processBuilder);
     }
 }
