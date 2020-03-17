@@ -19,6 +19,7 @@ package io.helidon.build.util;
 import java.util.function.Function;
 
 import org.fusesource.jansi.Ansi;
+import org.fusesource.jansi.AnsiConsole;
 
 import static org.fusesource.jansi.Ansi.ansi;
 
@@ -131,5 +132,9 @@ public enum Style implements Function<Object, String> {
             ansi.fg(color);
         }
         return ansi.a(message).reset().toString();
+    }
+
+    static {
+        AnsiConsole.systemInstall();
     }
 }

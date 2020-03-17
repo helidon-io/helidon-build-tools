@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -87,6 +88,38 @@ public final class FileUtils {
     }
 
     /**
+     * Copies the source directory to the destination.
+     *
+     * @param source The source directory.
+     * @param destination The destination directory. Must not exist.
+     * @return The absolute, normalized destination directory.
+     * @throws IllegalArgumentException If the destination exists.
+     */
+    @SuppressWarnings("CaughtExceptionImmediatelyRethrown")
+    public static Path copyDirectory(Path source, Path destination) {
+        assertDoesNotExist(destination);
+        try {
+            Files.walk(source).forEach(src -> {
+                try {
+                    final Path dst = destination.resolve(source.relativize(src));
+                    if (Files.isDirectory(src)) {
+                        Files.createDirectory(dst);
+                    } else {
+                        Files.copy(src, dst, COPY_ATTRIBUTES);
+                    }
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        } catch (UncheckedIOException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return destination.toAbsolutePath().normalize();
+    }
+
+    /**
      * List all files in the given directory that match the given filter. Does not recurse.
      *
      * @param directory The directory.
@@ -94,8 +127,20 @@ public final class FileUtils {
      * @return The normalized, absolute file paths.
      */
     public static List<Path> listFiles(Path directory, Predicate<String> fileNameFilter) {
+        return listFiles(directory, fileNameFilter, 1);
+    }
+
+    /**
+     * List all files in the given directory that match the given filter, recursively if maxDepth > 1.
+     *
+     * @param directory The directory.
+     * @param fileNameFilter The filter.
+     * @param maxDepth The maximum recursion depth.
+     * @return The normalized, absolute file paths.
+     */
+    public static List<Path> listFiles(Path directory, Predicate<String> fileNameFilter, int maxDepth) {
         try {
-            return Files.find(assertDir(directory), 1, (path, attrs) ->
+            return Files.find(assertDir(directory), maxDepth, (path, attrs) ->
                 attrs.isRegularFile() && fileNameFilter.test(path.getFileName().toString())
             ).collect(Collectors.toList());
         } catch (IOException e) {
@@ -110,8 +155,19 @@ public final class FileUtils {
      * @return The normalized, absolute file paths.
      */
     public static List<Path> list(Path directory) {
+        return list(directory, 1);
+    }
+
+    /**
+     * List all files and directories in the given directory, recursively if maxDepth > 1.
+     *
+     * @param directory The directory.
+     * @param maxDepth The maximum recursion depth.
+     * @return The normalized, absolute file paths.
+     */
+    public static List<Path> list(Path directory, final int maxDepth) {
         try {
-            return Files.find(assertDir(directory), 1, (path, attrs) -> true)
+            return Files.find(assertDir(directory), maxDepth, (path, attrs) -> true)
                         .collect(Collectors.toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -166,6 +222,39 @@ public final class FileUtils {
     }
 
     /**
+     * Assert that the given path does not exist.
+     *
+     * @param path The path.
+     * @return The normalized, absolute path.
+     * @throws IllegalArgumentException If the path exists.
+     */
+    public static Path assertDoesNotExist(Path path) {
+        if (Files.exists(requireNonNull(path))) {
+            throw new IllegalArgumentException(path + " exists");
+        } else {
+            return path.toAbsolutePath().normalize();
+        }
+    }
+
+    /**
+     * Deletes the given file or directory if it exists.
+     *
+     * @param fileOrDirectory The file or directory.
+     * @return The file or directory.
+     * @throws IOException If an error occurs.
+     */
+    public static Path delete(Path fileOrDirectory) throws IOException {
+        if (Files.exists(fileOrDirectory)) {
+            if (Files.isRegularFile(fileOrDirectory)) {
+                Files.delete(fileOrDirectory);
+            } else {
+                deleteDirectory(fileOrDirectory);
+            }
+        }
+        return fileOrDirectory;
+    }
+
+    /**
      * Deletes the given directory if it exists.
      *
      * @param directory The directory.
@@ -180,8 +269,35 @@ public final class FileUtils {
                      .forEach(file -> {
                          try {
                              Files.delete(file);
-                         } catch (Exception e) {
-                             throw new Error(e);
+                         } catch (IOException e) {
+                             throw new UncheckedIOException(e);
+                         }
+                     });
+            } else {
+                throw new IllegalArgumentException(directory + " is not a directory");
+            }
+        }
+        return directory;
+    }
+
+    /**
+     * Deletes the content of the given directory, if any.
+     *
+     * @param directory The directory.
+     * @return The directory.
+     * @throws IOException If an error occurs.
+     */
+    public static Path deleteDirectoryContent(Path directory) throws IOException {
+        if (Files.exists(directory)) {
+            if (Files.isDirectory(directory)) {
+                Files.walk(directory)
+                     .sorted(Comparator.reverseOrder())
+                     .filter(file -> !file.equals(directory))
+                     .forEach(file -> {
+                         try {
+                             Files.delete(file);
+                         } catch (IOException e) {
+                             throw new UncheckedIOException(e);
                          }
                      });
             } else {

@@ -1,0 +1,11 @@
+[
+  {
+    "name": "org.eclipse.aether.impl.DefaultServiceLocator$Entry",
+    "allPublicConstructors": true,
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allPublicFields": true,
+    "allDeclaredFields": true
+  }
+]

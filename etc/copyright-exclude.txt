@@ -12,3 +12,6 @@ vuex-router-sync.js
 .png
 .jpg
 .ftl
+.txt
+.json
+javax.annotation.processing.Processor
