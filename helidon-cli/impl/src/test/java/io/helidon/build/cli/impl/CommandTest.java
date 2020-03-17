@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import io.helidon.build.test.TestFiles;
 import io.helidon.build.util.HelidonVariant;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -66,6 +67,7 @@ public class CommandTest {
         TestFiles.ensureFile(targetDir.resolve(quickstartId(variant)));
     }
 
+    @Disabled
     @Test
     @Order(2)
     public void testBuild() throws Exception {
