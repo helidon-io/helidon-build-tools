@@ -18,21 +18,18 @@ package io.helidon.build.cli.impl;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+
+import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION;
 
 /**
  * CLI test utils.
  */
 class TestUtils {
-
-    static final String HELIDON_PROPERTIES = "helidon.properties";
-
-    private static Properties cliConfig;
 
     private TestUtils() {
     }
@@ -73,10 +70,13 @@ class TestUtils {
 
     static ExecResult exec(String... args) throws IOException, InterruptedException {
         List<String> cmdArgs = new ArrayList<>();
-        cmdArgs.addAll(List.of(javaPath(), "-cp", "\"" + System.getProperty("java.class.path") + "\"", Main.class.getName()));
-        for (String arg : args) {
-            cmdArgs.add(arg);
+        cmdArgs.addAll(List.of(javaPath(), "-cp", "\"" + System.getProperty("java.class.path") + "\""));
+        String version = System.getProperty(HELIDON_VERSION);
+        if (version != null) {
+            cmdArgs.add("-D" + HELIDON_VERSION + "=" + version);
         }
+        cmdArgs.add(Main.class.getName());
+        cmdArgs.addAll(Arrays.asList(args));
         ProcessBuilder pb = new ProcessBuilder(cmdArgs);
         Process p = pb.redirectErrorStream(true).start();
         String output = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
@@ -84,21 +84,5 @@ class TestUtils {
             throw new IllegalStateException("timeout waiting for process");
         }
         return new ExecResult(p.exitValue(), output);
-    }
-
-    static Properties cliConfig() {
-        if (cliConfig != null) {
-            return cliConfig;
-        }
-        try {
-            InputStream sourceStream = TestUtils.class.getResourceAsStream(HELIDON_PROPERTIES);
-            try (InputStreamReader isr = new InputStreamReader(sourceStream)) {
-                cliConfig = new Properties();
-                cliConfig.load(isr);
-                return cliConfig;
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

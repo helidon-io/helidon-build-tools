@@ -47,6 +47,7 @@ import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 public abstract class BaseCommand {
 
     static final String HELIDON_PROPERTIES = "helidon.properties";
+    static final String HELIDON_VERSION = "helidon.version";
     static final String MAVEN_EXEC = Constants.OS.mavenExec();
     static final String JAVA_HOME = System.getProperty("java.home");
     static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
@@ -124,6 +125,11 @@ public abstract class BaseCommand {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected String helidonVersion() {
+        String version = System.getProperty(HELIDON_VERSION);
+        return version != null ? version : cliConfig().getProperty(HELIDON_VERSION);
     }
 
     private static final String SPACES = "                                                        ";
