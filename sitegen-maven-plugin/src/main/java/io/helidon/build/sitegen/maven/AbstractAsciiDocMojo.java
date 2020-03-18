@@ -93,6 +93,7 @@ public abstract class AbstractAsciiDocMojo extends AbstractMojo {
 
     private static final String DEFAULT_SRC_DIR = "${project.basedir}";
     private static final String JRUBY_DEBUG_PROPERTY_NAME = "jruby.cli.verbose";
+    private static final boolean WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
 
     @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject project;
@@ -264,8 +265,12 @@ public abstract class AbstractAsciiDocMojo extends AbstractMojo {
      * @return PathMatchers for the globs
      */
     private static Stream<PathMatcher> pathMatchers(Path inputDirectory, String[] globs) {
-          return Arrays.stream(globs)
+        return Arrays.stream(globs)
                 .map(glob -> {
+                    if (WINDOWS) {
+                        String pattern = "glob:" + inputDirectory + File.separator + glob.replace("/", "\\");
+                        return FileSystems.getDefault().getPathMatcher(pattern.replace("\\", "\\\\"));
+                    }
                     return FileSystems.getDefault().getPathMatcher("glob:" + inputDirectory + "/" + glob);
                 });
     }
