@@ -65,11 +65,6 @@ class QuickstartGeneratorTest {
     }
 
     @Test
-    void testSeGenerationSpecificVersion() {
-        testGeneration(HelidonVariant.SE, version -> version.toString().equals("1.4.1"));
-    }
-
-    @Test
     void testSeGenerationLatestVersion() {
         testGeneration(HelidonVariant.SE, LATEST_RELEASE);
     }

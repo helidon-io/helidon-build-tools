@@ -31,8 +31,8 @@ import io.helidon.build.util.Constants;
 import io.helidon.build.util.HelidonVariant;
 import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.ProjectDependency;
-import io.helidon.build.util.QuickstartGenerator;
 
+import io.helidon.build.util.SimpleQuickstartGenerator;
 import org.apache.maven.model.Extension;
 import org.apache.maven.model.Model;
 
@@ -111,10 +111,10 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         }
 
         // Generate project using Maven archetype
-        Path dir = null;
+        Path dir;
         Path parentDirectory = commonOptions.project().toPath();
         try {
-            dir = QuickstartGenerator.generator()
+            dir = SimpleQuickstartGenerator.generator()
                     .parentDirectory(parentDirectory)
                     .helidonVariant(HelidonVariant.parse(flavor.name()))
                     .helidonVersion(version)

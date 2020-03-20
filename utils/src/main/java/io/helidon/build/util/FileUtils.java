@@ -42,7 +42,7 @@ public final class FileUtils {
     /**
      * The Java Home directory for the running JVM.
      */
-    public static final Path CURRENT_JAVA_HOME_DIR = Paths.get(System.getProperty("java.home"));
+    public static final Path CURRENT_JAVA_HOME_DIR = Paths.get(Constants.javaHome());
 
     /**
      * The working directory.

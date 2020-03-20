@@ -58,7 +58,7 @@ public class ForkedMavenExecutor extends BuildExecutor {
         // Make sure we use the current JDK by forcing it first in the path and setting JAVA_HOME. This might be required
         // if we're in an IDE whose process was started with a different JDK.
 
-        final String javaHome = System.getProperty("java.home");
+        final String javaHome = Constants.javaHome();
         final String javaHomeBin = javaHome + File.separator + "bin";
         final ProcessBuilder processBuilder = new ProcessBuilder().directory(projectDirectory().toFile())
                                                                   .command(command);

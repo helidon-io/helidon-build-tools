@@ -49,7 +49,7 @@ public abstract class BaseCommand {
     static final String HELIDON_PROPERTIES = "helidon.properties";
     static final String HELIDON_VERSION = "helidon.version";
     static final String MAVEN_EXEC = Constants.OS.mavenExec();
-    static final String JAVA_HOME = System.getProperty("java.home");
+    static final String JAVA_HOME = Constants.javaHome();
     static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
     static final long SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
 

@@ -23,6 +23,7 @@ import java.util.List;
 
 import io.helidon.build.test.TestFiles;
 
+import io.helidon.build.util.Constants;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -36,7 +37,7 @@ import static org.hamcrest.Matchers.nullValue;
  * Unit test for class {@link ClassDataSharing}.
  */
 class ClassDataSharingTest {
-    private static final Path JAVA_HOME = Paths.get(System.getProperty("java.home"));
+    private static final Path JAVA_HOME = Path.of(Constants.javaHome());
     private static final String APP_CLASS = "org/jboss/weld/environment/deployment/discovery/BeanArchiveScanner";
 
     @Test
