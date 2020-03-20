@@ -65,7 +65,7 @@ public class RootDirMojo extends AbstractMojo {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void execute() throws MojoFailureException {
+    public synchronized void execute() throws MojoFailureException {
         String rootDir = (String) getPluginContext().get(CONTEXT_KEY);
         if (null == rootDir) {
             rootDir = findRootDir();
@@ -90,12 +90,12 @@ public class RootDirMojo extends AbstractMojo {
         Collection<MavenProject> mavenProjects = gatherWholeReactor();
 
         for (MavenProject current : mavenProjects) {
-            Path basedir = current.getBasedir().toPath().toAbsolutePath().normalize();
-
-            if (basedir == null) {
+            if (current.getBasedir() == null) {
                 getLog().info("Basedir of " + current.getName() + " is null");
                 continue;
             }
+
+            Path basedir = current.getBasedir().toPath().toAbsolutePath().normalize();
 
             if (currentTopLevel == null) {
                 currentTopLevel = basedir;
