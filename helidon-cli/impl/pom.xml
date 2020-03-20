@@ -161,12 +161,7 @@
                                         <argument>-H:+ReportExceptionStackTraces</argument>
                                         <argument>-H:-ParseRuntimeOptions</argument>
                                         <argument>--no-server</argument>
-                                        <!--
-                                          - Helidon CLI requires a JDK and Maven to run, so it is OK to create
-                                          - a 'fallback' image that requires a JDK. We have problems without
-                                          - this flag at this point (e.g. looking for 'java.home' property).
-                                          -->
-                                        <argument>--force-fallback</argument>
+                                        <argument>--no-fallback</argument>
                                         <argument>-jar</argument>
                                         <argument>${project.build.directory}/${project.build.finalName}.jar</argument>
                                     </arguments>

@@ -19,7 +19,6 @@ package io.helidon.build.util;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 import org.eclipse.aether.version.Version;
@@ -30,19 +29,11 @@ import static io.helidon.build.util.Maven.LATEST_RELEASE;
 /**
  * Generator for a quickstart project.
  */
-public class QuickstartGenerator {
-    private static final String MAVEN_EXEC = Constants.OS.mavenExec();
+public class QuickstartGenerator extends SimpleQuickstartGenerator {
     private static final String HELIDON_GROUP_ID = "io.helidon";
     private static final String HELIDON_PROJECT_ID = "helidon-project";
-    private static final String ARCHETYPES_GROUP_ID = "io.helidon.archetypes";
-    private static final String HELIDON_QUICKSTART_PREFIX = "helidon-quickstart-";
-    private static final String QUICKSTART_PACKAGE_PREFIX = "io.helidon.examples.quickstart.";
 
     private Predicate<Version> versionSelector;
-    private Path parentDirectory;
-    private HelidonVariant variant;
-    private boolean quiet;
-    private String id;
     private Version version;
 
     /**
@@ -64,6 +55,7 @@ public class QuickstartGenerator {
      * @param helidonVersion The version. May be {@code null}.
      * @return This instance, for chaining.
      */
+    @Override
     public QuickstartGenerator helidonVersion(String helidonVersion) {
         return helidonVersion(helidonVersion == null ? LATEST_RELEASE : v -> v.toString().equals(helidonVersion));
     }
@@ -86,7 +78,7 @@ public class QuickstartGenerator {
      * @return This instance, for chaining.
      */
     public QuickstartGenerator helidonVariant(HelidonVariant helidonVariant) {
-        this.variant = helidonVariant;
+        super.helidonVariant(helidonVariant);
         return this;
     }
 
@@ -97,7 +89,7 @@ public class QuickstartGenerator {
      * @return This instance, for chaining.
      */
     public QuickstartGenerator quiet(boolean quiet) {
-        this.quiet = quiet;
+        super.quiet(quiet);
         return this;
     }
 
@@ -108,7 +100,7 @@ public class QuickstartGenerator {
      * @return This instance, for chaining.
      */
     public QuickstartGenerator parentDirectory(Path parentDirectory) {
-        this.parentDirectory = assertDir(parentDirectory);
+        super.parentDirectory(assertDir(parentDirectory));
         return this;
     }
 
@@ -117,58 +109,41 @@ public class QuickstartGenerator {
      *
      * @return The path to the project.
      */
+    @Override
     public Path generate() {
         initialize();
-        final String pkg = QUICKSTART_PACKAGE_PREFIX + variant.toString();
-        Log.info("Generating %s from archetype %s", id, version);
-        execute(new ProcessBuilder().directory(parentDirectory.toFile())
+        final String pkg = QUICKSTART_PACKAGE_PREFIX + variant().toString();
+        Log.info("Generating %s from archetype %s", id(), version);
+        execute(new ProcessBuilder().directory(parentDirectory().toFile())
                                     .command(List.of(MAVEN_EXEC,
                                                      "archetype:generate",
                                                      "-DinteractiveMode=false",
                                                      "-DarchetypeGroupId=" + ARCHETYPES_GROUP_ID,
-                                                     "-DarchetypeArtifactId=" + id,
+                                                     "-DarchetypeArtifactId=" + id(),
                                                      "-DarchetypeVersion=" + version,
                                                      "-DgroupId=test",
-                                                     "-DartifactId=" + id,
+                                                     "-DartifactId=" + id(),
                                                      "-Dpackage=" + pkg
                                     )));
-        final Path result = assertDir(parentDirectory.resolve(id));
+        final Path result = assertDir(parentDirectory().resolve(id()));
         log("Generated %s", result);
         return result;
     }
 
     private void initialize() {
-        if (variant == null) {
+        if (variant() == null) {
             throw new IllegalStateException("helidonVariant required.");
         }
-        if (parentDirectory == null) {
+        if (parentDirectory() == null) {
             throw new IllegalStateException("projectDirectory required.");
         }
-        this.id = HELIDON_QUICKSTART_PREFIX + variant.toString();
-        final Path projectDir = parentDirectory.resolve(id);
+        this.id(HELIDON_QUICKSTART_PREFIX + variant().toString());
+        final Path projectDir = parentDirectory().resolve(id());
         if (Files.exists(projectDir)) {
             throw new IllegalStateException(projectDir + " already exists");
         } else {
             final Maven maven = Maven.instance();
             this.version = maven.latestVersion(HELIDON_GROUP_ID, HELIDON_PROJECT_ID, versionSelector);
-        }
-    }
-
-    private void log(String message, Object... args) {
-        if (!quiet) {
-            Log.info(message, args);
-        }
-    }
-
-    private static void execute(ProcessBuilder builder) {
-        try {
-            ProcessMonitor.builder()
-                          .processBuilder(builder)
-                          .capture(true)
-                          .build()
-                          .execute(5, TimeUnit.MINUTES);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
     }
 }

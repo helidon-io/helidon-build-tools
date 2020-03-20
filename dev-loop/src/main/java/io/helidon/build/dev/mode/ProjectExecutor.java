@@ -37,7 +37,7 @@ public class ProjectExecutor {
     private static final String MAVEN_EXEC = Constants.OS.mavenExec();
     private static final List<String> EXEC_COMMAND = List.of(MAVEN_EXEC, "exec:java");
     private static final String JAVA_EXEC = Constants.OS.javaExecutable();
-    private static final String JAVA_HOME = System.getProperty("java.home");
+    private static final String JAVA_HOME = Constants.javaHome();
     private static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
     private static final String JIT_LEVEL_ONE = "-XX:TieredStopAtLevel=1";
     private static final String JIT_TWO_COMPILER_THREADS = "-XX:CICompilerCount=2";

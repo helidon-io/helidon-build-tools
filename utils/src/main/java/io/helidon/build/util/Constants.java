@@ -40,6 +40,24 @@ public final class Constants {
      */
     public static final String DIR_SEP = File.separator;
 
+    /**
+     * Gets location of Java's home directory by checking the (@code java.home} property
+     * followed by the {@code JAVA_HOME} environment variable.
+     *
+     * @return Java's home directory.
+     * @throws RuntimeException If unable to find home directory.
+     */
+    public static String javaHome() {
+        String javaHome = System.getProperty("java.home");
+        if (javaHome == null) {
+            javaHome = System.getenv("JAVA_HOME");
+            if (javaHome == null) {
+                throw new RuntimeException("Unable to find Java installation, please set JAVA_HOME");
+            }
+        }
+        return javaHome;
+    }
+
     private Constants() {
     }
 }

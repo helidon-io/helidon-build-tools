@@ -317,7 +317,7 @@ public class TestFiles implements BeforeAllCallback {
 
         final ProcessBuilder builder = new ProcessBuilder().directory(projectDir.toFile())
                                                            .command(List.of(MAVEN_EXEC, "clean", "package", "-DskipTests"));
-        final String javaHome = System.getProperty("java.home");
+        final String javaHome = Constants.javaHome();
         final String javaHomeBin = javaHome + File.separator + "bin";
         final Map<String, String> env = builder.environment();
         final String path = javaHomeBin + File.pathSeparatorChar + env.get("PATH");

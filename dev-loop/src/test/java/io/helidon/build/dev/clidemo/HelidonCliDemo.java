@@ -31,7 +31,7 @@ import io.helidon.build.util.Constants;
 import io.helidon.build.util.HelidonVariant;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.ProcessMonitor;
-import io.helidon.build.util.QuickstartGenerator;
+import io.helidon.build.util.SimpleQuickstartGenerator;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
@@ -59,7 +59,7 @@ public class HelidonCliDemo {
 
     private static final String MAVEN_EXEC = Constants.OS.mavenExec();
     private static final String MAVEN_PLUGIN_GOAL = "io.helidon.build-tools:helidon-maven-plugin:1.1.2-SNAPSHOT:dev";
-    private static final String JAVA_HOME = System.getProperty("java.home");
+    private static final String JAVA_HOME = Constants.javaHome();
     private static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
     private static final long SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
     private static final boolean FORK_MAVEN = "true".equals(System.getProperty("dev.fork"));
@@ -134,7 +134,7 @@ public class HelidonCliDemo {
             // Generate project
             Path dir = null;
             try {
-                dir = QuickstartGenerator.generator()
+                dir = SimpleQuickstartGenerator.generator()
                         .parentDirectory(CWD)
                         .helidonVariant(variant)
                         .helidonVersion(version)
