@@ -31,8 +31,8 @@ import io.helidon.build.util.Constants;
 import io.helidon.build.util.HelidonVariant;
 import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.ProjectDependency;
-
 import io.helidon.build.util.SimpleQuickstartGenerator;
+
 import org.apache.maven.model.Extension;
 import org.apache.maven.model.Model;
 
