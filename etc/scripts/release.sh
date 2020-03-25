@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 #
 # Copyright (c) 2018, 2020 Oracle and/or its affiliates.
 #
@@ -36,15 +36,6 @@ USAGE:
 
 $(basename ${0}) [ --promoted ] [ --build-number=N ] CMD
 
-  --promoted
-        Perform a promoted release.
-        The version will include a build number qualifier in the of '-b.N'
-        See also --build-number=N
-
-  --build-number=N
-        Set the build number for promoted release.
-        Works only with --promoted
-
   --version=V
         Override the version to use.
         This trumps --build-number=N
@@ -70,12 +61,6 @@ for ((i=0;i<${#ARGS[@]};i++))
 {
   ARG=${ARGS[${i}]}
   case ${ARG} in
-  "--promoted")
-    readonly PROMOTED=true
-    ;;
-  "--build-number="*)
-    readonly BUILD_NUMBER=${ARG#*=}
-    ;;
   "--version="*)
     VERSION=${ARG#*=}
     ;;
@@ -109,23 +94,13 @@ fi
 # Path to the root of the workspace
 readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
-# Hooks for version substitution work
-readonly PREPARE_HOOKS=()
-
-# Hooks for deployment work
-readonly PERFORM_HOOKS=()
-
-source ${WS_DIR}/etc/scripts/wercker-env.sh
-
-if [ "${WERCKER}" = "true" ] ; then
-  apt-get update && apt-get -y install graphviz
-fi
+source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
 # Resolve FULL_VERSION
-if [ -z ${VERSION+x} ]; then
+if [ -z "${VERSION+x}" ]; then
 
     # get maven version
-    MVN_VERSION=$(mvn \
+    MVN_VERSION=$(mvn ${MAVEN_ARGS} \
         -q \
         -f ${WS_DIR}/pom.xml \
         -Dexec.executable="echo" \
@@ -135,28 +110,7 @@ if [ -z ${VERSION+x} ]; then
 
     # strip qualifier
     readonly VERSION=${MVN_VERSION%-*}
-
-    # resolve promoted qualifier
-    if [ -n "${PROMOTED}" ] ; then
-
-      # resolve build number
-      if [ -z "${BUILD_NUMBER}" ] ; then
-
-        # x.y.z-b.<number> pattern
-        LAST_BUILD_NUMBER=$(git tag -l | \
-                            (grep ${VERSION}-b || echo "${VERSION}-b.0";) | \
-                            cut -f2- -db | \
-                            cut -f2- -d '.' | \
-                            sort -g | \
-                            tail -n1)
-        # next build number
-        BUILD_NUMBER=$(( ${LAST_BUILD_NUMBER} + 1 ))
-      fi
-
-      readonly FULL_VERSION=${VERSION}-b.${BUILD_NUMBER}
-    else
-      readonly FULL_VERSION=${VERSION}
-    fi
+    readonly FULL_VERSION=${VERSION}
   else
     readonly FULL_VERSION=${VERSION}
 fi
@@ -166,73 +120,14 @@ printf "\n%s: FULL_VERSION=%s\n\n" "$(basename ${0})" "${FULL_VERSION}"
 
 update_version(){
   # Update version
-  mvn -f ${WS_DIR}/pom.xml versions:set versions:set-property \
+  mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml versions:set versions:set-property \
     -DgenerateBackupPoms=false \
     -DnewVersion="${FULL_VERSION}" \
     -Dproperty=helidon.version \
     -DprocessAllModules=true
-
-  # Invoke prepare hook
-  if [ -n "${PREPARE_HOOKS}" ]; then
-    for prepare_hook in ${PREPARE_HOOKS} ; do
-      bash "${prepare_hook}"
-    done
-  fi
-}
-
-inject_credentials(){
-  # Add private_key from IDENTITY_FILE
-  if [ -n "${IDENTITY_FILE}" ] && [ ! -e ~/.ssh ]; then
-    mkdir ~/.ssh/ 2>/dev/null || true
-    echo -e "${IDENTITY_FILE}" > ~/.ssh/id_rsa
-    chmod og-rwx ~/.ssh/id_rsa
-    echo -e "Host *" >> ~/.ssh/config
-    echo -e "\tStrictHostKeyChecking no" >> ~/.ssh/config
-    echo -e "\tUserKnownHostsFile /dev/null" >> ~/.ssh/config
-  fi
-
- # Add GPG key pair
- if [ -n "${GPG_PUBLIC_KEY}" ] && [ -n "${GPG_PRIVATE_KEY}" ] ; then
-    mkdir ~/.gnupg 2>/dev/null || true
-    chmod 700 ~/.gnupg
-    echo "pinentry-mode loopback" > ~/.gnupg/gpg.conf
-    echo -e "${GPG_PUBLIC_KEY}" > ~/.gnupg/helidon_pub.gpg
-    gpg --import --no-tty --batch ~/.gnupg/helidon_pub.gpg
-    echo -e "${GPG_PRIVATE_KEY}" > ~/.gnupg/helidon_sec.gpg
-    gpg --allow-secret-key-import --import --no-tty --batch ~/.gnupg/helidon_sec.gpg
- fi
-
-  # Add docker config from DOCKER_CONFIG_FILE
-  if [ -n "${DOCKER_CONFIG_FILE}" ] && [ ! -e ~/.docker ]; then
-    mkdir ~/.docker/ 2>/dev/null || true
-    printf "${DOCKER_CONFIG_FILE}" > ~/.docker/config.json
-    chmod og-rwx ~/.docker/config.json
-  fi
-
-  # Add maven settings from MAVEN_SETTINGS_FILE
-  if [ -n "${MAVEN_SETTINGS_FILE}" ] ; then
-    mkdir ~/.m2/ 2>/dev/null || true
-    echo -e "${MAVEN_SETTINGS_FILE}" > ~/.m2/settings.xml
-  fi
-
-  # Add maven settings security from MAVEN_SETTINGS_SECURITY_FILE
-  if [ -n "${MAVEN_SETTINGS_SECURITY_FILE}" ] ; then
-    mkdir ~/.m2/ 2>/dev/null || true
-    echo -e "${MAVEN_SETTINGS_SECURITY_FILE}" > ~/.m2/settings-security.xml
-  fi
-
-  # Add maven settings security from MAVEN_SETTINGS_SECURITY_FILE
-  # Only if none exist on the system
-  if [ -n "${MAVEN_SETTINGS_SECURITY_FILE}" ] && [ ! -e ~/.m2/settings-security.xml ]; then
-    mkdir ~/.m2/ 2>/dev/null || true
-    echo "${MAVEN_SETTINGS_SECURITY_FILE}" > ~/.m2/settings-security.xml
-  fi
 }
 
 release_build(){
-    # Inject credentials in CI env
-    inject_credentials
-
     # Do the release work in a branch
     local GIT_BRANCH="release/${FULL_VERSION}"
     git branch -D "${GIT_BRANCH}" > /dev/null 2>&1 || true
@@ -250,42 +145,35 @@ release_build(){
 
     # Create the nexus staging repository
     local STAGING_DESC="Helidon Build Tools v${FULL_VERSION}"
-    mvn nexus-staging:rc-open \
+    mvn ${MAVEN_ARGS} nexus-staging:rc-open \
       -DstagingProfileId=6026dab46eed94 \
       -DstagingDescription="${STAGING_DESC}"
-    export STAGING_REPO_ID=$(mvn nexus-staging:rc-list | \
-      egrep "^\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
-      awk '{print $2}' | head -1)
+    export STAGING_REPO_ID=$(mvn ${MAVEN_ARGS} nexus-staging:rc-list | \
+      egrep "^[0-9:,]*[ ]?\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
+      awk '{print $2" "$3}' | \
+      sed -e s@'\[INFO\] '@@g -e s@'OPEN'@@g | \
+      head -1)
     echo "Nexus staging repository ID: ${STAGING_REPO_ID}"
 
     # Perform deployment
-    mvn -B clean deploy -Prelease -DskipTests \
-      -Dgpg.passphrase="${GPG_PASSPHRASE}" \
+    mvn ${MAVEN_ARGS} clean deploy -Prelease -DskipTests \
       -DstagingRepositoryId=${STAGING_REPO_ID} \
       -DretryFailedDeploymentCount=10
 
-    # Invoke perform hooks
-    if [ -n "${PERFORM_HOOKS}" ]; then
-      for perform_hook in ${PERFORM_HOOKS} ; do
-        bash "${perform_hook}"
-      done
-    fi
-
     # Close the nexus staging repository
-    mvn nexus-staging:rc-close \
+    mvn ${MAVEN_ARGS} nexus-staging:rc-close \
       -DstagingRepositoryId=${STAGING_REPO_ID} \
       -DstagingDescription="${STAGING_DESC}"
 
     # Create and push a git tag
-    # Note this may not be required for Github
     local GIT_REMOTE=$(git config --get remote.origin.url | \
-                       sed "s,https://[^@]*@\([^/]*\)/,git@\1:,")
+                       sed "s,https://\([^/]*\)/,git@\1:,")
 
     git remote add release "${GIT_REMOTE}" > /dev/null 2>&1 || \
     git remote set-url release "${GIT_REMOTE}"
 
     git tag -f "${FULL_VERSION}"
-    git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
+    git push --force release refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
 }
 
 # Invoke command

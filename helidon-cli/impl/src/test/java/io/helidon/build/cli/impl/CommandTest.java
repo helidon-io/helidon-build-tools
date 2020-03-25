@@ -61,8 +61,8 @@ public class CommandTest {
                 "--flavor", variant.toString(),
                 "--project ", targetDir.toString(),
                 "--version ", HELIDON_VERSION_PREVIOUS);
-        assertThat(res.code, is(equalTo(0)));
         System.out.println(res.output);
+        assertThat(res.code, is(equalTo(0)));
         TestFiles.ensureFile(targetDir.resolve(quickstartId(variant)));
     }
 
@@ -72,8 +72,8 @@ public class CommandTest {
         Path projectDir = targetDir.resolve(quickstartId(variant));
         TestUtils.ExecResult res = exec("build",
                 "--project ", projectDir.toString());
-        assertThat(res.code, is(equalTo(0)));
         System.out.println(res.output);
+        assertThat(res.code, is(equalTo(0)));
         TestFiles.ensureFile(TestFiles.helidonSeJar());
     }
 
@@ -83,8 +83,8 @@ public class CommandTest {
         Path projectDir = targetDir.resolve(quickstartId(variant));
         TestUtils.ExecResult res = exec("info",
                 "--project ", projectDir.toString());
-        assertThat(res.code, is(equalTo(0)));
         System.out.println(res.output);
+        assertThat(res.code, is(equalTo(0)));
     }
 
     @Test
@@ -93,8 +93,8 @@ public class CommandTest {
         Path projectDir = targetDir.resolve(quickstartId(variant));
         TestUtils.ExecResult res = exec("version",
                 "--project ", projectDir.toString());
-        assertThat(res.code, is(equalTo(0)));
         System.out.println(res.output);
+        assertThat(res.code, is(equalTo(0)));
     }
 
     @Test
@@ -104,8 +104,8 @@ public class CommandTest {
         TestUtils.ExecResult res = exec("features",
                 "--project ", projectDir.toString(),
                 "--all");
-        assertThat(res.code, is(equalTo(0)));
         System.out.println(res.output);
+        assertThat(res.code, is(equalTo(0)));
     }
 
     @Test
