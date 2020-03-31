@@ -29,7 +29,7 @@ if [ -n "${JENKINS_HOME}" ] ; then
     export MAVEN_OPTS
     export PATH="/tools/apache-maven-3.6.3/bin:${JAVA_HOME}/bin:${PATH}"
     if [ -n "${GITHUB_SSH_KEY}" ] ; then
-        export GIT_SSH_COMMAND="ssh -i ${GITHUB_SSH_KEY} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+        export GIT_SSH_COMMAND="ssh -i ${GITHUB_SSH_KEY}"
     fi
     MAVEN_ARGS="${MAVEN_ARGS} -B"
     if [ -n "${MAVEN_SETTINGS_FILE}" ] ; then
