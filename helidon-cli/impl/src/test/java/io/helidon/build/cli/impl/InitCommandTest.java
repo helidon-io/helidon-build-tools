@@ -35,11 +35,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Class CommandTest.
+ * Class InitCommandTest.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class CommandTest {
+public class InitCommandTest {
 
+    private static final String MY_GROUP_ID = "mygroup";
+    private static final String MY_ARTIFACT_ID = "myartifact";
     private static final String HELIDON_VERSION_TEST = "2.0.0-SNAPSHOT";
     private static final String HELIDON_VERSION_PREVIOUS = "2.0.0-M1";
 
@@ -56,65 +58,23 @@ public class CommandTest {
     }
 
     @Test
-    @Order(1)
-    public void testInit() throws Exception {
+    @Order(7)
+    public void testInitGroupArtifact() throws Exception {
         TestUtils.ExecResult res = exec("init",
                 "--flavor", variant.toString(),
                 "--project ", targetDir.toString(),
-                "--version ", HELIDON_VERSION_PREVIOUS);
+                "--version ", HELIDON_VERSION_PREVIOUS,
+                "--groupid", MY_GROUP_ID,
+                "--artifactid", MY_ARTIFACT_ID);
         assertThat(res.code, is(equalTo(0)));
         System.out.println(res.output);
-        assertTrue(Files.exists(targetDir.resolve(quickstartId(variant))));
-
+        assertTrue(Files.exists(targetDir.resolve(MY_ARTIFACT_ID)));
     }
 
     @Test
-    @Order(2)
-    public void testBuild() throws Exception {
-        Path projectDir = targetDir.resolve(quickstartId(variant));
-        TestUtils.ExecResult res = exec("build",
-                "--project ", projectDir.toString());
-        assertThat(res.code, is(equalTo(0)));
-        System.out.println(res.output);
-        assertTrue(Files.exists(TestFiles.helidonSeJar()));
-
-    }
-
-    @Test
-    @Order(3)
-    public void testInfo() throws Exception {
-        Path projectDir = targetDir.resolve(quickstartId(variant));
-        TestUtils.ExecResult res = exec("info",
-                "--project ", projectDir.toString());
-        assertThat(res.code, is(equalTo(0)));
-        System.out.println(res.output);
-    }
-
-    @Test
-    @Order(4)
-    public void testVersion() throws Exception {
-        Path projectDir = targetDir.resolve(quickstartId(variant));
-        TestUtils.ExecResult res = exec("version",
-                "--project ", projectDir.toString());
-        assertThat(res.code, is(equalTo(0)));
-        System.out.println(res.output);
-    }
-
-    @Test
-    @Order(5)
-    public void testFeatures() throws Exception {
-        Path projectDir = targetDir.resolve(quickstartId(variant));
-        TestUtils.ExecResult res = exec("features",
-                "--project ", projectDir.toString(),
-                "--all");
-        assertThat(res.code, is(equalTo(0)));
-        System.out.println(res.output);
-    }
-
-    @Test
-    @Order(6)
-    public void testClean() {
-        Path projectDir = targetDir.resolve(quickstartId(variant));
+    @Order(8)
+    public void testCleanGroupArtifact() {
+        Path projectDir = targetDir.resolve(MY_ARTIFACT_ID);
         assertTrue(TestFiles.deleteDirectory(projectDir.toFile()));
         System.out.println("Directory " + projectDir + " deleted");
     }

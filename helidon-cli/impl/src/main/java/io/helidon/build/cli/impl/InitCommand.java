@@ -53,6 +53,8 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
     private final Flavor flavor;
     private final Build build;
     private String version;
+    private String groupId;
+    private String artifactId;
 
     /**
      * Helidon flavors.
@@ -86,11 +88,15 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             CommonOptions commonOptions,
             @KeyValue(name = "flavor", description = "Helidon flavor", defaultValue = "SE") Flavor flavor,
             @KeyValue(name = "build", description = "Build type", defaultValue = "MAVEN") Build build,
-            @KeyValue(name = "version", description = "Helidon version") String version) {
+            @KeyValue(name = "version", description = "Helidon version") String version,
+            @KeyValue(name = "groupid", description = "Project's group ID") String groupId,
+            @KeyValue(name = "artifactid", description = "Project's artifact ID") String artifactId) {
         this.commonOptions = commonOptions;
         this.flavor = flavor;
         this.build = build;
         this.version = version;
+        this.groupId = groupId;
+        this.artifactId = artifactId;
     }
 
     @Override
@@ -118,6 +124,8 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
                     .parentDirectory(parentDirectory)
                     .helidonVariant(HelidonVariant.parse(flavor.name()))
                     .helidonVersion(version)
+                    .groupId(groupId)
+                    .artifactId(artifactId)
                     .generate();
         } catch (IllegalStateException e) {
             context.exitAction(ExitStatus.FAILURE, e.getMessage());
