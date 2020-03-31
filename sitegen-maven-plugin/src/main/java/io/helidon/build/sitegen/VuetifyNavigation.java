@@ -505,7 +505,7 @@ public class VuetifyNavigation implements Model {
             try {
                 this.urlSafeTitle = URLEncoder.encode(title, "UTF-8");
             } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException("Cannot url encode group title",e);
+                throw new RuntimeException("Cannot url encode group title", e);
             }
         }
 
