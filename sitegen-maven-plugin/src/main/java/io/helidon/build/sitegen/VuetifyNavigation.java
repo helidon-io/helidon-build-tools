@@ -16,6 +16,8 @@
 
 package io.helidon.build.sitegen;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,7 +28,6 @@ import java.util.stream.Stream;
 
 import io.helidon.config.Config;
 
-import static io.helidon.build.sitegen.AbstractBuilder.asType;
 import static io.helidon.build.sitegen.Helper.checkNonNull;
 import static io.helidon.build.sitegen.Helper.checkNonNullNonEmpty;
 
@@ -38,6 +39,7 @@ public class VuetifyNavigation implements Model {
     private static final String GLYPH_PROP = "glyph";
     private static final String TITLE_PROP = "title";
     private static final String ITEMS_PROP = "items";
+    private static final String URL_SAFE_TITLE_PROP = "urlSafeTitle";
     private static final String PATHPREFIX_PROP = "pathprefix";
     private static final String HREF_PROP = "href";
     private static final String INCLUDES_PROP = "includes";
@@ -488,6 +490,7 @@ public class VuetifyNavigation implements Model {
     public static class Group extends Item {
 
         private final List<Item> items;
+        private final String urlSafeTitle;
 
         /**
          * Create a new instance of {@link Group}.
@@ -499,6 +502,11 @@ public class VuetifyNavigation implements Model {
             super(title, glyph);
             checkNonNull(items, ITEMS_PROP);
             this.items = items;
+            try {
+                this.urlSafeTitle = URLEncoder.encode(title, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException("Cannot url encode group title",e);
+            }
         }
 
         /**
@@ -516,6 +524,10 @@ public class VuetifyNavigation implements Model {
          */
         public List<Item> getItems() {
             return items;
+        }
+
+        public String getUrlSafeTitle() {
+            return urlSafeTitle;
         }
 
         private Group resolve(Collection<Page> allPages) {
@@ -540,6 +552,8 @@ public class VuetifyNavigation implements Model {
         public Object get(String attr) {
             switch (attr) {
                 case (ITEMS_PROP):
+                    return items;
+                case (URL_SAFE_TITLE_PROP):
                     return items;
                 default:
                     return super.get(attr);
@@ -690,6 +704,7 @@ public class VuetifyNavigation implements Model {
                 String title = null;
                 Glyph glyph = null;
                 String pathprefix = null;
+                String parenttitle = null;
                 List<Item> items = null;
                 for (Map.Entry<String, Object> entry : values()) {
                     String attr = entry.getKey();

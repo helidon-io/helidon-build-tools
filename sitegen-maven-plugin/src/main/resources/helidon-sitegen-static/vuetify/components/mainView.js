@@ -72,11 +72,12 @@ window.allComponents["mainView"] = {
                 setMeta() {
                     if (typeof document === 'undefined') return;
                     const metaData = this.$route.meta || {};
-                    const section = this.$route.path.split('/');
                     let h1 = metaData.h1;
 
-                    if (section.length > 2) {
-                        h1 = `${section[1].charAt(0).toUpperCase()}${section[1].slice(1)} &nbsp;&mdash;&nbsp; ${h1}`;
+                    let rawParentTitle = this.$route.params.parentTitle;
+                    if (typeof rawParentTitle === "string" && rawParentTitle.length > 0) {
+                        let parentTitle = decodeURIComponent(rawParentTitle).replace(/\+/g, ' ');
+                        h1 = `${parentTitle} &nbsp;&mdash;&nbsp; ${h1}`;
                     }
 
                     document.title = `${metaData.title}`;

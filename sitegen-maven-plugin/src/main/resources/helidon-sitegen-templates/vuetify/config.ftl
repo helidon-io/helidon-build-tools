@@ -52,7 +52,7 @@ function createRoutes(){
 <#assign pageId = page.target?remove_beginning("/")?replace("/","-") />
 <#assign pageBindings = bindings[source]?has_content />
         {
-            path: '${page.target}',
+            path: '${page.target}/:parentTitle?',
             meta: {
                 h1: '${page.metadata.h1?js_string}',
                 title: '${page.metadata.title?js_string}',
@@ -91,7 +91,7 @@ function createNav(){
             items: [
 <#list groupitem.items as subgroupitem>
 <#if subgroupitem.islink>
-                { href: '${subgroupitem.href}', title: '${subgroupitem.title?js_string}' }<#sep>,</#sep>
+                { href: '${subgroupitem.href}/${groupitem.urlSafeTitle?js_string}', title: '${subgroupitem.title?js_string}' }<#sep>,</#sep>
 </#if>
 </#list>
             ]
