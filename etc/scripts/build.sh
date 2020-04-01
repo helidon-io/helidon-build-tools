@@ -29,9 +29,9 @@ trap on_error ERR
 
 # Path to this script
 if [ -h "${0}" ] ; then
-  readonly SCRIPT_PATH="$(readlink "${0}")"
+    readonly SCRIPT_PATH="$(readlink "${0}")"
 else
-  readonly SCRIPT_PATH="${0}"
+    readonly SCRIPT_PATH="${0}"
 fi
 
 # Path to the root of the workspace

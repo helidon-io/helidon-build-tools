@@ -28,13 +28,13 @@ on_error(){
 trap on_error ERR
 
 usage(){
-  cat <<EOF
+    cat <<EOF
 
 DESCRIPTION: Helidon Release Script
 
 USAGE:
 
-$(basename ${0}) [ --promoted ] [ --build-number=N ] CMD
+$(basename ${0}) [ --build-number=N ] CMD
 
   --version=V
         Override the version to use.
@@ -59,24 +59,24 @@ EOF
 ARGS=( "${@}" )
 for ((i=0;i<${#ARGS[@]};i++))
 {
-  ARG=${ARGS[${i}]}
-  case ${ARG} in
-  "--version="*)
-    VERSION=${ARG#*=}
-    ;;
-  "--help")
-    usage
-    exit 0
-    ;;
-  *)
-    if [ "${ARG}" = "update_version" ] || [ "${ARG}" = "release_build" ] ; then
-      readonly COMMAND="${ARG}"
-    else
-      echo "ERROR: unknown argument: ${ARG}"
-      exit 1
-    fi
-    ;;
-  esac
+    ARG=${ARGS[${i}]}
+    case ${ARG} in
+    "--version="*)
+        VERSION=${ARG#*=}
+        ;;
+    "--help")
+        usage
+        exit 0
+        ;;
+    *)
+        if [ "${ARG}" = "update_version" ] || [ "${ARG}" = "release_build" ] ; then
+            readonly COMMAND="${ARG}"
+        else
+            echo "ERROR: unknown argument: ${ARG}"
+            exit 1
+        fi
+        ;;
+    esac
 }
 
 if [ -z "${COMMAND}" ] ; then
@@ -86,9 +86,9 @@ fi
 
 # Path to this script
 if [ -h "${0}" ] ; then
-  readonly SCRIPT_PATH="$(readlink "${0}")"
+    readonly SCRIPT_PATH="$(readlink "${0}")"
 else
-  readonly SCRIPT_PATH="${0}"
+    readonly SCRIPT_PATH="${0}"
 fi
 
 # Path to the root of the workspace
@@ -109,22 +109,22 @@ if [ -z "${VERSION+x}" ]; then
         org.codehaus.mojo:exec-maven-plugin:1.3.1:exec)
 
     # strip qualifier
-    readonly VERSION=${MVN_VERSION%-*}
-    readonly FULL_VERSION=${VERSION}
-  else
-    readonly FULL_VERSION=${VERSION}
+    readonly VERSION="${MVN_VERSION%-*}"
+    readonly FULL_VERSION="${VERSION}"
+else
+    readonly FULL_VERSION="${VERSION}"
 fi
 
 export FULL_VERSION
 printf "\n%s: FULL_VERSION=%s\n\n" "$(basename ${0})" "${FULL_VERSION}"
 
 update_version(){
-  # Update version
-  mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml versions:set versions:set-property \
-    -DgenerateBackupPoms=false \
-    -DnewVersion="${FULL_VERSION}" \
-    -Dproperty=helidon.version \
-    -DprocessAllModules=true
+    # Update version
+    mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml versions:set versions:set-property \
+        -DgenerateBackupPoms="false" \
+        -DnewVersion="${FULL_VERSION}" \
+        -Dproperty="helidon.version" \
+        -DprocessAllModules="true"
 }
 
 release_build(){
@@ -146,28 +146,28 @@ release_build(){
     # Create the nexus staging repository
     local STAGING_DESC="Helidon Build Tools v${FULL_VERSION}"
     mvn ${MAVEN_ARGS} nexus-staging:rc-open \
-      -DstagingProfileId=6026dab46eed94 \
-      -DstagingDescription="${STAGING_DESC}"
+        -DstagingProfileId="6026dab46eed94" \
+        -DstagingDescription="${STAGING_DESC}"
     export STAGING_REPO_ID=$(mvn ${MAVEN_ARGS} nexus-staging:rc-list | \
-      egrep "^[0-9:,]*[ ]?\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
-      awk '{print $2" "$3}' | \
-      sed -e s@'\[INFO\] '@@g -e s@'OPEN'@@g | \
-      head -1)
+        egrep "^[0-9:,]*[ ]?\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
+        awk '{print $2" "$3}' | \
+        sed -e s@'\[INFO\] '@@g -e s@'OPEN'@@g | \
+        head -1)
     echo "Nexus staging repository ID: ${STAGING_REPO_ID}"
 
     # Perform deployment
     mvn ${MAVEN_ARGS} clean deploy -Prelease -DskipTests \
-      -DstagingRepositoryId=${STAGING_REPO_ID} \
-      -DretryFailedDeploymentCount=10
+        -DstagingRepositoryId="${STAGING_REPO_ID}" \
+        -DretryFailedDeploymentCount="10"
 
     # Close the nexus staging repository
     mvn ${MAVEN_ARGS} nexus-staging:rc-close \
-      -DstagingRepositoryId=${STAGING_REPO_ID} \
-      -DstagingDescription="${STAGING_DESC}"
+        -DstagingRepositoryId="${STAGING_REPO_ID}" \
+        -DstagingDescription="${STAGING_DESC}"
 
     # Create and push a git tag
     local GIT_REMOTE=$(git config --get remote.origin.url | \
-                       sed "s,https://\([^/]*\)/,git@\1:,")
+        sed "s,https://\([^/]*\)/,git@\1:,")
 
     git remote add release "${GIT_REMOTE}" > /dev/null 2>&1 || \
     git remote set-url release "${GIT_REMOTE}"

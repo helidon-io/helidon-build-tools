@@ -29,9 +29,9 @@ trap on_error ERR
 
 # Path to this script
 if [ -h "${0}" ] ; then
-  readonly SCRIPT_PATH="$(readlink "${0}")"
+    readonly SCRIPT_PATH="$(readlink "${0}")"
 else
-  readonly SCRIPT_PATH="${0}"
+    readonly SCRIPT_PATH="${0}"
 fi
 
 # Path to the root of the workspace
@@ -44,9 +44,9 @@ source ${WS_DIR}/etc/scripts/pipeline-env.sh
 die(){ echo "${1}" ; exit 1 ;}
 
 mvn ${MAVEN_ARGS} -q org.glassfish.copyright:glassfish-copyright-maven-plugin:copyright \
-        -Dcopyright.exclude=${WS_DIR}/etc/copyright-exclude.txt \
-        -Dcopyright.template=${WS_DIR}/etc/copyright.txt \
-        -Dcopyright.scm=git \
+        -Dcopyright.exclude="${WS_DIR}/etc/copyright-exclude.txt" \
+        -Dcopyright.template="${WS_DIR}/etc/copyright.txt" \
+        -Dcopyright.scm="git" \
         > ${RESULT_FILE} || die "Error running the Maven command"
 
 grep -i "copyright" ${RESULT_FILE} \
