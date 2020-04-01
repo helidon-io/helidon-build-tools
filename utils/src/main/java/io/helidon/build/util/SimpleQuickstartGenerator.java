@@ -53,7 +53,8 @@ public class SimpleQuickstartGenerator {
     private Path parentDirectory;
     private HelidonVariant variant;
     private boolean quiet;
-    private String id;
+    private String groupId;
+    private String artifactId;
     private String version;
 
     /**
@@ -76,12 +77,34 @@ public class SimpleQuickstartGenerator {
         return variant;
     }
 
-    protected String id() {
-        return id;
+    protected String groupId() {
+        return groupId;
     }
 
-    protected void id(String id) {
-        this.id = id;
+    /**
+     * Set the project's group ID.
+     *
+     * @param groupId The artifact ID.
+     * @return The generator.
+     */
+    public SimpleQuickstartGenerator groupId(String groupId) {
+        this.groupId = groupId;
+        return this;
+    }
+
+    protected String artifactId() {
+        return artifactId;
+    }
+
+    /**
+     * Set the project's artifact ID.
+     *
+     * @param artifactId The artifact ID.
+     * @return The generator.
+     */
+    public SimpleQuickstartGenerator artifactId(String artifactId) {
+        this.artifactId = artifactId;
+        return this;
     }
 
     /**
@@ -137,24 +160,25 @@ public class SimpleQuickstartGenerator {
     public Path generate() {
         initialize();
         final String pkg = QUICKSTART_PACKAGE_PREFIX + variant.toString();
-        Log.info("Generating %s from archetype %s", id, version);
+        Log.info("Generating %s from archetype %s", artifactId, version);
+        String archetypeId = HELIDON_QUICKSTART_PREFIX + variant.toString();
         execute(new ProcessBuilder().directory(parentDirectory.toFile())
                                     .command(List.of(MAVEN_EXEC,
                                                      "archetype:generate",
                                                      "-DinteractiveMode=false",
                                                      "-DarchetypeGroupId=" + ARCHETYPES_GROUP_ID,
-                                                     "-DarchetypeArtifactId=" + id,
+                                                     "-DarchetypeArtifactId=" + archetypeId,
                                                      "-DarchetypeVersion=" + version,
-                                                     "-DgroupId=test",
-                                                     "-DartifactId=" + id,
+                                                     "-DgroupId=" + groupId,
+                                                     "-DartifactId=" + artifactId,
                                                      "-Dpackage=" + pkg
                                     )));
-        final Path result = assertDir(parentDirectory.resolve(id));
+        final Path result = assertDir(parentDirectory.resolve(artifactId));
         log("Generated %s", result);
         return result;
     }
 
-    private void initialize() {
+    protected void initialize() {
         if (version == null) {
             throw new IllegalStateException("version required.");
         }
@@ -164,8 +188,13 @@ public class SimpleQuickstartGenerator {
         if (parentDirectory == null) {
             throw new IllegalStateException("projectDirectory required.");
         }
-        this.id = HELIDON_QUICKSTART_PREFIX + variant.toString();
-        final Path projectDir = parentDirectory.resolve(id);
+        if (groupId == null) {
+            groupId = "test";
+        }
+        if (artifactId == null) {
+            artifactId = HELIDON_QUICKSTART_PREFIX + variant.toString();
+        }
+        final Path projectDir = parentDirectory.resolve(artifactId);
         if (Files.exists(projectDir)) {
             throw new IllegalStateException(projectDir + " already exists");
         }
