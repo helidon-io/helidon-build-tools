@@ -185,6 +185,7 @@ public class Page implements Model {
          * @param keywords the {@link Page} keywords
          * @param h1 the {@link Page} alternative title
          * @param title  the {@link Page} title
+         * @param parentTitle  the {@link Page} custom parent title
          */
         public Metadata(String description,
                         String keywords,
