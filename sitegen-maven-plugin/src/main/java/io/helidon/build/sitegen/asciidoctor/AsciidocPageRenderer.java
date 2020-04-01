@@ -44,6 +44,7 @@ public class AsciidocPageRenderer implements PageRenderer {
 
     /**
      * Create a new instance of {@link AsciidocPageRenderer}.
+     *
      * @param backendName the name of the backend
      */
     public AsciidocPageRenderer(String backendName) {
@@ -60,7 +61,7 @@ public class AsciidocPageRenderer implements PageRenderer {
         File target = new File(pagesdir, page.getTargetPath() + "." + ext);
         siteEngine.asciidoc().render(page, ctx, target,
                 mapOf("page", page,
-                      "pages", ctx.getPages()));
+                        "pages", ctx.getPages()));
     }
 
     @Override
@@ -73,6 +74,7 @@ public class AsciidocPageRenderer implements PageRenderer {
                 asString(docHeader.get("description")),
                 asString(docHeader.get("keywords")),
                 asString(docHeader.get("h1")),
-                asString(docHeader.get("doctitle")));
+                asString(docHeader.get("doctitle")),
+                asString(docHeader.get("parenttitle")));
     }
 }

@@ -172,10 +172,12 @@ public class Page implements Model {
         private static final String KEYWORDS_PROP = "keywords";
         private static final String H1_PROP = "h1";
         private static final String TITLE_PROP = "title";
+        private static final String PARENT_TITLE_PROP = "parentTitle";
         private final String description;
         private final String keywords;
         private final String h1;
         private final String title;
+        private final String parentTitle;
 
         /**
          * Create a new {@link Metadata} instance.
@@ -187,12 +189,14 @@ public class Page implements Model {
         public Metadata(String description,
                         String keywords,
                         String h1,
-                        String title) {
+                        String title,
+                        String parentTitle) {
             checkNonNullNonEmpty(title, TITLE_PROP);
             this.description = description;
             this.keywords = keywords;
             this.h1 = h1;
             this.title = title;
+            this.parentTitle = parentTitle;
         }
 
         /**
@@ -227,6 +231,14 @@ public class Page implements Model {
             return title;
         }
 
+        /**
+         * Get the {@link Page} parent title.
+         * @return the parent title
+         */
+        public String getParentTitle() {
+            return parentTitle;
+        }
+
         @Override
         public Object get(String attr) {
             switch (attr) {
@@ -238,6 +250,8 @@ public class Page implements Model {
                     return h1;
                 case (TITLE_PROP):
                     return title;
+                case (PARENT_TITLE_PROP):
+                    return parentTitle;
                 default:
                     throw new IllegalStateException(
                             "Unkown attribute: " + attr);
