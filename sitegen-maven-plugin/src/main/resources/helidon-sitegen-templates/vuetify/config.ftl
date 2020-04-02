@@ -56,7 +56,7 @@ function createRoutes(){
             meta: {
                 h1: '${page.metadata.h1?js_string}',
                 title: '${page.metadata.title?js_string}',
-                parentTitle: <#if page.metadata.parentTitle??>'${page.metadata.parentTitle?js_string}'<#else>null</#if>,
+                h1Prefix: <#if page.metadata.h1Prefix??>'${page.metadata.h1Prefix?js_string}'<#else>null</#if>,
                 description: <#if page.metadata.description??>'${page.metadata.description?js_string}'<#else>null</#if>,
                 keywords: <#if page.metadata.keywords??>'${page.metadata.keywords?js_string}'<#else>null</#if>,
                 customLayout: <#if customLayoutEntries[source]??>'${customLayoutEntries[source]}'<#else>null</#if>,

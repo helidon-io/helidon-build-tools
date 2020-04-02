@@ -45,8 +45,8 @@ window.allComponents["mainView"] = {
                     h1Prefix = capitalize(section[1]);
                 }
 
-                if (metaData.parentTitle) {
-                    h1Prefix = metaData.parentTitle;
+                if (metaData.h1Prefix) {
+                    h1Prefix = metaData.h1Prefix;
                 }
 
                 if (h1Prefix) {
@@ -89,8 +89,8 @@ window.allComponents["mainView"] = {
                         h1Prefix = capitalize(section[1]);
                     }
 
-                    if (metaData.parentTitle) {
-                        h1Prefix = metaData.parentTitle;
+                    if (metaData.h1Prefix) {
+                        h1Prefix = metaData.h1Prefix;
                     }
 
                     if (h1Prefix) {

@@ -75,6 +75,6 @@ public class AsciidocPageRenderer implements PageRenderer {
                 asString(docHeader.get("keywords")),
                 asString(docHeader.get("h1")),
                 asString(docHeader.get("doctitle")),
-                asString(docHeader.get("parenttitle")));
+                asString(docHeader.get("h1prefix")));
     }
 }
