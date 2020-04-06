@@ -39,10 +39,19 @@ window.allComponents["mainView"] = {
                 const metaData = this.$route.meta || {};
                 const section = this.$route.path.split('/');
                 let h1 = metaData.h1;
+                let h1Prefix = null;
 
                 if (section.length > 2) {
+                    h1Prefix = capitalize(section[1]);
+                }
+
+                if (metaData.h1Prefix) {
+                    h1Prefix = metaData.h1Prefix;
+                }
+
+                if (h1Prefix) {
                     h1 = `
-                  <div class="hidden-sm-and-down">${section[1].charAt(0).toUpperCase()}${section[1].slice(1)} &nbsp;&mdash;&nbsp;&nbsp;
+                  <div class="hidden-sm-and-down">${h1Prefix} &nbsp;&mdash;&nbsp;&nbsp;
                   </div><div>${h1}</div>
                 `;
                 }
@@ -74,9 +83,18 @@ window.allComponents["mainView"] = {
                     const metaData = this.$route.meta || {};
                     const section = this.$route.path.split('/');
                     let h1 = metaData.h1;
+                    let h1Prefix = null;
 
                     if (section.length > 2) {
-                        h1 = `${section[1].charAt(0).toUpperCase()}${section[1].slice(1)} &nbsp;&mdash;&nbsp; ${h1}`;
+                        h1Prefix = capitalize(section[1]);
+                    }
+
+                    if (metaData.h1Prefix) {
+                        h1Prefix = metaData.h1Prefix;
+                    }
+
+                    if (h1Prefix) {
+                        h1 = `${h1Prefix} &nbsp;&mdash;&nbsp; ${h1}`;
                     }
 
                     document.title = `${metaData.title}`;

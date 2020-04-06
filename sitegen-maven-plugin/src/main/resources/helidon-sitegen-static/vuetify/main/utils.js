@@ -83,3 +83,7 @@ function loadPage(id, targetPath, compDef, customJsPath) {
         });
     });
 }
+
+function capitalize(src) {
+    return `${src.charAt(0).toUpperCase()}${src.slice(1)}`;
+}
