@@ -132,6 +132,7 @@
         <version.lib.plexus.component>2.0.0</version.lib.plexus.component>
         <version.lib.maven-settings>3.6.2</version.lib.maven-settings>
         <version.lib.site-plugin>3.8.2</version.lib.site-plugin>
+        <version.lib.mojo-executor>2.3.1</version.lib.mojo-executor>
         <!--
             !Version statement! - end
             -->
@@ -656,6 +657,12 @@
                 <artifactId>spotbugs-annotations</artifactId>
                 <version>${version.lib.spotbugs-annotations}</version>
             </dependency>
+            <dependency>
+                <groupId>org.twdata.maven</groupId>
+                <artifactId>mojo-executor</artifactId>
+                <version>${version.lib.mojo-executor}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 

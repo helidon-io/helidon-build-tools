@@ -84,6 +84,21 @@ public class ProjectConfig extends ConfigProperties {
     public static final String PROJECT_VERSION = "project.version";
 
     /**
+     * Project compilation succeed.
+     */
+    public static final String PROJECT_COMPILE_SUCCEEDED = "project.compile.succeeded";
+
+    /**
+     * Project incremental build strategy.
+     */
+    public static final String PROJECT_INCREMENTAL_BUILD_STRATEGY = "project.incremental.build.strategy";
+
+    /**
+     * Project compiler options.
+     */
+    public static final String PROJECT_COMPILER_OPTIONS = "project.compile.options";
+
+    /**
      * Constructor.
      *
      * @param file The file.
@@ -118,8 +133,8 @@ public class ProjectConfig extends ConfigProperties {
      */
     public List<String> listFeatures() {
         return keySet().stream()
-                .filter(k -> ((String) k).startsWith(FEATURE_PREFIX))
-                .map(k -> ((String) k).substring(FEATURE_PREFIX.length()))
+                .filter(k -> (k).startsWith(FEATURE_PREFIX))
+                .map(k -> (k).substring(FEATURE_PREFIX.length()))
                 .collect(Collectors.toList());
     }
 
@@ -133,17 +148,15 @@ public class ProjectConfig extends ConfigProperties {
         return entrySet()
                 .stream()
                 .filter(e -> {
-                    String s = (String) e.getKey();
+                    String s = e.getKey();
                     return s.equals(FEATURE_PREFIX + feature);
                 })
                 .flatMap(e -> {
-                    String v = (String) e.getValue();
+                    String v = e.getValue();
                     return Arrays.stream(v.split(","))
                             .map(d -> {
                                 String[] ds = d.split(":");
-                                ProjectDependency dep = new ProjectDependency(ds[0], ds[1],
-                                        ds.length > 2 ? ds[2] : null);
-                                return dep;
+                                return new ProjectDependency(ds[0], ds[1], ds.length > 2 ? ds[2] : null);
                             });
                 }).collect(Collectors.toList());
     }
