@@ -44,7 +44,7 @@ import static io.helidon.build.util.FileUtils.ensureDirectory;
 /**
  * Builds a project assuming a default pom.xml.
  */
-public class TestHelidonProjectSupplier implements ProjectSupplier {
+public class DefaultProjectSupplier implements ProjectSupplier {
     private static final List<String> CLEAN_BUILD_COMMAND = List.of("clean", "prepare-package", "-DskipTests");
     private static final List<String> BUILD_COMMAND = List.of("prepare-package", "-DskipTests");
     private static final String POM_FILE = "pom.xml";
@@ -56,7 +56,7 @@ public class TestHelidonProjectSupplier implements ProjectSupplier {
     /**
      * Constructor.
      */
-    public TestHelidonProjectSupplier() {
+    public DefaultProjectSupplier() {
     }
 
     @Override
@@ -83,13 +83,13 @@ public class TestHelidonProjectSupplier implements ProjectSupplier {
         final BuildRoot sources = createBuildRoot(BuildRootType.JavaSources, sourceDir);
         final BuildRoot classes = createBuildRoot(BuildRootType.JavaClasses, classesDir);
         final Charset sourceEncoding = StandardCharsets.UTF_8;
-        builder.component(createBuildComponent(sources, classes, new TestCompileJavaSources(sourceEncoding, false)));
+        builder.component(createBuildComponent(sources, classes, new CompileJavaSources(sourceEncoding, false)));
 
         final Path resourcesDir = projectDir.resolve(RESOURCES_DIR);
         if (Files.exists(resourcesDir)) {
             final BuildRoot resources = createBuildRoot(BuildRootType.Resources, resourcesDir);
             final BuildRoot binaries = createBuildRoot(BuildRootType.Resources, classesDir);
-            builder.component(createBuildComponent(resources, binaries, new TestCopyResources()));
+            builder.component(createBuildComponent(resources, binaries, new CopyResources()));
         }
 
         builder.mainClassName(findMainClassName(pomFile));

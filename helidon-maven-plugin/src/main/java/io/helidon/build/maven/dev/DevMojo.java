@@ -33,7 +33,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.ProjectBuilder;
 
 /**
  * Maven plugin that runs a {@link DevLoop}.
@@ -76,7 +75,7 @@ public class DevMojo extends AbstractMojo {
     /**
      * The current Maven session.
      */
-    @Parameter( defaultValue = "${session}", readonly = true )
+    @Parameter(defaultValue = "${session}", readonly = true)
     private MavenSession session;
 
     /**

@@ -40,16 +40,16 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
 /**
- * Unit test for class {@link TestHelidonProjectSupplier}.
+ * Unit test for class {@link DefaultProjectSupplier}.
  */
-class TestHelidonProjectSupplierTest {
+class DefaultProjectSupplierTest {
 
     @Test
     void testUpToDate() throws Exception {
         final Path projectDir = TestFiles.helidonSeProject();
         final TestMonitor monitor = new TestMonitor(1);
         final BuildExecutor executor = new ForkedMavenExecutor(projectDir, monitor, 30);
-        final ProjectSupplier supplier = new TestHelidonProjectSupplier();
+        final ProjectSupplier supplier = new DefaultProjectSupplier();
         final Project project = supplier.get(executor, false, 0);
         assertThat(project, is(not(nullValue())));
         assertThat(project.isBuildUpToDate(), is(true));
@@ -75,7 +75,7 @@ class TestHelidonProjectSupplierTest {
         final Path projectDir = TestFiles.helidonSeProjectCopy();
         final TestMonitor monitor = new TestMonitor(1);
         final BuildExecutor executor = new ForkedMavenExecutor(projectDir, monitor, 30);
-        final ProjectSupplier supplier = new TestHelidonProjectSupplier();
+        final ProjectSupplier supplier = new DefaultProjectSupplier();
         final Project project = supplier.get(executor, true, 0);
         assertThat(project, is(not(nullValue())));
         assertThat(project.isBuildUpToDate(), is(true));

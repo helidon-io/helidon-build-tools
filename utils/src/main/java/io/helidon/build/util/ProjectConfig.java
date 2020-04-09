@@ -17,6 +17,7 @@
 package io.helidon.build.util;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -91,6 +92,16 @@ public class ProjectConfig extends ConfigProperties {
      */
     public static final String PROJECT_LAST_BUILD_SUCCESS_TIME = "project.last.build.success.time";
 
+    /**
+     * Tests whether or not the configuration from the {@link #DOT_HELIDON} file in the given project directory exists.
+     *
+     * @param projectDir The project directory.
+     * @return {@code true} if file exists.
+     */
+    public static boolean helidonCliConfigExists(Path projectDir) {
+        return Files.isRegularFile(assertDir(projectDir).resolve(DOT_HELIDON));
+    }
+    
     /**
      * Loads and returns configuration from the {@link #DOT_HELIDON} file in the given project directory.
      *

@@ -20,7 +20,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import io.helidon.build.util.Log;
 import io.helidon.build.util.ProjectConfig;
 
 import org.apache.maven.AbstractMavenLifecycleParticipant;
@@ -37,6 +36,7 @@ import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.component.annotations.Component;
 
 import static io.helidon.build.dev.maven.MavenGoalExecutor.COMPILE_GOAL;
+import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSPATH;
 import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
@@ -50,47 +50,63 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
  */
 @Component(role = AbstractMavenLifecycleParticipant.class)
 public class ProjectConfigCollector extends AbstractMavenLifecycleParticipant {
+    private static final String DEBUG_PROPERTY = "project.config.collector.debug";
+    private static final boolean DEBUG = "true".equals(System.getProperty(DEBUG_PROPERTY));
     private static final String MAIN_CLASS_PROPERTY = "mainClass";
+    private static final String MULTI_MODULE_PROJECT = "Multi-module projects are not supported.";
+    private static final String MISSING_MAIN_CLASS = "The required '" + MAIN_CLASS_PROPERTY + "' property is missing.";
+    private static final String MISSING_DOT_HELIDON = "The required " + DOT_HELIDON + " file is missing.";
 
-    private boolean shouldUpdateConfig;
+    private boolean supportedProject;
     private boolean compileSucceeded;
+
+    /**
+     * Assert that the project is one whose configuration we can support.
+     *
+     * @param session The session.
+     */
+    public static void assertSupportedProject(MavenSession session) {
+        assertSupportedProject(session.getProjects().size() == 1, MULTI_MODULE_PROJECT);
+        final MavenProject project = session.getProjects().get(0);
+        final Path projectDir = project.getBasedir().toPath();
+        assertSupportedProject(ProjectConfig.helidonCliConfigExists(projectDir), MISSING_DOT_HELIDON);
+        assertSupportedProject(project.getProperties().getProperty(MAIN_CLASS_PROPERTY) != null, MISSING_MAIN_CLASS);
+        debug("Helidon project is supported");
+    }
 
     @Override
     public void afterProjectsRead(MavenSession session) {
-        if (session.getProjects().size() != 1) {
-            Log.debug("Cannot collect project config from multi-module projects");
-        } else {
-            final MavenProject project = session.getProjects().get(0);
-            if (project.getProperties().getProperty(MAIN_CLASS_PROPERTY) == null) {
-                throw new RuntimeException("Pom file is missing a required property: " + MAIN_CLASS_PROPERTY);
-            }
+        try {
+            // Ensure that we support this project
+            assertSupportedProject(session);
+            supportedProject = true;
 
             // Install our listener so we can know if compilation occurred and succeeded
-
             final MavenExecutionRequest request = session.getRequest();
             request.setExecutionListener(new EventListener(request.getExecutionListener()));
-            shouldUpdateConfig = true;
+        } catch (IllegalStateException e) {
+            supportedProject = false;
         }
     }
 
     @Override
     public void afterSessionEnd(MavenSession session) {
-        if (shouldUpdateConfig) {
+        if (supportedProject) {
             final MavenProject project = session.getProjects().get(0);
             final Path projectDir = project.getBasedir().toPath();
             final ProjectConfig config = ProjectConfig.loadHelidonCliConfig(projectDir);
             final MavenExecutionResult result = session.getResult();
             if (result == null) {
-                Log.debug("Build failed: no result");
+                debug("Build failed: no result");
                 invalidateConfig(config);
             } else if (result.hasExceptions()) {
-                Log.debug("Build failed: %s", result.getExceptions());
+                debug("Build failed: %s", result.getExceptions());
                 invalidateConfig(config);
             } else if (compileSucceeded) {
-                Log.debug("Build succeeded, with compilation. Updating config.");
+                debug("Build succeeded, with compilation. Updating config.");
                 updateConfig(config, project);
             } else {
-                Log.debug("Build succeeded, without compilation");
+                debug("Build succeeded, without compilation");
                 invalidateConfig(config);
             }
         }
@@ -123,6 +139,20 @@ public class ProjectConfigCollector extends AbstractMavenLifecycleParticipant {
     private void invalidateConfig(ProjectConfig config) {
         config.buildFailed();
         config.store();
+    }
+
+    private static void assertSupportedProject(boolean supported, String reasonIfUnsupported) {
+        if (!supported) {
+            final String message = "Helidon project is not supported: " + reasonIfUnsupported;
+            debug(message);
+            throw new IllegalStateException(message);
+        }
+    }
+
+    private static void debug(String message, Object... args) {
+        if (DEBUG) {
+            System.out.println(String.format(message, args));
+        }
     }
 
     private class EventListener implements ExecutionListener {

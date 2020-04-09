@@ -62,8 +62,8 @@ import static io.helidon.build.util.ProjectConfig.loadHelidonCliConfig;
  * A {@code ProjectSupplier} for Maven projects.
  */
 public class MavenProjectSupplier implements ProjectSupplier {
-    private static final List<String> CLEAN_BUILD_COMMAND = List.of("clean", "compile", "-DskipTests");
-    private static final List<String> BUILD_COMMAND = List.of("compile", "-DskipTests");
+    private static final List<String> CLEAN_BUILD_COMMAND = List.of("clean", "process-classes", "-DskipTests");
+    private static final List<String> BUILD_COMMAND = List.of("process-classes", "-DskipTests");
     private static final String TARGET_DIR_NAME = "target";
     private static final String POM_FILE = "pom.xml";
 
@@ -83,6 +83,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
     public MavenProjectSupplier(MavenProject project,
                                 MavenSession session,
                                 BuildPluginManager plugins) {
+        ProjectConfigCollector.assertSupportedProject(session);
         this.project = new AtomicReference<>(project);
         this.session = session;
         this.plugins = plugins;

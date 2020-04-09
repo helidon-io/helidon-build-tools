@@ -32,7 +32,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 /**
  * A build step that copies resources.
  */
-public class TestCopyResources implements BuildStep {
+public class CopyResources implements BuildStep {
 
     @Override
     public BuildRootType inputType() {
