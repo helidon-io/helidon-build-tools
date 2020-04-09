@@ -38,7 +38,7 @@ import org.apache.maven.project.MavenProject;
  * Maven plugin that runs a {@link DevLoop}.
  */
 @Mojo(name = "dev",
-    defaultPhase = LifecyclePhase.INITIALIZE,
+    defaultPhase = LifecyclePhase.NONE,
     requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
 public class DevMojo extends AbstractMojo {
 
