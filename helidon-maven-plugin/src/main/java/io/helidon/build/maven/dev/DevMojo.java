@@ -85,12 +85,6 @@ public class DevMojo extends AbstractMojo {
     @Component
     private BuildPluginManager plugins;
 
-    /**
-     * The Maven ProjectBuilder component.
-     */
-    @Component
-    private ProjectBuilder projectBuilder;
-
     @Override
     public void execute() throws MojoExecutionException {
         if (skip) {
@@ -99,7 +93,7 @@ public class DevMojo extends AbstractMojo {
         }
         try {
             MavenLogWriter.bind(getLog());
-            final ProjectSupplier projectSupplier = new MavenProjectSupplier(project, session, plugins, projectBuilder);
+            final ProjectSupplier projectSupplier = new MavenProjectSupplier(project, session, plugins);
             final DevLoop loop = new DevLoop(devProjectDir.toPath(), projectSupplier, clean, fork);
             loop.start(Integer.MAX_VALUE);
         } catch (Exception e) {

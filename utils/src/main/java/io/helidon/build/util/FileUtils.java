@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
 import static java.util.Objects.requireNonNull;
@@ -98,8 +99,8 @@ public final class FileUtils {
     @SuppressWarnings("CaughtExceptionImmediatelyRethrown")
     public static Path copyDirectory(Path source, Path destination) {
         assertDoesNotExist(destination);
-        try {
-            Files.walk(source).forEach(src -> {
+        try (Stream<Path> stream = Files.walk(source)) {
+            stream.forEach(src -> {
                 try {
                     final Path dst = destination.resolve(source.relativize(src));
                     if (Files.isDirectory(src)) {
@@ -264,15 +265,16 @@ public final class FileUtils {
     public static Path deleteDirectory(Path directory) throws IOException {
         if (Files.exists(directory)) {
             if (Files.isDirectory(directory)) {
-                Files.walk(directory)
-                     .sorted(Comparator.reverseOrder())
-                     .forEach(file -> {
-                         try {
-                             Files.delete(file);
-                         } catch (IOException e) {
-                             throw new UncheckedIOException(e);
-                         }
-                     });
+                try (Stream<Path> stream = Files.walk(directory)) {
+                    stream.sorted(Comparator.reverseOrder())
+                          .forEach(file -> {
+                              try {
+                                  Files.delete(file);
+                              } catch (IOException e) {
+                                  throw new UncheckedIOException(e);
+                              }
+                          });
+                }
             } else {
                 throw new IllegalArgumentException(directory + " is not a directory");
             }
@@ -290,16 +292,17 @@ public final class FileUtils {
     public static Path deleteDirectoryContent(Path directory) throws IOException {
         if (Files.exists(directory)) {
             if (Files.isDirectory(directory)) {
-                Files.walk(directory)
-                     .sorted(Comparator.reverseOrder())
-                     .filter(file -> !file.equals(directory))
-                     .forEach(file -> {
-                         try {
-                             Files.delete(file);
-                         } catch (IOException e) {
-                             throw new UncheckedIOException(e);
-                         }
-                     });
+                try (Stream<Path> stream = Files.walk(directory)) {
+                    stream.sorted(Comparator.reverseOrder())
+                          .filter(file -> !file.equals(directory))
+                          .forEach(file -> {
+                              try {
+                                  Files.delete(file);
+                              } catch (IOException e) {
+                                  throw new UncheckedIOException(e);
+                              }
+                          });
+                }
             } else {
                 throw new IllegalArgumentException(directory + " is not a directory");
             }

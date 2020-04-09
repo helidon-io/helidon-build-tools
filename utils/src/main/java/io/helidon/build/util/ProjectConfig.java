@@ -23,6 +23,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static io.helidon.build.util.FileUtils.assertDir;
+import static io.helidon.build.util.FileUtils.assertExists;
+
 /**
  * Class ConfigFile.
  */
@@ -84,19 +87,20 @@ public class ProjectConfig extends ConfigProperties {
     public static final String PROJECT_VERSION = "project.version";
 
     /**
-     * Project compilation succeed.
+     * Project last successful build time.
      */
-    public static final String PROJECT_COMPILE_SUCCEEDED = "project.compile.succeeded";
+    public static final String PROJECT_LAST_BUILD_SUCCESS_TIME = "project.last.build.success.time";
 
     /**
-     * Project incremental build strategy.
+     * Loads and returns configuration from the {@link #DOT_HELIDON} file in the given project directory.
+     *
+     * @param projectDir The project directory.
+     * @return The configuration.
      */
-    public static final String PROJECT_INCREMENTAL_BUILD_STRATEGY = "project.incremental.build.strategy";
-
-    /**
-     * Project compiler options.
-     */
-    public static final String PROJECT_COMPILER_OPTIONS = "project.compile.options";
+    public static ProjectConfig loadHelidonCliConfig(Path projectDir) {
+        final Path dotHelidon = assertExists(assertDir(projectDir).resolve(DOT_HELIDON));
+        return new ProjectConfig(dotHelidon.toFile());
+    }
 
     /**
      * Constructor.
@@ -133,9 +137,9 @@ public class ProjectConfig extends ConfigProperties {
      */
     public List<String> listFeatures() {
         return keySet().stream()
-                .filter(k -> (k).startsWith(FEATURE_PREFIX))
-                .map(k -> (k).substring(FEATURE_PREFIX.length()))
-                .collect(Collectors.toList());
+                       .filter(k -> (k).startsWith(FEATURE_PREFIX))
+                       .map(k -> (k).substring(FEATURE_PREFIX.length()))
+                       .collect(Collectors.toList());
     }
 
     /**
@@ -146,18 +150,42 @@ public class ProjectConfig extends ConfigProperties {
      */
     public List<ProjectDependency> featureDeps(String feature) {
         return entrySet()
-                .stream()
-                .filter(e -> {
-                    String s = e.getKey();
-                    return s.equals(FEATURE_PREFIX + feature);
-                })
-                .flatMap(e -> {
-                    String v = e.getValue();
-                    return Arrays.stream(v.split(","))
-                            .map(d -> {
-                                String[] ds = d.split(":");
-                                return new ProjectDependency(ds[0], ds[1], ds.length > 2 ? ds[2] : null);
-                            });
-                }).collect(Collectors.toList());
+            .stream()
+            .filter(e -> {
+                String s = e.getKey();
+                return s.equals(FEATURE_PREFIX + feature);
+            })
+            .flatMap(e -> {
+                String v = e.getValue();
+                return Arrays.stream(v.split(","))
+                             .map(d -> {
+                                 String[] ds = d.split(":");
+                                 return new ProjectDependency(ds[0], ds[1], ds.length > 2 ? ds[2] : null);
+                             });
+            }).collect(Collectors.toList());
+    }
+
+    /**
+     * Record that a build failed.
+     */
+    public void buildFailed() {
+        remove(PROJECT_LAST_BUILD_SUCCESS_TIME);
+    }
+
+    /**
+     * Record that a build completed successfully.
+     */
+    public void buildSucceeded() {
+        property(PROJECT_LAST_BUILD_SUCCESS_TIME, Long.toString(System.currentTimeMillis()));
+    }
+
+    /**
+     * Returns the last successful build time.
+     *
+     * @return The time (millis since epoch), or 0L if last build did not succeed.
+     */
+    public long lastSuccessfulBuildTime() {
+        final String time = property(PROJECT_LAST_BUILD_SUCCESS_TIME);
+        return time == null ? 0L : Long.parseLong(time);
     }
 }

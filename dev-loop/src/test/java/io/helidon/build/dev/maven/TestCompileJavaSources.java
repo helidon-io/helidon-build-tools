@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.dev.steps;
+package io.helidon.build.dev.maven;
 
 import java.io.File;
 import java.nio.charset.Charset;
@@ -44,7 +44,7 @@ import io.helidon.build.dev.Project;
  * A build step that compiles java sources using the ToolProvider API.
  * See configuration https://github.com/apache/maven-compiler-plugin/blob/master/src/main/java/org/apache/maven/plugin/compiler/AbstractCompilerMojo.java#L612
  */
-public class CompileJavaSources implements BuildStep {
+public class TestCompileJavaSources implements BuildStep {
     private static final int JAVA_SUFFIX_LENGTH = ".java".length();
     private static final String CLASS_SUFFIX = ".class";
     private static final String INNER_CLASS_SEPARATOR = "$";
@@ -58,7 +58,7 @@ public class CompileJavaSources implements BuildStep {
      * @param sourceEncoding The source encoding.
      * @param verbose Verbose flag.
      */
-    public CompileJavaSources(Charset sourceEncoding, boolean verbose) {
+    public TestCompileJavaSources(Charset sourceEncoding, boolean verbose) {
         this.compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) {
             throw new RuntimeException("System java compiler not available");

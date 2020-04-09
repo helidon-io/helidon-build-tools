@@ -26,7 +26,6 @@ import io.helidon.build.dev.BuildMonitor;
 import io.helidon.build.dev.BuildType;
 import io.helidon.build.dev.Project;
 import io.helidon.build.dev.ProjectSupplier;
-import io.helidon.build.dev.maven.DefaultHelidonProjectSupplier;
 import io.helidon.build.dev.maven.EmbeddedMavenExecutor;
 import io.helidon.build.dev.maven.ForkedMavenExecutor;
 import io.helidon.build.util.Log;
@@ -41,17 +40,6 @@ public class DevLoop {
     private final BuildExecutor buildExecutor;
     private final ProjectSupplier projectSupplier;
     private final boolean initialClean;
-
-    /**
-     * Create a dev loop.
-     *
-     * @param rootDir Project's root.
-     * @param initialClean Clean flag.
-     * @param forkBuilds {@code true} if builds should be forked.
-     */
-    public DevLoop(Path rootDir, boolean initialClean, boolean forkBuilds) {
-        this(rootDir, new DefaultHelidonProjectSupplier(), initialClean, forkBuilds);
-    }
 
     /**
      * Create a dev loop.

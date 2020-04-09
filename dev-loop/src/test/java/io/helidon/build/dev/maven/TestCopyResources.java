@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.dev.steps;
+package io.helidon.build.dev.maven;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,7 +32,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 /**
  * A build step that copies resources.
  */
-public class CopyResources implements BuildStep {
+public class TestCopyResources implements BuildStep {
 
     @Override
     public BuildRootType inputType() {
