@@ -101,7 +101,7 @@ public class ProjectConfig extends ConfigProperties {
     public static boolean helidonCliConfigExists(Path projectDir) {
         return Files.isRegularFile(assertDir(projectDir).resolve(DOT_HELIDON));
     }
-    
+
     /**
      * Loads and returns configuration from the {@link #DOT_HELIDON} file in the given project directory.
      *

@@ -35,7 +35,7 @@ import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.component.annotations.Component;
 
-import static io.helidon.build.dev.maven.MavenGoalExecutor.COMPILE_GOAL;
+import static io.helidon.build.dev.maven.MavenGoalExecutor.compileGoal;
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSPATH;
@@ -202,7 +202,7 @@ public class ProjectConfigCollector extends AbstractMavenLifecycleParticipant {
         public void mojoSucceeded(ExecutionEvent event) {
             final MojoExecution execution = event.getMojoExecution();
             next.mojoSucceeded(event);
-            if (execution.getGoal().equals(COMPILE_GOAL.name())) {
+            if (execution.getGoal().equals(compileGoal().name())) {
                 compileSucceeded = true;
             }
         }

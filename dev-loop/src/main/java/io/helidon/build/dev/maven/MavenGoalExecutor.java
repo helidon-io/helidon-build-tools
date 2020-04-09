@@ -37,25 +37,30 @@ import static java.util.Objects.requireNonNull;
  */
 public class MavenGoalExecutor {
     private static final String PLUGINS_GROUP = "org.apache.maven.plugins";
-    private static final String CLEAN_PLUGIN = "maven-clean-plugin";
     private static final String RESOURCES_PLUGIN = "maven-resources-plugin";
     private static final String COMPILER_PLUGIN = "maven-compiler-plugin";
     private static final String DEFAULT_EXECUTION_PREFIX = "default-";
     private static final String TEST_CONFIG_PREFIX = "test";
-    /**
-     * The {@code clean} goal.
-     */
-    public static Goal CLEAN_GOAL = new Goal("clean", PLUGINS_GROUP, CLEAN_PLUGIN);
+    private static final Goal RESOURCES_GOAL = new Goal("resources", PLUGINS_GROUP, RESOURCES_PLUGIN);
+    private static final Goal COMPILE_GOAL = new Goal("compile", PLUGINS_GROUP, COMPILER_PLUGIN);
 
     /**
-     * The {@code resources} goal.
+     * Returns the {@code resources} goal.
+     *
+     * @return The goal.
      */
-    public static Goal RESOURCES_GOAL = new Goal("resources", PLUGINS_GROUP, RESOURCES_PLUGIN);
+    public static Goal resourcesGoal() {
+        return RESOURCES_GOAL;
+    }
 
     /**
-     * The {@code compile} goal.
+     * Returns the {@code compile} goal.
+     *
+     * @return The goal.
      */
-    public static Goal COMPILE_GOAL = new Goal("compile", PLUGINS_GROUP, COMPILER_PLUGIN);
+    public static Goal compileGoal() {
+        return COMPILE_GOAL;
+    }
 
     private final ExecutionEnvironment executionEnvironment;
     private final Goal goal;
@@ -109,6 +114,11 @@ public class MavenGoalExecutor {
         return new Builder();
     }
 
+    /**
+     * Executes the goal.
+     *
+     * @throws Exception if an error occurs.
+     */
     public void execute() throws Exception {
         Log.debug("Executing %s goal", goal.name());
         MojoExecutor.executeMojo(plugin, goal.name(), config, executionEnvironment);
@@ -224,10 +234,14 @@ public class MavenGoalExecutor {
 
         @Override
         public String toString() {
-            return "Goal{" +
-                   "name='" + name + '\'' +
-                   ", plugin='" + pluginId + '\'' +
-                   '}';
+            return "Goal{"
+                   + "name='"
+                   + name
+                   + '\''
+                   + ", plugin='"
+                   + pluginId
+                   + '\''
+                   + '}';
         }
     }
 }

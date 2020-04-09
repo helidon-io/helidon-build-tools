@@ -25,6 +25,7 @@ import io.helidon.build.util.ProjectConfig;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 import static io.helidon.build.test.TestFiles.ensureDevLoopExtension;
 import static io.helidon.build.test.TestFiles.helidonSeProject;
@@ -40,7 +41,13 @@ import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * Unit test for class {@link ProjectConfigCollector}.
+ *
+ * NOTE: This test requires that the snapshot jar is already built, so is disabled by default; to run:
+ * <pre>
+ *    mvn install -DskipTests && mvn test -Dtest=ProjectConfigCollectorTest
+ * </pre>
  */
+@EnabledIfSystemProperty(named = "test", matches = "ProjectConfigCollectorTest")
 class ProjectConfigCollectorTest {
     private static final String DEBUG_PROPERTY = "-Dproject.config.collector.debug=true";
 
@@ -99,7 +106,7 @@ class ProjectConfigCollectorTest {
 
         config = ProjectConfig.loadHelidonCliConfig(projectDir);
         assertThat(config.keySet().isEmpty(), is(false));
-        assertThat(config.property(PROJECT_LAST_BUILD_SUCCESS_TIME),is(notNullValue()));
+        assertThat(config.property(PROJECT_LAST_BUILD_SUCCESS_TIME), is(notNullValue()));
         assertThat(config.lastSuccessfulBuildTime(), is(greaterThan(startTime)));
     }
 }

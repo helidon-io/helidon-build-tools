@@ -16,43 +16,45 @@
 
 package io.helidon.build.dev.maven;
 
-import java.util.Map;
 import java.util.function.Consumer;
 
 import io.helidon.build.dev.BuildRoot;
 import io.helidon.build.dev.BuildRootType;
 import io.helidon.build.dev.BuildStep;
 import io.helidon.build.dev.maven.MavenGoalExecutor.Goal;
-import io.helidon.build.util.Log;
 
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.Plugin;
-import org.apache.maven.model.PluginExecution;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.util.xml.Xpp3Dom;
-import org.twdata.maven.mojoexecutor.MojoExecutor;
-import org.twdata.maven.mojoexecutor.MojoExecutor.ExecutionEnvironment;
 
 import static io.helidon.build.dev.BuildRootType.JavaClasses;
 import static io.helidon.build.dev.BuildRootType.JavaSources;
 import static io.helidon.build.dev.BuildRootType.Resources;
-import static java.util.Objects.requireNonNull;
 
 /**
  * A {@link BuildStep} that executes a single maven goal (in process).
  */
 public class MavenGoalBuildStep implements BuildStep {
+    private static final BuildGoal RESOURCES_GOAL = new BuildGoal(MavenGoalExecutor.resourcesGoal(), Resources, Resources);
+    private static final BuildGoal COMPILE_GOAL = new BuildGoal(MavenGoalExecutor.compileGoal(), JavaSources, JavaClasses);
 
     /**
-     * The {@code resources} goal.
+     * Returns the {@code resources} goal.
+     *
+     * @return The goal.
      */
-    public static BuildGoal RESOURCES_GOAL = new BuildGoal(MavenGoalExecutor.RESOURCES_GOAL, Resources, Resources);
+    public static BuildGoal resourcesGoal() {
+        return RESOURCES_GOAL;
+    }
 
     /**
-     * The {@code compile} goal.
+     * Returns the {@code compile} goal.
+     *
+     * @return The goal.
      */
-    public static BuildGoal COMPILE_GOAL = new BuildGoal(MavenGoalExecutor.COMPILE_GOAL, JavaSources, JavaClasses);
+    public static BuildGoal compileGoal() {
+        return COMPILE_GOAL;
+    }
 
     private final MavenGoalExecutor executor;
     private final BuildRootType inputType;
@@ -60,8 +62,8 @@ public class MavenGoalBuildStep implements BuildStep {
 
     private MavenGoalBuildStep(Builder builder) {
         this.executor = builder.executor;
-        this.inputType = builder.inputType;
-        this.outputType = builder.outputType;
+        this.inputType = builder.buildGoal.inputType();
+        this.outputType = builder.buildGoal.outputType();
     }
 
     /**
@@ -96,8 +98,7 @@ public class MavenGoalBuildStep implements BuildStep {
     public static class Builder {
         private MavenGoalExecutor.Builder executorBuilder;
         private MavenGoalExecutor executor;
-        private BuildRootType inputType;
-        private BuildRootType outputType;
+        private BuildGoal buildGoal;
 
         Builder() {
             this.executorBuilder = MavenGoalExecutor.builder();
@@ -137,13 +138,14 @@ public class MavenGoalBuildStep implements BuildStep {
         }
 
         /**
-         * Sets the goal.
+         * Sets the build goal.
          *
-         * @param goal The goal.
+         * @param buildGoal The goal.
          * @return This instance, for chaining.
          */
-        public Builder goal(Goal goal) {
-            executorBuilder.goal(goal);
+        public Builder goal(BuildGoal buildGoal) {
+            this.buildGoal = buildGoal;
+            executorBuilder.goal(buildGoal.goal());
             return this;
         }
 

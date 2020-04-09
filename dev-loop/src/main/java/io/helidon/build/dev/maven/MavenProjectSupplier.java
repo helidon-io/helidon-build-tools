@@ -196,13 +196,12 @@ public class MavenProjectSupplier implements ProjectSupplier {
         return builder.build();
     }
 
-
     private BuildStep compileStep() {
         return MavenGoalBuildStep.builder()
                                  .mavenProject(project.get())
                                  .mavenSession(session)
                                  .pluginManager(plugins)
-                                 .goal(MavenGoalExecutor.COMPILE_GOAL)
+                                 .goal(MavenGoalBuildStep.compileGoal())
                                  .build();
     }
 
@@ -211,7 +210,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
                                  .mavenProject(project.get())
                                  .mavenSession(session)
                                  .pluginManager(plugins)
-                                 .goal(MavenGoalExecutor.RESOURCES_GOAL)
+                                 .goal(MavenGoalBuildStep.resourcesGoal())
                                  .build();
     }
 }
