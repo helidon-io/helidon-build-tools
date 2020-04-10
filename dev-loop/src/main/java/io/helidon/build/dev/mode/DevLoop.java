@@ -72,7 +72,8 @@ public class DevLoop {
 
     static class DevModeMonitor implements BuildMonitor {
         private static final int ON_READY_DELAY = 1000;
-        private static final int ON_BUILD_FAIL_DELAY = 10000;
+        private static final int ON_INCREMENTAL_BUILD_FAIL_DELAY = 1000;
+        private static final int ON_COMPLETE_BUILD_FAIL_DELAY = 10000;
 
         private ProjectExecutor projectExecutor;
 
@@ -94,9 +95,10 @@ public class DevLoop {
         }
 
         @Override
-        public long onBuildFail(int cycleNumber, Throwable error) {
+        public long onBuildFail(int cycleNumber, BuildType type, Throwable error) {
             ensureStop();
-            return ON_BUILD_FAIL_DELAY;
+            return type == BuildType.Incremental ? ON_INCREMENTAL_BUILD_FAIL_DELAY
+                                                 : ON_COMPLETE_BUILD_FAIL_DELAY;
         }
 
         @Override

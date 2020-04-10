@@ -17,13 +17,14 @@
 package io.helidon.build.dev.maven;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
 
 import io.helidon.build.dev.BuildExecutor;
 import io.helidon.build.dev.BuildRoot;
@@ -50,13 +51,13 @@ import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
 import static io.helidon.build.util.FileUtils.lastModifiedTime;
-import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSPATH;
 import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_RESOURCEDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCEDIRS;
 import static io.helidon.build.util.ProjectConfig.loadHelidonCliConfig;
+import static io.helidon.build.util.TimeUtils.toDateTime;
 
 /**
  * A {@code ProjectSupplier} for Maven projects.
@@ -66,6 +67,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
     private static final List<String> BUILD_COMMAND = List.of("process-classes", "-DskipTests");
     private static final String TARGET_DIR_NAME = "target";
     private static final String POM_FILE = "pom.xml";
+    private static final String DOT = ".";
 
     private final AtomicReference<MavenProject> project;
     private final MavenSession session;
@@ -130,19 +132,61 @@ public class MavenProjectSupplier implements ProjectSupplier {
         if (firstBuild.getAndSet(false)) {
 
             // Yes. We can skip the build IFF we have a previously completed build from another session whose build time
-            // is more recent than any file in the project (excluding target/* and .helidon)
+            // is more recent than any file in the project (excluding target/* and .*)
 
             config = loadHelidonCliConfig(projectDir);
-            final long lastFullBuildTime = config.lastSuccessfulBuildTime();
-            if (lastFullBuildTime > 0) {
-                final Path targetDir = projectDir.resolve(TARGET_DIR_NAME);
-                final Path helidonFile = projectDir.resolve(DOT_HELIDON);
-                try (Stream<Path> stream = Files.walk(projectDir)) {
-                    return stream.filter(path -> !path.equals(helidonFile))
-                                 .filter(path -> !path.startsWith(targetDir))
-                                 .allMatch(path -> lastModifiedTime(path) < lastFullBuildTime);
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
+            final long lastBuildTime = config.lastSuccessfulBuildTime();
+
+            if (lastBuildTime > 0) {
+                final AtomicBoolean canSkip = new AtomicBoolean(true);
+                final String buildTime = toDateTime(lastBuildTime);
+                Log.debug("Checking if project has files newer than last build: %s", buildTime);
+                try {
+                    Files.walkFileTree(projectDir, new FileVisitor<>() {
+                        @Override
+                        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                            final String name = dir.getFileName().toString();
+                            if (name.startsWith(DOT)
+                                || name.equals(TARGET_DIR_NAME)) {
+                                return FileVisitResult.SKIP_SUBTREE;
+                            } else {
+                                return FileVisitResult.CONTINUE;
+                            }
+                        }
+
+                        @Override
+                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                            if (file.getFileName().toString().startsWith(DOT)) {
+                                return FileVisitResult.CONTINUE;
+                            } else {
+                                final long lastModified = lastModifiedTime(file) * 1000;
+                                if (lastModified > lastBuildTime) {
+                                    final String fileTime = toDateTime(lastModified);
+                                    Log.debug("%s @ %s is newer than last build time %s", file, fileTime, buildTime);
+                                    canSkip.set(false);
+                                    return FileVisitResult.TERMINATE;
+                                } else {
+                                    return FileVisitResult.CONTINUE;
+                                }
+                            }
+                        }
+
+                        @Override
+                        public FileVisitResult visitFileFailed(Path file, IOException exc) {
+                            canSkip.set(false);
+                            return FileVisitResult.TERMINATE;
+                        }
+
+                        @Override
+                        public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+                            return FileVisitResult.CONTINUE;
+                        }
+                    });
+                    return canSkip.get();
+
+                } catch (Exception e) {
+                    Log.warn(e.getMessage());
+                    return false;
                 }
             }
         }
