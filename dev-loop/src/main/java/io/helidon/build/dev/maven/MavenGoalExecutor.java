@@ -20,6 +20,7 @@ import io.helidon.build.util.Log;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Plugin;
+import org.apache.maven.model.PluginExecution;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
@@ -37,6 +38,7 @@ public class MavenGoalExecutor {
     private static final String COMPILER_PLUGIN = "maven-compiler-plugin";
     private static final Goal RESOURCES_GOAL = new Goal("resources", PLUGINS_GROUP, RESOURCES_PLUGIN);
     private static final Goal COMPILE_GOAL = new Goal("compile", PLUGINS_GROUP, COMPILER_PLUGIN);
+    private static final String DEFAULT_EXECUTION_ID_PREFIX = "default-";
 
     /**
      * Returns the {@code resources} goal.
@@ -66,8 +68,20 @@ public class MavenGoalExecutor {
         this.goal = builder.goal;
         this.plugin = executionEnvironment.getMavenProject().getPlugin(goal.pluginId());
         requireNonNull(plugin, "plugin " + goal.pluginId() + " not found");
-        this.config = plugin.getConfiguration() == null ? MojoExecutor.configuration()
-                                                        : (Xpp3Dom) plugin.getConfiguration();
+        this.config = configuration();
+    }
+
+    private Xpp3Dom configuration() {
+        Xpp3Dom result;
+        final PluginExecution execution = plugin.getExecutionsAsMap().get(DEFAULT_EXECUTION_ID_PREFIX + goal.name());
+        if (execution != null && execution.getConfiguration() != null) {
+            result = (Xpp3Dom) execution.getConfiguration();
+        } else if (plugin.getConfiguration() != null) {
+            result = (Xpp3Dom) plugin.getConfiguration();
+        } else {
+            result = MojoExecutor.configuration();
+        }
+        return result;
     }
 
     /**
