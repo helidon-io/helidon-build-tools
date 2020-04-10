@@ -37,4 +37,7 @@ public class TimeUtils {
     public static String toDateTime(final long millis) {
         return FORMATTER.format(Instant.ofEpochMilli(millis));
     }
+
+    private TimeUtils() {
+    }
 }
