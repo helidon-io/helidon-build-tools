@@ -35,7 +35,6 @@ import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.component.annotations.Component;
 
-import static io.helidon.build.dev.maven.MavenGoalExecutor.compileGoal;
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSPATH;
@@ -56,6 +55,7 @@ public class ProjectConfigCollector extends AbstractMavenLifecycleParticipant {
     private static final String MULTI_MODULE_PROJECT = "Multi-module projects are not supported.";
     private static final String MISSING_MAIN_CLASS = "The required '" + MAIN_CLASS_PROPERTY + "' property is missing.";
     private static final String MISSING_DOT_HELIDON = "The required " + DOT_HELIDON + " file is missing.";
+    private static final String COMPILE_GOAL = "compile";
 
     private boolean supportedProject;
     private boolean compileSucceeded;
@@ -202,7 +202,7 @@ public class ProjectConfigCollector extends AbstractMavenLifecycleParticipant {
         public void mojoSucceeded(ExecutionEvent event) {
             final MojoExecution execution = event.getMojoExecution();
             next.mojoSucceeded(event);
-            if (execution.getGoal().equals(compileGoal().name())) {
+            if (execution.getGoal().equals(COMPILE_GOAL)) {
                 compileSucceeded = true;
             }
         }

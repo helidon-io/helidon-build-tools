@@ -16,14 +16,10 @@
 
 package io.helidon.build.dev.maven;
 
-import java.util.Arrays;
-import java.util.Map;
-
 import io.helidon.build.util.Log;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Plugin;
-import org.apache.maven.model.PluginExecution;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
@@ -39,8 +35,6 @@ public class MavenGoalExecutor {
     private static final String PLUGINS_GROUP = "org.apache.maven.plugins";
     private static final String RESOURCES_PLUGIN = "maven-resources-plugin";
     private static final String COMPILER_PLUGIN = "maven-compiler-plugin";
-    private static final String DEFAULT_EXECUTION_PREFIX = "default-";
-    private static final String TEST_CONFIG_PREFIX = "test";
     private static final Goal RESOURCES_GOAL = new Goal("resources", PLUGINS_GROUP, RESOURCES_PLUGIN);
     private static final Goal COMPILE_GOAL = new Goal("compile", PLUGINS_GROUP, COMPILER_PLUGIN);
 
@@ -72,37 +66,8 @@ public class MavenGoalExecutor {
         this.goal = builder.goal;
         this.plugin = executionEnvironment.getMavenProject().getPlugin(goal.pluginId());
         requireNonNull(plugin, "plugin " + goal.pluginId() + " not found");
-        this.config = configuration();
-    }
-
-    private Xpp3Dom configuration() {
-        Xpp3Dom result;
-        final PluginExecution execution = execution();
-        if (execution != null && execution.getConfiguration() != null) {
-            result = removeTestConfiguration((Xpp3Dom) execution.getConfiguration());
-        } else if (plugin.getConfiguration() != null) {
-            result = removeTestConfiguration((Xpp3Dom) plugin.getConfiguration());
-        } else {
-            result = MojoExecutor.configuration();
-        }
-        return result;
-    }
-
-    private Xpp3Dom removeTestConfiguration(Xpp3Dom config) {
-        final Xpp3Dom result = MojoExecutor.configuration();
-        Arrays.stream(config.getChildren())
-              .filter(child -> !child.getName().startsWith(TEST_CONFIG_PREFIX))
-              .forEach(result::addChild);
-        return result;
-    }
-
-    private PluginExecution execution() {
-        final Map<String, PluginExecution> executions = plugin.getExecutionsAsMap();
-        PluginExecution execution = executions.get(goal.name());
-        if (execution == null) {
-            execution = executions.get(DEFAULT_EXECUTION_PREFIX + goal.name());
-        }
-        return execution;
+        this.config = plugin.getConfiguration() == null ? MojoExecutor.configuration()
+                                                        : (Xpp3Dom) plugin.getConfiguration();
     }
 
     /**
