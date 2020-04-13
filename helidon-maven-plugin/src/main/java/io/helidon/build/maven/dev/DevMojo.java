@@ -18,12 +18,16 @@ package io.helidon.build.maven.dev;
 
 import java.io.File;
 
+import io.helidon.build.dev.ProjectSupplier;
 import io.helidon.build.dev.maven.MavenProjectSupplier;
 import io.helidon.build.dev.mode.DevLoop;
 import io.helidon.build.maven.link.MavenLogWriter;
 
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -35,7 +39,7 @@ import org.apache.maven.project.MavenProject;
  */
 @Mojo(name = "dev",
     defaultPhase = LifecyclePhase.NONE,
-    requiresDependencyResolution = ResolutionScope.RUNTIME)
+    requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
 public class DevMojo extends AbstractMojo {
 
     /**
@@ -68,6 +72,18 @@ public class DevMojo extends AbstractMojo {
     @Parameter(defaultValue = "false", property = "dev.skip")
     private boolean skip;
 
+    /**
+     * The current Maven session.
+     */
+    @Parameter(defaultValue = "${session}", readonly = true)
+    private MavenSession session;
+
+    /**
+     * The Maven BuildPluginManager component.
+     */
+    @Component
+    private BuildPluginManager plugins;
+
     @Override
     public void execute() throws MojoExecutionException {
         if (skip) {
@@ -76,7 +92,8 @@ public class DevMojo extends AbstractMojo {
         }
         try {
             MavenLogWriter.bind(getLog());
-            DevLoop loop = new DevLoop(devProjectDir.toPath(), new MavenProjectSupplier(), clean, fork);
+            final ProjectSupplier projectSupplier = new MavenProjectSupplier(project, session, plugins);
+            final DevLoop loop = new DevLoop(devProjectDir.toPath(), projectSupplier, clean, fork);
             loop.start(Integer.MAX_VALUE);
         } catch (Exception e) {
             throw new MojoExecutionException("Error", e);

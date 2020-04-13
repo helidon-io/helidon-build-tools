@@ -103,7 +103,7 @@ public class TestMonitor implements BuildMonitor {
     }
 
     @Override
-    public long onBuildFail(int cycleNumber, Throwable error) {
+    public long onBuildFail(int cycleNumber, BuildType type, Throwable error) {
         logCycle("onBuildFail", cycleNumber, error);
         buildFailed[cycleNumber] = error;
         return 0;

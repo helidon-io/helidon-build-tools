@@ -16,22 +16,32 @@
 
 package io.helidon.build.dev.maven;
 
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.build.dev.BuildExecutor;
 import io.helidon.build.dev.BuildRoot;
 import io.helidon.build.dev.BuildRootType;
+import io.helidon.build.dev.BuildStep;
+import io.helidon.build.dev.BuildType;
 import io.helidon.build.dev.DirectoryType;
 import io.helidon.build.dev.FileType;
 import io.helidon.build.dev.Project;
 import io.helidon.build.dev.ProjectDirectory;
 import io.helidon.build.dev.ProjectSupplier;
-import io.helidon.build.dev.steps.CompileJavaSources;
-import io.helidon.build.dev.steps.CopyResources;
-import io.helidon.build.util.ConfigProperties;
+import io.helidon.build.util.Log;
+import io.helidon.build.util.ProjectConfig;
+
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.plugin.BuildPluginManager;
+import org.apache.maven.project.MavenProject;
 
 import static io.helidon.build.dev.BuildComponent.createBuildComponent;
 import static io.helidon.build.dev.BuildFile.createBuildFile;
@@ -40,23 +50,47 @@ import static io.helidon.build.dev.ProjectDirectory.createProjectDirectory;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
-import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
+import static io.helidon.build.util.FileUtils.lastModifiedTime;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSPATH;
 import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_RESOURCEDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCEDIRS;
+import static io.helidon.build.util.ProjectConfig.loadHelidonCliConfig;
+import static io.helidon.build.util.TimeUtils.toDateTime;
 
 /**
  * A {@code ProjectSupplier} for Maven projects.
  */
 public class MavenProjectSupplier implements ProjectSupplier {
-    private static final List<String> CLEAN_BUILD_COMMAND = List.of("clean", "prepare-package", "-DskipTests");
-    private static final List<String> BUILD_COMMAND = List.of("prepare-package", "-DskipTests");
+    private static final List<String> CLEAN_BUILD_COMMAND = List.of("clean", "process-classes", "-DskipTests");
+    private static final List<String> BUILD_COMMAND = List.of("process-classes", "-DskipTests");
+    private static final String TARGET_DIR_NAME = "target";
+    private static final String POM_FILE = "pom.xml";
+    private static final String DOT = ".";
 
-    static final String POM_FILE = "pom.xml";
+    private final AtomicReference<MavenProject> project;
+    private final MavenSession session;
+    private final BuildPluginManager plugins;
+    private final AtomicBoolean firstBuild;
+    private ProjectConfig config;
 
-    private final ConfigProperties properties = new ConfigProperties(DOT_HELIDON);
+    /**
+     * Constructor.
+     *
+     * @param project The maven project.
+     * @param session The maven session.
+     * @param plugins The maven plugin manager.
+     */
+    public MavenProjectSupplier(MavenProject project,
+                                MavenSession session,
+                                BuildPluginManager plugins) {
+        ProjectConfigCollector.assertSupportedProject(session);
+        this.project = new AtomicReference<>(project);
+        this.session = session;
+        this.plugins = plugins;
+        this.firstBuild = new AtomicBoolean(true);
+    }
 
     /**
      * Gets a project instance.
@@ -69,18 +103,100 @@ public class MavenProjectSupplier implements ProjectSupplier {
      */
     @Override
     public Project get(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception {
+        final Path projectDir = executor.projectDirectory();
+        executor.monitor().onBuildStart(cycleNumber, clean ? BuildType.CleanComplete : BuildType.Complete);
+
+        // Get the updated config, performing the full build if needed
+
         if (clean) {
-            executor.execute(CLEAN_BUILD_COMMAND);
+            build(executor, CLEAN_BUILD_COMMAND);
+        } else if (canSkipBuild(projectDir)) {
+            Log.info("Project is up to date");
+        } else {
+            build(executor, BUILD_COMMAND);
         }
 
-        // Build and load properties
-        executor.execute(BUILD_COMMAND);
-        properties.load();
+        // Create and return the project based on the config
+        return createProject(executor.projectDirectory());
+    }
 
+    private void build(BuildExecutor executor, List<String> command) throws Exception {
+        executor.execute(command);
+        config = loadHelidonCliConfig(executor.projectDirectory());
+    }
+
+    private boolean canSkipBuild(Path projectDir) {
+
+        // Is this our first request in this session?
+
+        if (firstBuild.getAndSet(false)) {
+
+            // Yes. We can skip the build IFF we have a previously completed build from another session whose build time
+            // is more recent than any file in the project (excluding target/* and .*)
+
+            config = loadHelidonCliConfig(projectDir);
+            final long lastBuildTime = config.lastSuccessfulBuildTime();
+
+            if (lastBuildTime > 0) {
+                final AtomicBoolean canSkip = new AtomicBoolean(true);
+                final String buildTime = toDateTime(lastBuildTime);
+                Log.debug("Checking if project has files newer than last build: %s", buildTime);
+                try {
+                    Files.walkFileTree(projectDir, new FileVisitor<>() {
+                        @Override
+                        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                            final String name = dir.getFileName().toString();
+                            if (name.startsWith(DOT)
+                                || name.equals(TARGET_DIR_NAME)) {
+                                return FileVisitResult.SKIP_SUBTREE;
+                            } else {
+                                return FileVisitResult.CONTINUE;
+                            }
+                        }
+
+                        @Override
+                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                            if (file.getFileName().toString().startsWith(DOT)) {
+                                return FileVisitResult.CONTINUE;
+                            } else {
+                                final long lastModified = lastModifiedTime(file) * 1000;
+                                if (lastModified > lastBuildTime) {
+                                    final String fileTime = toDateTime(lastModified);
+                                    Log.debug("%s @ %s is newer than last build time %s", file, fileTime, buildTime);
+                                    canSkip.set(false);
+                                    return FileVisitResult.TERMINATE;
+                                } else {
+                                    return FileVisitResult.CONTINUE;
+                                }
+                            }
+                        }
+
+                        @Override
+                        public FileVisitResult visitFileFailed(Path file, IOException exc) {
+                            canSkip.set(false);
+                            return FileVisitResult.TERMINATE;
+                        }
+
+                        @Override
+                        public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+                            return FileVisitResult.CONTINUE;
+                        }
+                    });
+                    return canSkip.get();
+
+                } catch (Exception e) {
+                    Log.warn(e.getMessage());
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
+
+    private Project createProject(Path projectDir) {
         // Root directory
-        Path projectDir = executor.projectDirectory();
-        Project.Builder builder = Project.builder();
-        ProjectDirectory root = createProjectDirectory(DirectoryType.Project, projectDir);
+        final Project.Builder builder = Project.builder();
+        final ProjectDirectory root = createProjectDirectory(DirectoryType.Project, projectDir);
         builder.rootDirectory(root);
 
         // POM file
@@ -88,13 +204,13 @@ public class MavenProjectSupplier implements ProjectSupplier {
         builder.buildSystemFile(createBuildFile(root, FileType.MavenPom, pomFile));
 
         // Dependencies - Should we consider the classes/lib?
-        List<String> classpath = properties.propertyAsList(PROJECT_CLASSPATH);
+        final List<String> classpath = config.propertyAsList(PROJECT_CLASSPATH);
         classpath.stream().map(s -> Path.of(s)).forEach(builder::dependency);
 
         // Build components
-        List<String> sourceDirs = properties.propertyAsList(PROJECT_SOURCEDIRS);
-        List<String> classesDirs = properties.propertyAsList(PROJECT_CLASSDIRS);
-        List<String> resourcesDirs = properties.propertyAsList(PROJECT_RESOURCEDIRS);
+        final List<String> sourceDirs = config.propertyAsList(PROJECT_SOURCEDIRS);
+        final List<String> classesDirs = config.propertyAsList(PROJECT_CLASSDIRS);
+        final List<String> resourcesDirs = config.propertyAsList(PROJECT_RESOURCEDIRS);
 
         for (String sourceDir : sourceDirs) {
             for (String classesDir : classesDirs) {
@@ -102,8 +218,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
                 Path classesDirPath = ensureDirectory(projectDir.resolve(classesDir));
                 BuildRoot sources = createBuildRoot(BuildRootType.JavaSources, sourceDirPath);
                 BuildRoot classes = createBuildRoot(BuildRootType.JavaClasses, classesDirPath);
-                builder.component(createBuildComponent(sources, classes,
-                        new CompileJavaSources(StandardCharsets.UTF_8, false)));
+                builder.component(createBuildComponent(sources, classes, compileStep()));
             }
         }
 
@@ -114,14 +229,32 @@ public class MavenProjectSupplier implements ProjectSupplier {
                     Path classesDirPath = ensureDirectory(projectDir.resolve(classesDir));
                     BuildRoot sources = createBuildRoot(BuildRootType.Resources, resourcesDirPath);
                     BuildRoot classes = createBuildRoot(BuildRootType.Resources, classesDirPath);
-                    builder.component(createBuildComponent(sources, classes, new CopyResources()));
+                    builder.component(createBuildComponent(sources, classes, resourcesStep()));
                 }
             }
         }
 
         // Main class
-        builder.mainClassName(properties.property(PROJECT_MAINCLASS));
+        builder.mainClassName(config.property(PROJECT_MAINCLASS));
 
         return builder.build();
+    }
+
+    private BuildStep compileStep() {
+        return MavenGoalBuildStep.builder()
+                                 .mavenProject(project.get())
+                                 .mavenSession(session)
+                                 .pluginManager(plugins)
+                                 .goal(MavenGoalBuildStep.compileGoal())
+                                 .build();
+    }
+
+    private BuildStep resourcesStep() {
+        return MavenGoalBuildStep.builder()
+                                 .mavenProject(project.get())
+                                 .mavenSession(session)
+                                 .pluginManager(plugins)
+                                 .goal(MavenGoalBuildStep.resourcesGoal())
+                                 .build();
     }
 }

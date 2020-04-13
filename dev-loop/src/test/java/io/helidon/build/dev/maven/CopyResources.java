@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.dev.steps;
+package io.helidon.build.dev.maven;
 
 import java.io.IOException;
 import java.nio.file.Files;

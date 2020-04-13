@@ -23,13 +23,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.Log;
+
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.dev.TestUtils.newLoop;
 import static io.helidon.build.test.TestFiles.helidonSeProject;
 import static io.helidon.build.test.TestFiles.helidonSeProjectCopy;
 import static io.helidon.build.test.TestFiles.touch;
-import static io.helidon.build.dev.TestUtils.newLoop;
-import static io.helidon.build.dev.TestUtils.run;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;

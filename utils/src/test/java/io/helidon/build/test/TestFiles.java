@@ -17,6 +17,8 @@
 package io.helidon.build.test;
 
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
@@ -41,6 +43,11 @@ import io.helidon.build.util.Maven;
 import io.helidon.build.util.ProcessMonitor;
 import io.helidon.build.util.QuickstartGenerator;
 
+import org.apache.maven.model.Extension;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
+import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.eclipse.aether.version.Version;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -70,6 +77,9 @@ public class TestFiles implements BeforeAllCallback {
     private static final Instance<Path> SIGNED_JAR = new Instance<>(TestFiles::fetchSignedJar);
     private static final AtomicInteger SE_COPY_NUMBER = new AtomicInteger(1);
     private static final AtomicInteger MP_COPY_NUMBER = new AtomicInteger(1);
+    private static final String POM_FILE_NAME = "pom.xml";
+    private static final String DEVLOOP_GROUP_ID = "io.helidon.build-tools";
+    private static final String DEVLOOP_ARTIFACT_ID = "helidon-dev-loop";
 
     @Override
     public void beforeAll(ExtensionContext ctx) {
@@ -161,6 +171,44 @@ public class TestFiles implements BeforeAllCallback {
      */
     public static Path helidonMpProjectCopy() {
         return copyQuickstartProject(HelidonVariant.MP, MP_COPY_NUMBER);
+    }
+
+    /**
+     * Ensures that the dev-loop extension is registered in the project pom.xml.
+     *
+     * @param projectDir The project directory.
+     * @return The project directory, for chaining.
+     */
+    public static Path ensureDevLoopExtension(Path projectDir) {
+        final Path pomFile = projectDir.resolve(POM_FILE_NAME);
+        final Model model = readPomModel(pomFile);
+        final List<Extension> extensions = model.getBuild().getExtensions();
+        final String latestVersion = latestHelidonVersion().toString();
+        final int dashIndex = latestVersion.lastIndexOf("-");
+        final String baseVersion = dashIndex > 0 ? latestVersion.substring(0, dashIndex) : latestVersion;
+        final String snapshotVersion = baseVersion + SNAPSHOT_SUFFIX;
+        boolean addExtension = true;
+        for (int i = 0; i < extensions.size(); i++) {
+            final Extension extension = extensions.get(i);
+            if (extension.getGroupId().equals(DEVLOOP_GROUP_ID)
+                && extension.getArtifactId().equals(DEVLOOP_ARTIFACT_ID)) {
+                if (extension.getVersion().equals(snapshotVersion)) {
+                    addExtension = false;
+                } else {
+                    extensions.remove(i);
+                    break;
+                }
+            }
+        }
+        if (addExtension) {
+            Extension newExt = new Extension();
+            newExt.setGroupId(DEVLOOP_GROUP_ID);
+            newExt.setArtifactId(DEVLOOP_ARTIFACT_ID);
+            newExt.setVersion(snapshotVersion);
+            extensions.add(newExt);
+            writePomModel(pomFile, model);
+        }
+        return projectDir;
     }
 
     /**
@@ -354,6 +402,28 @@ public class TestFiles implements BeforeAllCallback {
                           .build()
                           .execute(5, TimeUnit.MINUTES);
         } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Model readPomModel(Path pomFile) {
+        try {
+            try (FileReader fr = new FileReader(pomFile.toFile())) {
+                MavenXpp3Reader mvnReader = new MavenXpp3Reader();
+                return mvnReader.read(fr);
+            }
+        } catch (IOException | XmlPullParserException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void writePomModel(Path pomFile, Model model) {
+        try {
+            try (FileWriter fw = new FileWriter(pomFile.toFile())) {
+                MavenXpp3Writer mvnWriter = new MavenXpp3Writer();
+                mvnWriter.write(fw, model);
+            }
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }

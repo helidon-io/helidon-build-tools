@@ -17,11 +17,15 @@
 package io.helidon.build.util;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static io.helidon.build.util.FileUtils.assertDir;
+import static io.helidon.build.util.FileUtils.assertExists;
 
 /**
  * Class ConfigFile.
@@ -84,6 +88,32 @@ public class ProjectConfig extends ConfigProperties {
     public static final String PROJECT_VERSION = "project.version";
 
     /**
+     * Project last successful build time.
+     */
+    public static final String PROJECT_LAST_BUILD_SUCCESS_TIME = "project.last.build.success.time";
+
+    /**
+     * Tests whether or not the configuration from the {@link #DOT_HELIDON} file in the given project directory exists.
+     *
+     * @param projectDir The project directory.
+     * @return {@code true} if file exists.
+     */
+    public static boolean helidonCliConfigExists(Path projectDir) {
+        return Files.isRegularFile(assertDir(projectDir).resolve(DOT_HELIDON));
+    }
+
+    /**
+     * Loads and returns configuration from the {@link #DOT_HELIDON} file in the given project directory.
+     *
+     * @param projectDir The project directory.
+     * @return The configuration.
+     */
+    public static ProjectConfig loadHelidonCliConfig(Path projectDir) {
+        final Path dotHelidon = assertExists(assertDir(projectDir).resolve(DOT_HELIDON));
+        return new ProjectConfig(dotHelidon.toFile());
+    }
+
+    /**
      * Constructor.
      *
      * @param file The file.
@@ -118,9 +148,9 @@ public class ProjectConfig extends ConfigProperties {
      */
     public List<String> listFeatures() {
         return keySet().stream()
-                .filter(k -> ((String) k).startsWith(FEATURE_PREFIX))
-                .map(k -> ((String) k).substring(FEATURE_PREFIX.length()))
-                .collect(Collectors.toList());
+                       .filter(k -> (k).startsWith(FEATURE_PREFIX))
+                       .map(k -> (k).substring(FEATURE_PREFIX.length()))
+                       .collect(Collectors.toList());
     }
 
     /**
@@ -131,20 +161,42 @@ public class ProjectConfig extends ConfigProperties {
      */
     public List<ProjectDependency> featureDeps(String feature) {
         return entrySet()
-                .stream()
-                .filter(e -> {
-                    String s = (String) e.getKey();
-                    return s.equals(FEATURE_PREFIX + feature);
-                })
-                .flatMap(e -> {
-                    String v = (String) e.getValue();
-                    return Arrays.stream(v.split(","))
-                            .map(d -> {
-                                String[] ds = d.split(":");
-                                ProjectDependency dep = new ProjectDependency(ds[0], ds[1],
-                                        ds.length > 2 ? ds[2] : null);
-                                return dep;
-                            });
-                }).collect(Collectors.toList());
+            .stream()
+            .filter(e -> {
+                String s = e.getKey();
+                return s.equals(FEATURE_PREFIX + feature);
+            })
+            .flatMap(e -> {
+                String v = e.getValue();
+                return Arrays.stream(v.split(","))
+                             .map(d -> {
+                                 String[] ds = d.split(":");
+                                 return new ProjectDependency(ds[0], ds[1], ds.length > 2 ? ds[2] : null);
+                             });
+            }).collect(Collectors.toList());
+    }
+
+    /**
+     * Record that a build failed.
+     */
+    public void buildFailed() {
+        remove(PROJECT_LAST_BUILD_SUCCESS_TIME);
+    }
+
+    /**
+     * Record that a build completed successfully.
+     */
+    public void buildSucceeded() {
+        property(PROJECT_LAST_BUILD_SUCCESS_TIME, Long.toString(System.currentTimeMillis()));
+    }
+
+    /**
+     * Returns the last successful build time.
+     *
+     * @return The time (millis since epoch), or 0L if last build did not succeed.
+     */
+    public long lastSuccessfulBuildTime() {
+        final String time = property(PROJECT_LAST_BUILD_SUCCESS_TIME);
+        return time == null ? 0L : Long.parseLong(time);
     }
 }

@@ -27,6 +27,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.helidon.build.dev.BuildType.Complete;
+import static io.helidon.build.dev.BuildType.Incremental;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -150,7 +152,7 @@ public class BuildLoop {
                 } catch (IllegalArgumentException | InterruptedException e) {
                     break;
                 } catch (Throwable e) {
-                    buildFailed(e);
+                    buildFailed(Complete, e);
                 }
 
             } else if (watchBinariesOnly) {
@@ -175,19 +177,19 @@ public class BuildLoop {
                 // If we have source changes, do an incremental build
 
                 final List<BuildRoot.Changes> sourceChanges = project.sourceChanges();
-                if (sourceChanges.isEmpty()) {
-                    ready();
-                } else {
+                if (!sourceChanges.isEmpty()) {
                     try {
                         changed(false, false);
-                        buildStarting(BuildType.Incremental);
+                        buildStarting(Incremental);
                         project.incrementalBuild(sourceChanges, monitor.stdOutConsumer(), monitor.stdErrConsumer());
                         project.update(false);
                         ready();
                     } catch (InterruptedException e) {
                         break;
                     } catch (Throwable e) {
-                        buildFailed(e);
+                        buildFailed(Incremental, e);
+                        // Wait for further changes before re-building
+                        project.update(false);
                     }
                 }
             }
@@ -235,8 +237,8 @@ public class BuildLoop {
         }
     }
 
-    private void buildFailed(Throwable e) {
-        delay.set(monitor.onBuildFail(cycleNumber.get(), e));
+    private void buildFailed(BuildType type, Throwable e) {
+        delay.set(monitor.onBuildFail(cycleNumber.get(), type, e));
     }
 
     private boolean cycleEnded() {
