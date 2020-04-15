@@ -20,6 +20,7 @@ import java.nio.file.Path;
 
 import io.helidon.build.test.TestFiles;
 import io.helidon.build.util.HelidonVariant;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -28,7 +29,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION;
 import static io.helidon.build.cli.impl.TestUtils.exec;
-import static io.helidon.build.test.TestFiles.quickstartId;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -66,8 +66,8 @@ public class InitCommandTest {
                 "--version ", HELIDON_VERSION_PREVIOUS,
                 "--groupid", MY_GROUP_ID,
                 "--artifactid", MY_ARTIFACT_ID);
-        assertThat(res.code, is(equalTo(0)));
         System.out.println(res.output);
+        assertThat(res.code, is(equalTo(0)));
         assertTrue(Files.exists(targetDir.resolve(MY_ARTIFACT_ID)));
     }
 

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.build.cli.impl;
 
 import java.io.File;
@@ -27,9 +28,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.util.Constants;
+import io.helidon.build.util.HelidonVersions;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.ProcessMonitor;
 import io.helidon.build.util.ProjectConfig;
@@ -39,6 +43,7 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
+import static io.helidon.build.util.HelidonVersions.unqualifiedMinimumMajorVersion;
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 
 /**
@@ -52,6 +57,8 @@ public abstract class BaseCommand {
     static final String JAVA_HOME = Constants.javaHome();
     static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
     static final long SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
+    static final int MINIMUM_MAJOR_HELIDON_VERSION = 2;
+    static final AtomicReference<String> DEFAULT_HELIDON_VERSION = new AtomicReference<>();
 
     private Properties cliConfig;
     private ProjectConfig projectConfig;
@@ -113,12 +120,12 @@ public abstract class BaseCommand {
         try {
             // Fork process and wait for its completion
             ProcessMonitor processMonitor = ProcessMonitor.builder()
-                    .processBuilder(processBuilder)
-                    .stdOut(context::logInfo)
-                    .stdErr(context::logError)
-                    .capture(false)
-                    .build()
-                    .start();
+                                                          .processBuilder(processBuilder)
+                                                          .stdOut(context::logInfo)
+                                                          .stdErr(context::logError)
+                                                          .capture(false)
+                                                          .build()
+                                                          .start();
             long pid = processMonitor.toHandle().pid();
             Log.info("Process with PID %d is starting", pid);
             processMonitor.waitForCompletion(SECONDS_PER_YEAR, TimeUnit.SECONDS);
@@ -128,8 +135,23 @@ public abstract class BaseCommand {
     }
 
     protected String helidonVersion() {
-        String version = System.getProperty(HELIDON_VERSION);
-        return version != null ? version : cliConfig().getProperty(HELIDON_VERSION);
+        return defaultHelidonVersion();
+    }
+
+    private String defaultHelidonVersion() {
+        if (DEFAULT_HELIDON_VERSION.get() == null) {
+            String version = System.getProperty(HELIDON_VERSION);
+            if (version == null) {
+                try {
+                    Predicate<String> filter = unqualifiedMinimumMajorVersion(MINIMUM_MAJOR_HELIDON_VERSION);
+                    version = HelidonVersions.releases(filter).latest();
+                } catch (Exception e) {
+                    version = cliConfig.getProperty(HELIDON_VERSION);
+                }
+            }
+            DEFAULT_HELIDON_VERSION.set(version);
+        }
+        return DEFAULT_HELIDON_VERSION.get();
     }
 
     private static final String SPACES = "                                                        ";
@@ -144,24 +166,23 @@ public abstract class BaseCommand {
     @SuppressWarnings("unchecked")
     private static String formatMapAsYaml(Map<String, Object> map, int level) {
         StringBuilder builder = new StringBuilder();
-        map.entrySet().forEach(e -> {
+        map.forEach((key, v) -> {
             builder.append(SPACES, 0, 2 * level);
-            Object v = e.getValue();
             if (v instanceof Map<?, ?>) {
-                builder.append(e.getKey()).append(":\n");
+                builder.append(key).append(":\n");
                 builder.append(formatMapAsYaml((Map<String, Object>) v, level + 1));
             } else if (v instanceof List<?>) {
                 List<String> l = (List<String>) v;
                 if (l.size() > 0) {
-                    builder.append(e.getKey()).append(":");
+                    builder.append(key).append(":");
                     l.forEach(s -> builder.append("\n")
-                            .append(SPACES, 0, 2 * (level + 1))
-                            .append("- ").append(s));
+                                          .append(SPACES, 0, 2 * (level + 1))
+                                          .append("- ").append(s));
                     builder.append("\n");
                 }
             } else if (v != null) {     // ignore key if value is null
-                builder.append(e.getKey()).append(":").append(" ")
-                        .append(v.toString()).append("\n");
+                builder.append(key).append(":").append(" ")
+                       .append(v.toString()).append("\n");
             }
         });
         return builder.toString();

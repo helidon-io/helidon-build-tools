@@ -35,7 +35,7 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
 /**
- * Maven goal to create a custom Java Runtime Image {@code jlink-image}.
+ * Maven goal to create a custom Java Runtime Image.
  */
 @Mojo(name = "jlink-image",
     defaultPhase = LifecyclePhase.PACKAGE,
