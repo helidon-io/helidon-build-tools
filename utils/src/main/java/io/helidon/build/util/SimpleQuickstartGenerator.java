@@ -56,6 +56,7 @@ public class SimpleQuickstartGenerator {
     private String groupId;
     private String artifactId;
     private String version;
+    private String packageName;
 
     /**
      * Returns a new generator.
@@ -104,6 +105,17 @@ public class SimpleQuickstartGenerator {
      */
     public SimpleQuickstartGenerator artifactId(String artifactId) {
         this.artifactId = artifactId;
+        return this;
+    }
+
+    /**
+     * Set the project's package.
+     *
+     * @param packageName The package.
+     * @return The generator.
+     */
+    public SimpleQuickstartGenerator packageName(String packageName) {
+        this.packageName = packageName;
         return this;
     }
 
@@ -159,7 +171,6 @@ public class SimpleQuickstartGenerator {
      */
     public Path generate() {
         initialize();
-        final String pkg = QUICKSTART_PACKAGE_PREFIX + variant.toString();
         Log.info("Generating %s from archetype %s", artifactId, version);
         String archetypeId = HELIDON_QUICKSTART_PREFIX + variant.toString();
         execute(new ProcessBuilder().directory(parentDirectory.toFile())
@@ -171,7 +182,7 @@ public class SimpleQuickstartGenerator {
                                                      "-DarchetypeVersion=" + version,
                                                      "-DgroupId=" + groupId,
                                                      "-DartifactId=" + artifactId,
-                                                     "-Dpackage=" + pkg
+                                                     "-Dpackage=" + packageName
                                     )));
         final Path result = assertDir(parentDirectory.resolve(artifactId));
         log("Generated %s", result);
@@ -193,6 +204,9 @@ public class SimpleQuickstartGenerator {
         }
         if (artifactId == null) {
             artifactId = HELIDON_QUICKSTART_PREFIX + variant.toString();
+        }
+        if (packageName == null) {
+            packageName = QUICKSTART_PACKAGE_PREFIX + variant.toString();
         }
         final Path projectDir = parentDirectory.resolve(artifactId);
         if (Files.exists(projectDir)) {
