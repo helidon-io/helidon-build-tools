@@ -25,14 +25,14 @@ import java.util.function.Predicate;
  */
 public class HelidonVersions {
     /**
-     * The Helidon bom group id.
+     * The Helidon project group id.
      */
-    public static final String HELIDON_BOM_GROUP_ID = "io.helidon";
+    public static final String HELIDON_PROJECT_GROUP_ID = "io.helidon";
 
     /**
-     * The Helidon bom artifact id.
+     * The Helidon project artifact id.
      */
-    public static final String HELIDON_BOM_ARTIFACT_ID = "helidon-bom";
+    public static final String HELIDON_PROJECT_ARTIFACT_ID = "helidon-project";
 
     /**
      * Returns Helidon versions released to Maven central that match the given filter.
@@ -44,8 +44,8 @@ public class HelidonVersions {
     public static MavenVersions releases(Predicate<MavenVersion> filter) {
         return MavenVersions.builder()
                             .filter(filter)
-                            .artifactGroupId(HELIDON_BOM_GROUP_ID)
-                            .artifactId(HELIDON_BOM_ARTIFACT_ID)
+                            .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
+                            .artifactId(HELIDON_PROJECT_ARTIFACT_ID)
                             .build();
     }
 
@@ -62,8 +62,8 @@ public class HelidonVersions {
     public static MavenVersions releases(Predicate<MavenVersion> filter, List<String> fallbackVersions) {
         return MavenVersions.builder()
                             .filter(filter)
-                            .artifactGroupId(HELIDON_BOM_GROUP_ID)
-                            .artifactId(HELIDON_BOM_ARTIFACT_ID)
+                            .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
+                            .artifactId(HELIDON_PROJECT_ARTIFACT_ID)
                             .fallbackVersions(fallbackVersions)
                             .build();
     }

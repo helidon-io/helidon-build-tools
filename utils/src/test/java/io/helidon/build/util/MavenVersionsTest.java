@@ -24,8 +24,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.util.HelidonVersions.HELIDON_BOM_ARTIFACT_ID;
-import static io.helidon.build.util.HelidonVersions.HELIDON_BOM_GROUP_ID;
+import static io.helidon.build.util.HelidonVersions.HELIDON_PROJECT_ARTIFACT_ID;
+import static io.helidon.build.util.HelidonVersions.HELIDON_PROJECT_GROUP_ID;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -40,14 +40,15 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Unit test for class {@link MavenVersions}.
  */
 class MavenVersionsTest {
+    private static final String LOCAL_METADATA_FILE = "maven-metadata-local.xml";
 
     @Test
     void testUriNotAccessible() {
         String errorMessage = assertThrows(IllegalStateException.class,
                                            () -> MavenVersions.builder()
                                                               .repository(new URI("http://foo.bar/maven/repository"))
-                                                              .artifactGroupId(HELIDON_BOM_GROUP_ID)
-                                                              .artifactId(HELIDON_BOM_ARTIFACT_ID)
+                                                              .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
+                                                              .artifactId(HELIDON_PROJECT_ARTIFACT_ID)
                                                               .build()).getMessage();
         assertThat(errorMessage, containsString("foo.bar"));
     }
@@ -57,8 +58,8 @@ class MavenVersionsTest {
         String errorMessage = assertThrows(IllegalStateException.class,
                                            () -> MavenVersions.builder()
                                                               .repository(new URI("http://foo.bar/maven/repository"))
-                                                              .artifactGroupId(HELIDON_BOM_GROUP_ID)
-                                                              .artifactId(HELIDON_BOM_ARTIFACT_ID)
+                                                              .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
+                                                              .artifactId(HELIDON_PROJECT_ARTIFACT_ID)
                                                               .filter(MavenVersion.notQualified())
                                                               .fallbackVersions(List.of("1.2.3-SNAPSHOT"))
                                                               .build()).getMessage();
@@ -69,8 +70,8 @@ class MavenVersionsTest {
     void testUriNotAccessibleAndFilteredFallbackIsNotEmpty() throws Exception {
         final MavenVersions versions = MavenVersions.builder()
                                                     .repository(new URI("http://foo.bar/maven/repository"))
-                                                    .artifactGroupId(HELIDON_BOM_GROUP_ID)
-                                                    .artifactId(HELIDON_BOM_ARTIFACT_ID)
+                                                    .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
+                                                    .artifactId(HELIDON_PROJECT_ARTIFACT_ID)
                                                     .filter(MavenVersion.notQualified())
                                                     .fallbackVersions(List.of("0.0.1", "1.2.3", "1.2.0"))
                                                     .build();
@@ -86,8 +87,8 @@ class MavenVersionsTest {
     void testQualifiedLessThanUnqualified() throws Exception {
         final MavenVersions versions = MavenVersions.builder()
                                                     .repository(new URI("http://foo.bar/maven/repository"))
-                                                    .artifactGroupId(HELIDON_BOM_GROUP_ID)
-                                                    .artifactId(HELIDON_BOM_ARTIFACT_ID)
+                                                    .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
+                                                    .artifactId(HELIDON_PROJECT_ARTIFACT_ID)
                                                     .fallbackVersions(List.of("2.0.0-SNAPSHOT",
                                                                               "2.0.0-M1",
                                                                               "2.0.0",
@@ -107,8 +108,8 @@ class MavenVersionsTest {
     @Test
     void testHelidonReleases() {
         final MavenVersions versions = MavenVersions.builder()
-                                                    .artifactGroupId(HELIDON_BOM_GROUP_ID)
-                                                    .artifactId(HELIDON_BOM_ARTIFACT_ID)
+                                                    .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
+                                                    .artifactId(HELIDON_PROJECT_ARTIFACT_ID)
                                                     .build();
         assertThat(versions, is(not(nullValue())));
         assertThat(versions.source(), containsString("http"));
@@ -122,8 +123,8 @@ class MavenVersionsTest {
     void testUnqualifiedHelidonReleases() {
         final MavenVersions versions = MavenVersions.builder()
                                                     .filter(MavenVersion.notQualified())
-                                                    .artifactGroupId(HELIDON_BOM_GROUP_ID)
-                                                    .artifactId(HELIDON_BOM_ARTIFACT_ID)
+                                                    .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
+                                                    .artifactId(HELIDON_PROJECT_ARTIFACT_ID)
                                                     .build();
         assertThat(versions, is(not(nullValue())));
         assertThat(versions.source(), containsString("http"));
@@ -137,13 +138,14 @@ class MavenVersionsTest {
     void testLocalHelidonBuilds() {
         final Path userHome = Paths.get(System.getProperty("user.home"));
         final Path localRepo = userHome.resolve(".m2/repository");
-        final Path metadataFile = localRepo.resolve("io/helidon/helidon-bom/maven-metadata-local.xml");
+        final Path metadataFile = localRepo.resolve("io/helidon/helidon-project/" + LOCAL_METADATA_FILE);
         assumeTrue(Files.exists(metadataFile));
 
         MavenVersions versions = MavenVersions.builder()
                                               .repository(localRepo.toUri())
-                                              .artifactGroupId(HELIDON_BOM_GROUP_ID)
-                                              .artifactId(HELIDON_BOM_ARTIFACT_ID)
+                                              .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
+                                              .artifactId(HELIDON_PROJECT_ARTIFACT_ID)
+                                              .metaDataFileName(LOCAL_METADATA_FILE)
                                               .build();
         assertThat(versions, is(not(nullValue())));
         assertThat(versions.source(), containsString("file"));

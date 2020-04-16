@@ -92,14 +92,16 @@ public class MavenVersions {
      * {@link MavenVersions} builder.
      */
     public static class Builder {
-        private static final String REMOTE_METADATA_FILE = "maven-metadata.xml";
-        private static final String LOCAL_METADATA_FILE = "maven-metadata-local.xml";
-        private static final String LOCAL_URI_SCHEME = "file";
 
         /**
          * The Maven central repository URI; used as the default if not specified.
          */
         public static final URI MAVEN_CENTRAL_URI = toUri("https://repo.maven.apache.org/maven2/");
+
+        /**
+         * The metadata file name for remote repositories; used as the default if not specified.
+         */
+        public static final String REMOTE_METADATA_FILE = "maven-metadata.xml";
 
         private URI repositoryBaseUri;
         private String artifactGroupId;
@@ -108,10 +110,12 @@ public class MavenVersions {
         private List<MavenVersion> versions;
         private List<String> fallbackVersions;
         private Predicate<MavenVersion> filter;
+        private String metaDataFileName;
 
         private Builder() {
             this.repositoryBaseUri = MAVEN_CENTRAL_URI;
             this.filter = v -> true;
+            this.metaDataFileName = REMOTE_METADATA_FILE;
         }
 
         /**
@@ -144,6 +148,17 @@ public class MavenVersions {
          */
         public Builder artifactId(String artifactId) {
             this.artifactId = requireNonNull(artifactId);
+            return this;
+        }
+
+        /**
+         * Sets the metadata file name. Defaults to
+         *
+         * @param metaDataFileName The id.
+         * @return This instance.
+         */
+        public Builder metaDataFileName(String metaDataFileName) {
+            this.metaDataFileName = requireNonNull(metaDataFileName);
             return this;
         }
 
@@ -182,9 +197,7 @@ public class MavenVersions {
             requireNonNull(artifactGroupId, "artifactGroupId is required");
             requireNonNull(artifactId, "artifactId is required");
             try {
-                final boolean local = repositoryBaseUri.getScheme().equals(LOCAL_URI_SCHEME);
-                final String metadataFileName = local ? LOCAL_METADATA_FILE : REMOTE_METADATA_FILE;
-                final String relativePath = toPath(artifactGroupId) + "/" + toPath(artifactId) + "/" + metadataFileName;
+                final String relativePath = toPath(artifactGroupId) + "/" + toPath(artifactId) + "/" + metaDataFileName;
                 final URL url = repositoryBaseUri.resolve(relativePath).toURL();
                 source = url.toString();
                 versions = convertAndSort(parse(url));
