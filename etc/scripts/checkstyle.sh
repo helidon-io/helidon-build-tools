@@ -29,9 +29,9 @@ trap on_error ERR
 
 # Path to this script
 if [ -h "${0}" ] ; then
-  readonly SCRIPT_PATH="$(readlink "${0}")"
+    readonly SCRIPT_PATH="$(readlink "${0}")"
 else
-  readonly SCRIPT_PATH="${0}"
+    readonly SCRIPT_PATH="${0}"
 fi
 
 # Path to the root of the workspace
@@ -41,14 +41,14 @@ readonly LOG_FILE=$(mktemp -t XXXcheckstyle-log)
 
 readonly RESULT_FILE=$(mktemp -t XXXcheckstyle-result)
 
-source ${WS_DIR}/etc/scripts/wercker-env.sh
+source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
 die(){ echo "${1}" ; exit 1 ;}
 
-mvn checkstyle:checkstyle-aggregate \
+mvn ${MAVEN_ARGS} checkstyle:checkstyle-aggregate \
     -f ${WS_DIR}/pom.xml \
-    -Dcheckstyle.output.format=plain \
-    -Dcheckstyle.output.file=${RESULT_FILE} \
+    -Dcheckstyle.output.format="plain" \
+    -Dcheckstyle.output.file="${RESULT_FILE}" \
     -Pexamples > ${LOG_FILE} 2>&1 || (cat ${LOG_FILE} ; exit 1)
 
 grep "^\[ERROR\]" ${RESULT_FILE} \

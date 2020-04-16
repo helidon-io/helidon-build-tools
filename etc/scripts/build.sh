@@ -29,20 +29,16 @@ trap on_error ERR
 
 # Path to this script
 if [ -h "${0}" ] ; then
-  readonly SCRIPT_PATH="$(readlink "${0}")"
+    readonly SCRIPT_PATH="$(readlink "${0}")"
 else
-  readonly SCRIPT_PATH="${0}"
+    readonly SCRIPT_PATH="${0}"
 fi
 
 # Path to the root of the workspace
 readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
-source ${WS_DIR}/etc/scripts/wercker-env.sh
+source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
-if [ "${WERCKER}" = "true" ] ; then
-  apt-get update && apt-get -y install graphviz
-fi
-
-mvn -f ${WS_DIR}/pom.xml \
+mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     clean install \
     --fail-at-end
