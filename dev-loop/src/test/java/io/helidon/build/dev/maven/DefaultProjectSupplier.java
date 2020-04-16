@@ -32,8 +32,6 @@ import io.helidon.build.dev.FileType;
 import io.helidon.build.dev.Project;
 import io.helidon.build.dev.ProjectDirectory;
 import io.helidon.build.dev.ProjectSupplier;
-import io.helidon.build.dev.steps.CompileJavaSources;
-import io.helidon.build.dev.steps.CopyResources;
 
 import static io.helidon.build.dev.BuildComponent.createBuildComponent;
 import static io.helidon.build.dev.BuildFile.createBuildFile;
@@ -46,7 +44,7 @@ import static io.helidon.build.util.FileUtils.ensureDirectory;
 /**
  * Builds a project assuming a default pom.xml.
  */
-public class DefaultHelidonProjectSupplier implements ProjectSupplier {
+public class DefaultProjectSupplier implements ProjectSupplier {
     private static final List<String> CLEAN_BUILD_COMMAND = List.of("clean", "prepare-package", "-DskipTests");
     private static final List<String> BUILD_COMMAND = List.of("prepare-package", "-DskipTests");
     private static final String POM_FILE = "pom.xml";
@@ -58,7 +56,7 @@ public class DefaultHelidonProjectSupplier implements ProjectSupplier {
     /**
      * Constructor.
      */
-    public DefaultHelidonProjectSupplier() {
+    public DefaultProjectSupplier() {
     }
 
     @Override

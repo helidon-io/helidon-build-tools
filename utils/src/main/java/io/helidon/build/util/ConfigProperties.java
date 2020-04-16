@@ -118,6 +118,16 @@ public class ConfigProperties {
     }
 
     /**
+     * Removes property.
+     *
+     * @param key The key.
+     * @return {@code true} if present and removed.
+     */
+    public boolean remove(String key) {
+        return properties.remove(key) != null;
+    }
+
+    /**
      * Returns set of keys as strings.
      *
      * @return Set of keys.

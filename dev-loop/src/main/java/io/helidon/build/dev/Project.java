@@ -17,6 +17,7 @@
 package io.helidon.build.dev;
 
 import java.io.File;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -28,9 +29,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import io.helidon.build.dev.util.ConsumerPrintStream;
+import io.helidon.build.util.Log;
+
 import static io.helidon.build.dev.DirectoryType.Depencencies;
 import static io.helidon.build.dev.ProjectDirectory.createProjectDirectory;
 import static io.helidon.build.util.FileUtils.listFiles;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A continuous build project. New instances must have been successfully built.
@@ -97,7 +102,7 @@ public class Project {
          * @return This instance, for chaining.
          */
         public Builder rootDirectory(ProjectDirectory rootDirectory) {
-            this.root = rootDirectory;
+            this.root = requireNonNull(rootDirectory);
             return this;
         }
 
@@ -108,7 +113,7 @@ public class Project {
          * @return This instance, for chaining.
          */
         public Builder buildSystemFile(BuildFile buildSystemFile) {
-            buildSystemFiles.add(buildSystemFile);
+            buildSystemFiles.add(requireNonNull(buildSystemFile));
             return this;
         }
 
@@ -119,7 +124,7 @@ public class Project {
          * @return This instance, for chaining.
          */
         public Builder compilerFlags(String compilerFlag) {
-            compilerFlags.add(compilerFlag);
+            compilerFlags.add(requireNonNull(compilerFlag));
             return this;
         }
 
@@ -130,7 +135,7 @@ public class Project {
          * @return This instance, for chaining.
          */
         public Builder component(BuildComponent component) {
-            components.add(component);
+            components.add(requireNonNull(component));
             return this;
         }
 
@@ -141,7 +146,7 @@ public class Project {
          * @return This instance, for chaining.
          */
         public Builder dependency(Path dependency) {
-            dependencyPaths.add(dependency);
+            dependencyPaths.add(requireNonNull(dependency));
             return this;
         }
 
@@ -152,7 +157,7 @@ public class Project {
          * @return This instance, for chaining.
          */
         public Builder mainClassName(String mainClassName) {
-            this.mainClassName = mainClassName;
+            this.mainClassName = requireNonNull(mainClassName);
             return this;
         }
 
@@ -370,9 +375,22 @@ public class Project {
                                     Consumer<String> stdOut,
                                     Consumer<String> stdErr) throws Exception {
         if (!changes.isEmpty()) {
-            for (final BuildRoot.Changes changed : changes) {
-                changed.root().component().incrementalBuild(changed, stdOut, stdErr);
+            final long startTime = System.currentTimeMillis();
+            final PrintStream origOut = System.out;
+            final PrintStream origErr = System.err;
+            try {
+                System.setOut(ConsumerPrintStream.newStream(stdOut));
+                System.setErr(ConsumerPrintStream.newStream(stdErr));
+                for (final BuildRoot.Changes changed : changes) {
+                    changed.root().component().incrementalBuild(changed, stdOut, stdErr);
+                }
+            } finally {
+                System.setOut(origOut);
+                System.setErr(origErr);
             }
+            final long elapsedTime = System.currentTimeMillis() - startTime;
+            final float elapsedSeconds = elapsedTime / 1000F;
+            Log.info("Build completed in %.1f seconds", elapsedSeconds);
         }
     }
 

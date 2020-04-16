@@ -19,7 +19,7 @@ package io.helidon.build.dev;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.build.dev.maven.DefaultHelidonProjectSupplier;
+import io.helidon.build.dev.maven.DefaultProjectSupplier;
 import io.helidon.build.dev.maven.EmbeddedMavenExecutor;
 import io.helidon.build.dev.maven.ForkedMavenExecutor;
 import io.helidon.build.util.Log;
@@ -49,7 +49,7 @@ class TestUtils {
                         .buildExecutor(buildExecutor(projectRoot, monitor))
                         .clean(initialClean)
                         .watchBinariesOnly(watchBinariesOnly)
-                        .projectSupplier(new DefaultHelidonProjectSupplier())
+                        .projectSupplier(new DefaultProjectSupplier())
                         .build();
     }
 

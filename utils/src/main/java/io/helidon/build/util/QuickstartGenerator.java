@@ -105,6 +105,9 @@ public class QuickstartGenerator extends SimpleQuickstartGenerator {
         if (artifactId() == null) {
             artifactId(HELIDON_QUICKSTART_PREFIX + variant().toString());
         }
+        if (packageName() == null) {
+            packageName(QUICKSTART_PACKAGE_PREFIX + variant().toString());
+        }
         final Path projectDir = parentDirectory().resolve(artifactId());
         if (Files.exists(projectDir)) {
             throw new IllegalStateException(projectDir + " already exists");

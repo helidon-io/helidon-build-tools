@@ -137,7 +137,8 @@ This plugin binds to the `package` phase by default.
 | stripDebug | Boolean | `false` | Remove all debug support from the image, including within `.class` files |
 | skipJavaImage | Boolean | `false` | Skip this goal execution |
 
-
+The above parameters are mapped to user properties of the form: `jlink.image.PROPERTY`.
+For example `-Djlink.image.addClassDataSharingArchive=false`.
 
 ### General usage
 
