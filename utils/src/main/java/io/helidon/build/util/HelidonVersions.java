@@ -35,69 +35,17 @@ public class HelidonVersions {
     public static final String HELIDON_BOM_ARTIFACT_ID = "helidon-bom";
 
     /**
-     * Known release versions. Ideally this should be updated on each release!
-     */
-    private static final List<String> KNOWN_RELEASES = List.of(
-        "2.0.0-M2",
-        "2.0.0-M1",
-        "1.4.4",
-        "1.4.3",
-        "1.4.2",
-        "1.4.1",
-        "1.4.0",
-        "1.3.1",
-        "1.3.0",
-        "1.2.1",
-        "1.2.0",
-        "1.1.2",
-        "1.1.1",
-        "1.1.0",
-        "1.0.3",
-        "1.0.2",
-        "1.0.1",
-        "1.0.0",
-        "0.11.1",
-        "0.11.0",
-        "0.10.6",
-        "0.10.5",
-        "0.10.4",
-        "0.10.3",
-        "0.10.2",
-        "0.10.1",
-        "0.10.0",
-        "0.9.1",
-        "0.9.0"
-    );
-
-    /**
-     * Filter that selects all versions.
-     */
-    public static final Predicate<String> ALL = version -> true;
-
-    /**
-     * Returns a filter that selects unqualified versions whose major number is at least the given minimum.
-     *
-     * @param minimumMajorVersion The minimum major version number.
-     * @return The filter.
-     */
-    public static Predicate<String> unqualifiedMinimumMajorVersion(int minimumMajorVersion) {
-        return version -> majorVersionIsAtLeast(version, minimumMajorVersion);
-    }
-
-    /**
      * Returns Helidon versions released to Maven central that match the given filter.
-     * If Maven central is not accessible, uses a hard coded list of fallback versions.
      *
      * @param filter The filter.
      * @return The versions.
      * @throws IllegalStateException If there are no versions available.
      */
-    public static MavenVersions releases(Predicate<String> filter) {
+    public static MavenVersions releases(Predicate<MavenVersion> filter) {
         return MavenVersions.builder()
                             .filter(filter)
                             .artifactGroupId(HELIDON_BOM_GROUP_ID)
                             .artifactId(HELIDON_BOM_ARTIFACT_ID)
-                            .fallbackVersions(KNOWN_RELEASES)
                             .build();
     }
 
@@ -111,27 +59,13 @@ public class HelidonVersions {
      * @return The versions.
      * @throws IllegalStateException If there are no versions available.
      */
-    public static MavenVersions releases(Predicate<String> filter, List<String> fallbackVersions) {
+    public static MavenVersions releases(Predicate<MavenVersion> filter, List<String> fallbackVersions) {
         return MavenVersions.builder()
                             .filter(filter)
                             .artifactGroupId(HELIDON_BOM_GROUP_ID)
                             .artifactId(HELIDON_BOM_ARTIFACT_ID)
                             .fallbackVersions(fallbackVersions)
                             .build();
-    }
-
-    private static boolean majorVersionIsAtLeast(String version, int minimumVersion) {
-        if (!version.contains("-")) {
-            final int firstDot = version.indexOf('.');
-            if (firstDot > 0) {
-                try {
-                    final int major = Integer.parseInt(version.substring(0, firstDot));
-                    return major >= minimumVersion;
-                } catch (NumberFormatException ignore) {
-                }
-            }
-        }
-        return false;
     }
 
     private HelidonVersions() {

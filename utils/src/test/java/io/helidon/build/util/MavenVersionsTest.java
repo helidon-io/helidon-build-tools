@@ -22,12 +22,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.util.HelidonVersions.HELIDON_BOM_ARTIFACT_ID;
 import static io.helidon.build.util.HelidonVersions.HELIDON_BOM_GROUP_ID;
-import static io.helidon.build.util.MavenVersions.Builder.UNQUALIFIED_FILTER;
+import static io.helidon.build.util.MavenVersion.toMavenVersion;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -60,7 +59,7 @@ class MavenVersionsTest {
                                                               .repository(new URI("http://foo.bar/maven/repository"))
                                                               .artifactGroupId(HELIDON_BOM_GROUP_ID)
                                                               .artifactId(HELIDON_BOM_ARTIFACT_ID)
-                                                              .filter(UNQUALIFIED_FILTER)
+                                                              .filter(MavenVersion.notQualified())
                                                               .fallbackVersions(List.of("1.2.3-SNAPSHOT"))
                                                               .build()).getMessage();
         assertThat(errorMessage, containsString("no fallback versions matching the filter"));
@@ -72,15 +71,37 @@ class MavenVersionsTest {
                                                     .repository(new URI("http://foo.bar/maven/repository"))
                                                     .artifactGroupId(HELIDON_BOM_GROUP_ID)
                                                     .artifactId(HELIDON_BOM_ARTIFACT_ID)
-                                                    .filter(UNQUALIFIED_FILTER)
+                                                    .filter(MavenVersion.notQualified())
                                                     .fallbackVersions(List.of("0.0.1", "1.2.3", "1.2.0"))
                                                     .build();
         assertThat(versions, is(not(nullValue())));
         assertThat(versions.source(), containsString("fallback"));
         assertThat(versions.versions(), is(not(nullValue())));
         assertThat(versions.versions().size(), is(3));
-        assertThat(versions.latest(), is("1.2.3"));
-        assertThat(versions.versions().contains("1.2.0"), is(true));
+        assertThat(versions.latest().toString(), is("1.2.3"));
+        assertThat(versions.versions().contains(toMavenVersion("1.2.0")), is(true));
+    }
+
+    @Test
+    void testQualifiedLessThanUnqualified() throws Exception {
+        final MavenVersions versions = MavenVersions.builder()
+                                                    .repository(new URI("http://foo.bar/maven/repository"))
+                                                    .artifactGroupId(HELIDON_BOM_GROUP_ID)
+                                                    .artifactId(HELIDON_BOM_ARTIFACT_ID)
+                                                    .fallbackVersions(List.of("2.0.0-SNAPSHOT",
+                                                                              "2.0.0-M1",
+                                                                              "2.0.0",
+                                                                              "1.0.0"))
+                                                    .build();
+        assertThat(versions, is(not(nullValue())));
+        assertThat(versions.source(), containsString("fallback"));
+        assertThat(versions.versions(), is(not(nullValue())));
+        assertThat(versions.versions().size(), is(4));
+        assertThat(versions.versions().get(0), is(toMavenVersion("2.0.0")));
+        assertThat(versions.versions().get(1), is(toMavenVersion("2.0.0-SNAPSHOT")));
+        assertThat(versions.versions().get(2), is(toMavenVersion("2.0.0-M1")));
+        assertThat(versions.versions().get(3), is(toMavenVersion("1.0.0")));
+        assertThat(versions.latest(), is(toMavenVersion("2.0.0")));
     }
 
     @Test
@@ -94,13 +115,13 @@ class MavenVersionsTest {
         assertThat(versions.versions(), is(not(nullValue())));
         assertThat(versions.versions(), is(not(empty())));
         assertThat(versions.latest(), is(not(nullValue())));
-        assertThat(versions.versions().contains("2.0.0-M1"), is(true));
+        assertThat(versions.versions().contains(toMavenVersion("2.0.0-M1")), is(true));
     }
 
     @Test
     void testUnqualifiedHelidonReleases() {
         final MavenVersions versions = MavenVersions.builder()
-                                                    .filter(UNQUALIFIED_FILTER)
+                                                    .filter(MavenVersion.notQualified())
                                                     .artifactGroupId(HELIDON_BOM_GROUP_ID)
                                                     .artifactId(HELIDON_BOM_ARTIFACT_ID)
                                                     .build();
@@ -109,14 +130,15 @@ class MavenVersionsTest {
         assertThat(versions.versions(), is(not(nullValue())));
         assertThat(versions.versions(), is(not(empty())));
         assertThat(versions.latest(), is(not(nullValue())));
-        assertThat(versions.versions().contains("2.0.0-M1"), is(false));
+        assertThat(versions.versions().contains(toMavenVersion("2.0.0-M1")), is(false));
     }
 
     @Test
-    @Disabled // Hmm, the assumeTrue() below doesn't seem to work in the pipeline
     void testLocalHelidonBuilds() {
-        final Path localRepo = Paths.get(System.getProperty("user.home")).resolve(".m2/repository");
-        assumeTrue(Files.exists(localRepo));
+        final Path userHome = Paths.get(System.getProperty("user.home"));
+        final Path localRepo = userHome.resolve(".m2/repository");
+        final Path metadataFile = localRepo.resolve("io/helidon/helidon-bom/maven-metadata-local.xml");
+        assumeTrue(Files.exists(metadataFile));
 
         MavenVersions versions = MavenVersions.builder()
                                               .repository(localRepo.toUri())

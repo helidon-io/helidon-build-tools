@@ -17,10 +17,13 @@
 package io.helidon.build.util;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.util.HelidonVersions.unqualifiedMinimumMajorVersion;
+import static io.helidon.build.util.MavenVersion.greaterThanOrEqualTo;
+import static io.helidon.build.util.MavenVersion.notQualified;
+import static io.helidon.build.util.MavenVersion.toMavenVersion;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -33,11 +36,22 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Unit test for class {@link HelidonVersions}.
  */
 class HelidonVersionsTest {
+    private static final String TWO_0_0_VERSION_STRING = "2.0.0";
+    private static final String HIGH_VERSION_STRING = "99999.99999.99999";
+    private static final String HIGHER_VERSION_STRING = "199999.99999.99999";
+    private static final MavenVersion TWO_0_0_VERSION = toMavenVersion(HIGHER_VERSION_STRING);
+    private static final MavenVersion HIGHER_VERSION = toMavenVersion(HIGHER_VERSION_STRING);
+
+    private static final Predicate<MavenVersion> UNQUALIFIED_2_0_0_MINUMUM =
+        notQualified().and(greaterThanOrEqualTo(TWO_0_0_VERSION_STRING));
+
+    private static final Predicate<MavenVersion> HIGH_UNQUALIFIED_MINUMUM =
+        notQualified().and(greaterThanOrEqualTo(HIGH_VERSION_STRING));
 
     @Test
     void testFilteredFallbackIsEmpty() {
         String errorMessage = assertThrows(IllegalStateException.class,
-                                           () -> HelidonVersions.releases(unqualifiedMinimumMajorVersion(99999),
+                                           () -> HelidonVersions.releases(HIGH_UNQUALIFIED_MINUMUM,
                                                                           List.of("2.0.0",
                                                                                   "1.2.3-SNAPSHOT",
                                                                                   "99999.0.0-SNAPSHOT"))
@@ -47,24 +61,37 @@ class HelidonVersionsTest {
 
     @Test
     void testFilteredFallbackIsNotEmpty() {
-        final MavenVersions versions = HelidonVersions.releases(unqualifiedMinimumMajorVersion(99999),
-                                                                List.of("2.0.0", "1.2.3-SNAPSHOT", "99999.0.0"));
+        final MavenVersions versions = HelidonVersions.releases(HIGH_UNQUALIFIED_MINUMUM,
+                                                                List.of("2.0.0", "1.2.3-SNAPSHOT", HIGHER_VERSION_STRING));
         assertThat(versions, is(not(nullValue())));
         assertThat(versions.source(), containsString("fallback"));
         assertThat(versions.versions(), is(not(nullValue())));
         assertThat(versions.versions().size(), is(1));
-        assertThat(versions.latest(), is("99999.0.0"));
-        assertThat(versions.versions().contains("99999.0.0"), is(true));
+        assertThat(versions.latest(), is(HIGHER_VERSION));
+        assertThat(versions.versions().contains(HIGHER_VERSION), is(true));
+    }
+
+    @Test
+    void testUnqualifiedMinimum() {
+        final MavenVersions versions = HelidonVersions.releases(UNQUALIFIED_2_0_0_MINUMUM,
+                                                                List.of("2.0.0-M1", "2.0.0", "3.0.0", "1.2.3-SNAPSHOT"));
+        assertThat(versions, is(not(nullValue())));
+        assertThat(versions.source(), containsString("fallback"));
+        assertThat(versions.versions(), is(not(nullValue())));
+        assertThat(versions.versions().size(), is(2));
+        assertThat(versions.latest(), is(toMavenVersion("3.0.0")));
+        assertThat(versions.versions().get(0), is(toMavenVersion("3.0.0")));
+        assertThat(versions.versions().get(1), is(toMavenVersion("2.0.0")));
     }
 
     @Test
     void testAllHelidonReleases() {
-        final MavenVersions versions = HelidonVersions.releases(HelidonVersions.ALL);
+        final MavenVersions versions = HelidonVersions.releases(v -> true);
         assertThat(versions, is(not(nullValue())));
         assertThat(versions.source(), containsString("http"));
         assertThat(versions.versions(), is(not(nullValue())));
         assertThat(versions.versions(), is(not(empty())));
         assertThat(versions.latest(), is(not(nullValue())));
-        assertThat(versions.versions().contains("2.0.0-M2"), is(true));
+        assertThat(versions.versions().contains(toMavenVersion("2.0.0-M2")), is(true));
     }
 }

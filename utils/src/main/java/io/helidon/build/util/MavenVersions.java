@@ -27,8 +27,6 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.apache.maven.artifact.versioning.ComparableVersion;
-
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -40,7 +38,7 @@ public class MavenVersions {
     private static final char TAG_BEGIN = '<';
 
     private final String source;
-    private final List<String> versions;
+    private final List<MavenVersion> versions;
 
     /**
      * Returns a new builder.
@@ -70,7 +68,7 @@ public class MavenVersions {
      *
      * @return The version.
      */
-    public String latest() {
+    public MavenVersion latest() {
         return versions.get(0);
     }
 
@@ -79,19 +77,15 @@ public class MavenVersions {
      *
      * @return The versions, latest first.
      */
-    public List<String> versions() {
+    public List<MavenVersion> versions() {
         return versions;
     }
 
     @Override
     public String toString() {
         return "MavenVersions{"
-               + "source='"
-               + source
-               + '\''
-               + ", versions="
-               + versions
-               + '}';
+               + "source='" + source + '\''
+               + ", versions=" + versions + '}';
     }
 
     /**
@@ -107,18 +101,13 @@ public class MavenVersions {
          */
         public static final URI MAVEN_CENTRAL_URI = toUri("https://repo.maven.apache.org/maven2/");
 
-        /**
-         * A filter that selects versions that do not contain "-" characters.
-         */
-        public static final Predicate<String> UNQUALIFIED_FILTER = version -> !version.contains("-");
-
         private URI repositoryBaseUri;
         private String artifactGroupId;
         private String artifactId;
         private String source;
-        private List<String> versions;
+        private List<MavenVersion> versions;
         private List<String> fallbackVersions;
-        private Predicate<String> filter;
+        private Predicate<MavenVersion> filter;
 
         private Builder() {
             this.repositoryBaseUri = MAVEN_CENTRAL_URI;
@@ -164,7 +153,7 @@ public class MavenVersions {
          * @param filter The filter.
          * @return This instance.
          */
-        public Builder filter(Predicate<String> filter) {
+        public Builder filter(Predicate<MavenVersion> filter) {
             this.filter = requireNonNull(filter);
             return this;
         }
@@ -198,7 +187,7 @@ public class MavenVersions {
                 final String relativePath = toPath(artifactGroupId) + "/" + toPath(artifactId) + "/" + metadataFileName;
                 final URL url = repositoryBaseUri.resolve(relativePath).toURL();
                 source = url.toString();
-                versions = sort(parse(url));
+                versions = convertAndSort(parse(url));
                 if (versions.isEmpty()) {
                     useFallbackVersions("No versions found");
                 }
@@ -212,7 +201,7 @@ public class MavenVersions {
             if (fallbackVersions == null) {
                 throw new IllegalStateException(reason);
             }
-            versions = sort(fallbackVersions);
+            versions = convertAndSort(fallbackVersions);
             if (versions.isEmpty()) {
                 throw new IllegalStateException("no fallback versions matching the filter");
             } else {
@@ -220,12 +209,11 @@ public class MavenVersions {
             }
         }
 
-        private List<String> sort(List<String> versions) {
+        private List<MavenVersion> convertAndSort(List<String> versions) {
             return versions.stream()
+                           .map(MavenVersion::toMavenVersion)
                            .filter(filter)
-                           .map(ComparableVersion::new)
                            .sorted(Collections.reverseOrder())
-                           .map(ComparableVersion::toString)
                            .collect(Collectors.toList());
         }
 

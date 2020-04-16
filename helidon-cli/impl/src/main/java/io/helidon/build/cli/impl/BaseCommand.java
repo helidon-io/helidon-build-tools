@@ -35,6 +35,7 @@ import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.HelidonVersions;
 import io.helidon.build.util.Log;
+import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProcessMonitor;
 import io.helidon.build.util.ProjectConfig;
 
@@ -43,7 +44,8 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
-import static io.helidon.build.util.HelidonVersions.unqualifiedMinimumMajorVersion;
+import static io.helidon.build.util.MavenVersion.greaterThanOrEqualTo;
+import static io.helidon.build.util.MavenVersion.notQualified;
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 
 /**
@@ -57,7 +59,7 @@ public abstract class BaseCommand {
     static final String JAVA_HOME = Constants.javaHome();
     static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
     static final long SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
-    static final int MINIMUM_MAJOR_HELIDON_VERSION = 2;
+    static final String MINIMUM_MAJOR_HELIDON_VERSION = "2.0.0";
     static final AtomicReference<String> DEFAULT_HELIDON_VERSION = new AtomicReference<>();
 
     private Properties cliConfig;
@@ -143,8 +145,8 @@ public abstract class BaseCommand {
             String version = System.getProperty(HELIDON_VERSION);
             if (version == null) {
                 try {
-                    Predicate<String> filter = unqualifiedMinimumMajorVersion(MINIMUM_MAJOR_HELIDON_VERSION);
-                    version = HelidonVersions.releases(filter).latest();
+                    Predicate<MavenVersion> filter = notQualified().and(greaterThanOrEqualTo(MINIMUM_MAJOR_HELIDON_VERSION));
+                    version = HelidonVersions.releases(filter).latest().toString();
                 } catch (Exception e) {
                     version = cliConfig.getProperty(HELIDON_VERSION);
                 }
