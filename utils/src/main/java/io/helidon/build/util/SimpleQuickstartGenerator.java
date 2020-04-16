@@ -108,6 +108,10 @@ public class SimpleQuickstartGenerator {
         return this;
     }
 
+    protected String packageName() {
+        return packageName;
+    }
+
     /**
      * Set the project's package.
      *
