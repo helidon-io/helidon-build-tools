@@ -19,12 +19,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * CLI test utils.
@@ -84,5 +87,16 @@ class TestUtils {
             throw new IllegalStateException("timeout waiting for process");
         }
         return new ExecResult(p.exitValue(), output);
+    }
+
+    static void assertPackageExist(Path projectPath, String packageName) {
+        assertTrue(Files.exists(projectPath));
+        Path path = projectPath.resolve("src/main/java");
+        assertTrue(Files.exists(path));
+        String[] dirs = packageName.split("\\.");
+        for (String dir : dirs) {
+            path = path.resolve(dir);
+            assertTrue(Files.exists(path));
+        }
     }
 }

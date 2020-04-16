@@ -15,7 +15,6 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import io.helidon.build.test.TestFiles;
@@ -27,8 +26,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION;
+import static io.helidon.build.cli.impl.TestUtils.assertPackageExist;
 import static io.helidon.build.cli.impl.TestUtils.exec;
-import static io.helidon.build.test.TestFiles.quickstartId;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -42,6 +41,7 @@ public class InitCommandTest {
 
     private static final String MY_GROUP_ID = "mygroup";
     private static final String MY_ARTIFACT_ID = "myartifact";
+    private static final String MY_PACKAGE = "com.oracle.mypackage";
     private static final String HELIDON_VERSION_TEST = "2.0.0-SNAPSHOT";
     private static final String HELIDON_VERSION_PREVIOUS = "2.0.0-M1";
 
@@ -58,22 +58,23 @@ public class InitCommandTest {
     }
 
     @Test
-    @Order(7)
-    public void testInitGroupArtifact() throws Exception {
+    @Order(1)
+    public void testInitGroupPackage() throws Exception {
         TestUtils.ExecResult res = exec("init",
                 "--flavor", variant.toString(),
                 "--project ", targetDir.toString(),
                 "--version ", HELIDON_VERSION_PREVIOUS,
                 "--groupid", MY_GROUP_ID,
-                "--artifactid", MY_ARTIFACT_ID);
+                "--artifactid", MY_ARTIFACT_ID,
+                "--package", MY_PACKAGE);
         assertThat(res.code, is(equalTo(0)));
         System.out.println(res.output);
-        assertTrue(Files.exists(targetDir.resolve(MY_ARTIFACT_ID)));
+        assertPackageExist(targetDir.resolve(MY_ARTIFACT_ID), MY_PACKAGE);
     }
 
     @Test
-    @Order(8)
-    public void testCleanGroupArtifact() {
+    @Order(2)
+    public void testCleanGroupPackage() {
         Path projectDir = targetDir.resolve(MY_ARTIFACT_ID);
         assertTrue(TestFiles.deleteDirectory(projectDir.toFile()));
         System.out.println("Directory " + projectDir + " deleted");
