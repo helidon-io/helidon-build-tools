@@ -20,6 +20,7 @@ import java.nio.file.Path;
 
 import io.helidon.build.test.TestFiles;
 import io.helidon.build.util.HelidonVariant;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -62,10 +63,9 @@ public class CommandTest {
                 "--flavor", variant.toString(),
                 "--project ", targetDir.toString(),
                 "--version ", HELIDON_VERSION_PREVIOUS);
-        assertThat(res.code, is(equalTo(0)));
         System.out.println(res.output);
+        assertThat(res.code, is(equalTo(0)));
         assertTrue(Files.exists(targetDir.resolve(quickstartId(variant))));
-
     }
 
     @Test
@@ -74,10 +74,9 @@ public class CommandTest {
         Path projectDir = targetDir.resolve(quickstartId(variant));
         TestUtils.ExecResult res = exec("build",
                 "--project ", projectDir.toString());
-        assertThat(res.code, is(equalTo(0)));
         System.out.println(res.output);
+        assertThat(res.code, is(equalTo(0)));
         assertTrue(Files.exists(TestFiles.helidonSeJar()));
-
     }
 
     @Test
@@ -86,8 +85,8 @@ public class CommandTest {
         Path projectDir = targetDir.resolve(quickstartId(variant));
         TestUtils.ExecResult res = exec("info",
                 "--project ", projectDir.toString());
-        assertThat(res.code, is(equalTo(0)));
         System.out.println(res.output);
+        assertThat(res.code, is(equalTo(0)));
     }
 
     @Test
@@ -96,8 +95,8 @@ public class CommandTest {
         Path projectDir = targetDir.resolve(quickstartId(variant));
         TestUtils.ExecResult res = exec("version",
                 "--project ", projectDir.toString());
-        assertThat(res.code, is(equalTo(0)));
         System.out.println(res.output);
+        assertThat(res.code, is(equalTo(0)));
     }
 
     @Test
@@ -107,8 +106,8 @@ public class CommandTest {
         TestUtils.ExecResult res = exec("features",
                 "--project ", projectDir.toString(),
                 "--all");
-        assertThat(res.code, is(equalTo(0)));
         System.out.println(res.output);
+        assertThat(res.code, is(equalTo(0)));
     }
 
     @Test
