@@ -73,10 +73,11 @@ public interface BuildMonitor {
      * Called when a build has failed.
      *
      * @param cycleNumber The cycle number.
+     * @param type The build type.
      * @param error The error.
      * @return The number of milliseconds to delay before retrying build.
      */
-    long onBuildFail(int cycleNumber, Throwable error);
+    long onBuildFail(int cycleNumber, BuildType type, Throwable error);
 
     /**
      * Called when a build has succeeded or when an initial build was not required.

@@ -236,15 +236,14 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
      * @return The changes.
      */
     public Changes changes() {
-        try {
-            final Changes changes = new Changes(this, files.get().keySet());
-            final Map<Path, BuildFile> files = this.files.get();
-            Files.walk(path())
-                 .forEach(file -> {
-                     if (fileType.test(file)) {
-                         changes.update(file, files.get(file));
-                     }
-                 });
+        final Changes changes = new Changes(this, files.get().keySet());
+        final Map<Path, BuildFile> files = this.files.get();
+        try (Stream<Path> stream = Files.walk(path())) {
+            stream.forEach(file -> {
+                if (fileType.test(file)) {
+                    changes.update(file, files.get(file));
+                }
+            });
             return changes;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -261,10 +260,10 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
     @Override
     public String toString() {
         return "BuildRoot{"
-                + "directoryType=" + directoryType()
-                + ", fileType=" + fileType
-                + ", path=" + path()
-                + '}';
+               + "directoryType=" + directoryType()
+               + ", fileType=" + fileType
+               + ", path=" + path()
+               + '}';
     }
 
     @Override
@@ -274,7 +273,7 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
         if (!super.equals(o)) return false;
         final BuildRoot that = (BuildRoot) o;
         return Objects.equals(fileType, that.fileType)
-                && Objects.equals(files, that.files);
+               && Objects.equals(files, that.files);
     }
 
     @Override
@@ -289,13 +288,12 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
 
     private Map<Path, BuildFile> collectFiles() {
         final Map<Path, BuildFile> files = new HashMap<>();
-        try {
-            Files.walk(path())
-                 .forEach(file -> {
-                     if (fileType.test(file)) {
-                         files.put(file, createBuildFile(this, fileType, file));
-                     }
-                 });
+        try (Stream<Path> stream = Files.walk(path())) {
+            stream.forEach(file -> {
+                if (fileType.test(file)) {
+                    files.put(file, createBuildFile(this, fileType, file));
+                }
+            });
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
