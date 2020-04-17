@@ -19,6 +19,7 @@ package io.helidon.build.util;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -129,7 +130,7 @@ public class ProjectConfig extends ConfigProperties {
      */
     public Optional<Path> projectDir() {
         String dir = property(PROJECT_DIRECTORY);
-        return dir == null ? Optional.empty() : Optional.of(Path.of(dir));
+        return dir == null ? Optional.empty() : Optional.of(Paths.get(dir));
     }
 
     /**

@@ -33,25 +33,24 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Unit test for class {@link HelidonVersions}.
+ * Integration test for class {@link HelidonVersions}.
  */
-class HelidonVersionsTest {
+class HelidonVersionsIT {
     private static final String TWO_0_0_VERSION_STRING = "2.0.0";
     private static final String HIGH_VERSION_STRING = "99999.99999.99999";
     private static final String HIGHER_VERSION_STRING = "199999.99999.99999";
-    private static final MavenVersion TWO_0_0_VERSION = toMavenVersion(HIGHER_VERSION_STRING);
     private static final MavenVersion HIGHER_VERSION = toMavenVersion(HIGHER_VERSION_STRING);
 
-    private static final Predicate<MavenVersion> UNQUALIFIED_2_0_0_MINUMUM =
+    private static final Predicate<MavenVersion> UNQUALIFIED_2_0_0_MINIMUM =
         notQualified().and(greaterThanOrEqualTo(TWO_0_0_VERSION_STRING));
 
-    private static final Predicate<MavenVersion> HIGH_UNQUALIFIED_MINUMUM =
+    private static final Predicate<MavenVersion> UNQUALIFIED_HIGH_MINIMUM =
         notQualified().and(greaterThanOrEqualTo(HIGH_VERSION_STRING));
 
     @Test
     void testFilteredFallbackIsEmpty() {
         String errorMessage = assertThrows(IllegalStateException.class,
-                                           () -> HelidonVersions.releases(HIGH_UNQUALIFIED_MINUMUM,
+                                           () -> HelidonVersions.releases(UNQUALIFIED_HIGH_MINIMUM,
                                                                           List.of("2.0.0",
                                                                                   "1.2.3-SNAPSHOT",
                                                                                   "99999.0.0-SNAPSHOT"))
@@ -61,7 +60,7 @@ class HelidonVersionsTest {
 
     @Test
     void testFilteredFallbackIsNotEmpty() {
-        final MavenVersions versions = HelidonVersions.releases(HIGH_UNQUALIFIED_MINUMUM,
+        final MavenVersions versions = HelidonVersions.releases(UNQUALIFIED_HIGH_MINIMUM,
                                                                 List.of("2.0.0", "1.2.3-SNAPSHOT", HIGHER_VERSION_STRING));
         assertThat(versions, is(not(nullValue())));
         assertThat(versions.source(), containsString("fallback"));
@@ -73,7 +72,7 @@ class HelidonVersionsTest {
 
     @Test
     void testUnqualifiedMinimum() {
-        final MavenVersions versions = HelidonVersions.releases(UNQUALIFIED_2_0_0_MINUMUM,
+        final MavenVersions versions = HelidonVersions.releases(UNQUALIFIED_2_0_0_MINIMUM,
                                                                 List.of("2.0.0-M1", "2.0.0", "3.0.0", "1.2.3-SNAPSHOT"));
         assertThat(versions, is(not(nullValue())));
         assertThat(versions.source(), containsString("fallback"));
@@ -85,7 +84,7 @@ class HelidonVersionsTest {
     }
 
     @Test
-    void testAllHelidonReleases() {
+    void testAllReleases() {
         final MavenVersions versions = HelidonVersions.releases(v -> true);
         assertThat(versions, is(not(nullValue())));
         assertThat(versions.source(), containsString("http"));

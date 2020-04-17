@@ -22,6 +22,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
@@ -94,14 +95,24 @@ public class MavenVersions {
     public static class Builder {
 
         /**
-         * The Maven central repository URI; used as the default if not specified.
+         * The default repository URI.
          */
-        public static final URI MAVEN_CENTRAL_URI = toUri("https://repo.maven.apache.org/maven2/");
+        public static final URI DEFAULT_REPOSITORY_URI = toUri("https://repo.maven.apache.org/maven2/");
 
         /**
-         * The metadata file name for remote repositories; used as the default if not specified.
+         * The default metadata file name.
          */
-        public static final String REMOTE_METADATA_FILE = "maven-metadata.xml";
+        public static final String DEFAULT_METADATA_FILE = "maven-metadata.xml";
+
+        /**
+         * The default connect timeout, in milliseconds.
+         */
+        public static final int DEFAULT_CONNECT_TIMEOUT = 500;
+
+        /**
+         * The default read timeout, in milliseconds.
+         */
+        public static final int DEFAULT_READ_TIMEOUT = 500;
 
         private URI repositoryBaseUri;
         private String artifactGroupId;
@@ -111,17 +122,21 @@ public class MavenVersions {
         private List<String> fallbackVersions;
         private Predicate<MavenVersion> filter;
         private String metaDataFileName;
+        private int connectTimeout;
+        private int readTimeout;
 
         private Builder() {
-            this.repositoryBaseUri = MAVEN_CENTRAL_URI;
+            this.repositoryBaseUri = DEFAULT_REPOSITORY_URI;
+            this.metaDataFileName = DEFAULT_METADATA_FILE;
+            this.connectTimeout = DEFAULT_CONNECT_TIMEOUT;
+            this.readTimeout = DEFAULT_READ_TIMEOUT;
             this.filter = v -> true;
-            this.metaDataFileName = REMOTE_METADATA_FILE;
         }
 
         /**
          * Sets the repository base URI.
          *
-         * @param repositoryUri The base URI, e.g. {@link #MAVEN_CENTRAL_URI}.
+         * @param repositoryUri The base URI, e.g. {@link #DEFAULT_REPOSITORY_URI}.
          * @return This instance.
          */
         public Builder repository(URI repositoryUri) {
@@ -152,13 +167,35 @@ public class MavenVersions {
         }
 
         /**
-         * Sets the metadata file name. Defaults to
+         * Sets the metadata file name.
          *
          * @param metaDataFileName The id.
          * @return This instance.
          */
         public Builder metaDataFileName(String metaDataFileName) {
             this.metaDataFileName = requireNonNull(metaDataFileName);
+            return this;
+        }
+
+        /**
+         * Sets the connect timeout.
+         *
+         * @param connectTimeout The timeout, in milliseconds..
+         * @return This instance.
+         */
+        public Builder connectTimeout(int connectTimeout) {
+            this.connectTimeout = assertValidTimeout(connectTimeout);
+            return this;
+        }
+
+        /**
+         * Sets the connect timeout.
+         *
+         * @param readTimeout The timeout, in milliseconds..
+         * @return This instance.
+         */
+        public Builder readTimeout(int readTimeout) {
+            this.readTimeout = assertValidTimeout(readTimeout);
             return this;
         }
 
@@ -230,7 +267,7 @@ public class MavenVersions {
                            .collect(Collectors.toList());
         }
 
-        private static List<String> parse(URL url) throws IOException {
+        private List<String> parse(URL url) throws IOException {
             try (InputStream stream = open(url)) {
                 return StreamUtils.toLines(stream)
                                   .stream()
@@ -245,22 +282,25 @@ public class MavenVersions {
             }
         }
 
-        private static InputStream open(URL url) throws IOException {
-            final boolean followingRedirects = HttpURLConnection.getFollowRedirects();
-            try {
-                if (!followingRedirects) {
-                    HttpURLConnection.setFollowRedirects(true);
-                }
-                return url.openStream();
-            } finally {
-                if (!followingRedirects) {
-                    HttpURLConnection.setFollowRedirects(false);
-                }
+        private InputStream open(URL url) throws IOException {
+            final URLConnection connection = url.openConnection();
+            connection.setConnectTimeout(connectTimeout);
+            connection.setReadTimeout(readTimeout);
+            if (connection instanceof HttpURLConnection) {
+                ((HttpURLConnection) connection).setInstanceFollowRedirects(true);
             }
+            return connection.getInputStream();
         }
 
         private static String toPath(String id) {
             return id.replace('.', '/');
+        }
+
+        private static int assertValidTimeout(int timeout) {
+             if (timeout < 0) {
+                 throw new IllegalArgumentException("negative timeout");
+             }
+             return timeout;
         }
 
         private static URI toUri(String uri) {
