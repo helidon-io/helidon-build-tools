@@ -42,6 +42,17 @@ public class MavenVersion extends ComparableVersion {
     }
 
     /**
+     * Returns a predicate that checks if the version being tested is both not qualified and is
+     * greater than or equal to the given version.
+     *
+     * @param minimumVersion The minimum version.
+     * @return The predicate.
+     */
+    public static Predicate<MavenVersion> unqualifiedMinimum(String minimumVersion) {
+        return notQualified().and(greaterThanOrEqualTo(minimumVersion));
+    }
+
+    /**
      * Returns a predicate that checks if the version being tested is not {@link #isQualified() qualified}.
      *
      * @return The predicate.

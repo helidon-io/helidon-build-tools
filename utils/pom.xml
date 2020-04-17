@@ -113,6 +113,9 @@
                             <goal>integration-test</goal>
                             <goal>verify</goal>
                         </goals>
+                        <configuration>
+                            <forkCount>0</forkCount>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

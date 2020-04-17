@@ -21,9 +21,8 @@ import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.util.MavenVersion.greaterThanOrEqualTo;
-import static io.helidon.build.util.MavenVersion.notQualified;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
+import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -41,11 +40,8 @@ class HelidonVersionsIT {
     private static final String HIGHER_VERSION_STRING = "199999.99999.99999";
     private static final MavenVersion HIGHER_VERSION = toMavenVersion(HIGHER_VERSION_STRING);
 
-    private static final Predicate<MavenVersion> UNQUALIFIED_2_0_0_MINIMUM =
-        notQualified().and(greaterThanOrEqualTo(TWO_0_0_VERSION_STRING));
-
-    private static final Predicate<MavenVersion> UNQUALIFIED_HIGH_MINIMUM =
-        notQualified().and(greaterThanOrEqualTo(HIGH_VERSION_STRING));
+    private static final Predicate<MavenVersion> UNQUALIFIED_2_0_0_MINIMUM = unqualifiedMinimum(TWO_0_0_VERSION_STRING);
+    private static final Predicate<MavenVersion> UNQUALIFIED_HIGH_MINIMUM = unqualifiedMinimum(HIGH_VERSION_STRING);
 
     @Test
     void testFilteredFallbackIsEmpty() {

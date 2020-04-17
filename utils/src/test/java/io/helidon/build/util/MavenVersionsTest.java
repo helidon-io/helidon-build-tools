@@ -17,6 +17,7 @@
 package io.helidon.build.util;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -27,9 +28,9 @@ import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.HelidonVersions.HELIDON_PROJECT_ARTIFACT_ID;
 import static io.helidon.build.util.HelidonVersions.HELIDON_PROJECT_GROUP_ID;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
+import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -39,19 +40,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Unit test for class {@link MavenVersions}.
  */
 class MavenVersionsTest {
-    private static final String MAVEN_REPO_PATH = "maven-repo";
-    private static final URI MAVEN_REPO_URI = mavenRepoUri();
-
-    private static URI mavenRepoUri() {
-        final Path testClasses = Paths.get(MavenVersionsTest.class.getProtectionDomain().getCodeSource().getLocation().getPath());
-        return assertDir(testClasses.resolve(MAVEN_REPO_PATH)).toUri();
-    }
+    private static final String INVALID_HOST_NAME = "not.a.domain.x";
+    private static final URI INACCESSIBLE_MAVEN_REPO = toUri("http://" + INVALID_HOST_NAME + "/maven/repository");
+    private static final URI MAVEN_REPO_2_0_0_M2 = mavenRepoUri("2.0.0-M2");
+    private static final URI MAVEN_REPO_2_0_0 = mavenRepoUri("2.0.0");
 
     @Test
     void testUriNotAccessible() {
         String errorMessage = assertThrows(IllegalStateException.class,
                                            () -> MavenVersions.builder()
-                                                              .repository(new URI("http://not.a.domain.x/maven/repository"))
+                                                              .repository(INACCESSIBLE_MAVEN_REPO)
                                                               .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
                                                               .artifactId(HELIDON_PROJECT_ARTIFACT_ID)
                                                               .build()).getMessage();
@@ -62,7 +60,7 @@ class MavenVersionsTest {
     void testUriNotAccessibleAndFilteredFallbackIsEmpty() {
         String errorMessage = assertThrows(IllegalStateException.class,
                                            () -> MavenVersions.builder()
-                                                              .repository(new URI("http://not.a.domain.x/maven/repository"))
+                                                              .repository(INACCESSIBLE_MAVEN_REPO)
                                                               .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
                                                               .artifactId(HELIDON_PROJECT_ARTIFACT_ID)
                                                               .filter(MavenVersion.notQualified())
@@ -72,9 +70,9 @@ class MavenVersionsTest {
     }
 
     @Test
-    void testUriNotAccessibleAndFilteredFallbackIsNotEmpty() throws Exception {
+    void testUriNotAccessibleAndFilteredFallbackIsNotEmpty() {
         final MavenVersions versions = MavenVersions.builder()
-                                                    .repository(new URI("http://not.a.domain.x/maven/repository"))
+                                                    .repository(INACCESSIBLE_MAVEN_REPO)
                                                     .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
                                                     .artifactId(HELIDON_PROJECT_ARTIFACT_ID)
                                                     .filter(MavenVersion.notQualified())
@@ -89,9 +87,9 @@ class MavenVersionsTest {
     }
 
     @Test
-    void testQualifiedLessThanUnqualified() throws Exception {
+    void testQualifiedLessThanUnqualified() {
         final MavenVersions versions = MavenVersions.builder()
-                                                    .repository(new URI("http://not.a.domain.x/maven/repository"))
+                                                    .repository(INACCESSIBLE_MAVEN_REPO)
                                                     .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
                                                     .artifactId(HELIDON_PROJECT_ARTIFACT_ID)
                                                     .fallbackVersions(List.of("2.0.0-SNAPSHOT",
@@ -111,33 +109,75 @@ class MavenVersionsTest {
     }
 
     @Test
-    void testHelidonReleases() {
+    void testAllCurrentHelidonReleases() {
         final MavenVersions versions = MavenVersions.builder()
-                                                    .repository(MAVEN_REPO_URI)
+                                                    .repository(MAVEN_REPO_2_0_0_M2)
                                                     .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
                                                     .artifactId(HELIDON_PROJECT_ARTIFACT_ID)
                                                     .build();
         assertThat(versions, is(not(nullValue())));
         assertThat(versions.source(), containsString("file"));
         assertThat(versions.versions(), is(not(nullValue())));
-        assertThat(versions.versions(), is(not(empty())));
-        assertThat(versions.latest(), is(not(nullValue())));
-        assertThat(versions.versions().contains(toMavenVersion("2.0.0-M1")), is(true));
+        assertThat(versions.versions().size(), is(29));
+        assertThat(versions.latest(), is(toMavenVersion("2.0.0-M2")));
+        assertThat(versions.versions().get(0), is(toMavenVersion("2.0.0-M2")));
     }
 
     @Test
-    void testUnqualifiedHelidonReleases() {
+    void testAllFutureHelidonReleases() {
         final MavenVersions versions = MavenVersions.builder()
-                                                    .filter(MavenVersion.notQualified())
-                                                    .repository(MAVEN_REPO_URI)
+                                                    .repository(MAVEN_REPO_2_0_0)
                                                     .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
                                                     .artifactId(HELIDON_PROJECT_ARTIFACT_ID)
                                                     .build();
         assertThat(versions, is(not(nullValue())));
         assertThat(versions.source(), containsString("file"));
         assertThat(versions.versions(), is(not(nullValue())));
-        assertThat(versions.versions(), is(not(empty())));
-        assertThat(versions.latest(), is(not(nullValue())));
-        assertThat(versions.versions().contains(toMavenVersion("2.0.0-M1")), is(false));
+        assertThat(versions.versions().size(), is(30));
+        assertThat(versions.latest(), is(toMavenVersion("2.0.0")));
+        assertThat(versions.versions().get(0), is(toMavenVersion("2.0.0")));
+    }
+
+    @Test
+    void testUnqualifiedMinimumCurrentHelidonReleases() {
+        String errorMessage = assertThrows(IllegalStateException.class,
+                                           () -> MavenVersions.builder()
+                                                              .filter(unqualifiedMinimum("2.0.0"))
+                                                              .repository(MAVEN_REPO_2_0_0_M2)
+                                                              .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
+                                                              .artifactId(HELIDON_PROJECT_ARTIFACT_ID)
+                                                              .build()).getMessage();
+        assertThat(errorMessage, containsString("No versions found"));
+
+    }
+
+    @Test
+    void testUnqualifiedMinimumFutureHelidonReleases() {
+        final MavenVersions versions = MavenVersions.builder()
+                                                    .filter(unqualifiedMinimum("2.0.0"))
+                                                    .repository(MAVEN_REPO_2_0_0)
+                                                    .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
+                                                    .artifactId(HELIDON_PROJECT_ARTIFACT_ID)
+                                                    .build();
+        assertThat(versions, is(not(nullValue())));
+        assertThat(versions.source(), containsString("file"));
+        assertThat(versions.versions(), is(not(nullValue())));
+        assertThat(versions.versions().size(), is(1));
+        assertThat(versions.latest(), is(toMavenVersion("2.0.0")));
+        assertThat(versions.versions().get(0), is(toMavenVersion("2.0.0")));
+    }
+
+    private static URI mavenRepoUri(String version) {
+        final String repoName = "maven-repo-" + version;
+        final Path testClasses = Paths.get(MavenVersionsTest.class.getProtectionDomain().getCodeSource().getLocation().getPath());
+        return assertDir(testClasses.resolve(repoName)).toUri();
+    }
+
+    private static URI toUri(String uri) {
+        try {
+            return new URI(uri);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

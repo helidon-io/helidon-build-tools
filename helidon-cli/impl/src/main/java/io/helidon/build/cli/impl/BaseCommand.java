@@ -44,8 +44,7 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
-import static io.helidon.build.util.MavenVersion.greaterThanOrEqualTo;
-import static io.helidon.build.util.MavenVersion.notQualified;
+import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 
 /**
@@ -145,7 +144,7 @@ public abstract class BaseCommand {
             String version = System.getProperty(HELIDON_VERSION);
             if (version == null) {
                 try {
-                    Predicate<MavenVersion> filter = notQualified().and(greaterThanOrEqualTo(MINIMUM_MAJOR_HELIDON_VERSION));
+                    Predicate<MavenVersion> filter = unqualifiedMinimum(MINIMUM_MAJOR_HELIDON_VERSION);
                     version = HelidonVersions.releases(filter).latest().toString();
                 } catch (Exception e) {
                     version = cliConfig.getProperty(HELIDON_VERSION);
