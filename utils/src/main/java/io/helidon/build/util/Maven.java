@@ -29,6 +29,7 @@ import java.util.stream.IntStream;
 
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.apache.maven.settings.Profile;
+import org.apache.maven.settings.Proxy;
 import org.apache.maven.settings.Repository;
 import org.apache.maven.settings.Settings;
 import org.apache.maven.settings.building.DefaultSettingsBuilderFactory;
@@ -367,16 +368,30 @@ public class Maven {
             }
         }
 
+        private org.eclipse.aether.repository.Proxy proxy(String repoUrl) {
+            for (Proxy proxySetting : settings.getProxies()) {
+                if (repoUrl.startsWith(proxySetting.getProtocol())) {
+                    return new org.eclipse.aether.repository.Proxy(proxySetting.getProtocol(), proxySetting.getHost(),
+                            proxySetting.getPort());
+                }
+            }
+            return null;
+        }
+
         private List<RemoteRepository> repositories() {
             final Map<String, Profile> profiles = settings.getProfilesAsMap();
             final List<RemoteRepository> result = new ArrayList<>();
             for (String profileName : settings.getActiveProfiles()) {
                 for (Repository repo : profiles.get(profileName).getRepositories()) {
-                    result.add(new RemoteRepository.Builder(repo.getId(), REPOSITORY_TYPE, repo.getUrl()).build());
+                    result.add(new RemoteRepository.Builder(repo.getId(), REPOSITORY_TYPE, repo.getUrl())
+                            .setProxy(proxy(repo.getUrl()))
+                            .build());
                 }
             }
             if (result.isEmpty()) {
-                result.add(new RemoteRepository.Builder(CENTRAL_ID, REPOSITORY_TYPE, CENTRAL_URL).build());
+                result.add(new RemoteRepository.Builder(CENTRAL_ID, REPOSITORY_TYPE, CENTRAL_URL)
+                        .setProxy(proxy(CENTRAL_URL))
+                        .build());
             }
             return result;
         }
