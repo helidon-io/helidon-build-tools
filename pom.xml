@@ -98,6 +98,9 @@
         <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF-8</surefire.argLine>
         <surefire.coverage.argline/>
 
+        <failsafe.argLine>-Xmx1024m -Dfile.encoding=UTF-8</failsafe.argLine>
+        <failsafe.coverage.argline/>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
@@ -160,6 +163,7 @@
         <version.plugin.spotbugs>3.1.12</version.plugin.spotbugs>
         <version.plugin.surefire.provider.junit>1.0.3</version.plugin.surefire.provider.junit>
         <version.plugin.surefire>2.19.1</version.plugin.surefire>
+        <version.plugin.failsafe>2.19.1</version.plugin.failsafe>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
     </properties>
 
@@ -234,6 +238,34 @@
                         <systemPropertyVariables>
                             <use.embedded.maven.executor>false</use.embedded.maven.executor>
                         </systemPropertyVariables>
+                        <excludes>
+                            <exclude>**/*IT.java</exclude>
+                        </excludes>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.junit.platform</groupId>
+                            <artifactId>junit-platform-surefire-provider</artifactId>
+                            <version>${version.plugin.surefire.provider.junit}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.junit.jupiter</groupId>
+                            <artifactId>junit-jupiter-engine</artifactId>
+                            <version>${version.lib.junit}</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${version.plugin.failsafe}</version>
+                    <configuration>
+                        <!-- DO NOT override argLine instead use failsafe.argLine -->
+                        <argLine>${failsafe.argLine} ${failsafe.coverage.argline}</argLine>
+                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                        <includes>
+                            <include>**/*IT.java</include>
+                        </includes>
                     </configuration>
                     <dependencies>
                         <dependency>

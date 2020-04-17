@@ -19,6 +19,7 @@ import java.nio.file.Path;
 
 import io.helidon.build.test.TestFiles;
 import io.helidon.build.util.HelidonVariant;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -67,8 +68,8 @@ public class InitCommandTest {
                 "--groupid", MY_GROUP_ID,
                 "--artifactid", MY_ARTIFACT_ID,
                 "--package", MY_PACKAGE);
-        assertThat(res.code, is(equalTo(0)));
         System.out.println(res.output);
+        assertThat(res.code, is(equalTo(0)));
         assertPackageExist(targetDir.resolve(MY_ARTIFACT_ID), MY_PACKAGE);
     }
 

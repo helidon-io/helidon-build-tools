@@ -18,6 +18,7 @@ module helidon.build.utils {
 
     requires org.fusesource.jansi;
     requires maven.resolver.provider;
+    requires maven.artifact;
     requires maven.settings;
     requires maven.settings.builder;
     requires org.apache.maven.resolver;
