@@ -37,7 +37,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Unit test for class {@link MavenVersions} .
+ * Unit test for class {@link MavenVersions}.
  */
 class MavenVersionsTest {
     private static final String INVALID_HOST_NAME = "not.a.domain.x";
