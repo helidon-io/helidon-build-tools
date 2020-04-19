@@ -472,12 +472,21 @@ table > thead > tr > th {
     text-align: left;
 }
 
-.table__overflow code, table__overflow kbd{
-    white-space: nowrap!important;
+.table__overflow code, table__overflow kbd {
+    white-space: nowrap !important;
 }
 
-.table__overflow tbody td {
+.table__overflow {
+}
+
+.no_wrap_table {
     white-space: nowrap!important;
+    overflow: auto;
+}
+
+.no_wrap_cell {
+    white-space: nowrap!important;
+    max-width: 100px;
 }
 
 .card__example .card__text {
