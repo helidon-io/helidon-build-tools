@@ -28,14 +28,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
 
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.util.Constants;
-import io.helidon.build.util.HelidonVersions;
 import io.helidon.build.util.Log;
-import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProcessMonitor;
 import io.helidon.build.util.ProjectConfig;
 
@@ -44,7 +40,6 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
-import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 
 /**
@@ -58,8 +53,6 @@ public abstract class BaseCommand {
     static final String JAVA_HOME = Constants.javaHome();
     static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
     static final long SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
-    static final String MINIMUM_MAJOR_HELIDON_VERSION = "2.0.0";
-    static final AtomicReference<String> DEFAULT_HELIDON_VERSION = new AtomicReference<>();
 
     private Properties cliConfig;
     private ProjectConfig projectConfig;
@@ -133,26 +126,6 @@ public abstract class BaseCommand {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    protected String helidonVersion() {
-        return defaultHelidonVersion();
-    }
-
-    private String defaultHelidonVersion() {
-        if (DEFAULT_HELIDON_VERSION.get() == null) {
-            String version = System.getProperty(HELIDON_VERSION);
-            if (version == null) {
-                try {
-                    Predicate<MavenVersion> filter = unqualifiedMinimum(MINIMUM_MAJOR_HELIDON_VERSION);
-                    version = HelidonVersions.releases(filter).latest().toString();
-                } catch (Exception e) {
-                    version = cliConfig.getProperty(HELIDON_VERSION);
-                }
-            }
-            DEFAULT_HELIDON_VERSION.set(version);
-        }
-        return DEFAULT_HELIDON_VERSION.get();
     }
 
     private static final String SPACES = "                                                        ";

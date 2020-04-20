@@ -16,6 +16,9 @@
 
 package io.helidon.build.util;
 
+import java.io.IOException;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -39,9 +42,11 @@ public class HelidonVersions {
      *
      * @param filter The filter.
      * @return The versions.
-     * @throws IllegalStateException If there are no versions available.
+     * @throws IOException If there is a problem accessing the repository, e.g. {@link SocketException} if there is a problem
+     * connecting or {@link SocketTimeoutException} if there is a timeout connecting to or reading a result.
+     * @throws IllegalStateException If there are no matching versions available.
      */
-    public static MavenVersions releases(Predicate<MavenVersion> filter) {
+    public static MavenVersions releases(Predicate<MavenVersion> filter) throws IOException {
         return MavenVersions.builder()
                             .filter(filter)
                             .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
@@ -57,9 +62,11 @@ public class HelidonVersions {
      * @param filter The filter.
      * @param fallbackVersions The fallback versions.
      * @return The versions.
-     * @throws IllegalStateException If there are no versions available.
+     * @throws IOException If there is a problem accessing the repository, e.g. {@link SocketException} if there is a problem
+     * connecting or {@link SocketTimeoutException} if there is a timeout connecting to or reading a result.
+     * @throws IllegalStateException If there are no matching versions available.
      */
-    public static MavenVersions releases(Predicate<MavenVersion> filter, List<String> fallbackVersions) {
+    public static MavenVersions releases(Predicate<MavenVersion> filter, List<String> fallbackVersions) throws IOException {
         return MavenVersions.builder()
                             .filter(filter)
                             .artifactGroupId(HELIDON_PROJECT_GROUP_ID)

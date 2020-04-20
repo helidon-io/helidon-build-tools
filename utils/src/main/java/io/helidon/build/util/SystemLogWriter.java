@@ -25,8 +25,20 @@ import io.helidon.build.util.Log.Level;
  * {@link Log.Writer} that writes to {@link System#out} and {@link System#err}.
  */
 public final class SystemLogWriter implements Log.Writer {
+    private static final String DEFAULT_LEVEL = "info";
+    private static final String LEVEL_PROPERTY = "log.level";
     private final int ordinal;
     private final boolean debugEnabled;
+
+    /**
+     * Returns a new instance.
+     *
+     * @return The instance.
+     */
+    public static SystemLogWriter create() {
+        final Level level = Level.valueOf(System.getProperty(LEVEL_PROPERTY, DEFAULT_LEVEL).toUpperCase());
+        return new SystemLogWriter(level);
+    }
 
     /**
      * Returns a new instance with the given level.

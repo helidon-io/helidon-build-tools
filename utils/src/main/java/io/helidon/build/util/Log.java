@@ -184,7 +184,7 @@ public abstract class Log {
     private static Writer writer() {
         Writer writer = WRITER.get();
         if (writer == null) {
-            writer = SystemLogWriter.create(Level.INFO);
+            writer = SystemLogWriter.create();
             setWriter(writer);
         }
         return writer;
