@@ -25,8 +25,11 @@ TODO:
 <#list attributes["role"]?replace(","," ")?replace("  ", " ")?split(" ") as class>${class}<#sep> </#sep></#list>
 </#if>
 </#assign>
+<#assign nowrap = attributes["nowrap"]?? && attributes["nowrap"]?boolean>
+<#assign cell_classes = nowrap?then('no_wrap_cell', '')>
+<#assign table_classes = nowrap?then('no_wrap_table', '') + ' ' + css_classes>
 <#if title??><div class="block-title"><span>${title}</span></div></#if>
-<div class="table__overflow elevation-1 ${css_classes}">
+<div class="table__overflow elevation-1 ${table_classes}">
 <table class="datatable table">
 <colgroup>
 <#list columns as column>
@@ -47,8 +50,8 @@ TODO:
 <tr>
 <#list row.cells as cell>
 <#if cell.content?is_enumerable>
-<#list cell.content as cellcontent><td>${cellcontent}</td></#list>
-<#else><td>${cell.content}</td>
+<#list cell.content as cellcontent><td class="${cell_classes}">${cellcontent}</td></#list>
+<#else><td class="${cell_classes}">${cell.content}</td>
 </#if>
 </#list>
 </tr>

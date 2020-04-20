@@ -102,3 +102,23 @@ The following table lists some animals:
 | `java.util.regex.Pattern`
 |
 |===
+
+== A wrapped table
+
+Table configured as `[cols="2,5"]`
+[cols="2,5"]
+|===
+|short text|Lorem ipsum
+|long text|Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis nibh est, tempor id, tempus sit amet, facilisis in, erat. In hac habitasse platea dictumst. Donec fermentum, pede vitae hendrerit sodales, odio lacus mattis ante, non ultrices ligula tellus et massa. Praesent placerat est sed dui.
+|short text|Lorem ipsum
+|===
+
+== A no-wrap table
+
+Table configured as `[cols="2,5", nowrap="true"]`
+[cols="2,5", nowrap="true"]
+|===
+|short text|Lorem ipsum
+|long text|Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis nibh est, tempor id, tempus sit amet, facilisis in, erat. In hac habitasse platea dictumst. Donec fermentum, pede vitae hendrerit sodales, odio lacus mattis ante, non ultrices ligula tellus et massa. Praesent placerat est sed dui.
+|short text|Lorem ipsum
+|===
