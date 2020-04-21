@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-descriptor name="test">
+    <properties>
+        <property id="gradle" description="Gradle based project" />
+        <property id="maven" description="Maven based project" />
+        <property id="groupId" description="Project groupId" />
+        <property id="artifactId" description="Project artifactId" />
+        <property id="version" description="Project version" />
+        <property id="name" description="Project name" />
+        <property id="package" description="Java package name" />
+    </properties>
+    <path-transformations>
+        <path-transformation id="packaged">
+            <replace regex="__pkg__" replacement="${package}" />
+            <replace regex="\\." replacement="\\/" />
+        </path-transformation>
+        <path-transformation id="mustache">
+            <replace regex="\.mustache$" replacement="" />
+        </path-transformation>
+    </path-transformations>
+    <template-sets transformations="mustache">
+        <template-set transformations="packaged">
+            <directory>src/main/java</directory>
+            <includes>
+                <include>**/*.mustache</include>
+            </includes>
+        </template-set>
+        <template-set transformations="packaged">
+            <directory>src/test/java</directory>
+            <includes>
+                <include>**/*.mustache</include>
+            </includes>
+        </template-set>
+        <template-set if="gradle">
+            <directory>.</directory>
+            <includes>
+                <include>build.gradle.mustache</include>
+            </includes>
+        </template-set>
+    </template-sets>
+    <file-sets>
+        <file-set transformations="packaged">
+            <directory>src/main/java</directory>
+            <excludes>
+                <exclude>**/*.mustache</exclude>
+            </excludes>
+        </file-set>
+        <file-set>
+            <directory>src/main/resources</directory>
+            <includes>
+                <include>**/*</include>
+            </includes>
+        </file-set>
+        <file-set transformations="packaged">
+            <directory>src/test/java</directory>
+            <excludes>
+                <exclude>**/*.mustache</exclude>
+            </excludes>
+        </file-set>
+        <file-set>
+            <directory>src/test/resources</directory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
+        </file-set>
+    </file-sets>
+    <input-flow>
+        <select id="build" text="Select a build system">
+            <choice property="maven" text="Maven" />
+            <choice property="gradle" text="Gradle" />
+        </select>
+        <input id="groupId" property="groupId" text="Enter a project groupId" if="maven"/>
+        <input id="artifactId" property="artifactId" text="Enter a project artifactId" />
+        <input id="version" property="version" text="Enter a project version" default="1.0-SNAPSHOT" />
+        <input id="name" property="name" text="Enter a project name" default="${artifactId}" />
+        <input id="package" property="package" text="Enter a Java package name" default="${groupId}" />
+    </input-flow>
+</archetype-descriptor>
