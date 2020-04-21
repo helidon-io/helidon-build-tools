@@ -43,7 +43,7 @@ import static java.util.Objects.requireNonNull;
 public class Project {
     private static final String JAR_FILE_SUFFIX = ".jar";
     private final ProjectDirectory root;
-    private final List<BuildFile> buildSystemFiles;
+    private final BuildFiles buildFiles;
     private final List<File> classPath;
     private final List<String> compilerFlags;
     private final List<Path> dependencyPaths;
@@ -54,7 +54,7 @@ public class Project {
 
     private Project(Builder builder) {
         this.root = builder.root;
-        this.buildSystemFiles = builder.buildSystemFiles;
+        this.buildFiles = new BuildFiles(builder.buildFiles);
         this.classPath = new ArrayList<>();
         this.compilerFlags = builder.compilerFlags;
         this.dependencyPaths = builder.dependencyPaths;
@@ -80,7 +80,7 @@ public class Project {
      */
     public static class Builder {
         private ProjectDirectory root;
-        private List<BuildFile> buildSystemFiles;
+        private List<BuildFile> buildFiles;
         private List<String> compilerFlags;
         private List<Path> dependencyPaths;
         private List<BuildFile> dependencies;
@@ -88,7 +88,7 @@ public class Project {
         private String mainClassName;
 
         private Builder() {
-            this.buildSystemFiles = new ArrayList<>();
+            this.buildFiles = new ArrayList<>();
             this.compilerFlags = new ArrayList<>();
             this.dependencyPaths = new ArrayList<>();
             this.dependencies = new ArrayList<>();
@@ -109,11 +109,11 @@ public class Project {
         /**
          * Add a build system file.
          *
-         * @param buildSystemFile The file.
+         * @param buildFile The file.
          * @return This instance, for chaining.
          */
-        public Builder buildSystemFile(BuildFile buildSystemFile) {
-            buildSystemFiles.add(requireNonNull(buildSystemFile));
+        public Builder buildFile(BuildFile buildFile) {
+            buildFiles.add(requireNonNull(buildFile));
             return this;
         }
 
@@ -173,7 +173,7 @@ public class Project {
             if (mainClassName == null) {
                 throw new IllegalStateException("mainClassName required");
             }
-            assertNotEmpty(buildSystemFiles, "buildSystemFile");
+            assertNotEmpty(buildFiles, "buildSystemFile");
             assertNotEmpty(dependencyPaths, "dependency");
             assertNotEmpty(components, "component");
             return new Project(this);
@@ -196,12 +196,12 @@ public class Project {
     }
 
     /**
-     * Returns the build system files (e.g. {@code pom.xml}).
+     * Returns the build files (e.g. {@code pom.xml}).
      *
      * @return The files.
      */
-    public List<BuildFile> buildSystemFiles() {
-        return buildSystemFiles;
+    public BuildFiles buildFiles() {
+        return buildFiles;
     }
 
     /**
@@ -250,17 +250,12 @@ public class Project {
     }
 
     /**
-     * Returns whether or not any build system file has changed.
+     * Returns whether or not any build file has changed.
      *
-     * @return {@code true} if any build system file has changed.
+     * @return {@code true} if any build file has changed.
      */
-    public boolean haveBuildSystemFilesChanged() {
-        for (final BuildFile file : buildSystemFiles()) {
-            if (file.hasChanged()) {
-                return true;
-            }
-        }
-        return false;
+    public boolean haveBuildFilesChanged() {
+        return buildFiles.haveChanged();
     }
 
     /**
@@ -307,7 +302,7 @@ public class Project {
     public boolean isBuildUpToDate() {
         long latestSource = 0;
         long oldestBinary = 0;
-        for (final BuildFile file : buildSystemFiles()) {
+        for (final BuildFile file : buildFiles.list()) {
             if (file.hasChanged()) {
                 return false;
             }

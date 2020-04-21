@@ -50,7 +50,7 @@ class DefaultProjectSupplierTest {
         final TestMonitor monitor = new TestMonitor(1);
         final BuildExecutor executor = new ForkedMavenExecutor(projectDir, monitor, 30);
         final ProjectSupplier supplier = new DefaultProjectSupplier();
-        final Project project = supplier.get(executor, false, 0);
+        final Project project = supplier.newProject(executor, false, 0);
         assertThat(project, is(not(nullValue())));
         assertThat(project.isBuildUpToDate(), is(true));
         assertThat(monitor.buildStart(0), is(false));
@@ -76,7 +76,7 @@ class DefaultProjectSupplierTest {
         final TestMonitor monitor = new TestMonitor(1);
         final BuildExecutor executor = new ForkedMavenExecutor(projectDir, monitor, 30);
         final ProjectSupplier supplier = new DefaultProjectSupplier();
-        final Project project = supplier.get(executor, true, 0);
+        final Project project = supplier.newProject(executor, true, 0);
         assertThat(project, is(not(nullValue())));
         assertThat(project.isBuildUpToDate(), is(true));
         assertThat(monitor.buildStart(0), is(true));

@@ -60,7 +60,7 @@ public class DefaultProjectSupplier implements ProjectSupplier {
     }
 
     @Override
-    public Project get(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception {
+    public Project newProject(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception {
         final Project project = createProject(executor.projectDirectory());
         if (clean || !project.isBuildUpToDate()) {
             executor.monitor().onBuildStart(cycleNumber, clean ? BuildType.CleanComplete : BuildType.Complete);
@@ -70,12 +70,22 @@ public class DefaultProjectSupplier implements ProjectSupplier {
         return project;
     }
 
+    @Override
+    public boolean hasChanged(Path projectDir, long lastCheckMillis) {
+        return MavenProjectSupplier.hasChangesSince(projectDir, lastCheckMillis);
+    }
+
+    @Override
+    public String buildFileName() {
+        return POM_FILE;
+    }
+
     private Project createProject(Path projectDir) throws IOException {
         final Project.Builder builder = Project.builder();
         final Path pomFile = assertFile(projectDir.resolve(POM_FILE));
         final ProjectDirectory root = createProjectDirectory(DirectoryType.Project, projectDir);
         builder.rootDirectory(root);
-        builder.buildSystemFile(createBuildFile(root, FileType.MavenPom, pomFile));
+        builder.buildFile(createBuildFile(root, FileType.MavenPom, pomFile));
         builder.dependency(projectDir.resolve(LIB_DIR));
 
         final Path sourceDir = assertDir(projectDir.resolve(JAVA_DIR));

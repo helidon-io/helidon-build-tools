@@ -25,6 +25,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
 import io.helidon.build.dev.BuildExecutor;
 import io.helidon.build.dev.BuildRoot;
@@ -69,11 +70,94 @@ public class MavenProjectSupplier implements ProjectSupplier {
     private static final String POM_FILE = "pom.xml";
     private static final String DOT = ".";
 
+    private static final Predicate<Path> NOT_HIDDEN = file -> {
+        final String name = file.getFileName().toString();
+        return !name.startsWith(DOT);
+    };
+
+    private static final Predicate<Path> NOT_TARGET_DIR = file -> {
+        final String name = file.getFileName().toString();
+        return !name.equals(TARGET_DIR_NAME);
+    };
+
     private final AtomicReference<MavenProject> project;
     private final MavenSession session;
     private final BuildPluginManager plugins;
     private final AtomicBoolean firstBuild;
     private ProjectConfig config;
+
+    /**
+     * Checks whether any matching file has a modified time more recent than the given time.
+     *
+     * @param projectDir The project directory.
+     * @param lastCheckMillis The time to check against, in milliseconds.
+     * @return {@code true} if there are more recent changes.
+     */
+    public static boolean hasChangesSince(Path projectDir, long lastCheckMillis) {
+        return hasChangesSince(projectDir, lastCheckMillis, NOT_HIDDEN, NOT_HIDDEN.and(NOT_TARGET_DIR));
+    }
+
+    /**
+     * Checks whether any matching file has a modified time more recent than the given time.
+     *
+     * @param projectDir The project directory.
+     * @param lastCheckMillis The time to check against, in milliseconds.
+     * @param dirFilter A filter for directories to visit.
+     * @param fileFilter A filter for which files to check.
+     * @return {@code true} if there are more recent changes.
+     */
+    public static boolean hasChangesSince(Path projectDir,
+                                          long lastCheckMillis,
+                                          Predicate<Path> dirFilter,
+                                          Predicate<Path> fileFilter) {
+        if (lastCheckMillis > 1000) {
+            final long lastCheckSeconds = lastCheckMillis / 1000;
+            final String lastCheck = toDateTime(lastCheckMillis);
+            final AtomicBoolean hasChanges = new AtomicBoolean(false);
+            Log.debug("Checking if project has files newer than last check time %s", lastCheck);
+            try {
+                Files.walkFileTree(projectDir, new FileVisitor<>() {
+                    @Override
+                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                        return dirFilter.test(dir) ? FileVisitResult.CONTINUE : FileVisitResult.SKIP_SUBTREE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                        if (fileFilter.test(file)) {
+                            final long lastModified = lastModifiedTime(file);
+                            if (lastModified > lastCheckSeconds) {
+                                final String fileTime = toDateTime(lastModified * 1000);
+                                Log.debug("%s @ %s is newer than last check time %s", file, fileTime, lastCheck);
+                                hasChanges.set(true);
+                                return FileVisitResult.TERMINATE;
+                            }
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFileFailed(Path file, IOException exc) {
+                        hasChanges.set(false);
+                        return FileVisitResult.TERMINATE;
+                    }
+
+                    @Override
+                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+
+                return hasChanges.get();
+
+            } catch (Exception e) {
+                Log.warn(e.getMessage());
+            }
+        }
+
+        // If we get here, just say yes.
+        return true;
+    }
 
     /**
      * Constructor.
@@ -92,17 +176,8 @@ public class MavenProjectSupplier implements ProjectSupplier {
         this.firstBuild = new AtomicBoolean(true);
     }
 
-    /**
-     * Gets a project instance.
-     *
-     * @param executor The build executor.
-     * @param clean {@code true} if the project should be cleaned and built.
-     * @param cycleNumber The cycle number.
-     * @return A project.
-     * @throws Exception If a problem is found.
-     */
     @Override
-    public Project get(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception {
+    public Project newProject(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception {
         final Path projectDir = executor.projectDirectory();
         executor.monitor().onBuildStart(cycleNumber, clean ? BuildType.CleanComplete : BuildType.Complete);
 
@@ -120,6 +195,16 @@ public class MavenProjectSupplier implements ProjectSupplier {
         return createProject(executor.projectDirectory());
     }
 
+    @Override
+    public boolean hasChanged(Path projectDir, long lastCheckMillis) {
+        return hasChangesSince(projectDir, lastCheckMillis);
+    }
+
+    @Override
+    public String buildFileName() {
+        return POM_FILE;
+    }
+
     private void build(BuildExecutor executor, List<String> command) throws Exception {
         executor.execute(command);
         config = loadHelidonCliConfig(executor.projectDirectory());
@@ -135,60 +220,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
             // is more recent than any file in the project (excluding target/* and .*)
 
             config = loadHelidonCliConfig(projectDir);
-            final long lastBuildTime = config.lastSuccessfulBuildTime();
-
-            if (lastBuildTime > 0) {
-                final AtomicBoolean canSkip = new AtomicBoolean(true);
-                final String buildTime = toDateTime(lastBuildTime);
-                Log.debug("Checking if project has files newer than last build: %s", buildTime);
-                try {
-                    Files.walkFileTree(projectDir, new FileVisitor<>() {
-                        @Override
-                        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-                            final String name = dir.getFileName().toString();
-                            if (name.startsWith(DOT)
-                                || name.equals(TARGET_DIR_NAME)) {
-                                return FileVisitResult.SKIP_SUBTREE;
-                            } else {
-                                return FileVisitResult.CONTINUE;
-                            }
-                        }
-
-                        @Override
-                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                            if (file.getFileName().toString().startsWith(DOT)) {
-                                return FileVisitResult.CONTINUE;
-                            } else {
-                                final long lastModified = lastModifiedTime(file) * 1000;
-                                if (lastModified > lastBuildTime) {
-                                    final String fileTime = toDateTime(lastModified);
-                                    Log.debug("%s @ %s is newer than last build time %s", file, fileTime, buildTime);
-                                    canSkip.set(false);
-                                    return FileVisitResult.TERMINATE;
-                                } else {
-                                    return FileVisitResult.CONTINUE;
-                                }
-                            }
-                        }
-
-                        @Override
-                        public FileVisitResult visitFileFailed(Path file, IOException exc) {
-                            canSkip.set(false);
-                            return FileVisitResult.TERMINATE;
-                        }
-
-                        @Override
-                        public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
-                            return FileVisitResult.CONTINUE;
-                        }
-                    });
-                    return canSkip.get();
-
-                } catch (Exception e) {
-                    Log.warn(e.getMessage());
-                    return false;
-                }
-            }
+            return !hasChangesSince(projectDir, config.lastSuccessfulBuildTime());
         }
         return false;
     }
@@ -201,7 +233,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
 
         // POM file
         final Path pomFile = assertFile(projectDir.resolve(POM_FILE));
-        builder.buildSystemFile(createBuildFile(root, FileType.MavenPom, pomFile));
+        builder.buildFile(createBuildFile(root, FileType.MavenPom, pomFile));
 
         // Dependencies - Should we consider the classes/lib?
         final List<String> classpath = config.propertyAsList(PROJECT_CLASSPATH);

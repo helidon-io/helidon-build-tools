@@ -57,9 +57,9 @@ public interface BuildMonitor {
      * Called when project changes have been detected.
      *
      * @param cycleNumber The cycle number.
-     * @param binariesOnly {@code true} if only binaries are being watched and only binary changes were detected.
+     * @param type The change type.
      */
-    void onChanged(int cycleNumber, boolean binariesOnly);
+    void onChanged(int cycleNumber, ChangeType type);
 
     /**
      * Called when a build is about to start.
