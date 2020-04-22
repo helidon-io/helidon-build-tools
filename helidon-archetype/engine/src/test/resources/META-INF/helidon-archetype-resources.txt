@@ -1,0 +1,2 @@
+pom.xml.mustache
+src/main/java/__pkg__/Main.java.mustache

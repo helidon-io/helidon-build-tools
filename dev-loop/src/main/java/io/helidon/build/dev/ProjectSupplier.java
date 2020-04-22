@@ -16,13 +16,15 @@
 
 package io.helidon.build.dev;
 
+import java.nio.file.Path;
+
 /**
  * A {@code Project} supplier.
  */
 public interface ProjectSupplier {
 
     /**
-     * Returns a new {@code Project} instance from the given directory that has been successfully built. Implementations
+     * Returns a new {@code Project} instance from the project directory that has been successfully built. Implementations
      * must call {@link BuildMonitor#onBuildStart(int, BuildType)} if a build is performed.
      *
      * @param executor The build executor.
@@ -32,5 +34,21 @@ public interface ProjectSupplier {
      * @throws IllegalArgumentException if the project directory is not a valid.
      * @throws Exception if the build fails.
      */
-    Project get(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception;
+    Project newProject(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception;
+
+    /**
+     * Checks whether any project file has a modified time more recent than the given time.
+     *
+     * @param projectDir The project directory.
+     * @param lastCheckMillis The time to check against, in milliseconds.
+     * @return {@code true} if there are more recent changes.
+     */
+    boolean hasChanged(Path projectDir, long lastCheckMillis);
+
+    /**
+     * Returns the name of the build file supported by this supplier, e.g. "pom.xml".
+     *
+     * @return The name.
+     */
+    String buildFileName();
 }

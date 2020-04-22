@@ -55,7 +55,7 @@ class BuildLoopTest {
 
         assertThat(monitor.cycleStart(0), is(true));
         assertThat(monitor.changed(0), is(false));
-        assertThat(monitor.binariesOnly(0), is(false));
+        assertThat(monitor.changeType(0), is(nullValue()));
         assertThat(monitor.buildStart(0), is(false));
         assertThat(monitor.buildType(0), is(nullValue()));
         assertThat(monitor.buildFailed(0), is(nullValue()));
@@ -64,7 +64,7 @@ class BuildLoopTest {
 
         assertThat(monitor.cycleStart(1), is(true));
         assertThat(monitor.changed(1), is(false));
-        assertThat(monitor.binariesOnly(1), is(false));
+        assertThat(monitor.changeType(1), is(nullValue()));
         assertThat(monitor.buildStart(1), is(false));
         assertThat(monitor.buildType(1), is(nullValue()));
         assertThat(monitor.buildFailed(1), is(nullValue()));
@@ -95,7 +95,7 @@ class BuildLoopTest {
 
         assertThat(monitor.cycleStart(0), is(true));
         assertThat(monitor.changed(0), is(false));
-        assertThat(monitor.binariesOnly(0), is(false));
+        assertThat(monitor.changeType(0), is(nullValue()));
         assertThat(monitor.buildStart(0), is(true));
         assertThat(monitor.buildType(0), is(BuildType.CleanComplete));
         assertThat(monitor.buildFailed(0), is(nullValue()));
@@ -104,7 +104,7 @@ class BuildLoopTest {
 
         assertThat(monitor.cycleStart(1), is(true));
         assertThat(monitor.changed(1), is(false));
-        assertThat(monitor.binariesOnly(1), is(false));
+        assertThat(monitor.changeType(1), is(nullValue()));
         assertThat(monitor.buildStart(1), is(false));
         assertThat(monitor.buildType(1), is(nullValue()));
         assertThat(monitor.buildFailed(1), is(nullValue()));
@@ -161,7 +161,7 @@ class BuildLoopTest {
 
         assertThat(monitor.cycleStart(0), is(true));
         assertThat(monitor.changed(0), is(false));
-        assertThat(monitor.binariesOnly(0), is(false));
+        assertThat(monitor.changeType(0), is(nullValue()));
         assertThat(monitor.buildStart(0), is(false));
         assertThat(monitor.buildType(0), is(nullValue()));
         assertThat(monitor.buildFailed(0), is(nullValue()));
@@ -170,7 +170,7 @@ class BuildLoopTest {
 
         assertThat(monitor.cycleStart(1), is(true));
         assertThat(monitor.changed(1), is(false));
-        assertThat(monitor.binariesOnly(1), is(false));
+        assertThat(monitor.changeType(1), is(nullValue()));
         assertThat(monitor.buildStart(1), is(false));
         assertThat(monitor.buildType(1), is(nullValue()));
         assertThat(monitor.buildFailed(1), is(nullValue()));
@@ -179,7 +179,7 @@ class BuildLoopTest {
 
         assertThat(monitor.cycleStart(2), is(true));
         assertThat(monitor.changed(2), is(true));
-        assertThat(monitor.binariesOnly(2), is(false));
+        assertThat(monitor.changeType(2), is(ChangeType.SourceFile));
         assertThat(monitor.buildStart(2), is(true));
         assertThat(monitor.buildType(2), is(BuildType.Incremental));
         assertThat(monitor.buildFailed(2), is(nullValue()));
@@ -188,7 +188,7 @@ class BuildLoopTest {
 
         assertThat(monitor.cycleStart(3), is(true));
         assertThat(monitor.changed(3), is(false));
-        assertThat(monitor.binariesOnly(3), is(false));
+        assertThat(monitor.changeType(3), is(nullValue()));
         assertThat(monitor.buildStart(3), is(false));
         assertThat(monitor.buildType(3), is(nullValue()));
         assertThat(monitor.buildFailed(3), is(nullValue()));
@@ -236,7 +236,7 @@ class BuildLoopTest {
 
         assertThat(monitor.cycleStart(0), is(true));
         assertThat(monitor.changed(0), is(false));
-        assertThat(monitor.binariesOnly(0), is(false));
+        assertThat(monitor.changeType(0), is(nullValue()));
         assertThat(monitor.buildStart(0), is(false));
         assertThat(monitor.buildType(0), is(nullValue()));
         assertThat(monitor.buildFailed(0), is(nullValue()));
@@ -245,7 +245,7 @@ class BuildLoopTest {
 
         assertThat(monitor.cycleStart(1), is(true));
         assertThat(monitor.changed(1), is(false));
-        assertThat(monitor.binariesOnly(1), is(false));
+        assertThat(monitor.changeType(1), is(nullValue()));
         assertThat(monitor.buildStart(1), is(false));
         assertThat(monitor.buildType(1), is(nullValue()));
         assertThat(monitor.buildFailed(1), is(nullValue()));
@@ -254,7 +254,7 @@ class BuildLoopTest {
 
         assertThat(monitor.cycleStart(2), is(true));
         assertThat(monitor.changed(2), is(true));
-        assertThat(monitor.binariesOnly(2), is(false));
+        assertThat(monitor.changeType(2), is(ChangeType.SourceFile));
         assertThat(monitor.buildStart(2), is(true));
         assertThat(monitor.buildType(2), is(BuildType.Incremental));
         assertThat(monitor.buildFailed(2), is(nullValue()));
@@ -263,7 +263,7 @@ class BuildLoopTest {
 
         assertThat(monitor.cycleStart(3), is(true));
         assertThat(monitor.changed(3), is(false));
-        assertThat(monitor.binariesOnly(3), is(false));
+        assertThat(monitor.changeType(3), is(nullValue()));
         assertThat(monitor.buildStart(3), is(false));
         assertThat(monitor.buildType(3), is(nullValue()));
         assertThat(monitor.buildFailed(3), is(nullValue()));
@@ -306,7 +306,7 @@ class BuildLoopTest {
 
         assertThat(monitor.cycleStart(0), is(true));
         assertThat(monitor.changed(0), is(false));
-        assertThat(monitor.binariesOnly(0), is(false));
+        assertThat(monitor.changeType(0), is(nullValue()));
         assertThat(monitor.buildStart(0), is(false));
         assertThat(monitor.buildType(0), is(nullValue()));
         assertThat(monitor.buildFailed(0), is(nullValue()));
@@ -315,7 +315,7 @@ class BuildLoopTest {
 
         assertThat(monitor.cycleStart(1), is(true));
         assertThat(monitor.changed(1), is(false));
-        assertThat(monitor.binariesOnly(1), is(false));
+        assertThat(monitor.changeType(1), is(nullValue()));
         assertThat(monitor.buildStart(1), is(false));
         assertThat(monitor.buildType(1), is(nullValue()));
         assertThat(monitor.buildFailed(1), is(nullValue()));
@@ -324,7 +324,7 @@ class BuildLoopTest {
 
         assertThat(monitor.cycleStart(2), is(true));
         assertThat(monitor.changed(2), is(true));
-        assertThat(monitor.binariesOnly(2), is(false));
+        assertThat(monitor.changeType(2), is(ChangeType.BuildFile));
         assertThat(monitor.buildStart(2), is(false));
         assertThat(monitor.buildType(2), is(nullValue()));
         assertThat(monitor.buildFailed(2), is(nullValue()));
@@ -333,7 +333,7 @@ class BuildLoopTest {
 
         assertThat(monitor.cycleStart(3), is(true));
         assertThat(monitor.changed(3), is(false));
-        assertThat(monitor.binariesOnly(3), is(false));
+        assertThat(monitor.changeType(3), is(nullValue()));
         assertThat(monitor.buildStart(3), is(true));
         assertThat(monitor.buildType(3), is(BuildType.Complete));
         assertThat(monitor.buildFailed(3), is(nullValue()));
