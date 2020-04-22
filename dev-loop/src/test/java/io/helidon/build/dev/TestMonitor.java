@@ -40,7 +40,7 @@ public class TestMonitor implements BuildMonitor {
     private boolean started;
     private boolean[] cycleStart;
     private boolean[] changed;
-    private boolean[] binariesOnly;
+    private ChangeType[] changeType;
     private boolean[] buildStart;
     private BuildType[] buildType;
     private Throwable[] buildFailed;
@@ -54,7 +54,7 @@ public class TestMonitor implements BuildMonitor {
         this.stopCycle = stopCycle;
         this.cycleStart = new boolean[stopCycle + 1];
         this.changed = new boolean[stopCycle + 1];
-        this.binariesOnly = new boolean[stopCycle + 1];
+        this.changeType = new ChangeType[stopCycle + 1];
         this.buildStart = new boolean[stopCycle + 1];
         this.buildType = new BuildType[stopCycle + 1];
         this.buildFailed = new Throwable[stopCycle + 1];
@@ -89,10 +89,10 @@ public class TestMonitor implements BuildMonitor {
     }
 
     @Override
-    public void onChanged(int cycleNumber, boolean binariesOnly) {
-        logCycle("onChanged", cycleNumber, "binariesOnly=" + binariesOnly);
+    public void onChanged(int cycleNumber, ChangeType type) {
+        logCycle("onChanged", cycleNumber, "binariesOnly=" + type);
         changed[cycleNumber] = true;
-        this.binariesOnly[cycleNumber] = binariesOnly;
+        this.changeType[cycleNumber] = type;
     }
 
     @Override
@@ -154,8 +154,8 @@ public class TestMonitor implements BuildMonitor {
         return changed[cycleNumber];
     }
 
-    public boolean binariesOnly(int cycleNumber) {
-        return binariesOnly[cycleNumber];
+    public ChangeType changeType(int cycleNumber) {
+        return changeType[cycleNumber];
     }
 
     public boolean buildStart(int cycleNumber) {

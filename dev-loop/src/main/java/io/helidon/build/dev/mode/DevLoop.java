@@ -24,6 +24,7 @@ import io.helidon.build.dev.BuildExecutor;
 import io.helidon.build.dev.BuildLoop;
 import io.helidon.build.dev.BuildMonitor;
 import io.helidon.build.dev.BuildType;
+import io.helidon.build.dev.ChangeType;
 import io.helidon.build.dev.Project;
 import io.helidon.build.dev.ProjectSupplier;
 import io.helidon.build.dev.maven.EmbeddedMavenExecutor;
@@ -37,6 +38,7 @@ public class DevLoop {
 
     private static final int MAX_BUILD_WAIT_SECONDS = 5 * 60;
 
+    private final BuildMonitor monitor;
     private final BuildExecutor buildExecutor;
     private final ProjectSupplier projectSupplier;
     private final boolean initialClean;
@@ -50,7 +52,7 @@ public class DevLoop {
      * @param forkBuilds {@code true} if builds should be forked.
      */
     public DevLoop(Path rootDir, ProjectSupplier projectSupplier, boolean initialClean, boolean forkBuilds) {
-        final BuildMonitor monitor = new DevModeMonitor();
+        this.monitor = new DevModeMonitor(projectSupplier.buildFileName());
         this.buildExecutor = forkBuilds ? new ForkedMavenExecutor(rootDir, monitor, MAX_BUILD_WAIT_SECONDS)
                                         : new EmbeddedMavenExecutor(rootDir, monitor);
         this.initialClean = initialClean;
@@ -64,7 +66,6 @@ public class DevLoop {
      * @throws Exception If a problem is found.
      */
     public void start(int maxWaitInSeconds) throws Exception {
-        DevModeMonitor monitor = new DevModeMonitor();
         Runtime.getRuntime().addShutdownHook(new Thread(monitor::onStopped));
         BuildLoop loop = newLoop(buildExecutor, initialClean, false);
         run(loop, maxWaitInSeconds);
@@ -72,10 +73,15 @@ public class DevLoop {
 
     static class DevModeMonitor implements BuildMonitor {
         private static final int ON_READY_DELAY = 1000;
-        private static final int ON_INCREMENTAL_BUILD_FAIL_DELAY = 1000;
-        private static final int ON_COMPLETE_BUILD_FAIL_DELAY = 10000;
+        private static final int BUILD_FAIL_DELAY = 1000;
 
+        private final String buildFileName;
         private ProjectExecutor projectExecutor;
+        private ChangeType lastChangeType;
+
+        private DevModeMonitor(String buildFileName) {
+            this.buildFileName = buildFileName;
+        }
 
         @Override
         public void onStarted() {
@@ -86,7 +92,8 @@ public class DevLoop {
         }
 
         @Override
-        public void onChanged(int cycleNumber, boolean binariesOnly) {
+        public void onChanged(int cycleNumber, ChangeType type) {
+            lastChangeType = type;
             ensureStop();
         }
 
@@ -97,8 +104,12 @@ public class DevLoop {
         @Override
         public long onBuildFail(int cycleNumber, BuildType type, Throwable error) {
             ensureStop();
-            return type == BuildType.Incremental ? ON_INCREMENTAL_BUILD_FAIL_DELAY
-                                                 : ON_COMPLETE_BUILD_FAIL_DELAY;
+            if (lastChangeType == ChangeType.BuildFile) {
+                Log.info("Waiting for more %s changes before retrying build", buildFileName);
+            } else if (lastChangeType == ChangeType.SourceFile) {
+                Log.info("Waiting for source file changes before retrying build");
+            }
+            return BUILD_FAIL_DELAY;
         }
 
         @Override

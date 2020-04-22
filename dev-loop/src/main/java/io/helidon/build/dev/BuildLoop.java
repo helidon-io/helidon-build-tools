@@ -16,6 +16,7 @@
 
 package io.helidon.build.dev;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -35,8 +36,9 @@ import static java.util.Objects.requireNonNull;
  * A continuous incremental build loop.
  */
 public class BuildLoop {
-    private static ExecutorService loopExecutor = Executors.newSingleThreadExecutor();
+    private static final ExecutorService LOOP_EXECUTOR = Executors.newSingleThreadExecutor();
     private final BuildExecutor buildExecutor;
+    private final Path projectDirectory;
     private final ProjectSupplier projectSupplier;
     private final BuildMonitor monitor;
     private final boolean watchBinariesOnly;
@@ -47,6 +49,8 @@ public class BuildLoop {
     private final AtomicReference<CountDownLatch> running;
     private final AtomicReference<CountDownLatch> stopped;
     private final AtomicReference<Project> project;
+    private final AtomicReference<ChangeType> lastChangeType;
+    private final AtomicLong lastFailedTime;
     private final AtomicBoolean ready;
     private final AtomicLong delay;
 
@@ -61,6 +65,7 @@ public class BuildLoop {
 
     private BuildLoop(Builder builder) {
         this.buildExecutor = builder.buildExecutor;
+        this.projectDirectory = buildExecutor.projectDirectory();
         this.projectSupplier = builder.projectSupplier;
         this.monitor = buildExecutor.monitor();
         this.watchBinariesOnly = builder.watchBinariesOnly;
@@ -71,6 +76,8 @@ public class BuildLoop {
         this.running = new AtomicReference<>(new CountDownLatch(1));
         this.stopped = new AtomicReference<>(new CountDownLatch(1));
         this.project = new AtomicReference<>();
+        this.lastChangeType = new AtomicReference<>();
+        this.lastFailedTime = new AtomicLong();
         this.ready = new AtomicBoolean();
         this.delay = new AtomicLong();
     }
@@ -85,7 +92,7 @@ public class BuildLoop {
             stopped.get().countDown(); // In case any previous waiters.
             running.set(new CountDownLatch(1));
             stopped.set(new CountDownLatch(1));
-            task.set(loopExecutor.submit(this::loop));
+            task.set(LOOP_EXECUTOR.submit(this::loop));
         }
         return this;
     }
@@ -144,15 +151,21 @@ public class BuildLoop {
             final Project project = cycleStarted();
             if (project == null) {
 
-                // Need to create/recreate the project. Note that supplier calls onBuildStart().
+                // If we failed last time because of a build file change, and there have been no more build file changes,
+                // do nothing here and wait for a build file change.
 
-                try {
-                    setProject(projectSupplier.get(buildExecutor, clean.getAndSet(false), cycleNumber.get()));
-                    ready();
-                } catch (IllegalArgumentException | InterruptedException e) {
-                    break;
-                } catch (Throwable e) {
-                    buildFailed(Complete, e);
+                if (shouldCreateProject()) {
+
+                    // Need to create/recreate the project. Note that supplier calls onBuildStart().
+
+                    try {
+                        setProject(projectSupplier.newProject(buildExecutor, clean.getAndSet(false), cycleNumber.get()));
+                        ready();
+                    } catch (IllegalArgumentException | InterruptedException e) {
+                        break;
+                    } catch (Throwable e) {
+                        buildFailed(Complete, e);
+                    }
                 }
 
             } else if (watchBinariesOnly) {
@@ -162,15 +175,15 @@ public class BuildLoop {
                 // we must recreate the project.
 
                 if (project.hasBinaryChanges()) {
-                    changed(true, true);
+                    changed(ChangeType.BinaryFile);
                 } else {
                     ready();
                 }
-            } else if (project.haveBuildSystemFilesChanged()) {
+            } else if (project.haveBuildFilesChanged()) {
 
-                // A build system file (e.g. pom.xml) has changed, so recreate the project
+                // A build file (e.g. pom.xml) has changed, so recreate the project
 
-                changed(true, false);
+                changed(ChangeType.BuildFile);
 
             } else {
 
@@ -179,7 +192,7 @@ public class BuildLoop {
                 final List<BuildRoot.Changes> sourceChanges = project.sourceChanges();
                 if (!sourceChanges.isEmpty()) {
                     try {
-                        changed(false, false);
+                        changed(ChangeType.SourceFile);
                         buildStarting(Incremental);
                         project.incrementalBuild(sourceChanges, monitor.stdOutConsumer(), monitor.stdErrConsumer());
                         project.update(false);
@@ -220,6 +233,7 @@ public class BuildLoop {
 
     private void buildStarting(BuildType type) {
         ready.set(false);
+        lastFailedTime.set(0);
         monitor.onBuildStart(cycleNumber.get(), type);
     }
 
@@ -229,16 +243,24 @@ public class BuildLoop {
         }
     }
 
-    private void changed(boolean clearProject, boolean binariesOnly) {
-        monitor.onChanged(cycleNumber.get(), binariesOnly);
+    private void changed(ChangeType type) {
+        lastChangeType.set(type);
+        monitor.onChanged(cycleNumber.get(), type);
         delay.set(0);
-        if (clearProject) {
+        if (type != ChangeType.SourceFile) {
             project.set(null);
         }
     }
 
     private void buildFailed(BuildType type, Throwable e) {
+        lastFailedTime.set(System.currentTimeMillis());
         delay.set(monitor.onBuildFail(cycleNumber.get(), type, e));
+    }
+
+    private boolean shouldCreateProject() {
+        final long lastFailed = lastFailedTime.get();
+        return lastFailed == 0
+               || projectSupplier.hasChanged(projectDirectory, lastFailed);
     }
 
     private boolean cycleEnded() {
