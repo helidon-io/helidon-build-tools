@@ -21,9 +21,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Predicate;
 
@@ -38,11 +36,10 @@ import io.helidon.build.util.HelidonVersions;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
-import io.helidon.build.util.ProjectDependency;
 import io.helidon.build.util.SimpleQuickstartGenerator;
 
-import org.apache.maven.model.Extension;
 import org.apache.maven.model.Model;
+import org.apache.maven.model.Plugin;
 
 import static io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;
@@ -56,11 +53,19 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
 @Command(name = "init", description = "Generate a new project")
 public final class InitCommand extends BaseCommand implements CommandExecution {
 
-    private static final String DEVLOOP_EXTENSION = "devloop.extension";
+    /*
+    build-tools.groupId=io.helidon.build-tools
+    build-tools.plugin.artifactId=helidon-maven-plugin
+
+         */
     private static final String MINIMUM_HELIDON_VERSION = "2.0.0";
     private static final int LATEST_HELIDON_VERSION_LOOKUP_RETRIES = 5;
     private static final long HELIDON_VERSION_LOOKUP_INITIAL_RETRY_DELAY = 500;
     private static final long HELIDON_VERSION_LOOKUP_RETRY_DELAY_INCREMENT = 500;
+    private static final String BUILD_TOOLS_GROUP_ID = "io.helidon.build-tools";
+    private static final String BUILD_TOOLS_PLUGIN_ARTIFACT_ID = "helidon-maven-plugin";
+    private static final String HELIDON_PLUGIN_VERSION_PROPERTY = "version.helidon.plugin";
+    private static final String POM = "pom.xml";
 
     private final CommonOptions commonOptions;
     private final Flavor flavor;
@@ -137,30 +142,29 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         }
 
         // Generate project using Maven archetype
-        Path dir;
+        Path projectDir;
         Path parentDirectory = commonOptions.project().toPath();
         try {
-            dir = SimpleQuickstartGenerator.generator()
-                                           .parentDirectory(parentDirectory)
-                                           .helidonVariant(HelidonVariant.parse(flavor.name()))
-                                           .helidonVersion(version)
-                                           .groupId(groupId)
-                                           .artifactId(artifactId)
-                                           .packageName(packageName)
-                                           .generate();
+            projectDir = SimpleQuickstartGenerator.generator()
+                                                  .parentDirectory(parentDirectory)
+                                                  .helidonVariant(HelidonVariant.parse(flavor.name()))
+                                                  .helidonVersion(version)
+                                                  .groupId(groupId)
+                                                  .artifactId(artifactId)
+                                                  .packageName(packageName)
+                                                  .generate();
         } catch (IllegalStateException e) {
             context.exitAction(ExitStatus.FAILURE, e.getMessage());
             return;
         }
-        Objects.requireNonNull(dir);
+        Objects.requireNonNull(projectDir);
 
-        // Archetype pom needs an extension for devloop.
-        File pomFile = dir.resolve("pom.xml").toFile();
-        ensurePomExtension(pomFile, cliConfig);
+        // Pom needs correct plugin version, with extensions enabled for devloop
+        ensurePomContent(projectDir);
 
         // Create config file that includes feature information
-        ProjectConfig configFile = projectConfig(dir);
-        configFile.property(PROJECT_DIRECTORY, dir.toString());
+        ProjectConfig configFile = projectConfig(projectDir);
+        configFile.property(PROJECT_DIRECTORY, projectDir.toString());
         configFile.property(PROJECT_FLAVOR, flavor.toString());
         configFile.property(HELIDON_VERSION, version);
         cliConfig.forEach((key, value) -> {
@@ -176,30 +180,51 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         configFile.store();
 
         context.logInfo("Switch directory to " + parentDirectory + Constants.DIR_SEP
-                        + dir.getFileName() + " to use CLI");
+                        + projectDir.getFileName() + " to use CLI");
     }
 
-    private void ensurePomExtension(File pomFile, Properties properties) {
+    private void ensurePomContent(Path projectDir) {
         // Support a system property override of the version here for testing
-        String extVersion = System.getProperty(HELIDON_VERSION, version);
+        String helidonVersion = System.getProperty(HELIDON_VERSION, version);
+        File pomFile = projectDir.resolve(POM).toFile();
         Model model = readPomModel(pomFile);
-        ProjectDependency ext = ProjectDependency.fromString(properties.getProperty(DEVLOOP_EXTENSION));
-        ext.version(extVersion);
-        Objects.requireNonNull(ext);
-        List<Extension> extensions = model.getBuild().getExtensions();
-        Optional<Extension> found = extensions.stream().filter(
-            e -> e.getGroupId().equals(ext.groupId())
-                 && e.getArtifactId().equals(ext.artifactId())
-                 && Objects.equals(e.getVersion(), ext.version())).findFirst();
-        if (found.isPresent()) {
-            return;
+        boolean propertyAdded = ensurePluginVersion(model, helidonVersion);
+        boolean extensionAdded = ensurePlugin(model);
+        if (extensionAdded || propertyAdded) {
+            writePomModel(pomFile, model);
         }
-        Extension newExt = new Extension();
-        newExt.setGroupId(ext.groupId());
-        newExt.setArtifactId(ext.artifactId());
-        newExt.setVersion(ext.version());
-        extensions.add(newExt);
-        writePomModel(pomFile, model);
+    }
+
+    private boolean ensurePluginVersion(Model model, String helidonVersion) {
+        Properties properties = model.getProperties();
+        String existing = properties.getProperty(HELIDON_PLUGIN_VERSION_PROPERTY);
+        if (existing == null || !existing.equals(helidonVersion)) {
+            model.addProperty(HELIDON_PLUGIN_VERSION_PROPERTY, helidonVersion);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean ensurePlugin(Model model) {
+        org.apache.maven.model.Build build = model.getBuild();
+        boolean isPresent = build.getPlugins()
+                                 .stream()
+                                 .anyMatch(p -> p.getGroupId().equals(BUILD_TOOLS_GROUP_ID)
+                                                && p.getArtifactId().equals(BUILD_TOOLS_PLUGIN_ARTIFACT_ID));
+        if (isPresent) {
+            // Assume it is what we want rather than updating if not equal, since
+            // that could undo future archetype changes.
+            return false;
+        } else {
+            Plugin helidonPlugin = new Plugin();
+            helidonPlugin.setGroupId(BUILD_TOOLS_GROUP_ID);
+            helidonPlugin.setArtifactId(BUILD_TOOLS_PLUGIN_ARTIFACT_ID);
+            helidonPlugin.setVersion("${" + HELIDON_PLUGIN_VERSION_PROPERTY + "}");
+            helidonPlugin.setExtensions(true);
+            build.addPlugin(helidonPlugin);
+            return true;
+        }
     }
 
     private static String defaultHelidonVersion() throws InterruptedException {
@@ -217,11 +242,11 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
                                                      long retryDelay,
                                                      long retryDelayIncrement) throws InterruptedException {
         Log.info("Looking up latest Helidon version");
-        final Predicate<MavenVersion> filter = unqualifiedMinimum(MINIMUM_HELIDON_VERSION);
+        Predicate<MavenVersion> filter = unqualifiedMinimum(MINIMUM_HELIDON_VERSION);
         int remainingRetries = retries;
         while (remainingRetries > 0) {
             try {
-                final String version = HelidonVersions.releases(filter).latest().toString();
+                String version = HelidonVersions.releases(filter).latest().toString();
                 Log.debug("Latest Helidon version found: %s", version);
                 return version;
             } catch (UnknownHostException | SocketException | SocketTimeoutException e) {

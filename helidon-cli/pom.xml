@@ -28,9 +28,15 @@
     <packaging>pom</packaging>
     <name>Helidon Command Line Interface Project</name>
 
+    <properties>
+        <java.source.version>11</java.source.version>
+        <java.target.version>11</java.target.version>
+    </properties>
+
     <modules>
         <module>harness</module>
         <module>codegen</module>
         <module>impl</module>
     </modules>
+
 </project>

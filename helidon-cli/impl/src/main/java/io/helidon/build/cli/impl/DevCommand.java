@@ -21,7 +21,6 @@ import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
-import io.helidon.build.util.ProjectConfig;
 
 /**
  * The {@code dev} command.
@@ -31,9 +30,7 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
 
     private static final String CLEAN_PROP_PREFIX = "-Ddev.clean=";
     private static final String FORK_PROP_PREFIX = "-Ddev.fork=";
-    private static final String MAVEN_PLUGIN_PROPERTY = "maven.plugin";
-    private static final String DEV_GOAL = "dev";
-    private static final String DEFAULT_DEV_GOAL = "helidon:" + DEV_GOAL;
+    private static final String DEV_GOAL = "helidon:dev";
 
     private final CommonOptions commonOptions;
     private final boolean clean;
@@ -51,26 +48,12 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
 
     @Override
     public void execute(CommandContext context) {
-        final ProjectConfig projectConfig = projectConfig(commonOptions.project().toPath());
-        if (!projectConfig.exists()) {
-            context.exitAction(CommandContext.ExitStatus.FAILURE, "Unable to find project");
-            return;
-        }
-
-        final String cleanProp = CLEAN_PROP_PREFIX + clean;
-        final String forkProp = FORK_PROP_PREFIX + fork;
-        final String helidonVersion = projectConfig.property(HELIDON_VERSION);
-        String goal = DEFAULT_DEV_GOAL;
-        if (helidonVersion != null) {
-            final String helidonPlugin = cliConfig().getProperty(MAVEN_PLUGIN_PROPERTY);
-            if (helidonPlugin != null) {
-                goal = helidonPlugin + ":" + helidonVersion + ":" + DEV_GOAL;
-            }
-        }
+        String cleanProp = CLEAN_PROP_PREFIX + clean;
+        String forkProp = FORK_PROP_PREFIX + fork;
 
         // Execute Helidon maven plugin to enter dev loop
         ProcessBuilder processBuilder = new ProcessBuilder().directory(commonOptions.project())
-                                                            .command(MAVEN_EXEC, goal, cleanProp, forkProp);
+                                                            .command(MAVEN_EXEC, DEV_GOAL, cleanProp, forkProp);
         executeProcess(context, processBuilder);
     }
 }
