@@ -126,6 +126,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <source>${java.source.version}</source>
+                    <target>${java.target.version}</target>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>io.helidon.build-tools.cli</groupId>

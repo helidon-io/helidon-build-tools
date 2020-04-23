@@ -48,7 +48,7 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
  * by {@link MavenProjectSupplier}. Must be installed as a maven extension to run.
  */
 @Component(role = AbstractMavenLifecycleParticipant.class)
-public class ProjectConfigCollector extends AbstractMavenLifecycleParticipant {
+public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipant {
     private static final String DEBUG_PROPERTY = "project.config.collector.debug";
     private static final boolean DEBUG = "true".equals(System.getProperty(DEBUG_PROPERTY));
     private static final String MAIN_CLASS_PROPERTY = "mainClass";

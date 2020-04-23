@@ -18,6 +18,7 @@ package io.helidon.build.util;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -47,7 +48,7 @@ class MavenVersionsTest {
 
     @Test
     void testUriNotAccessible() {
-        String errorMessage = assertThrows(IllegalStateException.class,
+        String errorMessage = assertThrows(UnknownHostException.class,
                                            () -> MavenVersions.builder()
                                                               .repository(INACCESSIBLE_MAVEN_REPO)
                                                               .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
@@ -66,11 +67,11 @@ class MavenVersionsTest {
                                                               .filter(MavenVersion.notQualified())
                                                               .fallbackVersions(List.of("1.2.3-SNAPSHOT"))
                                                               .build()).getMessage();
-        assertThat(errorMessage, containsString("no fallback versions matching the filter"));
+        assertThat(errorMessage, containsString("No matching fallback versions"));
     }
 
     @Test
-    void testUriNotAccessibleAndFilteredFallbackIsNotEmpty() {
+    void testUriNotAccessibleAndFilteredFallbackIsNotEmpty() throws Exception {
         final MavenVersions versions = MavenVersions.builder()
                                                     .repository(INACCESSIBLE_MAVEN_REPO)
                                                     .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
@@ -87,7 +88,7 @@ class MavenVersionsTest {
     }
 
     @Test
-    void testQualifiedLessThanUnqualified() {
+    void testQualifiedLessThanUnqualified() throws Exception {
         final MavenVersions versions = MavenVersions.builder()
                                                     .repository(INACCESSIBLE_MAVEN_REPO)
                                                     .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
@@ -109,7 +110,7 @@ class MavenVersionsTest {
     }
 
     @Test
-    void testAllCurrentHelidonReleases() {
+    void testAllCurrentHelidonReleases() throws Exception {
         final MavenVersions versions = MavenVersions.builder()
                                                     .repository(MAVEN_REPO_2_0_0_M2)
                                                     .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
@@ -124,7 +125,7 @@ class MavenVersionsTest {
     }
 
     @Test
-    void testAllFutureHelidonReleases() {
+    void testAllFutureHelidonReleases() throws Exception {
         final MavenVersions versions = MavenVersions.builder()
                                                     .repository(MAVEN_REPO_2_0_0)
                                                     .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
@@ -147,12 +148,12 @@ class MavenVersionsTest {
                                                               .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
                                                               .artifactId(HELIDON_PROJECT_ARTIFACT_ID)
                                                               .build()).getMessage();
-        assertThat(errorMessage, containsString("No versions found"));
+        assertThat(errorMessage, containsString("No matching versions found"));
 
     }
 
     @Test
-    void testUnqualifiedMinimumFutureHelidonReleases() {
+    void testUnqualifiedMinimumFutureHelidonReleases() throws Exception {
         final MavenVersions versions = MavenVersions.builder()
                                                     .filter(unqualifiedMinimum("2.0.0"))
                                                     .repository(MAVEN_REPO_2_0_0)

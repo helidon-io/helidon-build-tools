@@ -40,7 +40,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 /**
- * Unit test for class {@link ProjectConfigCollector}.
+ * Unit test for class {@link MavenProjectConfigCollector}.
  *
  * NOTE: This test requires that the snapshot jar is already built, so is disabled by default; to run:
  * <pre>
@@ -48,7 +48,7 @@ import static org.hamcrest.Matchers.notNullValue;
  * </pre>
  */
 @EnabledIfSystemProperty(named = "test", matches = "ProjectConfigCollectorTest")
-class ProjectConfigCollectorTest {
+class MavenProjectConfigCollectorTest {
     private static final String DEBUG_PROPERTY = "-Dproject.config.collector.debug=true";
 
     @Test

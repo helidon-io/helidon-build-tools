@@ -19,6 +19,8 @@ package io.helidon.build.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -228,9 +230,11 @@ public class MavenVersions {
          * Builds the {@link MavenVersions} instance.
          *
          * @return The instance.
-         * @throws IllegalStateException If there are no versions available.
+         * @throws IOException If there is a problem accessing the repository, e.g. {@link SocketException} if there is a problem
+         * connecting or {@link SocketTimeoutException} if there is a timeout connecting to or reading a result.
+         * @throws IllegalStateException If there are no matching versions available.
          */
-        public MavenVersions build() {
+        public MavenVersions build() throws IOException {
             requireNonNull(artifactGroupId, "artifactGroupId is required");
             requireNonNull(artifactId, "artifactId is required");
             try {
@@ -239,9 +243,12 @@ public class MavenVersions {
                 source = url.toString();
                 versions = convertAndSort(parse(url));
                 if (versions.isEmpty()) {
-                    useFallbackVersions("No versions found");
+                    useFallbackVersions("No matching versions found");
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
+                if (fallbackVersions == null) {
+                    throw e;
+                }
                 useFallbackVersions(e.toString());
             }
             return new MavenVersions(this);
@@ -253,7 +260,7 @@ public class MavenVersions {
             }
             versions = convertAndSort(fallbackVersions);
             if (versions.isEmpty()) {
-                throw new IllegalStateException("no fallback versions matching the filter");
+                throw new IllegalStateException("No matching fallback versions");
             } else {
                 source = "fallback";
             }
@@ -297,10 +304,10 @@ public class MavenVersions {
         }
 
         private static int assertValidTimeout(int timeout) {
-             if (timeout < 0) {
-                 throw new IllegalArgumentException("negative timeout");
-             }
-             return timeout;
+            if (timeout < 0) {
+                throw new IllegalArgumentException("negative timeout");
+            }
+            return timeout;
         }
 
         private static URI toUri(String uri) {

@@ -169,7 +169,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
     public MavenProjectSupplier(MavenProject project,
                                 MavenSession session,
                                 BuildPluginManager plugins) {
-        ProjectConfigCollector.assertSupportedProject(session);
+        MavenProjectConfigCollector.assertSupportedProject(session);
         this.project = new AtomicReference<>(project);
         this.session = session;
         this.plugins = plugins;
