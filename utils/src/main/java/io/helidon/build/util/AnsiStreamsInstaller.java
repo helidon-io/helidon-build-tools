@@ -97,7 +97,7 @@ public class AnsiStreamsInstaller {
 
     private static boolean shouldInstall() {
         if ("true".equals(System.getProperty(FORCE_ANSI_PROPERTY))) {
-            Log.debug("Installing Jansi streams: %s set", FORCE_ANSI_PROPERTY);
+            Log.debug("Installing Jansi streams: %s=true", FORCE_ANSI_PROPERTY);
             return true;
         } else if (System.console() != null) {
             Log.debug("Installing Jansi streams: console available");

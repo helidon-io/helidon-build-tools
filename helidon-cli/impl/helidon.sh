@@ -26,14 +26,14 @@ init() {
     local -r projectDir=$(dirname "${0}")
     local -r targetDir="${projectDir}/target/"
     local -r jarFile="${targetDir}/helidon.jar"
-    local -r debug="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005"
+    local -r attach="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005"
     local jvm
     local args
     action=exec
 
     while (( ${#} > 0 )); do
         case "${1}" in
-            --debug) appendVar jvm "${debug}" ;;
+            --attach) appendVar jvm "${attach}" ;;
             --dryRun) action=echo ;;
             *) appendVar args "${1}" ;;
         esac

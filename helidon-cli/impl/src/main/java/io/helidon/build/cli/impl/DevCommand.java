@@ -19,10 +19,10 @@ package io.helidon.build.cli.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
+import io.helidon.build.cli.harness.CommandContext.Verbosity;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
@@ -62,7 +62,7 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
         command.add(DEV_GOAL);
         command.add(CLEAN_PROP_PREFIX + clean);
         command.add(FORK_PROP_PREFIX + fork);
-        if (context.logger().isLoggable(Level.FINE)) {
+        if (!context.verbosity().equals(Verbosity.NORMAL)) {
             command.add("--debug");
         }
 

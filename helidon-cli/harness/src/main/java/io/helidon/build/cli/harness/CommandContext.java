@@ -271,8 +271,16 @@ public final class CommandContext {
     }
 
     /**
+     * Returns the verbosity level.
+     * @return The level.
+     */
+    public Verbosity verbosity() {
+        return logHandler.verbosity;
+    }
+
+    /**
      * Enable verbose mode.
-     * @param verbose verbose value
+     * @param verbosity verbosity value
      */
     void verbosity(Verbosity verbosity) {
         this.logHandler.verbosity = verbosity;
@@ -317,7 +325,7 @@ public final class CommandContext {
     /**
      * Verbosity levels.
      */
-    enum Verbosity {
+    public enum Verbosity {
         NORMAL,
         VERBOSE,
         DEBUG
