@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static io.helidon.build.util.FileUtils.assertDir;
+import static io.helidon.build.util.Style.Cyan;
 
 /**
  * Simple generator for a quickstart project. This class does not import any Maven classes
@@ -175,7 +176,7 @@ public class SimpleQuickstartGenerator {
      */
     public Path generate() {
         initialize();
-        Log.info("Generating %s from archetype %s", artifactId, version);
+        Log.info("Generating %s from archetype %s", Cyan.apply(artifactId), Cyan.apply(version));
         String archetypeId = HELIDON_QUICKSTART_PREFIX + variant.toString();
         execute(new ProcessBuilder().directory(parentDirectory.toFile())
                                     .command(List.of(MAVEN_EXEC,

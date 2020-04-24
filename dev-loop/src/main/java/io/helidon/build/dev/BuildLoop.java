@@ -28,6 +28,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.build.util.Log;
+
 import static io.helidon.build.dev.BuildType.Complete;
 import static io.helidon.build.dev.BuildType.Incremental;
 import static java.util.Objects.requireNonNull;
@@ -92,7 +94,15 @@ public class BuildLoop {
             stopped.get().countDown(); // In case any previous waiters.
             running.set(new CountDownLatch(1));
             stopped.set(new CountDownLatch(1));
-            task.set(LOOP_EXECUTOR.submit(this::loop));
+            task.set(LOOP_EXECUTOR.submit(() -> {
+                try {
+                    loop();
+                } catch (Throwable t) {
+                    Log.warn(t, "BuildLoop failed");
+                } finally {
+                    stopped();
+                }
+            }));
         }
         return this;
     }

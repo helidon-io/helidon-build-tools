@@ -16,11 +16,17 @@
 
 package io.helidon.build.cli.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
+import io.helidon.build.util.AnsiStreamsInstaller;
 
 /**
  * The {@code dev} command.
@@ -31,6 +37,7 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
     private static final String CLEAN_PROP_PREFIX = "-Ddev.clean=";
     private static final String FORK_PROP_PREFIX = "-Ddev.fork=";
     private static final String DEV_GOAL = "helidon:dev";
+    private static final String MAVEN_OPTS_VAR = "MAVEN_OPTS";
 
     private final CommonOptions commonOptions;
     private final boolean clean;
@@ -48,12 +55,33 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
 
     @Override
     public void execute(CommandContext context) {
-        String cleanProp = CLEAN_PROP_PREFIX + clean;
-        String forkProp = FORK_PROP_PREFIX + fork;
-
         // Execute Helidon maven plugin to enter dev loop
+
+        List<String> command = new ArrayList<>();
+        command.add(MAVEN_EXEC);
+        command.add(DEV_GOAL);
+        command.add(CLEAN_PROP_PREFIX + clean);
+        command.add(FORK_PROP_PREFIX + fork);
+        if (context.logger().isLoggable(Level.FINE)) {
+            command.add("--debug");
+        }
+
         ProcessBuilder processBuilder = new ProcessBuilder().directory(commonOptions.project())
-                                                            .command(MAVEN_EXEC, DEV_GOAL, cleanProp, forkProp);
+                                                            .command(command);
+
+        // Set the jansi.force property using MAVEN_OPTS, since this value is interpreted too early
+        // to pass it to the mvn command
+
+        String forceAnsi = AnsiStreamsInstaller.forceAnsiArgument();
+        Map<String, String> env = processBuilder.environment();
+        String opts = env.get(MAVEN_OPTS_VAR);
+        if (opts == null) {
+            opts = forceAnsi;
+        } else {
+            opts += (" " + forceAnsi);
+        }
+        env.put(MAVEN_OPTS_VAR, opts);
+
         executeProcess(context, processBuilder);
     }
 }

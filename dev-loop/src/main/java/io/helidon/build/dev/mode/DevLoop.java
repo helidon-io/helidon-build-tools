@@ -30,6 +30,7 @@ import io.helidon.build.dev.ProjectSupplier;
 import io.helidon.build.dev.maven.EmbeddedMavenExecutor;
 import io.helidon.build.dev.maven.ForkedMavenExecutor;
 import io.helidon.build.util.Log;
+import io.helidon.build.util.Style;
 
 /**
  * A development loop that manages application lifecycle based on events from a {@link BuildLoop}.
@@ -85,6 +86,7 @@ public class DevLoop {
 
         @Override
         public void onStarted() {
+            Log.info(Style.BoldBlue.apply("starting dev loop"));
         }
 
         @Override

@@ -38,11 +38,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.helidon.build-tools</groupId>
-            <artifactId>helidon-utils</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
             <scope>runtime</scope>

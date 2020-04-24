@@ -19,7 +19,6 @@ package io.helidon.build.util;
 import java.util.function.Function;
 
 import org.fusesource.jansi.Ansi;
-import org.fusesource.jansi.AnsiConsole;
 
 import static org.fusesource.jansi.Ansi.ansi;
 
@@ -93,6 +92,7 @@ public enum Style implements Function<Object, String> {
      */
     Bold(true, false, null);
 
+    private static final boolean ENABLED = AnsiStreamsInstaller.ensureInstalled();
     private final boolean bold;
     private final boolean bright;
     private final Ansi.Color color;
@@ -115,7 +115,7 @@ public enum Style implements Function<Object, String> {
     }
 
     /**
-     * Returns the message in this style, if styles are supported.
+     * Returns the message in this style, if Ansi escapes are supported.
      *
      * @param message The message.
      * @return The message.
@@ -132,9 +132,5 @@ public enum Style implements Function<Object, String> {
             ansi.fg(color);
         }
         return ansi.a(message).reset().toString();
-    }
-
-    static {
-        AnsiConsole.systemInstall();
     }
 }

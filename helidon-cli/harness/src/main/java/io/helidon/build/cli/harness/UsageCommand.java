@@ -18,6 +18,8 @@ package io.helidon.build.cli.harness;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static io.helidon.build.util.Style.BoldBrightGreen;
+
 /**
  * Built-in usage command.
  */
@@ -49,7 +51,7 @@ final class UsageCommand extends CommandModel {
     }
 
     private void execute(CommandContext context) {
-        context.logInfo(String.format("%nUsage:\t%s [OPTIONS] COMMAND%n", context.cli().name()));
+        context.logInfo(String.format("%nUsage:\t%s [OPTIONS] COMMAND%n", BoldBrightGreen.apply(context.cli().name())));
         context.logInfo(context.cli().description());
         context.logInfo("\nOptions:");
         context.logInfo(OutputHelper.table(GLOBAL_OPTIONS));

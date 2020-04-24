@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static io.helidon.build.test.StripAnsi.stripAnsi;
 
 /**
  * Test the built-in commands and options.
@@ -63,7 +64,7 @@ public class ExecTest {
         } finally {
             System.setOut(stdout);
         }
-        return new String(baos.toByteArray(), StandardCharsets.UTF_8);
+        return stripAnsi(new String(baos.toByteArray(), StandardCharsets.UTF_8));
     }
 
     static String exec(String... args) {

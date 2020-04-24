@@ -46,6 +46,8 @@ import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;
 import static io.helidon.build.util.ProjectConfig.FEATURE_PREFIX;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
+import static io.helidon.build.util.Style.BoldCyan;
+import static io.helidon.build.util.Style.Cyan;
 
 /**
  * The {@code init} command.
@@ -138,7 +140,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
                 context.exitAction(ExitStatus.FAILURE, e.getMessage());
                 return;
             }
-            context.logInfo("Using Helidon version " + version);
+            context.logInfo("Using Helidon version " + BoldCyan.apply(version));
         }
 
         // Generate project using Maven archetype
@@ -179,8 +181,9 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         });
         configFile.store();
 
-        context.logInfo("Switch directory to " + parentDirectory + Constants.DIR_SEP
-                        + projectDir.getFileName() + " to use CLI");
+
+        String dir = Cyan.apply(parentDirectory + Constants.DIR_SEP + projectDir.getFileName());
+        context.logInfo("Switch directory to " + dir + " to use CLI");
     }
 
     private void ensurePomContent(Path projectDir) {

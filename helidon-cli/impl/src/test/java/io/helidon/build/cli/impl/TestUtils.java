@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION;
+import static io.helidon.build.test.StripAnsi.stripAnsi;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -72,8 +73,7 @@ class TestUtils {
     }
 
     static ExecResult exec(String... args) throws IOException, InterruptedException {
-        List<String> cmdArgs = new ArrayList<>();
-        cmdArgs.addAll(List.of(javaPath(), "-cp", "\"" + System.getProperty("java.class.path") + "\""));
+        List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-cp", "\"" + System.getProperty("java.class.path") + "\""));
         String version = System.getProperty(HELIDON_VERSION);
         if (version != null) {
             cmdArgs.add("-D" + HELIDON_VERSION + "=" + version);
@@ -86,7 +86,7 @@ class TestUtils {
         if (!p.waitFor(10, TimeUnit.SECONDS)) {
             throw new IllegalStateException("timeout waiting for process");
         }
-        return new ExecResult(p.exitValue(), output);
+        return new ExecResult(p.exitValue(), stripAnsi(output));
     }
 
     static void assertPackageExist(Path projectPath, String packageName) {
