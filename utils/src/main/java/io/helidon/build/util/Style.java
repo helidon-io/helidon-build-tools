@@ -88,11 +88,26 @@ public enum Style implements Function<Object, String> {
     BoldBrightYellow(false, true, Ansi.Color.YELLOW),
 
     /**
+     * Red.
+     */
+    Red(false, false, Ansi.Color.RED),
+
+    /**
+     * Bold red.
+     */
+    BoldRed(false, false, Ansi.Color.RED),
+
+    /**
+     * Bold, bright red.
+     */
+    BoldBrightRed(false, true, Ansi.Color.RED),
+
+    /**
      * Bold.
      */
     Bold(true, false, null);
 
-    private static final boolean ENABLED = AnsiStreamsInstaller.ensureInstalled();
+    private static final boolean ENABLED = AnsiConsoleInstaller.ensureInstalled();
     private final boolean bold;
     private final boolean bright;
     private final Ansi.Color color;
@@ -122,15 +137,19 @@ public enum Style implements Function<Object, String> {
      */
     @Override
     public String apply(Object message) {
-        final Ansi ansi = ansi();
-        if (bold) {
-            ansi.bold();
+        if (ENABLED) {
+            final Ansi ansi = ansi();
+            if (bold) {
+                ansi.bold();
+            }
+            if (bright) {
+                ansi.fgBright(color);
+            } else if (color != null) {
+                ansi.fg(color);
+            }
+            return ansi.a(message).reset().toString();
+        } else {
+            return message.toString();
         }
-        if (bright) {
-            ansi.fgBright(color);
-        } else if (color != null) {
-            ansi.fg(color);
-        }
-        return ansi.a(message).reset().toString();
     }
 }

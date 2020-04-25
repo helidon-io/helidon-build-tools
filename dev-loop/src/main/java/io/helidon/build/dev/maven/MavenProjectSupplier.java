@@ -47,6 +47,9 @@ import org.apache.maven.project.MavenProject;
 import static io.helidon.build.dev.BuildComponent.createBuildComponent;
 import static io.helidon.build.dev.BuildFile.createBuildFile;
 import static io.helidon.build.dev.BuildRoot.createBuildRoot;
+import static io.helidon.build.dev.BuildType.CleanComplete;
+import static io.helidon.build.dev.BuildType.Complete;
+import static io.helidon.build.dev.BuildType.Skipped;
 import static io.helidon.build.dev.ProjectDirectory.createProjectDirectory;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
@@ -179,20 +182,23 @@ public class MavenProjectSupplier implements ProjectSupplier {
     @Override
     public Project newProject(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception {
         final Path projectDir = executor.projectDirectory();
-        executor.monitor().onBuildStart(cycleNumber, clean ? BuildType.CleanComplete : BuildType.Complete);
 
         // Get the updated config, performing the full build if needed
 
+        BuildType buildType;
         if (clean) {
-            build(executor, CLEAN_BUILD_COMMAND);
+            buildType = CleanComplete;
+            build(executor, true, cycleNumber);
         } else if (canSkipBuild(projectDir)) {
-            Log.info("Project is up to date");
+            buildType = Skipped;
+            executor.monitor().onBuildStart(cycleNumber, BuildType.Skipped);
         } else {
-            build(executor, BUILD_COMMAND);
+            buildType = Complete;
+            build(executor, false, cycleNumber);
         }
 
         // Create and return the project based on the config
-        return createProject(executor.projectDirectory());
+        return createProject(executor.projectDirectory(), buildType);
     }
 
     @Override
@@ -205,8 +211,9 @@ public class MavenProjectSupplier implements ProjectSupplier {
         return POM_FILE;
     }
 
-    private void build(BuildExecutor executor, List<String> command) throws Exception {
-        executor.execute(command);
+    private void build(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception {
+        executor.monitor().onBuildStart(cycleNumber, clean ? CleanComplete : Complete);
+        executor.execute(clean ? CLEAN_BUILD_COMMAND : BUILD_COMMAND);
         config = loadHelidonCliConfig(executor.projectDirectory());
     }
 
@@ -225,9 +232,9 @@ public class MavenProjectSupplier implements ProjectSupplier {
         return false;
     }
 
-    private Project createProject(Path projectDir) {
+    private Project createProject(Path projectDir, BuildType buildType) {
         // Root directory
-        final Project.Builder builder = Project.builder();
+        final Project.Builder builder = Project.builder().buildType(buildType);
         final ProjectDirectory root = createProjectDirectory(DirectoryType.Project, projectDir);
         builder.rootDirectory(root);
 

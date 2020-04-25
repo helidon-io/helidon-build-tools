@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.cli.impl;
 
-import java.util.ArrayList;
+package io.helidon.build.cli.impl;
 
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
@@ -45,9 +44,9 @@ public final class BuildCommand extends BaseCommand implements CommandExecution 
 
     @Creator
     BuildCommand(
-            CommonOptions commonOptions,
-            @Flag(name = "clean", description = "Perform a clean before the build") boolean clean,
-            @KeyValue(name = "mode", description = "Build mode", defaultValue = "PLAIN") BuildMode buildMode) {
+        CommonOptions commonOptions,
+        @Flag(name = "clean", description = "Perform a clean before the build") boolean clean,
+        @KeyValue(name = "mode", description = "Build mode", defaultValue = "PLAIN") BuildMode buildMode) {
         this.commonOptions = commonOptions;
         this.clean = clean;
         this.buildMode = buildMode;
@@ -55,27 +54,27 @@ public final class BuildCommand extends BaseCommand implements CommandExecution 
 
     @Override
     public void execute(CommandContext context) {
-        ProcessBuilder processBuilder = new ProcessBuilder().directory(commonOptions.project());
-        ArrayList<String> args = new ArrayList<>();
-        args.add(MAVEN_EXEC);
+        MavenCommand.Builder builder = MavenCommand.builder()
+                                                   .verbosity(context.verbosity())
+                                                   .directory(commonOptions.project());
         switch (buildMode) {
             case PLAIN:
-                // no-op
                 break;
             case JLINK:
-                args.add(JLINK_OPTION);
+                builder.addArgument(JLINK_OPTION);
                 break;
             case NATIVE:
-                args.add(NATIVE_OPTION);
+                builder.addArgument(NATIVE_OPTION);
                 break;
             default:
                 throw new IllegalStateException("Unknown build mode " + buildMode);
         }
+
         if (clean) {
-            args.add("clean");
+            builder.addArgument("clean");
         }
-        args.add("package");
-        processBuilder.command(args.toArray(new String[]{}));
-        executeProcess(context, processBuilder);
+        builder.addArgument("package");
+
+        builder.build().execute();
     }
 }

@@ -169,7 +169,8 @@ public class BuildLoop {
                     // Need to create/recreate the project. Note that supplier calls onBuildStart().
 
                     try {
-                        setProject(projectSupplier.newProject(buildExecutor, clean.getAndSet(false), cycleNumber.get()));
+                        boolean clean = this.clean.getAndSet(false);
+                        setProject(projectSupplier.newProject(buildExecutor, clean, cycleNumber.get()));
                         ready();
                     } catch (IllegalArgumentException | InterruptedException e) {
                         break;
@@ -206,6 +207,7 @@ public class BuildLoop {
                         buildStarting(Incremental);
                         project.incrementalBuild(sourceChanges, monitor.stdOutConsumer(), monitor.stdErrConsumer());
                         project.update(false);
+                        buildSucceeded(Incremental);
                         ready();
                     } catch (InterruptedException e) {
                         break;
@@ -262,6 +264,10 @@ public class BuildLoop {
         }
     }
 
+    private void buildSucceeded(BuildType type) {
+        monitor.onBuildSuccess(cycleNumber.get(), type);
+    }
+
     private void buildFailed(BuildType type, Throwable e) {
         lastFailedTime.set(System.currentTimeMillis());
         delay.set(monitor.onBuildFail(cycleNumber.get(), type, e));
@@ -269,8 +275,14 @@ public class BuildLoop {
 
     private boolean shouldCreateProject() {
         final long lastFailed = lastFailedTime.get();
-        return lastFailed == 0
-               || projectSupplier.hasChanged(projectDirectory, lastFailed);
+        if (lastFailed == 0) {
+            return true;
+        } else if (projectSupplier.hasChanged(projectDirectory, lastFailed)) {
+            monitor.onChanged(cycleNumber.get(), ChangeType.File);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private boolean cycleEnded() {
@@ -284,6 +296,7 @@ public class BuildLoop {
 
     private void setProject(Project project) {
         this.project.set(project);
+        buildSucceeded(project.buildType());
         ready.set(false);
     }
 

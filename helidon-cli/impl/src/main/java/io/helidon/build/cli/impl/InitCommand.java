@@ -154,6 +154,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
                                                   .groupId(groupId)
                                                   .artifactId(artifactId)
                                                   .packageName(packageName)
+                                                  .quiet(true)
                                                   .generate();
         } catch (IllegalStateException e) {
             context.exitAction(ExitStatus.FAILURE, e.getMessage());

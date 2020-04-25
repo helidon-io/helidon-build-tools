@@ -16,17 +16,16 @@
 
 package io.helidon.build.cli.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
-import io.helidon.build.cli.harness.CommandContext.Verbosity;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
-import io.helidon.build.util.AnsiStreamsInstaller;
+
+import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
 
 /**
  * The {@code dev} command.
@@ -36,8 +35,17 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
 
     private static final String CLEAN_PROP_PREFIX = "-Ddev.clean=";
     private static final String FORK_PROP_PREFIX = "-Ddev.fork=";
+    private static final String DO_NOT_USE_MAVEN_LOG = "-Ddev.useMavenLog=false";
     private static final String DEV_GOAL = "helidon:dev";
-    private static final String MAVEN_OPTS_VAR = "MAVEN_OPTS";
+    private static final String MAVEN_LOG_LEVEL_START = "[";
+    private static final String MAVEN_LOG_LEVEL_END = "]";
+    private static final String MAVEN_ERROR_LEVEL = "ERROR";
+
+    /**
+     * The message logged on loop start.
+     * NOTE: must be kept identical to DevLoop.START_MESSAGE
+     */
+    private static final String START_MESSAGE = "dev loop started";
 
     private final CommonOptions commonOptions;
     private final boolean clean;
@@ -55,33 +63,62 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
 
     @Override
     public void execute(CommandContext context) {
-        // Execute Helidon maven plugin to enter dev loop
 
-        List<String> command = new ArrayList<>();
-        command.add(MAVEN_EXEC);
-        command.add(DEV_GOAL);
-        command.add(CLEAN_PROP_PREFIX + clean);
-        command.add(FORK_PROP_PREFIX + fork);
-        if (!context.verbosity().equals(Verbosity.NORMAL)) {
-            command.add("--debug");
+        // Clear the terminal if Ansi escapes are enabled
+
+        clearScreen();
+
+        // Execute helidon-maven-plugin to enter dev loop
+
+        Consumer<String> stdOut = context.verbosity() == CommandContext.Verbosity.NORMAL
+                                  ? DevCommand::printMavenErrorLinesOnly
+                                  : DevCommand::printAllLines;
+        MavenCommand.builder()
+                    .description("dev loop starting")
+                    .verbosity(context.verbosity())
+                    .stdOut(stdOut)
+                    .filter(new OnlyLoopOutput())
+                    .addArgument(DEV_GOAL)
+                    .addArgument(DO_NOT_USE_MAVEN_LOG)
+                    .addArgument(CLEAN_PROP_PREFIX + clean)
+                    .addArgument(FORK_PROP_PREFIX + fork)
+                    .directory(commonOptions.project())
+                    .build()
+                    .execute();
+    }
+
+    private static class OnlyLoopOutput implements Predicate<String> {
+        private boolean started;
+
+        @Override
+        public boolean test(String line) {
+            if (started) {
+                return true;
+            } else if (line.endsWith(START_MESSAGE)) {
+                started = true;
+            }
+            return false;
         }
+    }
 
-        ProcessBuilder processBuilder = new ProcessBuilder().directory(commonOptions.project())
-                                                            .command(command);
+    private static void printAllLines(String line) {
+        System.out.println(line);
+    }
 
-        // Set the jansi.force property using MAVEN_OPTS, since this value is interpreted too early
-        // to pass it to the mvn command
-
-        String forceAnsi = AnsiStreamsInstaller.forceAnsiArgument();
-        Map<String, String> env = processBuilder.environment();
-        String opts = env.get(MAVEN_OPTS_VAR);
-        if (opts == null) {
-            opts = forceAnsi;
+    private static void printMavenErrorLinesOnly(String line) {
+        if (line.startsWith(MAVEN_LOG_LEVEL_START)) {
+            int levelEnd = line.indexOf(MAVEN_LOG_LEVEL_END);
+            if (levelEnd > 0 && line.substring(0, levelEnd).contains(MAVEN_ERROR_LEVEL)) {
+/*
+                String message = line.substring(levelEnd + 1);
+                if (!message.isBlank()) {
+                    System.out.println(message);
+                }
+*/
+                System.out.println(line);
+            }
         } else {
-            opts += (" " + forceAnsi);
+            System.out.println(line);
         }
-        env.put(MAVEN_OPTS_VAR, opts);
-
-        executeProcess(context, processBuilder);
     }
 }

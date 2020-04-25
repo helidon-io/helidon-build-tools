@@ -67,6 +67,12 @@ public class DevMojo extends AbstractMojo {
     private boolean fork;
 
     /**
+     * Use maven log.
+     */
+    @Parameter(defaultValue = "true", property = "dev.useMavenLog")
+    private boolean useMavenLog;
+
+    /**
      * Skip execution for this plugin.
      */
     @Parameter(defaultValue = "false", property = "dev.skip")
@@ -91,7 +97,9 @@ public class DevMojo extends AbstractMojo {
             return;
         }
         try {
-            MavenLogWriter.bind(getLog());
+            if (useMavenLog) {
+                MavenLogWriter.bind(getLog());
+            }
             final ProjectSupplier projectSupplier = new MavenProjectSupplier(project, session, plugins);
             final DevLoop loop = new DevLoop(devProjectDir.toPath(), projectSupplier, clean, fork);
             loop.start(Integer.MAX_VALUE);

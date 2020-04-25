@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.build.cli.harness;
 
 import java.util.Collection;
@@ -81,6 +82,7 @@ public final class CommandContext {
 
         /**
          * Test if this status is worse than the given one.
+         *
          * @param status status to compare with
          * @return {@code true} if worse, {@code false} if not
          */
@@ -109,6 +111,7 @@ public final class CommandContext {
 
         /**
          * Get the exit status.
+         *
          * @return exit status, never {@code null}
          */
         public ExitStatus status() {
@@ -117,6 +120,7 @@ public final class CommandContext {
 
         /**
          * Get the exit message.
+         *
          * @return message, may be {@code null}
          */
         public String message() {
@@ -150,6 +154,7 @@ public final class CommandContext {
 
     /**
      * Get the CLI definition.
+     *
      * @return CLI definition, never {@code null}
      */
     public CLIDefinition cli() {
@@ -158,6 +163,7 @@ public final class CommandContext {
 
     /**
      * Get a command model by name.
+     *
      * @param name command name
      * @return optional of command model, never {@code null}
      */
@@ -167,6 +173,7 @@ public final class CommandContext {
 
     /**
      * Get all commands.
+     *
      * @return collection of command models, never {@code null}
      */
     public Collection<CommandModel> allCommands() {
@@ -175,6 +182,7 @@ public final class CommandContext {
 
     /**
      * Get the logger for this context.
+     *
      * @return logger, never {@code null}
      */
     public Logger logger() {
@@ -183,6 +191,7 @@ public final class CommandContext {
 
     /**
      * Log an INFO message.
+     *
      * @param message INFO message to log
      */
     public void logInfo(String message) {
@@ -191,6 +200,7 @@ public final class CommandContext {
 
     /**
      * Log a WARNING message.
+     *
      * @param message WARNING message to log
      */
     public void logWarning(String message) {
@@ -199,6 +209,7 @@ public final class CommandContext {
 
     /**
      * Log a SEVERE message.
+     *
      * @param message SEVERE message to log
      */
     public void logError(String message) {
@@ -207,6 +218,7 @@ public final class CommandContext {
 
     /**
      * Log a FINE message.
+     *
      * @param message FINE message to log
      */
     public void logVerbose(String message) {
@@ -215,6 +227,7 @@ public final class CommandContext {
 
     /**
      * Log a FINEST message.
+     *
      * @param message FINEST message to log
      */
     public void logDebug(String message) {
@@ -223,6 +236,7 @@ public final class CommandContext {
 
     /**
      * Execute a nested command.
+     *
      * @param args raw arguments
      */
     public void execute(String... args) {
@@ -233,6 +247,7 @@ public final class CommandContext {
 
     /**
      * Set the error message if not already set.
+     *
      * @param status exit status
      * @param message error message
      */
@@ -244,6 +259,7 @@ public final class CommandContext {
 
     /**
      * Get the exit action.
+     *
      * @return exit action, never {@code null}
      */
     public ExitAction exitAction() {
@@ -252,6 +268,7 @@ public final class CommandContext {
 
     /**
      * Set the command parser.
+     *
      * @param parser parser
      */
     void parser(CommandParser parser) {
@@ -260,6 +277,7 @@ public final class CommandContext {
 
     /**
      * Get the command parser.
+     *
      * @return command parser
      * @throws IllegalStateException if parser is not set
      */
@@ -272,6 +290,7 @@ public final class CommandContext {
 
     /**
      * Returns the verbosity level.
+     *
      * @return The level.
      */
     public Verbosity verbosity() {
@@ -280,6 +299,7 @@ public final class CommandContext {
 
     /**
      * Enable verbose mode.
+     *
      * @param verbosity verbosity value
      */
     void verbosity(Verbosity verbosity) {
@@ -292,13 +312,17 @@ public final class CommandContext {
      * @param command command name
      */
     void commandNotFoundError(String command) {
-        List<String> allCommandNames = registry.commandsByName().values()
-                .stream().map(CommandModel::command).map(CommandInfo::name).collect(Collectors.toList());
+        List<String> allCommandNames = registry.commandsByName()
+                                               .values()
+                                               .stream()
+                                               .map(CommandModel::command)
+                                               .map(CommandInfo::name)
+                                               .collect(Collectors.toList());
         String match = CommandMatcher.match(command, allCommandNames);
         String cliName = cli.name();
         if (match != null) {
             error(String.format("'%s' is not a valid command.%nDid you mean '%s'?%nSee '%s --help' for more information",
-                    command, match, cliName));
+                                command, match, cliName));
         } else {
             error(String.format("'%s' is not a valid command.%nSee '%s --help' for more information", command, cliName));
         }
@@ -306,6 +330,7 @@ public final class CommandContext {
 
     /**
      * Set the exit action to {@link ExitStatus#FAILURE} with the given error message.
+     *
      * @param message error message
      */
     void error(String message) {
@@ -314,6 +339,7 @@ public final class CommandContext {
 
     /**
      * Create a new command context.
+     *
      * @param registry command registry
      * @param cliDef CLI definition
      * @return command context, never {@code null}
@@ -326,8 +352,17 @@ public final class CommandContext {
      * Verbosity levels.
      */
     public enum Verbosity {
+        /**
+         * Normal level.
+         */
         NORMAL,
+        /**
+         * Verbose level.
+         */
         VERBOSE,
+        /**
+         * Debug level.
+         */
         DEBUG
     }
 
@@ -346,7 +381,7 @@ public final class CommandContext {
             } else if (level == Level.WARNING || level == Level.SEVERE) {
                 System.err.println(record.getMessage());
             } else if ((level == Level.CONFIG || level == Level.FINE)
-                    && (verbosity == Verbosity.VERBOSE || verbosity == Verbosity.DEBUG)) {
+                       && (verbosity == Verbosity.VERBOSE || verbosity == Verbosity.DEBUG)) {
                 System.out.println(record.getMessage());
             } else if (verbosity == Verbosity.DEBUG) {
                 System.out.println(record.getMessage());

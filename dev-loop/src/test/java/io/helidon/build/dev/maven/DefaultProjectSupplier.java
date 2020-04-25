@@ -61,9 +61,10 @@ public class DefaultProjectSupplier implements ProjectSupplier {
 
     @Override
     public Project newProject(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception {
-        final Project project = createProject(executor.projectDirectory());
+        final BuildType buildType =  clean ? BuildType.CleanComplete : BuildType.Complete;
+        final Project project = createProject(executor.projectDirectory(), buildType);
         if (clean || !project.isBuildUpToDate()) {
-            executor.monitor().onBuildStart(cycleNumber, clean ? BuildType.CleanComplete : BuildType.Complete);
+            executor.monitor().onBuildStart(cycleNumber, buildType);
             executor.execute(clean ? CLEAN_BUILD_COMMAND : BUILD_COMMAND);
             project.update(true);
         }
@@ -80,8 +81,8 @@ public class DefaultProjectSupplier implements ProjectSupplier {
         return POM_FILE;
     }
 
-    private Project createProject(Path projectDir) throws IOException {
-        final Project.Builder builder = Project.builder();
+    private Project createProject(Path projectDir, BuildType buildType) throws IOException {
+        final Project.Builder builder = Project.builder().buildType(buildType);
         final Path pomFile = assertFile(projectDir.resolve(POM_FILE));
         final ProjectDirectory root = createProjectDirectory(DirectoryType.Project, projectDir);
         builder.rootDirectory(root);

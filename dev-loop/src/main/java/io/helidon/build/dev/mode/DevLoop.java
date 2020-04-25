@@ -30,13 +30,26 @@ import io.helidon.build.dev.ProjectSupplier;
 import io.helidon.build.dev.maven.EmbeddedMavenExecutor;
 import io.helidon.build.dev.maven.ForkedMavenExecutor;
 import io.helidon.build.util.Log;
-import io.helidon.build.util.Style;
+
+import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
+import static io.helidon.build.util.Style.Bold;
+import static io.helidon.build.util.Style.BoldBlue;
+import static io.helidon.build.util.Style.BoldBrightGreen;
+import static io.helidon.build.util.Style.BoldRed;
+import static io.helidon.build.util.Style.BoldYellow;
 
 /**
  * A development loop that manages application lifecycle based on events from a {@link BuildLoop}.
  */
 public class DevLoop {
 
+    /**
+     * The message logged on loop start.
+     * NOTE: do not change this without also changing DevCommand
+     */
+    private static final String START_MESSAGE = "dev loop started";
+
+    private static final String LOG_PREFIX = Bold.apply("|");
     private static final int MAX_BUILD_WAIT_SECONDS = 5 * 60;
 
     private final BuildMonitor monitor;
@@ -75,18 +88,27 @@ public class DevLoop {
     static class DevModeMonitor implements BuildMonitor {
         private static final int ON_READY_DELAY = 1000;
         private static final int BUILD_FAIL_DELAY = 1000;
+        private static final String HEADER = Bold.apply("dev loop");
 
         private final String buildFileName;
         private ProjectExecutor projectExecutor;
         private ChangeType lastChangeType;
+        private long buildStartTime;
 
         private DevModeMonitor(String buildFileName) {
             this.buildFileName = buildFileName;
         }
 
+        private void clear() {
+            if (clearScreen()) {
+                Log.info(HEADER);
+                Log.info(LOG_PREFIX);
+            }
+        }
+
         @Override
         public void onStarted() {
-            Log.info(Style.BoldBlue.apply("starting dev loop"));
+            clear();
         }
 
         @Override
@@ -95,29 +117,53 @@ public class DevLoop {
 
         @Override
         public void onChanged(int cycleNumber, ChangeType type) {
+            clear();
+            Log.info("%s %s changed", LOG_PREFIX, BoldBlue.apply(type));
             lastChangeType = type;
             ensureStop();
         }
 
         @Override
         public void onBuildStart(int cycleNumber, BuildType type) {
+            if (type == BuildType.Skipped) {
+                Log.info("%s %s", LOG_PREFIX, BoldBrightGreen.apply("up to date"));
+            } else {
+                String operation = cycleNumber == 0 ? "building" : "rebuilding";
+                Log.info("%s %s (%s)", LOG_PREFIX, BoldBlue.apply(operation), type);
+                buildStartTime = System.currentTimeMillis();
+            }
+        }
+
+        @Override
+        public void onBuildSuccess(int cycleNumber, BuildType type) {
+            if (type != BuildType.Skipped) {
+                long elapsedTime = System.currentTimeMillis() - buildStartTime;
+                float elapsedSeconds = elapsedTime / 1000F;
+                String operation = cycleNumber == 0 ? "build" : "rebuild";
+                Log.info("%s %s completed (%.1f seconds)", LOG_PREFIX, BoldBlue.apply(operation), elapsedSeconds);
+            }
         }
 
         @Override
         public long onBuildFail(int cycleNumber, BuildType type, Throwable error) {
+            Log.info("%s %s", LOG_PREFIX, BoldRed.apply("build failed"));
             ensureStop();
+            String message;
             if (lastChangeType == ChangeType.BuildFile) {
-                Log.info("Waiting for more %s changes before retrying build", buildFileName);
+                message = String.format("waiting for %s changes before retrying build", buildFileName);
             } else if (lastChangeType == ChangeType.SourceFile) {
-                Log.info("Waiting for source file changes before retrying build");
+                message = "waiting for source file changes before retrying build";
+            } else {
+                message = "waiting for changes before retrying build";
             }
+            Log.info("%s %s", LOG_PREFIX, BoldYellow.apply(message));
             return BUILD_FAIL_DELAY;
         }
 
         @Override
         public long onReady(int cycleNumber, Project project) {
             if (projectExecutor == null) {
-                projectExecutor = new ProjectExecutor(project);
+                projectExecutor = new ProjectExecutor(project, LOG_PREFIX);
                 projectExecutor.start();
             } else if (!projectExecutor.isRunning()) {
                 projectExecutor.start();
@@ -156,6 +202,7 @@ public class DevLoop {
     @SuppressWarnings("unchecked")
     private static <T extends BuildMonitor> T run(BuildLoop loop, int maxWaitSeconds)
     throws InterruptedException, TimeoutException {
+        Log.info(START_MESSAGE);
         loop.start();
         Log.debug("Waiting up to %d seconds for build loop completion", maxWaitSeconds);
         if (!loop.waitForStopped(maxWaitSeconds, TimeUnit.SECONDS)) {

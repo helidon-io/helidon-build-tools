@@ -23,15 +23,31 @@ public enum BuildType {
     /**
      * A complete build that is cleaned first.
      */
-    CleanComplete,
+    CleanComplete("clean, full"),
 
     /**
      * A complete build.
      */
-    Complete,
+    Complete("full"),
 
     /**
      * An incremental build.
      */
-    Incremental
+    Incremental("incremental"),
+
+    /**
+     * Skipped.
+     */
+    Skipped("skipped");
+
+    private final String description;
+
+    BuildType(String description) {
+        this.description = description;
+    }
+
+    @Override
+    public String toString() {
+        return description;
+    }
 }

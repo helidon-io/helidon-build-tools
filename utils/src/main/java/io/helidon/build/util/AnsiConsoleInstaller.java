@@ -21,11 +21,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.fusesource.jansi.Ansi;
 import picocli.jansi.graalvm.AnsiConsole;
 
+import static org.fusesource.jansi.Ansi.ansi;
+
 /**
  * Installer for {@link System#out} and {@link System#err} streams that support {@link Ansi} escapes, if possible.
  * Supports {@code GraalVM} native executables.
  */
-public class AnsiStreamsInstaller {
+public class AnsiConsoleInstaller {
     // Note: Class instances are not used here since this class is used within a maven plugin
     //       that might have a different version of Jansi
     private static final String JANSI_PACKAGE_PREFIX = "org.fusesource.jansi";
@@ -40,13 +42,13 @@ public class AnsiStreamsInstaller {
     public static final String FORCE_ANSI_PROPERTY = "jansi.force";
 
     /**
-     * Returns a command-line argument to set the {@link #FORCE_ANSI_PROPERTY} to {@code true}
+     * Returns the command-line argument to set the {@link #FORCE_ANSI_PROPERTY} to {@code true}
      * if Ansi escapes are enabled, or {@code false} if not.
      *
      * @return The command line argument, e.g. "-Djansi.force=true";
      */
     public static String forceAnsiArgument() {
-        return "-D" + FORCE_ANSI_PROPERTY + "=" + isEnabled();
+        return "-D" + FORCE_ANSI_PROPERTY + "=" + areAnsiEscapesEnabled();
     }
 
     /**
@@ -54,8 +56,33 @@ public class AnsiStreamsInstaller {
      *
      * @return {@code true} if enabled.
      */
-    public static boolean isEnabled() {
+    public static boolean areAnsiEscapesEnabled() {
         return ensureInstalled();
+    }
+
+    /**
+     * Clears the screen if Ansi escapes are enabled.
+     *
+     * @return {@code true} if Ansi escapes are enabled.
+     */
+    public static boolean clearScreen() {
+        return clearScreen(0);
+    }
+
+    /**
+     * Clears the screen from the given row if Ansi escapes are enabled.
+     *
+     * @param startRow The row at which to start clearing.
+     * @return {@code true} if Ansi escapes are enabled.
+     */
+    public static boolean clearScreen(int startRow) {
+        if (areAnsiEscapesEnabled()) {
+            System.out.print(ansi().cursor(startRow, 0).eraseScreen());
+            System.out.flush();
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -108,6 +135,6 @@ public class AnsiStreamsInstaller {
         }
     }
 
-    private AnsiStreamsInstaller() {
+    private AnsiConsoleInstaller() {
     }
 }

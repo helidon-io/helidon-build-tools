@@ -28,6 +28,8 @@ import io.helidon.build.util.Constants;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.ProcessMonitor;
 
+import static io.helidon.build.util.Style.BoldBlue;
+
 /**
  * Class ProjectStarter.
  */
@@ -59,6 +61,8 @@ public class ProjectExecutor {
 
     private final ExecutionMode mode;
     private final Project project;
+    private final String logPrefix;
+    private final String name;
     private ProcessMonitor processMonitor;
     private long pid;
 
@@ -66,20 +70,24 @@ public class ProjectExecutor {
      * Create an executor from a project.
      *
      * @param project The project.
+     * @param logPrefix The log prefix.
      */
-    public ProjectExecutor(Project project) {
-        this(project, ExecutionMode.JAVA);
+    public ProjectExecutor(Project project, String logPrefix) {
+        this(project, ExecutionMode.JAVA, logPrefix);
     }
 
     /**
      * Create an executor from a project specifying an execution mode.
      *
      * @param project The project.
+     * @param logPrefix The log prefix.
      * @param mode The execution mode.
      */
-    public ProjectExecutor(Project project, ExecutionMode mode) {
+    public ProjectExecutor(Project project, ExecutionMode mode, String logPrefix) {
         this.project = project;
         this.mode = mode;
+        this.logPrefix = logPrefix;
+        this.name = BoldBlue.apply(project.name());
     }
 
     /**
@@ -113,15 +121,14 @@ public class ProjectExecutor {
     public void stop() {
         if (processMonitor != null) {
             try {
+                Log.debug("%s %s stopping", logPrefix, name);
                 processMonitor.stop(WAIT_TERMINATION, TimeUnit.SECONDS);
-                Log.info("Process with PID %d stopped", pid);
+                Log.info("%s %s stopped", logPrefix, name);
             } catch (IllegalStateException ignore) {
             } catch (ProcessMonitor.ProcessFailedException e) {
-                final int exitCode = e.exitCode();
-                Log.info("Process with PID %d stopped (exit code %d)", pid, exitCode);
+                Log.info("%s %s stopped", logPrefix, name);
             } catch (Exception e) {
-                Log.error("Error stopping process: %s", e.getMessage());
-                throw new RuntimeException(e);
+                throw new RuntimeException(String.format("Failed to stop %s: %s", project.name(), e.getMessage()));
             }
             processMonitor = null;
         }
@@ -170,6 +177,8 @@ public class ProjectExecutor {
         env.put("JAVA_HOME", JAVA_HOME);
 
         try {
+            Log.info("%s %s starting", logPrefix, name);
+            Log.info();
             this.processMonitor = ProcessMonitor.builder()
                                                 .processBuilder(processBuilder)
                                                 .stdOut(System.out::println)
@@ -178,7 +187,6 @@ public class ProjectExecutor {
                                                 .build()
                                                 .start();
             this.pid = processMonitor.toHandle().pid();
-            Log.info("Process with PID %d is starting", pid);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
