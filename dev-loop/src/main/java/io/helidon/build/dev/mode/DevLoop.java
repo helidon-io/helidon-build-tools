@@ -101,6 +101,7 @@ public class DevLoop {
 
         private void clear() {
             if (clearScreen()) {
+                Log.info();
                 Log.info(HEADER);
                 Log.info(LOG_PREFIX);
             }

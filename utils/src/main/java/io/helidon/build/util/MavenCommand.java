@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.cli.impl;
+package io.helidon.build.util;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -25,13 +25,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-
-import io.helidon.build.cli.harness.CommandContext.Verbosity;
-import io.helidon.build.util.AnsiConsoleInstaller;
-import io.helidon.build.util.Constants;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.ProcessMonitor;
-import io.helidon.build.util.Style;
 
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.Style.Bold;
@@ -109,7 +102,7 @@ public class MavenCommand {
         private String description;
         private Path directory;
         private List<String> mavenArgs;
-        private Verbosity verbosity;
+        private boolean verbose;
         private int debugPort;
         private int maxWaitSeconds;
         private Consumer<String> stdOut;
@@ -120,7 +113,6 @@ public class MavenCommand {
 
         private Builder() {
             this.mavenArgs = new ArrayList<>();
-            this.verbosity = Verbosity.NORMAL;
             this.maxWaitSeconds = SECONDS_PER_YEAR;
         }
 
@@ -179,13 +171,13 @@ public class MavenCommand {
         }
 
         /**
-         * Sets verbosity level.
+         * Sets verbose output.
          *
-         * @param verbosity The level.
+         * @param verbose {@code true} for verbose (i.e. {@code --debug}) maven output.
          * @return This instance, for chaining.
          */
-        public Builder verbosity(Verbosity verbosity) {
-            this.verbosity = verbosity;
+        public Builder verbose(boolean verbose) {
+            this.verbose = verbose;
             return this;
         }
 
@@ -268,7 +260,7 @@ public class MavenCommand {
             List<String> command = new ArrayList<>();
             command.add(MAVEN_EXEC);
             command.addAll(mavenArgs);
-            if (verbosity == Verbosity.DEBUG) {
+            if (verbose) {
                 command.add("--debug");
             }
 

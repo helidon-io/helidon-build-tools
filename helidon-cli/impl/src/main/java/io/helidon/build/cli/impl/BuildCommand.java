@@ -22,6 +22,9 @@ import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
+import io.helidon.build.util.MavenCommand;
+
+import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 
 /**
  * The {@code build} command.
@@ -55,7 +58,7 @@ public final class BuildCommand extends BaseCommand implements CommandExecution 
     @Override
     public void execute(CommandContext context) {
         MavenCommand.Builder builder = MavenCommand.builder()
-                                                   .verbosity(context.verbosity())
+                                                   .verbose(context.verbosity() != NORMAL)
                                                    .directory(commonOptions.project());
         switch (buildMode) {
             case PLAIN:

@@ -24,7 +24,10 @@ import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
+import io.helidon.build.util.MavenCommand;
+import io.helidon.build.util.Style;
 
+import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
 
 /**
@@ -64,18 +67,20 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
     @Override
     public void execute(CommandContext context) {
 
-        // Clear the terminal if Ansi escapes are enabled
+        // Clear the terminal if Ansi escapes are enabled and print header
 
         clearScreen();
+        System.out.println();
+        System.out.print(Style.Bold.apply("dev loop starting "));
+        System.out.flush();
 
         // Execute helidon-maven-plugin to enter dev loop
 
-        Consumer<String> stdOut = context.verbosity() == CommandContext.Verbosity.NORMAL
+        Consumer<String> stdOut = context.verbosity() == NORMAL
                                   ? DevCommand::printMavenErrorLinesOnly
                                   : DevCommand::printAllLines;
         MavenCommand.builder()
-                    .description("dev loop starting")
-                    .verbosity(context.verbosity())
+                    .verbose(context.verbosity() != NORMAL)
                     .stdOut(stdOut)
                     .filter(new OnlyLoopOutput())
                     .addArgument(DEV_GOAL)
@@ -88,7 +93,11 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
     }
 
     private static class OnlyLoopOutput implements Predicate<String> {
+        private static final int LINES_PER_UPDATE = 3;
+        private static final int MAX_UPDATES = 3;
         private boolean started;
+        private int updates;
+        private int updateCountDown;
 
         @Override
         public boolean test(String line) {
@@ -96,6 +105,14 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
                 return true;
             } else if (line.endsWith(START_MESSAGE)) {
                 started = true;
+            } else if (updateCountDown == 0) {
+                if (updates < MAX_UPDATES) {
+                    System.out.print('.');
+                    updateCountDown = LINES_PER_UPDATE;
+                    updates++;
+                }
+            } else {
+                updateCountDown--;
             }
             return false;
         }
