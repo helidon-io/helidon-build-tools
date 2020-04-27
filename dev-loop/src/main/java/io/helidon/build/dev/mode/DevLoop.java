@@ -32,6 +32,7 @@ import io.helidon.build.dev.maven.ForkedMavenExecutor;
 import io.helidon.build.util.Log;
 
 import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
+import static io.helidon.build.util.Constants.DEV_LOOP_START_MESSAGE;
 import static io.helidon.build.util.Style.Bold;
 import static io.helidon.build.util.Style.BoldBlue;
 import static io.helidon.build.util.Style.BoldBrightGreen;
@@ -42,14 +43,6 @@ import static io.helidon.build.util.Style.BoldYellow;
  * A development loop that manages application lifecycle based on events from a {@link BuildLoop}.
  */
 public class DevLoop {
-
-    /**
-     * The message logged on loop start.
-     * NOTE: do not change this without also changing DevCommand
-     */
-    private static final String START_MESSAGE = "dev loop started";
-
-    private static final String LOG_PREFIX = Bold.apply("|");
     private static final int MAX_BUILD_WAIT_SECONDS = 5 * 60;
 
     private final BuildMonitor monitor;
@@ -66,7 +59,7 @@ public class DevLoop {
      * @param forkBuilds {@code true} if builds should be forked.
      */
     public DevLoop(Path rootDir, ProjectSupplier projectSupplier, boolean initialClean, boolean forkBuilds) {
-        this.monitor = new DevModeMonitor(projectSupplier.buildFileName());
+        this.monitor = new DevModeMonitor(rootDir, projectSupplier.buildFileName());
         this.buildExecutor = forkBuilds ? new ForkedMavenExecutor(rootDir, monitor, MAX_BUILD_WAIT_SECONDS)
                                         : new EmbeddedMavenExecutor(rootDir, monitor);
         this.initialClean = initialClean;
@@ -89,13 +82,16 @@ public class DevLoop {
         private static final int ON_READY_DELAY = 1000;
         private static final int BUILD_FAIL_DELAY = 1000;
         private static final String HEADER = Bold.apply("dev loop");
+        private static final String LOG_PREFIX = Bold.apply("|");
 
+        private final String projectName;
         private final String buildFileName;
         private ProjectExecutor projectExecutor;
         private ChangeType lastChangeType;
         private long buildStartTime;
 
-        private DevModeMonitor(String buildFileName) {
+        private DevModeMonitor(Path projectDir, String buildFileName) {
+            this.projectName = Bold.apply(projectDir.getFileName().toString());
             this.buildFileName = buildFileName;
         }
 
@@ -104,6 +100,8 @@ public class DevLoop {
                 Log.info();
                 Log.info(HEADER);
                 Log.info(LOG_PREFIX);
+            } else {
+                Log.info();
             }
         }
 
@@ -119,7 +117,7 @@ public class DevLoop {
         @Override
         public void onChanged(int cycleNumber, ChangeType type) {
             clear();
-            Log.info("%s %s changed", LOG_PREFIX, BoldBlue.apply(type));
+            Log.info("%s %s", LOG_PREFIX, BoldBlue.apply(type + " changed"));
             lastChangeType = type;
             ensureStop();
         }
@@ -141,7 +139,7 @@ public class DevLoop {
                 long elapsedTime = System.currentTimeMillis() - buildStartTime;
                 float elapsedSeconds = elapsedTime / 1000F;
                 String operation = cycleNumber == 0 ? "build" : "rebuild";
-                Log.info("%s %s completed (%.1f seconds)", LOG_PREFIX, BoldBlue.apply(operation), elapsedSeconds);
+                Log.info("%s %s (%.1f seconds)", LOG_PREFIX, BoldBlue.apply(operation + " completed"), elapsedSeconds);
             }
         }
 
@@ -203,7 +201,7 @@ public class DevLoop {
     @SuppressWarnings("unchecked")
     private static <T extends BuildMonitor> T run(BuildLoop loop, int maxWaitSeconds)
     throws InterruptedException, TimeoutException {
-        Log.info(START_MESSAGE);
+        Log.info(DEV_LOOP_START_MESSAGE);
         loop.start();
         Log.debug("Waiting up to %d seconds for build loop completion", maxWaitSeconds);
         if (!loop.waitForStopped(maxWaitSeconds, TimeUnit.SECONDS)) {

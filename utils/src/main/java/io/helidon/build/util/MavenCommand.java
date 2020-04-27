@@ -98,6 +98,8 @@ public class MavenCommand {
         private static final String MAVEN_OPTS_VAR = "MAVEN_OPTS";
         private static final int SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
         private static final String DEBUG_OPT_PREFIX = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:";
+        private static final String LOG_LEVEL_PROPERTY = "log.level";
+        private static final String LOG_LEVEL = System.getProperty(LOG_LEVEL_PROPERTY);
 
         private String description;
         private Path directory;
@@ -263,6 +265,9 @@ public class MavenCommand {
             if (verbose) {
                 command.add("--debug");
             }
+            if (LOG_LEVEL != null) {
+                command.add("-D" + LOG_LEVEL_PROPERTY + "=" + LOG_LEVEL);
+            }
 
             // Create the process builder
 
@@ -282,11 +287,10 @@ public class MavenCommand {
                 mavenOpts = addMavenOption(DEBUG_OPT_PREFIX + debugPort, mavenOpts);
             }
 
-            // Set the jansi.force property depending on whether or not it is enabled in this process
-            // Must use MAVEN_OPTS since the property is checked prior to maven's processing of the
-            // command-line -D options
+            // Ensure that the Ansi configuration in the child process is set correctly.
+            // Must use MAVEN_OPTS since properties are checked prior to maven's processing of the command-line -D options.
 
-            mavenOpts = addMavenOption(AnsiConsoleInstaller.forceAnsiArgument(), mavenOpts);
+            mavenOpts = addMavenOption(AnsiConsoleInstaller.childProcessArgument(), mavenOpts);
 
             env.put(MAVEN_OPTS_VAR, mavenOpts);
 

@@ -29,6 +29,9 @@ import io.helidon.build.util.Log;
 import io.helidon.build.util.ProcessMonitor;
 
 import static io.helidon.build.util.Style.BoldBlue;
+import static io.helidon.build.util.Style.BoldBrightGreen;
+import static io.helidon.build.util.Style.BoldBrightRed;
+import static io.helidon.build.util.Style.BoldYellow;
 
 /**
  * Class ProjectStarter.
@@ -43,6 +46,9 @@ public class ProjectExecutor {
     private static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
     private static final String JIT_LEVEL_ONE = "-XX:TieredStopAtLevel=1";
     private static final String JIT_TWO_COMPILER_THREADS = "-XX:CICompilerCount=2";
+    private static final String STARTING = BoldBrightGreen.apply("starting");
+    private static final String STOPPING = BoldYellow.apply("stopping");
+    private static final String STOPPED = BoldBrightRed.apply("stopped");
 
     /**
      * Execution mode.
@@ -121,12 +127,12 @@ public class ProjectExecutor {
     public void stop() {
         if (processMonitor != null) {
             try {
-                Log.debug("%s %s stopping", logPrefix, name);
+                logState(STOPPING);
                 processMonitor.stop(WAIT_TERMINATION, TimeUnit.SECONDS);
-                Log.info("%s %s stopped", logPrefix, name);
+                logState(STOPPED);
             } catch (IllegalStateException ignore) {
             } catch (ProcessMonitor.ProcessFailedException e) {
-                Log.info("%s %s stopped", logPrefix, name);
+                logState(STOPPED);
             } catch (Exception e) {
                 throw new RuntimeException(String.format("Failed to stop %s: %s", project.name(), e.getMessage()));
             }
@@ -149,6 +155,11 @@ public class ProjectExecutor {
     public void restart() {
         stop();
         start();
+    }
+
+    private void logState(String state) {
+        Log.info("%s %s %s", logPrefix, name, state);
+        System.out.flush();
     }
 
     private void startMaven() {
@@ -177,7 +188,7 @@ public class ProjectExecutor {
         env.put("JAVA_HOME", JAVA_HOME);
 
         try {
-            Log.info("%s %s starting", logPrefix, name);
+            logState(STARTING);
             Log.info();
             this.processMonitor = ProcessMonitor.builder()
                                                 .processBuilder(processBuilder)

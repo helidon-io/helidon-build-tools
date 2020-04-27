@@ -41,6 +41,11 @@ public final class Constants {
     public static final String DIR_SEP = File.separator;
 
     /**
+     * Message logged when the dev loop has started. Used to coordinate {@code DevCommand} and {@code DevLoop}.
+     */
+    public static final String DEV_LOOP_START_MESSAGE = "dev loop started";
+
+    /**
      * Gets location of Java's home directory by checking the (@code java.home} property
      * followed by the {@code JAVA_HOME} environment variable.
      *
@@ -57,6 +62,7 @@ public final class Constants {
         }
         return javaHome;
     }
+
 
     private Constants() {
     }

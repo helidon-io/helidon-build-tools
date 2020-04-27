@@ -17,6 +17,7 @@
 package io.helidon.build.util;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.fusesource.jansi.Ansi;
 import picocli.jansi.graalvm.AnsiConsole;
@@ -28,27 +29,98 @@ import static org.fusesource.jansi.Ansi.ansi;
  * Supports {@code GraalVM} native executables.
  */
 public class AnsiConsoleInstaller {
-    // Note: Class instances are not used here since this class is used within a maven plugin
-    //       that might have a different version of Jansi
-    private static final String JANSI_PACKAGE_PREFIX = "org.fusesource.jansi";
-    private static final String JANSI_STRIP_STREAM_CLASS_NAME = "org.fusesource.jansi.AnsiPrintStream";
-    private static final AtomicBoolean INSTALLED = new AtomicBoolean();
-    private static final AtomicBoolean ENABLED = new AtomicBoolean();
 
     /**
      * The system property that, if {@code true}, will bypass the default check
      * to see if stdin is a terminal.
      */
-    public static final String FORCE_ANSI_PROPERTY = "jansi.force";
+    private static final String JANSI_FORCE_PROPERTY = "jansi.force";
 
     /**
-     * Returns the command-line argument to set the {@link #FORCE_ANSI_PROPERTY} to {@code true}
-     * if Ansi escapes are enabled, or {@code false} if not.
-     *
-     * @return The command line argument, e.g. "-Djansi.force=true";
+     * The system property that, if {@code true}, will install streams that strip Ansi escapes.
      */
-    public static String forceAnsiArgument() {
-        return "-D" + FORCE_ANSI_PROPERTY + "=" + areAnsiEscapesEnabled();
+    private static final String JANSI_STRIP_PROPERTY = "jansi.strip";
+
+    /**
+     * The system property that, if {@code true}, will not install streams.
+     */
+    private static final String JANSI_PASS_THROUGH_PROPERTY = "jansi.passthrough";
+
+    /**
+     * The Helidon child process property name.
+     */
+    private static final String HELIDON_CHILD_PROCESS_PROPERTY = "helidon.child.process";
+
+    // Note: Class instances are not used here since this class is used within a maven plugin
+    //       that might have a different version of Jansi
+    private static final String JANSI_PACKAGE_PREFIX = "org.fusesource.jansi";
+    private static final String JANSI_STRIP_STREAM_CLASS_NAME = "org.fusesource.jansi.AnsiPrintStream";
+    private static final boolean IS_HELIDON_CHILD_PROCESS = Boolean.getBoolean(HELIDON_CHILD_PROCESS_PROPERTY);
+    private static final AtomicBoolean INSTALLED = new AtomicBoolean();
+    private static final AtomicReference<ConsoleType> CONSOLE_TYPE = new AtomicReference<>();
+    private static final AtomicBoolean ENABLED = new AtomicBoolean();
+
+    /**
+     * Console types.
+     */
+    public enum ConsoleType {
+        /**
+         * Support Ansi escapes.
+         */
+        ANSI(JANSI_FORCE_PROPERTY),
+
+        /**
+         * Strip Ansi escapes.
+         */
+        STRIP_ANSI(JANSI_STRIP_PROPERTY),
+
+        /**
+         * Do not explicitly support or strip Ansi escapes.
+         */
+        DEFAULT(JANSI_PASS_THROUGH_PROPERTY);
+
+        private final String argument;
+
+        ConsoleType(String propertyName) {
+            this.argument = "-D" + HELIDON_CHILD_PROCESS_PROPERTY + "=true" + " -D" + propertyName + "=true";
+        }
+
+        /**
+         * Returns the command-line argument that forces Ansi escapes to be handled in a child process
+         * the same way as they are in this one.
+         */
+        public String childProcessArgument() {
+            return argument;
+        }
+    }
+
+    /**
+     * Returns the command-line argument that forces Ansi escapes to be handled in a child process
+     * the same way as they are in this one.
+     *
+     * @return The command line argument.
+     */
+    public static String childProcessArgument() {
+        return consoleType().childProcessArgument();
+    }
+
+    /**
+     * Returns whether or not this process is a child of another Helidon process.
+     *
+     * @return {@code true} if this process is a child of another Helidon process.
+     */
+    public static boolean isHelidonChildProcess() {
+        return IS_HELIDON_CHILD_PROCESS;
+    }
+
+    /**
+     * Returns whether or not Ansi escapes are enabled. Calls {@link #ensureInstalled()}.
+     *
+     * @return {@code true} if enabled.
+     */
+    public static ConsoleType consoleType() {
+        ensureInstalled();
+        return CONSOLE_TYPE.get();
     }
 
     /**
@@ -92,48 +164,58 @@ public class AnsiConsoleInstaller {
      */
     public static boolean ensureInstalled() {
         if (!INSTALLED.getAndSet(true)) {
-            if (shouldInstall()) {
-                AnsiConsole.systemInstall();
-            }
-            ENABLED.set(checkEnabled());
+            ConsoleType desiredType = desiredConsoleType();
+            AnsiConsole.systemInstall();
+            ConsoleType installedType = installedConsoleType(desiredType);
+            CONSOLE_TYPE.set(installedType);
+            ENABLED.set(installedType == ConsoleType.ANSI);
         }
         return ENABLED.get();
     }
 
-    private static boolean checkEnabled() {
-        if (Ansi.isEnabled()) {
-            final String systemOutClass = System.out.getClass().getName();
-            if (systemOutClass.startsWith(JANSI_PACKAGE_PREFIX)) {
-                // We have a Jansi type installed, check if it is the type that strips escapes
-                if (systemOutClass.equals(JANSI_STRIP_STREAM_CLASS_NAME)) {
-                    Log.debug("Ansi escapes will be stripped by system streams");
-                    return false;
-                } else {
-                    Log.debug("Ansi escapes should not be stripped by system streams");
-                    return true;
-                }
-            } else {
-                Log.debug("System.out not a Jansi type (%s); Ansi escapes should not be stripped", systemOutClass);
-                return true;
-            }
+    private static ConsoleType desiredConsoleType() {
+        if (Boolean.getBoolean(JANSI_FORCE_PROPERTY)) {
+            Log.debug("Jansi streams requested: %s=true", JANSI_FORCE_PROPERTY);
+            return ConsoleType.ANSI;
+        } else if (Boolean.getBoolean(JANSI_STRIP_PROPERTY)) {
+            Log.debug("Jansi strip streams requested: %s=true", JANSI_STRIP_PROPERTY);
+            return ConsoleType.STRIP_ANSI;
+        } else if (Boolean.getBoolean(JANSI_PASS_THROUGH_PROPERTY)) {
+            Log.debug("Jansi pass through streams requested: %s=true", JANSI_PASS_THROUGH_PROPERTY);
+            return ConsoleType.STRIP_ANSI;
+        } else if (System.console() != null) {
+            Log.debug("No Jansi request, but Console is available");
+            return ConsoleType.ANSI;
         } else {
-            Log.debug("Ansi has been disabled");
-            return false;
+            Log.debug("No Jansi request and Console is not available");
+            return ConsoleType.DEFAULT;
         }
     }
 
-    private static boolean shouldInstall() {
-        if ("true".equals(System.getProperty(FORCE_ANSI_PROPERTY))) {
-            Log.debug("Installing Jansi streams: %s=true", FORCE_ANSI_PROPERTY);
-            return true;
-        } else if (System.console() != null) {
-            Log.debug("Installing Jansi streams: console available");
-            return true;
+    private static ConsoleType installedConsoleType(ConsoleType desiredType) {
+        final String systemOutClass = System.out.getClass().getName();
+        if (systemOutClass.startsWith(JANSI_PACKAGE_PREFIX)) {
+            // We have a Jansi type installed, check if it is the type that strips escapes
+            if (systemOutClass.equals(JANSI_STRIP_STREAM_CLASS_NAME)) {
+                if (desiredType != ConsoleType.STRIP_ANSI) {
+                    Log.debug("Desired = %s, but Ansi escapes will be stripped by system streams.", desiredType);
+                }
+                return ConsoleType.STRIP_ANSI;
+            } else {
+                if (desiredType != ConsoleType.ANSI) {
+                    Log.debug("Desired = %s, but Ansi escapes should be supported by system streams.", desiredType);
+                }
+                return ConsoleType.ANSI;
+            }
         } else {
-            Log.debug("Skipping Jansi streams install: not forced and console not available");
-            return false;
+            if (desiredType != ConsoleType.DEFAULT) {
+                Log.debug("Desired = %s, but System.out not a Jansi type (%s) ao Ansi escapes should not be stripped",
+                        desiredType, systemOutClass);
+            }
+            return ConsoleType.DEFAULT;
         }
     }
+
 
     private AnsiConsoleInstaller() {
     }
