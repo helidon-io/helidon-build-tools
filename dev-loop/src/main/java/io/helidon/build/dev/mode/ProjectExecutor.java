@@ -37,7 +37,6 @@ import static io.helidon.build.util.Style.BoldYellow;
  * Class ProjectStarter.
  */
 public class ProjectExecutor {
-
     private static final long WAIT_TERMINATION = 5L;
     private static final String MAVEN_EXEC = Constants.OS.mavenExec();
     private static final List<String> EXEC_COMMAND = List.of(MAVEN_EXEC, "exec:java");
@@ -123,16 +122,17 @@ public class ProjectExecutor {
 
     /**
      * Stop execution.
+     * @param quiet {@code true} if should not log.
      */
-    public void stop() {
+    public void stop(boolean quiet) {
         if (processMonitor != null) {
             try {
-                logState(STOPPING);
+                stateChanged(STOPPING, quiet);
                 processMonitor.stop(WAIT_TERMINATION, TimeUnit.SECONDS);
-                logState(STOPPED);
+                stateChanged(STOPPED, quiet);
             } catch (IllegalStateException ignore) {
             } catch (ProcessMonitor.ProcessFailedException e) {
-                logState(STOPPED);
+                stateChanged(STOPPED, quiet);
             } catch (Exception e) {
                 throw new RuntimeException(String.format("Failed to stop %s: %s", project.name(), e.getMessage()));
             }
@@ -149,17 +149,14 @@ public class ProjectExecutor {
         return processMonitor != null;
     }
 
-    /**
-     * Restart project.
-     */
-    public void restart() {
-        stop();
-        start();
-    }
-
-    private void logState(String state) {
-        Log.info("%s %s %s", logPrefix, name, state);
-        System.out.flush();
+    private void stateChanged(String state, boolean quiet) {
+        if (!quiet) {
+            if (logPrefix == null) {
+                Log.info("%s %s", name, state);
+            } else {
+                Log.info("%s%s %s", logPrefix, name, state);
+            }
+        }
     }
 
     private void startMaven() {
@@ -188,7 +185,7 @@ public class ProjectExecutor {
         env.put("JAVA_HOME", JAVA_HOME);
 
         try {
-            logState(STARTING);
+            stateChanged(STARTING, false);
             Log.info();
             this.processMonitor = ProcessMonitor.builder()
                                                 .processBuilder(processBuilder)

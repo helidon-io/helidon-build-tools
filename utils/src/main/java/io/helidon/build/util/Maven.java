@@ -16,12 +16,10 @@
 
 package io.helidon.build.util;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -57,7 +55,6 @@ import org.eclipse.aether.version.Version;
 import static io.helidon.build.util.Constants.DIR_SEP;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
-import static java.util.Objects.requireNonNull;
 
 /**
  * Maven utilities.
@@ -66,6 +63,7 @@ public class Maven {
     private static final String LATEST_VERSION = "[0,)";
     private static final String SNAPSHOT_SUFFIX = "-SNAPSHOT";
     private static final Instance<Maven> DEFAULT_INSTANCE = new Instance<>(Maven::defaultInstance);
+
     private final RepositorySystem system;
     private final DefaultRepositorySystemSession session;
     private final List<RemoteRepository> repositories;
@@ -129,10 +127,10 @@ public class Maven {
         final int lastIndex = versions.size() - 1;
         final Predicate<Version> predicate = filter == null ? LATEST : filter;
         return IntStream.rangeClosed(0, lastIndex)
-                        .mapToObj(index -> versions.get(lastIndex - index))
-                        .filter(predicate)
-                        .findFirst()
-                        .orElseThrow(() -> new IllegalStateException("no matching version found!"));
+                .mapToObj(index -> versions.get(lastIndex - index))
+                .filter(predicate)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("no matching version found!"));
     }
 
     /**
@@ -211,9 +209,7 @@ public class Maven {
      * Maven builder.
      */
     public static class Builder {
-        private static final String PATH_VAR = "PATH";
         private static final String USER_HOME_PROPERTY = "user.home";
-        private static final String MVN_BINARY_NAME = "mvn";
         private static final String GLOBAL_SETTINGS_PATH = "conf" + DIR_SEP + "settings.xml";
         private static final String USER_SETTINGS_PATH = ".m2" + DIR_SEP + "settings.xml";
         private static final String LOCAL_REPOSITORY_PATH = ".m2" + DIR_SEP + "repository";
@@ -221,8 +217,6 @@ public class Maven {
         private static final String REPOSITORY_TYPE = "default";
         private static final String CENTRAL_URL = "https://repo.maven.apache.org/maven2/";
         private static final String LOCAL_REPOSITORY_KEY = "localRepository";
-        private static final String MAVEN_HOME_VAR = "MAVEN_HOME";
-        private static final String MVN_HOME_VAR = "MVN_HOME";
 
         private final Path userHome;
         private Path mavenHome;
@@ -302,8 +296,8 @@ public class Maven {
         public Maven build() {
             system = newRepositorySystem();
             session = MavenRepositorySystemUtils.newSession()
-                                                .setOffline(offline)
-                                                .setCache(new DefaultRepositoryCache());
+                    .setOffline(offline)
+                    .setCache(new DefaultRepositoryCache());
             final LocalRepository localRepo = localRepository();
             session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
 
@@ -317,13 +311,7 @@ public class Maven {
 
         private Path mavenHome() {
             if (mavenHome == null) {
-                mavenHome = envVarPath(MAVEN_HOME_VAR);
-                if (mavenHome == null) {
-                    mavenHome = envVarPath(MVN_HOME_VAR);
-                    if (mavenHome == null) {
-                        mavenHome = findExecutable(MVN_BINARY_NAME);
-                    }
-                }
+                mavenHome = MavenCommand.mavenHome();
             }
             return mavenHome;
         }
@@ -405,23 +393,10 @@ public class Maven {
                 @Override
                 public void serviceCreationFailed(Class<?> type, Class<?> impl, Throwable exception) {
                     Log.error("Service creation failed for %s implementation %s: %s",
-                              type, impl, exception.getMessage(), exception);
+                            type, impl, exception.getMessage(), exception);
                 }
             });
             return locator.getService(RepositorySystem.class);
-        }
-
-        private static Path envVarPath(String var) {
-            final String path = System.getenv(var);
-            return path == null ? null : Paths.get(path);
-        }
-
-        private static Path findExecutable(String executableName) {
-            return Arrays.stream(requireNonNull(System.getenv(PATH_VAR)).split(File.pathSeparator))
-                         .map(dir -> Paths.get(dir))
-                         .filter(path -> Files.isExecutable(path.resolve(executableName)))
-                         .findFirst()
-                         .orElseThrow(() -> new IllegalStateException(executableName + " not found in " + PATH_VAR));
         }
     }
 

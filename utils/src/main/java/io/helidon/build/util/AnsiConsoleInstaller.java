@@ -31,6 +31,11 @@ import static org.fusesource.jansi.Ansi.ansi;
 public class AnsiConsoleInstaller {
 
     /**
+     * The Helidon child process property name.
+     */
+    public static final String HELIDON_CHILD_PROCESS_PROPERTY = "helidon.child.process";
+
+    /**
      * The system property that, if {@code true}, will bypass the default check
      * to see if stdin is a terminal.
      */
@@ -45,11 +50,6 @@ public class AnsiConsoleInstaller {
      * The system property that, if {@code true}, will not install streams.
      */
     private static final String JANSI_PASS_THROUGH_PROPERTY = "jansi.passthrough";
-
-    /**
-     * The Helidon child process property name.
-     */
-    private static final String HELIDON_CHILD_PROCESS_PROPERTY = "helidon.child.process";
 
     // Note: Class instances are not used here since this class is used within a maven plugin
     //       that might have a different version of Jansi

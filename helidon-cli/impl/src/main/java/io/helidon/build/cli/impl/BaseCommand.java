@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import io.helidon.build.util.AnsiConsoleInstaller;
 import io.helidon.build.util.ProjectConfig;
 
 import org.apache.maven.model.Model;
@@ -48,6 +49,10 @@ public abstract class BaseCommand {
     private Properties cliConfig;
     private ProjectConfig projectConfig;
     private Path projectDir;
+
+    protected BaseCommand() {
+        AnsiConsoleInstaller.ensureInstalled();
+    }
 
     protected ProjectConfig projectConfig(Path dir) {
         if (projectConfig != null && dir.equals(projectDir)) {

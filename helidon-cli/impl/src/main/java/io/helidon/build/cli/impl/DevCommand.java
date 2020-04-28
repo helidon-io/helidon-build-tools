@@ -21,31 +21,33 @@ import java.util.function.Predicate;
 
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
+import io.helidon.build.cli.harness.CommandContext.Verbosity;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.util.MavenCommand;
-import io.helidon.build.util.Style;
 
+import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
 import static io.helidon.build.util.Constants.DEV_LOOP_START_MESSAGE;
+import static io.helidon.build.util.Style.Bold;
+import static io.helidon.build.util.Style.BoldBrightGreen;
 
 /**
  * The {@code dev} command.
  */
 @Command(name = "dev", description = "Continuous application development")
-public final class DevCommand extends BaseCommand implements CommandExecution {
+public final class DevCommand extends MavenBaseCommand implements CommandExecution {
 
     private static final String CLEAN_PROP_PREFIX = "-Ddev.clean=";
     private static final String FORK_PROP_PREFIX = "-Ddev.fork=";
-    private static final String DO_NOT_USE_MAVEN_LOG = "-Ddev.useMavenLog=false";
+    private static final String TERMINAL_MODE_PROP_PREFIX = "-Ddev.terminalMode=";
     private static final String DEBUG_PORT_PROPERTY = "debug.port";
     private static final String DEV_GOAL = "helidon:dev";
     private static final String MAVEN_LOG_LEVEL_START = "[";
     private static final String MAVEN_LOG_LEVEL_END = "]";
     private static final String MAVEN_ERROR_LEVEL = "ERROR";
-
 
     private final CommonOptions commonOptions;
     private final boolean clean;
@@ -63,28 +65,40 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
 
     @Override
     public void execute(CommandContext context) {
+        if (isMavenVersionOutOfDate(context)) {
+            return;
+        }
 
-        // Clear the terminal if Ansi escapes are enabled and print header
+        Verbosity verbosity = context.verbosity();
+        boolean terminalMode = verbosity == NORMAL;
 
-        clearScreen();
-        System.out.println();
-        System.out.print(Style.Bold.apply("dev loop starting "));
-        System.out.flush();
+        // Clear terminal and print header if in terminal mode
+
+        if (terminalMode) {
+            clearScreen();
+            System.out.println();
+            System.out.print(Bold.apply("helidon dev ") + BoldBrightGreen.apply("starting "));
+            System.out.flush();
+        }
 
         // Execute helidon-maven-plugin to enter dev loop
 
-        Consumer<String> stdOut = context.verbosity() == NORMAL
+        Consumer<String> stdOut = terminalMode
                 ? DevCommand::printMavenErrorLinesOnly
                 : DevCommand::printAllLines;
 
+        Predicate<String> filter = terminalMode
+                ? new OnlyLoopOutput()
+                : line -> true;
+
         MavenCommand.builder()
-                .verbose(context.verbosity() != NORMAL)
+                .verbose(verbosity == DEBUG)
                 .stdOut(stdOut)
-                .filter(new OnlyLoopOutput())
+                .filter(filter)
                 .addArgument(DEV_GOAL)
-                .addArgument(DO_NOT_USE_MAVEN_LOG)
                 .addArgument(CLEAN_PROP_PREFIX + clean)
                 .addArgument(FORK_PROP_PREFIX + fork)
+                .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
                 .directory(commonOptions.project())
                 .debugPort(Integer.getInteger(DEBUG_PORT_PROPERTY, 0))
                 .build()
@@ -93,17 +107,27 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
 
     private static class OnlyLoopOutput implements Predicate<String> {
         private static final String DEBUGGER_LISTEN_MESSAGE_PREFIX = "Listening for transport";
+        private static final String BUILD_SUCCEEDED = "BUILD SUCCESS";
+        private static final String BUILD_FAILED = "BUILD FAILURE";
         private static final int LINES_PER_UPDATE = 3;
         private static final int MAX_UPDATES = 3;
         private boolean debugger;
         private boolean started;
         private int updates;
         private int updateCountDown;
+        private boolean completed;
 
         @Override
         public boolean test(String line) {
             if (started) {
-                return true;
+                if (completed) {
+                    return false;
+                } else if (line.endsWith(BUILD_SUCCEEDED) || line.endsWith(BUILD_FAILED)) {
+                    completed = true;
+                    return false;
+                } else {
+                    return true;
+                }
             } else if (line.endsWith(DEV_LOOP_START_MESSAGE)) {
                 started = true;
             } else if (line.startsWith(DEBUGGER_LISTEN_MESSAGE_PREFIX)) {
@@ -135,13 +159,10 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
         if (line.startsWith(MAVEN_LOG_LEVEL_START)) {
             int levelEnd = line.indexOf(MAVEN_LOG_LEVEL_END);
             if (levelEnd > 0 && line.substring(0, levelEnd).contains(MAVEN_ERROR_LEVEL)) {
-/*
                 String message = line.substring(levelEnd + 1);
-                if (!message.isBlank()) {
+                if (message.isBlank()) {
                     System.out.println(message);
                 }
-*/
-                System.out.println(line);
             }
         } else {
             System.out.println(line);

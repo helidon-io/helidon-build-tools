@@ -18,6 +18,7 @@ package io.helidon.build.util;
 
 import java.io.File;
 
+import static io.helidon.build.util.AnsiConsoleInstaller.HELIDON_CHILD_PROCESS_PROPERTY;
 import static io.helidon.build.util.OSType.currentOS;
 
 /**

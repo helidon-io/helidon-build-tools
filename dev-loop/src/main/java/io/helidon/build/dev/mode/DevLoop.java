@@ -38,14 +38,15 @@ import static io.helidon.build.util.Style.BoldBlue;
 import static io.helidon.build.util.Style.BoldBrightGreen;
 import static io.helidon.build.util.Style.BoldRed;
 import static io.helidon.build.util.Style.BoldYellow;
+import static org.fusesource.jansi.Ansi.ansi;
 
 /**
  * A development loop that manages application lifecycle based on events from a {@link BuildLoop}.
  */
 public class DevLoop {
     private static final int MAX_BUILD_WAIT_SECONDS = 5 * 60;
-
-    private final BuildMonitor monitor;
+    private final boolean terminalMode;
+    private final DevModeMonitor monitor;
     private final BuildExecutor buildExecutor;
     private final ProjectSupplier projectSupplier;
     private final boolean initialClean;
@@ -57,11 +58,17 @@ public class DevLoop {
      * @param projectSupplier Project supplier.
      * @param initialClean Clean flag.
      * @param forkBuilds {@code true} if builds should be forked.
+     * @param terminalMode {@code true} for terminal output.
      */
-    public DevLoop(Path rootDir, ProjectSupplier projectSupplier, boolean initialClean, boolean forkBuilds) {
-        this.monitor = new DevModeMonitor(rootDir, projectSupplier.buildFileName());
+    public DevLoop(Path rootDir,
+                   ProjectSupplier projectSupplier,
+                   boolean initialClean,
+                   boolean forkBuilds,
+                   boolean terminalMode) {
+        this.terminalMode = terminalMode;
+        this.monitor = new DevModeMonitor(terminalMode, projectSupplier.buildFileName());
         this.buildExecutor = forkBuilds ? new ForkedMavenExecutor(rootDir, monitor, MAX_BUILD_WAIT_SECONDS)
-                                        : new EmbeddedMavenExecutor(rootDir, monitor);
+                : new EmbeddedMavenExecutor(rootDir, monitor);
         this.initialClean = initialClean;
         this.projectSupplier = projectSupplier;
     }
@@ -73,7 +80,7 @@ public class DevLoop {
      * @throws Exception If a problem is found.
      */
     public void start(int maxWaitInSeconds) throws Exception {
-        Runtime.getRuntime().addShutdownHook(new Thread(monitor::onStopped));
+        Runtime.getRuntime().addShutdownHook(new Thread(monitor::shutdown));
         BuildLoop loop = newLoop(buildExecutor, initialClean, false);
         run(loop, maxWaitInSeconds);
     }
@@ -81,27 +88,29 @@ public class DevLoop {
     static class DevModeMonitor implements BuildMonitor {
         private static final int ON_READY_DELAY = 1000;
         private static final int BUILD_FAIL_DELAY = 1000;
-        private static final String HEADER = Bold.apply("dev loop");
-        private static final String LOG_PREFIX = Bold.apply("|");
+        private static final String HEADER = Bold.apply("helidon dev");
+        private static final String LOG_PREFIX = Bold.apply("|") + " ";
 
-        private final String projectName;
+        private final boolean terminalMode;
         private final String buildFileName;
         private ProjectExecutor projectExecutor;
         private ChangeType lastChangeType;
         private long buildStartTime;
 
-        private DevModeMonitor(Path projectDir, String buildFileName) {
-            this.projectName = Bold.apply(projectDir.getFileName().toString());
+        private DevModeMonitor(boolean terminalMode, String buildFileName) {
+            this.terminalMode = terminalMode;
             this.buildFileName = buildFileName;
         }
 
         private void clear() {
-            if (clearScreen()) {
-                Log.info();
-                Log.info(HEADER);
-                Log.info(LOG_PREFIX);
-            } else {
-                Log.info();
+            if (terminalMode) {
+                if (clearScreen()) {
+                    Log.info();
+                    Log.info(HEADER);
+                    Log.info(LOG_PREFIX);
+                } else {
+                    Log.info();
+                }
             }
         }
 
@@ -114,21 +123,29 @@ public class DevLoop {
         public void onCycleStart(int cycleNumber) {
         }
 
+        private void log(String message, Object... args) {
+            if (terminalMode) {
+                Log.info(LOG_PREFIX + message, args);
+            } else {
+                Log.info(message, args);
+            }
+        }
+
         @Override
         public void onChanged(int cycleNumber, ChangeType type) {
             clear();
-            Log.info("%s %s", LOG_PREFIX, BoldBlue.apply(type + " changed"));
+            log("%s", BoldBlue.apply(type + " changed"));
             lastChangeType = type;
-            ensureStop();
+            ensureStop(false);
         }
 
         @Override
         public void onBuildStart(int cycleNumber, BuildType type) {
             if (type == BuildType.Skipped) {
-                Log.info("%s %s", LOG_PREFIX, BoldBrightGreen.apply("up to date"));
+                log("%s", BoldBrightGreen.apply("up to date"));
             } else {
                 String operation = cycleNumber == 0 ? "building" : "rebuilding";
-                Log.info("%s %s (%s)", LOG_PREFIX, BoldBlue.apply(operation), type);
+                log("%s (%s)", BoldBlue.apply(operation), type);
                 buildStartTime = System.currentTimeMillis();
             }
         }
@@ -139,30 +156,30 @@ public class DevLoop {
                 long elapsedTime = System.currentTimeMillis() - buildStartTime;
                 float elapsedSeconds = elapsedTime / 1000F;
                 String operation = cycleNumber == 0 ? "build" : "rebuild";
-                Log.info("%s %s (%.1f seconds)", LOG_PREFIX, BoldBlue.apply(operation + " completed"), elapsedSeconds);
+                log("%s (%.1f seconds)", BoldBlue.apply(operation + " completed"), elapsedSeconds);
             }
         }
 
         @Override
         public long onBuildFail(int cycleNumber, BuildType type, Throwable error) {
-            Log.info("%s %s", LOG_PREFIX, BoldRed.apply("build failed"));
-            ensureStop();
+            log("%s", BoldRed.apply("build failed"));
+            ensureStop(false);
             String message;
             if (lastChangeType == ChangeType.BuildFile) {
-                message = String.format("waiting for %s changes before retrying build", buildFileName);
+                message = String.format("waiting for %s changes", buildFileName);
             } else if (lastChangeType == ChangeType.SourceFile) {
-                message = "waiting for source file changes before retrying build";
+                message = "waiting for source file changes";
             } else {
-                message = "waiting for changes before retrying build";
+                message = "waiting for changes";
             }
-            Log.info("%s %s", LOG_PREFIX, BoldYellow.apply(message));
+            log("%s", BoldYellow.apply(message));
             return BUILD_FAIL_DELAY;
         }
 
         @Override
         public long onReady(int cycleNumber, Project project) {
             if (projectExecutor == null) {
-                projectExecutor = new ProjectExecutor(project, LOG_PREFIX);
+                projectExecutor = new ProjectExecutor(project, terminalMode ? LOG_PREFIX : null);
                 projectExecutor.start();
             } else if (!projectExecutor.isRunning()) {
                 projectExecutor.start();
@@ -177,37 +194,42 @@ public class DevLoop {
 
         @Override
         public void onStopped() {
-            ensureStop();
+            ensureStop(false);
         }
 
-        private void ensureStop() {
+        private void ensureStop(boolean quiet) {
             if (projectExecutor != null) {
                 final ProjectExecutor executor = projectExecutor;
                 projectExecutor = null;
-                executor.stop();
+                executor.stop(quiet);
             }
+        }
+
+        private void shutdown() {
+            System.out.println(ansi().reset());
+            ensureStop(true);
         }
     }
 
     private BuildLoop newLoop(BuildExecutor executor, boolean initialClean, boolean watchBinariesOnly) {
         return BuildLoop.builder()
-                        .buildExecutor(executor)
-                        .clean(initialClean)
-                        .watchBinariesOnly(watchBinariesOnly)
-                        .projectSupplier(projectSupplier)
-                        .build();
+                .buildExecutor(executor)
+                .clean(initialClean)
+                .watchBinariesOnly(watchBinariesOnly)
+                .projectSupplier(projectSupplier)
+                .build();
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T extends BuildMonitor> T run(BuildLoop loop, int maxWaitSeconds)
-    throws InterruptedException, TimeoutException {
-        Log.info(DEV_LOOP_START_MESSAGE);
+    private void run(BuildLoop loop, int maxWaitSeconds) throws InterruptedException, TimeoutException {
+        if (terminalMode) {
+            Log.info(DEV_LOOP_START_MESSAGE);
+        }
         loop.start();
         Log.debug("Waiting up to %d seconds for build loop completion", maxWaitSeconds);
         if (!loop.waitForStopped(maxWaitSeconds, TimeUnit.SECONDS)) {
             loop.stop(0L);
             throw new TimeoutException("While waiting for loop completion");
         }
-        return (T) loop.monitor();
+        loop.monitor();
     }
 }

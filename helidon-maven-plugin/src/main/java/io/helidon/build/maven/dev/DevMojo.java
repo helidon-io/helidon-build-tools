@@ -22,6 +22,8 @@ import io.helidon.build.dev.ProjectSupplier;
 import io.helidon.build.dev.maven.MavenProjectSupplier;
 import io.helidon.build.dev.mode.DevLoop;
 import io.helidon.build.maven.link.MavenLogWriter;
+import io.helidon.build.util.Log;
+import io.helidon.build.util.SystemLogWriter;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
@@ -67,10 +69,10 @@ public class DevMojo extends AbstractMojo {
     private boolean fork;
 
     /**
-     * Use maven log.
+     * Use terminal mode.
      */
-    @Parameter(defaultValue = "true", property = "dev.useMavenLog")
-    private boolean useMavenLog;
+    @Parameter(defaultValue = "false", property = "dev.terminalMode")
+    private boolean terminalMode;
 
     /**
      * Skip execution for this plugin.
@@ -97,11 +99,13 @@ public class DevMojo extends AbstractMojo {
             return;
         }
         try {
-            if (useMavenLog) {
+            if (terminalMode) {
+                SystemLogWriter.bind(getLog().isDebugEnabled() ? Log.Level.DEBUG : Log.Level.INFO);
+            } else {
                 MavenLogWriter.bind(getLog());
             }
             final ProjectSupplier projectSupplier = new MavenProjectSupplier(project, session, plugins);
-            final DevLoop loop = new DevLoop(devProjectDir.toPath(), projectSupplier, clean, fork);
+            final DevLoop loop = new DevLoop(devProjectDir.toPath(), projectSupplier, clean, fork, terminalMode);
             loop.start(Integer.MAX_VALUE);
         } catch (Exception e) {
             throw new MojoExecutionException("Error", e);
