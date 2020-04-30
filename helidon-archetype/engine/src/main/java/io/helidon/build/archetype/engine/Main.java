@@ -52,7 +52,7 @@ public final class Main {
 
         File outputDir = new File(args[1]);
         if (outputDir.exists()) {
-            System.err.println(templateJar + " exists");
+            System.err.println(outputDir + " exists");
             System.exit(1);
         }
         new ArchetypeEngine(cl, System.getProperties()).generate(outputDir);
