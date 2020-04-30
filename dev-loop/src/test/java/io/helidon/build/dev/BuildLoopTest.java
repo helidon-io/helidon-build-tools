@@ -277,7 +277,6 @@ class BuildLoopTest {
     @Test
     void testQuickstartSePomFileChangeWhileRunning() throws Exception {
         final Path rootDir = helidonSeProjectCopy();
-        final AtomicInteger resourceFilesTouched = new AtomicInteger();
         final TestMonitor monitor = new TestMonitor(3) {
             @Override
             public void onCycleStart(int cycleNumber) {

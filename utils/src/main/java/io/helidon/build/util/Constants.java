@@ -18,7 +18,6 @@ package io.helidon.build.util;
 
 import java.io.File;
 
-import static io.helidon.build.util.AnsiConsoleInstaller.HELIDON_CHILD_PROCESS_PROPERTY;
 import static io.helidon.build.util.OSType.currentOS;
 
 /**
@@ -40,11 +39,6 @@ public final class Constants {
      * File system directory separator.
      */
     public static final String DIR_SEP = File.separator;
-
-    /**
-     * Message logged when the dev loop has started. Used to coordinate {@code DevCommand} and {@code DevLoop}.
-     */
-    public static final String DEV_LOOP_START_MESSAGE = "dev loop started";
 
     /**
      * Gets location of Java's home directory by checking the (@code java.home} property

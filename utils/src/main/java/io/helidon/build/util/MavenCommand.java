@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static io.helidon.build.util.Constants.EOL;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.listFiles;
 import static io.helidon.build.util.Style.Bold;
@@ -79,7 +80,7 @@ public class MavenCommand {
     }
 
     /**
-     * Finds the {@code mvn} executable by using the following, in order:
+     * Finds the {@code mvn} executable. Searches using the following, in order:
      * <ol>
      *     <li>The {@code MAVEN_HOME} environment variable</li>
      *     <li>The {@code MVN_HOME} environment variable</li>
@@ -97,8 +98,8 @@ public class MavenCommand {
             }
             if (maven == null) {
                 maven = FileUtils.findExecutableInPath(MAVEN_BINARY_NAME)
-                        .orElseThrow(() -> new IllegalStateException(MAVEN_BINARY_NAME + " not found. Please add it to " +
-                                "your PATH or set either the MAVEN_HOME or MVN_HOME environment variables."));
+                        .orElseThrow(() -> new IllegalStateException(MAVEN_BINARY_NAME + " not found. Please add it to "
+                                + "your PATH or set either the MAVEN_HOME or MVN_HOME environment variables."));
             }
             MAVEN_EXECUTABLE.set(maven);
         }
@@ -149,18 +150,17 @@ public class MavenCommand {
     public static void assertRequiredMavenVersion(MavenVersion requiredMinimumVersion) {
         MavenVersion installed = installedVersion();
         if (installed.isLessThan(requiredMinimumVersion)) {
-            final String eol = System.getProperty("line.separator");
-            final String msg = eol
+            final String msg = EOL
                     + Bold.apply("Maven version ")
                     + BoldBrightGreen.apply(requiredMinimumVersion)
                     + Bold.apply(" or later is required, found ")
                     + BoldBrightRed.apply(installed)
                     + Bold.apply(".")
-                    + eol
+                    + EOL
                     + "Please update from "
                     + MAVEN_DOWNLOAD_URL
                     + " and prepend your PATH or set the MAVEN_HOME or MVN_HOME environment variable."
-                    + eol;
+                    + EOL;
             throw new IllegalStateException(msg);
         }
     }

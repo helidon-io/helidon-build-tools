@@ -88,6 +88,8 @@ public class AnsiConsoleInstaller {
         /**
          * Returns the command-line argument that forces Ansi escapes to be handled in a child process
          * the same way as they are in this one.
+         *
+         * @return The argument.
          */
         public String childProcessArgument() {
             return argument;
@@ -98,7 +100,7 @@ public class AnsiConsoleInstaller {
      * Returns the command-line argument that forces Ansi escapes to be handled in a child process
      * the same way as they are in this one.
      *
-     * @return The command line argument.
+     * @return The argument.
      */
     public static String childProcessArgument() {
         return consoleType().childProcessArgument();

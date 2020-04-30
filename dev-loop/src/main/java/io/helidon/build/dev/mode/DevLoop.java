@@ -32,7 +32,12 @@ import io.helidon.build.dev.maven.ForkedMavenExecutor;
 import io.helidon.build.util.Log;
 
 import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
-import static io.helidon.build.util.Constants.DEV_LOOP_START_MESSAGE;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_COMPLETED;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_STARTING;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_PROJECT_CHANGED;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_START_MESSAGE;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_STYLED_MESSAGE_PREFIX;
 import static io.helidon.build.util.Style.Bold;
 import static io.helidon.build.util.Style.BoldBlue;
 import static io.helidon.build.util.Style.BoldBrightGreen;
@@ -89,7 +94,7 @@ public class DevLoop {
         private static final int ON_READY_DELAY = 1000;
         private static final int BUILD_FAIL_DELAY = 1000;
         private static final String HEADER = Bold.apply("helidon dev");
-        private static final String LOG_PREFIX = Bold.apply("|") + " ";
+        private static final String LOG_PREFIX = DEV_LOOP_STYLED_MESSAGE_PREFIX + " ";
 
         private final boolean terminalMode;
         private final String buildFileName;
@@ -134,7 +139,7 @@ public class DevLoop {
         @Override
         public void onChanged(int cycleNumber, ChangeType type) {
             clear();
-            log("%s", BoldBlue.apply(type + " changed"));
+            log("%s", BoldBlue.apply(type + " " + DEV_LOOP_PROJECT_CHANGED));
             lastChangeType = type;
             ensureStop(false);
         }
@@ -144,7 +149,7 @@ public class DevLoop {
             if (type == BuildType.Skipped) {
                 log("%s", BoldBrightGreen.apply("up to date"));
             } else {
-                String operation = cycleNumber == 0 ? "building" : "rebuilding";
+                String operation = cycleNumber == 0 ? DEV_LOOP_BUILD_STARTING : "re" + DEV_LOOP_BUILD_STARTING;
                 log("%s (%s)", BoldBlue.apply(operation), type);
                 buildStartTime = System.currentTimeMillis();
             }
@@ -155,14 +160,15 @@ public class DevLoop {
             if (type != BuildType.Skipped) {
                 long elapsedTime = System.currentTimeMillis() - buildStartTime;
                 float elapsedSeconds = elapsedTime / 1000F;
-                String operation = cycleNumber == 0 ? "build" : "rebuild";
-                log("%s (%.1f seconds)", BoldBlue.apply(operation + " completed"), elapsedSeconds);
+                String operation = cycleNumber == 0 ? "build " : "rebuild ";
+                log("%s (%.1f seconds)", BoldBlue.apply(operation + DEV_LOOP_BUILD_COMPLETED), elapsedSeconds);
             }
         }
 
         @Override
         public long onBuildFail(int cycleNumber, BuildType type, Throwable error) {
-            log("%s", BoldRed.apply("build failed"));
+            Log.info();
+            log("%s", BoldRed.apply(DEV_LOOP_BUILD_FAILED));
             ensureStop(false);
             String message;
             if (lastChangeType == ChangeType.BuildFile) {

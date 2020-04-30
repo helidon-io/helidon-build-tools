@@ -46,7 +46,6 @@ import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;
 import static io.helidon.build.util.ProjectConfig.FEATURE_PREFIX;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
-import static io.helidon.build.util.Style.BoldCyan;
 import static io.helidon.build.util.Style.Cyan;
 
 /**
@@ -140,7 +139,6 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
                 context.exitAction(ExitStatus.FAILURE, e.getMessage());
                 return;
             }
-            context.logInfo("Using Helidon version " + BoldCyan.apply(version));
         }
 
         // Generate project using Maven archetype

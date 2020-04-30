@@ -28,7 +28,10 @@ import io.helidon.build.util.Constants;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.ProcessMonitor;
 
-import static io.helidon.build.util.Style.BoldBlue;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_SERVER_STARTING;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_SERVER_STOPPED;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_SERVER_STOPPING;
+import static io.helidon.build.util.Style.BoldBrightCyan;
 import static io.helidon.build.util.Style.BoldBrightGreen;
 import static io.helidon.build.util.Style.BoldBrightRed;
 import static io.helidon.build.util.Style.BoldYellow;
@@ -45,9 +48,9 @@ public class ProjectExecutor {
     private static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
     private static final String JIT_LEVEL_ONE = "-XX:TieredStopAtLevel=1";
     private static final String JIT_TWO_COMPILER_THREADS = "-XX:CICompilerCount=2";
-    private static final String STARTING = BoldBrightGreen.apply("starting");
-    private static final String STOPPING = BoldYellow.apply("stopping");
-    private static final String STOPPED = BoldBrightRed.apply("stopped");
+    private static final String STARTING = BoldBrightGreen.apply(DEV_LOOP_SERVER_STARTING);
+    private static final String STOPPING = BoldYellow.apply(DEV_LOOP_SERVER_STOPPING);
+    private static final String STOPPED = BoldBrightRed.apply(DEV_LOOP_SERVER_STOPPED);
 
     /**
      * Execution mode.
@@ -92,7 +95,7 @@ public class ProjectExecutor {
         this.project = project;
         this.mode = mode;
         this.logPrefix = logPrefix;
-        this.name = BoldBlue.apply(project.name());
+        this.name = BoldBrightCyan.apply(project.name());
     }
 
     /**
