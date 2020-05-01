@@ -179,7 +179,6 @@
         <module>snakeyaml-codegen-maven-plugin</module>
         <module>utils</module>
         <module>dev-loop</module>
-        <module>application-types</module>
     </modules>
 
     <build>
