@@ -43,6 +43,11 @@ public class ForkedMavenExecutor extends BuildExecutor {
     }
 
     @Override
+    public boolean willFork() {
+        return true;
+    }
+
+    @Override
     public void execute(String... args) {
         MavenCommand.builder()
                     .directory(projectDirectory())

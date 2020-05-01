@@ -80,7 +80,7 @@ class DefaultProjectSupplierTest {
         assertThat(project, is(not(nullValue())));
         assertThat(project.isBuildUpToDate(), is(true));
         assertThat(monitor.buildStart(0), is(true));
-        assertThat(monitor.buildType(0), is(BuildType.CleanComplete));
+        assertThat(monitor.buildType(0), is(BuildType.ForkedCleanComplete));
         assertThat(project, is(not(nullValue())));
         assertThat(project.root().directoryType(), is(DirectoryType.Project));
         assertThat(project.root().path(), is(projectDir));

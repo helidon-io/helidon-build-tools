@@ -32,9 +32,10 @@ import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_STARTING;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_HEADER;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_MESSAGE_PREFIX;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_SERVER_STARTING;
-import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_START_MESSAGE;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_START;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_STYLED_MESSAGE_PREFIX;
 import static io.helidon.build.util.Style.Bold;
 import static io.helidon.build.util.Style.BoldBrightGreen;
@@ -48,7 +49,7 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
     private static final String CLEAN_PROP_PREFIX = "-Ddev.clean=";
     private static final String FORK_PROP_PREFIX = "-Ddev.fork=";
     private static final String TERMINAL_MODE_PROP_PREFIX = "-Ddev.terminalMode=";
-    private static final String DEBUG_PORT_PROPERTY = "debug.port";
+    private static final String DEBUG_PORT_PROPERTY = "dev.debug.port";
     private static final String DEV_GOAL = "helidon:dev";
     private static final String MAVEN_LOG_LEVEL_START = "[";
     private static final String MAVEN_LOG_LEVEL_END = "]";
@@ -62,9 +63,9 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
 
     @Creator
     DevCommand(
-            CommonOptions commonOptions,
-            @Flag(name = "clean", description = "Perform a clean before the first build") boolean clean,
-            @Flag(name = "fork", description = "Fork mvn execution") boolean fork) {
+        CommonOptions commonOptions,
+        @Flag(name = "clean", description = "Perform a clean before the first build") boolean clean,
+        @Flag(name = "fork", description = "Fork mvn execution") boolean fork) {
         this.commonOptions = commonOptions;
         this.clean = clean;
         this.fork = fork;
@@ -92,25 +93,25 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
         // Execute helidon-maven-plugin to enter dev loop
 
         Consumer<String> stdOut = terminalMode
-                ? terminalModeOutput
-                : DevCommand::printAllLines;
+                                  ? terminalModeOutput
+                                  : DevCommand::printAllLines;
 
         Predicate<String> filter = terminalMode
-                ? terminalModeOutput
-                : line -> true;
+                                   ? terminalModeOutput
+                                   : line -> true;
 
         MavenCommand.builder()
-                .verbose(verbosity == DEBUG)
-                .stdOut(stdOut)
-                .filter(filter)
-                .addArgument(DEV_GOAL)
-                .addArgument(CLEAN_PROP_PREFIX + clean)
-                .addArgument(FORK_PROP_PREFIX + fork)
-                .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
-                .directory(commonOptions.project())
-                .debugPort(Integer.getInteger(DEBUG_PORT_PROPERTY, 0))
-                .build()
-                .execute();
+                    .verbose(verbosity == DEBUG)
+                    .stdOut(stdOut)
+                    .filter(filter)
+                    .addArgument(DEV_GOAL)
+                    .addArgument(CLEAN_PROP_PREFIX + clean)
+                    .addArgument(FORK_PROP_PREFIX + fork)
+                    .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
+                    .directory(commonOptions.project())
+                    .debugPort(Integer.getInteger(DEBUG_PORT_PROPERTY, 0))
+                    .build()
+                    .execute();
     }
 
     private static void printAllLines(String line) {
@@ -141,8 +142,11 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
         @Override
         public boolean test(String line) {
             if (devLoopStarted) {
-                if (line.startsWith(DEV_LOOP_STYLED_MESSAGE_PREFIX)
-                        || line.startsWith(DEV_LOOP_MESSAGE_PREFIX)) {
+                if (line.contains(DEV_LOOP_HEADER)) {
+                    appendLine = true;
+                    return true;
+                } else if (line.startsWith(DEV_LOOP_STYLED_MESSAGE_PREFIX)
+                           || line.startsWith(DEV_LOOP_MESSAGE_PREFIX)) {
                     if (line.contains(DEV_LOOP_BUILD_STARTING)) {
                         appendLineIfError = true;
                     } else if (line.contains(DEV_LOOP_SERVER_STARTING)) {
@@ -155,14 +159,14 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
                 } else if (suspendOutput) {
                     return false;
                 } else if (line.contains(BUILD_SUCCEEDED)
-                        || line.contains(BUILD_FAILED)
-                        || line.contains(HELP_TAG)) {
+                           || line.contains(BUILD_FAILED)
+                           || line.contains(HELP_TAG)) {
                     suspendOutput();
                     return false;
                 } else {
                     return !line.equals(AT_TAG);
                 }
-            } else if (line.endsWith(DEV_LOOP_START_MESSAGE)) {
+            } else if (line.endsWith(DEV_LOOP_START)) {
                 devLoopStarted = true;
                 return false;
             } else if (line.startsWith(DEBUGGER_LISTEN_MESSAGE_PREFIX)) {
@@ -211,7 +215,7 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
                     if (levelEnd > 0) {
                         String level = line.substring(0, levelEnd);
                         if (level.contains(MAVEN_ERROR_LEVEL)
-                                || level.contains(MAVEN_FATAL_LEVEL)) {
+                            || level.contains(MAVEN_FATAL_LEVEL)) {
                             if (appendLineIfError) {
                                 System.out.println();
                                 appendLineIfError = false;

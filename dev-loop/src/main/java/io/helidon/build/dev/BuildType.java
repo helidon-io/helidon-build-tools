@@ -31,6 +31,16 @@ public enum BuildType {
     Complete("full"),
 
     /**
+     * A forked complete build that is cleaned first.
+     */
+    ForkedCleanComplete("forked, clean, full"),
+
+    /**
+     * A forked complete build.
+     */
+    ForkedComplete("forked, full"),
+
+    /**
      * An incremental build.
      */
     Incremental("incremental"),
@@ -44,6 +54,21 @@ public enum BuildType {
 
     BuildType(String description) {
         this.description = description;
+    }
+
+    /**
+     * Returns a complete type based on the given flags.
+     *
+     * @param forked {@code true} if build is forked.
+     * @param clean {@code true} if build is clean.
+     * @return The type.
+     */
+    public static BuildType completeType(boolean forked, boolean clean) {
+        if (forked) {
+            return clean ? ForkedCleanComplete : ForkedComplete;
+        } else {
+            return clean ? CleanComplete : Complete;
+        }
     }
 
     @Override

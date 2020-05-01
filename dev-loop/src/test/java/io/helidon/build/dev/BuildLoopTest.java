@@ -97,7 +97,7 @@ class BuildLoopTest {
         assertThat(monitor.changed(0), is(false));
         assertThat(monitor.changeType(0), is(nullValue()));
         assertThat(monitor.buildStart(0), is(true));
-        assertThat(monitor.buildType(0), is(BuildType.CleanComplete));
+        assertThat(monitor.buildType(0), is(BuildType.ForkedCleanComplete));
         assertThat(monitor.buildFailed(0), is(nullValue()));
         assertThat(monitor.ready(0), is(true));
         assertThat(monitor.cycleEnd(0), is(true));
@@ -334,7 +334,7 @@ class BuildLoopTest {
         assertThat(monitor.changed(3), is(false));
         assertThat(monitor.changeType(3), is(nullValue()));
         assertThat(monitor.buildStart(3), is(true));
-        assertThat(monitor.buildType(3), is(BuildType.Complete));
+        assertThat(monitor.buildType(3), is(BuildType.ForkedComplete));
         assertThat(monitor.buildFailed(3), is(nullValue()));
         assertThat(monitor.ready(3), is(true));
         assertThat(monitor.cycleEnd(3), is(true));

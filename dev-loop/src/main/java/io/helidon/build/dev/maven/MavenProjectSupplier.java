@@ -47,8 +47,6 @@ import org.apache.maven.project.MavenProject;
 import static io.helidon.build.dev.BuildComponent.createBuildComponent;
 import static io.helidon.build.dev.BuildFile.createBuildFile;
 import static io.helidon.build.dev.BuildRoot.createBuildRoot;
-import static io.helidon.build.dev.BuildType.CleanComplete;
-import static io.helidon.build.dev.BuildType.Complete;
 import static io.helidon.build.dev.BuildType.Skipped;
 import static io.helidon.build.dev.ProjectDirectory.createProjectDirectory;
 import static io.helidon.build.util.FileUtils.assertDir;
@@ -87,6 +85,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
     private final MavenSession session;
     private final BuildPluginManager plugins;
     private final AtomicBoolean firstBuild;
+    private BuildType buildType;
     private ProjectConfig config;
 
     /**
@@ -185,15 +184,13 @@ public class MavenProjectSupplier implements ProjectSupplier {
 
         // Get the updated config, performing the full build if needed
 
-        BuildType buildType;
+        buildType = BuildType.completeType(executor.willFork(), clean);
         if (clean) {
-            buildType = CleanComplete;
             build(executor, true, cycleNumber);
         } else if (canSkipBuild(projectDir)) {
             buildType = Skipped;
             executor.monitor().onBuildStart(cycleNumber, BuildType.Skipped);
         } else {
-            buildType = Complete;
             build(executor, false, cycleNumber);
         }
 
@@ -212,7 +209,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
     }
 
     private void build(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception {
-        executor.monitor().onBuildStart(cycleNumber, clean ? CleanComplete : Complete);
+        executor.monitor().onBuildStart(cycleNumber, buildType);
         executor.execute(clean ? CLEAN_BUILD_COMMAND : BUILD_COMMAND);
         config = loadHelidonCliConfig(executor.projectDirectory());
     }

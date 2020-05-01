@@ -21,10 +21,6 @@ import static io.helidon.build.util.Style.Bold;
  * Constants supporting coordination between {@code DevLoop} and {@code DevCommand}.
  */
 public class DevLoopMessages {
-    /**
-     * Message logged when the dev loop has started.
-     */
-    public static final String DEV_LOOP_START_MESSAGE = "[loop started]";
 
     /**
      * Dev loop message prefix.
@@ -35,6 +31,16 @@ public class DevLoopMessages {
      * Styled dev loop message prefix.
      */
     public static final String DEV_LOOP_STYLED_MESSAGE_PREFIX = Bold.apply(DEV_LOOP_MESSAGE_PREFIX);
+
+    /**
+     * Message content when the dev loop has started.
+     */
+    public static final String DEV_LOOP_START = "loop started";
+
+    /**
+     * Message content when the dev loop clears the screen and writes the header.
+     */
+    public static final String DEV_LOOP_HEADER = "helidon dev";
 
     /**
      * Message content when a project has changed.

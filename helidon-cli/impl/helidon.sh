@@ -27,6 +27,7 @@ init() {
     local -r targetDir="${projectDir}/target/"
     local -r jarFile="${targetDir}/helidon.jar"
     local -r attach="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005"
+    local -r attachDev="-Ddev.debug.port=5006"
     local jvm
     local args
     action=exec
@@ -34,6 +35,7 @@ init() {
     while (( ${#} > 0 )); do
         case "${1}" in
             --attach) appendVar jvm "${attach}" ;;
+            --attachDev) appendVar jvm "${attachDev}" ;;
             --dryRun) action=echo ;;
             *) appendVar args "${1}" ;;
         esac

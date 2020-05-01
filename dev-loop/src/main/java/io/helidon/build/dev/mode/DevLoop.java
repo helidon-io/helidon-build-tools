@@ -35,12 +35,12 @@ import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_COMPLETED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_STARTING;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_HEADER;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_PROJECT_CHANGED;
-import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_START_MESSAGE;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_START;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_STYLED_MESSAGE_PREFIX;
 import static io.helidon.build.util.Style.Bold;
 import static io.helidon.build.util.Style.BoldBlue;
-import static io.helidon.build.util.Style.BoldBrightGreen;
 import static io.helidon.build.util.Style.BoldRed;
 import static io.helidon.build.util.Style.BoldYellow;
 import static org.fusesource.jansi.Ansi.ansi;
@@ -73,7 +73,7 @@ public class DevLoop {
         this.terminalMode = terminalMode;
         this.monitor = new DevModeMonitor(terminalMode, projectSupplier.buildFileName());
         this.buildExecutor = forkBuilds ? new ForkedMavenExecutor(rootDir, monitor, MAX_BUILD_WAIT_SECONDS)
-                : new EmbeddedMavenExecutor(rootDir, monitor);
+                                        : new EmbeddedMavenExecutor(rootDir, monitor);
         this.initialClean = initialClean;
         this.projectSupplier = projectSupplier;
     }
@@ -93,7 +93,7 @@ public class DevLoop {
     static class DevModeMonitor implements BuildMonitor {
         private static final int ON_READY_DELAY = 1000;
         private static final int BUILD_FAIL_DELAY = 1000;
-        private static final String HEADER = Bold.apply("helidon dev");
+        private static final String HEADER = Bold.apply(DEV_LOOP_HEADER);
         private static final String LOG_PREFIX = DEV_LOOP_STYLED_MESSAGE_PREFIX + " ";
 
         private final boolean terminalMode;
@@ -112,7 +112,6 @@ public class DevLoop {
                 if (clearScreen()) {
                     Log.info();
                     Log.info(HEADER);
-                    Log.info(LOG_PREFIX);
                 } else {
                     Log.info();
                 }
@@ -141,13 +140,13 @@ public class DevLoop {
             clear();
             log("%s", BoldBlue.apply(type + " " + DEV_LOOP_PROJECT_CHANGED));
             lastChangeType = type;
-            ensureStop(false);
+            ensureStop();
         }
 
         @Override
         public void onBuildStart(int cycleNumber, BuildType type) {
             if (type == BuildType.Skipped) {
-                log("%s", BoldBrightGreen.apply("up to date"));
+                log("%s", BoldBlue.apply("up to date"));
             } else {
                 String operation = cycleNumber == 0 ? DEV_LOOP_BUILD_STARTING : "re" + DEV_LOOP_BUILD_STARTING;
                 log("%s (%s)", BoldBlue.apply(operation), type);
@@ -169,7 +168,7 @@ public class DevLoop {
         public long onBuildFail(int cycleNumber, BuildType type, Throwable error) {
             Log.info();
             log("%s", BoldRed.apply(DEV_LOOP_BUILD_FAILED));
-            ensureStop(false);
+            ensureStop();
             String message;
             if (lastChangeType == ChangeType.BuildFile) {
                 message = String.format("waiting for %s changes", buildFileName);
@@ -200,35 +199,35 @@ public class DevLoop {
 
         @Override
         public void onStopped() {
-            ensureStop(false);
+            ensureStop();
         }
 
-        private void ensureStop(boolean quiet) {
+        private void ensureStop() {
             if (projectExecutor != null) {
                 final ProjectExecutor executor = projectExecutor;
                 projectExecutor = null;
-                executor.stop(quiet);
+                executor.stop();
             }
         }
 
         private void shutdown() {
             System.out.println(ansi().reset());
-            ensureStop(true);
+            ensureStop();
         }
     }
 
     private BuildLoop newLoop(BuildExecutor executor, boolean initialClean, boolean watchBinariesOnly) {
         return BuildLoop.builder()
-                .buildExecutor(executor)
-                .clean(initialClean)
-                .watchBinariesOnly(watchBinariesOnly)
-                .projectSupplier(projectSupplier)
-                .build();
+                        .buildExecutor(executor)
+                        .clean(initialClean)
+                        .watchBinariesOnly(watchBinariesOnly)
+                        .projectSupplier(projectSupplier)
+                        .build();
     }
 
     private void run(BuildLoop loop, int maxWaitSeconds) throws InterruptedException, TimeoutException {
         if (terminalMode) {
-            Log.info(DEV_LOOP_START_MESSAGE);
+            Log.info(DEV_LOOP_START);
         }
         loop.start();
         Log.debug("Waiting up to %d seconds for build loop completion", maxWaitSeconds);

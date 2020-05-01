@@ -61,7 +61,7 @@ public class DefaultProjectSupplier implements ProjectSupplier {
 
     @Override
     public Project newProject(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception {
-        final BuildType buildType =  clean ? BuildType.CleanComplete : BuildType.Complete;
+        final BuildType buildType = BuildType.completeType(executor.willFork(), clean);
         final Project project = createProject(executor.projectDirectory(), buildType);
         if (clean || !project.isBuildUpToDate()) {
             executor.monitor().onBuildStart(cycleNumber, buildType);

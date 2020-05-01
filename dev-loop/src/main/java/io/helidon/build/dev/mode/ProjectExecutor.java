@@ -40,7 +40,10 @@ import static io.helidon.build.util.Style.BoldYellow;
  * Class ProjectStarter.
  */
 public class ProjectExecutor {
-    private static final long WAIT_TERMINATION = 5L;
+    private static final long STOP_WAIT_SECONDS = 1L;
+    private static final int STOP_WAIT_RETRIES = 5;
+    private static final int STOP_WAIT_RETRY_LOG_STEP = 2;
+
     private static final String MAVEN_EXEC = Constants.OS.mavenExec();
     private static final List<String> EXEC_COMMAND = List.of(MAVEN_EXEC, "exec:java");
     private static final String JAVA_EXEC = Constants.OS.javaExecutable();
@@ -124,23 +127,48 @@ public class ProjectExecutor {
     }
 
     /**
-     * Stop execution.
-     * @param quiet {@code true} if should not log.
+     * Stop execution. Logs stopping message only if process does not stop quickly.
      */
-    public void stop(boolean quiet) {
+    public void stop() {
+        stop(false);
+    }
+
+    /**
+     * Stop execution.
+     *
+     * @param verbose {@code true} if should log all state changes.
+     */
+    public void stop(boolean verbose) {
         if (processMonitor != null) {
-            try {
-                stateChanged(STOPPING, quiet);
-                processMonitor.stop(WAIT_TERMINATION, TimeUnit.SECONDS);
-                stateChanged(STOPPED, quiet);
-            } catch (IllegalStateException ignore) {
-            } catch (ProcessMonitor.ProcessFailedException e) {
-                stateChanged(STOPPED, quiet);
-            } catch (Exception e) {
-                throw new RuntimeException(String.format("Failed to stop %s: %s", project.name(), e.getMessage()));
+            if (verbose) {
+                stateChanged(STOPPING);
             }
-            processMonitor = null;
+            try {
+                for (int step = 0; step < STOP_WAIT_RETRIES; step++) {
+                    try {
+                        processMonitor.stop(STOP_WAIT_SECONDS, TimeUnit.SECONDS);
+                    } catch (ProcessMonitor.ProcessTimeoutException timeout) {
+                        if (!verbose && step == STOP_WAIT_RETRY_LOG_STEP) {
+                            stateChanged(STOPPING);
+                        }
+                    } catch (IllegalStateException | ProcessMonitor.ProcessFailedException done) {
+                        break;
+                    } catch (Exception e) {
+                        throw new RuntimeException(stopFailedMessage(e));
+                    }
+                }
+            } finally {
+                processMonitor = null;
+            }
+
+            if (verbose) {
+                stateChanged(STOPPED);
+            }
         }
+    }
+
+    private String stopFailedMessage(Exception e) {
+        return String.format("Failed to stop %s (pid %d): %s", project.name(), pid, e.getMessage());
     }
 
     /**
@@ -152,13 +180,11 @@ public class ProjectExecutor {
         return processMonitor != null;
     }
 
-    private void stateChanged(String state, boolean quiet) {
-        if (!quiet) {
-            if (logPrefix == null) {
-                Log.info("%s %s", name, state);
-            } else {
-                Log.info("%s%s %s", logPrefix, name, state);
-            }
+    private void stateChanged(String state) {
+        if (logPrefix == null) {
+            Log.info("%s %s", name, state);
+        } else {
+            Log.info("%s%s %s", logPrefix, name, state);
         }
     }
 
@@ -188,7 +214,7 @@ public class ProjectExecutor {
         env.put("JAVA_HOME", JAVA_HOME);
 
         try {
-            stateChanged(STARTING, false);
+            stateChanged(STARTING);
             Log.info();
             this.processMonitor = ProcessMonitor.builder()
                                                 .processBuilder(processBuilder)
