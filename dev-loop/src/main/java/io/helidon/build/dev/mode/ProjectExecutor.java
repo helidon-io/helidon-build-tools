@@ -146,7 +146,9 @@ public class ProjectExecutor {
             try {
                 for (int step = 0; step < STOP_WAIT_RETRIES; step++) {
                     try {
-                        processMonitor.stop(STOP_WAIT_SECONDS, TimeUnit.SECONDS);
+                        if (!processMonitor.stop(STOP_WAIT_SECONDS, TimeUnit.SECONDS).isAlive()) {
+                            break;
+                        }
                     } catch (ProcessMonitor.ProcessTimeoutException timeout) {
                         if (!verbose && step == STOP_WAIT_RETRY_LOG_STEP) {
                             stateChanged(STOPPING);
