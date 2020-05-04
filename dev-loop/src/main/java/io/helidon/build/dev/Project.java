@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.build.dev.util.ConsumerPrintStream;
+import io.helidon.build.util.ProjectConfig;
 
 import static io.helidon.build.dev.DirectoryType.Depencencies;
 import static io.helidon.build.dev.ProjectDirectory.createProjectDirectory;
@@ -51,6 +52,7 @@ public class Project {
     private final List<BuildFile> dependencies;
     private final List<BuildComponent> components;
     private final String mainClassName;
+    private final ProjectConfig config;
     private final Map<Path, ProjectDirectory> parents;
 
     private Project(Builder builder) {
@@ -64,6 +66,7 @@ public class Project {
         this.dependencies = builder.dependencies;
         this.components = builder.components;
         this.mainClassName = builder.mainClassName;
+        this.config = builder.config;
         this.parents = new HashMap<>();
         components.forEach(c -> c.project(this));
         updateDependencies();
@@ -91,6 +94,7 @@ public class Project {
         private List<BuildFile> dependencies;
         private List<BuildComponent> components;
         private String mainClassName;
+        private ProjectConfig config;
 
         private Builder() {
             this.buildFiles = new ArrayList<>();
@@ -189,6 +193,17 @@ public class Project {
         }
 
         /**
+         * Sets the project config.
+         *
+         * @param config The config.
+         * @return This instance, for chaining.
+         */
+        public Builder config(ProjectConfig config) {
+            this.mainClassName = requireNonNull(mainClassName);
+            return this;
+        }
+
+        /**
          * Returns a new project.
          *
          * @return The project.
@@ -208,6 +223,9 @@ public class Project {
             assertNotEmpty(components, "component");
             if (name == null) {
                 name = root.path().getFileName().toString();
+            }
+            if (config == null) {
+                config = ProjectConfig.loadHelidonCliConfig(root.path());
             }
             return new Project(this);
         }
@@ -429,6 +447,8 @@ public class Project {
                 for (final BuildRoot.Changes changed : changes) {
                     changed.root().component().incrementalBuild(changed, stdOut, stdErr);
                 }
+                config.buildSucceeded();
+                config.store();
             } finally {
                 System.setOut(origOut);
                 System.setErr(origErr);

@@ -28,4 +28,5 @@ module helidon.build.utils {
     requires org.apache.maven.resolver.spi;
     requires org.apache.maven.resolver.transport.file;
     requires org.apache.maven.resolver.transport.http;
+    requires maven.model;
 }

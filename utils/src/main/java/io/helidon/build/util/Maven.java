@@ -102,7 +102,6 @@ public class Maven {
         return DEFAULT_INSTANCE.instance();
     }
 
-
     /**
      * Returns the latest version for the given artifact.
      *

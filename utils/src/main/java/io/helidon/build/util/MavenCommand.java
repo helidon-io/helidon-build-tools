@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +29,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
+import static io.helidon.build.util.AnsiConsoleInstaller.isHelidonChildProcess;
 import static io.helidon.build.util.Constants.EOL;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.listFiles;
@@ -98,8 +101,9 @@ public class MavenCommand {
             }
             if (maven == null) {
                 maven = FileUtils.findExecutableInPath(MAVEN_BINARY_NAME)
-                        .orElseThrow(() -> new IllegalStateException(MAVEN_BINARY_NAME + " not found. Please add it to "
-                                + "your PATH or set either the MAVEN_HOME or MVN_HOME environment variables."));
+                                 .orElseThrow(() -> new IllegalStateException(MAVEN_BINARY_NAME + " not found. Please add it to "
+                                                                              + "your PATH or set either the MAVEN_HOME or "
+                                                                              + "MVN_HOME environment variables."));
             }
             MAVEN_EXECUTABLE.set(maven);
         }
@@ -151,16 +155,16 @@ public class MavenCommand {
         MavenVersion installed = installedVersion();
         if (installed.isLessThan(requiredMinimumVersion)) {
             final String msg = EOL
-                    + Bold.apply("Maven version ")
-                    + BoldBrightGreen.apply(requiredMinimumVersion)
-                    + Bold.apply(" or later is required, found ")
-                    + BoldBrightRed.apply(installed)
-                    + Bold.apply(".")
-                    + EOL
-                    + "Please update from "
-                    + MAVEN_DOWNLOAD_URL
-                    + " and prepend your PATH or set the MAVEN_HOME or MVN_HOME environment variable."
-                    + EOL;
+                               + Bold.apply("Maven version ")
+                               + BoldBrightGreen.apply(requiredMinimumVersion)
+                               + Bold.apply(" or later is required, found ")
+                               + BoldBrightRed.apply(installed)
+                               + Bold.apply(".")
+                               + EOL
+                               + "Please update from "
+                               + MAVEN_DOWNLOAD_URL
+                               + " and prepend your PATH or set the MAVEN_HOME or MVN_HOME environment variable."
+                               + EOL;
             throw new IllegalStateException(msg);
         }
     }
@@ -175,14 +179,14 @@ public class MavenCommand {
                 Log.info("%s", Bold.apply(name));
             }
             ProcessMonitor processMonitor = ProcessMonitor.builder()
-                    .processBuilder(processBuilder)
-                    .stdOut(stdOut)
-                    .stdErr(stdErr)
-                    .filter(filter)
-                    .transform(transform)
-                    .capture(false)
-                    .build()
-                    .start();
+                                                          .processBuilder(processBuilder)
+                                                          .stdOut(stdOut)
+                                                          .stdErr(stdErr)
+                                                          .filter(filter)
+                                                          .transform(transform)
+                                                          .capture(false)
+                                                          .build()
+                                                          .start();
             processMonitor.waitForCompletion(maxWaitSeconds, TimeUnit.SECONDS);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -222,7 +226,10 @@ public class MavenCommand {
         private static final String LOG_LEVEL_PROPERTY = "log.level";
         private static final String LOG_LEVEL = System.getProperty(LOG_LEVEL_PROPERTY);
         private static final MavenVersion DEFAULT_MINIMUM = MavenVersion.toMavenVersion("3.6.0");
-
+        private static final String DEBUG_PORT_PROPERTY = "mvn.debug.port";
+        private static final String CHILD_DEBUG_PORT_PROPERTY = "mvn.child.debug.port";
+        private static final int DEFAULT_DEBUG_PORT = Integer.getInteger(DEBUG_PORT_PROPERTY, 0);
+        private static final int DEFAULT_CHILD_DEBUG_PORT = Integer.getInteger(CHILD_DEBUG_PORT_PROPERTY, 0);
         private String description;
         private Path directory;
         private List<String> mavenArgs;
@@ -238,6 +245,7 @@ public class MavenCommand {
 
         private Builder() {
             this.mavenArgs = new ArrayList<>();
+            this.debugPort = isHelidonChildProcess() ? DEFAULT_CHILD_DEBUG_PORT : DEFAULT_DEBUG_PORT;
             this.maxWaitSeconds = SECONDS_PER_YEAR;
             this.requiredMinimumVersion = DEFAULT_MINIMUM;
         }
@@ -403,6 +411,9 @@ public class MavenCommand {
             if (LOG_LEVEL != null) {
                 command.add("-D" + LOG_LEVEL_PROPERTY + "=" + LOG_LEVEL);
             }
+            if (DEFAULT_CHILD_DEBUG_PORT > 0) {
+                command.add("-D" + CHILD_DEBUG_PORT_PROPERTY + "=" + DEFAULT_CHILD_DEBUG_PORT);
+            }
 
             // Create the process builder
 
@@ -418,7 +429,7 @@ public class MavenCommand {
 
             // Setup MAVEN_OPTS with debugger, if needed
 
-            String mavenOpts = env.get(MAVEN_OPTS_VAR);
+            String mavenOpts = removeDebugOption(env.get(MAVEN_OPTS_VAR));
             if (debugPort > 0) {
                 mavenOpts = addMavenOption(DEBUG_OPT_PREFIX + debugPort, mavenOpts);
             }
@@ -434,7 +445,18 @@ public class MavenCommand {
         }
 
         private static String addMavenOption(String option, String mavenOpts) {
-            return mavenOpts == null ? option : mavenOpts + " " + option;
+            return mavenOpts == null ? option : mavenOpts.trim() + " " + option;
+        }
+
+        private static String removeDebugOption(String mavenOpts) {
+            if (mavenOpts != null) {
+                if (mavenOpts.contains(DEBUG_OPT_PREFIX)) {
+                    mavenOpts = Arrays.stream(mavenOpts.trim().split(" "))
+                                      .filter(opt -> !opt.startsWith(DEBUG_OPT_PREFIX))
+                                      .collect(Collectors.joining(" "));
+                }
+            }
+            return mavenOpts;
         }
 
         private void prepare() {

@@ -37,12 +37,13 @@ import static io.helidon.build.util.Style.BoldBrightRed;
 import static io.helidon.build.util.Style.BoldYellow;
 
 /**
- * Class ProjectStarter.
+ * Project executor.
  */
 public class ProjectExecutor {
     private static final long STOP_WAIT_SECONDS = 1L;
     private static final int STOP_WAIT_RETRIES = 5;
-    private static final int STOP_WAIT_RETRY_LOG_STEP = 2;
+    private static final int STOP_WAIT_RETRY_LOG_STEP = 1;
+    private static final int STOP_WAIT_RETRY_FORCE_STEP = 3;
 
     private static final String MAVEN_EXEC = Constants.OS.mavenExec();
     private static final List<String> EXEC_COMMAND = List.of(MAVEN_EXEC, "exec:java");
@@ -128,6 +129,8 @@ public class ProjectExecutor {
 
     /**
      * Stop execution. Logs stopping message only if process does not stop quickly.
+     *
+     * @throws IllegalStateException If process does not stop before timeout.
      */
     public void stop() {
         stop(false);
@@ -137,6 +140,7 @@ public class ProjectExecutor {
      * Stop execution.
      *
      * @param verbose {@code true} if should log all state changes.
+     * @throws IllegalStateException If process does not stop before timeout.
      */
     public void stop(boolean verbose) {
         if (processMonitor != null) {
@@ -144,42 +148,53 @@ public class ProjectExecutor {
                 stateChanged(STOPPING);
             }
             try {
+                boolean isAlive = true;
+                boolean force = false;
                 for (int step = 0; step < STOP_WAIT_RETRIES; step++) {
                     try {
-                        if (!processMonitor.stop(STOP_WAIT_SECONDS, TimeUnit.SECONDS).isAlive()) {
+                        isAlive = processMonitor.destroy(force)
+                                                .waitForCompletion(STOP_WAIT_SECONDS, TimeUnit.SECONDS)
+                                                .isAlive();
+                        if (!isAlive) {
                             break;
                         }
                     } catch (ProcessMonitor.ProcessTimeoutException timeout) {
                         if (!verbose && step == STOP_WAIT_RETRY_LOG_STEP) {
                             stateChanged(STOPPING);
+                        } else if (step == STOP_WAIT_RETRY_FORCE_STEP) {
+                            force = true;
                         }
                     } catch (IllegalStateException | ProcessMonitor.ProcessFailedException done) {
+                        isAlive = false;
                         break;
                     } catch (Exception e) {
-                        throw new RuntimeException(stopFailedMessage(e));
+                        throw new IllegalStateException(stopFailedMessage(e.getMessage()));
                     }
+                }
+                if (isAlive) {
+                    throw new IllegalStateException(stopFailedMessage("timeout expired"));
                 }
             } finally {
                 processMonitor = null;
             }
-
             if (verbose) {
                 stateChanged(STOPPED);
             }
         }
     }
 
-    private String stopFailedMessage(Exception e) {
-        return String.format("Failed to stop %s (pid %d): %s", project.name(), pid, e.getMessage());
-    }
-
     /**
      * Check if project is running.
      *
-     * @return Outcome of test.
+     * @return {@code true} if running.
      */
     public boolean isRunning() {
-        return processMonitor != null;
+        return processMonitor != null
+               && processMonitor.isAlive();
+    }
+
+    private String stopFailedMessage(String reason) {
+        return String.format("Failed to stop %s (pid %d): %s", project.name(), pid, reason);
     }
 
     private void stateChanged(String state) {
@@ -227,7 +242,7 @@ public class ProjectExecutor {
                                                 .start();
             this.pid = processMonitor.toHandle().pid();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 

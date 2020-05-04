@@ -17,8 +17,6 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -31,11 +29,6 @@ import java.util.Properties;
 import io.helidon.build.util.AnsiConsoleInstaller;
 import io.helidon.build.util.ProjectConfig;
 
-import org.apache.maven.model.Model;
-import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
-import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
-
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 
 /**
@@ -44,7 +37,7 @@ import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 public abstract class BaseCommand {
 
     static final String HELIDON_PROPERTIES = "helidon.properties";
-    static final String HELIDON_VERSION = "helidon.version";
+    static final String HELIDON_VERSION_PROPERTY = "helidon.version";
 
     private Properties cliConfig;
     private ProjectConfig projectConfig;
@@ -74,28 +67,6 @@ public abstract class BaseCommand {
                 cliConfig = new Properties();
                 cliConfig.load(isr);
                 return cliConfig;
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected Model readPomModel(File pomFile) {
-        try {
-            try (FileReader fr = new FileReader(pomFile)) {
-                MavenXpp3Reader mvnReader = new MavenXpp3Reader();
-                return mvnReader.read(fr);
-            }
-        } catch (IOException | XmlPullParserException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected void writePomModel(File pomFile, Model model) {
-        try {
-            try (FileWriter fw = new FileWriter(pomFile)) {
-                MavenXpp3Writer mvnWriter = new MavenXpp3Writer();
-                mvnWriter.write(fw, model);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

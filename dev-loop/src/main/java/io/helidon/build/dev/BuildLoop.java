@@ -97,6 +97,7 @@ public class BuildLoop {
             task.set(LOOP_EXECUTOR.submit(() -> {
                 try {
                     loop();
+                } catch (InterruptedException ignore) {
                 } catch (Throwable t) {
                     Log.warn(t, "BuildLoop failed");
                 } finally {
@@ -155,7 +156,8 @@ public class BuildLoop {
         return stopped.get().await(timeout, unit);
     }
 
-    private void loop() {
+    @SuppressWarnings("BusyWait")
+    private void loop() throws InterruptedException {
         started();
         while (run.get()) {
             final Project project = cycleStarted();
@@ -173,7 +175,7 @@ public class BuildLoop {
                         setProject(projectSupplier.newProject(buildExecutor, clean, cycleNumber.get()));
                         ready();
                     } catch (IllegalArgumentException | InterruptedException e) {
-                        break;
+                        throw e;
                     } catch (Throwable e) {
                         buildFailed(Complete, e);
                     }
@@ -211,6 +213,8 @@ public class BuildLoop {
                         ready();
                     } catch (InterruptedException e) {
                         break;
+                    } catch (IllegalStateException e) {
+                        throw e;
                     } catch (Throwable e) {
                         buildFailed(Incremental, e);
                         // Wait for further changes before re-building

@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION;
+import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.cli.impl.TestUtils.assertPackageExist;
 import static io.helidon.build.cli.impl.TestUtils.exec;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -55,7 +55,7 @@ public class InitCommandTest {
      */
     @BeforeAll
     public static void setHelidonVersion() {
-        System.setProperty(HELIDON_VERSION, HELIDON_VERSION_TEST);
+        System.setProperty(HELIDON_VERSION_PROPERTY, HELIDON_VERSION_TEST);
     }
 
     @Test

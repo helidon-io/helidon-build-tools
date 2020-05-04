@@ -31,7 +31,7 @@ import io.helidon.build.util.Constants;
 import io.helidon.build.util.HelidonVariant;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.ProcessMonitor;
-import io.helidon.build.util.SimpleQuickstartGenerator;
+import io.helidon.build.util.QuickstartGenerator;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
@@ -134,11 +134,11 @@ public class HelidonCliDemo {
             // Generate project
             Path dir = null;
             try {
-                dir = SimpleQuickstartGenerator.generator()
-                        .parentDirectory(CWD)
-                        .helidonVariant(variant)
-                        .helidonVersion(version)
-                        .generate();
+                dir = QuickstartGenerator.generator()
+                                         .parentDirectory(CWD)
+                                         .helidonVariant(variant)
+                                         .helidonVersion(version)
+                                         .generate();
             } catch (IllegalStateException e) {
                 System.err.println(e.getMessage());
                 System.exit(2);

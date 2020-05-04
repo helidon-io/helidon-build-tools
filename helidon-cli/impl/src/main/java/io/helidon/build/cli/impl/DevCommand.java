@@ -25,6 +25,7 @@ import io.helidon.build.cli.harness.CommandContext.Verbosity;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
+import io.helidon.build.util.AnsiConsoleInstaller;
 import io.helidon.build.util.MavenCommand;
 
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
@@ -49,7 +50,6 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
     private static final String CLEAN_PROP_PREFIX = "-Ddev.clean=";
     private static final String FORK_PROP_PREFIX = "-Ddev.fork=";
     private static final String TERMINAL_MODE_PROP_PREFIX = "-Ddev.terminalMode=";
-    private static final String DEBUG_PORT_PROPERTY = "dev.debug.port";
     private static final String DEV_GOAL = "helidon:dev";
     private static final String MAVEN_LOG_LEVEL_START = "[";
     private static final String MAVEN_LOG_LEVEL_END = "]";
@@ -100,18 +100,21 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
                                    ? terminalModeOutput
                                    : line -> true;
 
-        MavenCommand.builder()
-                    .verbose(verbosity == DEBUG)
-                    .stdOut(stdOut)
-                    .filter(filter)
-                    .addArgument(DEV_GOAL)
-                    .addArgument(CLEAN_PROP_PREFIX + clean)
-                    .addArgument(FORK_PROP_PREFIX + fork)
-                    .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
-                    .directory(commonOptions.project())
-                    .debugPort(Integer.getInteger(DEBUG_PORT_PROPERTY, 0))
-                    .build()
-                    .execute();
+        try {
+            MavenCommand.builder()
+                        .verbose(verbosity == DEBUG)
+                        .stdOut(stdOut)
+                        .filter(filter)
+                        .addArgument(DEV_GOAL)
+                        .addArgument(CLEAN_PROP_PREFIX + clean)
+                        .addArgument(FORK_PROP_PREFIX + fork)
+                        .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
+                        .directory(commonOptions.project())
+                        .build()
+                        .execute();
+        } catch (Exception e) {
+            context.exitAction(CommandContext.ExitStatus.FAILURE, e.getMessage());
+        }
     }
 
     private static void printAllLines(String line) {
@@ -168,6 +171,7 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
                 }
             } else if (line.endsWith(DEV_LOOP_START)) {
                 devLoopStarted = true;
+                insertLine = !AnsiConsoleInstaller.areAnsiEscapesEnabled();
                 return false;
             } else if (line.startsWith(DEBUGGER_LISTEN_MESSAGE_PREFIX)) {
                 debugger = true;

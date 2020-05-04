@@ -280,9 +280,9 @@ public final class ProcessMonitor {
     public ProcessMonitor destroy(boolean force) {
         assertRunning();
         if (force) {
-            process.destroy();
-        } else {
             process.destroyForcibly();
+        } else {
+            process.destroy();
         }
         cancelTasks();
         return this;
@@ -440,7 +440,8 @@ public final class ProcessMonitor {
         final Process process = this.process;
         if (process == null) {
             throw new IllegalStateException("not started");
-        } if (!process.isAlive()) {
+        }
+        if (!process.isAlive()) {
             throw new IllegalStateException("already completed");
         }
     }
