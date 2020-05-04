@@ -17,35 +17,42 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
+import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
-import java.util.Objects;
+import java.util.List;
 import java.util.Properties;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
+import io.helidon.build.archetype.engine.ArchetypeEngine;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.KeyValue;
+
 import io.helidon.build.util.Constants;
-import io.helidon.build.util.HelidonVariant;
 import io.helidon.build.util.HelidonVersions;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
-import io.helidon.build.util.SimpleQuickstartGenerator;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
 
 import static io.helidon.build.cli.harness.CommandContext.ExitStatus;
-import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;
+import static io.helidon.build.cli.impl.Prompter.display;
+import static io.helidon.build.cli.impl.Prompter.displayLine;
+import static io.helidon.build.cli.impl.Prompter.prompt;
 import static io.helidon.build.util.ProjectConfig.FEATURE_PREFIX;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
+import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;
 
 /**
  * The {@code init} command.
@@ -68,12 +75,13 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
     private static final String POM = "pom.xml";
 
     private final CommonOptions commonOptions;
-    private final Flavor flavor;
+    private Flavor flavor;
     private final Build build;
     private String version;
-    private final String groupId;
-    private final String artifactId;
-    private final String packageName;
+    private String groupId;
+    private String artifactId;
+    private String packageName;
+    private String projectName;
 
     /**
      * Helidon flavors.
@@ -104,13 +112,14 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
 
     @Creator
     InitCommand(
-        CommonOptions commonOptions,
-        @KeyValue(name = "flavor", description = "Helidon flavor", defaultValue = "SE") Flavor flavor,
-        @KeyValue(name = "build", description = "Build type", defaultValue = "MAVEN") Build build,
-        @KeyValue(name = "version", description = "Helidon version") String version,
-        @KeyValue(name = "groupid", description = "Project's group ID") String groupId,
-        @KeyValue(name = "artifactid", description = "Project's artifact ID") String artifactId,
-        @KeyValue(name = "package", description = "Project's package name") String packageName) {
+            CommonOptions commonOptions,
+            @KeyValue(name = "flavor", description = "Helidon flavor", defaultValue = "SE") Flavor flavor,
+            @KeyValue(name = "build", description = "Build type", defaultValue = "MAVEN") Build build,
+            @KeyValue(name = "version", description = "Helidon version") String version,
+            @KeyValue(name = "groupid", description = "Project's group ID", defaultValue = "mygroupid") String groupId,
+            @KeyValue(name = "artifactid", description = "Project's artifact ID", defaultValue = "myartifactid") String artifactId,
+            @KeyValue(name = "package", description = "Project's package name", defaultValue = "mypackage") String packageName,
+            @KeyValue(name = "name", description = "Project's name") String projectName) {
         this.commonOptions = commonOptions;
         this.flavor = flavor;
         this.build = build;
@@ -118,6 +127,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.packageName = packageName;
+        this.projectName = projectName;
     }
 
     @Override
@@ -141,23 +151,51 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             context.logInfo("Using Helidon version " + version);
         }
 
-        // Generate project using Maven archetype
-        Path projectDir;
-        Path parentDirectory = commonOptions.project().toPath();
+        // Prompt for all standard options
+        version = prompt("Helidon version", version);
+        String r = prompt("Helidon flavor", new String[]{"SE", "MP"}, 0);
+        flavor = Flavor.valueOf(r);
+
+        // TODO: Gather remote templates
+        display("Gathering application templates ... ");
+        List<String> appTypes = cliConfig.keySet().stream()
+                .map(Object::toString)
+                .filter(k -> k.startsWith(flavor + ".apptype"))
+                .map(k -> k.substring(k.lastIndexOf('.') + 1))
+                .collect(Collectors.toList());
+        displayLine("DONE");
+        String appType = prompt("Select application type", appTypes, 0);
+
+        // More standard options
+        groupId = prompt("Enter groupId", groupId);
+        artifactId = prompt("Enter artifactId", artifactId);
+        packageName = prompt("Enter package name", packageName);
+        projectName = prompt("Enter project name", "myproject");
+
+        // For now get jar file from property value and set up class loader
+        URLClassLoader cl;
         try {
-            projectDir = SimpleQuickstartGenerator.generator()
-                                                  .parentDirectory(parentDirectory)
-                                                  .helidonVariant(HelidonVariant.parse(flavor.name()))
-                                                  .helidonVersion(version)
-                                                  .groupId(groupId)
-                                                  .artifactId(artifactId)
-                                                  .packageName(packageName)
-                                                  .generate();
-        } catch (IllegalStateException e) {
-            context.exitAction(ExitStatus.FAILURE, e.getMessage());
+            File jarFile = new File(cliConfig.getProperty(flavor + ".apptype." + appType));
+            if (!jarFile.exists()) {
+                context.exitAction(ExitStatus.FAILURE, jarFile + " does not exist");
+                return;
+            }
+            cl = new URLClassLoader(new URL[]{jarFile.toURI().toURL()}, null);
+        } catch (MalformedURLException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        // TODO: process non-standard properties here
+
+        // Generate project using archetype engine
+        Path parentDirectory = commonOptions.project().toPath();
+        Path projectDir = parentDirectory.resolve(projectName);
+        if (projectDir.toFile().exists()) {
+            context.exitAction(ExitStatus.FAILURE, projectDir + " exists");
             return;
         }
-        Objects.requireNonNull(projectDir);
+        Properties properties = initEngineProperties();
+        new ArchetypeEngine(cl, properties).generate(projectDir.toFile());
 
         // Pom needs correct plugin version, with extensions enabled for devloop
         ensurePomContent(projectDir);
@@ -173,14 +211,25 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
                 configFile.property(propName, (String) value);
             } else if (propName.startsWith(flavor.toString())) {       // Project's flavor
                 configFile.property(
-                    propName.substring(flavor.toString().length() + 1),
-                    (String) value);
+                        propName.substring(flavor.toString().length() + 1),
+                        (String) value);
             }
         });
         configFile.store();
 
         context.logInfo("Switch directory to " + parentDirectory + Constants.DIR_SEP
-                        + projectDir.getFileName() + " to use CLI");
+                + projectDir.getFileName() + " to use CLI");
+    }
+
+    private Properties initEngineProperties() {
+        Properties properties = System.getProperties();
+        properties.setProperty("groupId", groupId);
+        properties.setProperty("artifactId", artifactId);
+        properties.setProperty("package", packageName);
+        properties.setProperty("name", projectName);
+        properties.setProperty("helidonVersion", version);
+        properties.setProperty("maven", Boolean.TRUE.toString());
+        return properties;
     }
 
     private void ensurePomContent(Path projectDir) {
@@ -209,9 +258,9 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
     private boolean ensurePlugin(Model model) {
         org.apache.maven.model.Build build = model.getBuild();
         boolean isPresent = build.getPlugins()
-                                 .stream()
-                                 .anyMatch(p -> p.getGroupId().equals(BUILD_TOOLS_GROUP_ID)
-                                                && p.getArtifactId().equals(BUILD_TOOLS_PLUGIN_ARTIFACT_ID));
+                .stream()
+                .anyMatch(p -> p.getGroupId().equals(BUILD_TOOLS_GROUP_ID)
+                        && p.getArtifactId().equals(BUILD_TOOLS_PLUGIN_ARTIFACT_ID));
         if (isPresent) {
             // Assume it is what we want rather than updating if not equal, since
             // that could undo future archetype changes.
@@ -232,8 +281,8 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         String version = System.getProperty(HELIDON_VERSION);
         if (version == null) {
             version = lookupLatestHelidonVersion(LATEST_HELIDON_VERSION_LOOKUP_RETRIES,
-                                                 HELIDON_VERSION_LOOKUP_INITIAL_RETRY_DELAY,
-                                                 HELIDON_VERSION_LOOKUP_RETRY_DELAY_INCREMENT);
+                    HELIDON_VERSION_LOOKUP_INITIAL_RETRY_DELAY,
+                    HELIDON_VERSION_LOOKUP_RETRY_DELAY_INCREMENT);
         }
         return version;
     }
@@ -257,8 +306,8 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
                 }
             } catch (IllegalStateException e) {
                 throw new IllegalStateException("No versions >= "
-                                                + MINIMUM_HELIDON_VERSION
-                                                + " found, please specify with --version option.");
+                        + MINIMUM_HELIDON_VERSION
+                        + " found, please specify with --version option.");
             } catch (Exception e) {
                 Log.debug("Lookup failed: %s", e.toString());
                 break;
