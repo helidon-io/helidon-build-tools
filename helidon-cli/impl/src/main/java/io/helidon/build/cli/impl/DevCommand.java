@@ -161,8 +161,8 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
         public boolean test(String line) {
             if (devLoopStarted) {
                 if (line.contains(DEV_LOOP_HEADER)) {
-                    appendLine = true;
-                    return true;
+                    header(line);
+                    return false;
                 } else if (line.startsWith(DEV_LOOP_STYLED_MESSAGE_PREFIX)
                            || line.startsWith(DEV_LOOP_MESSAGE_PREFIX)) {
                     if (line.contains(DEV_LOOP_BUILD_STARTING)) {
@@ -220,6 +220,14 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
             } else {
                 devLoopStartingCountDown--;
             }
+        }
+
+        private void header(String line) {
+            if (clearScreen()) {
+                System.out.println();
+                System.out.println(line);
+            }
+            System.out.println();
         }
 
         @Override

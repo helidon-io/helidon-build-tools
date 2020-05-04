@@ -31,7 +31,6 @@ import io.helidon.build.dev.maven.EmbeddedMavenExecutor;
 import io.helidon.build.dev.maven.ForkedMavenExecutor;
 import io.helidon.build.util.Log;
 
-import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_COMPLETED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_STARTING;
@@ -107,20 +106,17 @@ public class DevLoop {
             this.buildFileName = buildFileName;
         }
 
-        private void clear() {
+        private void header() {
             if (terminalMode) {
-                if (clearScreen()) {
-                    Log.info();
-                    Log.info(HEADER);
-                } else {
-                    Log.info();
-                }
+                Log.info(HEADER);
+            } else {
+                Log.info();
             }
         }
 
         @Override
         public void onStarted() {
-            clear();
+            header();
         }
 
         @Override
@@ -137,7 +133,7 @@ public class DevLoop {
 
         @Override
         public void onChanged(int cycleNumber, ChangeType type) {
-            clear();
+            header();
             log("%s", BoldBlue.apply(type + " " + DEV_LOOP_PROJECT_CHANGED));
             lastChangeType = type;
             ensureStop();
