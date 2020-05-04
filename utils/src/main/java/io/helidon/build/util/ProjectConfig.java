@@ -17,6 +17,7 @@
 package io.helidon.build.util;
 
 import java.io.File;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertExists;
+import static io.helidon.build.util.PomUtils.HELIDON_VERSION_PROPERTY;
 
 /**
  * Class ConfigFile.
@@ -100,7 +102,30 @@ public class ProjectConfig extends ConfigProperties {
      * @return {@code true} if file exists.
      */
     public static boolean helidonCliConfigExists(Path projectDir) {
-        return Files.isRegularFile(assertDir(projectDir).resolve(DOT_HELIDON));
+        return Files.isRegularFile(toDotHelidon(projectDir));
+    }
+
+    /**
+     * Ensure that the configuration file exists in the given project directory.
+     *
+     * @param projectDir The project directory.
+     * @return The config.
+     * @throws UncheckedIOException If it does not exist and could not be created.
+     */
+    public static ProjectConfig ensureHelidonCliConfig(Path projectDir) {
+        final Path dotHelidon = toDotHelidon(projectDir);
+        if (Files.isRegularFile(dotHelidon)) {
+            return new ProjectConfig(dotHelidon.toFile());
+        } else {
+            ProjectConfig config = new ProjectConfig(dotHelidon.toFile());
+            config.projectDir(projectDir);
+            String version = System.getProperty(HELIDON_VERSION_PROPERTY);
+            if (version != null) {
+                config.property(PROJECT_VERSION);
+            }
+            config.store();
+            return config;
+        }
     }
 
     /**
@@ -110,8 +135,12 @@ public class ProjectConfig extends ConfigProperties {
      * @return The configuration.
      */
     public static ProjectConfig loadHelidonCliConfig(Path projectDir) {
-        final Path dotHelidon = assertExists(assertDir(projectDir).resolve(DOT_HELIDON));
+        final Path dotHelidon = assertExists(toDotHelidon(projectDir));
         return new ProjectConfig(dotHelidon.toFile());
+    }
+
+    private static Path toDotHelidon(Path projectDir) {
+        return assertDir(projectDir).resolve(DOT_HELIDON);
     }
 
     /**

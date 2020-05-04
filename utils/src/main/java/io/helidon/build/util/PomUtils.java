@@ -26,6 +26,9 @@ import org.apache.maven.model.Plugin;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 
+import static io.helidon.build.util.FileUtils.assertDir;
+import static io.helidon.build.util.FileUtils.assertFile;
+
 /**
  * Pom file utilities.
  */
@@ -41,6 +44,16 @@ public class PomUtils {
     public static final String HELIDON_VERSION_PROPERTY = "helidon.version";
 
     /**
+     * Returns the pom file from the given project.
+     *
+     * @param projectDir The project directory.
+     * @return The pom file.
+     */
+    public static Path toPomFile(Path projectDir) {
+        return assertFile(assertDir(projectDir).resolve(POM));
+    }
+
+    /**
      * Ensures that the helidon plugin is configured in the pom file of the given project.
      *
      * @param projectDir The project directory.
@@ -50,7 +63,7 @@ public class PomUtils {
     public static void ensureHelidonPluginConfig(Path projectDir, String defaultPluginVersion) {
         // Support a system property override of the version here for testing
         String version = System.getProperty(HELIDON_VERSION_PROPERTY, defaultPluginVersion);
-        Path pomFile = projectDir.resolve(POM);
+        Path pomFile = toPomFile(projectDir);
         Model model = readPomModel(pomFile);
         boolean propertyAdded = ensurePluginVersion(model, version);
         boolean extensionAdded = ensurePlugin(model);
@@ -95,11 +108,11 @@ public class PomUtils {
         }
     }
 
-    private static boolean ensurePluginVersion(Model model, String helidonVersion) {
+    private static boolean ensurePluginVersion(Model model, String helidonPluginVersion) {
         Properties properties = model.getProperties();
         String existing = properties.getProperty(HELIDON_PLUGIN_VERSION_PROPERTY);
-        if (existing == null || !existing.equals(helidonVersion)) {
-            model.addProperty(HELIDON_PLUGIN_VERSION_PROPERTY, helidonVersion);
+        if (existing == null || !existing.equals(helidonPluginVersion)) {
+            model.addProperty(HELIDON_PLUGIN_VERSION_PROPERTY, helidonPluginVersion);
             return true;
         } else {
             return false;

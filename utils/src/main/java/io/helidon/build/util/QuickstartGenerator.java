@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static io.helidon.build.util.FileUtils.assertDir;
+import static io.helidon.build.util.PomUtils.ensureHelidonPluginConfig;
 import static io.helidon.build.util.Style.Blue;
 import static io.helidon.build.util.Style.BoldBrightCyan;
 
@@ -191,7 +192,7 @@ public class QuickstartGenerator {
                                                      "-Dpackage=" + packageName
                                     )));
         final Path projectDir = assertDir(parentDirectory.resolve(artifactId));
-        PomUtils.ensureHelidonPluginConfig(projectDir, version);
+        ensureHelidonPluginConfig(projectDir, version);  // NOTE: Remove this once new archetype is completed!
         log("Created %s", projectDir);
         return projectDir;
     }

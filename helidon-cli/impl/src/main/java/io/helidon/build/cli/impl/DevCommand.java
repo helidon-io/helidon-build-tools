@@ -28,6 +28,7 @@ import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.util.AnsiConsoleInstaller;
 import io.helidon.build.util.MavenCommand;
 
+import static io.helidon.build.cli.harness.CommandContext.ExitStatus.FAILURE;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
@@ -38,6 +39,8 @@ import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_MESSAGE_PREFIX;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_SERVER_STARTING;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_START;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_STYLED_MESSAGE_PREFIX;
+import static io.helidon.build.util.FileUtils.WORKING_DIR;
+import static io.helidon.build.util.ProjectConfig.ensureHelidonCliConfig;
 import static io.helidon.build.util.Style.Bold;
 import static io.helidon.build.util.Style.BoldBrightGreen;
 
@@ -71,17 +74,29 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
         this.fork = fork;
     }
 
+    private boolean isValidConfig(CommandContext context) {
+        try {
+            ensureHelidonCliConfig(WORKING_DIR);
+            return true;
+        } catch (Exception e) {
+            context.exitAction(FAILURE, e.getMessage());
+            return false;
+        }
+    }
+
     @Override
     public void execute(CommandContext context) {
-        if (isMavenVersionOutOfDate(context)) {
+
+        // Ensure preconditions
+
+        if (isMavenVersionOutOfDate(context) || !isValidConfig(context)) {
             return;
         }
 
-        Verbosity verbosity = context.verbosity();
-        boolean terminalMode = verbosity == NORMAL;
-
         // Clear terminal and print header if in terminal mode
 
+        Verbosity verbosity = context.verbosity();
+        boolean terminalMode = verbosity == NORMAL;
         if (terminalMode) {
             clearScreen();
             System.out.println();
@@ -113,7 +128,7 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
                         .build()
                         .execute();
         } catch (Exception e) {
-            context.exitAction(CommandContext.ExitStatus.FAILURE, e.getMessage());
+            context.exitAction(FAILURE, e.getMessage());
         }
     }
 
