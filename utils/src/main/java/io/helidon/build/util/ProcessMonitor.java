@@ -38,9 +38,6 @@ import static java.util.Objects.requireNonNullElseGet;
  * Executes a process and waits for completion, monitoring the output.
  */
 public final class ProcessMonitor {
-    private static final int DESTROY_DELAY_SECONDS = 2;
-    private static final int DESTROY_RETRIES = 5;
-    private static final int DESTROY_FORCE_RETRY = 3;
     private static final ExecutorService EXECUTOR = ForkJoinPool.commonPool();
     private final ProcessBuilder builder;
     private final String description;

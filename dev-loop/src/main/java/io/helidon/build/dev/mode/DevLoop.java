@@ -182,15 +182,23 @@ public class DevLoop {
             if (projectExecutor == null) {
                 projectExecutor = new ProjectExecutor(project, terminalMode ? LOG_PREFIX : null);
                 projectExecutor.start();
-            } else if (!projectExecutor.isRunning()) {
-                projectExecutor.start();
             }
             return ON_READY_DELAY;
         }
 
         @Override
         public boolean onCycleEnd(int cycleNumber) {
-            return true;
+            if (projectExecutor == null) {
+                return true;
+            } else if (projectExecutor.isRunning()) {
+                return true;
+            } else if (projectExecutor.hasStdErrMessage()) {
+                // Shutdown and exit loop
+                projectExecutor.stop();
+                return false;
+            } else {
+                return true;
+            }
         }
 
         @Override

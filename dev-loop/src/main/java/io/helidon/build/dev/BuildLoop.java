@@ -211,9 +211,7 @@ public class BuildLoop {
                         project.update(false);
                         buildSucceeded(Incremental);
                         ready();
-                    } catch (InterruptedException e) {
-                        break;
-                    } catch (IllegalStateException e) {
+                    } catch (IllegalArgumentException | InterruptedException e) {
                         throw e;
                     } catch (Throwable e) {
                         buildFailed(Incremental, e);

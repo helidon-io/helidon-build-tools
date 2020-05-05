@@ -77,6 +77,8 @@ public class ProjectExecutor {
     private final String name;
     private ProcessMonitor processMonitor;
     private long pid;
+    private boolean hasStdOutMessage;
+    private boolean hasStdErrMessage;
 
     /**
      * Create an executor from a project.
@@ -193,6 +195,24 @@ public class ProjectExecutor {
                && processMonitor.isAlive();
     }
 
+    /**
+     * Check if project has printed to {@link System#out}.
+     *
+     * @return {@code true} if anything has been printed to {@link System#out}.
+     */
+    public boolean hasStdOutMessage() {
+        return hasStdErrMessage;
+    }
+
+    /**
+     * Check if project has printed to {@link System#err}.
+     *
+     * @return {@code true} if anything has been printed to {@link System#err}.
+     */
+    public boolean hasStdErrMessage() {
+        return hasStdErrMessage;
+    }
+
     private String stopFailedMessage(String reason) {
         return String.format("Failed to stop %s (pid %d): %s", project.name(), pid, reason);
     }
@@ -221,6 +241,7 @@ public class ProjectExecutor {
     }
 
     private void start(List<String> command) {
+        hasStdErrMessage = false;
         ProcessBuilder processBuilder = new ProcessBuilder()
             .directory(project.root().path().toFile())
             .command(command);
@@ -235,8 +256,8 @@ public class ProjectExecutor {
             Log.info();
             this.processMonitor = ProcessMonitor.builder()
                                                 .processBuilder(processBuilder)
-                                                .stdOut(System.out::println)
-                                                .stdErr(System.err::println)
+                                                .stdOut(this::printStdOut)
+                                                .stdErr(this::printStdErr)
                                                 .capture(true)
                                                 .build()
                                                 .start();
@@ -244,6 +265,16 @@ public class ProjectExecutor {
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private void printStdOut(String line) {
+        hasStdOutMessage = true;
+        System.out.println(line);
+    }
+
+    private void printStdErr(String line) {
+        hasStdErrMessage = true;
+        System.err.println(line);
     }
 
     private String classPathString() {

@@ -27,6 +27,7 @@ import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.util.AnsiConsoleInstaller;
 import io.helidon.build.util.MavenCommand;
+import io.helidon.build.util.Style;
 
 import static io.helidon.build.cli.harness.CommandContext.ExitStatus.FAILURE;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
@@ -109,16 +110,19 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
 
         Consumer<String> stdOut = terminalMode
                                   ? terminalModeOutput
-                                  : DevCommand::printAllLines;
+                                  : DevCommand::printStdOutLine;
+
+        Consumer<String> stdErr = DevCommand::printStdErrLine;
 
         Predicate<String> filter = terminalMode
                                    ? terminalModeOutput
-                                   : line -> true;
+                                   : DevCommand::printAllLines;
 
         try {
             MavenCommand.builder()
                         .verbose(verbosity == DEBUG)
                         .stdOut(stdOut)
+                        .stdErr(stdErr)
                         .filter(filter)
                         .addArgument(DEV_GOAL)
                         .addArgument(CLEAN_PROP_PREFIX + clean)
@@ -132,8 +136,16 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
         }
     }
 
-    private static void printAllLines(String line) {
+    private static boolean printAllLines(String line) {
+        return true;
+    }
+
+    private static void printStdOutLine(String line) {
         System.out.println(line);
+    }
+
+    private static void printStdErrLine(String line) {
+        System.out.println(Style.Red.apply(line));
     }
 
     /**
