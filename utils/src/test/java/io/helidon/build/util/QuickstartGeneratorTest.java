@@ -26,7 +26,6 @@ import java.nio.file.Paths;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.test.TestFiles.latestHelidonVersion;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -40,6 +39,7 @@ import static org.hamcrest.Matchers.nullValue;
  */
 class QuickstartGeneratorTest {
     private static final Path TARGET_DIR = targetDir(QuickstartGeneratorTest.class);
+    private static final String HELIDON_TEST_VERSION = "2.0.0-SNAPSHOT";
 
     private Path generated;
 
@@ -64,13 +64,13 @@ class QuickstartGeneratorTest {
     }
 
     @Test
-    void testSeGenerationLatestVersion() {
-        testGeneration(HelidonVariant.SE, latestHelidonVersion().toString());
+    void testSeGeneration() {
+        testGeneration(HelidonVariant.SE, HELIDON_TEST_VERSION);
     }
 
     @Test
-    void testMpGenerationLatestVersion() {
-        testGeneration(HelidonVariant.MP, latestHelidonVersion().toString());
+    void testMpGeneration() {
+        testGeneration(HelidonVariant.MP, HELIDON_TEST_VERSION);
     }
 
     private void testGeneration(HelidonVariant variant, String version) {
