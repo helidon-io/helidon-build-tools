@@ -155,7 +155,7 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
         private boolean suspendOutput;
         private boolean insertLine;
         private boolean appendLine;
-        private boolean appendLineIfError;
+        private boolean insertLineIfError;
 
         @Override
         public boolean test(String line) {
@@ -166,7 +166,7 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
                 } else if (line.startsWith(DEV_LOOP_STYLED_MESSAGE_PREFIX)
                            || line.startsWith(DEV_LOOP_MESSAGE_PREFIX)) {
                     if (line.contains(DEV_LOOP_BUILD_STARTING)) {
-                        appendLineIfError = true;
+                        insertLineIfError = true;
                     } else if (line.contains(DEV_LOOP_SERVER_STARTING)) {
                         appendLine = true;
                     } else if (line.contains(DEV_LOOP_BUILD_FAILED)) {
@@ -190,6 +190,11 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
                 return false;
             } else if (line.startsWith(DEBUGGER_LISTEN_MESSAGE_PREFIX)) {
                 debugger = true;
+                return true;
+            } else if (errorMessage(line) != null) {
+                devLoopStarted = true;
+                insertLine = true;
+                insertLineIfError = AnsiConsoleInstaller.areAnsiEscapesEnabled();
                 return true;
             } else {
                 updateProgress();
@@ -230,6 +235,20 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
             System.out.println();
         }
 
+        private static String errorMessage(String line) {
+            if (line.startsWith(MAVEN_LOG_LEVEL_START)) {
+                int levelEnd = line.indexOf(MAVEN_LOG_LEVEL_END);
+                if (levelEnd > 0) {
+                    String level = line.substring(0, levelEnd);
+                    if (level.contains(MAVEN_ERROR_LEVEL)
+                        || level.contains(MAVEN_FATAL_LEVEL)) {
+                        return line.substring(levelEnd + 2);
+                    }
+                }
+            }
+            return null;
+        }
+
         @Override
         public void accept(String line) {
             if (!line.isBlank()) {
@@ -238,20 +257,13 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
                     insertLine = false;
                 }
                 if (line.startsWith(MAVEN_LOG_LEVEL_START)) {
-                    int levelEnd = line.indexOf(MAVEN_LOG_LEVEL_END);
-                    if (levelEnd > 0) {
-                        String level = line.substring(0, levelEnd);
-                        if (level.contains(MAVEN_ERROR_LEVEL)
-                            || level.contains(MAVEN_FATAL_LEVEL)) {
-                            if (appendLineIfError) {
-                                System.out.println();
-                                appendLineIfError = false;
-                            }
-                            String message = line.substring(levelEnd + 2);
-                            if (!message.isBlank()) {
-                                System.out.println(message);
-                            }
+                    String errorMessage = errorMessage(line);
+                    if (errorMessage != null && !errorMessage.isBlank()) {
+                        if (insertLineIfError) {
+                            System.out.println();
+                            insertLineIfError = false;
                         }
+                        System.out.println(errorMessage);
                     }
                 } else {
                     System.out.println(line);
