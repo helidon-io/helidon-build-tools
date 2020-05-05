@@ -29,7 +29,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION;
 import static io.helidon.build.cli.impl.TestUtils.exec;
-import static io.helidon.build.test.TestFiles.quickstartId;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -42,7 +41,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class CommandTest {
 
     private static final String HELIDON_VERSION_TEST = "2.0.0-SNAPSHOT";
-    private static final String HELIDON_VERSION_PREVIOUS = "2.0.0-M1";
+    private static final String HELIDON_VERSION_PREVIOUS = "2.0.0-M2";
+    private static final String MY_PROJECT = "myproject";
+    private static final String MY_GROUP_ID = "mygroup";
+    private static final String MY_ARTIFACT_ID = "myartifact";
 
     private HelidonVariant variant = HelidonVariant.SE;
     private Path targetDir = TestFiles.targetDir();
@@ -62,27 +64,32 @@ public class CommandTest {
         TestUtils.ExecResult res = exec("init",
                 "--flavor", variant.toString(),
                 "--project ", targetDir.toString(),
-                "--version ", HELIDON_VERSION_PREVIOUS);
+                "--version ", HELIDON_VERSION_PREVIOUS,
+                "--artifactid", MY_ARTIFACT_ID,
+                "--groupid", MY_GROUP_ID,
+                "--name", MY_PROJECT,
+                "--batch");
         System.out.println(res.output);
         assertThat(res.code, is(equalTo(0)));
-        assertTrue(Files.exists(targetDir.resolve(quickstartId(variant))));
+        Path projectDir = targetDir.resolve(Path.of(MY_PROJECT));
+        assertTrue(Files.exists(projectDir));
     }
 
     @Test
     @Order(2)
     public void testBuild() throws Exception {
-        Path projectDir = targetDir.resolve(quickstartId(variant));
+        Path projectDir = targetDir.resolve(Path.of(MY_PROJECT));
         TestUtils.ExecResult res = exec("build",
                 "--project ", projectDir.toString());
         System.out.println(res.output);
         assertThat(res.code, is(equalTo(0)));
-        assertTrue(Files.exists(TestFiles.helidonSeJar()));
+        assertTrue(Files.exists(projectDir.resolve("target/" + MY_ARTIFACT_ID + ".jar")));
     }
 
     @Test
     @Order(3)
     public void testInfo() throws Exception {
-        Path projectDir = targetDir.resolve(quickstartId(variant));
+        Path projectDir = targetDir.resolve(Path.of(MY_PROJECT));
         TestUtils.ExecResult res = exec("info",
                 "--project ", projectDir.toString());
         System.out.println(res.output);
@@ -92,7 +99,7 @@ public class CommandTest {
     @Test
     @Order(4)
     public void testVersion() throws Exception {
-        Path projectDir = targetDir.resolve(quickstartId(variant));
+        Path projectDir = targetDir.resolve(Path.of(MY_PROJECT));
         TestUtils.ExecResult res = exec("version",
                 "--project ", projectDir.toString());
         System.out.println(res.output);
@@ -101,19 +108,8 @@ public class CommandTest {
 
     @Test
     @Order(5)
-    public void testFeatures() throws Exception {
-        Path projectDir = targetDir.resolve(quickstartId(variant));
-        TestUtils.ExecResult res = exec("features",
-                "--project ", projectDir.toString(),
-                "--all");
-        System.out.println(res.output);
-        assertThat(res.code, is(equalTo(0)));
-    }
-
-    @Test
-    @Order(6)
     public void testClean() {
-        Path projectDir = targetDir.resolve(quickstartId(variant));
+        Path projectDir = targetDir.resolve(Path.of(MY_PROJECT));
         assertTrue(TestFiles.deleteDirectory(projectDir.toFile()));
         System.out.println("Directory " + projectDir + " deleted");
     }

@@ -43,6 +43,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.helidon.build-tools.archetype</groupId>
+            <artifactId>helidon-archetype-engine</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
             <scope>runtime</scope>
@@ -76,10 +81,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.build-tools.archetype</groupId>
-            <artifactId>helidon-archetype-engine</artifactId>
-            <version>2.0.0-SNAPSHOT</version>
-            <scope>compile</scope>
+            <groupId>com.github.spullara.mustache.java</groupId>
+            <artifactId>compiler</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

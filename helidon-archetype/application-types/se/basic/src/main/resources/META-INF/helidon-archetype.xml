@@ -18,7 +18,6 @@
 -->
 <archetype-descriptor>
     <properties>
-        <!-- These are standard properties for all application types -->
         <property id="gradle" description="Gradle based project"/>
         <property id="maven" description="Maven based project"/>
         <property id="groupId" description="Project groupId"/>
@@ -27,7 +26,6 @@
         <property id="name" description="Project name"/>
         <property id="package" description="Java package name"/>
         <property id="helidonVersion" description="Version of Helidon to use"/>
-        <!-- Place project specific properties below -->
     </properties>
     <transformations>
         <transformation id="packaged">
@@ -90,16 +88,10 @@
         </file-set>
     </file-sets>
     <input-flow>
-        <select text="Select a build system">
-            <choice property="maven" text="Maven"/>
-            <choice property="gradle" text="Gradle"/>
-        </select>
-        <!-- TODO input value transformation -->
-        <!-- TODO choice node at the top for yes/no properties -->
-        <input property="groupId" text="Enter a project groupId" if="maven"/>
-        <input property="artifactId" text="Enter a project artifactId"/>
-        <input property="version" text="Enter a project version"/>
-        <input property="name" text="Enter a project name" default="${artifactId}"/>
-        <input property="package" text="Enter a Java package name" default="${groupId}"/>
+        <input property="name" text="Enter a project name" default="${name}"/>
+        <input property="groupId" text="Enter a project groupId" if="maven" default="${groupId}"/>
+        <input property="artifactId" text="Enter an project artifactId" default="${artifactId}"/>
+        <input property="version" text="Enter a project version" default="1.0-SNAPSHOT"/>
+        <input property="package" text="Enter a Java package name" default="${package}"/>
     </input-flow>
 </archetype-descriptor>

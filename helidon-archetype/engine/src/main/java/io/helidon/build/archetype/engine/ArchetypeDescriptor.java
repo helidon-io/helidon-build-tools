@@ -564,7 +564,7 @@ public final class ArchetypeDescriptor {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            if (!super.equals((Conditional) obj)) {
+            if (!super.equals(obj)) {
                 return false;
             }
             final FileSet other = (FileSet) obj;
@@ -790,12 +790,21 @@ public final class ArchetypeDescriptor {
         }
 
         /**
-         * Get the default value.
+         * Get the default value. If it is an expression of the form {@code ${prop}},
+         * return value of a system property if defined or the empty string if not.
          *
          * @return default value
          */
         public Optional<String> defaultValue() {
-            return defaultValue;
+            return defaultValue.map(dv -> {
+                String trimmed = dv.trim();
+                if (trimmed.length() > 3 && trimmed.startsWith("${") && trimmed.endsWith("}")) {
+                    String prop = trimmed.substring(2, trimmed.length() - 1);
+                    String value = System.getProperty(prop);
+                    return value != null ? value : "";
+                }
+                return dv;
+            });
         }
 
         @Override

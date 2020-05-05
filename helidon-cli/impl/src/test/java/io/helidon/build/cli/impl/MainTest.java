@@ -20,7 +20,6 @@ import java.io.IOException;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.cli.impl.TestUtils.exec;
-import static io.helidon.build.cli.impl.TestUtils.resourceAsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -29,23 +28,6 @@ import static org.hamcrest.CoreMatchers.is;
  * CLI main class test.
  */
 public class MainTest {
-
-    static final String CLI_USAGE = resourceAsString("cli-usage.txt");
-
-    @Test
-    public void testUsage() throws IOException, InterruptedException {
-        TestUtils.ExecResult res = exec("--help");
-        assertThat(res.code, is(equalTo(0)));
-        assertThat(res.output, is(equalTo(CLI_USAGE)));
-
-        res = exec("help");
-        assertThat(res.code, is(equalTo(0)));
-        assertThat(res.output, is(equalTo(CLI_USAGE)));
-
-        res = exec();
-        assertThat(res.code, is(equalTo(0)));
-        assertThat(res.output, is(equalTo(CLI_USAGE)));
-    }
 
     @Test
     public void testHelp() throws IOException, InterruptedException {
@@ -59,12 +41,6 @@ public class MainTest {
         assertThat(res.code, is(equalTo(0)));
 
         res = exec("help" ,"dev");
-        assertThat(res.code, is(equalTo(0)));
-
-        res = exec("features" ,"--help");
-        assertThat(res.code, is(equalTo(0)));
-
-        res = exec("help", "features");
         assertThat(res.code, is(equalTo(0)));
 
         res = exec("info" ,"--help");

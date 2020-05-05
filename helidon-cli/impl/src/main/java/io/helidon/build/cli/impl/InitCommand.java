@@ -29,11 +29,13 @@ import java.util.Properties;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import io.helidon.build.archetype.engine.ArchetypeDescriptor;
 import io.helidon.build.archetype.engine.ArchetypeEngine;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
+import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
 
 import io.helidon.build.util.Constants;
@@ -75,13 +77,15 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
     private static final String POM = "pom.xml";
 
     private final CommonOptions commonOptions;
+    private final boolean batch;
     private Flavor flavor;
     private final Build build;
+    private String appType;
     private String version;
-    private String groupId;
-    private String artifactId;
-    private String packageName;
-    private String projectName;
+    private final String groupId;
+    private final String artifactId;
+    private final String packageName;
+    private final String projectName;
 
     /**
      * Helidon flavors.
@@ -113,17 +117,21 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
     @Creator
     InitCommand(
             CommonOptions commonOptions,
+            @Flag(name = "batch", description = "Enables non-interactive mode") boolean batch,
             @KeyValue(name = "flavor", description = "Helidon flavor", defaultValue = "SE") Flavor flavor,
             @KeyValue(name = "build", description = "Build type", defaultValue = "MAVEN") Build build,
             @KeyValue(name = "version", description = "Helidon version") String version,
+            @KeyValue(name = "apptype", description = "Application type", defaultValue = "basic") String appType,
             @KeyValue(name = "groupid", description = "Project's group ID", defaultValue = "mygroupid") String groupId,
             @KeyValue(name = "artifactid", description = "Project's artifact ID", defaultValue = "myartifactid") String artifactId,
             @KeyValue(name = "package", description = "Project's package name", defaultValue = "mypackage") String packageName,
-            @KeyValue(name = "name", description = "Project's name") String projectName) {
+            @KeyValue(name = "name", description = "Project's name", defaultValue = "myproject") String projectName) {
         this.commonOptions = commonOptions;
+        this.batch = batch;
         this.flavor = flavor;
         this.build = build;
         this.version = version;
+        this.appType = appType;
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.packageName = packageName;
@@ -151,10 +159,12 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             context.logInfo("Using Helidon version " + version);
         }
 
-        // Prompt for all standard options
-        version = prompt("Helidon version", version);
-        String r = prompt("Helidon flavor", new String[]{"SE", "MP"}, 0);
-        flavor = Flavor.valueOf(r);
+        if (!batch) {
+            // Prompt common flow
+            version = prompt("Helidon version", version);
+            String f = prompt("Helidon flavor", new String[]{"SE", "MP"}, 0);
+            flavor = Flavor.valueOf(f);
+        }
 
         // TODO: Gather remote templates
         display("Gathering application templates ... ");
@@ -164,13 +174,10 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
                 .map(k -> k.substring(k.lastIndexOf('.') + 1))
                 .collect(Collectors.toList());
         displayLine("DONE");
-        String appType = prompt("Select application type", appTypes, 0);
 
-        // More standard options
-        groupId = prompt("Enter groupId", groupId);
-        artifactId = prompt("Enter artifactId", artifactId);
-        packageName = prompt("Enter package name", packageName);
-        projectName = prompt("Enter project name", "myproject");
+        if (!batch) {
+            appType = prompt("Select application type", appTypes, 0);
+        }
 
         // For now get jar file from property value and set up class loader
         URLClassLoader cl;
@@ -185,7 +192,24 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             throw new RuntimeException(ex);
         }
 
-        // TODO: process non-standard properties here
+        Properties properties = initEngineProperties();
+        ArchetypeEngine engine = new ArchetypeEngine(cl, properties);
+
+        if (!batch) {
+            ArchetypeDescriptor descriptor = engine.descriptor();
+            ArchetypeDescriptor.InputFlow inputFlow = descriptor.inputFlow();
+
+            // Process input flow from template
+            inputFlow.nodes().forEach(n -> {
+                if (n instanceof ArchetypeDescriptor.Input) {
+                    ArchetypeDescriptor.Input input = (ArchetypeDescriptor.Input) n;
+                    String v = prompt(input.property().description(), input.defaultValue());
+                    System.setProperty(input.property().id(), v);
+                } else {
+                    throw new UnsupportedOperationException("No support for " + n);
+                }
+            });
+        }
 
         // Generate project using archetype engine
         Path parentDirectory = commonOptions.project().toPath();
@@ -194,8 +218,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             context.exitAction(ExitStatus.FAILURE, projectDir + " exists");
             return;
         }
-        Properties properties = initEngineProperties();
-        new ArchetypeEngine(cl, properties).generate(projectDir.toFile());
+        engine.generate(projectDir.toFile());
 
         // Pom needs correct plugin version, with extensions enabled for devloop
         ensurePomContent(projectDir);

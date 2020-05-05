@@ -100,6 +100,15 @@ public final class ArchetypeEngine {
                 descriptor.fileSets().map(FileSets::transformations).orElseGet(Collections::emptyList), paths, properties);
     }
 
+    /**
+     * Return archetype descriptor.
+     *
+     * @return Archetype descriptor.
+     */
+    public ArchetypeDescriptor descriptor() {
+        return descriptor;
+    }
+
     private static ArchetypeDescriptor loadDescriptor(ClassLoader cl) {
         InputStream descIs = cl.getResourceAsStream(DESCRIPTOR_RESOURCE_NAME);
         if (descIs == null) {

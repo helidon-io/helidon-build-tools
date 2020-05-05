@@ -42,6 +42,7 @@ public class InitCommandTest {
 
     private static final String MY_GROUP_ID = "mygroup";
     private static final String MY_ARTIFACT_ID = "myartifact";
+    private static final String MY_PROJECT = "myproject";
     private static final String MY_PACKAGE = "com.oracle.mypackage";
     private static final String HELIDON_VERSION_TEST = "2.0.0-SNAPSHOT";
     private static final String HELIDON_VERSION_PREVIOUS = "2.0.0-M1";
@@ -62,21 +63,23 @@ public class InitCommandTest {
     @Order(1)
     public void testInitGroupPackage() throws Exception {
         TestUtils.ExecResult res = exec("init",
+                "--batch",
                 "--flavor", variant.toString(),
                 "--project ", targetDir.toString(),
                 "--version ", HELIDON_VERSION_PREVIOUS,
                 "--groupid", MY_GROUP_ID,
                 "--artifactid", MY_ARTIFACT_ID,
-                "--package", MY_PACKAGE);
+                "--package", MY_PACKAGE,
+                "--name", MY_PROJECT);
         System.out.println(res.output);
         assertThat(res.code, is(equalTo(0)));
-        assertPackageExist(targetDir.resolve(MY_ARTIFACT_ID), MY_PACKAGE);
+        assertPackageExist(targetDir.resolve(MY_PROJECT), MY_PACKAGE);
     }
 
     @Test
     @Order(2)
     public void testCleanGroupPackage() {
-        Path projectDir = targetDir.resolve(MY_ARTIFACT_ID);
+        Path projectDir = targetDir.resolve(MY_PROJECT);
         assertTrue(TestFiles.deleteDirectory(projectDir.toFile()));
         System.out.println("Directory " + projectDir + " deleted");
     }

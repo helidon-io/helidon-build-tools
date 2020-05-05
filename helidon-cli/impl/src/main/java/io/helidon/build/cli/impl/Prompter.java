@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Class Prompter.
@@ -30,9 +31,15 @@ class Prompter {
     private Prompter() {
     }
 
+    static String prompt(String question, Optional<String> defaultResponse) {
+        return prompt(question, defaultResponse.orElse(null));
+    }
+
     static String prompt(String question, String defaultResponse) {
         try {
-            String q = String.format("%s (Default: %s): ", question, defaultResponse);
+            String q = defaultResponse != null
+                    ? String.format("%s (Default: %s): ", question, defaultResponse)
+                    : String.format("%s: ", question);
             System.out.print(q);
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             String response = reader.readLine().trim();
