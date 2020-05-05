@@ -76,7 +76,7 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
 
     private boolean isValidConfig(CommandContext context) {
         try {
-            ensureHelidonCliConfig(WORKING_DIR);
+            ensureHelidonCliConfig(WORKING_DIR, null);
             return true;
         } catch (Exception e) {
             context.exitAction(FAILURE, e.getMessage());

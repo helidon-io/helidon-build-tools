@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.PomUtils.ensureHelidonPluginConfig;
+import static io.helidon.build.util.ProjectConfig.ensureHelidonCliConfig;
 import static io.helidon.build.util.Style.Blue;
 import static io.helidon.build.util.Style.BoldBrightCyan;
 
@@ -39,7 +40,7 @@ public class QuickstartGenerator {
     protected static final String MAVEN_EXEC = Constants.OS.mavenExec();
 
     /**
-     * Groud ID for archetypes.
+     * Group ID for archetypes.
      */
     protected static final String ARCHETYPES_GROUP_ID = "io.helidon.archetypes";
 
@@ -60,6 +61,7 @@ public class QuickstartGenerator {
     private String artifactId;
     private String version;
     private String packageName;
+    private String pluginVersion;
 
     /**
      * Returns a new generator.
@@ -71,6 +73,7 @@ public class QuickstartGenerator {
     }
 
     protected QuickstartGenerator() {
+        pluginVersion = BuildToolsProperties.instance().version();
     }
 
     protected Path parentDirectory() {
@@ -150,6 +153,18 @@ public class QuickstartGenerator {
     }
 
     /**
+     * Sets the Helidon plugin version to use.
+     *
+     * @param pluginVersion The version.
+     * @return This instance, for chaining.
+     */
+    public QuickstartGenerator pluginVersion(String pluginVersion) {
+        Objects.requireNonNull(pluginVersion);
+        this.pluginVersion = pluginVersion;
+        return this;
+    }
+
+    /**
      * Sets whether or not log messages should be suppressed. Default is {@code false}.
      *
      * @param quiet {@code true} if log messages should not be written.
@@ -192,7 +207,8 @@ public class QuickstartGenerator {
                                                      "-Dpackage=" + packageName
                                     )));
         final Path projectDir = assertDir(parentDirectory.resolve(artifactId));
-        ensureHelidonPluginConfig(projectDir, version);  // NOTE: Remove this once new archetype is completed!
+        ensureHelidonCliConfig(projectDir, version);
+        ensureHelidonPluginConfig(projectDir, pluginVersion);  // NOTE: Remove this once new archetype is completed!
         log("Created %s", projectDir);
         return projectDir;
     }
@@ -206,6 +222,9 @@ public class QuickstartGenerator {
         }
         if (parentDirectory == null) {
             throw new IllegalStateException("projectDirectory required.");
+        }
+        if (pluginVersion == null) {
+            throw new IllegalStateException("pluginVersion required.");
         }
         if (groupId == null) {
             groupId = "test";

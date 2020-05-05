@@ -35,13 +35,12 @@ import static io.helidon.build.util.FileUtils.assertFile;
 public class PomUtils {
     private static final String BUILD_TOOLS_GROUP_ID = "io.helidon.build-tools";
     private static final String BUILD_TOOLS_PLUGIN_ARTIFACT_ID = "helidon-maven-plugin";
-    private static final String HELIDON_PLUGIN_VERSION_PROPERTY = "version.helidon.plugin";
     private static final String POM = "pom.xml";
 
     /**
-     * The helidon version property name.
+     * The Helidon plugin version property name.
      */
-    public static final String HELIDON_VERSION_PROPERTY = "helidon.version";
+    public static final String HELIDON_PLUGIN_VERSION_PROPERTY = "version.helidon.plugin";
 
     /**
      * Returns the pom file from the given project.
@@ -57,15 +56,14 @@ public class PomUtils {
      * Ensures that the helidon plugin is configured in the pom file of the given project.
      *
      * @param projectDir The project directory.
-     * @param defaultPluginVersion The default plugin version to use if the {@link #HELIDON_VERSION_PROPERTY} system property
-     * is not set.
+     * @param helidonPluginVersion The plugin version.
      */
-    public static void ensureHelidonPluginConfig(Path projectDir, String defaultPluginVersion) {
+    public static void ensureHelidonPluginConfig(Path projectDir, String helidonPluginVersion) {
         // Support a system property override of the version here for testing
-        String version = System.getProperty(HELIDON_VERSION_PROPERTY, defaultPluginVersion);
+        String pluginVersion = System.getProperty(HELIDON_PLUGIN_VERSION_PROPERTY, helidonPluginVersion);
         Path pomFile = toPomFile(projectDir);
         Model model = readPomModel(pomFile);
-        boolean propertyAdded = ensurePluginVersion(model, version);
+        boolean propertyAdded = ensurePluginVersion(model, pluginVersion);
         boolean extensionAdded = ensurePlugin(model);
         if (extensionAdded || propertyAdded) {
             writePomModel(pomFile, model);

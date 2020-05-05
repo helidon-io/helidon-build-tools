@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertExists;
-import static io.helidon.build.util.PomUtils.HELIDON_VERSION_PROPERTY;
 
 /**
  * Class ConfigFile.
@@ -91,9 +90,15 @@ public class ProjectConfig extends ConfigProperties {
     public static final String PROJECT_VERSION = "project.version";
 
     /**
+     * Helidon version.
+     */
+    public static final String HELIDON_VERSION = "helidon.version";
+
+    /**
      * Project last successful build time.
      */
     public static final String PROJECT_LAST_BUILD_SUCCESS_TIME = "project.last.build.success.time";
+
 
     /**
      * Tests whether or not the configuration from the {@link #DOT_HELIDON} file in the given project directory exists.
@@ -109,17 +114,18 @@ public class ProjectConfig extends ConfigProperties {
      * Ensure that the configuration file exists in the given project directory.
      *
      * @param projectDir The project directory.
+     * @param helidonVersion The helidon version. May be {@code null}.
      * @return The config.
      * @throws UncheckedIOException If it does not exist and could not be created.
      */
-    public static ProjectConfig ensureHelidonCliConfig(Path projectDir) {
+    public static ProjectConfig ensureHelidonCliConfig(Path projectDir, String helidonVersion) {
         final Path dotHelidon = toDotHelidon(projectDir);
         if (Files.isRegularFile(dotHelidon)) {
             return new ProjectConfig(dotHelidon.toFile());
         } else {
             ProjectConfig config = new ProjectConfig(dotHelidon.toFile());
             config.projectDir(projectDir);
-            String version = System.getProperty(HELIDON_VERSION_PROPERTY);
+            String version = System.getProperty(HELIDON_VERSION, helidonVersion);
             if (version != null) {
                 config.property(PROJECT_VERSION);
             }
