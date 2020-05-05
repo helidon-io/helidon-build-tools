@@ -38,6 +38,7 @@ import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
 
+import io.helidon.build.cli.impl.FlowNodeControllers.FlowNodeController;
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.HelidonVersions;
 import io.helidon.build.util.Log;
@@ -200,15 +201,9 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             ArchetypeDescriptor.InputFlow inputFlow = descriptor.inputFlow();
 
             // Process input flow from template
-            inputFlow.nodes().forEach(n -> {
-                if (n instanceof ArchetypeDescriptor.Input) {
-                    ArchetypeDescriptor.Input input = (ArchetypeDescriptor.Input) n;
-                    String v = prompt(input.property().description(), input.defaultValue());
-                    System.setProperty(input.property().id(), v);
-                } else {
-                    throw new UnsupportedOperationException("No support for " + n);
-                }
-            });
+            inputFlow.nodes().stream()
+                    .map(FlowNodeControllers::create)
+                    .forEach(FlowNodeController::execute);
         }
 
         // Generate project using archetype engine
@@ -251,7 +246,9 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         properties.setProperty("package", packageName);
         properties.setProperty("name", projectName);
         properties.setProperty("helidonVersion", version);
-        properties.setProperty("maven", Boolean.TRUE.toString());
+        if (properties.getProperty("maven") == null) {
+            properties.setProperty("maven", "true");        // No gradle support yet
+        }
         return properties;
     }
 

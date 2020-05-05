@@ -660,7 +660,7 @@ public final class ArchetypeDescriptor {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            if (!super.equals((Conditional) obj)) {
+            if (!super.equals(obj)) {
                 return false;
             }
             final FlowNode other = (FlowNode) obj;
@@ -708,7 +708,7 @@ public final class ArchetypeDescriptor {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            if (!super.equals((FlowNode) obj)) {
+            if (!super.equals(obj)) {
                 return false;
             }
             final Select other = (Select) obj;
@@ -756,7 +756,7 @@ public final class ArchetypeDescriptor {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            if (!super.equals((FlowNode) obj)) {
+            if (!super.equals(obj)) {
                 return false;
             }
             final Choice other = (Choice) obj;
@@ -827,7 +827,7 @@ public final class ArchetypeDescriptor {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            if (!super.equals((FlowNode) obj)) {
+            if (!super.equals(obj)) {
                 return false;
             }
             final Input other = (Input) obj;
