@@ -22,8 +22,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
-import java.util.stream.IntStream;
 
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.apache.maven.settings.Profile;
@@ -45,40 +43,26 @@ import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResult;
-import org.eclipse.aether.resolution.VersionRangeRequest;
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
-import org.eclipse.aether.version.Version;
 
 import static io.helidon.build.util.Constants.DIR_SEP;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 
 /**
- * Maven utilities.
+ * Maven artifact utilities.
  */
-public class Maven {
-    private static final String LATEST_VERSION = "[0,)";
-    private static final String SNAPSHOT_SUFFIX = "-SNAPSHOT";
-    private static final Instance<Maven> DEFAULT_INSTANCE = new Instance<>(Maven::defaultInstance);
+public class MavenArtifacts {
+    private static final Instance<MavenArtifacts> DEFAULT_INSTANCE = new Instance<>(MavenArtifacts::defaultInstance);
 
     private final RepositorySystem system;
     private final DefaultRepositorySystemSession session;
     private final List<RemoteRepository> repositories;
 
-    /**
-     * A version filter that does not allow snapshots.
-     */
-    public static final Predicate<Version> LATEST_RELEASE = Maven::notSnapshot;
-
-    /**
-     * A version filter that allows any version.
-     */
-    public static final Predicate<Version> LATEST = version -> true;
-
-    private Maven(Builder builder) {
+    private MavenArtifacts(Builder builder) {
         this.system = builder.system;
         this.session = builder.session;
         this.repositories = builder.repositories;
@@ -98,65 +82,8 @@ public class Maven {
      *
      * @return The instance.
      */
-    public static Maven instance() {
+    public static MavenArtifacts instance() {
         return DEFAULT_INSTANCE.instance();
-    }
-
-    /**
-     * Returns the latest version for the given artifact.
-     *
-     * @param groupId The artifact group id.
-     * @param artifactId The artifact id.
-     * @param filter The filter. May be {@code null}.
-     * @return The latest version.
-     */
-    public Version latestVersion(String groupId, String artifactId, Predicate<Version> filter) {
-        return latestVersion(toCoordinates(groupId, artifactId, LATEST_VERSION), filter);
-    }
-
-    /**
-     * Returns the latest version for the given artifact.
-     *
-     * @param coordinates The artifact coordinates.
-     * @param filter The filter. May be {@code null}.
-     * @return The latest version.
-     */
-    public Version latestVersion(String coordinates, Predicate<Version> filter) {
-        final List<Version> versions = versions(coordinates);
-        final int lastIndex = versions.size() - 1;
-        final Predicate<Version> predicate = filter == null ? LATEST : filter;
-        return IntStream.rangeClosed(0, lastIndex)
-                .mapToObj(index -> versions.get(lastIndex - index))
-                .filter(predicate)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("no matching version found!"));
-    }
-
-    /**
-     * Returns the versions for the given artifact.
-     *
-     * @param groupId The artifact group id.
-     * @param artifactId The artifact id.
-     * @return The versions.
-     */
-    public List<Version> versions(String groupId, String artifactId) {
-        return versions(toCoordinates(groupId, artifactId, LATEST_VERSION));
-    }
-
-    /**
-     * Returns the versions for the given artifact.
-     *
-     * @param coordinates The artifact coordinates.
-     * @return The versions.
-     */
-    public List<Version> versions(String coordinates) {
-        final Artifact artifact = new DefaultArtifact(coordinates);
-        final VersionRangeRequest request = new VersionRangeRequest(artifact, repositories, null);
-        try {
-            return system.resolveVersionRange(session, request).getVersions();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     /**
@@ -198,10 +125,6 @@ public class Maven {
      */
     public static String toCoordinates(String groupId, String artifactId, String version) {
         return groupId + ":" + artifactId + ":" + version;
-    }
-
-    private static boolean notSnapshot(Version version) {
-        return !version.toString().endsWith(SNAPSHOT_SUFFIX);
     }
 
     /**
@@ -288,15 +211,15 @@ public class Maven {
         }
 
         /**
-         * Builds the {@link Maven} instance.
+         * Builds the {@link MavenArtifacts} instance.
          *
          * @return The instance.
          */
-        public Maven build() {
+        public MavenArtifacts build() {
             system = newRepositorySystem();
             session = MavenRepositorySystemUtils.newSession()
-                    .setOffline(offline)
-                    .setCache(new DefaultRepositoryCache());
+                                                .setOffline(offline)
+                                                .setCache(new DefaultRepositoryCache());
             final LocalRepository localRepo = localRepository();
             session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
 
@@ -305,7 +228,7 @@ public class Maven {
 
             settings = settings();
             repositories = repositories();
-            return new Maven(this);
+            return new MavenArtifacts(this);
         }
 
         private Path mavenHome() {
@@ -359,7 +282,7 @@ public class Maven {
             for (Proxy proxySetting : settings.getProxies()) {
                 if (repoUrl.startsWith(proxySetting.getProtocol())) {
                     return new org.eclipse.aether.repository.Proxy(proxySetting.getProtocol(), proxySetting.getHost(),
-                            proxySetting.getPort());
+                                                                   proxySetting.getPort());
                 }
             }
             return null;
@@ -371,14 +294,14 @@ public class Maven {
             for (String profileName : settings.getActiveProfiles()) {
                 for (Repository repo : profiles.get(profileName).getRepositories()) {
                     result.add(new RemoteRepository.Builder(repo.getId(), REPOSITORY_TYPE, repo.getUrl())
-                            .setProxy(proxy(repo.getUrl()))
-                            .build());
+                                   .setProxy(proxy(repo.getUrl()))
+                                   .build());
                 }
             }
             if (result.isEmpty()) {
                 result.add(new RemoteRepository.Builder(CENTRAL_ID, REPOSITORY_TYPE, CENTRAL_URL)
-                        .setProxy(proxy(CENTRAL_URL))
-                        .build());
+                               .setProxy(proxy(CENTRAL_URL))
+                               .build());
             }
             return result;
         }
@@ -392,21 +315,21 @@ public class Maven {
                 @Override
                 public void serviceCreationFailed(Class<?> type, Class<?> impl, Throwable exception) {
                     Log.error("Service creation failed for %s implementation %s: %s",
-                            type, impl, exception.getMessage(), exception);
+                              type, impl, exception.getMessage(), exception);
                 }
             });
             return locator.getService(RepositorySystem.class);
         }
     }
 
-    private static Maven defaultInstance() {
+    private static MavenArtifacts defaultInstance() {
         if (System.getProperty("dump.env") != null) {
             Log.info("\n--- Environment ---- \n");
             System.getenv().forEach((key, value) -> Log.info("    %s = %s", key, value));
             Log.info("\n--- System Properties ---- \n");
             System.getProperties().forEach((key, value) -> Log.info("    %s = %s", key, value));
         }
-        return Maven.builder().build();
+        return MavenArtifacts.builder().build();
     }
 
 }

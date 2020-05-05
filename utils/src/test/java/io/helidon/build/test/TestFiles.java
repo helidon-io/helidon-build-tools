@@ -33,7 +33,7 @@ import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.HelidonVariant;
 import io.helidon.build.util.Instance;
 import io.helidon.build.util.Log;
-import io.helidon.build.util.Maven;
+import io.helidon.build.util.MavenArtifacts;
 import io.helidon.build.util.MavenCommand;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.MavenVersions;
@@ -208,12 +208,12 @@ public class TestFiles implements BeforeAllCallback {
     }
 
     /**
-     * Returns the {@link Maven} instance.
+     * Returns the {@link MavenArtifacts} instance.
      *
      * @return The instance.
      */
-    private static Maven maven() {
-        return Maven.instance();
+    private static MavenArtifacts mavenArtifacts() {
+        return MavenArtifacts.instance();
     }
 
     /**
@@ -259,7 +259,7 @@ public class TestFiles implements BeforeAllCallback {
 
     private static Path fetchSignedJar() {
         Log.info("Fetching signed jar %s", SIGNED_JAR_COORDINATES);
-        return maven().artifact(SIGNED_JAR_COORDINATES);
+        return mavenArtifacts().artifact(SIGNED_JAR_COORDINATES);
     }
 
     private static Path targetDir(Class<?> testClass) {
