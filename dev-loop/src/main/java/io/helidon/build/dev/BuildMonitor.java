@@ -70,6 +70,14 @@ public interface BuildMonitor {
     void onBuildStart(int cycleNumber, BuildType type);
 
     /**
+     * Called when a build has succeeded.
+     *
+     * @param cycleNumber The cycle number.
+     * @param type The build type.
+     */
+    void onBuildSuccess(int cycleNumber, BuildType type);
+
+    /**
      * Called when a build has failed.
      *
      * @param cycleNumber The cycle number.

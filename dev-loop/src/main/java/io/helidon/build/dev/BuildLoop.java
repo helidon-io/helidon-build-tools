@@ -28,6 +28,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.build.util.Log;
+
 import static io.helidon.build.dev.BuildType.Complete;
 import static io.helidon.build.dev.BuildType.Incremental;
 import static java.util.Objects.requireNonNull;
@@ -92,7 +94,16 @@ public class BuildLoop {
             stopped.get().countDown(); // In case any previous waiters.
             running.set(new CountDownLatch(1));
             stopped.set(new CountDownLatch(1));
-            task.set(LOOP_EXECUTOR.submit(this::loop));
+            task.set(LOOP_EXECUTOR.submit(() -> {
+                try {
+                    loop();
+                } catch (InterruptedException ignore) {
+                } catch (Throwable t) {
+                    Log.warn(t, "BuildLoop failed");
+                } finally {
+                    stopped();
+                }
+            }));
         }
         return this;
     }
@@ -145,7 +156,8 @@ public class BuildLoop {
         return stopped.get().await(timeout, unit);
     }
 
-    private void loop() {
+    @SuppressWarnings("BusyWait")
+    private void loop() throws InterruptedException {
         started();
         while (run.get()) {
             final Project project = cycleStarted();
@@ -159,10 +171,11 @@ public class BuildLoop {
                     // Need to create/recreate the project. Note that supplier calls onBuildStart().
 
                     try {
-                        setProject(projectSupplier.newProject(buildExecutor, clean.getAndSet(false), cycleNumber.get()));
+                        boolean clean = this.clean.getAndSet(false);
+                        setProject(projectSupplier.newProject(buildExecutor, clean, cycleNumber.get()));
                         ready();
                     } catch (IllegalArgumentException | InterruptedException e) {
-                        break;
+                        throw e;
                     } catch (Throwable e) {
                         buildFailed(Complete, e);
                     }
@@ -196,9 +209,10 @@ public class BuildLoop {
                         buildStarting(Incremental);
                         project.incrementalBuild(sourceChanges, monitor.stdOutConsumer(), monitor.stdErrConsumer());
                         project.update(false);
+                        buildSucceeded(Incremental);
                         ready();
-                    } catch (InterruptedException e) {
-                        break;
+                    } catch (IllegalArgumentException | InterruptedException e) {
+                        throw e;
                     } catch (Throwable e) {
                         buildFailed(Incremental, e);
                         // Wait for further changes before re-building
@@ -252,6 +266,10 @@ public class BuildLoop {
         }
     }
 
+    private void buildSucceeded(BuildType type) {
+        monitor.onBuildSuccess(cycleNumber.get(), type);
+    }
+
     private void buildFailed(BuildType type, Throwable e) {
         lastFailedTime.set(System.currentTimeMillis());
         delay.set(monitor.onBuildFail(cycleNumber.get(), type, e));
@@ -259,8 +277,14 @@ public class BuildLoop {
 
     private boolean shouldCreateProject() {
         final long lastFailed = lastFailedTime.get();
-        return lastFailed == 0
-               || projectSupplier.hasChanged(projectDirectory, lastFailed);
+        if (lastFailed == 0) {
+            return true;
+        } else if (projectSupplier.hasChanged(projectDirectory, lastFailed)) {
+            monitor.onChanged(cycleNumber.get(), ChangeType.File);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private boolean cycleEnded() {
@@ -274,6 +298,7 @@ public class BuildLoop {
 
     private void setProject(Project project) {
         this.project.set(project);
+        buildSucceeded(project.buildType());
         ready.set(false);
     }
 

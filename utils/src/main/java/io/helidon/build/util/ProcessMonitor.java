@@ -38,9 +38,6 @@ import static java.util.Objects.requireNonNullElseGet;
  * Executes a process and waits for completion, monitoring the output.
  */
 public final class ProcessMonitor {
-    private static final int DESTROY_DELAY_SECONDS = 2;
-    private static final int DESTROY_RETRIES = 5;
-    private static final int DESTROY_FORCE_RETRY = 3;
     private static final ExecutorService EXECUTOR = ForkJoinPool.commonPool();
     private final ProcessBuilder builder;
     private final String description;
@@ -260,7 +257,7 @@ public final class ProcessMonitor {
      * @throws IllegalStateException If the process was not started or has already been completed.
      * @throws ProcessTimeoutException If the process does not complete in the specified time.
      * @throws ProcessFailedException If the process fails.
-     * @throws InterruptedException If the a thread is interrupted.
+     * @throws InterruptedException If the thread is interrupted.
      */
     @SuppressWarnings("checkstyle:JavadocMethod")
     public ProcessMonitor stop(long timeout, TimeUnit unit) throws ProcessTimeoutException,
@@ -280,9 +277,9 @@ public final class ProcessMonitor {
     public ProcessMonitor destroy(boolean force) {
         assertRunning();
         if (force) {
-            process.destroy();
-        } else {
             process.destroyForcibly();
+        } else {
+            process.destroy();
         }
         cancelTasks();
         return this;
@@ -315,6 +312,20 @@ public final class ProcessMonitor {
         } else {
             destroy(false);
             throw new ProcessTimeoutException(this);
+        }
+    }
+
+    /**
+     * Tests whether or not the proces is alive.
+     *
+     * @return {@code true} if the process is alive.
+     */
+    public boolean isAlive() {
+        Process process = this.process;
+        if (process == null) {
+            return false;
+        } else {
+            return process.isAlive();
         }
     }
 
@@ -423,10 +434,11 @@ public final class ProcessMonitor {
     }
 
     private void assertRunning() {
+        final Process process = this.process;
         if (process == null) {
             throw new IllegalStateException("not started");
         }
-        if (out == null) {
+        if (!process.isAlive()) {
             throw new IllegalStateException("already completed");
         }
     }

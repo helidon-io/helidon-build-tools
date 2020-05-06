@@ -28,12 +28,23 @@ import io.helidon.build.util.Constants;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.ProcessMonitor;
 
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_SERVER_STARTING;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_SERVER_STOPPED;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_SERVER_STOPPING;
+import static io.helidon.build.util.Style.BoldBrightCyan;
+import static io.helidon.build.util.Style.BoldBrightGreen;
+import static io.helidon.build.util.Style.BoldBrightRed;
+import static io.helidon.build.util.Style.BoldYellow;
+
 /**
- * Class ProjectStarter.
+ * Project executor.
  */
 public class ProjectExecutor {
+    private static final long STOP_WAIT_SECONDS = 1L;
+    private static final int STOP_WAIT_RETRIES = 5;
+    private static final int STOP_WAIT_RETRY_LOG_STEP = 1;
+    private static final int STOP_WAIT_RETRY_FORCE_STEP = 3;
 
-    private static final long WAIT_TERMINATION = 5L;
     private static final String MAVEN_EXEC = Constants.OS.mavenExec();
     private static final List<String> EXEC_COMMAND = List.of(MAVEN_EXEC, "exec:java");
     private static final String JAVA_EXEC = Constants.OS.javaExecutable();
@@ -41,6 +52,9 @@ public class ProjectExecutor {
     private static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
     private static final String JIT_LEVEL_ONE = "-XX:TieredStopAtLevel=1";
     private static final String JIT_TWO_COMPILER_THREADS = "-XX:CICompilerCount=2";
+    private static final String STARTING = BoldBrightGreen.apply(DEV_LOOP_SERVER_STARTING);
+    private static final String STOPPING = BoldYellow.apply(DEV_LOOP_SERVER_STOPPING);
+    private static final String STOPPED = BoldBrightRed.apply(DEV_LOOP_SERVER_STOPPED);
 
     /**
      * Execution mode.
@@ -59,27 +73,35 @@ public class ProjectExecutor {
 
     private final ExecutionMode mode;
     private final Project project;
+    private final String logPrefix;
+    private final String name;
     private ProcessMonitor processMonitor;
     private long pid;
+    private boolean hasStdOutMessage;
+    private boolean hasStdErrMessage;
 
     /**
      * Create an executor from a project.
      *
      * @param project The project.
+     * @param logPrefix The log prefix.
      */
-    public ProjectExecutor(Project project) {
-        this(project, ExecutionMode.JAVA);
+    public ProjectExecutor(Project project, String logPrefix) {
+        this(project, ExecutionMode.JAVA, logPrefix);
     }
 
     /**
      * Create an executor from a project specifying an execution mode.
      *
      * @param project The project.
+     * @param logPrefix The log prefix.
      * @param mode The execution mode.
      */
-    public ProjectExecutor(Project project, ExecutionMode mode) {
+    public ProjectExecutor(Project project, ExecutionMode mode, String logPrefix) {
         this.project = project;
         this.mode = mode;
+        this.logPrefix = logPrefix;
+        this.name = BoldBrightCyan.apply(project.name());
     }
 
     /**
@@ -108,40 +130,99 @@ public class ProjectExecutor {
     }
 
     /**
-     * Stop execution.
+     * Stop execution. Logs stopping message only if process does not stop quickly.
+     *
+     * @throws IllegalStateException If process does not stop before timeout.
      */
     public void stop() {
+        stop(false);
+    }
+
+    /**
+     * Stop execution.
+     *
+     * @param verbose {@code true} if should log all state changes.
+     * @throws IllegalStateException If process does not stop before timeout.
+     */
+    public void stop(boolean verbose) {
         if (processMonitor != null) {
-            try {
-                processMonitor.stop(WAIT_TERMINATION, TimeUnit.SECONDS);
-                Log.info("Process with PID %d stopped", pid);
-            } catch (IllegalStateException ignore) {
-            } catch (ProcessMonitor.ProcessFailedException e) {
-                final int exitCode = e.exitCode();
-                Log.info("Process with PID %d stopped (exit code %d)", pid, exitCode);
-            } catch (Exception e) {
-                Log.error("Error stopping process: %s", e.getMessage());
-                throw new RuntimeException(e);
+            if (verbose) {
+                stateChanged(STOPPING);
             }
-            processMonitor = null;
+            try {
+                boolean isAlive = true;
+                boolean force = false;
+                for (int step = 0; step < STOP_WAIT_RETRIES; step++) {
+                    try {
+                        isAlive = processMonitor.destroy(force)
+                                                .waitForCompletion(STOP_WAIT_SECONDS, TimeUnit.SECONDS)
+                                                .isAlive();
+                        if (!isAlive) {
+                            break;
+                        }
+                    } catch (ProcessMonitor.ProcessTimeoutException timeout) {
+                        if (!verbose && step == STOP_WAIT_RETRY_LOG_STEP) {
+                            stateChanged(STOPPING);
+                        } else if (step == STOP_WAIT_RETRY_FORCE_STEP) {
+                            force = true;
+                        }
+                    } catch (IllegalStateException | ProcessMonitor.ProcessFailedException done) {
+                        isAlive = false;
+                        break;
+                    } catch (Exception e) {
+                        throw new IllegalStateException(stopFailedMessage(e.getMessage()));
+                    }
+                }
+                if (isAlive) {
+                    throw new IllegalStateException(stopFailedMessage("timeout expired"));
+                }
+            } finally {
+                processMonitor = null;
+            }
+            if (verbose) {
+                stateChanged(STOPPED);
+            }
         }
     }
 
     /**
      * Check if project is running.
      *
-     * @return Outcome of test.
+     * @return {@code true} if running.
      */
     public boolean isRunning() {
-        return processMonitor != null;
+        return processMonitor != null
+               && processMonitor.isAlive();
     }
 
     /**
-     * Restart project.
+     * Check if project has printed to {@link System#out}.
+     *
+     * @return {@code true} if anything has been printed to {@link System#out}.
      */
-    public void restart() {
-        stop();
-        start();
+    public boolean hasStdOutMessage() {
+        return hasStdErrMessage;
+    }
+
+    /**
+     * Check if project has printed to {@link System#err}.
+     *
+     * @return {@code true} if anything has been printed to {@link System#err}.
+     */
+    public boolean hasStdErrMessage() {
+        return hasStdErrMessage;
+    }
+
+    private String stopFailedMessage(String reason) {
+        return String.format("Failed to stop %s (pid %d): %s", project.name(), pid, reason);
+    }
+
+    private void stateChanged(String state) {
+        if (logPrefix == null) {
+            Log.info("%s %s", name, state);
+        } else {
+            Log.info("%s%s %s", logPrefix, name, state);
+        }
     }
 
     private void startMaven() {
@@ -160,6 +241,7 @@ public class ProjectExecutor {
     }
 
     private void start(List<String> command) {
+        hasStdErrMessage = false;
         ProcessBuilder processBuilder = new ProcessBuilder()
             .directory(project.root().path().toFile())
             .command(command);
@@ -170,18 +252,29 @@ public class ProjectExecutor {
         env.put("JAVA_HOME", JAVA_HOME);
 
         try {
+            stateChanged(STARTING);
+            Log.info();
             this.processMonitor = ProcessMonitor.builder()
                                                 .processBuilder(processBuilder)
-                                                .stdOut(System.out::println)
-                                                .stdErr(System.err::println)
+                                                .stdOut(this::printStdOut)
+                                                .stdErr(this::printStdErr)
                                                 .capture(true)
                                                 .build()
                                                 .start();
             this.pid = processMonitor.toHandle().pid();
-            Log.info("Process with PID %d is starting", pid);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
+    }
+
+    private void printStdOut(String line) {
+        hasStdOutMessage = true;
+        System.out.println(line);
+    }
+
+    private void printStdErr(String line) {
+        hasStdErrMessage = true;
+        System.err.println(line);
     }
 
     private String classPathString() {

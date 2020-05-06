@@ -15,7 +15,6 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,6 +29,7 @@ import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValues;
+import io.helidon.build.util.PomUtils;
 import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.ProjectDependency;
 
@@ -73,7 +73,7 @@ public final class FeaturesCommand extends BaseCommand implements CommandExecuti
         } else if (list ^ all) {
             if (list) {
                 listProjectFeatures(context);
-            } else if (all) {
+            } else {
                 listAllFeatures(context);
             }
         } else {
@@ -93,8 +93,8 @@ public final class FeaturesCommand extends BaseCommand implements CommandExecuti
 
     private void addFeatures(CommandContext context) {
         Path projectDir = commonOptions.project().toPath();
-        File pomFile = projectDir.resolve("pom.xml").toFile();
-        Model model = readPomModel(pomFile);
+        Path pomFile = projectDir.resolve("pom.xml");
+        Model model = PomUtils.readPomModel(pomFile);
         ProjectConfig projectConfig = projectConfig(commonOptions.project().toPath());
 
         // Get info of features already added
@@ -144,7 +144,7 @@ public final class FeaturesCommand extends BaseCommand implements CommandExecuti
         }
 
         // Write model back to pom file
-        writePomModel(pomFile, model);
+        PomUtils.writePomModel(pomFile, model);
     }
 
     private void exitAction(CommandContext context) {

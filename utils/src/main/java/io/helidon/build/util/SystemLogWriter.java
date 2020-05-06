@@ -31,6 +31,15 @@ public final class SystemLogWriter implements Log.Writer {
     private final boolean debugEnabled;
 
     /**
+     * Binds an instance of this type to the {@code io.helidon.build.util.Log} at the given level.
+     *
+     * @param level The level.
+     */
+    public static void bind(Level level) {
+        Log.setWriter(create(level));
+    }
+
+    /**
      * Returns a new instance.
      *
      * @return The instance.

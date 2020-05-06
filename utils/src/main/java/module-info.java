@@ -17,6 +17,7 @@ module helidon.build.utils {
     exports io.helidon.build.util;
 
     requires org.fusesource.jansi;
+    requires info.picocli.jansi.graalvm;
     requires maven.resolver.provider;
     requires maven.artifact;
     requires maven.settings;
@@ -27,4 +28,5 @@ module helidon.build.utils {
     requires org.apache.maven.resolver.spi;
     requires org.apache.maven.resolver.transport.file;
     requires org.apache.maven.resolver.transport.http;
+    requires maven.model;
 }

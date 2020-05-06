@@ -17,8 +17,6 @@
 package io.helidon.build.test;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
@@ -26,32 +24,22 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.build.util.Constants;
 import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.HelidonVariant;
 import io.helidon.build.util.Instance;
 import io.helidon.build.util.Log;
-import io.helidon.build.util.Maven;
-import io.helidon.build.util.ProcessMonitor;
+import io.helidon.build.util.MavenArtifacts;
+import io.helidon.build.util.MavenCommand;
 import io.helidon.build.util.QuickstartGenerator;
 
-import org.apache.maven.model.Extension;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
-import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
-import org.eclipse.aether.version.Version;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import static io.helidon.build.test.HelidonTestVersions.currentHelidonBuildToolsReleaseVersion;
+import static io.helidon.build.test.HelidonTestVersions.currentHelidonReleaseVersion;
 import static io.helidon.build.util.Constants.DIR_SEP;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
@@ -62,24 +50,15 @@ import static java.util.Objects.requireNonNull;
  * Test file utilities.
  */
 public class TestFiles implements BeforeAllCallback {
-    private static final String MAVEN_EXEC = Constants.OS.mavenExec();
-    private static final String HELIDON_GROUP_ID = "io.helidon";
-    private static final String HELIDON_PROJECT_ID = "helidon-project";
     private static final String HELIDON_QUICKSTART_PREFIX = "helidon-quickstart-";
     private static final String SIGNED_JAR_COORDINATES = "org.bouncycastle:bcpkix-jdk15on:1.60";
     private static final String VERSION_1_4_1 = "1.4.1";
-    private static final String SNAPSHOT_SUFFIX = "-SNAPSHOT";
-    private static final Set<String> EXCLUDED_VERSIONS = Collections.singleton("2.0.0-M1");
     private static final AtomicReference<Path> TARGET_DIR = new AtomicReference<>();
-    private static final Instance<Version> LATEST_HELIDON_VERSION = new Instance<>(TestFiles::lookupLatestHelidonVersion);
     private static final Instance<Path> SE_JAR = new Instance<>(TestFiles::getOrCreateQuickstartSeJar);
     private static final Instance<Path> MP_JAR = new Instance<>(TestFiles::getOrCreateQuickstartMpJar);
     private static final Instance<Path> SIGNED_JAR = new Instance<>(TestFiles::fetchSignedJar);
     private static final AtomicInteger SE_COPY_NUMBER = new AtomicInteger(1);
     private static final AtomicInteger MP_COPY_NUMBER = new AtomicInteger(1);
-    private static final String POM_FILE_NAME = "pom.xml";
-    private static final String DEVLOOP_GROUP_ID = "io.helidon.build-tools";
-    private static final String DEVLOOP_ARTIFACT_ID = "helidon-dev-loop";
 
     @Override
     public void beforeAll(ExtensionContext ctx) {
@@ -99,22 +78,13 @@ public class TestFiles implements BeforeAllCallback {
     }
 
     /**
-     * Returns the latest Helidon version.
-     *
-     * @return The version.
-     */
-    public static Version latestHelidonVersion() {
-        return LATEST_HELIDON_VERSION.instance();
-    }
-
-    /**
      * Returns the value required for the {@code -Dexit.on.started} property to trigger on
      * the latest Helidon version.
      *
      * @return The value.
      */
     public static String exitOnStartedValue() {
-        return latestHelidonVersion().toString().equals(VERSION_1_4_1) ? "✅" : "!";
+        return currentHelidonReleaseVersion().equals(VERSION_1_4_1) ? "✅" : "!";
     }
 
     /**
@@ -174,44 +144,6 @@ public class TestFiles implements BeforeAllCallback {
     }
 
     /**
-     * Ensures that the dev-loop extension is registered in the project pom.xml.
-     *
-     * @param projectDir The project directory.
-     * @return The project directory, for chaining.
-     */
-    public static Path ensureDevLoopExtension(Path projectDir) {
-        final Path pomFile = projectDir.resolve(POM_FILE_NAME);
-        final Model model = readPomModel(pomFile);
-        final List<Extension> extensions = model.getBuild().getExtensions();
-        final String latestVersion = latestHelidonVersion().toString();
-        final int dashIndex = latestVersion.lastIndexOf("-");
-        final String baseVersion = dashIndex > 0 ? latestVersion.substring(0, dashIndex) : latestVersion;
-        final String snapshotVersion = baseVersion + SNAPSHOT_SUFFIX;
-        boolean addExtension = true;
-        for (int i = 0; i < extensions.size(); i++) {
-            final Extension extension = extensions.get(i);
-            if (extension.getGroupId().equals(DEVLOOP_GROUP_ID)
-                && extension.getArtifactId().equals(DEVLOOP_ARTIFACT_ID)) {
-                if (extension.getVersion().equals(snapshotVersion)) {
-                    addExtension = false;
-                } else {
-                    extensions.remove(i);
-                    break;
-                }
-            }
-        }
-        if (addExtension) {
-            Extension newExt = new Extension();
-            newExt.setGroupId(DEVLOOP_GROUP_ID);
-            newExt.setArtifactId(DEVLOOP_ARTIFACT_ID);
-            newExt.setVersion(snapshotVersion);
-            extensions.add(newExt);
-            writePomModel(pomFile, model);
-        }
-        return projectDir;
-    }
-
-    /**
      * Returns a signed jar.
      *
      * @return The jar.
@@ -261,12 +193,12 @@ public class TestFiles implements BeforeAllCallback {
     }
 
     /**
-     * Returns the {@link Maven} instance.
+     * Returns the {@link MavenArtifacts} instance.
      *
      * @return The instance.
      */
-    public static Maven maven() {
-        return Maven.instance();
+    private static MavenArtifacts mavenArtifacts() {
+        return MavenArtifacts.instance();
     }
 
     /**
@@ -294,35 +226,25 @@ public class TestFiles implements BeforeAllCallback {
         return HELIDON_QUICKSTART_PREFIX + variant;
     }
 
-    private static Version lookupLatestHelidonVersion() {
-        Log.info("Looking up latest release version (excluding %s)", EXCLUDED_VERSIONS);
-        final Version version = maven().latestVersion(HELIDON_GROUP_ID, HELIDON_PROJECT_ID, TestFiles::isAcceptableRelease);
-        Log.info("Using Helidon release version %s", version);
-        return version;
-    }
 
-    private static boolean isAcceptableRelease(Version version) {
-        final String v = version.toString();
-        return !v.endsWith(SNAPSHOT_SUFFIX) && !EXCLUDED_VERSIONS.contains(v);
-    }
-
-    private static boolean isSelectedVersion(Version version) {
-        final Version selected = latestHelidonVersion();
-        return selected.equals(version);
-    }
-
-    private static Path fetchSignedJar() {
-        Log.info("Fetching signed jar %s", SIGNED_JAR_COORDINATES);
-        return maven().artifact(SIGNED_JAR_COORDINATES);
-    }
-
-    private static Path targetDir(Class<?> testClass) {
+    /**
+     * Returns the target directory for the given test class.
+     *
+     * @param testClass The test class.
+     * @return The directory.
+     */
+    public static Path targetDir(Class<?> testClass) {
         try {
             final Path codeSource = Paths.get(testClass.getProtectionDomain().getCodeSource().getLocation().toURI());
             return ensureDirectory(codeSource.getParent());
         } catch (URISyntaxException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private static Path fetchSignedJar() {
+        Log.info("Fetching signed jar %s", SIGNED_JAR_COORDINATES);
+        return mavenArtifacts().artifact(SIGNED_JAR_COORDINATES);
     }
 
     private static Path getOrCreateQuickstartSeJar() {
@@ -352,7 +274,8 @@ public class TestFiles implements BeforeAllCallback {
         return QuickstartGenerator.generator()
                                   .helidonVariant(variant)
                                   .parentDirectory(targetDir())
-                                  .helidonVersion(TestFiles::isSelectedVersion)
+                                  .helidonVersion(currentHelidonReleaseVersion())
+                                  .pluginVersion(currentHelidonBuildToolsReleaseVersion())
                                   .generate();
     }
 
@@ -360,19 +283,14 @@ public class TestFiles implements BeforeAllCallback {
         final String id = quickstartId(variant);
         Log.info("Building %s", id);
 
-        // Make sure we use the current JDK by forcing it first in the path and setting JAVA_HOME. This might be required
-        // if we're in an IDE whose process was started with a different JDK.
+        MavenCommand.builder()
+                    .directory(projectDir)
+                    .addArgument("clean")
+                    .addArgument("package")
+                    .addArgument("-DskipTests")
+                    .build()
+                    .execute();
 
-        final ProcessBuilder builder = new ProcessBuilder().directory(projectDir.toFile())
-                                                           .command(List.of(MAVEN_EXEC, "clean", "package", "-DskipTests"));
-        final String javaHome = Constants.javaHome();
-        final String javaHomeBin = javaHome + File.separator + "bin";
-        final Map<String, String> env = builder.environment();
-        final String path = javaHomeBin + File.pathSeparatorChar + env.get("PATH");
-        env.put("PATH", path);
-        env.put("JAVA_HOME", javaHome);
-
-        execute(builder);
         return quickstartJar(projectDir, id);
     }
 
@@ -392,39 +310,5 @@ public class TestFiles implements BeforeAllCallback {
             copyDir = directory(variant, copyNumber.getAndIncrement());
         }
         return FileUtils.copyDirectory(sourceDir, copyDir);
-    }
-
-    private static void execute(ProcessBuilder builder) {
-        try {
-            ProcessMonitor.builder()
-                          .processBuilder(builder)
-                          .capture(true)
-                          .build()
-                          .execute(5, TimeUnit.MINUTES);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static Model readPomModel(Path pomFile) {
-        try {
-            try (FileReader fr = new FileReader(pomFile.toFile())) {
-                MavenXpp3Reader mvnReader = new MavenXpp3Reader();
-                return mvnReader.read(fr);
-            }
-        } catch (IOException | XmlPullParserException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static void writePomModel(Path pomFile, Model model) {
-        try {
-            try (FileWriter fw = new FileWriter(pomFile.toFile())) {
-                MavenXpp3Writer mvnWriter = new MavenXpp3Writer();
-                mvnWriter.write(fw, model);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

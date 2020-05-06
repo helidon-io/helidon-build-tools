@@ -43,6 +43,18 @@
             <artifactId>spotbugs-annotations</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools</groupId>
+            <artifactId>helidon-utils</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools</groupId>
+            <artifactId>helidon-utils</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

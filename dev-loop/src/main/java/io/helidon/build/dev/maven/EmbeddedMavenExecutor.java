@@ -54,6 +54,11 @@ public class EmbeddedMavenExecutor extends BuildExecutor {
     }
 
     @Override
+    public boolean willFork() {
+        return false;
+    }
+
+    @Override
     public void execute(String... args) throws Exception {
         final Object mavenCli = MAVEN_CLI.get();
         final Method doMain = DO_MAIN_METHOD.get();

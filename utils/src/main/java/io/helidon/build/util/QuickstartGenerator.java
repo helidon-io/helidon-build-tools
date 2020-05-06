@@ -18,21 +18,50 @@ package io.helidon.build.util;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.function.Predicate;
-
-import org.eclipse.aether.version.Version;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import static io.helidon.build.util.FileUtils.assertDir;
-import static io.helidon.build.util.Maven.LATEST_RELEASE;
+import static io.helidon.build.util.PomUtils.ensureHelidonPluginConfig;
+import static io.helidon.build.util.ProjectConfig.ensureHelidonCliConfig;
+import static io.helidon.build.util.Style.Blue;
+import static io.helidon.build.util.Style.BoldBrightCyan;
 
 /**
- * Generator for a quickstart project.
+ * Simple generator for a quickstart project. This class does not import any Maven classes
+ * and is currently used to avoid problems with Graal native compilation.
  */
-public class QuickstartGenerator extends SimpleQuickstartGenerator {
-    private static final String HELIDON_GROUP_ID = "io.helidon";
-    private static final String HELIDON_PROJECT_ID = "helidon-project";
+public class QuickstartGenerator {
 
-    private Predicate<Version> versionSelector;
+    /**
+     * Maven executable.
+     */
+    protected static final String MAVEN_EXEC = Constants.OS.mavenExec();
+
+    /**
+     * Group ID for archetypes.
+     */
+    protected static final String ARCHETYPES_GROUP_ID = "io.helidon.archetypes";
+
+    /**
+     * Helidon quickstart prefix.
+     */
+    protected static final String HELIDON_QUICKSTART_PREFIX = "helidon-quickstart-";
+
+    /**
+     * Quickstart package prefix.
+     */
+    protected static final String QUICKSTART_PACKAGE_PREFIX = "io.helidon.examples.quickstart.";
+
+    private Path parentDirectory;
+    private HelidonVariant variant;
+    private boolean quiet;
+    private String groupId;
+    private String artifactId;
+    private String version;
+    private String packageName;
+    private String pluginVersion;
 
     /**
      * Returns a new generator.
@@ -44,17 +73,51 @@ public class QuickstartGenerator extends SimpleQuickstartGenerator {
     }
 
     private QuickstartGenerator() {
-        this.versionSelector = LATEST_RELEASE;
+        pluginVersion = BuildToolsProperties.instance().version();
     }
 
     /**
-     * Sets a selector for the Helidon version to use. The latest release is selected if not set.
+     * Set the project's group ID.
      *
-     * @param helidonVersionSelector The version. May be {@code null}.
+     * @param groupId The artifact ID.
+     * @return The generator.
+     */
+    public QuickstartGenerator groupId(String groupId) {
+        this.groupId = groupId;
+        return this;
+    }
+
+    /**
+     * Set the project's artifact ID.
+     *
+     * @param artifactId The artifact ID.
+     * @return The generator.
+     */
+    public QuickstartGenerator artifactId(String artifactId) {
+        this.artifactId = artifactId;
+        return this;
+    }
+
+    /**
+     * Set the project's package.
+     *
+     * @param packageName The package.
+     * @return The generator.
+     */
+    public QuickstartGenerator packageName(String packageName) {
+        this.packageName = packageName;
+        return this;
+    }
+
+    /**
+     * Sets the Helidon version to use.
+     *
+     * @param version The version.
      * @return This instance, for chaining.
      */
-    public QuickstartGenerator helidonVersion(Predicate<Version> helidonVersionSelector) {
-        this.versionSelector = helidonVersionSelector == null ? LATEST_RELEASE : helidonVersionSelector;
+    public QuickstartGenerator helidonVersion(String version) {
+        Objects.requireNonNull(version);
+        this.version = version;
         return this;
     }
 
@@ -65,7 +128,19 @@ public class QuickstartGenerator extends SimpleQuickstartGenerator {
      * @return This instance, for chaining.
      */
     public QuickstartGenerator helidonVariant(HelidonVariant helidonVariant) {
-        super.helidonVariant(helidonVariant);
+        this.variant = helidonVariant;
+        return this;
+    }
+
+    /**
+     * Sets the Helidon plugin version to use.
+     *
+     * @param pluginVersion The version.
+     * @return This instance, for chaining.
+     */
+    public QuickstartGenerator pluginVersion(String pluginVersion) {
+        Objects.requireNonNull(pluginVersion);
+        this.pluginVersion = pluginVersion;
         return this;
     }
 
@@ -76,7 +151,7 @@ public class QuickstartGenerator extends SimpleQuickstartGenerator {
      * @return This instance, for chaining.
      */
     public QuickstartGenerator quiet(boolean quiet) {
-        super.quiet(quiet);
+        this.quiet = quiet;
         return this;
     }
 
@@ -87,34 +162,80 @@ public class QuickstartGenerator extends SimpleQuickstartGenerator {
      * @return This instance, for chaining.
      */
     public QuickstartGenerator parentDirectory(Path parentDirectory) {
-        super.parentDirectory(assertDir(parentDirectory));
+        this.parentDirectory = assertDir(parentDirectory);
         return this;
     }
 
-    @Override
-    protected void initialize() {
-        if (variant() == null) {
+    /**
+     * Generate the project.
+     *
+     * @return The path to the project.
+     */
+    public Path generate() {
+        initialize();
+        Log.info("Creating %s using version %s", BoldBrightCyan.apply(artifactId), Blue.apply(version));
+        String archetypeId = HELIDON_QUICKSTART_PREFIX + variant.toString();
+        execute(new ProcessBuilder().directory(parentDirectory.toFile())
+                                    .command(List.of(MAVEN_EXEC,
+                                                     "archetype:generate",
+                                                     "-DinteractiveMode=false",
+                                                     "-DarchetypeGroupId=" + ARCHETYPES_GROUP_ID,
+                                                     "-DarchetypeArtifactId=" + archetypeId,
+                                                     "-DarchetypeVersion=" + version,
+                                                     "-DgroupId=" + groupId,
+                                                     "-DartifactId=" + artifactId,
+                                                     "-Dpackage=" + packageName
+                                    )));
+        final Path projectDir = assertDir(parentDirectory.resolve(artifactId));
+        ensureHelidonCliConfig(projectDir, version);
+        ensureHelidonPluginConfig(projectDir, pluginVersion);  // NOTE: Remove this once new archetype is completed!
+        log("Created %s", projectDir);
+        return projectDir;
+    }
+
+    private void initialize() {
+        if (version == null) {
+            throw new IllegalStateException("version required.");
+        }
+        if (variant == null) {
             throw new IllegalStateException("helidonVariant required.");
         }
-        if (parentDirectory() == null) {
+        if (parentDirectory == null) {
             throw new IllegalStateException("projectDirectory required.");
         }
-        if (groupId() == null) {
-            groupId("test");
+        if (pluginVersion == null) {
+            throw new IllegalStateException("pluginVersion required.");
         }
-        if (artifactId() == null) {
-            artifactId(HELIDON_QUICKSTART_PREFIX + variant().toString());
+        if (groupId == null) {
+            groupId = "test";
         }
-        if (packageName() == null) {
-            packageName(QUICKSTART_PACKAGE_PREFIX + variant().toString());
+        if (artifactId == null) {
+            artifactId = HELIDON_QUICKSTART_PREFIX + variant.toString();
         }
-        final Path projectDir = parentDirectory().resolve(artifactId());
+        if (packageName == null) {
+            packageName = QUICKSTART_PACKAGE_PREFIX + variant.toString();
+        }
+        final Path projectDir = parentDirectory.resolve(artifactId);
         if (Files.exists(projectDir)) {
             throw new IllegalStateException(projectDir + " already exists");
-        } else {
-            final Maven maven = Maven.instance();
-            Version version = maven.latestVersion(HELIDON_GROUP_ID, HELIDON_PROJECT_ID, versionSelector);
-            helidonVersion(version.toString());
+        }
+    }
+
+    private void log(String message, Object... args) {
+        if (!quiet) {
+            Log.info(message, args);
+        }
+    }
+
+    private static void execute(ProcessBuilder builder) {
+        try {
+            ProcessMonitor.builder()
+                          .processBuilder(builder)
+                          .capture(true)
+                          .build()
+                          .execute(5, TimeUnit.MINUTES);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }

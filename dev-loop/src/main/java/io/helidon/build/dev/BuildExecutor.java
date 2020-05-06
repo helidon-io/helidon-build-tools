@@ -42,6 +42,13 @@ public abstract class BuildExecutor {
     }
 
     /**
+     * Returns whether or not this executor will fork the maven process.
+     *
+     * @return {@code true} if will fork.
+     */
+    public abstract boolean willFork();
+
+    /**
      * Execute maven with the given arguments.
      *
      * @param args The maven arguments.
