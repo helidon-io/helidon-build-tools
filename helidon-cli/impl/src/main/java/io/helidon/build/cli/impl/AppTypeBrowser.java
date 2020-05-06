@@ -49,12 +49,16 @@ class AppTypeBrowser {
         if (remoteAppTypes.isEmpty()) {
             Log.warn("Unable to find apptypes in remote repository");
         }
-        List<String> localAppTypes = appTypesLocalRepo(flavor, helidonVersion);
-        if (localAppTypes.isEmpty()) {
+        List<String> appTypes = appTypesLocalRepo(flavor, helidonVersion);
+        if (appTypes.isEmpty()) {
             Log.warn("Unable to find apptypes in local repository");
         }
-        remoteAppTypes.addAll(localAppTypes);
-        return remoteAppTypes;
+        for (String remoteAppType : remoteAppTypes) {
+            if (!appTypes.contains(remoteAppType)) {
+                appTypes.add(remoteAppType);
+            }
+        }
+        return appTypes;
     }
 
     static List<String> appTypesRemoteRepo(Flavor flavor, String helidonVersion) {
@@ -67,8 +71,6 @@ class AppTypeBrowser {
                 Model model = readPomModel(is);
                 return model.getModules();
             }
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
         } catch (FileNotFoundException e) {
             // falls through
         } catch (IOException e) {
