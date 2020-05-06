@@ -54,7 +54,7 @@ class FlowNodeControllers {
 
         @Override
         void execute() {
-            String v = prompt(input.property().description(), input.defaultValue());
+            String v = prompt(input.text(), input.defaultValue());
             System.setProperty(input.property().id(), v);
         }
     }

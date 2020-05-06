@@ -84,17 +84,6 @@ public abstract class BaseCommand {
         }
     }
 
-    protected Model readPomModel(File pomFile) {
-        try {
-            try (FileReader fr = new FileReader(pomFile)) {
-                MavenXpp3Reader mvnReader = new MavenXpp3Reader();
-                return mvnReader.read(fr);
-            }
-        } catch (IOException | XmlPullParserException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     protected void writePomModel(File pomFile, Model model) {
         try {
             try (FileWriter fw = new FileWriter(pomFile)) {
