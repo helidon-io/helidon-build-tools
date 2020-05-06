@@ -18,15 +18,15 @@ package io.helidon.build.util;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+
+import io.helidon.build.test.TestFiles;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.util.FileUtils.ensureDirectory;
+import static io.helidon.build.test.HelidonTestVersions.currentHelidonReleaseVersion;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -38,9 +38,7 @@ import static org.hamcrest.Matchers.nullValue;
  * Unit test for class {@link QuickstartGenerator}.
  */
 class QuickstartGeneratorTest {
-    private static final Path TARGET_DIR = targetDir(QuickstartGeneratorTest.class);
-    private static final String HELIDON_TEST_VERSION = "2.0.0-SNAPSHOT";
-
+    private static final Path TARGET_DIR = TestFiles.targetDir(QuickstartGeneratorTest.class);
     private Path generated;
 
     @AfterEach
@@ -65,12 +63,12 @@ class QuickstartGeneratorTest {
 
     @Test
     void testSeGeneration() {
-        testGeneration(HelidonVariant.SE, HELIDON_TEST_VERSION);
+        testGeneration(HelidonVariant.SE, currentHelidonReleaseVersion());
     }
 
     @Test
     void testMpGeneration() {
-        testGeneration(HelidonVariant.MP, HELIDON_TEST_VERSION);
+        testGeneration(HelidonVariant.MP, currentHelidonReleaseVersion());
     }
 
     private void testGeneration(HelidonVariant variant, String version) {
@@ -86,14 +84,5 @@ class QuickstartGeneratorTest {
         assertThat(Files.exists(generated.resolve("src/main/java")), is(true));
         assertThat(Files.exists(generated.resolve("src/main/resources")), is(true));
         assertThat(FileUtils.listFiles(generated, name -> name.endsWith(".java"), 64), is(not(empty())));
-    }
-
-    private static Path targetDir(Class<?> testClass) {
-        try {
-            final Path codeSource = Paths.get(testClass.getProtectionDomain().getCodeSource().getLocation().toURI());
-            return ensureDirectory(codeSource.getParent());
-        } catch (URISyntaxException e) {
-            throw new IllegalStateException(e);
-        }
     }
 }

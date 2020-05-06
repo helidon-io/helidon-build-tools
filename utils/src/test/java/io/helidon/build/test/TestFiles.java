@@ -24,8 +24,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
-import java.util.Collections;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -35,8 +33,6 @@ import io.helidon.build.util.Instance;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenArtifacts;
 import io.helidon.build.util.MavenCommand;
-import io.helidon.build.util.MavenVersion;
-import io.helidon.build.util.MavenVersions;
 import io.helidon.build.util.QuickstartGenerator;
 
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -47,8 +43,6 @@ import static io.helidon.build.util.Constants.DIR_SEP;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
 import static io.helidon.build.util.FileUtils.lastModifiedTime;
-import static io.helidon.build.util.HelidonVersions.HELIDON_PROJECT_ARTIFACT_ID;
-import static io.helidon.build.util.HelidonVersions.HELIDON_PROJECT_GROUP_ID;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -58,7 +52,6 @@ public class TestFiles implements BeforeAllCallback {
     private static final String HELIDON_QUICKSTART_PREFIX = "helidon-quickstart-";
     private static final String SIGNED_JAR_COORDINATES = "org.bouncycastle:bcpkix-jdk15on:1.60";
     private static final String VERSION_1_4_1 = "1.4.1";
-    private static final Set<String> EXCLUDED_VERSIONS = Collections.singleton("2.0.0-M1");
     private static final AtomicReference<Path> TARGET_DIR = new AtomicReference<>();
     private static final Instance<Path> SE_JAR = new Instance<>(TestFiles::getOrCreateQuickstartSeJar);
     private static final Instance<Path> MP_JAR = new Instance<>(TestFiles::getOrCreateQuickstartMpJar);
@@ -232,34 +225,25 @@ public class TestFiles implements BeforeAllCallback {
         return HELIDON_QUICKSTART_PREFIX + variant;
     }
 
-    private static MavenVersion lookupLatestHelidonVersion() {
-        try {
-            Log.info("Looking up latest release version (excluding %s)", EXCLUDED_VERSIONS);
-            final MavenVersion latest = MavenVersions.builder()
-                                                     .filter(v -> !EXCLUDED_VERSIONS.contains(v.toString()))
-                                                     .artifactGroupId(HELIDON_PROJECT_GROUP_ID)
-                                                     .artifactId(HELIDON_PROJECT_ARTIFACT_ID)
-                                                     .build()
-                                                     .latest();
-            Log.info("Using Helidon release version %s", latest);
-            return latest;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
-    private static Path fetchSignedJar() {
-        Log.info("Fetching signed jar %s", SIGNED_JAR_COORDINATES);
-        return mavenArtifacts().artifact(SIGNED_JAR_COORDINATES);
-    }
-
-    private static Path targetDir(Class<?> testClass) {
+    /**
+     * Returns the target directory for the given test class.
+     *
+     * @param testClass The test class.
+     * @return The directory.
+     */
+    public static Path targetDir(Class<?> testClass) {
         try {
             final Path codeSource = Paths.get(testClass.getProtectionDomain().getCodeSource().getLocation().toURI());
             return ensureDirectory(codeSource.getParent());
         } catch (URISyntaxException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private static Path fetchSignedJar() {
+        Log.info("Fetching signed jar %s", SIGNED_JAR_COORDINATES);
+        return mavenArtifacts().artifact(SIGNED_JAR_COORDINATES);
     }
 
     private static Path getOrCreateQuickstartSeJar() {
