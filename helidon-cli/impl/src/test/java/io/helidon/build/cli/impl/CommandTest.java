@@ -29,6 +29,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.cli.impl.TestUtils.exec;
+import static io.helidon.build.test.HelidonTestVersions.currentHelidonSnapshotVersion;
+import static io.helidon.build.test.HelidonTestVersions.previousHelidonReleaseVersion;
 import static io.helidon.build.test.TestFiles.quickstartId;
 import static io.helidon.build.util.PomUtils.HELIDON_PLUGIN_VERSION_PROPERTY;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -42,11 +44,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class CommandTest {
 
-    private static final String HELIDON_VERSION_TEST = "2.0.0-SNAPSHOT";
-    private static final String HELIDON_VERSION_PREVIOUS = "2.0.0-M1";
+    private static final String HELIDON_VERSION_TEST = currentHelidonSnapshotVersion();
+    private static final String HELIDON_VERSION_PREVIOUS = previousHelidonReleaseVersion();
 
-    private HelidonVariant variant = HelidonVariant.SE;
-    private Path targetDir = TestFiles.targetDir();
+    private final HelidonVariant variant = HelidonVariant.SE;
+    private final Path targetDir = TestFiles.targetDir();
 
     /**
      * Overrides version under test. This property must be propagated to all

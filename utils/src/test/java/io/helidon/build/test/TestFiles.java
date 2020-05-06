@@ -42,6 +42,7 @@ import io.helidon.build.util.QuickstartGenerator;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import static io.helidon.build.test.HelidonTestVersions.currentHelidonReleaseVersion;
 import static io.helidon.build.util.Constants.DIR_SEP;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
@@ -59,7 +60,6 @@ public class TestFiles implements BeforeAllCallback {
     private static final String VERSION_1_4_1 = "1.4.1";
     private static final Set<String> EXCLUDED_VERSIONS = Collections.singleton("2.0.0-M1");
     private static final AtomicReference<Path> TARGET_DIR = new AtomicReference<>();
-    private static final Instance<MavenVersion> LATEST_HELIDON_VERSION = new Instance<>(TestFiles::lookupLatestHelidonVersion);
     private static final Instance<Path> SE_JAR = new Instance<>(TestFiles::getOrCreateQuickstartSeJar);
     private static final Instance<Path> MP_JAR = new Instance<>(TestFiles::getOrCreateQuickstartMpJar);
     private static final Instance<Path> SIGNED_JAR = new Instance<>(TestFiles::fetchSignedJar);
@@ -84,22 +84,13 @@ public class TestFiles implements BeforeAllCallback {
     }
 
     /**
-     * Returns the latest Helidon version.
-     *
-     * @return The version.
-     */
-    public static MavenVersion latestHelidonVersion() {
-        return LATEST_HELIDON_VERSION.instance();
-    }
-
-    /**
      * Returns the value required for the {@code -Dexit.on.started} property to trigger on
      * the latest Helidon version.
      *
      * @return The value.
      */
     public static String exitOnStartedValue() {
-        return latestHelidonVersion().toString().equals(VERSION_1_4_1) ? "✅" : "!";
+        return currentHelidonReleaseVersion().equals(VERSION_1_4_1) ? "✅" : "!";
     }
 
     /**
@@ -298,7 +289,7 @@ public class TestFiles implements BeforeAllCallback {
         return QuickstartGenerator.generator()
                                   .helidonVariant(variant)
                                   .parentDirectory(targetDir())
-                                  .helidonVersion(latestHelidonVersion().toString())
+                                  .helidonVersion(currentHelidonReleaseVersion())
                                   .generate();
     }
 
