@@ -41,7 +41,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class CommandTest {
 
     private static final String HELIDON_VERSION_TEST = "2.0.0-SNAPSHOT";
-    private static final String HELIDON_VERSION_PREVIOUS = "2.0.0-M2";
     private static final String MY_PROJECT = "myproject";
     private static final String MY_GROUP_ID = "mygroup";
     private static final String MY_ARTIFACT_ID = "myartifact";
@@ -64,7 +63,7 @@ public class CommandTest {
         TestUtils.ExecResult res = exec("init",
                 "--flavor", variant.toString(),
                 "--project ", targetDir.toString(),
-                "--version ", HELIDON_VERSION_PREVIOUS,
+                "--version ", HELIDON_VERSION_TEST,
                 "--artifactid", MY_ARTIFACT_ID,
                 "--groupid", MY_GROUP_ID,
                 "--name", MY_PROJECT,

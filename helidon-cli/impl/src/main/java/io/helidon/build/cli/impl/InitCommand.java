@@ -24,6 +24,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.function.Predicate;
@@ -82,7 +83,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
     private Flavor flavor;
     private final Build build;
     private String appType;
-    private String version;
+    private String helidonVersion;
     private final String groupId;
     private final String artifactId;
     private final String packageName;
@@ -131,7 +132,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         this.batch = batch;
         this.flavor = flavor;
         this.build = build;
-        this.version = version;
+        this.helidonVersion = version;
         this.appType = appType;
         this.groupId = groupId;
         this.artifactId = artifactId;
@@ -150,40 +151,42 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         Properties cliConfig = cliConfig();
 
         // Ensure version
-        if (version == null || version.isEmpty()) {
+        if (helidonVersion == null || helidonVersion.isEmpty()) {
             try {
-                version = defaultHelidonVersion();
+                helidonVersion = defaultHelidonVersion();
             } catch (Exception e) {
                 context.exitAction(ExitStatus.FAILURE, e.getMessage());
                 return;
             }
-            context.logInfo("Using Helidon version " + version);
+            context.logInfo("Using Helidon version " + helidonVersion);
         }
 
         if (!batch) {
             // Prompt common flow
-            version = prompt("Helidon version", version);
+            helidonVersion = prompt("Helidon version", helidonVersion);
             String f = prompt("Helidon flavor", new String[]{"SE", "MP"}, 0);
             flavor = Flavor.valueOf(f);
         }
 
         // TODO: Gather remote templates
         display("Gathering application templates ... ");
-        List<String> appTypes = cliConfig.keySet().stream()
-                .map(Object::toString)
-                .filter(k -> k.startsWith(flavor + ".apptype"))
-                .map(k -> k.substring(k.lastIndexOf('.') + 1))
-                .collect(Collectors.toList());
+        ArrayList<Path> jars = ArchetypeBrowser.jarsLocalRepo(flavor, helidonVersion);
+        ArrayList<String> appTypes = ArchetypeBrowser.appTypesLocalRepo(jars);
         displayLine("DONE");
 
         if (!batch) {
             appType = prompt("Select application type", appTypes, 0);
         }
+        int appTypeIndex = appTypes.indexOf(appType);
+        if (appTypeIndex < 0) {
+            context.exitAction(ExitStatus.FAILURE, "Unable to find apptype " + appType);
+            return;
+        }
 
         // For now get jar file from property value and set up class loader
         URLClassLoader cl;
         try {
-            File jarFile = new File(cliConfig.getProperty(flavor + ".apptype." + appType));
+            File jarFile = jars.get(appTypeIndex).toFile();
             if (!jarFile.exists()) {
                 context.exitAction(ExitStatus.FAILURE, jarFile + " does not exist");
                 return;
@@ -222,7 +225,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         ProjectConfig configFile = projectConfig(projectDir);
         configFile.property(PROJECT_DIRECTORY, projectDir.toString());
         configFile.property(PROJECT_FLAVOR, flavor.toString());
-        configFile.property(HELIDON_VERSION, version);
+        configFile.property(HELIDON_VERSION, helidonVersion);
         cliConfig.forEach((key, value) -> {
             String propName = (String) key;
             if (propName.startsWith(FEATURE_PREFIX)) {      // Applies to both SE or MP
@@ -245,7 +248,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         properties.setProperty("artifactId", artifactId);
         properties.setProperty("package", packageName);
         properties.setProperty("name", projectName);
-        properties.setProperty("helidonVersion", version);
+        properties.setProperty("helidonVersion", helidonVersion);
         if (properties.getProperty("maven") == null) {
             properties.setProperty("maven", "true");        // No gradle support yet
         }
@@ -254,7 +257,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
 
     private void ensurePomContent(Path projectDir) {
         // Support a system property override of the version here for testing
-        String helidonVersion = System.getProperty(HELIDON_VERSION, version);
+        String helidonVersion = System.getProperty(HELIDON_VERSION, this.helidonVersion);
         File pomFile = projectDir.resolve(POM).toFile();
         Model model = readPomModel(pomFile);
         boolean propertyAdded = ensurePluginVersion(model, helidonVersion);

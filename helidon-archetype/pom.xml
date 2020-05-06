@@ -31,6 +31,5 @@
     <modules>
         <module>engine</module>
         <module>maven-plugin</module>
-        <module>application-types</module>
     </modules>
 </project>

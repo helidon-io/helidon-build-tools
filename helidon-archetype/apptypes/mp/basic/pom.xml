@@ -20,16 +20,23 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>io.helidon.build-tools.archetype</groupId>
-        <artifactId>helidon-archetype-project</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
-    </parent>
-    <artifactId>helidon-apptypes-se</artifactId>
-    <name>Helidon Archetypes SE</name>
-    <packaging>pom</packaging>
 
-    <modules>
-        <module>basic</module>
-    </modules>
+    <groupId>io.helidon.build-tools.archetype</groupId>
+    <artifactId>helidon-archetype-apptypes-mp-basic</artifactId>
+    <version>2.0.0-SNAPSHOT</version>
+    <name>Helidon Archetype MP Basic</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <build>
+        <extensions>
+            <extension>
+                <groupId>io.helidon.build-tools.archetype</groupId>
+                <artifactId>helidon-archetype-maven-plugin</artifactId>
+                <version>${project.version}</version>
+            </extension>
+        </extensions>
+    </build>
 </project>

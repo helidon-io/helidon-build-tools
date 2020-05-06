@@ -45,7 +45,6 @@ public class InitCommandTest {
     private static final String MY_PROJECT = "myproject";
     private static final String MY_PACKAGE = "com.oracle.mypackage";
     private static final String HELIDON_VERSION_TEST = "2.0.0-SNAPSHOT";
-    private static final String HELIDON_VERSION_PREVIOUS = "2.0.0-M1";
 
     private HelidonVariant variant = HelidonVariant.SE;
     private Path targetDir = TestFiles.targetDir();
@@ -66,7 +65,7 @@ public class InitCommandTest {
                 "--batch",
                 "--flavor", variant.toString(),
                 "--project ", targetDir.toString(),
-                "--version ", HELIDON_VERSION_PREVIOUS,
+                "--version ", HELIDON_VERSION_TEST,
                 "--groupid", MY_GROUP_ID,
                 "--artifactid", MY_ARTIFACT_ID,
                 "--package", MY_PACKAGE,
