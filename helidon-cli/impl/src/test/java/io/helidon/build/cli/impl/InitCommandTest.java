@@ -29,7 +29,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.cli.impl.TestUtils.assertPackageExist;
 import static io.helidon.build.cli.impl.TestUtils.exec;
-import static io.helidon.build.test.HelidonTestVersions.currentHelidonSnapshotVersion;
+import static io.helidon.build.test.HelidonTestVersions.currentHelidonReleaseVersion;
 import static io.helidon.build.test.HelidonTestVersions.previousHelidonReleaseVersion;
 import static io.helidon.build.util.PomUtils.HELIDON_PLUGIN_VERSION_PROPERTY;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -46,7 +46,7 @@ public class InitCommandTest {
     private static final String MY_GROUP_ID = "mygroup";
     private static final String MY_ARTIFACT_ID = "myartifact";
     private static final String MY_PACKAGE = "com.oracle.mypackage";
-    private static final String HELIDON_VERSION_TEST = currentHelidonSnapshotVersion();
+    private static final String HELIDON_VERSION_TEST = currentHelidonReleaseVersion();
     private static final String HELIDON_VERSION_PREVIOUS = previousHelidonReleaseVersion();
 
     private final HelidonVariant variant = HelidonVariant.SE;

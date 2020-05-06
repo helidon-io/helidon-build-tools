@@ -72,20 +72,8 @@ public class QuickstartGenerator {
         return new QuickstartGenerator();
     }
 
-    protected QuickstartGenerator() {
+    private QuickstartGenerator() {
         pluginVersion = BuildToolsProperties.instance().version();
-    }
-
-    protected Path parentDirectory() {
-        return parentDirectory;
-    }
-
-    protected HelidonVariant variant() {
-        return variant;
-    }
-
-    protected String groupId() {
-        return groupId;
     }
 
     /**
@@ -99,10 +87,6 @@ public class QuickstartGenerator {
         return this;
     }
 
-    protected String artifactId() {
-        return artifactId;
-    }
-
     /**
      * Set the project's artifact ID.
      *
@@ -112,10 +96,6 @@ public class QuickstartGenerator {
     public QuickstartGenerator artifactId(String artifactId) {
         this.artifactId = artifactId;
         return this;
-    }
-
-    protected String packageName() {
-        return packageName;
     }
 
     /**
@@ -213,7 +193,7 @@ public class QuickstartGenerator {
         return projectDir;
     }
 
-    protected void initialize() {
+    private void initialize() {
         if (version == null) {
             throw new IllegalStateException("version required.");
         }
@@ -241,13 +221,13 @@ public class QuickstartGenerator {
         }
     }
 
-    protected void log(String message, Object... args) {
+    private void log(String message, Object... args) {
         if (!quiet) {
             Log.info(message, args);
         }
     }
 
-    protected static void execute(ProcessBuilder builder) {
+    private static void execute(ProcessBuilder builder) {
         try {
             ProcessMonitor.builder()
                           .processBuilder(builder)

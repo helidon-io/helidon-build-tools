@@ -38,6 +38,7 @@ import io.helidon.build.util.QuickstartGenerator;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import static io.helidon.build.test.HelidonTestVersions.currentHelidonBuildToolsReleaseVersion;
 import static io.helidon.build.test.HelidonTestVersions.currentHelidonReleaseVersion;
 import static io.helidon.build.util.Constants.DIR_SEP;
 import static io.helidon.build.util.FileUtils.assertFile;
@@ -274,6 +275,7 @@ public class TestFiles implements BeforeAllCallback {
                                   .helidonVariant(variant)
                                   .parentDirectory(targetDir())
                                   .helidonVersion(currentHelidonReleaseVersion())
+                                  .pluginVersion(currentHelidonBuildToolsReleaseVersion())
                                   .generate();
     }
 

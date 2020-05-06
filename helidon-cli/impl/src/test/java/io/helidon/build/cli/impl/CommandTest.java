@@ -29,7 +29,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.cli.impl.TestUtils.exec;
-import static io.helidon.build.test.HelidonTestVersions.currentHelidonSnapshotVersion;
+import static io.helidon.build.test.HelidonTestVersions.currentHelidonReleaseVersion;
 import static io.helidon.build.test.HelidonTestVersions.previousHelidonReleaseVersion;
 import static io.helidon.build.test.TestFiles.quickstartId;
 import static io.helidon.build.util.PomUtils.HELIDON_PLUGIN_VERSION_PROPERTY;
@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class CommandTest {
 
-    private static final String HELIDON_VERSION_TEST = currentHelidonSnapshotVersion();
+    private static final String HELIDON_VERSION_TEST = currentHelidonReleaseVersion();
     private static final String HELIDON_VERSION_PREVIOUS = previousHelidonReleaseVersion();
 
     private final HelidonVariant variant = HelidonVariant.SE;

@@ -25,6 +25,8 @@ public class HelidonTestVersions {
     private static final String CURRENT_HELIDON_SNAPSHOT_VERSION = "2.0.0-SNAPSHOT";
     private static final String PREVIOUS_HELIDON_RELEASE_VERSION = "2.0.0-M1";
 
+    private static final String CURRENT_HELIDON_BUILD_TOOLS_RELEASE_VERSION = "2.0.0-M2";
+
     /**
      * Returns the current release version.
      *
@@ -50,5 +52,14 @@ public class HelidonTestVersions {
      */
     public static String previousHelidonReleaseVersion() {
         return PREVIOUS_HELIDON_RELEASE_VERSION;
+    }
+
+    /**
+     * Returns the current release version.
+     *
+     * @return the version.
+     */
+    public static String currentHelidonBuildToolsReleaseVersion() {
+        return CURRENT_HELIDON_BUILD_TOOLS_RELEASE_VERSION;
     }
 }

@@ -29,6 +29,7 @@ import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.KeyValue;
+import io.helidon.build.util.BuildToolsProperties;
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.HelidonVariant;
 import io.helidon.build.util.HelidonVersions;
@@ -135,6 +136,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
                                             .parentDirectory(parentDirectory)
                                             .helidonVariant(HelidonVariant.parse(flavor.name()))
                                             .helidonVersion(version)
+                                            .pluginVersion(BuildToolsProperties.instance().version())
                                             .groupId(groupId)
                                             .artifactId(artifactId)
                                             .packageName(packageName)
