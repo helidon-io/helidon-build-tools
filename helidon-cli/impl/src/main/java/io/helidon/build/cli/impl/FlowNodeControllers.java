@@ -17,9 +17,11 @@ package io.helidon.build.cli.impl;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.ArchetypeDescriptor;
+import io.helidon.build.archetype.engine.PropertyEvaluator;
 
 import static io.helidon.build.cli.impl.Prompter.prompt;
 
@@ -31,43 +33,63 @@ class FlowNodeControllers {
     private FlowNodeControllers() {
     }
 
-    static FlowNodeController create(ArchetypeDescriptor.FlowNode flowNode) {
+    private static boolean hasExpression(String value) {
+        return value.contains("${") && value.contains("}");
+    }
+
+    static FlowNodeController create(ArchetypeDescriptor.FlowNode flowNode, Map<String, String> properties) {
         if (flowNode instanceof ArchetypeDescriptor.Input) {
-            return new InputController((ArchetypeDescriptor.Input) flowNode);
+            return new InputController((ArchetypeDescriptor.Input) flowNode, properties);
         }
         if (flowNode instanceof ArchetypeDescriptor.Select) {
-            return new SelectController((ArchetypeDescriptor.Select) flowNode);
+            return new SelectController((ArchetypeDescriptor.Select) flowNode, properties);
         }
         throw new UnsupportedOperationException("No support for " + flowNode);
     }
 
     static abstract class FlowNodeController {
+        private final Map<String, String> properties;
+
+        FlowNodeController(Map<String, String> properties) {
+            this.properties = properties;
+        }
+
+        Map<String, String> properties() {
+            return properties;
+        }
+
         abstract void execute();
     }
 
     static class InputController extends FlowNodeController {
         private final ArchetypeDescriptor.Input input;
 
-        InputController(ArchetypeDescriptor.Input input) {
+        InputController(ArchetypeDescriptor.Input input, Map<String, String> properties) {
+            super(properties);
             this.input = input;
         }
 
         @Override
         void execute() {
-            String v = prompt(input.text(), input.defaultValue());
-            System.setProperty(input.property().id(), v);
+            String property = input.property().id();
+            String defaultValue = input.defaultValue()
+                    .map(v -> hasExpression(v) ? PropertyEvaluator.evaluate(v, properties()) : v)
+                    .orElse(null);
+            String v = prompt(input.text(), defaultValue);
+            properties().put(property, v);
         }
     }
 
     static class SelectController extends FlowNodeController {
         private final ArchetypeDescriptor.Select select;
 
-        SelectController(ArchetypeDescriptor.Select select) {
+        SelectController(ArchetypeDescriptor.Select select, Map<String, String> properties) {
+            super(properties);
             this.select = select;
         }
 
         @Override
-        void execute() {
+        void execute() {        // TODO
             LinkedList<ArchetypeDescriptor.Choice> choices = select.choices();
             List<String> options = choices.stream()
                     .map(ArchetypeDescriptor.Choice::text)

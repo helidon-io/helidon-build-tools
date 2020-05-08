@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.Conditional;
@@ -72,26 +71,27 @@ public final class ArchetypeEngine {
     /**
      * Create a new archetype engine instance.
      * @param archetype archetype file
-     * @param userProperties user properties
+     * @param properties user properties
      * @throws MalformedURLException if an error occurred converting the file to a URL
      */
-    public ArchetypeEngine(File archetype, Properties userProperties) throws MalformedURLException {
-        this(new URLClassLoader(new URL[] {archetype.toURI().toURL()}), userProperties);
+    public ArchetypeEngine(File archetype, Map<String, String> properties) throws MalformedURLException {
+        this(new URLClassLoader(new URL[] {archetype.toURI().toURL()}), properties);
     }
 
     /**
      * Create a new archetype engine instance.
      * @param cl class loader used to load the archetype
-     * @param userProperties user properties
+     * @param properties a mutable map of properties referenced by this engine
      */
-    public ArchetypeEngine(ClassLoader cl, Properties userProperties) {
+    public ArchetypeEngine(ClassLoader cl, Map<String, String> properties) {
         this.cl = Objects.requireNonNull(cl, "class-loader is null");
         this.mf = new DefaultMustacheFactory();
         this.descriptor = loadDescriptor(cl);
-        Objects.requireNonNull(userProperties, "userProperties is null");
-        this.properties = descriptor.properties().stream()
-                .filter((p) -> p.defaultValue().isPresent() || userProperties.containsKey(p.id()))
-                .collect(Collectors.toMap(Property::id, (p) -> userProperties.getProperty(p.id(), p.defaultValue().orElse(""))));
+        Objects.requireNonNull(properties, "properties is null");
+        descriptor.properties().stream()
+                .filter(p -> p.defaultValue().isPresent() && !properties.containsKey(p.id()))
+                .forEach(p -> properties.put(p.id(), p.defaultValue().get()));
+        this.properties = properties;
         List<SourcePath> paths = loadResourcesList(cl);
         this.templates = resolveFileSets(descriptor.templateSets().map(TemplateSets::templateSets).orElseGet(LinkedList::new),
                 descriptor.templateSets().map(TemplateSets::transformations).orElseGet(Collections::emptyList), paths,
@@ -166,65 +166,10 @@ public final class ArchetypeEngine {
                 .flatMap((t) -> t.replacements().stream())
                 .collect(Collectors.toList());
         for (Replacement rep : replacements) {
-            String replacement = resolveProperties(rep.replacement(), properties);
+            String replacement = PropertyEvaluator.evaluate(rep.replacement(), properties);
             output = output.replaceAll(rep.regex(), replacement);
         }
         return output;
-    }
-
-    /**
-     * Resolve a property of the form <code>${prop}</code>.
-     * @param input input to be resolved
-     * @param properties properties values
-     * @return resolved property
-     */
-    static String resolveProperties(String input, Map<String, String> properties) {
-        int start = input.indexOf("${");
-        int end = input.indexOf("}");
-        int index = 0;
-        String resolved = null;
-        while (start >= 0 && end > 0) {
-            if (resolved == null) {
-                resolved = input.substring(index, start);
-            } else {
-                resolved += input.substring(index, start);
-            }
-            String propName = input.substring(start + 2, end);
-
-            // search for transformation (name/regexp/replace)
-            int matchStart = 0;
-            do {
-                matchStart = propName.indexOf("/", matchStart + 1);
-            } while (matchStart > 0 && propName.charAt(matchStart - 1) == '\\');
-            int matchEnd = matchStart;
-            do {
-                matchEnd = propName.indexOf("/", matchEnd + 1);
-            } while (matchStart > 0 && propName.charAt(matchStart - 1) == '\\');
-
-            String regexp = null;
-            String replace = null;
-            if (matchStart > 0 && matchEnd > matchStart) {
-                regexp = propName.substring(matchStart + 1, matchEnd);
-                replace = propName.substring(matchEnd + 1);
-                propName = propName.substring(0, matchStart);
-            }
-
-            String propValue = properties.get(propName);
-            if (propValue == null) {
-                propValue = "";
-            } else if (regexp != null && replace != null) {
-                propValue = propValue.replaceAll(regexp, replace);
-            }
-
-            resolved += propValue;
-            index = end + 1;
-            start = input.indexOf("${", index);
-            end = input.indexOf("}", index);
-        }
-        if (resolved != null) {
-            return resolved + input.substring(index);
-        }
-        return input;
     }
 
     /**

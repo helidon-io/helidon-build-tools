@@ -790,24 +790,12 @@ public final class ArchetypeDescriptor {
         }
 
         /**
-         * Get the default value. If it is an expression of the form {@code ${prop}},
-         * return value of a system property if defined or the unexpanded expression
-         * if not.
+         * Get the default value.
          *
          * @return default value
          */
         public Optional<String> defaultValue() {
-            return defaultValue.map(dv -> {
-                String trimmed = dv.trim();
-                if (trimmed.length() > 3 && trimmed.startsWith("${") && trimmed.endsWith("}")) {
-                    String prop = trimmed.substring(2, trimmed.length() - 1);
-                    String value = System.getProperty(prop);
-                    if (value != null) {
-                        return value;
-                    }
-                }
-                return dv;
-            });
+            return defaultValue;
         }
 
         @Override

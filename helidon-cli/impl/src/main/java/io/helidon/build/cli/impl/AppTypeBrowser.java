@@ -18,15 +18,14 @@ package io.helidon.build.cli.impl;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.helidon.build.util.Log;
 import io.helidon.build.cli.impl.InitCommand.Flavor;
 
-import io.helidon.build.util.Log;
 import org.apache.maven.model.Model;
 
 import static io.helidon.build.cli.impl.PomReader.readPomModel;

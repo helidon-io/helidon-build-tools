@@ -25,11 +25,13 @@ import java.net.URLClassLoader;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.function.Predicate;
 
 import io.helidon.build.archetype.engine.ArchetypeDescriptor;
 import io.helidon.build.archetype.engine.ArchetypeEngine;
+import io.helidon.build.archetype.engine.Maps;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandExecution;
@@ -62,11 +64,6 @@ import static io.helidon.build.cli.impl.PomReader.readPomModel;
 @Command(name = "init", description = "Generate a new project")
 public final class InitCommand extends BaseCommand implements CommandExecution {
 
-    /*
-    build-tools.groupId=io.helidon.build-tools
-    build-tools.plugin.artifactId=helidon-maven-plugin
-
-         */
     private static final String MINIMUM_HELIDON_VERSION = "2.0.0";
     private static final int LATEST_HELIDON_VERSION_LOOKUP_RETRIES = 5;
     private static final long HELIDON_VERSION_LOOKUP_INITIAL_RETRY_DELAY = 500;
@@ -85,7 +82,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
     private final String groupId;
     private final String artifactId;
     private final String packageName;
-    private final String projectName;
+    private final String name;
 
     /**
      * Helidon flavors.
@@ -114,28 +111,35 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         GRADLE,
     }
 
+    static final String DEFAULT_FLAVOR = "SE";
+    static final String DEFAULT_APPTYPE = "basic";
+    static final String DEFAULT_GROUP_ID = "mygroupid";
+    static final String DEFAULT_ARTIFACT_ID = "myartifactid";
+    static final String DEFAULT_PACKAGE = "mypackage";
+    static final String DEFAULT_NAME = "myproject";
+
     @Creator
     InitCommand(
             CommonOptions commonOptions,
             @Flag(name = "batch", description = "Enables non-interactive mode") boolean batch,
-            @KeyValue(name = "flavor", description = "Helidon flavor", defaultValue = "SE") Flavor flavor,
+            @KeyValue(name = "flavor", description = "Helidon flavor", defaultValue = DEFAULT_FLAVOR) Flavor flavor,
             @KeyValue(name = "build", description = "Build type", defaultValue = "MAVEN") Build build,
             @KeyValue(name = "version", description = "Helidon version") String version,
-            @KeyValue(name = "apptype", description = "Application type", defaultValue = "basic") String appType,
-            @KeyValue(name = "groupid", description = "Project's group ID", defaultValue = "mygroupid") String groupId,
-            @KeyValue(name = "artifactid", description = "Project's artifact ID", defaultValue = "myartifactid") String artifactId,
-            @KeyValue(name = "package", description = "Project's package name", defaultValue = "mypackage") String packageName,
-            @KeyValue(name = "name", description = "Project's name", defaultValue = "myproject") String projectName) {
+            @KeyValue(name = "apptype", description = "Application type", defaultValue = DEFAULT_APPTYPE) String appType,
+            @KeyValue(name = "groupid", description = "Project's group ID", defaultValue = DEFAULT_GROUP_ID) String groupId,
+            @KeyValue(name = "artifactid", description = "Project's artifact ID", defaultValue = DEFAULT_ARTIFACT_ID) String artifactId,
+            @KeyValue(name = "package", description = "Project's package name", defaultValue = DEFAULT_PACKAGE) String packageName,
+            @KeyValue(name = "name", description = "Project's name", defaultValue = DEFAULT_NAME) String projectName) {
         this.commonOptions = commonOptions;
         this.batch = batch;
-        this.flavor = flavor;
         this.build = build;
         this.helidonVersion = version;
+        this.flavor = flavor;
         this.appType = appType;
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.packageName = packageName;
-        this.projectName = projectName;
+        this.name = projectName;
     }
 
     @Override
@@ -146,26 +150,33 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             return;
         }
 
+        // Read CLI config file
         Properties cliConfig = cliConfig();
 
-        // Ensure version
-        if (helidonVersion == null || helidonVersion.isEmpty()) {
+        // Attempt to find default Helidon version if none provided
+        if (helidonVersion == null) {
             try {
                 helidonVersion = defaultHelidonVersion();
+                context.logInfo("Using Helidon version " + helidonVersion);
             } catch (Exception e) {
-                context.exitAction(ExitStatus.FAILURE, e.getMessage());
-                return;
+                // If in batch mode we cannot proceed
+                if (batch) {
+                    context.exitAction(ExitStatus.FAILURE, e.getMessage());
+                    return;
+                }
             }
-            context.logInfo("Using Helidon version " + helidonVersion);
         }
 
+        // Need Helidon version and flavor to proceed
         if (!batch) {
-            // Prompt common flow
-            helidonVersion = prompt("Helidon version", helidonVersion);
+            if (helidonVersion == null) {
+                helidonVersion = prompt("Helidon version", helidonVersion);
+            }
             String f = prompt("Helidon flavor", new String[]{"SE", "MP"}, 0);
             flavor = Flavor.valueOf(f);
         }
 
+        // Gather application types
         displayLine("Gathering application types ... ");
         List<String> appTypes = AppTypeBrowser.appTypes(flavor, helidonVersion);
         if (appTypes.size() == 0) {
@@ -179,7 +190,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             appType = prompt("Select application type", appTypes, 0);
         }
 
-        // For now get jar file from property value and set up class loader
+        // Find jar and set up class loader
         URLClassLoader cl;
         try {
             File jarFile = AppTypeBrowser.jarFileLocalRepo(flavor, helidonVersion, appType).toFile();
@@ -189,25 +200,28 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             }
             cl = new URLClassLoader(new URL[]{jarFile.toURI().toURL()}, null);
         } catch (MalformedURLException ex) {
-            throw new RuntimeException(ex);
+            context.exitAction(ExitStatus.FAILURE, ex.getMessage());
+            return;
         }
 
-        Properties properties = initEngineProperties();
+        // Initialize mutable set of properties and engine
+        Map<String, String> properties = initProperties();
         ArchetypeEngine engine = new ArchetypeEngine(cl, properties);
 
+        // Run input flow if not in batch mode
         if (!batch) {
             ArchetypeDescriptor descriptor = engine.descriptor();
             ArchetypeDescriptor.InputFlow inputFlow = descriptor.inputFlow();
 
-            // Process input flow from template
+            // Process input flow from template and updates properties
             inputFlow.nodes().stream()
-                    .map(FlowNodeControllers::create)
+                    .map(n -> FlowNodeControllers.create(n, properties))
                     .forEach(FlowNodeController::execute);
         }
 
         // Generate project using archetype engine
         Path parentDirectory = commonOptions.project().toPath();
-        Path projectDir = parentDirectory.resolve(projectName);
+        Path projectDir = parentDirectory.resolve(properties.get("name"));
         if (projectDir.toFile().exists()) {
             context.exitAction(ExitStatus.FAILURE, projectDir + " exists");
             return;
@@ -238,16 +252,14 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
                 + projectDir.getFileName() + " to use CLI");
     }
 
-    private Properties initEngineProperties() {
-        Properties properties = System.getProperties();
-        properties.setProperty("groupId", groupId);
-        properties.setProperty("artifactId", artifactId);
-        properties.setProperty("package", packageName);
-        properties.setProperty("name", projectName);
-        properties.setProperty("helidonVersion", helidonVersion);
-        if (properties.getProperty("maven") == null) {
-            properties.setProperty("maven", "true");        // No gradle support yet
-        }
+    private Map<String, String> initProperties() {
+        Map<String, String> properties = Maps.fromProperties(System.getProperties());
+        properties.put("groupId", groupId);
+        properties.put("artifactId", artifactId);
+        properties.put("package", packageName);
+        properties.put("name", name);
+        properties.put("helidonVersion", helidonVersion);
+        properties.putIfAbsent("maven", "true");        // No gradle support yet
         return properties;
     }
 

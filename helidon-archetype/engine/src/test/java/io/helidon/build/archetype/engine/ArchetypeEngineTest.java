@@ -15,6 +15,7 @@
  */
 package io.helidon.build.archetype.engine;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
@@ -50,22 +51,22 @@ public class ArchetypeEngineTest {
     @Test
     public void testResolveProperties() {
         Map<String, String> props = Map.of("foo", "bar", "bar", "foo");
-        assertThat(ArchetypeEngine.resolveProperties("${foo}", props), is("bar"));
-        assertThat(ArchetypeEngine.resolveProperties("${xxx}", props), is(""));
-        assertThat(ArchetypeEngine.resolveProperties("-${foo}-", props), is("-bar-"));
-        assertThat(ArchetypeEngine.resolveProperties("$${foo}}", props), is("$bar}"));
-        assertThat(ArchetypeEngine.resolveProperties("${foo}-${bar}", props), is("bar-foo"));
-        assertThat(ArchetypeEngine.resolveProperties("foo", props), is("foo"));
-        assertThat(ArchetypeEngine.resolveProperties("$foo", props), is("$foo"));
-        assertThat(ArchetypeEngine.resolveProperties("${foo", props), is("${foo"));
-        assertThat(ArchetypeEngine.resolveProperties("${ foo}", props), is(""));
-        assertThat(ArchetypeEngine.resolveProperties("${foo }", props), is(""));
+        assertThat(PropertyEvaluator.evaluate("${foo}", props), is("bar"));
+        assertThat(PropertyEvaluator.evaluate("${xxx}", props), is(""));
+        assertThat(PropertyEvaluator.evaluate("-${foo}-", props), is("-bar-"));
+        assertThat(PropertyEvaluator.evaluate("$${foo}}", props), is("$bar}"));
+        assertThat(PropertyEvaluator.evaluate("${foo}-${bar}", props), is("bar-foo"));
+        assertThat(PropertyEvaluator.evaluate("foo", props), is("foo"));
+        assertThat(PropertyEvaluator.evaluate("$foo", props), is("$foo"));
+        assertThat(PropertyEvaluator.evaluate("${foo", props), is("${foo"));
+        assertThat(PropertyEvaluator.evaluate("${ foo}", props), is(""));
+        assertThat(PropertyEvaluator.evaluate("${foo }", props), is(""));
     }
 
     @Test
     public void testTransformedProperties() {
         Map<String, String> props = Map.of("package", "com.example.myapp");
-        assertThat(ArchetypeEngine.resolveProperties("${package/\\./\\/}", props), is("com/example/myapp"));
+        assertThat(PropertyEvaluator.evaluate("${package/\\./\\/}", props), is("com/example/myapp"));
     }
 
     @Test
@@ -109,13 +110,13 @@ public class ArchetypeEngineTest {
 
     @Test
     public void testGenerate() throws IOException {
-        Properties props = new Properties();
-        props.put("groupId", "com.example");
-        props.put("artifactId", "my-project");
-        props.put("version", "1.0-SNAPSHOT");
-        props.put("name", "my super project");
-        props.put("package", "com.example.myproject");
-        props.put("maven", "true");
+        Map<String, String> properties = new HashMap<>();
+        properties.put("groupId", "com.example");
+        properties.put("artifactId", "my-project");
+        properties.put("version", "1.0-SNAPSHOT");
+        properties.put("name", "my super project");
+        properties.put("package", "com.example.myproject");
+        properties.put("maven", "true");
         File targetDir = new File(new File("").getAbsolutePath(), "target");
         File outputDir = new File(targetDir, "test-project");
         Path outputDirPath = outputDir.toPath();
@@ -126,7 +127,7 @@ public class ArchetypeEngineTest {
                     .forEach(File::delete);
         }
         assertThat(Files.exists(outputDirPath), is(false));
-        new ArchetypeEngine(ArchetypeEngineTest.class.getClassLoader(), props).generate(outputDir);
+        new ArchetypeEngine(ArchetypeEngineTest.class.getClassLoader(), properties).generate(outputDir);
         assertThat(Files.exists(outputDirPath), is(true));
         assertThat(Files.walk(outputDirPath)
                 .filter(p -> !Files.isDirectory(p))

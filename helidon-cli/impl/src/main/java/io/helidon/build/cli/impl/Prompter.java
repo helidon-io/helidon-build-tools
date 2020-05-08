@@ -61,7 +61,7 @@ class Prompter {
                 String o = String.format("  (%d) %s ", i + 1, options[i]);
                 System.out.println(o);
             }
-            String q = String.format("Enter selection (Default: %s): ", options[defaultOption]);
+            String q = String.format("Enter selection (Default: %d): ", defaultOption + 1);
             System.out.print(q);
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             String response = reader.readLine().trim();

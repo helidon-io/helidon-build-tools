@@ -88,14 +88,10 @@
         </file-set>
     </file-sets>
     <input-flow>
-        <select id="build" text="Build system">
-            <choice property="maven" text="Maven"/>
-            <choice property="gradle" text="Gradle"/>
-        </select>
         <input property="name" text="Project name" default="${name}"/>
         <input property="groupId" text="Project groupId" if="maven" default="${groupId}"/>
         <input property="artifactId" text="Project artifactId" default="${artifactId}"/>
-        <input property="version" text="Project version" default="1.0-SNAPSHOT"/>
+        <input property="version" text="Project version" default="${version}"/>
         <input property="package" text="Java package name" default="${package}"/>
     </input-flow>
 </archetype-descriptor>
