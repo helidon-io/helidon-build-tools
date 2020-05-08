@@ -70,7 +70,6 @@ public class CommandTest {
         System.out.println(res.output);
         assertThat(res.code, is(equalTo(0)));
         assertTrue(Files.exists(targetDir.resolve(quickstartId(variant))));
-        throw new AssertionError("I'm failing!");
     }
 
     @Test

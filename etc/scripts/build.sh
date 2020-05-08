@@ -41,5 +41,4 @@ source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     clean install \
-    -Dmaven.test.failure.ignore=true \
     --fail-at-end
