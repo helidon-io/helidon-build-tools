@@ -111,7 +111,11 @@ public final class CommandRunner {
     public static void execute(CLIDefinition cli, Class clazz, String... args) {
         CommandRegistry registry = CommandRegistry.load(clazz);
         CommandContext context = CommandContext.create(registry, cli);
-        CommandRunner.execute(context, args);
-        context.exitAction().run();
+        try {
+            CommandRunner.execute(context, args);
+            context.exitAction().run();
+        } catch (Throwable failure) {
+            context.error(failure).run();
+        }
     }
 }

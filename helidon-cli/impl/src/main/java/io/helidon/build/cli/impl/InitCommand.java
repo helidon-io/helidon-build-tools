@@ -38,6 +38,7 @@ import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.QuickstartGenerator;
 
+import static io.helidon.build.util.Requirements.failed;
 import static io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;
 import static io.helidon.build.util.ProjectConfig.FEATURE_PREFIX;
@@ -111,9 +112,11 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
     @Override
     public void execute(CommandContext context) {
         // Check build type
-        if (build == Build.GRADLE) {
-            context.exitAction(ExitStatus.FAILURE, "Gradle support is not implemented");
-            return;
+
+        if (build == Build.MAVEN) {
+            assertRequiredMavenVersion();
+        } else {
+            failed("Gradle support is not implemented");
         }
 
         Properties cliConfig = cliConfig();
@@ -122,7 +125,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         if (version == null || version.isEmpty()) {
             try {
                 version = defaultHelidonVersion();
-            } catch (Exception e) {
+            } catch (Exception e) {   // TODO
                 context.exitAction(ExitStatus.FAILURE, e.getMessage());
                 return;
             }

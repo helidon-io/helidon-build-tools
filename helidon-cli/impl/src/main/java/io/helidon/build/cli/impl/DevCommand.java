@@ -49,7 +49,7 @@ import static io.helidon.build.util.Style.BoldBrightGreen;
  * The {@code dev} command.
  */
 @Command(name = "dev", description = "Continuous application development")
-public final class DevCommand extends MavenBaseCommand implements CommandExecution {
+public final class DevCommand extends BaseCommand implements CommandExecution {
 
     private static final String CLEAN_PROP_PREFIX = "-Ddev.clean=";
     private static final String FORK_PROP_PREFIX = "-Ddev.fork=";
@@ -75,14 +75,8 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
         this.fork = fork;
     }
 
-    private boolean isValidConfig(CommandContext context) {
-        try {
-            ensureHelidonCliConfig(WORKING_DIR, null);
-            return true;
-        } catch (Exception e) {
-            context.exitAction(FAILURE, e.getMessage());
-            return false;
-        }
+    private void assertValidConfig() {
+        ensureHelidonCliConfig(WORKING_DIR, null);
     }
 
     @Override
@@ -90,9 +84,8 @@ public final class DevCommand extends MavenBaseCommand implements CommandExecuti
 
         // Ensure preconditions
 
-        if (isMavenVersionOutOfDate(context) || !isValidConfig(context)) {
-            return;
-        }
+        assertRequiredMavenVersion();
+        assertValidConfig();
 
         // Clear terminal and print header if in terminal mode
 

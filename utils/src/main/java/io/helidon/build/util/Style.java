@@ -65,12 +65,12 @@ public enum Style implements Function<Object, String> {
     /**
      * Bold green.
      */
-    BoldGreen(false, false, Ansi.Color.GREEN),
+    BoldGreen(true, false, Ansi.Color.GREEN),
 
     /**
      * Bold, bright green.
      */
-    BoldBrightGreen(false, true, Ansi.Color.GREEN),
+    BoldBrightGreen(true, true, Ansi.Color.GREEN),
 
     /**
      * Yellow.
@@ -80,12 +80,12 @@ public enum Style implements Function<Object, String> {
     /**
      * Bold yellow.
      */
-    BoldYellow(false, false, Ansi.Color.YELLOW),
+    BoldYellow(true, false, Ansi.Color.YELLOW),
 
     /**
      * Bold, bright yellow.
      */
-    BoldBrightYellow(false, true, Ansi.Color.YELLOW),
+    BoldBrightYellow(true, true, Ansi.Color.YELLOW),
 
     /**
      * Red.
@@ -95,12 +95,12 @@ public enum Style implements Function<Object, String> {
     /**
      * Bold red.
      */
-    BoldRed(false, false, Ansi.Color.RED),
+    BoldRed(true, false, Ansi.Color.RED),
 
     /**
      * Bold, bright red.
      */
-    BoldBrightRed(false, true, Ansi.Color.RED),
+    BoldBrightRed(true, true, Ansi.Color.RED),
 
     /**
      * Bold.
@@ -108,6 +108,7 @@ public enum Style implements Function<Object, String> {
     Bold(true, false, null);
 
     private static final boolean ENABLED = AnsiConsoleInstaller.ensureInstalled();
+    private static final String ANSI_ESCAPE_BEGIN = "\033[";
     private final boolean bold;
     private final boolean bright;
     private final Ansi.Color color;
@@ -151,5 +152,26 @@ public enum Style implements Function<Object, String> {
         } else {
             return message.toString();
         }
+    }
+
+    /**
+     * Renders the embedded {@link StyleRenderer style DSL}, if styles are supported, after formatting.
+     *
+     * @param format The message format.
+     * @param args The message arguments.
+     * @return The message.
+     */
+    public static String render(String format, Object... args) {
+        return StyleRenderer.render(String.format(format, args));
+    }
+
+    /**
+     * Tests whether or not the given text contains an Ansi escape sequence.
+     *
+     * @param text The text.
+     * @return {@code true} if an Ansi escape sequence found.
+     */
+    public static boolean isStyled(String text) {
+        return text.contains(ANSI_ESCAPE_BEGIN);
     }
 }

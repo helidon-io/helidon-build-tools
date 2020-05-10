@@ -35,9 +35,8 @@ import static io.helidon.build.util.AnsiConsoleInstaller.isHelidonChildProcess;
 import static io.helidon.build.util.Constants.EOL;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.listFiles;
+import static io.helidon.build.util.Requirements.requires;
 import static io.helidon.build.util.Style.Bold;
-import static io.helidon.build.util.Style.BoldBrightGreen;
-import static io.helidon.build.util.Style.BoldBrightRed;
 import static java.io.File.pathSeparatorChar;
 import static java.util.Objects.requireNonNull;
 
@@ -145,6 +144,12 @@ public class MavenCommand {
         return MAVEN_VERSION.get();
     }
 
+    private static final String VERSION_ERROR = "$(bold Maven version) $(GREEN! %s) "
+                                                + "$(bold or later is required, found) $(RED! %s)$(bold .)"
+                                                + EOL
+                                                + "Please update from %s and prepend your PATH or set the MAVEN_HOME or MVN_HOME "
+                                                + "environment variable.";
+
     /**
      * Assert that then installed Maven version is at least the given minimum.
      *
@@ -153,20 +158,8 @@ public class MavenCommand {
      */
     public static void assertRequiredMavenVersion(MavenVersion requiredMinimumVersion) {
         MavenVersion installed = installedVersion();
-        if (installed.isLessThan(requiredMinimumVersion)) {
-            final String msg = EOL
-                               + Bold.apply("Maven version ")
-                               + BoldBrightGreen.apply(requiredMinimumVersion)
-                               + Bold.apply(" or later is required, found ")
-                               + BoldBrightRed.apply(installed)
-                               + Bold.apply(".")
-                               + EOL
-                               + "Please update from "
-                               + MAVEN_DOWNLOAD_URL
-                               + " and prepend your PATH or set the MAVEN_HOME or MVN_HOME environment variable."
-                               + EOL;
-            throw new IllegalStateException(msg);
-        }
+        requires(installed.isGreaterThanOrEqualTo(requiredMinimumVersion),
+                 VERSION_ERROR, requiredMinimumVersion, installed, MAVEN_DOWNLOAD_URL);
     }
 
     /**

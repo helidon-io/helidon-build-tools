@@ -242,6 +242,7 @@
                         <trimStackTrace>false</trimStackTrace>
                         <systemPropertyVariables>
                             <use.embedded.maven.executor>false</use.embedded.maven.executor>
+                            <jansi.force>true</jansi.force>
                         </systemPropertyVariables>
                         <excludes>
                             <exclude>**/*IT.java</exclude>
