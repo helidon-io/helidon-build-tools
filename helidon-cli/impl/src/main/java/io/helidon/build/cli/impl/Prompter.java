@@ -42,8 +42,8 @@ class Prompter {
                     : String.format("%s: ", question);
             System.out.print(q);
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            String response = reader.readLine().trim();
-            return response.length() == 0 ? defaultResponse : response;
+            String response = reader.readLine();
+            return response == null || response.length() == 0 ? defaultResponse : response.trim();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -64,11 +64,11 @@ class Prompter {
             String q = String.format("Enter selection (Default: %d): ", defaultOption + 1);
             System.out.print(q);
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            String response = reader.readLine().trim();
-            if (response.length() == 0) {
+            String response = reader.readLine();
+            if (response == null || response.trim().length() == 0) {
                 return options[defaultOption];
             }
-            int option = Integer.parseInt(response);
+            int option = Integer.parseInt(response.trim());
             if (option <= 0 || option > options.length) {
                 return prompt(question, options, defaultOption);
             }

@@ -15,70 +15,50 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.File;
 import java.nio.file.Path;
 
 import io.helidon.build.test.TestFiles;
-import io.helidon.build.util.HelidonVariant;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_NAME;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_PACKAGE;
 import static io.helidon.build.cli.impl.TestUtils.assertPackageExist;
-import static io.helidon.build.cli.impl.TestUtils.exec;
+import static io.helidon.build.cli.impl.TestUtils.execWithDirAndInput;
+
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Class InitCommandTest.
+ * Class InitInteractiveTest.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class InitCommandTest {
-
-    private static final String MY_GROUP_ID = "mygroup";
-    private static final String MY_ARTIFACT_ID = "myartifact";
-    private static final String MY_PROJECT = "myproject";
-    private static final String MY_PACKAGE = "com.oracle.mypackage";
+public class InitInteractiveTest {
     private static final String HELIDON_VERSION_TEST = "2.0.0-SNAPSHOT";
 
-    private HelidonVariant variant = HelidonVariant.SE;
     private Path targetDir = TestFiles.targetDir();
-
-    /**
-     * Overrides version under test. This property must be propagated to all
-     * forked processes.
-     */
-    @BeforeAll
-    public static void setHelidonVersion() {
-        System.setProperty(HELIDON_VERSION, HELIDON_VERSION_TEST);
-    }
 
     @Test
     @Order(1)
-    public void testInitGroupPackage() throws Exception {
-        TestUtils.ExecResult res = exec("init",
-                "--batch",
-                "--flavor", variant.toString(),
-                "--project ", targetDir.toString(),
-                "--version ", HELIDON_VERSION_TEST,
-                "--groupid", MY_GROUP_ID,
-                "--artifactid", MY_ARTIFACT_ID,
-                "--package", MY_PACKAGE,
-                "--name", MY_PROJECT);
+    public void testInitSe() throws Exception {
+        File input = new File(InitCommand.class.getResource("input.txt").getFile());
+        TestUtils.ExecResult res = execWithDirAndInput(targetDir.toFile(), input,
+                "init", "--version ", HELIDON_VERSION_TEST);
         System.out.println(res.output);
         assertThat(res.code, is(equalTo(0)));
-        assertPackageExist(targetDir.resolve(MY_PROJECT), MY_PACKAGE);
+        assertPackageExist(targetDir.resolve(DEFAULT_NAME), DEFAULT_PACKAGE);
     }
 
     @Test
     @Order(2)
-    public void testCleanGroupPackage() {
-        Path projectDir = targetDir.resolve(MY_PROJECT);
+    public void testCleanSe() {
+        Path projectDir = targetDir.resolve(DEFAULT_NAME);
         assertTrue(TestFiles.deleteDirectory(projectDir.toFile()));
         System.out.println("Directory " + projectDir + " deleted");
     }

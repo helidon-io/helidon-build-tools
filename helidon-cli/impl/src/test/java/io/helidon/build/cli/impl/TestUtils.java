@@ -72,6 +72,10 @@ class TestUtils {
     }
 
     static ExecResult exec(String... args) throws IOException, InterruptedException {
+        return execWithDirAndInput(null, null, args);
+    }
+
+    static ExecResult execWithDirAndInput(File wd, File input, String... args) throws IOException, InterruptedException {
         List<String> cmdArgs = new ArrayList<>();
         cmdArgs.addAll(List.of(javaPath(), "-cp", "\"" + System.getProperty("java.class.path") + "\""));
         String version = System.getProperty(HELIDON_VERSION);
@@ -81,6 +85,12 @@ class TestUtils {
         cmdArgs.add(Main.class.getName());
         cmdArgs.addAll(Arrays.asList(args));
         ProcessBuilder pb = new ProcessBuilder(cmdArgs);
+        if (wd != null) {
+            pb.directory(wd);
+        }
+        if (input != null) {
+            pb.redirectInput(input);
+        }
         Process p = pb.redirectErrorStream(true).start();
         String output = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         if (!p.waitFor(10, TimeUnit.SECONDS)) {
