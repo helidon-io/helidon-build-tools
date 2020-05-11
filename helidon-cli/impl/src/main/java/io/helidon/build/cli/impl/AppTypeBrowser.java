@@ -15,89 +15,184 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
-import io.helidon.build.util.Log;
 import io.helidon.build.cli.impl.InitCommand.Flavor;
-
+import io.helidon.build.util.Log;
 import org.apache.maven.model.Model;
 
 import static io.helidon.build.cli.impl.PomReader.readPomModel;
 
 /**
- * Class ArchetypeBrowser. Unix style path only for now.
+ * Class ArchetypeBrowser.
  */
 class AppTypeBrowser {
 
-    private static final String REMOTE_REPO = "https://repo.maven.apache.org/maven2";
-    private static final String LOCAL_REPOSITORY = System.getProperty("user.home") + "/.m2/repository";
-    private static final String ARCHETYPE_DIRECTORY = "/io/helidon/build-tools/archetype";
-    private static final String ARCHETYPE_PREFIX = "helidon-archetype-apptypes-";
+    /**
+     * Maven remote repo.
+     */
+    static final String REMOTE_REPO = "https://repo.maven.apache.org/maven2";
 
-    private AppTypeBrowser() {
+    /**
+     * Maven local repo.
+     */
+    static final String LOCAL_REPO = "file://" + System.getProperty("user.home") + "/.m2/repository";
+
+    /**
+     * Archetype directory.
+     */
+    private static final String ARCHETYPE_DIRECTORY = "/io/helidon/build-tools/archetype";
+
+    /**
+     * Prefix for all archetypes.
+     */
+    private static final String ARCHETYPE_PREFIX = "helidon-archetype-apptypes";
+
+    /**
+     * Format is helidon-archetype-apptypes-{flavor}-{apptype}-{version}.jar
+     */
+    private static final String APPTYPE_JAR = ARCHETYPE_PREFIX + "-%s-%s-%s.jar";
+
+    /**
+     * Format is helidon-archetype-apptypes-{flavor}-{version}.pom
+     */
+    private static final String APPTYPE_POM = ARCHETYPE_PREFIX + "-%s-%s.pom";
+
+    /**
+     * Reusable byte buffer.
+     */
+    private static final byte[] BUFFER = new byte[8 * 1024];
+
+    private final Path localCache;
+    private final Flavor flavor;
+    private final String helidonVersion;
+
+    AppTypeBrowser(Flavor flavor, String helidonVersion) {
+        this.flavor = flavor;
+        this.helidonVersion = helidonVersion;
+        String userHome = System.getProperty("user.home");
+        Objects.requireNonNull(userHome);
+        localCache = Path.of(userHome, ".helidon", "cache");        // $HOME/.helidon/cache
     }
 
-    static List<String> appTypes(Flavor flavor, String helidonVersion) {
-        List<String> remoteAppTypes = appTypesRemoteRepo(flavor, helidonVersion);
-        if (remoteAppTypes.isEmpty()) {
-            Log.warn("Unable to find apptypes in remote repository");
-        }
-        List<String> appTypes = appTypesLocalRepo(flavor, helidonVersion);
-        if (appTypes.isEmpty()) {
-            Log.warn("Unable to find apptypes in local repository");
-        }
-        for (String remoteAppType : remoteAppTypes) {
-            if (!appTypes.contains(remoteAppType)) {
-                appTypes.add(remoteAppType);
+    /**
+     * Returns list of apptypes available. Checks remote repo if local cache
+     * does not include a pom file. For convenience, it also checks the local
+     * Maven repo to support unreleased versions.
+     *
+     * @return List of available apptypes.
+     */
+    List<String> appTypes() {
+        List<String> appTypes = appTypesLocalRepo();
+        if (appTypes.size() == 0) {
+            downloadPom(REMOTE_REPO);
+            appTypes = appTypesLocalRepo();
+            if (appTypes.size() == 0) {
+                downloadPom(LOCAL_REPO);
+                appTypes = appTypesLocalRepo();
+                return appTypes;
             }
         }
         return appTypes;
     }
 
-    static List<String> appTypesRemoteRepo(Flavor flavor, String helidonVersion) {
-        String pomFile = String.format("%s%s-%s.pom", ARCHETYPE_PREFIX, flavor, helidonVersion);
-        String location = String.format("%s%s/%s/%s/%s", REMOTE_REPO, ARCHETYPE_DIRECTORY,
-                ARCHETYPE_PREFIX + flavor, helidonVersion, pomFile);
-        try {
-            URL url = new URL(location);
-            try (InputStream is = url.openConnection().getInputStream()) {
-                Model model = readPomModel(is);
-                return model.getModules();
-            }
-        } catch (FileNotFoundException e) {
-            // falls through
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return new ArrayList<>();
+    /**
+     * Returns path to archetype jar in local cache or {@code null} if not found
+     * and not available for download. Checks remote and then local repo to
+     * handle unreleased versions.
+     *
+     * @param appType The application type.
+     * @return Path to archetype jar or {@code null} if not found.
+     */
+    Path archetypeJar(String appType) {
+        Path jar = downloadJar(REMOTE_REPO, appType);
+        return jar == null ? downloadJar(LOCAL_REPO, appType) : jar;
     }
 
-    static List<String> appTypesLocalRepo(Flavor flavor, String helidonVersion) {
-        String pomFile = String.format("%s%s-%s.pom", ARCHETYPE_PREFIX, flavor, helidonVersion);
-        Path path = Path.of(LOCAL_REPOSITORY, ARCHETYPE_DIRECTORY,
-                            ARCHETYPE_PREFIX + flavor, helidonVersion, pomFile);
+    /**
+     * Downloads jar into the local cache and returns path to it.
+     *
+     * @param repo The repository to use.
+     * @param apptype Application type.
+     * @return Path to local jar or {code null} if unable.
+     */
+    private Path downloadJar(String repo, String apptype) {
+        String jar = String.format(APPTYPE_JAR, flavor, apptype, helidonVersion);
+        Path localJarPath = localCache.resolve(jar);
+        if (!localJarPath.toFile().exists()) {
+            String location;
+            try {
+                // Attempt remote download of artifact
+                location = String.format("%s%s/%s-%s-%s/%s/%s", repo, ARCHETYPE_DIRECTORY,
+                        ARCHETYPE_PREFIX, flavor, apptype, helidonVersion, jar);
+                downloadArtifact(new URL(location), localJarPath);
+            } catch (FileNotFoundException e1) {
+                Log.warn("Unable to download file %s from %s", jar, repo);
+                return null;
+            } catch (IOException e1) {
+                throw new RuntimeException(e1);
+            }
+        }
+        return localJarPath;
+    }
+
+    /**
+     * Searches for apptypes in the local cache by inspecting the corresponding POM file.
+     *
+     * @return List of apptype names in local POM file.
+     */
+    List<String> appTypesLocalRepo() {
+        String pomFile = String.format(APPTYPE_POM, flavor, helidonVersion);
+        Path path = localCache.resolve(pomFile);
         if (path.toFile().exists()) {
             Model model = readPomModel(path.toFile());
             return model.getModules();
         }
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
-    static Path jarFileLocalRepo(Flavor flavor, String helidonVersion, String apptype) {
-        String dirFile = String.format("%s%s-%s", ARCHETYPE_PREFIX, flavor, apptype);
-        String jarFile = String.format("%s%s-%s-%s.jar", ARCHETYPE_PREFIX, flavor, apptype, helidonVersion);
-        Path path = Path.of(LOCAL_REPOSITORY + ARCHETYPE_DIRECTORY, dirFile, helidonVersion, jarFile);
-        return path.toFile().exists() ? path : null;
+    /**
+     * Downloads repository POM into local cache.
+     */
+    private void downloadPom(String repo) {
+        String pom = String.format(APPTYPE_POM, flavor, helidonVersion);
+        Path localPomPath = localCache.resolve(pom);
+        String location = String.format("%s%s/%s-%s/%s/%s", repo, ARCHETYPE_DIRECTORY,
+                ARCHETYPE_PREFIX, flavor, helidonVersion, pom);
+        try {
+            URL url = new URL(location);
+            downloadArtifact(url, localPomPath);
+        } catch (FileNotFoundException e) {
+            Log.warn("Unable to download file %s from %s", pom, repo);
+            // Falls through
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public static void main(String[] args) {
-        appTypesRemoteRepo(Flavor.SE, "2.0.0-SNAPSHOT").forEach(System.out::println);
-        System.out.println(jarFileLocalRepo(Flavor.SE, "2.0.0-SNAPSHOT", "basic"));
+    /**
+     * Downloads a repository artifact into the local cache.
+     *
+     * @param url Location of remote artifact.
+     * @param localPath Local path.
+     * @throws IOException If error occurs.
+     */
+    void downloadArtifact(URL url, Path localPath) throws IOException {
+        try (BufferedInputStream bis = new BufferedInputStream(url.openConnection().getInputStream())) {
+            try (FileOutputStream fos = new FileOutputStream(localPath.toFile())) {
+                int n;
+                while ((n = bis.read(BUFFER, 0, BUFFER.length)) >= 0) {
+                    fos.write(BUFFER, 0, n);
+                }
+            }
+        }
     }
 }

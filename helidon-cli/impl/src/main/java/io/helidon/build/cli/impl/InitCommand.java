@@ -177,8 +177,9 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         }
 
         // Gather application types
+        AppTypeBrowser browser = new AppTypeBrowser(flavor, helidonVersion);
         displayLine("Gathering application types ... ");
-        List<String> appTypes = AppTypeBrowser.appTypes(flavor, helidonVersion);
+        List<String> appTypes = browser.appTypes();
         if (appTypes.size() == 0) {
             context.exitAction(ExitStatus.FAILURE, "Unable to find application types for "
                     + flavor + " and " + helidonVersion);
@@ -193,7 +194,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         // Find jar and set up class loader
         URLClassLoader cl;
         try {
-            File jarFile = AppTypeBrowser.jarFileLocalRepo(flavor, helidonVersion, appType).toFile();
+            File jarFile = browser.archetypeJar(appType).toFile();
             if (!jarFile.exists()) {
                 context.exitAction(ExitStatus.FAILURE, jarFile + " does not exist");
                 return;
