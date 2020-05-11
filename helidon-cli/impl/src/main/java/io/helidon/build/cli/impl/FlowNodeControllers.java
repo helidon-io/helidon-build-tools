@@ -33,10 +33,13 @@ class FlowNodeControllers {
     private FlowNodeControllers() {
     }
 
-    private static boolean hasExpression(String value) {
-        return value.contains("${") && value.contains("}");
-    }
-
+    /**
+     * Controller creator.
+     *
+     * @param flowNode The flow node.
+     * @param properties Properties used to resolve and expressions.
+     * @return A flow controller.
+     */
     static FlowNodeController create(ArchetypeDescriptor.FlowNode flowNode, Map<String, String> properties) {
         if (flowNode instanceof ArchetypeDescriptor.Input) {
             return new InputController((ArchetypeDescriptor.Input) flowNode, properties);
@@ -47,6 +50,9 @@ class FlowNodeControllers {
         throw new UnsupportedOperationException("No support for " + flowNode);
     }
 
+    /**
+     * Base class for all controllers.
+     */
     static abstract class FlowNodeController {
         private final Map<String, String> properties;
 
@@ -61,6 +67,9 @@ class FlowNodeControllers {
         abstract void execute();
     }
 
+    /**
+     * Controller for {@code ArchetypeDescriptor.Input}.
+     */
     static class InputController extends FlowNodeController {
         private final ArchetypeDescriptor.Input input;
 
@@ -69,6 +78,9 @@ class FlowNodeControllers {
             this.input = input;
         }
 
+        /**
+         * Executes the controller. Evaluates default value if an expression.
+         */
         @Override
         void execute() {
             String property = input.property().id();
@@ -80,6 +92,9 @@ class FlowNodeControllers {
         }
     }
 
+    /**
+     * Controller for {@code ArchetypeDescriptor.Select}.
+     */
     static class SelectController extends FlowNodeController {
         private final ArchetypeDescriptor.Select select;
 
@@ -88,8 +103,12 @@ class FlowNodeControllers {
             this.select = select;
         }
 
+        /**
+         * Executes the controller. Assumes that first choice is always default.
+         * Sets the property associated with selection to {@code "true"}.
+         */
         @Override
-        void execute() {        // TODO
+        void execute() {
             LinkedList<ArchetypeDescriptor.Choice> choices = select.choices();
             List<String> options = choices.stream()
                     .map(ArchetypeDescriptor.Choice::text)
@@ -101,5 +120,15 @@ class FlowNodeControllers {
                     .findFirst().get();
             System.setProperty(property.id(), "true");
         }
+    }
+
+    /**
+     * Simple check for values that contain expressions.
+     *
+     * @param value The value.
+     * @return Returns {@code true} if value contains an expression, false otherwise.
+     */
+    private static boolean hasExpression(String value) {
+        return value.contains("${") && value.contains("}");
     }
 }
