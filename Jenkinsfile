@@ -18,6 +18,9 @@ pipeline {
   agent {
     label "linux"
   }
+  options {
+    parallelsAlwaysFailFast()
+  }
   stages {
     stage('default') {
       parallel {
