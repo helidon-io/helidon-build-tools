@@ -65,8 +65,8 @@ import static io.helidon.build.util.TimeUtils.toDateTime;
  * A {@code ProjectSupplier} for Maven projects.
  */
 public class MavenProjectSupplier implements ProjectSupplier {
-    private static final List<String> CLEAN_BUILD_COMMAND = List.of("clean", "process-classes", "-DskipTests");
-    private static final List<String> BUILD_COMMAND = List.of("process-classes", "-DskipTests");
+    private static final List<String> CLEAN_BUILD_COMMAND = List.of("clean", "prepare-package", "-DskipTests");
+    private static final List<String> BUILD_COMMAND = List.of("prepare-package", "-DskipTests");
     private static final String TARGET_DIR_NAME = "target";
     private static final String POM_FILE = "pom.xml";
     private static final String DOT = ".";

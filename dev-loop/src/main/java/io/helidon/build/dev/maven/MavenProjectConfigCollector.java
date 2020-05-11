@@ -17,6 +17,7 @@
 package io.helidon.build.dev.maven;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -55,88 +56,101 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
     private static final String MULTI_MODULE_PROJECT = "Multi-module projects are not supported.";
     private static final String MISSING_MAIN_CLASS = "The required '" + MAIN_CLASS_PROPERTY + "' property is missing.";
     private static final String MISSING_DOT_HELIDON = "The required " + DOT_HELIDON + " file is missing.";
-    private static final String COMPILE_GOAL = "compile";
+    private static final String COPY_DEPENDENCIES_GOAL = "copy-dependencies";
+    private static final String COPY_LIBS_EXECUTION_ID = "copy-libs";
+    private static final String TARGET_DIR_NAME = "target";
+    private static final String LIBS_DIR_NAME = "libs";
+    private static final String JAR_FILE_SUFFIX = ".jar";
 
-    private boolean supportedProject;
-    private boolean compileSucceeded;
+    private Path supportedProjectDir;
+    private ProjectConfig config;
 
     /**
      * Assert that the project is one whose configuration we can support.
      *
      * @param session The session.
+     * @return The project directory.
      */
-    public static void assertSupportedProject(MavenSession session) {
+    public static Path assertSupportedProject(MavenSession session) {
         assertSupportedProject(session.getProjects().size() == 1, MULTI_MODULE_PROJECT);
         final MavenProject project = session.getProjects().get(0);
         final Path projectDir = project.getBasedir().toPath();
         assertSupportedProject(ProjectConfig.helidonCliConfigExists(projectDir), MISSING_DOT_HELIDON);
         assertSupportedProject(project.getProperties().getProperty(MAIN_CLASS_PROPERTY) != null, MISSING_MAIN_CLASS);
         debug("Helidon project is supported");
+        return projectDir;
     }
 
     @Override
     public void afterProjectsRead(MavenSession session) {
+        // Init state
+        supportedProjectDir = null;
+        config = null;
         try {
             // Ensure that we support this project
-            assertSupportedProject(session);
-            supportedProject = true;
+            supportedProjectDir = assertSupportedProject(session);
 
             // Install our listener so we can know if compilation occurred and succeeded
             final MavenExecutionRequest request = session.getRequest();
             request.setExecutionListener(new EventListener(request.getExecutionListener()));
         } catch (IllegalStateException e) {
-            supportedProject = false;
+            supportedProjectDir = null;
         }
     }
 
     @Override
     public void afterSessionEnd(MavenSession session) {
-        if (supportedProject) {
-            final MavenProject project = session.getProjects().get(0);
-            final Path projectDir = project.getBasedir().toPath();
-            final ProjectConfig config = ProjectConfig.loadHelidonCliConfig(projectDir);
+        if (supportedProjectDir != null) {
             final MavenExecutionResult result = session.getResult();
             if (result == null) {
                 debug("Build failed: no result");
-                invalidateConfig(config);
+                invalidateConfig();
             } else if (result.hasExceptions()) {
                 debug("Build failed: %s", result.getExceptions());
-                invalidateConfig(config);
-            } else if (compileSucceeded) {
+                invalidateConfig();
+            } else if (config != null) {
                 debug("Build succeeded, with compilation. Updating config.");
-                updateConfig(config, project);
+                storeConfig();
             } else {
                 debug("Build succeeded, without compilation");
-                invalidateConfig(config);
+                invalidateConfig();
             }
         }
     }
 
-    private void updateConfig(ProjectConfig config, MavenProject project) {
+    private void collectConfig(MavenProject project) {
         try {
-            final String mainClass = project.getProperties().getProperty(MAIN_CLASS_PROPERTY);
-            config.property(PROJECT_MAINCLASS, mainClass);
+            final Path projectDir = project.getBasedir().toPath();
+            config = ProjectConfig.loadHelidonCliConfig(projectDir);
+            config.property(PROJECT_MAINCLASS, project.getProperties().getProperty(MAIN_CLASS_PROPERTY));
             config.property(PROJECT_VERSION, project.getVersion());
-            config.property(PROJECT_CLASSPATH, project.getRuntimeClasspathElements());
-            config.property(PROJECT_SOURCEDIRS, project.getCompileSourceRoots());
             final List<String> classesDirs = project.getCompileClasspathElements()
                                                     .stream()
-                                                    .filter(d -> !d.endsWith(".jar"))
+                                                    .filter(d -> !d.endsWith(JAR_FILE_SUFFIX))
                                                     .collect(Collectors.toList());
             config.property(PROJECT_CLASSDIRS, classesDirs);
+            config.property(PROJECT_SOURCEDIRS, project.getCompileSourceRoots());
             final List<String> resourceDirs = project.getResources()
                                                      .stream()
                                                      .map(Resource::getDirectory)
                                                      .collect(Collectors.toList());
             config.property(PROJECT_RESOURCEDIRS, resourceDirs);
-            config.buildSucceeded();
-            config.store();
+            final Path libsDir = projectDir.resolve(TARGET_DIR_NAME).resolve(LIBS_DIR_NAME);
+            final List<String> classPath = new ArrayList<>(classesDirs);
+            classPath.add(libsDir.toString());
+            config.property(PROJECT_CLASSPATH, classPath);
         } catch (DependencyResolutionRequiredException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void invalidateConfig(ProjectConfig config) {
+    private void storeConfig() {
+        config.buildSucceeded();
+        config.store();
+    }
+
+    private void invalidateConfig() {
+        this.config = ProjectConfig.loadHelidonCliConfig(supportedProjectDir);
         config.buildFailed();
         config.store();
     }
@@ -202,8 +216,9 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
         public void mojoSucceeded(ExecutionEvent event) {
             final MojoExecution execution = event.getMojoExecution();
             next.mojoSucceeded(event);
-            if (execution.getGoal().equals(COMPILE_GOAL)) {
-                compileSucceeded = true;
+            if (execution.getGoal().equals(COPY_DEPENDENCIES_GOAL)
+                && execution.getExecutionId().equals(COPY_LIBS_EXECUTION_ID)) {
+                collectConfig(event.getProject());
             }
         }
 
