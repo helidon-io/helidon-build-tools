@@ -17,14 +17,12 @@
 package io.helidon.build.dev.maven;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import io.helidon.build.util.ProjectConfig;
 
 import org.apache.maven.AbstractMavenLifecycleParticipant;
-import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.execution.AbstractExecutionListener;
 import org.apache.maven.execution.ExecutionEvent;
 import org.apache.maven.execution.ExecutionListener;
@@ -38,7 +36,6 @@ import org.codehaus.plexus.component.annotations.Component;
 
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
-import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSPATH;
 import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_RESOURCEDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCEDIRS;
@@ -56,14 +53,13 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
     private static final String MULTI_MODULE_PROJECT = "Multi-module projects are not supported.";
     private static final String MISSING_MAIN_CLASS = "The required '" + MAIN_CLASS_PROPERTY + "' property is missing.";
     private static final String MISSING_DOT_HELIDON = "The required " + DOT_HELIDON + " file is missing.";
-    private static final String COPY_DEPENDENCIES_GOAL = "copy-dependencies";
-    private static final String COPY_LIBS_EXECUTION_ID = "copy-libs";
-    private static final String TARGET_DIR_NAME = "target";
-    private static final String LIBS_DIR_NAME = "libs";
+    private static final List<String> COMPILE_AND_RUNTIME_SCOPES = List.of("compile", "runtime");
+    private static final List<String> COMPILE_SCOPE = List.of("compile");
+    private static final String COMPILE_GOAL = "compile";
     private static final String JAR_FILE_SUFFIX = ".jar";
 
     private Path supportedProjectDir;
-    private ProjectConfig config;
+    private ProjectConfig projectConfig;
 
     /**
      * Assert that the project is one whose configuration we can support.
@@ -85,7 +81,7 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
     public void afterProjectsRead(MavenSession session) {
         // Init state
         supportedProjectDir = null;
-        config = null;
+        projectConfig = null;
         try {
             // Ensure that we support this project
             supportedProjectDir = assertSupportedProject(session);
@@ -108,7 +104,7 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
             } else if (result.hasExceptions()) {
                 debug("Build failed: %s", result.getExceptions());
                 invalidateConfig();
-            } else if (config != null) {
+            } else if (projectConfig != null) {
                 debug("Build succeeded, with compilation. Updating config.");
                 storeConfig();
             } else {
@@ -119,40 +115,38 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
     }
 
     private void collectConfig(MavenProject project) {
-        try {
-            final Path projectDir = project.getBasedir().toPath();
-            config = ProjectConfig.loadHelidonCliConfig(projectDir);
-            config.property(PROJECT_MAINCLASS, project.getProperties().getProperty(MAIN_CLASS_PROPERTY));
-            config.property(PROJECT_VERSION, project.getVersion());
-            final List<String> classesDirs = project.getCompileClasspathElements()
-                                                    .stream()
-                                                    .filter(d -> !d.endsWith(JAR_FILE_SUFFIX))
-                                                    .collect(Collectors.toList());
-            config.property(PROJECT_CLASSDIRS, classesDirs);
-            config.property(PROJECT_SOURCEDIRS, project.getCompileSourceRoots());
-            final List<String> resourceDirs = project.getResources()
-                                                     .stream()
-                                                     .map(Resource::getDirectory)
-                                                     .collect(Collectors.toList());
-            config.property(PROJECT_RESOURCEDIRS, resourceDirs);
-            final Path libsDir = projectDir.resolve(TARGET_DIR_NAME).resolve(LIBS_DIR_NAME);
-            final List<String> classPath = new ArrayList<>(classesDirs);
-            classPath.add(libsDir.toString());
-            config.property(PROJECT_CLASSPATH, classPath);
-        } catch (DependencyResolutionRequiredException e) {
-            throw new RuntimeException(e);
-        }
+        final Path projectDir = project.getBasedir().toPath();
+        final ProjectConfig config = ProjectConfig.loadHelidonCliConfig(projectDir);
+        config.property(PROJECT_MAINCLASS, project.getProperties().getProperty(MAIN_CLASS_PROPERTY));
+        config.property(PROJECT_VERSION, project.getVersion());
+        final Path outputDir = projectDir.resolve(project.getBuild().getOutputDirectory());
+        final List<String> classesDirs = List.of(outputDir.toString());
+        config.property(PROJECT_CLASSDIRS, classesDirs);
+        config.property(PROJECT_SOURCEDIRS, project.getCompileSourceRoots());
+        final List<String> resourceDirs = project.getResources()
+                                                 .stream()
+                                                 .map(Resource::getDirectory)
+                                                 .collect(Collectors.toList());
+        config.property(PROJECT_RESOURCEDIRS, resourceDirs);
+
+        // NOTE: The classpath is computed by MavenProjectSupplier rather than being
+        //       computed and stored here. This was done to solve a bug with MP where
+        //       the classpath was incorrect at the end of the compile step, and the
+        //       fix to correct it here required the use of "prepare-package" rather
+        //       than "process-classes", slowing everything down.
+
+        this.projectConfig = config;
     }
 
     private void storeConfig() {
-        config.buildSucceeded();
-        config.store();
+        projectConfig.buildSucceeded();
+        projectConfig.store();
     }
 
     private void invalidateConfig() {
-        this.config = ProjectConfig.loadHelidonCliConfig(supportedProjectDir);
-        config.buildFailed();
-        config.store();
+        projectConfig = ProjectConfig.loadHelidonCliConfig(supportedProjectDir);
+        projectConfig.buildFailed();
+        projectConfig.store();
     }
 
     private static void assertSupportedProject(boolean supported, String reasonIfUnsupported) {
@@ -216,8 +210,7 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
         public void mojoSucceeded(ExecutionEvent event) {
             final MojoExecution execution = event.getMojoExecution();
             next.mojoSucceeded(event);
-            if (execution.getGoal().equals(COPY_DEPENDENCIES_GOAL)
-                && execution.getExecutionId().equals(COPY_LIBS_EXECUTION_ID)) {
+            if (execution.getGoal().equals(COMPILE_GOAL)) {
                 collectConfig(event.getProject());
             }
         }

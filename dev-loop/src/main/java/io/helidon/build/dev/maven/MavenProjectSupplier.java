@@ -24,7 +24,6 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import io.helidon.build.dev.BuildExecutor;
@@ -35,6 +34,7 @@ import io.helidon.build.dev.BuildType;
 import io.helidon.build.dev.DirectoryType;
 import io.helidon.build.dev.FileType;
 import io.helidon.build.dev.Project;
+import io.helidon.build.dev.Project.Builder;
 import io.helidon.build.dev.ProjectDirectory;
 import io.helidon.build.dev.ProjectSupplier;
 import io.helidon.build.util.Log;
@@ -42,7 +42,11 @@ import io.helidon.build.util.ProjectConfig;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
+import org.apache.maven.project.DefaultDependencyResolutionRequest;
+import org.apache.maven.project.DependencyResolutionException;
+import org.apache.maven.project.DependencyResolutionRequest;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.ProjectDependenciesResolver;
 
 import static io.helidon.build.dev.BuildComponent.createBuildComponent;
 import static io.helidon.build.dev.BuildFile.createBuildFile;
@@ -54,19 +58,22 @@ import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
 import static io.helidon.build.util.FileUtils.lastModifiedTime;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
-import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSPATH;
 import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_RESOURCEDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCEDIRS;
 import static io.helidon.build.util.ProjectConfig.loadHelidonCliConfig;
 import static io.helidon.build.util.TimeUtils.toDateTime;
+import static java.util.Objects.requireNonNull;
+import static org.eclipse.aether.util.artifact.JavaScopes.COMPILE;
+import static org.eclipse.aether.util.artifact.JavaScopes.RUNTIME;
+import static org.eclipse.aether.util.filter.DependencyFilterUtils.classpathFilter;
 
 /**
  * A {@code ProjectSupplier} for Maven projects.
  */
 public class MavenProjectSupplier implements ProjectSupplier {
-    private static final List<String> CLEAN_BUILD_COMMAND = List.of("clean", "prepare-package", "-DskipTests");
-    private static final List<String> BUILD_COMMAND = List.of("prepare-package", "-DskipTests");
+    private static final List<String> CLEAN_BUILD_COMMAND = List.of("clean", "process-classes", "-DskipTests");
+    private static final List<String> BUILD_COMMAND = List.of("process-classes", "-DskipTests");
     private static final String TARGET_DIR_NAME = "target";
     private static final String POM_FILE = "pom.xml";
     private static final String DOT = ".";
@@ -81,9 +88,11 @@ public class MavenProjectSupplier implements ProjectSupplier {
         return !name.equals(TARGET_DIR_NAME);
     };
 
-    private final AtomicReference<MavenProject> project;
+    private final MavenProject project;
     private final MavenSession session;
     private final BuildPluginManager plugins;
+    private final ProjectDependenciesResolver dependencyResolver;
+    private final DependencyResolutionRequest dependencyRequest;
     private final AtomicBoolean firstBuild;
     private BuildType buildType;
     private ProjectConfig config;
@@ -167,14 +176,19 @@ public class MavenProjectSupplier implements ProjectSupplier {
      * @param project The maven project.
      * @param session The maven session.
      * @param plugins The maven plugin manager.
+     * @param resolver The maven dependencies resolver;.
      */
     public MavenProjectSupplier(MavenProject project,
                                 MavenSession session,
-                                BuildPluginManager plugins) {
+                                BuildPluginManager plugins,
+                                ProjectDependenciesResolver resolver) {
         MavenProjectConfigCollector.assertSupportedProject(session);
-        this.project = new AtomicReference<>(project);
-        this.session = session;
-        this.plugins = plugins;
+        this.project = project;
+        this.session = requireNonNull(session);
+        this.plugins = requireNonNull(plugins);
+        this.dependencyResolver = requireNonNull(resolver);
+        this.dependencyRequest = new DefaultDependencyResolutionRequest(project, requireNonNull(session.getRepositorySession()))
+            .setResolutionFilter(classpathFilter(COMPILE, RUNTIME));
         this.firstBuild = new AtomicBoolean(true);
     }
 
@@ -231,7 +245,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
 
     private Project createProject(Path projectDir, BuildType buildType) {
         // Root directory
-        final Project.Builder builder = Project.builder().buildType(buildType);
+        final Builder builder = Project.builder().buildType(buildType);
         final ProjectDirectory root = createProjectDirectory(DirectoryType.Project, projectDir);
         builder.rootDirectory(root);
 
@@ -239,9 +253,8 @@ public class MavenProjectSupplier implements ProjectSupplier {
         final Path pomFile = assertFile(projectDir.resolve(POM_FILE));
         builder.buildFile(createBuildFile(root, FileType.MavenPom, pomFile));
 
-        // Dependencies - Should we consider the classes/lib?
-        final List<String> classpath = config.propertyAsList(PROJECT_CLASSPATH);
-        classpath.stream().map(s -> Path.of(s)).forEach(builder::dependency);
+        // Dependencies
+        addDependencies(builder);
 
         // Build components
         final List<String> sourceDirs = config.propertyAsList(PROJECT_SOURCEDIRS);
@@ -276,9 +289,22 @@ public class MavenProjectSupplier implements ProjectSupplier {
         return builder.build();
     }
 
+    private void addDependencies(Builder builder) {
+        try {
+            dependencyResolver.resolve(dependencyRequest)
+                              .getDependencies()
+                              .stream()
+                              .map(d -> d.getArtifact().getFile().toPath())
+                              .forEach(builder::dependency);
+        } catch (DependencyResolutionException e) {
+            throw new IllegalStateException("Dependency resolution failed: " + e.getMessage());
+        }
+    }
+
+
     private BuildStep compileStep() {
         return MavenGoalBuildStep.builder()
-                                 .mavenProject(project.get())
+                                 .mavenProject(project)
                                  .mavenSession(session)
                                  .pluginManager(plugins)
                                  .goal(MavenGoalBuildStep.compileGoal())
@@ -287,7 +313,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
 
     private BuildStep resourcesStep() {
         return MavenGoalBuildStep.builder()
-                                 .mavenProject(project.get())
+                                 .mavenProject(project)
                                  .mavenSession(session)
                                  .pluginManager(plugins)
                                  .goal(MavenGoalBuildStep.resourcesGoal())

@@ -170,7 +170,7 @@ public class ConfigProperties {
     public void store() {
         try {
             try (FileWriter writer = new FileWriter(file)) {
-                properties.store(writer, getClass().getName());
+                properties.store(writer, "Helidon Project Configuration");
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
