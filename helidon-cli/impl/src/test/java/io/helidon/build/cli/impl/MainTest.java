@@ -45,7 +45,6 @@ public class MainTest {
         res = exec();
         assertThat(res.code, is(equalTo(0)));
         assertThat(res.output, is(equalTo(CLI_USAGE)));
-        throw new AssertionError("this is a dummy test failure!");
     }
 
     @Test
