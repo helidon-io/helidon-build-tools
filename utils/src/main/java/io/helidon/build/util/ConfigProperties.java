@@ -22,6 +22,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -99,12 +100,12 @@ public class ConfigProperties {
     }
 
     /**
-     * Set property using string list and {@link #DELIMITER}.
+     * Set property using string collection and {@link #DELIMITER}.
      *
      * @param key The key.
-     * @param values The string list.
+     * @param values The strings.
      */
-    public void property(String key, List<String> values) {
+    public void property(String key, Collection<String> values) {
         properties.setProperty(key, String.join(DELIMITER, values));
     }
 
@@ -169,7 +170,7 @@ public class ConfigProperties {
     public void store() {
         try {
             try (FileWriter writer = new FileWriter(file)) {
-                properties.store(writer, getClass().getName());
+                properties.store(writer, "Helidon Project Configuration");
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);

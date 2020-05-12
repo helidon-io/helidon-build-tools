@@ -145,7 +145,11 @@ public class DevLoop {
                 log("%s", BoldBlue.apply("up to date"));
             } else {
                 String operation = cycleNumber == 0 ? DEV_LOOP_BUILD_STARTING : "re" + DEV_LOOP_BUILD_STARTING;
-                log("%s (%s)", BoldBlue.apply(operation), type);
+                if (type == BuildType.Incremental) {
+                    log("%s (%s)", BoldBlue.apply(operation), type);
+                } else {
+                    log("%s", BoldBlue.apply(operation));
+                }
                 buildStartTime = System.currentTimeMillis();
             }
         }
