@@ -31,6 +31,7 @@ import static io.helidon.build.cli.impl.InitCommand.DEFAULT_FLAVOR;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_GROUP_ID;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_NAME;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_PACKAGE;
+import static io.helidon.build.cli.impl.TestUtils.assertPackageExist;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -155,9 +156,7 @@ class InitTestHelper {
         assertThat(model.getArtifactId(), is(artifactId));
 
         // Package
-        Path packageDir = projectDir.resolve("src/main/java")
-                .resolve(packageName.replace('.', '/'));
-        assertTrue(Files.exists(packageDir));
+        assertPackageExist(projectDir, packageName);
 
         // Name
         assertThat(model.getName(), is(name));

@@ -16,6 +16,7 @@
 
 package io.helidon.build.util;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileVisitResult;
@@ -25,8 +26,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
@@ -49,6 +52,8 @@ public final class FileUtils {
      * The working directory.
      */
     public static final Path WORKING_DIR = Paths.get(System.getProperty("user.dir")).toAbsolutePath();
+
+    private static final String PATH_VAR = "PATH";
 
     /**
      * Returns the relative path from the working directory for the given path, if possible.
@@ -142,7 +147,7 @@ public final class FileUtils {
     public static List<Path> listFiles(Path directory, Predicate<String> fileNameFilter, int maxDepth) {
         try {
             return Files.find(assertDir(directory), maxDepth, (path, attrs) ->
-                attrs.isRegularFile() && fileNameFilter.test(path.getFileName().toString())
+                    attrs.isRegularFile() && fileNameFilter.test(path.getFileName().toString())
             ).collect(Collectors.toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -169,7 +174,7 @@ public final class FileUtils {
     public static List<Path> list(Path directory, final int maxDepth) {
         try {
             return Files.find(assertDir(directory), maxDepth, (path, attrs) -> true)
-                        .collect(Collectors.toList());
+                    .collect(Collectors.toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -267,13 +272,13 @@ public final class FileUtils {
             if (Files.isDirectory(directory)) {
                 try (Stream<Path> stream = Files.walk(directory)) {
                     stream.sorted(Comparator.reverseOrder())
-                          .forEach(file -> {
-                              try {
-                                  Files.delete(file);
-                              } catch (IOException e) {
-                                  throw new UncheckedIOException(e);
-                              }
-                          });
+                            .forEach(file -> {
+                                try {
+                                    Files.delete(file);
+                                } catch (IOException e) {
+                                    throw new UncheckedIOException(e);
+                                }
+                            });
                 }
             } else {
                 throw new IllegalArgumentException(directory + " is not a directory");
@@ -294,14 +299,14 @@ public final class FileUtils {
             if (Files.isDirectory(directory)) {
                 try (Stream<Path> stream = Files.walk(directory)) {
                     stream.sorted(Comparator.reverseOrder())
-                          .filter(file -> !file.equals(directory))
-                          .forEach(file -> {
-                              try {
-                                  Files.delete(file);
-                              } catch (IOException e) {
-                                  throw new UncheckedIOException(e);
-                              }
-                          });
+                            .filter(file -> !file.equals(directory))
+                            .forEach(file -> {
+                                try {
+                                    Files.delete(file);
+                                } catch (IOException e) {
+                                    throw new UncheckedIOException(e);
+                                }
+                            });
                 }
             } else {
                 throw new IllegalArgumentException(directory + " is not a directory");
@@ -374,6 +379,20 @@ public final class FileUtils {
      */
     public static String fileName(Path file) {
         return requireNonNull(file.getFileName()).toString();
+    }
+
+    /**
+     * Find an executable in the {@code PATH} environment variable, if present.
+     *
+     * @param executableName The executable name.
+     * @return The path.
+     */
+    public static Optional<Path> findExecutableInPath(String executableName) {
+        return Arrays.stream(requireNonNull(System.getenv(PATH_VAR)).split(File.pathSeparator))
+                .map(dir -> Paths.get(dir))
+                .map(path -> path.resolve(executableName))
+                .filter(Files::isExecutable)
+                .findFirst();
     }
 
     private FileUtils() {

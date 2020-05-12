@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION;
+import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -72,15 +72,17 @@ class TestUtils {
     }
 
     static ExecResult exec(String... args) throws IOException, InterruptedException {
+        List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-cp", "\"" + System.getProperty("java.class.path") + "\""));
+        String version = System.getProperty(HELIDON_VERSION_PROPERTY);
         return execWithDirAndInput(null, null, args);
     }
 
     static ExecResult execWithDirAndInput(File wd, File input, String... args) throws IOException, InterruptedException {
         List<String> cmdArgs = new ArrayList<>();
         cmdArgs.addAll(List.of(javaPath(), "-cp", "\"" + System.getProperty("java.class.path") + "\""));
-        String version = System.getProperty(HELIDON_VERSION);
+        String version = System.getProperty(HELIDON_VERSION_PROPERTY);
         if (version != null) {
-            cmdArgs.add("-D" + HELIDON_VERSION + "=" + version);
+            cmdArgs.add("-D" + HELIDON_VERSION_PROPERTY + "=" + version);
         }
         cmdArgs.add(Main.class.getName());
         cmdArgs.addAll(Arrays.asList(args));

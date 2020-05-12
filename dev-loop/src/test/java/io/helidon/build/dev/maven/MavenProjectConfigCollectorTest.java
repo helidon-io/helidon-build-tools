@@ -27,7 +27,6 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
-import static io.helidon.build.test.TestFiles.ensureDevLoopExtension;
 import static io.helidon.build.test.TestFiles.helidonSeProject;
 import static io.helidon.build.test.TestFiles.helidonSeProjectCopy;
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
@@ -53,7 +52,7 @@ class MavenProjectConfigCollectorTest {
 
     @Test
     void testMissingDotHelidonFileDoesNotCauseFailure() throws Exception {
-        final Path projectDir = ensureDevLoopExtension(helidonSeProject());
+        final Path projectDir = helidonSeProject();
         final TestMonitor monitor = new TestMonitor(1);
         final BuildExecutor executor = new ForkedMavenExecutor(projectDir, monitor, 120);
         final Path dotHelidonFile = projectDir.resolve(DOT_HELIDON);
@@ -67,7 +66,7 @@ class MavenProjectConfigCollectorTest {
 
     @Test
     void testWithoutCompile() throws Exception {
-        final Path projectDir = ensureDevLoopExtension(helidonSeProjectCopy());
+        final Path projectDir = helidonSeProjectCopy();
         final TestMonitor monitor = new TestMonitor(1);
         final BuildExecutor executor = new ForkedMavenExecutor(projectDir, monitor, 120);
         final Path dotHelidonFile = projectDir.resolve(DOT_HELIDON);
@@ -88,7 +87,7 @@ class MavenProjectConfigCollectorTest {
 
     @Test
     void testWithCompile() throws Exception {
-        final Path projectDir = ensureDevLoopExtension(helidonSeProjectCopy());
+        final Path projectDir = helidonSeProjectCopy();
         final TestMonitor monitor = new TestMonitor(1);
         final BuildExecutor executor = new ForkedMavenExecutor(projectDir, monitor, 120);
         final Path dotHelidonFile = projectDir.resolve(DOT_HELIDON);

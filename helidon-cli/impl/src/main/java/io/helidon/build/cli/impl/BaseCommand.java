@@ -30,6 +30,7 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.build.cli.harness.CommandContext;
+import io.helidon.build.util.AnsiConsoleInstaller;
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.ProcessMonitor;
@@ -48,8 +49,7 @@ import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 public abstract class BaseCommand {
 
     static final String HELIDON_PROPERTIES = "helidon.properties";
-    static final String HELIDON_VERSION = "helidon.version";
-    static final String MAVEN_EXEC = Constants.OS.mavenExec();
+    static final String HELIDON_VERSION_PROPERTY = "helidon.version";
     static final String JAVA_HOME = Constants.javaHome();
     static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
     static final long SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
@@ -57,6 +57,10 @@ public abstract class BaseCommand {
     private Properties cliConfig;
     private ProjectConfig projectConfig;
     private Path projectDir;
+
+    protected BaseCommand() {
+        AnsiConsoleInstaller.ensureInstalled();
+    }
 
     protected ProjectConfig projectConfig(Path dir) {
         if (projectConfig != null && dir.equals(projectDir)) {
@@ -80,6 +84,17 @@ public abstract class BaseCommand {
                 return cliConfig;
             }
         } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected Model readPomModel(File pomFile) {
+        try {
+            try (FileReader fr = new FileReader(pomFile)) {
+                MavenXpp3Reader mvnReader = new MavenXpp3Reader();
+                return mvnReader.read(fr);
+            }
+        } catch (IOException | XmlPullParserException e) {
             throw new RuntimeException(e);
         }
     }

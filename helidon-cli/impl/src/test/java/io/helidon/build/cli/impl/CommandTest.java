@@ -18,6 +18,7 @@ package io.helidon.build.cli.impl;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import io.helidon.build.test.HelidonTestVersions;
 import io.helidon.build.test.TestFiles;
 import io.helidon.build.util.HelidonVariant;
 
@@ -27,7 +28,12 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION;
+import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARTIFACT_ID;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_GROUP_ID;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_NAME;
+import static io.helidon.build.util.PomUtils.HELIDON_PLUGIN_VERSION_PROPERTY;
+
 import static io.helidon.build.cli.impl.TestUtils.exec;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -40,10 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class CommandTest {
 
-    private static final String HELIDON_VERSION_TEST = "2.0.0-SNAPSHOT";
-    private static final String MY_PROJECT = "myproject";
-    private static final String MY_GROUP_ID = "mygroup";
-    private static final String MY_ARTIFACT_ID = "myartifact";
+    private static final String HELIDON_VERSION_TEST = HelidonTestVersions.currentHelidonReleaseVersion();
+    private static final String HELIDON_SNAPSHOT_VERSION = HelidonTestVersions.currentHelidonSnapshotVersion();
 
     private HelidonVariant variant = HelidonVariant.SE;
     private Path targetDir = TestFiles.targetDir();
@@ -54,7 +58,8 @@ public class CommandTest {
      */
     @BeforeAll
     public static void setHelidonVersion() {
-        System.setProperty(HELIDON_VERSION, HELIDON_VERSION_TEST);
+        System.setProperty(HELIDON_VERSION_PROPERTY, HELIDON_SNAPSHOT_VERSION);
+        System.setProperty(HELIDON_PLUGIN_VERSION_PROPERTY, HELIDON_VERSION_TEST);
     }
 
     @Test
@@ -63,32 +68,32 @@ public class CommandTest {
         TestUtils.ExecResult res = exec("init",
                 "--flavor", variant.toString(),
                 "--project ", targetDir.toString(),
-                "--version ", HELIDON_VERSION_TEST,
-                "--artifactid", MY_ARTIFACT_ID,
-                "--groupid", MY_GROUP_ID,
-                "--name", MY_PROJECT,
+                "--version ", HELIDON_SNAPSHOT_VERSION,
+                "--artifactid", DEFAULT_ARTIFACT_ID,
+                "--groupid", DEFAULT_GROUP_ID,
+                "--name", DEFAULT_NAME,
                 "--batch");
         System.out.println(res.output);
         assertThat(res.code, is(equalTo(0)));
-        Path projectDir = targetDir.resolve(Path.of(MY_PROJECT));
+        Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
         assertTrue(Files.exists(projectDir));
     }
 
     @Test
     @Order(2)
     public void testBuild() throws Exception {
-        Path projectDir = targetDir.resolve(Path.of(MY_PROJECT));
+        Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
         TestUtils.ExecResult res = exec("build",
                 "--project ", projectDir.toString());
         System.out.println(res.output);
         assertThat(res.code, is(equalTo(0)));
-        assertTrue(Files.exists(projectDir.resolve("target/" + MY_ARTIFACT_ID + ".jar")));
+        assertTrue(Files.exists(projectDir.resolve("target/" + DEFAULT_ARTIFACT_ID + ".jar")));
     }
 
     @Test
     @Order(3)
     public void testInfo() throws Exception {
-        Path projectDir = targetDir.resolve(Path.of(MY_PROJECT));
+        Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
         TestUtils.ExecResult res = exec("info",
                 "--project ", projectDir.toString());
         System.out.println(res.output);
@@ -98,7 +103,7 @@ public class CommandTest {
     @Test
     @Order(4)
     public void testVersion() throws Exception {
-        Path projectDir = targetDir.resolve(Path.of(MY_PROJECT));
+        Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
         TestUtils.ExecResult res = exec("version",
                 "--project ", projectDir.toString());
         System.out.println(res.output);
@@ -108,7 +113,7 @@ public class CommandTest {
     @Test
     @Order(5)
     public void testClean() {
-        Path projectDir = targetDir.resolve(Path.of(MY_PROJECT));
+        Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
         assertTrue(TestFiles.deleteDirectory(projectDir.toFile()));
         System.out.println("Directory " + projectDir + " deleted");
     }

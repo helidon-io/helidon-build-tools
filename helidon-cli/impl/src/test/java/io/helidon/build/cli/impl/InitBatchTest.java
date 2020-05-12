@@ -19,18 +19,22 @@ import java.nio.file.Path;
 
 import io.helidon.build.test.TestFiles;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARTIFACT_ID;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_FLAVOR;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_GROUP_ID;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_NAME;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARTIFACT_ID;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_GROUP_ID;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_PACKAGE;
+import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.cli.impl.TestUtils.assertPackageExist;
 import static io.helidon.build.cli.impl.TestUtils.exec;
+import static io.helidon.build.test.HelidonTestVersions.currentHelidonReleaseVersion;
+import static io.helidon.build.test.HelidonTestVersions.currentHelidonSnapshotVersion;
+import static io.helidon.build.util.PomUtils.HELIDON_PLUGIN_VERSION_PROPERTY;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -38,26 +42,37 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Class InitBatchTest.
+ * Class InitCommandTest.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class InitBatchTest {
-    private static final String HELIDON_VERSION_TEST = "2.0.0-SNAPSHOT";
 
-    private Path targetDir = TestFiles.targetDir();
+    private static final String HELIDON_VERSION_TEST = currentHelidonReleaseVersion();
+    private static final String HELIDON_SNAPSHOT_VERSION = currentHelidonSnapshotVersion();
+
+    private final Path targetDir = TestFiles.targetDir();
+
+    /**
+     * Overrides version under test. This property must be propagated to all
+     * forked processes.
+     */
+    @BeforeAll
+    public static void setHelidonVersion() {
+        System.setProperty(HELIDON_VERSION_PROPERTY, HELIDON_SNAPSHOT_VERSION);
+        System.setProperty(HELIDON_PLUGIN_VERSION_PROPERTY, HELIDON_VERSION_TEST);
+    }
 
     @Test
     @Order(1)
-    public void testInitGroupPackage() throws Exception {
+    public void testInit() throws Exception {
         TestUtils.ExecResult res = exec("init",
                 "--batch",
-                "--flavor", DEFAULT_FLAVOR,
+                "--flavor", "MP",
                 "--project ", targetDir.toString(),
-                "--version ", HELIDON_VERSION_TEST,
+                "--version ", HELIDON_SNAPSHOT_VERSION,
                 "--groupid", DEFAULT_GROUP_ID,
                 "--artifactid", DEFAULT_ARTIFACT_ID,
-                "--package", DEFAULT_PACKAGE,
-                "--name", DEFAULT_NAME);
+                "--package", DEFAULT_PACKAGE);
         System.out.println(res.output);
         assertThat(res.code, is(equalTo(0)));
         assertPackageExist(targetDir.resolve(DEFAULT_NAME), DEFAULT_PACKAGE);
@@ -65,7 +80,7 @@ public class InitBatchTest {
 
     @Test
     @Order(2)
-    public void testCleanGroupPackage() {
+    public void testClean() {
         Path projectDir = targetDir.resolve(DEFAULT_NAME);
         assertTrue(TestFiles.deleteDirectory(projectDir.toFile()));
         System.out.println("Directory " + projectDir + " deleted");

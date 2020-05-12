@@ -21,17 +21,33 @@ package io.helidon.build.dev;
  */
 public enum ChangeType {
     /**
+     * One or more files changed.
+     */
+    File("file"),
+
+    /**
      * One or more build files changed.
      */
-    BuildFile,
+    BuildFile("build file"),
 
     /**
      * One or more source files changed.
      */
-    SourceFile,
+    SourceFile("source file"),
 
     /**
      * One or more binary files changed.
      */
-    BinaryFile
+    BinaryFile("binary file");
+
+    private final String description;
+
+    ChangeType(String description) {
+        this.description = description;
+    }
+
+    @Override
+    public String toString() {
+        return description;
+    }
 }

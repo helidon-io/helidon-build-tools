@@ -16,24 +16,17 @@
 
 package io.helidon.build.dev.maven;
 
-import java.io.File;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import io.helidon.build.dev.BuildExecutor;
 import io.helidon.build.dev.BuildMonitor;
-import io.helidon.build.util.Constants;
-import io.helidon.build.util.ProcessMonitor;
+import io.helidon.build.util.MavenCommand;
 
 /**
- * A {@link BuildExecutor} that forks a process.
+ * A {@link BuildExecutor} that forks a Maven process.
  */
 public class ForkedMavenExecutor extends BuildExecutor {
-    private static final String MAVEN_EXEC = Constants.OS.mavenExec();
     private final int maxBuildWaitSeconds;
 
     /**
@@ -50,29 +43,19 @@ public class ForkedMavenExecutor extends BuildExecutor {
     }
 
     @Override
-    public void execute(String... args) throws Exception {
-        final List<String> command = new ArrayList<>();
-        command.add(MAVEN_EXEC);
-        command.addAll(Arrays.asList(args));
+    public boolean willFork() {
+        return true;
+    }
 
-        // Make sure we use the current JDK by forcing it first in the path and setting JAVA_HOME. This might be required
-        // if we're in an IDE whose process was started with a different JDK.
-
-        final String javaHome = Constants.javaHome();
-        final String javaHomeBin = javaHome + File.separator + "bin";
-        final ProcessBuilder processBuilder = new ProcessBuilder().directory(projectDirectory().toFile())
-                                                                  .command(command);
-        final Map<String, String> env = processBuilder.environment();
-        final String path = javaHomeBin + File.pathSeparatorChar + env.get("PATH");
-        env.put("PATH", path);
-        env.put("JAVA_HOME", javaHome);
-
-        ProcessMonitor.builder()
-                      .processBuilder(processBuilder)
-                      .stdOut(monitor().stdOutConsumer())
-                      .stdErr(monitor().stdErrConsumer())
-                      .capture(false)
-                      .build()
-                      .execute(maxBuildWaitSeconds, TimeUnit.SECONDS);
+    @Override
+    public void execute(String... args) {
+        MavenCommand.builder()
+                    .directory(projectDirectory())
+                    .arguments(Arrays.asList(args))
+                    .stdOut(monitor().stdOutConsumer())
+                    .stdErr(monitor().stdErrConsumer())
+                    .maxWaitSeconds(maxBuildWaitSeconds)
+                    .build()
+                    .execute();
     }
 }

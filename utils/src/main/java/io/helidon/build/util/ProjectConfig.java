@@ -17,6 +17,7 @@
 package io.helidon.build.util;
 
 import java.io.File;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -89,9 +90,15 @@ public class ProjectConfig extends ConfigProperties {
     public static final String PROJECT_VERSION = "project.version";
 
     /**
+     * Helidon version.
+     */
+    public static final String HELIDON_VERSION = "helidon.version";
+
+    /**
      * Project last successful build time.
      */
     public static final String PROJECT_LAST_BUILD_SUCCESS_TIME = "project.last.build.success.time";
+
 
     /**
      * Tests whether or not the configuration from the {@link #DOT_HELIDON} file in the given project directory exists.
@@ -100,7 +107,31 @@ public class ProjectConfig extends ConfigProperties {
      * @return {@code true} if file exists.
      */
     public static boolean helidonCliConfigExists(Path projectDir) {
-        return Files.isRegularFile(assertDir(projectDir).resolve(DOT_HELIDON));
+        return Files.isRegularFile(toDotHelidon(projectDir));
+    }
+
+    /**
+     * Ensure that the configuration file exists in the given project directory.
+     *
+     * @param projectDir The project directory.
+     * @param helidonVersion The helidon version. May be {@code null}.
+     * @return The config.
+     * @throws UncheckedIOException If it does not exist and could not be created.
+     */
+    public static ProjectConfig ensureHelidonCliConfig(Path projectDir, String helidonVersion) {
+        final Path dotHelidon = toDotHelidon(projectDir);
+        if (Files.isRegularFile(dotHelidon)) {
+            return new ProjectConfig(dotHelidon.toFile());
+        } else {
+            ProjectConfig config = new ProjectConfig(dotHelidon.toFile());
+            config.projectDir(projectDir);
+            String version = System.getProperty(HELIDON_VERSION, helidonVersion);
+            if (version != null) {
+                config.property(PROJECT_VERSION);
+            }
+            config.store();
+            return config;
+        }
     }
 
     /**
@@ -110,8 +141,12 @@ public class ProjectConfig extends ConfigProperties {
      * @return The configuration.
      */
     public static ProjectConfig loadHelidonCliConfig(Path projectDir) {
-        final Path dotHelidon = assertExists(assertDir(projectDir).resolve(DOT_HELIDON));
+        final Path dotHelidon = assertExists(toDotHelidon(projectDir));
         return new ProjectConfig(dotHelidon.toFile());
+    }
+
+    private static Path toDotHelidon(Path projectDir) {
+        return assertDir(projectDir).resolve(DOT_HELIDON);
     }
 
     /**

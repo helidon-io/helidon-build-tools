@@ -30,7 +30,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.build.dev.util.ConsumerPrintStream;
-import io.helidon.build.util.Log;
+import io.helidon.build.util.ProjectConfig;
 
 import static io.helidon.build.dev.DirectoryType.Depencencies;
 import static io.helidon.build.dev.ProjectDirectory.createProjectDirectory;
@@ -42,6 +42,8 @@ import static java.util.Objects.requireNonNull;
  */
 public class Project {
     private static final String JAR_FILE_SUFFIX = ".jar";
+    private final String name;
+    private final BuildType buildType;
     private final ProjectDirectory root;
     private final BuildFiles buildFiles;
     private final List<File> classPath;
@@ -50,9 +52,12 @@ public class Project {
     private final List<BuildFile> dependencies;
     private final List<BuildComponent> components;
     private final String mainClassName;
+    private final ProjectConfig config;
     private final Map<Path, ProjectDirectory> parents;
 
     private Project(Builder builder) {
+        this.name = builder.name;
+        this.buildType = builder.buildType;
         this.root = builder.root;
         this.buildFiles = new BuildFiles(builder.buildFiles);
         this.classPath = new ArrayList<>();
@@ -61,6 +66,7 @@ public class Project {
         this.dependencies = builder.dependencies;
         this.components = builder.components;
         this.mainClassName = builder.mainClassName;
+        this.config = builder.config;
         this.parents = new HashMap<>();
         components.forEach(c -> c.project(this));
         updateDependencies();
@@ -79,6 +85,8 @@ public class Project {
      * A {@code Project} builder.
      */
     public static class Builder {
+        private String name;
+        private BuildType buildType;
         private ProjectDirectory root;
         private List<BuildFile> buildFiles;
         private List<String> compilerFlags;
@@ -86,6 +94,7 @@ public class Project {
         private List<BuildFile> dependencies;
         private List<BuildComponent> components;
         private String mainClassName;
+        private ProjectConfig config;
 
         private Builder() {
             this.buildFiles = new ArrayList<>();
@@ -96,9 +105,31 @@ public class Project {
         }
 
         /**
+         * Sets the project name.
+         *
+         * @param name The name.
+         * @return This instance, for chaining.
+         */
+        public Builder name(String name) {
+            this.name = requireNonNull(name);
+            return this;
+        }
+
+        /**
+         * Sets the build type.
+         *
+         * @param buildType The type.
+         * @return This instance, for chaining.
+         */
+        public Builder buildType(BuildType buildType) {
+            this.buildType = requireNonNull(buildType);
+            return this;
+        }
+
+        /**
          * Sets the project root directory.
          *
-         * @param rootDirectory Thd directory.
+         * @param rootDirectory The directory.
          * @return This instance, for chaining.
          */
         public Builder rootDirectory(ProjectDirectory rootDirectory) {
@@ -162,6 +193,17 @@ public class Project {
         }
 
         /**
+         * Sets the project config.
+         *
+         * @param config The config.
+         * @return This instance, for chaining.
+         */
+        public Builder config(ProjectConfig config) {
+            this.mainClassName = requireNonNull(mainClassName);
+            return this;
+        }
+
+        /**
          * Returns a new project.
          *
          * @return The project.
@@ -173,9 +215,18 @@ public class Project {
             if (mainClassName == null) {
                 throw new IllegalStateException("mainClassName required");
             }
+            if (buildType == null) {
+                throw new IllegalStateException("buildType required");
+            }
             assertNotEmpty(buildFiles, "buildSystemFile");
             assertNotEmpty(dependencyPaths, "dependency");
             assertNotEmpty(components, "component");
+            if (name == null) {
+                name = root.path().getFileName().toString();
+            }
+            if (config == null) {
+                config = ProjectConfig.loadHelidonCliConfig(root.path());
+            }
             return new Project(this);
         }
 
@@ -184,6 +235,24 @@ public class Project {
                 throw new IllegalStateException("At least 1 " + description + " is required");
             }
         }
+    }
+
+    /**
+     * Returns the project name.
+     *
+     * @return The name.
+     */
+    public String name() {
+        return name;
+    }
+
+    /**
+     * Returns the build type.
+     *
+     * @return The type.
+     */
+    public BuildType buildType() {
+        return buildType;
     }
 
     /**
@@ -370,7 +439,6 @@ public class Project {
                                     Consumer<String> stdOut,
                                     Consumer<String> stdErr) throws Exception {
         if (!changes.isEmpty()) {
-            final long startTime = System.currentTimeMillis();
             final PrintStream origOut = System.out;
             final PrintStream origErr = System.err;
             try {
@@ -379,13 +447,12 @@ public class Project {
                 for (final BuildRoot.Changes changed : changes) {
                     changed.root().component().incrementalBuild(changed, stdOut, stdErr);
                 }
+                config.buildSucceeded();
+                config.store();
             } finally {
                 System.setOut(origOut);
                 System.setErr(origErr);
             }
-            final long elapsedTime = System.currentTimeMillis() - startTime;
-            final float elapsedSeconds = elapsedTime / 1000F;
-            Log.info("Build completed in %.1f seconds", elapsedSeconds);
         }
     }
 

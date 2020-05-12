@@ -18,18 +18,15 @@ package io.helidon.build.util;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.function.Predicate;
 
-import org.eclipse.aether.version.Version;
+import io.helidon.build.test.TestFiles;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.util.FileUtils.ensureDirectory;
-import static io.helidon.build.util.Maven.LATEST_RELEASE;
+import static io.helidon.build.test.HelidonTestVersions.currentHelidonReleaseVersion;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -41,7 +38,7 @@ import static org.hamcrest.Matchers.nullValue;
  * Unit test for class {@link QuickstartGenerator}.
  */
 class QuickstartGeneratorTest {
-    private static Path TARGET_DIR = targetDir(QuickstartGeneratorTest.class);
+    private static final Path TARGET_DIR = TestFiles.targetDir(QuickstartGeneratorTest.class);
     private Path generated;
 
     @AfterEach
@@ -58,23 +55,23 @@ class QuickstartGeneratorTest {
     @Test
     void testSeGenerationNonExistentVersion() {
         try {
-            testGeneration(HelidonVariant.SE, version -> version.toString().equals("never published"));
-        } catch (IllegalStateException e) {
-            assertThat(e.getMessage(), containsString("no matching version"));
+            testGeneration(HelidonVariant.SE, "0.0.0");
+        } catch (Exception e) {
+            assertThat(e.getMessage(), containsString("desired archetype does not exist"));
         }
     }
 
     @Test
-    void testSeGenerationLatestVersion() {
-        testGeneration(HelidonVariant.SE, LATEST_RELEASE);
+    void testSeGeneration() {
+        testGeneration(HelidonVariant.SE, currentHelidonReleaseVersion());
     }
 
     @Test
-    void testMpGenerationLatestVersion() {
-        testGeneration(HelidonVariant.MP, LATEST_RELEASE);
+    void testMpGeneration() {
+        testGeneration(HelidonVariant.MP, currentHelidonReleaseVersion());
     }
 
-    private void testGeneration(HelidonVariant variant, Predicate<Version> version) {
+    private void testGeneration(HelidonVariant variant, String version) {
         generated = QuickstartGenerator.generator()
                                        .parentDirectory(TARGET_DIR)
                                        .helidonVariant(variant)
@@ -87,14 +84,5 @@ class QuickstartGeneratorTest {
         assertThat(Files.exists(generated.resolve("src/main/java")), is(true));
         assertThat(Files.exists(generated.resolve("src/main/resources")), is(true));
         assertThat(FileUtils.listFiles(generated, name -> name.endsWith(".java"), 64), is(not(empty())));
-    }
-
-    private static Path targetDir(Class<?> testClass) {
-        try {
-            final Path codeSource = Paths.get(testClass.getProtectionDomain().getCodeSource().getLocation().toURI());
-            return ensureDirectory(codeSource.getParent());
-        } catch (URISyntaxException e) {
-            throw new IllegalStateException(e);
-        }
     }
 }

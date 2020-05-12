@@ -132,6 +132,7 @@ public class ArchetypeEngineTest {
         assertThat(Files.walk(outputDirPath)
                 .filter(p -> !Files.isDirectory(p))
                 .map((p) -> outputDirPath.relativize(p).toString())
+                .sorted()
                 .collect(Collectors.toList()),
                 is(List.of("pom.xml", "src/main/java/com/example/myproject/Main.java")));
 

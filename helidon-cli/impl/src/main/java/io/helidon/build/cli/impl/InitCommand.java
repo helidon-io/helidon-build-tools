@@ -56,7 +56,6 @@ import static io.helidon.build.util.ProjectConfig.FEATURE_PREFIX;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
 import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;
-import static io.helidon.build.cli.impl.PomReader.readPomModel;
 
 /**
  * The {@code init} command.
@@ -236,7 +235,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         ProjectConfig configFile = projectConfig(projectDir);
         configFile.property(PROJECT_DIRECTORY, projectDir.toString());
         configFile.property(PROJECT_FLAVOR, flavor.toString());
-        configFile.property(HELIDON_VERSION, helidonVersion);
+        configFile.property(HELIDON_VERSION_PROPERTY, helidonVersion);
         cliConfig.forEach((key, value) -> {
             String propName = (String) key;
             if (propName.startsWith(FEATURE_PREFIX)) {      // Applies to both SE or MP
@@ -266,7 +265,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
 
     private void ensurePomContent(Path projectDir) {
         // Support a system property override of the version here for testing
-        String helidonVersion = System.getProperty(HELIDON_VERSION, this.helidonVersion);
+        String helidonVersion = System.getProperty(HELIDON_VERSION_PROPERTY, this.helidonVersion);
         File pomFile = projectDir.resolve(POM).toFile();
         Model model = readPomModel(pomFile);
         boolean propertyAdded = ensurePluginVersion(model, helidonVersion);
@@ -310,7 +309,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
 
     private static String defaultHelidonVersion() throws InterruptedException {
         // Check the system property first, primarily to support tests
-        String version = System.getProperty(HELIDON_VERSION);
+        String version = System.getProperty(HELIDON_VERSION_PROPERTY);
         if (version == null) {
             version = lookupLatestHelidonVersion(LATEST_HELIDON_VERSION_LOOKUP_RETRIES,
                     HELIDON_VERSION_LOOKUP_INITIAL_RETRY_DELAY,
