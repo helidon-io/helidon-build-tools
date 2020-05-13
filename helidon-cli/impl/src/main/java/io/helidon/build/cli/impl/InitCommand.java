@@ -54,6 +54,7 @@ import static io.helidon.build.util.ProjectConfig.FEATURE_PREFIX;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
 import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;
+import static io.helidon.build.util.Style.BoldBrightGreen;
 
 /**
  * The {@code init} command.
@@ -242,8 +243,18 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         });
         configFile.store();
 
-        context.logInfo("Switch directory to " + parentDirectory + Constants.DIR_SEP
-                + projectDir.getFileName() + " to use CLI");
+        String dir = BoldBrightGreen.apply(parentDirectory + Constants.DIR_SEP + projectDir.getFileName());
+        Prompter.displayLine("Switch directory to " + dir + " to use CLI");
+
+        if (!batch) {
+            Prompter.displayLine("");
+            boolean startDev = Prompter.promptYesNo("Start development loop?", false);
+            if (startDev) {
+                DevCommand devCommand = new DevCommand(new CommonOptions(projectDir.toFile()),
+                        true, false);
+                devCommand.execute(context);
+            }
+        }
     }
 
     private Map<String, String> initProperties() {
