@@ -28,6 +28,7 @@ import java.util.Objects;
 
 import io.helidon.build.cli.impl.InitCommand.Flavor;
 import io.helidon.build.util.Log;
+
 import org.apache.maven.model.Model;
 
 import static io.helidon.build.util.PomUtils.readPomModel;
@@ -58,12 +59,12 @@ class AppTypeBrowser {
     private static final String ARCHETYPE_PREFIX = "helidon-archetype-apptypes";
 
     /**
-     * Format is helidon-archetype-apptypes-{flavor}-{apptype}-{version}.jar
+     * Format is helidon-archetype-apptypes-{flavor}-{apptype}-{version}.jar.
      */
     private static final String APPTYPE_JAR = ARCHETYPE_PREFIX + "-%s-%s-%s.jar";
 
     /**
-     * Format is helidon-archetype-apptypes-{flavor}-{version}.pom
+     * Format is helidon-archetype-apptypes-{flavor}-{version}.pom.
      */
     private static final String APPTYPE_POM = ARCHETYPE_PREFIX + "-%s-%s.pom";
 

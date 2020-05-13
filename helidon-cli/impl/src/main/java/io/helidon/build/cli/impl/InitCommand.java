@@ -46,14 +46,14 @@ import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
 
-import static io.helidon.build.util.PomUtils.ensureHelidonPluginConfig;
 import static io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import static io.helidon.build.cli.impl.Prompter.displayLine;
 import static io.helidon.build.cli.impl.Prompter.prompt;
+import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;
+import static io.helidon.build.util.PomUtils.ensureHelidonPluginConfig;
 import static io.helidon.build.util.ProjectConfig.FEATURE_PREFIX;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
-import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;
 import static io.helidon.build.util.Style.BoldBrightGreen;
 
 /**
@@ -116,14 +116,21 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
     InitCommand(
             CommonOptions commonOptions,
             @Flag(name = "batch", description = "Enables non-interactive mode") boolean batch,
-            @KeyValue(name = "flavor", description = "Helidon flavor", defaultValue = DEFAULT_FLAVOR) Flavor flavor,
-            @KeyValue(name = "build", description = "Build type", defaultValue = "MAVEN") Build build,
+            @KeyValue(name = "flavor", description = "Helidon flavor",
+                    defaultValue = DEFAULT_FLAVOR) Flavor flavor,
+            @KeyValue(name = "build", description = "Build type",
+                    defaultValue = "MAVEN") Build build,
             @KeyValue(name = "version", description = "Helidon version") String version,
-            @KeyValue(name = "apptype", description = "Application type", defaultValue = DEFAULT_APPTYPE) String appType,
-            @KeyValue(name = "groupid", description = "Project's group ID", defaultValue = DEFAULT_GROUP_ID) String groupId,
-            @KeyValue(name = "artifactid", description = "Project's artifact ID", defaultValue = DEFAULT_ARTIFACT_ID) String artifactId,
-            @KeyValue(name = "package", description = "Project's package name", defaultValue = DEFAULT_PACKAGE) String packageName,
-            @KeyValue(name = "name", description = "Project's name", defaultValue = DEFAULT_NAME) String projectName) {
+            @KeyValue(name = "apptype", description = "Application type",
+                    defaultValue = DEFAULT_APPTYPE) String appType,
+            @KeyValue(name = "groupid", description = "Project's group ID",
+                    defaultValue = DEFAULT_GROUP_ID) String groupId,
+            @KeyValue(name = "artifactid", description = "Project's artifact ID",
+                    defaultValue = DEFAULT_ARTIFACT_ID) String artifactId,
+            @KeyValue(name = "package", description = "Project's package name",
+                    defaultValue = DEFAULT_PACKAGE) String packageName,
+            @KeyValue(name = "name", description = "Project's name",
+                    defaultValue = DEFAULT_NAME) String projectName) {
         this.commonOptions = commonOptions;
         this.batch = batch;
         this.build = build;

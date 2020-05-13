@@ -53,7 +53,7 @@ class FlowNodeControllers {
     /**
      * Base class for all controllers.
      */
-    static abstract class FlowNodeController {
+    abstract static class FlowNodeController {
         private final Map<String, String> properties;
 
         FlowNodeController(Map<String, String> properties) {

@@ -96,8 +96,8 @@ class Prompter {
                 return defaultOption;
             }
             response = response.trim().toLowerCase();
-            return response.equals("y") || response.equals("n") ?
-                    response.equals("y") : promptYesNo(question, defaultOption);
+            return response.equals("y") || response.equals("n")
+                    ? response.equals("y") : promptYesNo(question, defaultOption);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
