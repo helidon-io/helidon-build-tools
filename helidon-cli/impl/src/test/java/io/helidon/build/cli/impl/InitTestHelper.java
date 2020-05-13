@@ -32,6 +32,7 @@ import static io.helidon.build.cli.impl.InitCommand.DEFAULT_FLAVOR;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_GROUP_ID;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_NAME;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_PACKAGE;
+import static io.helidon.build.cli.impl.BaseCommandTest.HELIDON_SNAPSHOT_VERSION;
 import static io.helidon.build.cli.impl.TestUtils.assertPackageExist;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -44,8 +45,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Class InitTestHelper.
  */
 class InitTestHelper {
-
-    private static final String HELIDON_VERSION_TEST = "2.0.0-SNAPSHOT";
 
     private String flavor = DEFAULT_FLAVOR;
     private String apptype = DEFAULT_APPTYPE;
@@ -97,7 +96,7 @@ class InitTestHelper {
         args.add("init");
         args.add("--batch");
         args.add("--version");
-        args.add(HELIDON_VERSION_TEST);
+        args.add(HELIDON_SNAPSHOT_VERSION);
         args.add("--project");
         args.add(targetDir.toString());
         if (!flavor.equals(DEFAULT_FLAVOR)) {

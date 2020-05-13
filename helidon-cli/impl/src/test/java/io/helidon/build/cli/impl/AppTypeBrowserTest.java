@@ -17,20 +17,20 @@ package io.helidon.build.cli.impl;
 
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.List;
 
 import io.helidon.build.cli.impl.InitCommand.Flavor;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.cli.impl.AppTypeBrowser.REMOTE_REPO;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static io.helidon.build.cli.impl.AppTypeBrowser.REMOTE_REPO;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 
 /**
  * Class AppTypeBrowserTest.
  */
-public class AppTypeBrowserTest {
-
-    private static final String HELIDON_VERSION = "2.0.0-M2";
+public class AppTypeBrowserTest extends BaseCommandTest {
 
     /**
      * Test a simple file download from remote repo.
@@ -40,25 +40,31 @@ public class AppTypeBrowserTest {
     @Test
     public void testDownload() throws Exception {
         Path file = Path.of("maven-metadata.xml");
-        AppTypeBrowser browser = new AppTypeBrowser(Flavor.SE, HELIDON_VERSION);
+        AppTypeBrowser browser = new AppTypeBrowser(Flavor.SE, HELIDON_VERSION_TEST);
         browser.downloadArtifact(new URL(REMOTE_REPO + "/io/helidon/build-tools/maven-metadata.xml"), file);
         assertThat(file.toFile().exists(), is(true));
         assertThat(file.toFile().delete(), is(true));
     }
 
     /**
-     * No assertions since we don't have a release yet. This code only exercises
-     * the cache logic for now.
+     * Assertions should be strengthen after we have a release.
      */
     @Test
-    public void testCache() {
-        AppTypeBrowser browser = new AppTypeBrowser(Flavor.MP, "2.0.0-SNAPSHOT");
-        browser.appTypes().stream()
-                .map(browser::archetypeJar)
-                .forEach(System.out::println);
-        browser = new AppTypeBrowser(Flavor.SE, "2.0.0-SNAPSHOT");
-        browser.appTypes().stream()
-                .map(browser::archetypeJar)
-                .forEach(System.out::println);
+    public void testMpBrowser() {
+        AppTypeBrowser browser = new AppTypeBrowser(Flavor.MP, HELIDON_SNAPSHOT_VERSION);
+        List<String> appTypes = browser.appTypes();
+        assertThat(appTypes.size(), is(greaterThanOrEqualTo(0)));
+        assertThat(appTypes.stream().map(browser::archetypeJar).count(), is(greaterThanOrEqualTo(0L)));
+    }
+
+    /**
+     * Assertions should be strengthen after we have a release.
+     */
+    @Test
+    public void testSeBrowser() {
+        AppTypeBrowser browser = new AppTypeBrowser(Flavor.SE, HELIDON_SNAPSHOT_VERSION);
+        List<String> appTypes = browser.appTypes();
+        assertThat(appTypes.size(), is(greaterThanOrEqualTo(0)));
+        assertThat(appTypes.stream().map(browser::archetypeJar).count(), is(greaterThanOrEqualTo(0L)));
     }
 }

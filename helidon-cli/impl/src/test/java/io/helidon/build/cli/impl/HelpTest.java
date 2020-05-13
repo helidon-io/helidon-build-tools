@@ -25,9 +25,9 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 
 /**
- * CLI main class test.
+ * Class HelpTest.
  */
-public class MainTest {
+public class HelpTest {
 
     @Test
     public void testHelp() throws IOException, InterruptedException {

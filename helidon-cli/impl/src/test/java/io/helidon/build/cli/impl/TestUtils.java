@@ -26,6 +26,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.build.cli.impl.InitCommand.Flavor;
+
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -110,5 +112,16 @@ class TestUtils {
             path = path.resolve(dir);
             assertTrue(Files.exists(path));
         }
+    }
+
+    static boolean apptypeArchetypeFound(Flavor flavor, String helidonVersion, String apptype) {
+        AppTypeBrowser browser = new AppTypeBrowser(flavor, helidonVersion);
+        boolean found = browser.appTypes().contains(apptype);
+        if (!found) {
+            String msg = String.format("WARNING: Unable to find archetype %s for flavor %s and version %s",
+                    apptype, flavor, helidonVersion);
+            System.err.println(msg);
+        }
+        return found;
     }
 }
