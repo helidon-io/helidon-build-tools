@@ -20,12 +20,14 @@ import java.io.File;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -33,8 +35,11 @@ import io.helidon.build.dev.util.ConsumerPrintStream;
 import io.helidon.build.util.ProjectConfig;
 
 import static io.helidon.build.dev.DirectoryType.Depencencies;
+import static io.helidon.build.dev.FileChangeAware.changedTimeOf;
 import static io.helidon.build.dev.ProjectDirectory.createProjectDirectory;
 import static io.helidon.build.util.FileUtils.listFiles;
+import static io.helidon.build.util.FileUtils.newerThan;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -319,12 +324,12 @@ public class Project {
     }
 
     /**
-     * Returns whether or not any build file has changed.
+     * Returns the most recent modification time if any build file has an updated modification time.
      *
-     * @return {@code true} if any build file has changed.
+     * @return The time, if changed.
      */
-    public boolean haveBuildFilesChanged() {
-        return buildFiles.haveChanged();
+    public Optional<FileTime> buildFilesChangedTime() {
+        return buildFiles.changedTime();
     }
 
     /**
@@ -333,34 +338,40 @@ public class Project {
      * @return The changes.
      */
     public List<BuildRoot.Changes> sourceChanges() {
-        final List<BuildRoot.Changes> result = new ArrayList<>();
+        List<BuildRoot.Changes> result = null;
         for (final BuildComponent component : components()) {
             final BuildRoot.Changes changes = component.sourceRoot().changes();
             if (!changes.isEmpty()) {
+                if (result == null) {
+                    result = new ArrayList<>();
+                }
                 result.add(changes);
             }
         }
-        return result;
+        return result == null ? emptyList() : result;
     }
 
     /**
-     * Returns whether or not any binaries have changed.
+     * Returns the most recent modification time if any build file has an updated modification time.
      *
-     * @return The changes.
+     * @return The time, if changed.
      */
-    public boolean hasBinaryChanges() {
+    public Optional<FileTime> binaryFilesChangedTime() {
+        FileTime changed = null;
         for (final BuildComponent component : components()) {
             final BuildRoot.Changes changes = component.outputRoot().changes();
             if (!changes.isEmpty()) {
-                return true;
+                final Optional<FileTime> changedTime = changes.changedTime();
+                if (changedTime.isPresent() && newerThan(changedTime.get(), changed)) {
+                    changed = changedTime.get();
+                }
             }
         }
-        for (BuildFile dependency : dependencies()) {
-            if (dependency.hasChanged()) {
-                return true;
-            }
+        final Optional<FileTime> changedTime = changedTimeOf(dependencies());
+        if (changedTime.isPresent() && newerThan(changedTime.get(), changed)) {
+            changed = changedTime.get();
         }
-        return false;
+        return Optional.ofNullable(changed);
     }
 
     /**
@@ -369,60 +380,63 @@ public class Project {
      * @return {@code true} if up to date, {@code false} if not.
      */
     public boolean isBuildUpToDate() {
-        long latestSource = 0;
-        long oldestBinary = 0;
+        FileTime latestSource = null;
+        FileTime latestBinary = null;
+
         for (final BuildFile file : buildFiles.list()) {
-            if (file.hasChanged()) {
-                return false;
-            }
-            final long lastModified = file.lastModifiedTime();
-            if (lastModified > latestSource) {
-                latestSource = lastModified;
+            final Optional<FileTime> changed = file.changedTimeIfNewerThan(latestSource);
+            if (changed.isPresent()) {
+                latestSource = changed.get();
             }
         }
         for (BuildComponent component : components()) {
             for (final BuildFile file : component.sourceRoot().list()) {
-                if (file.hasChanged()) {
-                    return false;
-                }
-                final long lastModified = file.lastModifiedTime();
-                if (lastModified > latestSource) {
-                    latestSource = lastModified;
+                final Optional<FileTime> changed = file.changedTimeIfNewerThan(latestSource);
+                if (changed.isPresent()) {
+                    latestSource = changed.get();
                 }
             }
             for (final BuildFile file : component.outputRoot().list()) {
-                final long lastModified = file.lastModifiedTime();
-                if (lastModified > oldestBinary) {
-                    oldestBinary = lastModified;
-                    if (oldestBinary < latestSource) {
-                        return false;
-                    }
+                final Optional<FileTime> changed = file.changedTimeIfNewerThan(latestBinary);
+                if (changed.isPresent()) {
+                    latestBinary = changed.get();
                 }
             }
         }
-        if (oldestBinary == 0) {
-            return false;   // Not yet built.
+
+        // Are any sources more recent than the most recent binary?
+
+        if (newerThan(latestSource, latestBinary)) {
+
+            // Yes, so we are not up to date.
+
+            return false;
         }
+
+        // Are any dependencies newer than the most recent source?
+
         for (final BuildFile file : dependencies()) {
-            final long lastModified = file.lastModifiedTime();
-            if (lastModified > oldestBinary) {
-                oldestBinary = lastModified;
-                if (oldestBinary < latestSource) {
-                    return false;
-                }
+            final Optional<FileTime> changed = file.changedTimeIfOlderThan(latestBinary);
+            if (changed.isPresent() && newerThan(changed.get(), latestSource)) {
+
+                // Yes, so we are not up to date.
+
+                return false;
             }
         }
+
+        // We're up to date.
         return true;
     }
 
     /**
      * Update the project time stamps.
      *
-     * @param updateDepenencies {@code true} if dependencies should be updated.
+     * @param updateDependencies {@code true} if dependencies should be updated.
      */
-    public void update(boolean updateDepenencies) {
+    public void update(boolean updateDependencies) {
         components().forEach(BuildComponent::update);
-        if (updateDepenencies) {
+        if (updateDependencies) {
             updateDependencies();
         }
     }

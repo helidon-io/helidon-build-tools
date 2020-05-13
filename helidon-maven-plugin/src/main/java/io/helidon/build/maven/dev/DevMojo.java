@@ -35,7 +35,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.ProjectDependenciesResolver;
 
 /**
  * Maven plugin that runs a {@link DevLoop}.
@@ -93,12 +92,6 @@ public class DevMojo extends AbstractMojo {
     @Component
     private BuildPluginManager plugins;
 
-    /**
-     * The Maven ProjectDependenciesResolver component.
-     */
-    @Component
-    private ProjectDependenciesResolver resolver;
-
     @Override
     public void execute() throws MojoExecutionException {
         if (skip) {
@@ -111,7 +104,7 @@ public class DevMojo extends AbstractMojo {
             } else {
                 MavenLogWriter.bind(getLog());
             }
-            final ProjectSupplier projectSupplier = new MavenProjectSupplier(project, session, plugins, resolver);
+            final ProjectSupplier projectSupplier = new MavenProjectSupplier(project, session, plugins);
             final DevLoop loop = new DevLoop(devProjectDir.toPath(), projectSupplier, clean, fork, terminalMode);
             loop.start(Integer.MAX_VALUE);
         } catch (Exception e) {

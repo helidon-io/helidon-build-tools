@@ -55,9 +55,9 @@ public class ProjectConfig extends ConfigProperties {
     public static final String FEATURE_PREFIX = "feature.";
 
     /**
-     * Project's classpath property.
+     * Project's dependencies property.
      */
-    public static final String PROJECT_CLASSPATH = "project.classpath";
+    public static final String PROJECT_DEPENDENCIES = "project.dependencies";
 
     /**
      * Project's source directories property.
