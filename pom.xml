@@ -645,51 +645,6 @@
                 <version>${version.lib.asm}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.maven.resolver</groupId>
-                <artifactId>maven-resolver-api</artifactId>
-                <version>${version.lib.maven-resolver}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.maven.resolver</groupId>
-                <artifactId>maven-resolver-spi</artifactId>
-                <version>${version.lib.maven-resolver}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.maven.resolver</groupId>
-                <artifactId>maven-resolver-impl</artifactId>
-                <version>${version.lib.maven-resolver}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.maven.resolver</groupId>
-                <artifactId>maven-resolver-connector-basic</artifactId>
-                <version>${version.lib.maven-resolver}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.maven.resolver</groupId>
-                <artifactId>maven-resolver-transport-file</artifactId>
-                <version>${version.lib.maven-resolver}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.maven.resolver</groupId>
-                <artifactId>maven-resolver-transport-http</artifactId>
-                <version>${version.lib.maven-resolver}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.maven</groupId>
-                <artifactId>maven-settings</artifactId>
-                <version>${version.lib.maven}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.maven</groupId>
-                <artifactId>maven-settings-builder</artifactId>
-                <version>${version.lib.maven}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.maven</groupId>
-                <artifactId>maven-resolver-provider</artifactId>
-                <version>${version.lib.maven}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.codehaus.plexus</groupId>
                 <artifactId>plexus-component-annotations</artifactId>
                 <version>${version.lib.plexus.component}</version>

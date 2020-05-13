@@ -31,7 +31,6 @@ import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.HelidonVariant;
 import io.helidon.build.util.Instance;
 import io.helidon.build.util.Log;
-import io.helidon.build.util.MavenArtifacts;
 import io.helidon.build.util.MavenCommand;
 import io.helidon.build.util.QuickstartGenerator;
 
@@ -193,15 +192,6 @@ public class TestFiles implements BeforeAllCallback {
     }
 
     /**
-     * Returns the {@link MavenArtifacts} instance.
-     *
-     * @return The instance.
-     */
-    private static MavenArtifacts mavenArtifacts() {
-        return MavenArtifacts.instance();
-    }
-
-    /**
      * Recursively delete a directory.
      *
      * @param dir Directory to delete.
@@ -243,8 +233,7 @@ public class TestFiles implements BeforeAllCallback {
     }
 
     private static Path fetchSignedJar() {
-        Log.info("Fetching signed jar %s", SIGNED_JAR_COORDINATES);
-        return mavenArtifacts().artifact(SIGNED_JAR_COORDINATES);
+        throw new IllegalStateException("not yet implemented, see https://github.com/oracle/helidon-build-tools/issues/110");
     }
 
     private static Path getOrCreateQuickstartSeJar() {

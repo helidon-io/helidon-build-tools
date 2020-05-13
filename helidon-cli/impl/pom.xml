@@ -165,6 +165,7 @@
                                     <arguments>
                                         <argument>-H:Path=${project.build.directory}</argument>
                                         <argument>-H:Name=${project.build.finalName}</argument>
+                                        <argument>-H:+PrintAnalysisCallTree</argument>
                                         <argument>-H:+ReportExceptionStackTraces</argument>
                                         <argument>-H:-ParseRuntimeOptions</argument>
                                         <argument>--no-server</argument>

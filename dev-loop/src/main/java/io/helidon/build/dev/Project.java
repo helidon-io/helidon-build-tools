@@ -464,6 +464,7 @@ public class Project {
         dependencyPaths.forEach(this::addDependency);
 
         // Build/rebuild classPath, weeding out any duplicates
+        // First, add each java build root
 
         final Set<Path> paths = new LinkedHashSet<>();
         components.forEach(component -> {
@@ -471,7 +472,12 @@ public class Project {
                 paths.add(component.outputRoot().path());
             }
         });
+
+        // Add all dependencies
+
         dependencies.forEach(dependency -> paths.add(dependency.path()));
+
+        // Finally, set the classpath from all the paths we collected
 
         classPath.clear();
         paths.forEach(path -> classPath.add(path.toFile()));
