@@ -29,7 +29,7 @@ import io.helidon.build.cli.impl.InitCommand.Flavor;
 import io.helidon.build.util.Log;
 import org.apache.maven.model.Model;
 
-import static io.helidon.build.cli.impl.PomReader.readPomModel;
+import static io.helidon.build.util.PomUtils.readPomModel;
 
 /**
  * Class ArchetypeBrowser.
@@ -153,7 +153,7 @@ class AppTypeBrowser {
         String pomFile = String.format(APPTYPE_POM, flavor, helidonVersion);
         Path path = localCache.resolve(pomFile);
         if (path.toFile().exists()) {
-            Model model = readPomModel(path.toFile());
+            Model model = readPomModel(path);
             return model.getModules();
         }
         return Collections.emptyList();

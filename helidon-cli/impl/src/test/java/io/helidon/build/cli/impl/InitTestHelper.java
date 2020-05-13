@@ -24,6 +24,7 @@ import io.helidon.build.test.TestFiles;
 
 import org.apache.maven.model.Model;
 
+import static io.helidon.build.util.PomUtils.readPomModel;
 import static io.helidon.build.cli.impl.TestUtils.exec;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_APPTYPE;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARTIFACT_ID;
@@ -38,7 +39,6 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static io.helidon.build.cli.impl.PomReader.readPomModel;
 
 /**
  * Class InitTestHelper.

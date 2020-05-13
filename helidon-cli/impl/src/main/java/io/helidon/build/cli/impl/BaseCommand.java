@@ -17,8 +17,6 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -27,19 +25,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
-import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.util.AnsiConsoleInstaller;
-import io.helidon.build.util.Constants;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.ProcessMonitor;
 import io.helidon.build.util.ProjectConfig;
-
-import org.apache.maven.model.Model;
-import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
-import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 
@@ -50,9 +38,6 @@ public abstract class BaseCommand {
 
     static final String HELIDON_PROPERTIES = "helidon.properties";
     static final String HELIDON_VERSION_PROPERTY = "helidon.version";
-    static final String JAVA_HOME = Constants.javaHome();
-    static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
-    static final long SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
 
     private Properties cliConfig;
     private ProjectConfig projectConfig;
@@ -84,50 +69,6 @@ public abstract class BaseCommand {
                 return cliConfig;
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected Model readPomModel(File pomFile) {
-        try {
-            try (FileReader fr = new FileReader(pomFile)) {
-                MavenXpp3Reader mvnReader = new MavenXpp3Reader();
-                return mvnReader.read(fr);
-            }
-        } catch (IOException | XmlPullParserException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected void writePomModel(File pomFile, Model model) {
-        try {
-            try (FileWriter fw = new FileWriter(pomFile)) {
-                MavenXpp3Writer mvnWriter = new MavenXpp3Writer();
-                mvnWriter.write(fw, model);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected void executeProcess(CommandContext context, ProcessBuilder processBuilder) {
-        Map<String, String> env = processBuilder.environment();
-        String path = JAVA_HOME_BIN + File.pathSeparatorChar + env.get("PATH");
-        env.put("PATH", path);
-        env.put("JAVA_HOME", JAVA_HOME);
-        try {
-            // Fork process and wait for its completion
-            ProcessMonitor processMonitor = ProcessMonitor.builder()
-                                                          .processBuilder(processBuilder)
-                                                          .stdOut(context::logInfo)
-                                                          .stdErr(context::logError)
-                                                          .capture(false)
-                                                          .build()
-                                                          .start();
-            long pid = processMonitor.toHandle().pid();
-            Log.info("Process with PID %d is starting", pid);
-            processMonitor.waitForCompletion(SECONDS_PER_YEAR, TimeUnit.SECONDS);
-        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

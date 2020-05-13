@@ -38,7 +38,6 @@ import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
-
 import io.helidon.build.cli.impl.FlowNodeControllers.FlowNodeController;
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.HelidonVersions;
@@ -49,6 +48,8 @@ import io.helidon.build.util.ProjectConfig;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
 
+import static io.helidon.build.util.PomUtils.readPomModel;
+import static io.helidon.build.util.PomUtils.writePomModel;
 import static io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import static io.helidon.build.cli.impl.Prompter.displayLine;
 import static io.helidon.build.cli.impl.Prompter.prompt;
