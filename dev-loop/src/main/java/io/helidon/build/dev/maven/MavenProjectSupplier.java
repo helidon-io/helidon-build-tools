@@ -123,6 +123,8 @@ public class MavenProjectSupplier implements ProjectSupplier {
      *
      * @param projectDir The project directory.
      * @param lastCheckTime The time to check against.
+     * @param checkAllFiles {@code true} if all files should be checked and the most recent change time returned,
+     * {@code false} if the first changed time should be returned.
      * @return The time, if changed.
      */
     public static Optional<FileTime> changedTime(Path projectDir, FileTime lastCheckTime, boolean checkAllFiles) {

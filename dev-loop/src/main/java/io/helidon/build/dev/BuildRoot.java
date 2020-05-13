@@ -35,8 +35,8 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static io.helidon.build.dev.BuildFile.createBuildFile;
-import static io.helidon.build.util.FileUtils.newerThan;
 import static io.helidon.build.util.FileUtils.lastModifiedTime;
+import static io.helidon.build.util.FileUtils.newerThan;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.requireNonNull;
 
