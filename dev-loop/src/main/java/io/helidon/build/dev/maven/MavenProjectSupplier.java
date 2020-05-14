@@ -90,7 +90,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
     /**
      * Constructor.
      *
-     * @param project ThNOT_TARGET_DIRe maven project.
+     * @param project The maven project.
      * @param session The maven session.
      * @param plugins The maven plugin manager.
      */
