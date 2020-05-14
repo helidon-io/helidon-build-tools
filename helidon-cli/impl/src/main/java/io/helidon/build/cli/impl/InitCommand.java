@@ -54,7 +54,7 @@ import static io.helidon.build.util.PomUtils.ensureHelidonPluginConfig;
 import static io.helidon.build.util.ProjectConfig.FEATURE_PREFIX;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
-import static io.helidon.build.util.Style.BoldBrightGreen;
+import static io.helidon.build.util.Style.BoldBrightCyan;
 
 /**
  * The {@code init} command.
@@ -250,7 +250,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         });
         configFile.store();
 
-        String dir = BoldBrightGreen.apply(parentDirectory + Constants.DIR_SEP + projectDir.getFileName());
+        String dir = BoldBrightCyan.apply(parentDirectory + Constants.DIR_SEP + projectDir.getFileName());
         Prompter.displayLine("Switch directory to " + dir + " to use CLI");
 
         if (!batch) {
