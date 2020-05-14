@@ -52,20 +52,20 @@ class AppTypeBrowser {
     /**
      * Archetype directory.
      */
-    private static final String ARCHETYPE_DIRECTORY = "/io/helidon/apptypes";
+    private static final String ARCHETYPE_DIRECTORY = "/io/helidon/archetypes";
 
     /**
      * Prefix for all archetypes.
      */
-    private static final String ARCHETYPE_PREFIX = "helidon-apptypes";
+    private static final String ARCHETYPE_PREFIX = "helidon-archetypes";
 
     /**
-     * Format is helidon-archetype-apptypes-{flavor}-{apptype}-{version}.jar.
+     * Format is helidon-archetype-{flavor}-{apptype}-{version}.jar.
      */
     private static final String APPTYPE_JAR = ARCHETYPE_PREFIX + "-%s-%s-%s.jar";
 
     /**
-     * Format is helidon-archetype-apptypes-{flavor}-{version}.pom.
+     * Format is helidon-archetype-{flavor}-{version}.pom.
      */
     private static final String APPTYPE_POM = ARCHETYPE_PREFIX + "-%s-%s.pom";
 
