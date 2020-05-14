@@ -32,8 +32,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.build.archetype.engine.ArchetypeEngine;
-
 import io.helidon.build.archetype.engine.Maps;
+
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;

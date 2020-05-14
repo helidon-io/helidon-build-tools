@@ -28,6 +28,12 @@ public class Maps {
     private Maps() {
     }
 
+    /**
+     * Utility to convert a {@code Properties} into a {@code Map<String, String>}.
+     *
+     * @param properties The properties.
+     * @return A map instance.
+     */
     public static Map<String, String> fromProperties(Properties properties) {
         Objects.requireNonNull(properties);
         Map<String, String> map = new HashMap<>();
@@ -35,6 +41,12 @@ public class Maps {
         return map;
     }
 
+    /**
+     * Utility to convert a {@code Map<String, String>} into a {@code Properties}.
+     *
+     * @param map The map.
+     * @return Properties instance.
+     */
     public static Properties toProperties(Map<String, String> map) {
         Objects.requireNonNull(map);
         Properties properties = new Properties();
