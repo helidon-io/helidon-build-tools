@@ -30,6 +30,7 @@ import static io.helidon.build.dev.TestUtils.newLoop;
 import static io.helidon.build.test.TestFiles.helidonSeProject;
 import static io.helidon.build.test.TestFiles.helidonSeProjectCopy;
 import static io.helidon.build.test.TestFiles.touch;
+import static io.helidon.build.util.FileUtils.lastModifiedTime;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
@@ -288,8 +289,10 @@ class BuildLoopTest {
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-                    Log.info("touching pom file");
-                    touch(rootDir.resolve("pom.xml"));
+                    Path pomFile = rootDir.resolve("pom.xml");
+                    Log.info("about to touch pom file, mod time is %s", lastModifiedTime(pomFile));
+                    touch(pomFile);
+                    Log.info("touched pom file, mod time is %s", lastModifiedTime(pomFile));
                 }
             }
         };

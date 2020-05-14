@@ -17,6 +17,8 @@
 package io.helidon.build.dev;
 
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
+import java.util.Optional;
 
 /**
  * A {@code Project} supplier.
@@ -37,13 +39,22 @@ public interface ProjectSupplier {
     Project newProject(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception;
 
     /**
-     * Checks whether any project file has a modified time more recent than the given time.
+     * Returns whether or not any project file has a modified time more recent than the given time.
      *
      * @param projectDir The project directory.
-     * @param lastCheckMillis The time to check against, in milliseconds.
-     * @return {@code true} if there are more recent changes.
+     * @param lastCheckTime The time to check against.
+     * @return {@code true} if changed.
      */
-    boolean hasChanged(Path projectDir, long lastCheckMillis);
+    boolean hasChanges(Path projectDir, FileTime lastCheckTime);
+
+    /**
+     * Returns the most recent modification time if any project file has a modified time more recent than the given time.
+     *
+     * @param projectDir The project directory.
+     * @param lastCheckTime The time to check against.
+     * @return The time, if changed.
+     */
+    Optional<FileTime> changedTime(Path projectDir, FileTime lastCheckTime);
 
     /**
      * Returns the name of the build file supported by this supplier, e.g. "pom.xml".

@@ -20,6 +20,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.inject.Inject;
+
 import io.helidon.build.util.ProjectConfig;
 
 import org.apache.maven.AbstractMavenLifecycleParticipant;
@@ -31,15 +33,23 @@ import org.apache.maven.execution.MavenExecutionResult;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.MojoExecution;
+import org.apache.maven.project.DefaultDependencyResolutionRequest;
+import org.apache.maven.project.DependencyResolutionException;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.ProjectDependenciesResolver;
 import org.codehaus.plexus.component.annotations.Component;
+import org.eclipse.aether.graph.DependencyFilter;
 
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
+import static io.helidon.build.util.ProjectConfig.PROJECT_DEPENDENCIES;
 import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_RESOURCEDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCEDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
+import static org.eclipse.aether.util.artifact.JavaScopes.COMPILE;
+import static org.eclipse.aether.util.artifact.JavaScopes.RUNTIME;
+import static org.eclipse.aether.util.filter.DependencyFilterUtils.classpathFilter;
 
 /**
  * Collects settings from a maven project and stores them in the a config file for later use
@@ -53,11 +63,11 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
     private static final String MULTI_MODULE_PROJECT = "Multi-module projects are not supported.";
     private static final String MISSING_MAIN_CLASS = "The required '" + MAIN_CLASS_PROPERTY + "' property is missing.";
     private static final String MISSING_DOT_HELIDON = "The required " + DOT_HELIDON + " file is missing.";
-    private static final List<String> COMPILE_AND_RUNTIME_SCOPES = List.of("compile", "runtime");
-    private static final List<String> COMPILE_SCOPE = List.of("compile");
+    private static final DependencyFilter DEPENDENCY_FILTER = classpathFilter(COMPILE, RUNTIME);
     private static final String COMPILE_GOAL = "compile";
-    private static final String JAR_FILE_SUFFIX = ".jar";
 
+    @Inject
+    private ProjectDependenciesResolver dependenciesResolver;
     private Path supportedProjectDir;
     private ProjectConfig projectConfig;
 
@@ -114,28 +124,36 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
         }
     }
 
-    private void collectConfig(MavenProject project) {
+    private void collectConfig(MavenProject project, MavenSession session) {
         final Path projectDir = project.getBasedir().toPath();
         final ProjectConfig config = ProjectConfig.loadHelidonCliConfig(projectDir);
-        config.property(PROJECT_MAINCLASS, project.getProperties().getProperty(MAIN_CLASS_PROPERTY));
-        config.property(PROJECT_VERSION, project.getVersion());
+        final List<String> dependencies = dependencies(project, session);
         final Path outputDir = projectDir.resolve(project.getBuild().getOutputDirectory());
         final List<String> classesDirs = List.of(outputDir.toString());
-        config.property(PROJECT_CLASSDIRS, classesDirs);
-        config.property(PROJECT_SOURCEDIRS, project.getCompileSourceRoots());
         final List<String> resourceDirs = project.getResources()
                                                  .stream()
                                                  .map(Resource::getDirectory)
                                                  .collect(Collectors.toList());
+        config.property(PROJECT_DEPENDENCIES, dependencies);
+        config.property(PROJECT_MAINCLASS, project.getProperties().getProperty(MAIN_CLASS_PROPERTY));
+        config.property(PROJECT_VERSION, project.getVersion());
+        config.property(PROJECT_CLASSDIRS, classesDirs);
+        config.property(PROJECT_SOURCEDIRS, project.getCompileSourceRoots());
         config.property(PROJECT_RESOURCEDIRS, resourceDirs);
-
-        // NOTE: The classpath is computed by MavenProjectSupplier rather than being
-        //       computed and stored here. This was done to solve a bug with MP where
-        //       the classpath was incorrect at the end of the compile step, and the
-        //       fix to correct it here required the use of "prepare-package" rather
-        //       than "process-classes", slowing everything down.
-
         this.projectConfig = config;
+    }
+
+    private List<String> dependencies(MavenProject project, MavenSession session) {
+        try {
+            return dependenciesResolver.resolve(new DefaultDependencyResolutionRequest(project, session.getRepositorySession())
+                                                    .setResolutionFilter(DEPENDENCY_FILTER))
+                                       .getDependencies()
+                                       .stream()
+                                       .map(d -> d.getArtifact().getFile().toString())
+                                       .collect(Collectors.toList());
+        } catch (DependencyResolutionException e) {
+            throw new RuntimeException("Dependency resolution failed: " + e.getMessage());
+        }
     }
 
     private void storeConfig() {
@@ -211,7 +229,7 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
             final MojoExecution execution = event.getMojoExecution();
             next.mojoSucceeded(event);
             if (execution.getGoal().equals(COMPILE_GOAL)) {
-                collectConfig(event.getProject());
+                collectConfig(event.getProject(), event.getSession());
             }
         }
 

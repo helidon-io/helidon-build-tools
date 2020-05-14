@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -147,7 +148,7 @@ public final class FileUtils {
     public static List<Path> listFiles(Path directory, Predicate<String> fileNameFilter, int maxDepth) {
         try {
             return Files.find(assertDir(directory), maxDepth, (path, attrs) ->
-                    attrs.isRegularFile() && fileNameFilter.test(path.getFileName().toString())
+                attrs.isRegularFile() && fileNameFilter.test(path.getFileName().toString())
             ).collect(Collectors.toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -174,7 +175,7 @@ public final class FileUtils {
     public static List<Path> list(Path directory, final int maxDepth) {
         try {
             return Files.find(assertDir(directory), maxDepth, (path, attrs) -> true)
-                    .collect(Collectors.toList());
+                        .collect(Collectors.toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -272,13 +273,13 @@ public final class FileUtils {
             if (Files.isDirectory(directory)) {
                 try (Stream<Path> stream = Files.walk(directory)) {
                     stream.sorted(Comparator.reverseOrder())
-                            .forEach(file -> {
-                                try {
-                                    Files.delete(file);
-                                } catch (IOException e) {
-                                    throw new UncheckedIOException(e);
-                                }
-                            });
+                          .forEach(file -> {
+                              try {
+                                  Files.delete(file);
+                              } catch (IOException e) {
+                                  throw new UncheckedIOException(e);
+                              }
+                          });
                 }
             } else {
                 throw new IllegalArgumentException(directory + " is not a directory");
@@ -299,14 +300,14 @@ public final class FileUtils {
             if (Files.isDirectory(directory)) {
                 try (Stream<Path> stream = Files.walk(directory)) {
                     stream.sorted(Comparator.reverseOrder())
-                            .filter(file -> !file.equals(directory))
-                            .forEach(file -> {
-                                try {
-                                    Files.delete(file);
-                                } catch (IOException e) {
-                                    throw new UncheckedIOException(e);
-                                }
-                            });
+                          .filter(file -> !file.equals(directory))
+                          .forEach(file -> {
+                              try {
+                                  Files.delete(file);
+                              } catch (IOException e) {
+                                  throw new UncheckedIOException(e);
+                              }
+                          });
                 }
             } else {
                 throw new IllegalArgumentException(directory + " is not a directory");
@@ -363,12 +364,85 @@ public final class FileUtils {
      * @param file The file.
      * @return The last modified time.
      */
-    public static long lastModifiedTime(Path file) {
+    public static long lastModifiedSeconds(Path file) {
+        return lastModifiedTime(file).to(TimeUnit.SECONDS);
+    }
+
+    /**
+     * Returns the last modified time of the given file, in millis.
+     *
+     * @param file The file.
+     * @return The last modified time.
+     */
+    public static long lastModifiedMillis(Path file) {
+        return lastModifiedTime(file).to(TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Returns the last modified time of the given file.
+     *
+     * @param file The file.
+     * @return The last modified time.
+     */
+    public static FileTime lastModifiedTime(Path file) {
         try {
-            return Files.getLastModifiedTime(file).to(TimeUnit.SECONDS);
+            return Files.getLastModifiedTime(file);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
+    }
+
+    /**
+     * Tests whether or not the given file has a modified time that is newer than the base time.
+     *
+     * @param file The file.
+     * @param baseTime The base time. May be {@code null}.
+     * @return {@code true} if base time is {@code null} or change time is newer.
+     */
+    public static Optional<FileTime> newerThan(Path file, FileTime baseTime) {
+        final FileTime modTime = lastModifiedTime(file);
+        if (newerThan(modTime, baseTime)) {
+            return Optional.of(modTime);
+        } else {
+            return Optional.empty();
+        }
+    }
+    /**
+     * Tests whether or not the given file has a modified time that is older than the base time.
+     *
+     * @param file The file.
+     * @param baseTime The base time. May be {@code null}.
+     * @return {@code true} if base time is {@code null} or change time is older.
+     */
+    public static Optional<FileTime> olderThan(Path file, FileTime baseTime) {
+        final FileTime modTime = lastModifiedTime(file);
+        if (olderThan(modTime, baseTime)) {
+            return Optional.of(modTime);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Tests whether or not the given change time is newer than a base time.
+     *
+     * @param changeTime The time.
+     * @param baseTime The base time. May be {@code null}.
+     * @return {@code true} if base time is {@code null} or change time is newer.
+     */
+    public static boolean newerThan(FileTime changeTime, FileTime baseTime) {
+        return baseTime == null || changeTime.compareTo(baseTime) > 0;
+    }
+
+    /**
+     * Tests whether or not the given change time is older than a base time.
+     *
+     * @param changeTime The time.
+     * @param baseTime The base time. May be {@code null}.
+     * @return {@code true} if base time is {@code null} or change time is older.
+     */
+    public static boolean olderThan(FileTime changeTime, FileTime baseTime) {
+        return baseTime == null || changeTime.compareTo(baseTime) < 0;
     }
 
     /**
@@ -389,10 +463,10 @@ public final class FileUtils {
      */
     public static Optional<Path> findExecutableInPath(String executableName) {
         return Arrays.stream(requireNonNull(System.getenv(PATH_VAR)).split(File.pathSeparator))
-                .map(dir -> Paths.get(dir))
-                .map(path -> path.resolve(executableName))
-                .filter(Files::isExecutable)
-                .findFirst();
+                     .map(dir -> Paths.get(dir))
+                     .map(path -> path.resolve(executableName))
+                     .filter(Files::isExecutable)
+                     .findFirst();
     }
 
     private FileUtils() {

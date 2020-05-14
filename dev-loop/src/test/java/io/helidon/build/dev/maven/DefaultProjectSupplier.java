@@ -21,7 +21,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.List;
+import java.util.Optional;
 
 import io.helidon.build.dev.BuildExecutor;
 import io.helidon.build.dev.BuildRoot;
@@ -72,9 +74,15 @@ public class DefaultProjectSupplier implements ProjectSupplier {
     }
 
     @Override
-    public boolean hasChanged(Path projectDir, long lastCheckMillis) {
-        return MavenProjectSupplier.hasChangesSince(projectDir, lastCheckMillis);
+    public boolean hasChanges(Path projectDir, FileTime lastCheckTime) {
+        return MavenProjectSupplier.changedTime(projectDir, lastCheckTime, false).isPresent();
     }
+
+    @Override
+    public Optional<FileTime> changedTime(Path projectDir, FileTime lastCheckTime) {
+        return MavenProjectSupplier.changedTime(projectDir, lastCheckTime, true);
+    }
+
 
     @Override
     public String buildFileName() {

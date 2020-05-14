@@ -42,7 +42,7 @@ import static io.helidon.build.test.HelidonTestVersions.currentHelidonReleaseVer
 import static io.helidon.build.util.Constants.DIR_SEP;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
-import static io.helidon.build.util.FileUtils.lastModifiedTime;
+import static io.helidon.build.util.FileUtils.lastModifiedSeconds;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -177,7 +177,7 @@ public class TestFiles implements BeforeAllCallback {
     public static Path touch(Path file) {
         if (Files.exists(file)) {
             final long currentTime = System.currentTimeMillis();
-            final long lastModified = lastModifiedTime(file);
+            final long lastModified = lastModifiedSeconds(file);
             final long lastModifiedPlusOneSecond = lastModified + 1000;
             final long newTime = Math.max(currentTime, lastModifiedPlusOneSecond);
             try {
