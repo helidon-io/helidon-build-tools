@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -51,12 +52,12 @@ class AppTypeBrowser {
     /**
      * Archetype directory.
      */
-    private static final String ARCHETYPE_DIRECTORY = "/io/helidon/build-tools/archetype";
+    private static final String ARCHETYPE_DIRECTORY = "/io/helidon/apptypes";
 
     /**
      * Prefix for all archetypes.
      */
-    private static final String ARCHETYPE_PREFIX = "helidon-archetype-apptypes";
+    private static final String ARCHETYPE_PREFIX = "helidon-apptypes";
 
     /**
      * Format is helidon-archetype-apptypes-{flavor}-{apptype}-{version}.jar.
@@ -145,7 +146,7 @@ class AppTypeBrowser {
                 location = String.format("%s%s/%s-%s-%s/%s/%s", repo, ARCHETYPE_DIRECTORY,
                         ARCHETYPE_PREFIX, flavor, apptype, helidonVersion, jar);
                 downloadArtifact(new URL(location), localJarPath);
-            } catch (FileNotFoundException e1) {
+            } catch (ConnectException | FileNotFoundException e1) {
                 Log.warn("Unable to download file %s from %s", jar, repo);
                 return null;
             } catch (IOException e1) {
@@ -181,7 +182,7 @@ class AppTypeBrowser {
         try {
             URL url = new URL(location);
             downloadArtifact(url, localPomPath);
-        } catch (FileNotFoundException e) {
+        } catch (ConnectException | FileNotFoundException e) {
             Log.warn("Unable to download file %s from %s", pom, repo);
             // Falls through
         } catch (IOException e) {

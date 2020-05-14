@@ -1,5 +1,5 @@
 
-package {{package}};
+package mypackage;
 
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
