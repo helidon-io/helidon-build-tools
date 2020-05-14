@@ -16,17 +16,12 @@
 
 package io.helidon.build.dev.maven;
 
-import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import io.helidon.build.dev.BuildExecutor;
@@ -40,7 +35,7 @@ import io.helidon.build.dev.Project;
 import io.helidon.build.dev.Project.Builder;
 import io.helidon.build.dev.ProjectDirectory;
 import io.helidon.build.dev.ProjectSupplier;
-import io.helidon.build.util.Log;
+import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.ProjectConfig;
 
 import org.apache.maven.execution.MavenSession;
@@ -52,10 +47,10 @@ import static io.helidon.build.dev.BuildFile.createBuildFile;
 import static io.helidon.build.dev.BuildRoot.createBuildRoot;
 import static io.helidon.build.dev.BuildType.Skipped;
 import static io.helidon.build.dev.ProjectDirectory.createProjectDirectory;
+import static io.helidon.build.util.FileUtils.ChangeDetectionType.*;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
-import static io.helidon.build.util.FileUtils.lastModifiedTime;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DEPENDENCIES;
 import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
@@ -94,7 +89,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
     /**
      * Constructor.
      *
-     * @param project The maven project.
+     * @param project ThNOT_TARGET_DIRe maven project.
      * @param session The maven session.
      * @param plugins The maven plugin manager.
      */
@@ -110,12 +105,12 @@ public class MavenProjectSupplier implements ProjectSupplier {
 
     @Override
     public boolean hasChanges(Path projectDir, FileTime lastCheckTime) {
-        return changedTime(projectDir, lastCheckTime, false).isPresent();
+        return changedTime(projectDir, lastCheckTime, FIRST).isPresent();
     }
 
     @Override
     public Optional<FileTime> changedTime(Path projectDir, FileTime lastCheckTime) {
-        return changedTime(projectDir, lastCheckTime, true);
+        return changedTime(projectDir, lastCheckTime, LATEST);
     }
 
     /**
@@ -123,78 +118,11 @@ public class MavenProjectSupplier implements ProjectSupplier {
      *
      * @param projectDir The project directory.
      * @param lastCheckTime The time to check against.
-     * @param checkAllFiles {@code true} if all files should be checked and the most recent change time returned,
-     * {@code false} if the first changed time should be returned.
+     * @param type The type of search.
      * @return The time, if changed.
      */
-    public static Optional<FileTime> changedTime(Path projectDir, FileTime lastCheckTime, boolean checkAllFiles) {
-        return changedTime(projectDir, lastCheckTime, NOT_HIDDEN, NOT_HIDDEN.and(NOT_TARGET_DIR), checkAllFiles);
-    }
-
-    /**
-     * Checks whether any matching file has a modified time more recent than the given time.
-     *
-     * @param projectDir The project directory.
-     * @param lastCheckTime The time to check against.
-     * @param dirFilter A filter for directories to visit.
-     * @param fileFilter A filter for which files to check.
-     * @param checkAllFiles {@code true} if all files should be checked and the most recent change time returned,
-     * {@code false} if the first changed time should be returned.
-     * @return The time, if changed.
-     */
-    public static Optional<FileTime> changedTime(Path projectDir,
-                                                 FileTime lastCheckTime,
-                                                 Predicate<Path> dirFilter,
-                                                 Predicate<Path> fileFilter,
-                                                 boolean checkAllFiles) {
-        if (lastCheckTime != null) {
-            final AtomicReference<FileTime> checkTime = new AtomicReference<>(lastCheckTime);
-            final AtomicReference<FileTime> changeTime = new AtomicReference<>();
-            Log.debug("Checking if project has files newer than last check time %s", lastCheckTime);
-            try {
-                Files.walkFileTree(projectDir, new FileVisitor<>() {
-                    @Override
-                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-                        return dirFilter.test(dir) ? FileVisitResult.CONTINUE : FileVisitResult.SKIP_SUBTREE;
-                    }
-
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                        if (fileFilter.test(file)) {
-                            final FileTime fileTime = lastModifiedTime(file);
-                            if (fileTime.compareTo(checkTime.get()) > 0) {
-                                Log.debug("%s @ %s is newer than last check time %s", file, fileTime, lastCheckTime);
-                                changeTime.set(fileTime);
-                                if (checkAllFiles) {
-                                    checkTime.set(fileTime);
-                                } else {
-                                    return FileVisitResult.TERMINATE;
-                                }
-                            }
-                        }
-                        return FileVisitResult.CONTINUE;
-                    }
-
-                    @Override
-                    public FileVisitResult visitFileFailed(Path file, IOException exc) {
-                        changeTime.set(null);
-                        return FileVisitResult.TERMINATE;
-                    }
-
-                    @Override
-                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
-
-                return Optional.ofNullable(changeTime.get());
-
-            } catch (Exception e) {
-                Log.warn(e.getMessage());
-            }
-        }
-
-        return Optional.of(FileTime.fromMillis(System.currentTimeMillis())); // Force it if we get here
+    public static Optional<FileTime> changedTime(Path projectDir, FileTime lastCheckTime, FileUtils.ChangeDetectionType type) {
+        return FileUtils.changedTime(projectDir, lastCheckTime, NOT_HIDDEN.and(NOT_TARGET_DIR), NOT_HIDDEN, type);
     }
 
     @Override

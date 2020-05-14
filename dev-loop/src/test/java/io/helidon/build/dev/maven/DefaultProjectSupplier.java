@@ -39,6 +39,8 @@ import static io.helidon.build.dev.BuildComponent.createBuildComponent;
 import static io.helidon.build.dev.BuildFile.createBuildFile;
 import static io.helidon.build.dev.BuildRoot.createBuildRoot;
 import static io.helidon.build.dev.ProjectDirectory.createProjectDirectory;
+import static io.helidon.build.util.FileUtils.ChangeDetectionType.FIRST;
+import static io.helidon.build.util.FileUtils.ChangeDetectionType.LATEST;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
@@ -75,14 +77,13 @@ public class DefaultProjectSupplier implements ProjectSupplier {
 
     @Override
     public boolean hasChanges(Path projectDir, FileTime lastCheckTime) {
-        return MavenProjectSupplier.changedTime(projectDir, lastCheckTime, false).isPresent();
+        return MavenProjectSupplier.changedTime(projectDir, lastCheckTime, FIRST).isPresent();
     }
 
     @Override
     public Optional<FileTime> changedTime(Path projectDir, FileTime lastCheckTime) {
-        return MavenProjectSupplier.changedTime(projectDir, lastCheckTime, true);
+        return MavenProjectSupplier.changedTime(projectDir, lastCheckTime, LATEST);
     }
-
 
     @Override
     public String buildFileName() {

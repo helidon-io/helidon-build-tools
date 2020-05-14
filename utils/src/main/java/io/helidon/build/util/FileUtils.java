@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -407,6 +408,7 @@ public final class FileUtils {
             return Optional.empty();
         }
     }
+
     /**
      * Tests whether or not the given file has a modified time that is older than the base time.
      *
@@ -467,6 +469,87 @@ public final class FileUtils {
                      .map(path -> path.resolve(executableName))
                      .filter(Files::isExecutable)
                      .findFirst();
+    }
+
+    /**
+     * Change detection type.
+     */
+    public enum ChangeDetectionType {
+        /**
+         * Return the first newer modification time.
+         */
+        FIRST,
+        /**
+         * Return the latest newer modification time.
+         */
+        LATEST
+    }
+
+    /**
+     * Checks whether any matching file in the given directory has a modified time more recent than the given time.
+     *
+     * @param directory The directory.
+     * @param baseTime The time to check against. If {@code null}, uses {@code FileUtils.fromMillis(0)}.
+     * @param dirFilter A filter for directories to visit.
+     * @param fileFilter A filter for which files to check.
+     * @param type The type.
+     * @return The time, if changed.
+     */
+    public static Optional<FileTime> changedTime(Path directory,
+                                                 FileTime baseTime,
+                                                 Predicate<Path> dirFilter,
+                                                 Predicate<Path> fileFilter,
+                                                 ChangeDetectionType type) {
+        if (baseTime == null) {
+            baseTime = FileTime.fromMillis(0);
+        }
+        final AtomicReference<FileTime> checkTime = new AtomicReference<>(baseTime);
+        final AtomicReference<FileTime> changeTime = new AtomicReference<>();
+        final boolean checkAllFiles = type == ChangeDetectionType.LATEST;
+        Log.debug("Checking if project has files newer than last check time %s", checkTime.get());
+        try {
+            Files.walkFileTree(directory, new FileVisitor<>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                    return dirFilter.test(dir) ? FileVisitResult.CONTINUE : FileVisitResult.SKIP_SUBTREE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (fileFilter.test(file)) {
+                        final FileTime fileTime = lastModifiedTime(file);
+                        if (fileTime.compareTo(checkTime.get()) > 0) {
+                            Log.debug("%s @ %s is newer than last check time %s", file, fileTime, checkTime.get());
+                            changeTime.set(fileTime);
+                            if (checkAllFiles) {
+                                checkTime.set(fileTime);
+                            } else {
+                                return FileVisitResult.TERMINATE;
+                            }
+                        }
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) {
+                    changeTime.set(null);
+                    return FileVisitResult.TERMINATE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+
+            return Optional.ofNullable(changeTime.get());
+
+        } catch (Exception e) {
+            Log.warn(e.getMessage());
+        }
+
+        return Optional.of(FileTime.fromMillis(System.currentTimeMillis())); // Force it if we get here
     }
 
     private FileUtils() {

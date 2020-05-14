@@ -301,11 +301,8 @@ public class BuildLoop {
             final Optional<FileTime> changed = projectSupplier.changedTime(projectDirectory, lastChangeTime.get());
             if (changed.isPresent()) {
 
-                // Yes. Update the last change time in case we fail again.
-                lastChangeTime.set(changed.get());
-
-                // Notify and return that we're ready to create the project
-                monitor.onChanged(cycleNumber.get(), ChangeType.File);
+                // Yes, so we're ready to try again. Notify using the last change time in case we fail again.
+                changed(ChangeType.File, changed.get());
                 return true;
 
             } else {
