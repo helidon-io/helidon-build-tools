@@ -283,7 +283,11 @@ public class BuildLoop {
     }
 
     private void buildFailed(BuildType type, Throwable e) {
-        lastFailedTime.set(System.currentTimeMillis());
+        final long failedTime = System.currentTimeMillis();
+        lastFailedTime.set(failedTime);
+        if (lastChangeTime.get() == null) {
+            lastChangeTime.set(FileTime.fromMillis(failedTime));
+        }
         delay.set(monitor.onBuildFail(cycleNumber.get(), type, e));
     }
 
@@ -298,7 +302,7 @@ public class BuildLoop {
         } else {
 
             // Yes. Has any file changed since the last change we saw?
-            final Optional<FileTime> changed = projectSupplier.changedTime(projectDirectory, lastChangeTime.get());
+            final Optional<FileTime> changed = projectSupplier.changedSince(projectDirectory, lastChangeTime.get());
             if (changed.isPresent()) {
 
                 // Yes, so we're ready to try again. Notify using the last change time in case we fail again.

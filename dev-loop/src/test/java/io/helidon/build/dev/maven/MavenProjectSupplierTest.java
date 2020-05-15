@@ -59,7 +59,7 @@ class MavenProjectSupplierTest {
     }
 
     private static FileTime changedTime(FileTime checkTime, FileUtils.ChangeDetectionType type) {
-        Optional<FileTime> result = MavenProjectSupplier.changedTime(rootDir, checkTime, type);
+        Optional<FileTime> result = MavenProjectSupplier.changedSince(rootDir, checkTime, type);
         assertThat(result, is(not(nullValue())));
         assertThat(result.isPresent(), is(true));
         return result.get();
@@ -83,29 +83,29 @@ class MavenProjectSupplierTest {
     }
 
     @Test
-    void testChangeTimeFromTimeZero() {
+    void testChangedSinceFromTimeZero() {
         FileTime pomTime = lastModifiedTime(pomFile);
         FileTime fromTimeZero = changedTime(TIME_ZERO, LATEST);
         assertThat(fromTimeZero.compareTo(pomTime), is(greaterThanOrEqualTo(0)));
     }
 
     @Test
-    void testChangeTimeClassFileNotChecked() {
+    void testChangedSinceClassFileNotChecked() {
         FileTime initial = changedTime(TIME_ZERO, LATEST);
         FileTime touched = touchFile(classFile);
 
         // We should not find the class change since the filter won't allow visiting the target dir
-        Optional<FileTime> found = MavenProjectSupplier.changedTime(rootDir, initial, LATEST);
+        Optional<FileTime> found = MavenProjectSupplier.changedSince(rootDir, initial, LATEST);
         assertThat(found.isPresent(), is(false));
 
         // Re-check that it is found without filter
-        found = FileUtils.changedTime(rootDir, initial, d -> true, f -> true, LATEST);
+        found = FileUtils.changedSince(rootDir, initial, d -> true, f -> true, LATEST);
         assertThat(found.isPresent(), is(true));
         assertThat(found.get(), is(touched));
     }
 
     @Test
-    void testChangeTimeOneFileChanged() {
+    void testChangedSinceOneFileChanged() {
         FileTime initial = lastModified(pomFile);
         FileTime touched = touchFile(pomFile);
         assertThat(touched.compareTo(initial), is(greaterThan(0)));
@@ -116,7 +116,7 @@ class MavenProjectSupplierTest {
     }
 
     @Test
-    void testChangeTimeTwoFilesChanged() {
+    void testChangedSinceTwoFilesChanged() {
 
         FileTime initialPom = lastModified(pomFile);
         FileTime touchedPom = touchFile(pomFile);

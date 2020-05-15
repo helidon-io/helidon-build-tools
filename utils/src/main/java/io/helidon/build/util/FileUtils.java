@@ -495,15 +495,14 @@ public final class FileUtils {
      * @param type The type.
      * @return The time, if changed.
      */
-    public static Optional<FileTime> changedTime(Path directory,
-                                                 FileTime baseTime,
-                                                 Predicate<Path> dirFilter,
-                                                 Predicate<Path> fileFilter,
-                                                 ChangeDetectionType type) {
-        if (baseTime == null) {
-            baseTime = FileTime.fromMillis(0);
-        }
-        final AtomicReference<FileTime> checkTime = new AtomicReference<>(baseTime);
+    public static Optional<FileTime> changedSince(Path directory,
+                                                  FileTime baseTime,
+                                                  Predicate<Path> dirFilter,
+                                                  Predicate<Path> fileFilter,
+                                                  ChangeDetectionType type) {
+
+        final FileTime base = baseTime == null ? FileTime.fromMillis(0) : baseTime;
+        final AtomicReference<FileTime> checkTime = new AtomicReference<>(base);
         final AtomicReference<FileTime> changeTime = new AtomicReference<>();
         final boolean checkAllFiles = type == ChangeDetectionType.LATEST;
         Log.debug("Checking if project has files newer than last check time %s", checkTime.get());

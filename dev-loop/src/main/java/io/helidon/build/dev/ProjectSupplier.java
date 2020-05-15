@@ -54,7 +54,7 @@ public interface ProjectSupplier {
      * @param lastCheckTime The time to check against.
      * @return The time, if changed.
      */
-    Optional<FileTime> changedTime(Path projectDir, FileTime lastCheckTime);
+    Optional<FileTime> changedSince(Path projectDir, FileTime lastCheckTime);
 
     /**
      * Returns the name of the build file supported by this supplier, e.g. "pom.xml".

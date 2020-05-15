@@ -106,12 +106,12 @@ public class MavenProjectSupplier implements ProjectSupplier {
 
     @Override
     public boolean hasChanges(Path projectDir, FileTime lastCheckTime) {
-        return changedTime(projectDir, lastCheckTime, FIRST).isPresent();
+        return changedSince(projectDir, lastCheckTime, FIRST).isPresent();
     }
 
     @Override
-    public Optional<FileTime> changedTime(Path projectDir, FileTime lastCheckTime) {
-        return changedTime(projectDir, lastCheckTime, LATEST);
+    public Optional<FileTime> changedSince(Path projectDir, FileTime lastCheckTime) {
+        return changedSince(projectDir, lastCheckTime, LATEST);
     }
 
     /**
@@ -122,8 +122,8 @@ public class MavenProjectSupplier implements ProjectSupplier {
      * @param type The type of search.
      * @return The time, if changed.
      */
-    public static Optional<FileTime> changedTime(Path projectDir, FileTime lastCheckTime, FileUtils.ChangeDetectionType type) {
-        return FileUtils.changedTime(projectDir, lastCheckTime, NOT_HIDDEN.and(NOT_TARGET_DIR), NOT_HIDDEN, type);
+    public static Optional<FileTime> changedSince(Path projectDir, FileTime lastCheckTime, FileUtils.ChangeDetectionType type) {
+        return FileUtils.changedSince(projectDir, lastCheckTime, NOT_HIDDEN.and(NOT_TARGET_DIR), NOT_HIDDEN, type);
     }
 
     @Override

@@ -77,12 +77,12 @@ public class DefaultProjectSupplier implements ProjectSupplier {
 
     @Override
     public boolean hasChanges(Path projectDir, FileTime lastCheckTime) {
-        return MavenProjectSupplier.changedTime(projectDir, lastCheckTime, FIRST).isPresent();
+        return MavenProjectSupplier.changedSince(projectDir, lastCheckTime, FIRST).isPresent();
     }
 
     @Override
-    public Optional<FileTime> changedTime(Path projectDir, FileTime lastCheckTime) {
-        return MavenProjectSupplier.changedTime(projectDir, lastCheckTime, LATEST);
+    public Optional<FileTime> changedSince(Path projectDir, FileTime lastCheckTime) {
+        return MavenProjectSupplier.changedSince(projectDir, lastCheckTime, LATEST);
     }
 
     @Override
