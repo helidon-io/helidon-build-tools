@@ -37,7 +37,7 @@ public class Maps {
     public static Map<String, String> fromProperties(Properties properties) {
         Objects.requireNonNull(properties);
         Map<String, String> map = new HashMap<>();
-        properties.forEach((k, v) -> map.put(k.toString(), v.toString()));
+        properties.stringPropertyNames().forEach(k -> map.put(k, properties.getProperty(k)));
         return map;
     }
 

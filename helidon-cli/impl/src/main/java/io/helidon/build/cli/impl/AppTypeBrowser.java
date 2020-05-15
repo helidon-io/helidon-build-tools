@@ -45,7 +45,8 @@ class AppTypeBrowser {
     static final String REMOTE_REPO = "https://repo.maven.apache.org/maven2";
 
     /**
-     * Maven local repo.
+     * Maven local repo. Mostly a convenience to find unreleased versions; if not
+     * found or not available a warning is displayed.
      */
     static final String LOCAL_REPO = "file://" + System.getProperty("user.home") + "/.m2/repository";
 
