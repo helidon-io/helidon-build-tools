@@ -225,8 +225,14 @@ public class BuildLoop {
                             throw e;
                         } catch (Throwable e) {
                             buildFailed(Incremental, e);
-                            // Wait for further changes before re-building
-                            project.update(false);
+
+                            // Wait for further changes before re-building. Since it is possible for a file to have changed
+                            // during the build, we must ensure that we don't miss it. Do nothing if there are changes since
+                            // the last change; if there are none, update the project so that we'll wait for them.
+
+                            if (changedSinceLast().isEmpty()) {
+                                project.update(false);
+                            }
                         }
                     }
                 }
@@ -302,7 +308,7 @@ public class BuildLoop {
         } else {
 
             // Yes. Has any file changed since the last change we saw?
-            final Optional<FileTime> changed = projectSupplier.changedSince(projectDirectory, lastChangeTime.get());
+            final Optional<FileTime> changed = changedSinceLast();
             if (changed.isPresent()) {
 
                 // Yes, so we're ready to try again. Notify using the last change time in case we fail again.
@@ -315,6 +321,10 @@ public class BuildLoop {
                 return false;
             }
         }
+    }
+
+    private Optional<FileTime> changedSinceLast() {
+        return projectSupplier.changedSince(projectDirectory, lastChangeTime.get());
     }
 
     private boolean cycleEnded() {
