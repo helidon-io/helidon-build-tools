@@ -34,7 +34,7 @@ public class PropertyEvaluator {
      */
     public static String evaluate(String input, Map<String, String> properties) {
         int start = input.indexOf("${");
-        int end = input.indexOf("}");
+        int end = input.indexOf("}", start);
         int index = 0;
         String resolved = null;
         while (start >= 0 && end > 0) {
