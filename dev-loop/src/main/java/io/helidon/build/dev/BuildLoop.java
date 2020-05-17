@@ -226,11 +226,11 @@ public class BuildLoop {
                         } catch (Throwable e) {
                             buildFailed(Incremental, e);
 
-                            // Wait for further changes before re-building. Since it is possible for a file to have changed
-                            // during the build, we must ensure that we don't miss it. Do nothing if there are changes since
-                            // the last change; if there are none, update the project so that we'll wait for them.
+                            // Wait for further changes before re-building, if needed. Since it is possible for a file to have
+                            // changed during the build, we must ensure that we don't miss it. Do nothing if there are changes
+                            // since the last change; if there are none, update the project so that we'll wait for them.
 
-                            if (changedSinceLast().isEmpty()) {
+                            if (project.sourceChangesSince(lastChangeTime.get()).isEmpty()) {
                                 project.update(false);
                             }
                         }

@@ -25,8 +25,11 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.build.dev.maven.MavenProjectSupplier;
+import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.Log;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.dev.TestUtils.newLoop;
@@ -39,6 +42,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -89,7 +93,7 @@ class BuildLoopTest {
         return changeJava(javaFile, VALID_JAVA_PUBLIC_CLASS_PREFIX, INVALID_JAVA_PUBLIC_CLASS_PREFIX);
     }
 
-    private static FileTime fixJava(Path javaFile)  {
+    private static FileTime fixJava(Path javaFile) {
         wait(javaFile, "FIXING");
         return changeJava(javaFile, INVALID_JAVA_PUBLIC_CLASS_PREFIX, VALID_JAVA_PUBLIC_CLASS_PREFIX);
     }
@@ -443,5 +447,37 @@ class BuildLoopTest {
         assertThat(monitor.buildFailed(3), is(nullValue()));
         assertThat(monitor.ready(3), is(true));
         assertThat(monitor.cycleEnd(3), is(true));
+    }
+
+    @Test
+    // This is here for the occasional sanity checks; it is timing related so could cause intermittent failures
+    @Disabled
+    void testChangeDetectionMethodsRelativePerformance() throws Exception {
+        final Path rootDir = newSeProject(false);
+        final TestMonitor monitor = new TestMonitor(0);
+        final BuildLoop loop = newLoop(rootDir, false, false, monitor);
+        final int iterations = 1000;
+        final FileTime timeZero = FileTime.fromMillis(0);
+        TestUtils.run(loop);
+        final Project project = loop.project();
+
+        Log.info("%d iterations of MavenProjectSupplier.changedSince()", iterations);
+        long startTime = System.currentTimeMillis();
+        for (int i = 0; i < iterations; i++) {
+            MavenProjectSupplier.changedSince(rootDir, timeZero, FileUtils.ChangeDetectionType.LATEST);
+        }
+        final long changedSinceTotal = System.currentTimeMillis() - startTime;
+        Log.info("changedSince: %d ms", changedSinceTotal);
+
+
+        Log.info("%d iterations of project.sourceChangesSince()", iterations);
+        startTime = System.currentTimeMillis();
+        for (int i = 0; i < iterations; i++) {
+            project.sourceChangesSince(timeZero);
+        }
+        final long sourceChangesSinceTotal = System.currentTimeMillis() - startTime;
+        Log.info("sourceChangesSince: %d ms", sourceChangesSinceTotal);
+
+        assertThat(sourceChangesSinceTotal, is(lessThan(changedSinceTotal)));
     }
 }

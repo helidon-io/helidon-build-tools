@@ -30,13 +30,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import io.helidon.build.dev.util.ConsumerPrintStream;
+import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.ProjectConfig;
 
 import static io.helidon.build.dev.DirectoryType.Depencencies;
 import static io.helidon.build.dev.FileChangeAware.changedTimeOf;
 import static io.helidon.build.dev.ProjectDirectory.createProjectDirectory;
+import static io.helidon.build.util.FileUtils.ChangeDetectionType.LATEST;
 import static io.helidon.build.util.FileUtils.listFiles;
 import static io.helidon.build.util.FileUtils.newerThan;
 import static java.util.Collections.emptyList;
@@ -47,6 +50,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class Project {
     private static final String JAR_FILE_SUFFIX = ".jar";
+    private static final Predicate<Path> ANY = path -> true;
     private final String name;
     private final BuildType buildType;
     private final ProjectDirectory root;
@@ -349,6 +353,25 @@ public class Project {
             }
         }
         return result == null ? emptyList() : result;
+    }
+
+    /**
+     * Checks whether any source file has a modified time more recent than the given time.
+     *
+     * @param time The time to check against. If {@code null}, uses {@code FileUtils.fromMillis(0)}.
+     * @return The time, if changed.
+     */
+    public Optional<FileTime> sourceChangesSince(FileTime time) {
+        FileTime result = null;
+        for (final BuildComponent component : components()) {
+            final Optional<FileTime> changed = FileUtils.changedSince(component.sourceRoot().path(), time, ANY, ANY, LATEST);
+            if (changed.isPresent()) {
+                if (FileUtils.newerThan(changed.get(), result)) {
+                    result = changed.get();
+                }
+            }
+        }
+        return Optional.ofNullable(result);
     }
 
     /**
