@@ -225,8 +225,14 @@ public class BuildLoop {
                             throw e;
                         } catch (Throwable e) {
                             buildFailed(Incremental, e);
-                            // Wait for further changes before re-building
-                            project.update(false);
+
+                            // Wait for further changes before re-building, if needed. Since it is possible for a file to have
+                            // changed during the build, we must ensure that we don't miss it. Do nothing if there are changes
+                            // since the last change; if there are none, update the project so that we'll wait for them.
+
+                            if (project.sourceChangesSince(lastChangeTime.get()).isEmpty()) {
+                                project.update(false);
+                            }
                         }
                     }
                 }
@@ -283,7 +289,11 @@ public class BuildLoop {
     }
 
     private void buildFailed(BuildType type, Throwable e) {
-        lastFailedTime.set(System.currentTimeMillis());
+        final long failedTime = System.currentTimeMillis();
+        lastFailedTime.set(failedTime);
+        if (lastChangeTime.get() == null) {
+            lastChangeTime.set(FileTime.fromMillis(failedTime));
+        }
         delay.set(monitor.onBuildFail(cycleNumber.get(), type, e));
     }
 
@@ -298,14 +308,11 @@ public class BuildLoop {
         } else {
 
             // Yes. Has any file changed since the last change we saw?
-            final Optional<FileTime> changed = projectSupplier.changedTime(projectDirectory, lastChangeTime.get());
+            final Optional<FileTime> changed = changedSinceLast();
             if (changed.isPresent()) {
 
-                // Yes. Update the last change time in case we fail again.
-                lastChangeTime.set(changed.get());
-
-                // Notify and return that we're ready to create the project
-                monitor.onChanged(cycleNumber.get(), ChangeType.File);
+                // Yes, so we're ready to try again. Notify using the last change time in case we fail again.
+                changed(ChangeType.File, changed.get());
                 return true;
 
             } else {
@@ -314,6 +321,10 @@ public class BuildLoop {
                 return false;
             }
         }
+    }
+
+    private Optional<FileTime> changedSinceLast() {
+        return projectSupplier.changedSince(projectDirectory, lastChangeTime.get());
     }
 
     private boolean cycleEnded() {

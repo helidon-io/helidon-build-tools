@@ -20,7 +20,6 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Predicate;
 
 import io.helidon.build.util.FileUtils;
 
@@ -80,26 +79,6 @@ public class BuildFile implements FileChangeAware {
      */
     public Path path() {
         return path;
-    }
-
-    /**
-     * Tests the given predicate against the path.
-     *
-     * @param test The test.
-     * @return {@code true} if the path matches.
-     */
-    public boolean matches(Predicate<Path> test) {
-        return test.test(path());
-    }
-
-    /**
-     * Tests the given predicate against the file name.
-     *
-     * @param test The test.
-     * @return {@code true} if the path matches.
-     */
-    public boolean matchesFileName(Predicate<String> test) {
-        return test.test(path().getFileName().toString());
     }
 
     @Override
