@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.build.cli.impl.InitCommand.Flavor;
 
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
+import static io.helidon.build.test.StripAnsi.stripAnsi;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -100,7 +101,7 @@ class TestUtils {
         if (!p.waitFor(10, TimeUnit.SECONDS)) {
             throw new IllegalStateException("timeout waiting for process");
         }
-        return new ExecResult(p.exitValue(), output);
+        return new ExecResult(p.exitValue(), stripAnsi(output));
     }
 
     static void assertPackageExist(Path projectPath, String packageName) {
