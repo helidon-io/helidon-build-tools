@@ -33,19 +33,38 @@ public abstract class Log {
         /**
          * Debug level.
          */
-        DEBUG,
+        DEBUG(java.util.logging.Level.FINEST),
+        /**
+         * Verbose level.
+         */
+        VERBOSE(java.util.logging.Level.FINE),
         /**
          * Info level.
          */
-        INFO,
+        INFO(java.util.logging.Level.INFO),
         /**
          * Warn level.
          */
-        WARN,
+        WARN((java.util.logging.Level.WARNING)),
         /**
          * Error level.
          */
-        ERROR
+        ERROR(java.util.logging.Level.SEVERE);
+
+        /**
+         * Returns the corresponding java.util.logging.Level level.
+         *
+         * @return The level.
+         */
+        java.util.logging.Level toJulLevel() {
+            return julLevel;
+        }
+
+        private final java.util.logging.Level julLevel;
+
+        Level(java.util.logging.Level julLevel) {
+            this.julLevel = julLevel;
+        }
     }
 
     /**
@@ -69,6 +88,13 @@ public abstract class Log {
          * @return {@code true} if enabled.
          */
         boolean isDebugEnabled();
+
+        /**
+         * Returns whether or not verbose messages will be written.
+         *
+         * @return {@code true} if enabled.
+         */
+        boolean isVerboseEnabled();
     }
 
     /**
@@ -76,7 +102,7 @@ public abstract class Log {
      *
      * @param writer The writer.
      */
-    public static void setWriter(Writer writer) {
+    public static void writer(Writer writer) {
         WRITER.set(requireNonNull(writer));
     }
 
@@ -90,13 +116,32 @@ public abstract class Log {
     }
 
     /**
-     * Log a message at FINE level.
+     * Returns whether or not verbose messages will be written.
+     *
+     * @return {@code true} if enabled.
+     */
+    public static boolean isVerboseEnabled() {
+        return WRITER.get().isVerboseEnabled();
+    }
+
+    /**
+     * Log a message at DEBUG level.
      *
      * @param message The message.
      * @param args The message args.
      */
     public static void debug(String message, Object... args) {
         log(Level.DEBUG, message, args);
+    }
+
+    /**
+     * Log a message at VERBOSE level.
+     *
+     * @param message The message.
+     * @param args The message args.
+     */
+    public static void verbose(String message, Object... args) {
+        log(Level.VERBOSE, message, args);
     }
 
     /**
@@ -185,7 +230,7 @@ public abstract class Log {
         Writer writer = WRITER.get();
         if (writer == null) {
             writer = SystemLogWriter.create();
-            setWriter(writer);
+            writer(writer);
         }
         return writer;
     }

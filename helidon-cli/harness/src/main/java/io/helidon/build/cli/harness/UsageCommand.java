@@ -18,6 +18,8 @@ package io.helidon.build.cli.harness;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import io.helidon.build.util.Log;
+
 import static io.helidon.build.util.Style.Bold;
 
 /**
@@ -52,19 +54,19 @@ final class UsageCommand extends CommandModel {
 
     private void execute(CommandContext context) {
         String styledName = Bold.apply(context.cli().name());
-        context.logInfo(String.format("%nUsage:\t%s [OPTIONS] COMMAND%n", styledName));
-        context.logInfo(context.cli().description());
-        context.logInfo("\nOptions:");
-        context.logInfo(OutputHelper.table(GLOBAL_OPTIONS));
-        context.logInfo("\nCommands:");
+        Log.info(String.format("%nUsage:\t%s [OPTIONS] COMMAND%n", styledName));
+        Log.info(context.cli().description());
+        Log.info("\nOptions:");
+        Log.info(OutputHelper.table(GLOBAL_OPTIONS));
+        Log.info("\nCommands:");
         Map<String, String> commands = new LinkedHashMap<>();
         for (CommandModel cmdModel : context.allCommands()) {
             CommandInfo cmdInfo = cmdModel.command();
             commands.put(cmdInfo.name(), cmdInfo.description());
         }
         if (!commands.isEmpty()) {
-            context.logInfo(OutputHelper.table(commands));
+            Log.info(OutputHelper.table(commands));
         }
-        context.logInfo(String.format("%nRun '%s COMMAND --help' for more information on a command.", context.cli().name()));
+        Log.info(String.format("%nRun '%s COMMAND --help' for more information on a command.", context.cli().name()));
     }
 }

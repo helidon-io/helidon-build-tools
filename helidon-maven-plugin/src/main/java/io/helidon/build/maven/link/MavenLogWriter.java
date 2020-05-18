@@ -18,6 +18,7 @@ package io.helidon.build.maven.link;
 
 
 import io.helidon.build.util.Log.Level;
+import io.helidon.build.util.Style;
 
 import org.apache.maven.plugin.logging.Log;
 
@@ -33,7 +34,7 @@ public class MavenLogWriter implements io.helidon.build.util.Log.Writer {
      * @param mavenLog The maven log.
      */
     public static void bind(Log mavenLog) {
-        io.helidon.build.util.Log.setWriter(new MavenLogWriter(mavenLog));
+        io.helidon.build.util.Log.writer(new MavenLogWriter(mavenLog));
     }
 
     /**
@@ -51,13 +52,19 @@ public class MavenLogWriter implements io.helidon.build.util.Log.Writer {
     }
 
     @Override
+    public boolean isVerboseEnabled() {
+        return isDebugEnabled();
+    }
+
+    @Override
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
     public void write(Level level, Throwable thrown, String message, Object... args) {
         switch (level) {
 
             case DEBUG:
+            case VERBOSE:
                 if (log.isDebugEnabled()) {
-                    final String msg = String.format(message, args);
+                    final String msg = Style.render(message, args);
                     if (thrown == null) {
                         log.debug(msg);
                     } else {
@@ -68,7 +75,7 @@ public class MavenLogWriter implements io.helidon.build.util.Log.Writer {
 
             case INFO: {
                 if (log.isInfoEnabled()) {
-                    final String msg = String.format(message, args);
+                    final String msg = Style.render(message, args);
                     if (thrown == null) {
                         log.info(msg);
                     } else {
@@ -80,7 +87,7 @@ public class MavenLogWriter implements io.helidon.build.util.Log.Writer {
 
             case WARN: {
                 if (log.isWarnEnabled()) {
-                    final String msg = String.format(message, args);
+                    final String msg = Style.render(message, args);
                     if (thrown == null) {
                         log.warn(msg);
                     } else {
@@ -92,7 +99,7 @@ public class MavenLogWriter implements io.helidon.build.util.Log.Writer {
 
             case ERROR: {
                 if (log.isErrorEnabled()) {
-                    final String msg = String.format(message, args);
+                    final String msg = Style.render(message, args);
                     if (thrown == null) {
                         log.error(msg);
                     } else {

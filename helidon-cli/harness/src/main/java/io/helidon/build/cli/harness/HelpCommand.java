@@ -19,6 +19,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.build.util.Log;
+
 /**
  * The {@code help} command.
  */
@@ -119,10 +121,10 @@ class HelpCommand extends CommandModel {
             if (!argument.isEmpty()) {
                 usage += (usage.isEmpty() ? argument : (" " + argument));
             }
-            context.logInfo(String.format("%nUsage:\t%s %s [OPTIONS] %s%n", context.cli().name(), model.command().name(), usage));
-            context.logInfo(model.command().description());
-            context.logInfo("\nOptions:");
-            context.logInfo(OutputHelper.table(options));
+            Log.info(String.format("%nUsage:\t%s %s [OPTIONS] %s%n", context.cli().name(), model.command().name(), usage));
+            Log.info(model.command().description());
+            Log.info("\nOptions:");
+            Log.info(OutputHelper.table(options));
         }
     }
 }

@@ -46,7 +46,6 @@ import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
 
-import static io.helidon.build.util.Requirements.failed;
 import static io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import static io.helidon.build.cli.impl.Prompter.displayLine;
 import static io.helidon.build.cli.impl.Prompter.prompt;
@@ -56,6 +55,7 @@ import static io.helidon.build.util.ProjectConfig.FEATURE_PREFIX;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
 import static io.helidon.build.util.Style.BoldBrightCyan;
+import static io.helidon.build.util.Requirements.failed;
 
 /**
  * The {@code init} command.
@@ -161,7 +161,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         if (helidonVersion == null) {
             try {
                 helidonVersion = defaultHelidonVersion();
-                context.logInfo("Using Helidon version " + helidonVersion);
+                Log.info("Using Helidon version " + helidonVersion);
             } catch (Exception e) {
                 // If in batch mode we cannot proceed
                 if (batch) {

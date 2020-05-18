@@ -69,9 +69,10 @@ public final class CommandRunner {
     private void doExecuteCommand(CommandModel command) {
         if (parser.resolve(CommandModel.VERBOSE_OPTION)) {
             context.verbosity(CommandContext.Verbosity.VERBOSE);
-        }
-        if (parser.resolve(CommandModel.DEBUG_OPTION)) {
+        } else if (parser.resolve(CommandModel.DEBUG_OPTION)) {
             context.verbosity(CommandContext.Verbosity.DEBUG);
+        } else {
+            context.verbosity(CommandContext.Verbosity.NORMAL);
         }
         command.createExecution(parser).execute(context);
     }

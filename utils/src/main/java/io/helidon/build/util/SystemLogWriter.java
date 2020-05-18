@@ -21,22 +21,33 @@ import java.io.StringWriter;
 
 import io.helidon.build.util.Log.Level;
 
+import static io.helidon.build.util.Constants.EOL;
+import static io.helidon.build.util.Style.BoldRed;
+import static io.helidon.build.util.Style.Red;
+import static io.helidon.build.util.Style.Yellow;
+import static org.fusesource.jansi.Ansi.Attribute.ITALIC;
+import static org.fusesource.jansi.Ansi.ansi;
+
 /**
- * {@link Log.Writer} that writes to {@link System#out} and {@link System#err}.
+ * {@link Log.Writer} that writes to {@link System#out} and {@link System#err}. Supports use of
+ * {@link StyleRenderer} substitutions in log messages.
  */
 public final class SystemLogWriter implements Log.Writer {
+    private static final boolean STYLES_ENABLED = AnsiConsoleInstaller.areAnsiEscapesEnabled();
     private static final String DEFAULT_LEVEL = "info";
     private static final String LEVEL_PROPERTY = "log.level";
-    private final int ordinal;
-    private final boolean debugEnabled;
+    private int ordinal;
 
     /**
      * Binds an instance of this type to the {@code io.helidon.build.util.Log} at the given level.
      *
      * @param level The level.
+     * @return The instance.
      */
-    public static void bind(Level level) {
-        Log.setWriter(create(level));
+    public static SystemLogWriter bind(Level level) {
+        final SystemLogWriter writer = create(level);
+        Log.writer(writer);
+        return writer;
     }
 
     /**
@@ -60,34 +71,55 @@ public final class SystemLogWriter implements Log.Writer {
     }
 
     private SystemLogWriter(Level level) {
+        level(level);
+    }
+
+    /**
+     * Sets the level.
+     *
+     * @param level The new level.
+     */
+    public void level(Level level) {
         this.ordinal = level.ordinal();
-        this.debugEnabled = Level.DEBUG.ordinal() >= ordinal;
     }
 
     @Override
     public boolean isDebugEnabled() {
-        return debugEnabled;
+        return Level.DEBUG.ordinal() >= ordinal;
+    }
+
+    @Override
+    public boolean isVerboseEnabled() {
+        return Level.VERBOSE.ordinal() >= ordinal;
     }
 
     @Override
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
     public void write(Level level, Throwable thrown, String message, Object... args) {
-        if (shouldWrite(level)) {
-            final String msg = toString(String.format(message, args), thrown);
+        if (level.ordinal() >= ordinal) {
+            final String rendered = Style.render(message, args);
+            final boolean isStyled = Style.isStyled(rendered);
             switch (level) {
-                case DEBUG:
+                case DEBUG: {
+                    System.out.println(isStyled ? rendered : ansi().a(ITALIC).a(rendered).reset());
+                    break;
+                }
+
+                case VERBOSE:
                 case INFO: {
-                    System.out.println(msg);
+                    System.out.println(rendered);
                     break;
                 }
 
                 case WARN: {
-                    System.err.println("WARNING: " + msg);
+                    final String msg = toStyled(rendered, isStyled, Yellow, thrown);
+                    System.err.println(STYLES_ENABLED ? msg : "WARNING: " + msg);
                     break;
                 }
 
                 case ERROR: {
-                    System.err.println("ERROR: " + msg);
+                    final String msg = toStyled(rendered, isStyled, BoldRed, thrown);
+                    System.err.println(STYLES_ENABLED ? msg : "ERROR: " + msg);
                     break;
                 }
 
@@ -98,18 +130,33 @@ public final class SystemLogWriter implements Log.Writer {
         }
     }
 
-    private boolean shouldWrite(Level level) {
-        return level.ordinal() >= ordinal;
+    private static String toStyled(String message, boolean isStyled, Style defaultStyle) {
+        return isStyled ? message : defaultStyle.apply(message);
     }
 
-    private String toString(String message, Throwable thrown) {
-        if (thrown == null) {
-            return message;
+    private String toStyled(String message, boolean isStyled, Style defaultStyle, Throwable thrown) {
+        final String styled = toStyled(message, isStyled, defaultStyle);
+        final String trace = toStackTrace(thrown);
+        if (trace == null) {
+            return styled;
+        } else if (styled.isEmpty()) {
+            return trace;
         } else {
-            StringWriter string = new StringWriter();
-            PrintWriter print = new PrintWriter(string);
-            thrown.printStackTrace(print);
-            return message + Constants.EOL + Constants.EOL + string.toString();
+            return styled + EOL + EOL + trace;
         }
+    }
+
+    private static String toStackTrace(Throwable thrown) {
+        if (thrown != null) {
+            try {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                thrown.printStackTrace(pw);
+                pw.close();
+                return Red.apply(sw.toString());
+            } catch (Exception ignored) {
+            }
+        }
+        return null;
     }
 }

@@ -16,62 +16,45 @@
 
 package io.helidon.build.cli.harness;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.build.cli.harness.CommandModel.CommandInfo;
-import io.helidon.build.util.Requirements;
 import io.helidon.build.util.Log;
+import io.helidon.build.util.Log.Level;
+import io.helidon.build.util.Requirements;
 import io.helidon.build.util.Style;
 import io.helidon.build.util.SystemLogWriter;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
-import static io.helidon.build.cli.harness.CommandContext.Verbosity.VERBOSE;
-import static io.helidon.build.util.Constants.EOL;
-import static io.helidon.build.util.Style.BoldRed;
-import static io.helidon.build.util.Style.BoldYellow;
-import static io.helidon.build.util.Style.Red;
-import static java.util.logging.Level.SEVERE;
-import static java.util.logging.Level.WARNING;
+import static io.helidon.build.util.Log.Level.DEBUG;
+import static io.helidon.build.util.Log.Level.ERROR;
+import static io.helidon.build.util.Log.Level.INFO;
+import static io.helidon.build.util.Log.Level.VERBOSE;
+import static io.helidon.build.util.Log.Level.WARN;
 
 /**
  * The command context.
  */
 public final class CommandContext {
-
+    private static final SystemLogWriter LOG_WRITER = SystemLogWriter.bind(INFO);
     private final CLIDefinition cli;
-    private final Logger logger;
     private final CommandRegistry registry;
-    private final LogHandler logHandler;
+    private Verbosity verbosity;
     private ExitAction exitAction;
     private CommandParser parser;
 
     CommandContext(CommandContext parent) {
-        this.cli = parent.cli;
-        this.logger = parent.logger;
-        this.registry = parent.registry;
-        this.logHandler = parent.logHandler;
-        this.exitAction = new ExitAction();
+        this(parent.registry, parent.cli);
     }
 
     private CommandContext(CommandRegistry registry, CLIDefinition cli) {
         this.cli = Objects.requireNonNull(cli, "cli is null");
-        this.logger = Logger.getAnonymousLogger();
-        this.logger.setUseParentHandlers(false);
-        this.logHandler = new LogHandler();
-        this.logger.addHandler(logHandler);
         this.registry = Objects.requireNonNull(registry, "registry is null");
         this.exitAction = new ExitAction();
     }
@@ -171,17 +154,17 @@ public final class CommandContext {
                     if (failure != null) {
                         Requirements.toFailure(failure).ifPresentOrElse(ce -> {
                             // Assume message is already rendered
-                            exit(ce.getMessage(), null, Level.INFO, 1);
+                            exit(ce.getMessage(), null, INFO, 1);
                         }, () -> {
                             // Otherwise just use the message in the exception
-                            exit(LogHandler.THROWN_ONLY_MESSAGE, failure, SEVERE, 1);
+                            exit("", failure, ERROR, 1);
                         });
                     } else {
-                        exit(message, null, SEVERE, 1);
+                        exit(message, null, ERROR, 1);
                     }
                     break;
                 case WARNING:
-                    exit(message, null, WARNING, 0);
+                    exit(message, null, WARN, 0);
                     break;
                 default:
                     System.exit(0);
@@ -190,15 +173,15 @@ public final class CommandContext {
 
         private void exit(String message, Throwable error, Level level, int statusCode) {
             if (message != null && !message.isEmpty()) {
-                logLine();
+                Log.info();
                 if (Style.isStyled(message)) {
-                    logInfo(message);
+                    Log.info(message);
                 } else {
-                    log(level, error, message);
+                    Log.log(level, error, message);
                 }
-                logLine();
+                Log.info();
             }
-            System.exit(0);
+            System.exit(statusCode);
         }
     }
 
@@ -228,79 +211,6 @@ public final class CommandContext {
      */
     public Collection<CommandModel> allCommands() {
         return registry.all();
-    }
-
-    /**
-     * Log an empty line.
-     */
-    public void logLine() {
-        log(Level.INFO, null, "");
-    }
-
-    /**
-     * Log an INFO message.
-     *
-     * @param message INFO message to log
-     * @param args message args passed to {@link String#format}.
-     */
-    public void logInfo(String message, Object... args) {
-        log(Level.INFO, null, message, args);
-    }
-
-    /**
-     * Log a WARNING message.
-     *
-     * @param message WARNING message to log
-     * @param args message args passed to {@link String#format}.
-     */
-    public void logWarning(String message, Object... args) {
-        log(Level.WARNING, null, message, args);
-    }
-
-    /**
-     * Log a SEVERE message.
-     *
-     * @param message SEVERE message to log
-     * @param args message args passed to {@link String#format}.
-     */
-    public void logError(String message, Object... args) {
-        log(SEVERE, null, message, args);
-    }
-
-    /**
-     * Log a SEVERE message.
-     *
-     * @param error error
-     * @param message SEVERE message to log
-     * @param args message args passed to {@link String#format}.
-     */
-    public void logError(Throwable error, String message, Object... args) {
-        log(SEVERE, error, message, args);
-    }
-
-    /**
-     * Log a FINE message.
-     *
-     * @param message FINE message to log
-     * @param args message args passed to {@link String#format}.
-     */
-    public void logVerbose(String message, Object... args) {
-        log(Level.FINE, null, message, args);
-    }
-
-    /**
-     * Log a FINEST message.
-     *
-     * @param message FINEST message to log
-     * @param args message args passed to {@link String#format}.
-     */
-    public void logDebug(String message, Object... args) {
-        log(Level.FINEST, null, message, args);
-    }
-
-    private void log(Level level, Throwable error, String message, Object... args) {
-        String msg = message == null ? "" : String.format(message, args);
-        logger.log(level, msg, error);
     }
 
     /**
@@ -376,7 +286,7 @@ public final class CommandContext {
      * @return The level.
      */
     public Verbosity verbosity() {
-        return logHandler.verbosity;
+        return verbosity;
     }
 
     /**
@@ -385,11 +295,23 @@ public final class CommandContext {
      * @param verbosity verbosity value
      */
     void verbosity(Verbosity verbosity) {
-        this.logHandler.verbosity = verbosity;
-        if (verbosity == DEBUG) {
-            SystemLogWriter.bind(Log.Level.DEBUG);
-        } else if (verbosity == VERBOSE) {
-            // TODO SystemLogWriter.bind(Log.Level.FINE);
+        this.verbosity = verbosity;
+        switch (verbosity) {
+            case DEBUG: {
+                LOG_WRITER.level(DEBUG);
+                break;
+            }
+            case VERBOSE: {
+                LOG_WRITER.level(VERBOSE);
+                break;
+            }
+            case NORMAL: {
+                LOG_WRITER.level(INFO);
+                break;
+            }
+            default: {
+                throw new RuntimeException("unknown verbosity: " + verbosity);
+            }
         }
     }
 
@@ -463,72 +385,5 @@ public final class CommandContext {
          * Debug level.
          */
         DEBUG
-    }
-
-    /**
-     * Custom log handler to print the message to {@code stdout} and {@code stderr}.
-     */
-    private static final class LogHandler extends Handler {
-        static final String THROWN_ONLY_MESSAGE = "<thrown-only>";
-
-        private Verbosity verbosity = Verbosity.NORMAL;
-
-        @Override
-        public void publish(LogRecord record) {
-            Level level = record.getLevel();
-            String message = record.getMessage();
-            boolean verbose = verbosity == Verbosity.VERBOSE || verbosity == Verbosity.DEBUG;
-
-            if (level == Level.INFO) {
-                System.out.println(message);
-            } else if (level == Level.WARNING) {
-                System.err.println(BoldYellow.apply(message));
-            } else if (level == SEVERE) {
-                StringBuilder sb = new StringBuilder();
-                boolean thrownOnly = message.equalsIgnoreCase(THROWN_ONLY_MESSAGE);
-                if (!thrownOnly) {
-                    sb.append(BoldRed.apply(message));
-                }
-                if (verbose) {
-                    String trace = toStackTrace(record);
-                    if (trace != null) {
-                        if (!thrownOnly) {
-                            sb.append(EOL);
-                        }
-                        sb.append(Red.apply(trace));
-                    }
-                } else if (thrownOnly) {
-                    sb.append(BoldRed.apply(record.getThrown().getMessage()));
-                }
-                System.err.println(sb.toString());
-            } else if (verbose && (level == Level.CONFIG || level == Level.FINE)) {
-                System.out.println(message);
-            } else if (verbosity == Verbosity.DEBUG) {
-                System.out.println(message);
-            }
-        }
-
-        @Override
-        public void flush() {
-        }
-
-        @Override
-        public void close() throws SecurityException {
-        }
-
-        private static String toStackTrace(final LogRecord record) {
-            Throwable thrown = record.getThrown();
-            if (thrown != null) {
-                try {
-                    StringWriter sw = new StringWriter();
-                    PrintWriter pw = new PrintWriter(sw);
-                    thrown.printStackTrace(pw);
-                    pw.close();
-                    return sw.toString();
-                } catch (Exception ignored) {
-                }
-            }
-            return null;
-        }
     }
 }
