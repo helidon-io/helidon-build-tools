@@ -16,6 +16,7 @@
 
 package io.helidon.build.util;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.nio.file.Path;
@@ -73,13 +74,24 @@ public class PomUtils {
     /**
      * Reads the pom model.
      *
+     * @param pomPath The pom path.
+     * @return The model.
+     * @throws RuntimeException on error.
+     */
+    public static Model readPomModel(Path pomPath) {
+        return readPomModel(pomPath.toFile());
+    }
+
+    /**
+     * Reads the pom model.
+     *
      * @param pomFile The pom file.
      * @return The model.
      * @throws RuntimeException on error.
      */
-    public static Model readPomModel(Path pomFile) {
+    public static Model readPomModel(File pomFile) {
         try {
-            try (FileReader fr = new FileReader(pomFile.toFile())) {
+            try (FileReader fr = new FileReader(pomFile)) {
                 MavenXpp3Reader mvnReader = new MavenXpp3Reader();
                 return mvnReader.read(fr);
             }
@@ -91,13 +103,24 @@ public class PomUtils {
     /**
      * Writes the pom model.
      *
+     * @param pomPath The pom path.
+     * @param model The model.
+     * @throws RuntimeException on error.
+     */
+    public static void writePomModel(Path pomPath, Model model) {
+        writePomModel(pomPath.toFile(), model);
+    }
+
+    /**
+     * Writes the pom model.
+     *
      * @param pomFile The pom file.
      * @param model The model.
      * @throws RuntimeException on error.
      */
-    public static void writePomModel(Path pomFile, Model model) {
+    public static void writePomModel(File pomFile, Model model) {
         try {
-            try (FileWriter fw = new FileWriter(pomFile.toFile())) {
+            try (FileWriter fw = new FileWriter(pomFile)) {
                 MavenXpp3Writer mvnWriter = new MavenXpp3Writer();
                 mvnWriter.write(fw, model);
             }

@@ -17,7 +17,9 @@
 package io.helidon.build.dev;
 
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,6 +34,7 @@ import io.helidon.build.util.Log;
 
 import static io.helidon.build.dev.BuildType.Complete;
 import static io.helidon.build.dev.BuildType.Incremental;
+import static io.helidon.build.dev.FileChangeAware.changedTimeOf;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -52,6 +55,7 @@ public class BuildLoop {
     private final AtomicReference<CountDownLatch> stopped;
     private final AtomicReference<Project> project;
     private final AtomicReference<ChangeType> lastChangeType;
+    private final AtomicReference<FileTime> lastChangeTime;
     private final AtomicLong lastFailedTime;
     private final AtomicBoolean ready;
     private final AtomicLong delay;
@@ -79,6 +83,7 @@ public class BuildLoop {
         this.stopped = new AtomicReference<>(new CountDownLatch(1));
         this.project = new AtomicReference<>();
         this.lastChangeType = new AtomicReference<>();
+        this.lastChangeTime = new AtomicReference<>();
         this.lastFailedTime = new AtomicLong();
         this.ready = new AtomicBoolean();
         this.delay = new AtomicLong();
@@ -163,15 +168,15 @@ public class BuildLoop {
             final Project project = cycleStarted();
             if (project == null) {
 
-                // If we failed last time because of a build file change, and there have been no more build file changes,
-                // do nothing here and wait for a build file change.
+                // Need to create/recreate the project. If we failed last time we don't want to
+                // rebuild yet if there have been no changes; are we ready?
 
-                if (shouldCreateProject()) {
+                if (readyToCreateProject()) {
 
-                    // Need to create/recreate the project. Note that supplier calls onBuildStart().
+                    // Yes. Note that supplier calls onBuildStart().
 
                     try {
-                        boolean clean = this.clean.getAndSet(false);
+                        final boolean clean = this.clean.getAndSet(false);
                         setProject(projectSupplier.newProject(buildExecutor, clean, cycleNumber.get()));
                         ready();
                     } catch (IllegalArgumentException | InterruptedException e) {
@@ -184,39 +189,51 @@ public class BuildLoop {
             } else if (watchBinariesOnly) {
 
                 // We're only watching binary changes, assuming some external process might
-                // do a build. If we see any changes, we have not idea what they might be, so
+                // do a build. If we see any changes, we have no idea what they might be, so
                 // we must recreate the project.
 
-                if (project.hasBinaryChanges()) {
-                    changed(ChangeType.BinaryFile);
+                final Optional<FileTime> binaryChangeTime = project.binaryFilesChangedTime();
+                if (binaryChangeTime.isPresent()) {
+                    changed(ChangeType.BinaryFile, binaryChangeTime.get());
                 } else {
                     ready();
                 }
-            } else if (project.haveBuildFilesChanged()) {
-
-                // A build file (e.g. pom.xml) has changed, so recreate the project
-
-                changed(ChangeType.BuildFile);
 
             } else {
 
-                // If we have source changes, do an incremental build
+                // If we have a build file (e.g. pom.xml) change, recreate the project
 
-                final List<BuildRoot.Changes> sourceChanges = project.sourceChanges();
-                if (!sourceChanges.isEmpty()) {
-                    try {
-                        changed(ChangeType.SourceFile);
-                        buildStarting(Incremental);
-                        project.incrementalBuild(sourceChanges, monitor.stdOutConsumer(), monitor.stdErrConsumer());
-                        project.update(false);
-                        buildSucceeded(Incremental);
-                        ready();
-                    } catch (IllegalArgumentException | InterruptedException e) {
-                        throw e;
-                    } catch (Throwable e) {
-                        buildFailed(Incremental, e);
-                        // Wait for further changes before re-building
-                        project.update(false);
+                final Optional<FileTime> buildChangeTime = project.buildFilesChangedTime();
+                if (buildChangeTime.isPresent()) {
+
+                    changed(ChangeType.BuildFile, buildChangeTime.get());
+
+                } else {
+
+                    // If we have source changes, do an incremental build
+
+                    final List<BuildRoot.Changes> sourceChanges = project.sourceChanges();
+                    if (!sourceChanges.isEmpty()) {
+                        try {
+                            changed(ChangeType.SourceFile, changedTimeOf(sourceChanges).orElseThrow());
+                            buildStarting(Incremental);
+                            project.incrementalBuild(sourceChanges, monitor.stdOutConsumer(), monitor.stdErrConsumer());
+                            project.update(false);
+                            buildSucceeded(Incremental);
+                            ready();
+                        } catch (IllegalArgumentException | InterruptedException e) {
+                            throw e;
+                        } catch (Throwable e) {
+                            buildFailed(Incremental, e);
+
+                            // Wait for further changes before re-building, if needed. Since it is possible for a file to have
+                            // changed during the build, we must ensure that we don't miss it. Do nothing if there are changes
+                            // since the last change; if there are none, update the project so that we'll wait for them.
+
+                            if (project.sourceChangesSince(lastChangeTime.get()).isEmpty()) {
+                                project.update(false);
+                            }
+                        }
                     }
                 }
             }
@@ -257,8 +274,9 @@ public class BuildLoop {
         }
     }
 
-    private void changed(ChangeType type) {
+    private void changed(ChangeType type, FileTime lastChangedTime) {
         lastChangeType.set(type);
+        lastChangeTime.set(lastChangedTime);
         monitor.onChanged(cycleNumber.get(), type);
         delay.set(0);
         if (type != ChangeType.SourceFile) {
@@ -271,20 +289,42 @@ public class BuildLoop {
     }
 
     private void buildFailed(BuildType type, Throwable e) {
-        lastFailedTime.set(System.currentTimeMillis());
+        final long failedTime = System.currentTimeMillis();
+        lastFailedTime.set(failedTime);
+        if (lastChangeTime.get() == null) {
+            lastChangeTime.set(FileTime.fromMillis(failedTime));
+        }
         delay.set(monitor.onBuildFail(cycleNumber.get(), type, e));
     }
 
-    private boolean shouldCreateProject() {
-        final long lastFailed = lastFailedTime.get();
-        if (lastFailed == 0) {
+    private boolean readyToCreateProject() {
+
+        // Did we fail last time?
+        if (lastFailedTime.get() == 0) {
+
+            // No, so we're ready to create the project.
             return true;
-        } else if (projectSupplier.hasChanged(projectDirectory, lastFailed)) {
-            monitor.onChanged(cycleNumber.get(), ChangeType.File);
-            return true;
+
         } else {
-            return false;
+
+            // Yes. Has any file changed since the last change we saw?
+            final Optional<FileTime> changed = changedSinceLast();
+            if (changed.isPresent()) {
+
+                // Yes, so we're ready to try again. Notify using the last change time in case we fail again.
+                changed(ChangeType.File, changed.get());
+                return true;
+
+            } else {
+
+                // No, so wait.
+                return false;
+            }
         }
+    }
+
+    private Optional<FileTime> changedSinceLast() {
+        return projectSupplier.changedSince(projectDirectory, lastChangeTime.get());
     }
 
     private boolean cycleEnded() {

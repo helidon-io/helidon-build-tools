@@ -21,7 +21,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.List;
+import java.util.Optional;
 
 import io.helidon.build.dev.BuildExecutor;
 import io.helidon.build.dev.BuildRoot;
@@ -37,6 +39,8 @@ import static io.helidon.build.dev.BuildComponent.createBuildComponent;
 import static io.helidon.build.dev.BuildFile.createBuildFile;
 import static io.helidon.build.dev.BuildRoot.createBuildRoot;
 import static io.helidon.build.dev.ProjectDirectory.createProjectDirectory;
+import static io.helidon.build.util.FileUtils.ChangeDetectionType.FIRST;
+import static io.helidon.build.util.FileUtils.ChangeDetectionType.LATEST;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
@@ -72,8 +76,13 @@ public class DefaultProjectSupplier implements ProjectSupplier {
     }
 
     @Override
-    public boolean hasChanged(Path projectDir, long lastCheckMillis) {
-        return MavenProjectSupplier.hasChangesSince(projectDir, lastCheckMillis);
+    public boolean hasChanges(Path projectDir, FileTime lastCheckTime) {
+        return MavenProjectSupplier.changedSince(projectDir, lastCheckTime, FIRST).isPresent();
+    }
+
+    @Override
+    public Optional<FileTime> changedSince(Path projectDir, FileTime lastCheckTime) {
+        return MavenProjectSupplier.changedSince(projectDir, lastCheckTime, LATEST);
     }
 
     @Override

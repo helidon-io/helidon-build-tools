@@ -32,7 +32,7 @@ import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.util.FileUtils.ensureDirectory;
-import static io.helidon.build.util.FileUtils.lastModifiedTime;
+import static io.helidon.build.util.FileUtils.lastModifiedSeconds;
 import static io.helidon.build.util.OSType.Linux;
 import static io.helidon.build.util.OSType.Windows;
 import static io.helidon.linker.util.Constants.OS;
@@ -72,7 +72,7 @@ class StartScriptTest {
     }
 
     private static String timeStampComparison(String name, Path file) {
-        final String timestamp = Long.toString(lastModifiedTime(file));
+        final String timestamp = Long.toString(lastModifiedSeconds(file));
         return "${" + name + "TimeStamp} " + NOT_EQUAL + " \"" + timestamp + "\"";
     }
 

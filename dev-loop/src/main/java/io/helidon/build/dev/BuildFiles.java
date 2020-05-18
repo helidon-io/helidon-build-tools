@@ -16,15 +16,18 @@
 
 package io.helidon.build.dev;
 
+import java.nio.file.attribute.FileTime;
 import java.util.List;
+import java.util.Optional;
 
+import static io.helidon.build.dev.FileChangeAware.changedTimeOf;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 
 /**
  * A collection of {@link BuildFile}s that can be polled for changes.
  */
-public class BuildFiles {
+public class BuildFiles implements FileChangeAware {
     private final List<BuildFile> buildFiles;
 
     /**
@@ -39,18 +42,9 @@ public class BuildFiles {
         this.buildFiles = unmodifiableList(buildFiles);
     }
 
-    /**
-     * Returns whether or not any build file has changed.
-     *
-     * @return {@code true} if any build file has changed.
-     */
-    public boolean haveChanged() {
-        for (final BuildFile file : buildFiles) {
-            if (file.hasChanged()) {
-                return true;
-            }
-        }
-        return false;
+    @Override
+    public Optional<FileTime> changedTime() {
+        return changedTimeOf(buildFiles);
     }
 
     /**

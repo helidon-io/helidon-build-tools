@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,12 +28,15 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static io.helidon.build.dev.BuildFile.createBuildFile;
+import static io.helidon.build.util.FileUtils.lastModifiedTime;
+import static io.helidon.build.util.FileUtils.newerThan;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.requireNonNull;
 
@@ -139,11 +143,12 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
     /**
      * Directory changes.
      */
-    public static class Changes {
+    public static class Changes implements FileChangeAware {
         private final BuildRoot root;
         private final Set<Path> added;
         private final Set<Path> modified;
         private final Set<Path> removed;
+        private FileTime changedTime;
 
         private Changes(BuildRoot root, Set<Path> initialFiles) {
             this.root = root;
@@ -218,14 +223,42 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
             return result;
         }
 
+        @Override
+        public Optional<FileTime> changedTime() {
+            return Optional.of(changedTime);
+        }
+
         private void update(Path file, BuildFile existing) {
+            FileTime lastModified = null;
             if (existing == null) {
+
+                // We didn't know about this one last time, so it is an addition
+
+                lastModified = lastModifiedTime(file);
                 added.add(file);
+
             } else {
+
+                // We knew about it last time, so take it out of our removed list
+
                 removed.remove(file);
-                if (existing.hasChanged()) {
+
+                // Has it changed?
+
+                final Optional<FileTime> changedTime = existing.changedTime();
+                if (changedTime.isPresent()) {
+
+                    // Yes, so it is modified
+
+                    lastModified = changedTime.get();
                     modified.add(file);
                 }
+            }
+
+            // Keep the most recent changed time
+
+            if (lastModified != null && newerThan(lastModified, changedTime)) {
+                changedTime = lastModified;
             }
         }
     }

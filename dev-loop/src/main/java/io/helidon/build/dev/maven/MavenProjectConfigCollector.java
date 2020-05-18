@@ -20,10 +20,11 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.inject.Inject;
+
 import io.helidon.build.util.ProjectConfig;
 
 import org.apache.maven.AbstractMavenLifecycleParticipant;
-import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.execution.AbstractExecutionListener;
 import org.apache.maven.execution.ExecutionEvent;
 import org.apache.maven.execution.ExecutionListener;
@@ -32,16 +33,23 @@ import org.apache.maven.execution.MavenExecutionResult;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.MojoExecution;
+import org.apache.maven.project.DefaultDependencyResolutionRequest;
+import org.apache.maven.project.DependencyResolutionException;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.ProjectDependenciesResolver;
 import org.codehaus.plexus.component.annotations.Component;
+import org.eclipse.aether.graph.DependencyFilter;
 
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
-import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSPATH;
+import static io.helidon.build.util.ProjectConfig.PROJECT_DEPENDENCIES;
 import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_RESOURCEDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCEDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
+import static org.eclipse.aether.util.artifact.JavaScopes.COMPILE;
+import static org.eclipse.aether.util.artifact.JavaScopes.RUNTIME;
+import static org.eclipse.aether.util.filter.DependencyFilterUtils.classpathFilter;
 
 /**
  * Collects settings from a maven project and stores them in the a config file for later use
@@ -55,90 +63,108 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
     private static final String MULTI_MODULE_PROJECT = "Multi-module projects are not supported.";
     private static final String MISSING_MAIN_CLASS = "The required '" + MAIN_CLASS_PROPERTY + "' property is missing.";
     private static final String MISSING_DOT_HELIDON = "The required " + DOT_HELIDON + " file is missing.";
+    private static final DependencyFilter DEPENDENCY_FILTER = classpathFilter(COMPILE, RUNTIME);
     private static final String COMPILE_GOAL = "compile";
 
-    private boolean supportedProject;
-    private boolean compileSucceeded;
+    @Inject
+    private ProjectDependenciesResolver dependenciesResolver;
+    private Path supportedProjectDir;
+    private ProjectConfig projectConfig;
 
     /**
      * Assert that the project is one whose configuration we can support.
      *
      * @param session The session.
+     * @return The project directory.
      */
-    public static void assertSupportedProject(MavenSession session) {
+    public static Path assertSupportedProject(MavenSession session) {
         assertSupportedProject(session.getProjects().size() == 1, MULTI_MODULE_PROJECT);
         final MavenProject project = session.getProjects().get(0);
         final Path projectDir = project.getBasedir().toPath();
         assertSupportedProject(ProjectConfig.helidonCliConfigExists(projectDir), MISSING_DOT_HELIDON);
         assertSupportedProject(project.getProperties().getProperty(MAIN_CLASS_PROPERTY) != null, MISSING_MAIN_CLASS);
         debug("Helidon project is supported");
+        return projectDir;
     }
 
     @Override
     public void afterProjectsRead(MavenSession session) {
+        // Init state
+        supportedProjectDir = null;
+        projectConfig = null;
         try {
             // Ensure that we support this project
-            assertSupportedProject(session);
-            supportedProject = true;
+            supportedProjectDir = assertSupportedProject(session);
 
             // Install our listener so we can know if compilation occurred and succeeded
             final MavenExecutionRequest request = session.getRequest();
             request.setExecutionListener(new EventListener(request.getExecutionListener()));
         } catch (IllegalStateException e) {
-            supportedProject = false;
+            supportedProjectDir = null;
         }
     }
 
     @Override
     public void afterSessionEnd(MavenSession session) {
-        if (supportedProject) {
-            final MavenProject project = session.getProjects().get(0);
-            final Path projectDir = project.getBasedir().toPath();
-            final ProjectConfig config = ProjectConfig.loadHelidonCliConfig(projectDir);
+        if (supportedProjectDir != null) {
             final MavenExecutionResult result = session.getResult();
             if (result == null) {
                 debug("Build failed: no result");
-                invalidateConfig(config);
+                invalidateConfig();
             } else if (result.hasExceptions()) {
                 debug("Build failed: %s", result.getExceptions());
-                invalidateConfig(config);
-            } else if (compileSucceeded) {
+                invalidateConfig();
+            } else if (projectConfig != null) {
                 debug("Build succeeded, with compilation. Updating config.");
-                updateConfig(config, project);
+                storeConfig();
             } else {
                 debug("Build succeeded, without compilation");
-                invalidateConfig(config);
+                invalidateConfig();
             }
         }
     }
 
-    private void updateConfig(ProjectConfig config, MavenProject project) {
+    private void collectConfig(MavenProject project, MavenSession session) {
+        final Path projectDir = project.getBasedir().toPath();
+        final ProjectConfig config = ProjectConfig.loadHelidonCliConfig(projectDir);
+        final List<String> dependencies = dependencies(project, session);
+        final Path outputDir = projectDir.resolve(project.getBuild().getOutputDirectory());
+        final List<String> classesDirs = List.of(outputDir.toString());
+        final List<String> resourceDirs = project.getResources()
+                                                 .stream()
+                                                 .map(Resource::getDirectory)
+                                                 .collect(Collectors.toList());
+        config.property(PROJECT_DEPENDENCIES, dependencies);
+        config.property(PROJECT_MAINCLASS, project.getProperties().getProperty(MAIN_CLASS_PROPERTY));
+        config.property(PROJECT_VERSION, project.getVersion());
+        config.property(PROJECT_CLASSDIRS, classesDirs);
+        config.property(PROJECT_SOURCEDIRS, project.getCompileSourceRoots());
+        config.property(PROJECT_RESOURCEDIRS, resourceDirs);
+        this.projectConfig = config;
+    }
+
+    private List<String> dependencies(MavenProject project, MavenSession session) {
         try {
-            final String mainClass = project.getProperties().getProperty(MAIN_CLASS_PROPERTY);
-            config.property(PROJECT_MAINCLASS, mainClass);
-            config.property(PROJECT_VERSION, project.getVersion());
-            config.property(PROJECT_CLASSPATH, project.getRuntimeClasspathElements());
-            config.property(PROJECT_SOURCEDIRS, project.getCompileSourceRoots());
-            final List<String> classesDirs = project.getCompileClasspathElements()
-                                                    .stream()
-                                                    .filter(d -> !d.endsWith(".jar"))
-                                                    .collect(Collectors.toList());
-            config.property(PROJECT_CLASSDIRS, classesDirs);
-            final List<String> resourceDirs = project.getResources()
-                                                     .stream()
-                                                     .map(Resource::getDirectory)
-                                                     .collect(Collectors.toList());
-            config.property(PROJECT_RESOURCEDIRS, resourceDirs);
-            config.buildSucceeded();
-            config.store();
-        } catch (DependencyResolutionRequiredException e) {
-            throw new RuntimeException(e);
+            return dependenciesResolver.resolve(new DefaultDependencyResolutionRequest(project, session.getRepositorySession())
+                                                    .setResolutionFilter(DEPENDENCY_FILTER))
+                                       .getDependencies()
+                                       .stream()
+                                       .map(d -> d.getArtifact().getFile().toString())
+                                       .collect(Collectors.toList());
+        } catch (DependencyResolutionException e) {
+            throw new RuntimeException("Dependency resolution failed: " + e.getMessage());
         }
     }
 
-    private void invalidateConfig(ProjectConfig config) {
-        config.buildFailed();
-        config.store();
+    private void storeConfig() {
+        projectConfig.buildSucceeded();
+        projectConfig.store();
+    }
+
+    private void invalidateConfig() {
+        projectConfig = ProjectConfig.loadHelidonCliConfig(supportedProjectDir);
+        projectConfig.buildFailed();
+        projectConfig.store();
     }
 
     private static void assertSupportedProject(boolean supported, String reasonIfUnsupported) {
@@ -203,7 +229,7 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
             final MojoExecution execution = event.getMojoExecution();
             next.mojoSucceeded(event);
             if (execution.getGoal().equals(COMPILE_GOAL)) {
-                compileSucceeded = true;
+                collectConfig(event.getProject(), event.getSession());
             }
         }
 

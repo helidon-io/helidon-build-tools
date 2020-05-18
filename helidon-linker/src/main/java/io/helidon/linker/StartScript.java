@@ -460,7 +460,7 @@ public class StartScript {
          * @return The last modified time.
          */
         protected static String lastModifiedTime(Path file) {
-            return Long.toString(FileUtils.lastModifiedTime(file));
+            return Long.toString(FileUtils.lastModifiedSeconds(file));
         }
 
         @Override

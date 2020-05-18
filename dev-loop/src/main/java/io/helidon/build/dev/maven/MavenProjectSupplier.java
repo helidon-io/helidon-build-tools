@@ -16,15 +16,12 @@
 
 package io.helidon.build.dev.maven;
 
-import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import io.helidon.build.dev.BuildExecutor;
@@ -35,9 +32,10 @@ import io.helidon.build.dev.BuildType;
 import io.helidon.build.dev.DirectoryType;
 import io.helidon.build.dev.FileType;
 import io.helidon.build.dev.Project;
+import io.helidon.build.dev.Project.Builder;
 import io.helidon.build.dev.ProjectDirectory;
 import io.helidon.build.dev.ProjectSupplier;
-import io.helidon.build.util.Log;
+import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.ProjectConfig;
 
 import org.apache.maven.execution.MavenSession;
@@ -49,17 +47,18 @@ import static io.helidon.build.dev.BuildFile.createBuildFile;
 import static io.helidon.build.dev.BuildRoot.createBuildRoot;
 import static io.helidon.build.dev.BuildType.Skipped;
 import static io.helidon.build.dev.ProjectDirectory.createProjectDirectory;
+import static io.helidon.build.util.FileUtils.ChangeDetectionType.FIRST;
+import static io.helidon.build.util.FileUtils.ChangeDetectionType.LATEST;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
-import static io.helidon.build.util.FileUtils.lastModifiedTime;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
-import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSPATH;
+import static io.helidon.build.util.ProjectConfig.PROJECT_DEPENDENCIES;
 import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_RESOURCEDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCEDIRS;
 import static io.helidon.build.util.ProjectConfig.loadHelidonCliConfig;
-import static io.helidon.build.util.TimeUtils.toDateTime;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A {@code ProjectSupplier} for Maven projects.
@@ -81,85 +80,12 @@ public class MavenProjectSupplier implements ProjectSupplier {
         return !name.equals(TARGET_DIR_NAME);
     };
 
-    private final AtomicReference<MavenProject> project;
+    private final MavenProject project;
     private final MavenSession session;
     private final BuildPluginManager plugins;
     private final AtomicBoolean firstBuild;
     private BuildType buildType;
     private ProjectConfig config;
-
-    /**
-     * Checks whether any matching file has a modified time more recent than the given time.
-     *
-     * @param projectDir The project directory.
-     * @param lastCheckMillis The time to check against, in milliseconds.
-     * @return {@code true} if there are more recent changes.
-     */
-    public static boolean hasChangesSince(Path projectDir, long lastCheckMillis) {
-        return hasChangesSince(projectDir, lastCheckMillis, NOT_HIDDEN, NOT_HIDDEN.and(NOT_TARGET_DIR));
-    }
-
-    /**
-     * Checks whether any matching file has a modified time more recent than the given time.
-     *
-     * @param projectDir The project directory.
-     * @param lastCheckMillis The time to check against, in milliseconds.
-     * @param dirFilter A filter for directories to visit.
-     * @param fileFilter A filter for which files to check.
-     * @return {@code true} if there are more recent changes.
-     */
-    public static boolean hasChangesSince(Path projectDir,
-                                          long lastCheckMillis,
-                                          Predicate<Path> dirFilter,
-                                          Predicate<Path> fileFilter) {
-        if (lastCheckMillis > 1000) {
-            final long lastCheckSeconds = lastCheckMillis / 1000;
-            final String lastCheck = toDateTime(lastCheckMillis);
-            final AtomicBoolean hasChanges = new AtomicBoolean(false);
-            Log.debug("Checking if project has files newer than last check time %s", lastCheck);
-            try {
-                Files.walkFileTree(projectDir, new FileVisitor<>() {
-                    @Override
-                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-                        return dirFilter.test(dir) ? FileVisitResult.CONTINUE : FileVisitResult.SKIP_SUBTREE;
-                    }
-
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                        if (fileFilter.test(file)) {
-                            final long lastModified = lastModifiedTime(file);
-                            if (lastModified > lastCheckSeconds) {
-                                final String fileTime = toDateTime(lastModified * 1000);
-                                Log.debug("%s @ %s is newer than last check time %s", file, fileTime, lastCheck);
-                                hasChanges.set(true);
-                                return FileVisitResult.TERMINATE;
-                            }
-                        }
-                        return FileVisitResult.CONTINUE;
-                    }
-
-                    @Override
-                    public FileVisitResult visitFileFailed(Path file, IOException exc) {
-                        hasChanges.set(false);
-                        return FileVisitResult.TERMINATE;
-                    }
-
-                    @Override
-                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
-
-                return hasChanges.get();
-
-            } catch (Exception e) {
-                Log.warn(e.getMessage());
-            }
-        }
-
-        // If we get here, just say yes.
-        return true;
-    }
 
     /**
      * Constructor.
@@ -172,10 +98,32 @@ public class MavenProjectSupplier implements ProjectSupplier {
                                 MavenSession session,
                                 BuildPluginManager plugins) {
         MavenProjectConfigCollector.assertSupportedProject(session);
-        this.project = new AtomicReference<>(project);
-        this.session = session;
-        this.plugins = plugins;
+        this.project = project;
+        this.session = requireNonNull(session);
+        this.plugins = requireNonNull(plugins);
         this.firstBuild = new AtomicBoolean(true);
+    }
+
+    @Override
+    public boolean hasChanges(Path projectDir, FileTime lastCheckTime) {
+        return changedSince(projectDir, lastCheckTime, FIRST).isPresent();
+    }
+
+    @Override
+    public Optional<FileTime> changedSince(Path projectDir, FileTime lastCheckTime) {
+        return changedSince(projectDir, lastCheckTime, LATEST);
+    }
+
+    /**
+     * Checks whether any matching file has a modified time more recent than the given time.
+     *
+     * @param projectDir The project directory.
+     * @param lastCheckTime The time to check against.
+     * @param type The type of search.
+     * @return The time, if changed.
+     */
+    public static Optional<FileTime> changedSince(Path projectDir, FileTime lastCheckTime, FileUtils.ChangeDetectionType type) {
+        return FileUtils.changedSince(projectDir, lastCheckTime, NOT_HIDDEN.and(NOT_TARGET_DIR), NOT_HIDDEN, type);
     }
 
     @Override
@@ -199,11 +147,6 @@ public class MavenProjectSupplier implements ProjectSupplier {
     }
 
     @Override
-    public boolean hasChanged(Path projectDir, long lastCheckMillis) {
-        return hasChangesSince(projectDir, lastCheckMillis);
-    }
-
-    @Override
     public String buildFileName() {
         return POM_FILE;
     }
@@ -224,14 +167,14 @@ public class MavenProjectSupplier implements ProjectSupplier {
             // is more recent than any file in the project (excluding target/* and .*)
 
             config = loadHelidonCliConfig(projectDir);
-            return !hasChangesSince(projectDir, config.lastSuccessfulBuildTime());
+            return !hasChanges(projectDir, FileTime.fromMillis(config.lastSuccessfulBuildTime()));
         }
         return false;
     }
 
     private Project createProject(Path projectDir, BuildType buildType) {
         // Root directory
-        final Project.Builder builder = Project.builder().buildType(buildType);
+        final Builder builder = Project.builder().buildType(buildType);
         final ProjectDirectory root = createProjectDirectory(DirectoryType.Project, projectDir);
         builder.rootDirectory(root);
 
@@ -239,9 +182,11 @@ public class MavenProjectSupplier implements ProjectSupplier {
         final Path pomFile = assertFile(projectDir.resolve(POM_FILE));
         builder.buildFile(createBuildFile(root, FileType.MavenPom, pomFile));
 
-        // Dependencies - Should we consider the classes/lib?
-        final List<String> classpath = config.propertyAsList(PROJECT_CLASSPATH);
-        classpath.stream().map(s -> Path.of(s)).forEach(builder::dependency);
+        // Dependencies
+        final List<String> dependencies = config.propertyAsList(PROJECT_DEPENDENCIES);
+        for (String dependency : dependencies) {
+            builder.dependency(Path.of(dependency));
+        }
 
         // Build components
         final List<String> sourceDirs = config.propertyAsList(PROJECT_SOURCEDIRS);
@@ -276,9 +221,10 @@ public class MavenProjectSupplier implements ProjectSupplier {
         return builder.build();
     }
 
+
     private BuildStep compileStep() {
         return MavenGoalBuildStep.builder()
-                                 .mavenProject(project.get())
+                                 .mavenProject(project)
                                  .mavenSession(session)
                                  .pluginManager(plugins)
                                  .goal(MavenGoalBuildStep.compileGoal())
@@ -287,7 +233,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
 
     private BuildStep resourcesStep() {
         return MavenGoalBuildStep.builder()
-                                 .mavenProject(project.get())
+                                 .mavenProject(project)
                                  .mavenSession(session)
                                  .pluginManager(plugins)
                                  .goal(MavenGoalBuildStep.resourcesGoal())

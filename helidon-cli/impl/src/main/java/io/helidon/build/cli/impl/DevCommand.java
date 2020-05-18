@@ -59,6 +59,7 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
     private static final String MAVEN_LOG_LEVEL_END = "]";
     private static final String MAVEN_ERROR_LEVEL = "ERROR";
     private static final String MAVEN_FATAL_LEVEL = "FATAL";
+    private static final String SLF4J_PREFIX = "SLF4J:";
 
     private final CommonOptions commonOptions;
     private final boolean clean;
@@ -179,6 +180,8 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
                     }
                     restoreOutput();
                     return true;
+                } else if (line.startsWith(SLF4J_PREFIX)) {
+                    return false;
                 } else if (suspendOutput) {
                     return false;
                 } else if (line.contains(BUILD_SUCCEEDED)

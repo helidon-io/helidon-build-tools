@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.build.archetype.engine.ArchetypeEngine;
+import io.helidon.build.archetype.engine.Maps;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -159,7 +160,7 @@ public class IntegrationTestMojo extends AbstractMojo {
                     .forEach(File::delete);
         }
         Files.createDirectories(outputDir);
-        new ArchetypeEngine(archetypeFile, props).generate(outputDir.toFile());
+        new ArchetypeEngine(archetypeFile, Maps.fromProperties(props)).generate(outputDir.toFile());
         List<String> goals = Files.readAllLines(projectGoal).stream()
                 .flatMap(g -> Stream.of(g.split(" ")))
                 .collect(Collectors.toList());

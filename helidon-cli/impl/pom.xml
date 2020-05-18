@@ -38,6 +38,16 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.helidon.build-tools</groupId>
+            <artifactId>helidon-utils</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools.archetype</groupId>
+            <artifactId>helidon-archetype-engine</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
             <scope>runtime</scope>
@@ -155,6 +165,7 @@
                                     <arguments>
                                         <argument>-H:Path=${project.build.directory}</argument>
                                         <argument>-H:Name=${project.build.finalName}</argument>
+                                        <argument>-H:+PrintAnalysisCallTree</argument>
                                         <argument>-H:+ReportExceptionStackTraces</argument>
                                         <argument>-H:-ParseRuntimeOptions</argument>
                                         <argument>--no-server</argument>

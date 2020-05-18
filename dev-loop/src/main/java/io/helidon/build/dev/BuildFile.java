@@ -16,13 +16,12 @@
 
 package io.helidon.build.dev;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.Objects;
-import java.util.function.Predicate;
+import java.util.Optional;
+
+import io.helidon.build.util.FileUtils;
 
 import static io.helidon.build.util.FileUtils.assertFile;
 import static java.util.Objects.requireNonNull;
@@ -30,7 +29,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * A project build file that can detect modification.
  */
-public class BuildFile {
+public class BuildFile implements FileChangeAware {
     private final ProjectDirectory parent;
     private final FileType type;
     private final Path path;
@@ -52,7 +51,7 @@ public class BuildFile {
         this.parent = requireNonNull(parent);
         this.type = requireNonNull(type);
         this.path = assertFile(path);
-        this.lastModified = getLastModifiedTime();
+        this.lastModified = FileUtils.lastModifiedTime(path);
     }
 
     /**
@@ -82,34 +81,29 @@ public class BuildFile {
         return path;
     }
 
-    /**
-     * Tests the given predicate against the path.
-     *
-     * @param test The test.
-     * @return {@code true} if the path matches.
-     */
-    public boolean matches(Predicate<Path> test) {
-        return test.test(path());
+    @Override
+    public Optional<FileTime> changedTime() {
+        return FileUtils.newerThan(path, lastModified);
     }
 
     /**
-     * Tests the given predicate against the file name.
+     * Tests whether or not this file has a modified time that is more recent than the base time.
      *
-     * @param test The test.
-     * @return {@code true} if the path matches.
+     * @param baseTime The base time. May be {@code null}.
+     * @return {@code true} if base time is {@code null} or change time is newer.
      */
-    public boolean matchesFileName(Predicate<String> test) {
-        return test.test(path().getFileName().toString());
+    public Optional<FileTime> changedTimeIfNewerThan(FileTime baseTime) {
+        return FileUtils.newerThan(path, baseTime);
     }
 
     /**
-     * Returns whether or not this file has a different mod time than when this instance was created.
+     * Tests whether or not this file has a modified time that is more recent than the base time.
      *
-     * @return {@code true} if changed.
+     * @param baseTime The base time. May be {@code null}.
+     * @return {@code true} if base time is {@code null} or change time is older.
      */
-    public boolean hasChanged() {
-        final FileTime current = getLastModifiedTime();
-        return !lastModified.equals(current);
+    public Optional<FileTime> changedTimeIfOlderThan(FileTime baseTime) {
+        return FileUtils.olderThan(path, baseTime);
     }
 
     /**
@@ -117,8 +111,8 @@ public class BuildFile {
      *
      * @return The last modified time.
      */
-    public long lastModifiedTime() {
-        return lastModified.toMillis();
+    public FileTime lastModifiedTime() {
+        return lastModified;
     }
 
     @Override
@@ -133,7 +127,7 @@ public class BuildFile {
      * Updates the last modified time.
      */
     public void update() {
-        lastModified = getLastModifiedTime();
+        lastModified = FileUtils.lastModifiedTime(path);
     }
 
     @Override
@@ -144,16 +138,8 @@ public class BuildFile {
     @Override
     public String toString() {
         return "BuildFile{"
-                + "type=" + type
-                + ", path=" + path
-                + '}';
-    }
-
-    private FileTime getLastModifiedTime() {
-        try {
-            return Files.getLastModifiedTime(path);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+               + "type=" + type
+               + ", path=" + path
+               + '}';
     }
 }

@@ -31,7 +31,6 @@ import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.HelidonVariant;
 import io.helidon.build.util.Instance;
 import io.helidon.build.util.Log;
-import io.helidon.build.util.MavenArtifacts;
 import io.helidon.build.util.MavenCommand;
 import io.helidon.build.util.QuickstartGenerator;
 
@@ -43,7 +42,7 @@ import static io.helidon.build.test.HelidonTestVersions.currentHelidonReleaseVer
 import static io.helidon.build.util.Constants.DIR_SEP;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
-import static io.helidon.build.util.FileUtils.lastModifiedTime;
+import static io.helidon.build.util.FileUtils.lastModifiedSeconds;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -178,7 +177,7 @@ public class TestFiles implements BeforeAllCallback {
     public static Path touch(Path file) {
         if (Files.exists(file)) {
             final long currentTime = System.currentTimeMillis();
-            final long lastModified = lastModifiedTime(file);
+            final long lastModified = lastModifiedSeconds(file);
             final long lastModifiedPlusOneSecond = lastModified + 1000;
             final long newTime = Math.max(currentTime, lastModifiedPlusOneSecond);
             try {
@@ -190,15 +189,6 @@ public class TestFiles implements BeforeAllCallback {
         } else {
             return ensureFile(file);
         }
-    }
-
-    /**
-     * Returns the {@link MavenArtifacts} instance.
-     *
-     * @return The instance.
-     */
-    private static MavenArtifacts mavenArtifacts() {
-        return MavenArtifacts.instance();
     }
 
     /**
@@ -243,8 +233,7 @@ public class TestFiles implements BeforeAllCallback {
     }
 
     private static Path fetchSignedJar() {
-        Log.info("Fetching signed jar %s", SIGNED_JAR_COORDINATES);
-        return mavenArtifacts().artifact(SIGNED_JAR_COORDINATES);
+        throw new IllegalStateException("not yet implemented, see https://github.com/oracle/helidon-build-tools/issues/110");
     }
 
     private static Path getOrCreateQuickstartSeJar() {
