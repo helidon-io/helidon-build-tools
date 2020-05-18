@@ -26,6 +26,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.build.cli.impl.InitCommand.Flavor;
+
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.test.StripAnsi.stripAnsi;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -75,12 +77,25 @@ class TestUtils {
     static ExecResult exec(String... args) throws IOException, InterruptedException {
         List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-cp", "\"" + System.getProperty("java.class.path") + "\""));
         String version = System.getProperty(HELIDON_VERSION_PROPERTY);
+        return execWithDirAndInput(null, null, args);
+    }
+
+    static ExecResult execWithDirAndInput(File wd, File input, String... args) throws IOException, InterruptedException {
+        List<String> cmdArgs = new ArrayList<>();
+        cmdArgs.addAll(List.of(javaPath(), "-cp", "\"" + System.getProperty("java.class.path") + "\""));
+        String version = System.getProperty(HELIDON_VERSION_PROPERTY);
         if (version != null) {
             cmdArgs.add("-D" + HELIDON_VERSION_PROPERTY + "=" + version);
         }
         cmdArgs.add(Main.class.getName());
         cmdArgs.addAll(Arrays.asList(args));
         ProcessBuilder pb = new ProcessBuilder(cmdArgs);
+        if (wd != null) {
+            pb.directory(wd);
+        }
+        if (input != null) {
+            pb.redirectInput(input);
+        }
         Process p = pb.redirectErrorStream(true).start();
         String output = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         if (!p.waitFor(10, TimeUnit.SECONDS)) {
@@ -98,5 +113,16 @@ class TestUtils {
             path = path.resolve(dir);
             assertTrue(Files.exists(path));
         }
+    }
+
+    static boolean apptypeArchetypeFound(Flavor flavor, String helidonVersion, String apptype) {
+        AppTypeBrowser browser = new AppTypeBrowser(flavor, helidonVersion);
+        boolean found = browser.appTypes().contains(apptype);
+        if (!found) {
+            String msg = String.format("WARNING: Unable to find archetype %s for flavor %s and version %s",
+                    apptype, flavor, helidonVersion);
+            System.err.println(msg);
+        }
+        return found;
     }
 }

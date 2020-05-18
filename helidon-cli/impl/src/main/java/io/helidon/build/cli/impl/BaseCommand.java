@@ -73,7 +73,6 @@ public abstract class BaseCommand {
         }
     }
 
-
     private static final String SPACES = "                                                        ";
 
     protected static String formatMapAsYaml(String top, Map<String, Object> map) {

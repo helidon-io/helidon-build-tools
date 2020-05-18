@@ -19,74 +19,72 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import io.helidon.build.test.TestFiles;
-import io.helidon.build.util.HelidonVariant;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARTIFACT_ID;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_GROUP_ID;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_NAME;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_APPTYPE;
+
 import static io.helidon.build.cli.impl.TestUtils.exec;
-import static io.helidon.build.test.HelidonTestVersions.currentHelidonReleaseVersion;
-import static io.helidon.build.test.HelidonTestVersions.previousHelidonReleaseVersion;
-import static io.helidon.build.test.TestFiles.quickstartId;
-import static io.helidon.build.util.PomUtils.HELIDON_PLUGIN_VERSION_PROPERTY;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static io.helidon.build.cli.impl.InitCommand.Flavor;
 
 /**
  * Class CommandTest.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class CommandTest {
+public class CommandTest extends BaseCommandTest {
 
-    private static final String HELIDON_VERSION_TEST = currentHelidonReleaseVersion();
-    private static final String HELIDON_VERSION_PREVIOUS = previousHelidonReleaseVersion();
-
-    private final HelidonVariant variant = HelidonVariant.SE;
+    private final Flavor flavor = Flavor.SE;
     private final Path targetDir = TestFiles.targetDir();
 
-    /**
-     * Overrides version under test. This property must be propagated to all
-     * forked processes.
-     */
-    @BeforeAll
-    public static void setHelidonVersion() {
-        System.setProperty(HELIDON_VERSION_PROPERTY, HELIDON_VERSION_TEST);
-        System.setProperty(HELIDON_PLUGIN_VERSION_PROPERTY, HELIDON_VERSION_TEST);
+    @BeforeEach
+    public void precondition() {
+        assumeTrue(TestUtils.apptypeArchetypeFound(flavor, HELIDON_SNAPSHOT_VERSION, DEFAULT_APPTYPE));
     }
 
     @Test
     @Order(1)
     public void testInit() throws Exception {
         TestUtils.ExecResult res = exec("init",
-                "--flavor", variant.toString(),
+                "--flavor", flavor.toString(),
                 "--project ", targetDir.toString(),
-                "--version ", HELIDON_VERSION_PREVIOUS);
+                "--version ", HELIDON_SNAPSHOT_VERSION,
+                "--artifactid", DEFAULT_ARTIFACT_ID,
+                "--groupid", DEFAULT_GROUP_ID,
+                "--name", DEFAULT_NAME,
+                "--batch");
         System.out.println(res.output);
         assertThat(res.code, is(equalTo(0)));
-        assertTrue(Files.exists(targetDir.resolve(quickstartId(variant))));
+        Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
+        assertTrue(Files.exists(projectDir));
     }
 
     @Test
     @Order(2)
     public void testBuild() throws Exception {
-        Path projectDir = targetDir.resolve(quickstartId(variant));
+        Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
         TestUtils.ExecResult res = exec("build",
                 "--project ", projectDir.toString());
         System.out.println(res.output);
         assertThat(res.code, is(equalTo(0)));
-        assertTrue(Files.exists(TestFiles.helidonSeJar()));
+        assertTrue(Files.exists(projectDir.resolve("target/" + DEFAULT_ARTIFACT_ID + ".jar")));
     }
 
     @Test
     @Order(3)
     public void testInfo() throws Exception {
-        Path projectDir = targetDir.resolve(quickstartId(variant));
+        Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
         TestUtils.ExecResult res = exec("info",
                 "--project ", projectDir.toString());
         System.out.println(res.output);
@@ -96,7 +94,7 @@ public class CommandTest {
     @Test
     @Order(4)
     public void testVersion() throws Exception {
-        Path projectDir = targetDir.resolve(quickstartId(variant));
+        Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
         TestUtils.ExecResult res = exec("version",
                 "--project ", projectDir.toString());
         System.out.println(res.output);
@@ -105,19 +103,8 @@ public class CommandTest {
 
     @Test
     @Order(5)
-    public void testFeatures() throws Exception {
-        Path projectDir = targetDir.resolve(quickstartId(variant));
-        TestUtils.ExecResult res = exec("features",
-                "--project ", projectDir.toString(),
-                "--all");
-        System.out.println(res.output);
-        assertThat(res.code, is(equalTo(0)));
-    }
-
-    @Test
-    @Order(6)
     public void testClean() {
-        Path projectDir = targetDir.resolve(quickstartId(variant));
+        Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
         assertTrue(TestFiles.deleteDirectory(projectDir.toFile()));
         System.out.println("Directory " + projectDir + " deleted");
     }

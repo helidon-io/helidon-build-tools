@@ -17,70 +17,63 @@ package io.helidon.build.cli.impl;
 
 import java.nio.file.Path;
 
+import io.helidon.build.cli.impl.InitCommand.Flavor;
 import io.helidon.build.test.TestFiles;
-import io.helidon.build.util.HelidonVariant;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_NAME;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARTIFACT_ID;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_GROUP_ID;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_PACKAGE;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_APPTYPE;
 import static io.helidon.build.cli.impl.TestUtils.assertPackageExist;
 import static io.helidon.build.cli.impl.TestUtils.exec;
-import static io.helidon.build.test.HelidonTestVersions.currentHelidonReleaseVersion;
-import static io.helidon.build.test.HelidonTestVersions.previousHelidonReleaseVersion;
-import static io.helidon.build.util.PomUtils.HELIDON_PLUGIN_VERSION_PROPERTY;
+
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Class InitCommandTest.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class InitCommandTest {
+public class InitBatchTest extends BaseCommandTest {
 
-    private static final String MY_GROUP_ID = "mygroup";
-    private static final String MY_ARTIFACT_ID = "myartifact";
-    private static final String MY_PACKAGE = "com.oracle.mypackage";
-    private static final String HELIDON_VERSION_TEST = currentHelidonReleaseVersion();
-    private static final String HELIDON_VERSION_PREVIOUS = previousHelidonReleaseVersion();
-
-    private final HelidonVariant variant = HelidonVariant.SE;
+    private final Flavor flavor = Flavor.MP;
     private final Path targetDir = TestFiles.targetDir();
 
-    /**
-     * Overrides version under test. This property must be propagated to all
-     * forked processes.
-     */
-    @BeforeAll
-    public static void setHelidonVersion() {
-        System.setProperty(HELIDON_VERSION_PROPERTY, HELIDON_VERSION_TEST);
-        System.setProperty(HELIDON_PLUGIN_VERSION_PROPERTY, HELIDON_VERSION_TEST);
+    @BeforeEach
+    public void precondition() {
+        assumeTrue(TestUtils.apptypeArchetypeFound(flavor, HELIDON_SNAPSHOT_VERSION, DEFAULT_APPTYPE));
     }
 
     @Test
     @Order(1)
-    public void testInitGroupPackage() throws Exception {
+    public void testInit() throws Exception {
         TestUtils.ExecResult res = exec("init",
-                "--flavor", variant.toString(),
+                "--batch",
+                "--flavor", flavor.toString(),
                 "--project ", targetDir.toString(),
-                "--version ", HELIDON_VERSION_PREVIOUS,
-                "--groupid", MY_GROUP_ID,
-                "--artifactid", MY_ARTIFACT_ID,
-                "--package", MY_PACKAGE);
+                "--version ", HELIDON_SNAPSHOT_VERSION,
+                "--groupid", DEFAULT_GROUP_ID,
+                "--artifactid", DEFAULT_ARTIFACT_ID,
+                "--package", DEFAULT_PACKAGE);
         System.out.println(res.output);
         assertThat(res.code, is(equalTo(0)));
-        assertPackageExist(targetDir.resolve(MY_ARTIFACT_ID), MY_PACKAGE);
+        assertPackageExist(targetDir.resolve(DEFAULT_NAME), DEFAULT_PACKAGE);
     }
 
     @Test
     @Order(2)
-    public void testCleanGroupPackage() {
-        Path projectDir = targetDir.resolve(MY_ARTIFACT_ID);
+    public void testClean() {
+        Path projectDir = targetDir.resolve(DEFAULT_NAME);
         assertTrue(TestFiles.deleteDirectory(projectDir.toFile()));
         System.out.println("Directory " + projectDir + " deleted");
     }
