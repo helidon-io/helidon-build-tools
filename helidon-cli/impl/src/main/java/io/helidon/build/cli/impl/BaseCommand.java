@@ -26,11 +26,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import io.helidon.build.util.Requirements;
 import io.helidon.build.util.AnsiConsoleInstaller;
 import io.helidon.build.util.MavenCommand;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
+import io.helidon.build.util.Requirements;
 
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;

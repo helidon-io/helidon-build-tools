@@ -299,6 +299,7 @@ public final class CommandContext {
      *
      * @param verbosity verbosity value
      */
+    @SuppressWarnings("checkstyle:AvoidNestedBlocks")
     void verbosity(Verbosity verbosity) {
         this.verbosity = verbosity;
         switch (verbosity) {

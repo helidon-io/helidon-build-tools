@@ -30,6 +30,9 @@ public class Log {
     private static final AtomicInteger WARNINGS = new AtomicInteger();
     private static final AtomicInteger ERRORS = new AtomicInteger();
 
+    private Log() {
+    }
+
     /**
      * Levels.
      */

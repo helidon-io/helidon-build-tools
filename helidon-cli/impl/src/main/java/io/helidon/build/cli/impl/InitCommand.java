@@ -54,8 +54,8 @@ import static io.helidon.build.util.PomUtils.ensureHelidonPluginConfig;
 import static io.helidon.build.util.ProjectConfig.FEATURE_PREFIX;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
-import static io.helidon.build.util.Style.BoldBrightCyan;
 import static io.helidon.build.util.Requirements.failed;
+import static io.helidon.build.util.Style.BoldBrightCyan;
 
 /**
  * The {@code init} command.

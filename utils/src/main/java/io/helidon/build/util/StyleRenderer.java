@@ -45,10 +45,10 @@ import static org.fusesource.jansi.Ansi.ansi;
  * Supported code names are the case insensitive names of the non-color {@link Code}s, and the case <em>sensitive</em> set of
  * aliases for all colors (i.e. {@link Code#isColor()} {@code == true}:
  * <ol>
- *     <l>plain color: lower case (e.g. {@code "red")}</l>
- *     <l>bright color: lower case + {@code '!'} (e.g. {@code "red!")}</l>
- *     <l>bold color: upper case (e.g. {@code "RED")}</l>
- *     <l>bright bold color: upper case + {@code '!'} (e.g. {@code "RED!")}</l>
+ *     <li>plain color: lower case (e.g. {@code "red")}</li>
+ *     <li>bright color: lower case + {@code '!'} (e.g. {@code "red!")}</li>
+ *     <li>bold color: upper case (e.g. {@code "RED")}</li>
+ *     <li>bright bold color: upper case + {@code '!'} (e.g. {@code "RED!")}</li>
  * </ol>
  *
  * Note that background colors (e.g. {@link Code#BG_BLUE}) have the same set of aliases. Examples:
@@ -85,6 +85,9 @@ public class StyleRenderer {
     private static final String END_TOKEN = ")";
     private static final String BRIGHT = "!";
     private static final Map<String, Consumer<Ansi>> ALIASES = aliases();
+
+    private StyleRenderer() {
+    }
 
     /**
      * Substitute the Ansi sequences in the given text.
