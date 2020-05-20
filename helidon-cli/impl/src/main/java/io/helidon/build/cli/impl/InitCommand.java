@@ -145,7 +145,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
     }
 
     @Override
-    public void execute(CommandContext context) {
+    public void execute(CommandContext context) throws Exception {
         // Check build type
 
         if (build == Build.MAVEN) {

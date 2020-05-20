@@ -38,6 +38,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Unit test for class {@link MavenProjectSupplier}.
@@ -129,15 +130,17 @@ class MavenProjectSupplierTest {
         assertThat(touchedJava, is(not(touchedPom)));
         assertThat(touchedJava.compareTo(touchedPom), is(greaterThan(0)));
 
-        // Check all should find touchedJava since it was most recent
+        // Check LATEST should find touchedJava since it was most recent
 
         FileTime found = changedTime(initialPom, LATEST);
         assertThat(found, is(touchedJava));
 
-        // Check first should find touchedPom since it was changed first
-        // NOTE: this *might* fail if file system iteration order
+        // Check FIRST should find touchedPom since it was changed first, but this is
+        // file system iteration order dependent so just make sure it is one of them
 
         found = changedTime(initialPom, FIRST);
-        assertThat(found, is(touchedPom));
+        if (!found.equals(touchedPom) && !found.equals(touchedJava)) {
+            fail("Expected either " + touchedPom + " or " + touchedJava + ", got " + found);
+        }
     }
 }

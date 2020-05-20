@@ -29,7 +29,6 @@ import io.helidon.build.util.AnsiConsoleInstaller;
 import io.helidon.build.util.MavenCommand;
 import io.helidon.build.util.Style;
 
-import static io.helidon.build.cli.harness.CommandContext.ExitStatus.FAILURE;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
@@ -68,9 +67,9 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
 
     @Creator
     DevCommand(
-        CommonOptions commonOptions,
-        @Flag(name = "clean", description = "Perform a clean before the first build") boolean clean,
-        @Flag(name = "fork", description = "Fork mvn execution") boolean fork) {
+            CommonOptions commonOptions,
+            @Flag(name = "clean", description = "Perform a clean before the first build") boolean clean,
+            @Flag(name = "fork", description = "Fork mvn execution") boolean fork) {
         this.commonOptions = commonOptions;
         this.clean = clean;
         this.fork = fork;
@@ -81,7 +80,7 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
     }
 
     @Override
-    public void execute(CommandContext context) {
+    public void execute(CommandContext context) throws Exception {
 
         // Ensure preconditions
 
@@ -103,31 +102,27 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
         // Execute helidon-maven-plugin to enter dev loop
 
         Consumer<String> stdOut = terminalMode
-                                  ? terminalModeOutput
-                                  : DevCommand::printStdOutLine;
+                ? terminalModeOutput
+                : DevCommand::printStdOutLine;
 
         Consumer<String> stdErr = DevCommand::printStdErrLine;
 
         Predicate<String> filter = terminalMode
-                                   ? terminalModeOutput
-                                   : DevCommand::printAllLines;
+                ? terminalModeOutput
+                : DevCommand::printAllLines;
 
-        try {
-            MavenCommand.builder()
-                        .verbose(verbosity == DEBUG)
-                        .stdOut(stdOut)
-                        .stdErr(stdErr)
-                        .filter(filter)
-                        .addArgument(DEV_GOAL)
-                        .addArgument(CLEAN_PROP_PREFIX + clean)
-                        .addArgument(FORK_PROP_PREFIX + fork)
-                        .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
-                        .directory(commonOptions.project())
-                        .build()
-                        .execute();
-        } catch (Exception e) {
-            context.exitAction(FAILURE, e.getMessage());
-        }
+        MavenCommand.builder()
+                .verbose(verbosity == DEBUG)
+                .stdOut(stdOut)
+                .stdErr(stdErr)
+                .filter(filter)
+                .addArgument(DEV_GOAL)
+                .addArgument(CLEAN_PROP_PREFIX + clean)
+                .addArgument(FORK_PROP_PREFIX + fork)
+                .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
+                .directory(commonOptions.project())
+                .build()
+                .execute();
     }
 
     private static boolean printAllLines(String line) {
@@ -170,7 +165,7 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
                     header(line);
                     return false;
                 } else if (line.startsWith(DEV_LOOP_STYLED_MESSAGE_PREFIX)
-                           || line.startsWith(DEV_LOOP_MESSAGE_PREFIX)) {
+                        || line.startsWith(DEV_LOOP_MESSAGE_PREFIX)) {
                     if (line.contains(DEV_LOOP_BUILD_STARTING)) {
                         insertLineIfError = true;
                     } else if (line.contains(DEV_LOOP_SERVER_STARTING)) {
@@ -185,8 +180,8 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
                 } else if (suspendOutput) {
                     return false;
                 } else if (line.contains(BUILD_SUCCEEDED)
-                           || line.contains(BUILD_FAILED)
-                           || line.contains(HELP_TAG)) {
+                        || line.contains(BUILD_FAILED)
+                        || line.contains(HELP_TAG)) {
                     suspendOutput();
                     return false;
                 } else {
@@ -249,7 +244,7 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
                 if (levelEnd > 0) {
                     String level = line.substring(0, levelEnd);
                     if (level.contains(MAVEN_ERROR_LEVEL)
-                        || level.contains(MAVEN_FATAL_LEVEL)) {
+                            || level.contains(MAVEN_FATAL_LEVEL)) {
                         return line.substring(levelEnd + 2);
                     }
                 }

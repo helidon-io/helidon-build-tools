@@ -50,20 +50,17 @@ public final class CommandRunner {
 
     /**
      * Execute the command represented by the given name.
+     *
      * @param command command name
      */
     private void doExecuteCommandName(String command) {
-        try {
-            context.command(command).map(this::mapHelp)
+        context.command(command).map(this::mapHelp)
                 .ifPresentOrElse(this::doExecuteCommand, () -> context.commandNotFoundError(command));
-        } catch (CommandParserException ex) {
-            context.error(String.format("%s%nSee '%s %s --help'",
-                    ex.getMessage(), context.cli().name(), command));
-        }
     }
 
     /**
      * Execute the given {@link CommandModel} instance.
+     *
      * @param command command to execute
      */
     private void doExecuteCommand(CommandModel command) {
@@ -74,11 +71,18 @@ public final class CommandRunner {
         } else {
             context.verbosity(CommandContext.Verbosity.NORMAL);
         }
-        command.createExecution(parser).execute(context);
+        try {
+            command.createExecution(parser).execute(context);
+        } catch (CommandParserException ex) {
+            context.error("%s%nSee '%s %s --help'", ex.getMessage(), context.cli().name(), command.command().name());
+        } catch (Throwable t) {
+            context.error(t);
+        }
     }
 
     /**
      * Resolve the {@code --help} option and return the {@code help} command if found.
+     *
      * @param command fallback command
      * @return {@code help} command if the {@code --help} option is provided, otherwise the supplied fallback command
      */
@@ -90,7 +94,7 @@ public final class CommandRunner {
      * No command provided, print the usage.
      */
     private void printUsage() {
-        new UsageCommand().createExecution(parser).execute(context);
+        doExecuteCommand(new UsageCommand());
     }
 
     /**
@@ -105,18 +109,15 @@ public final class CommandRunner {
 
     /**
      * Execute a command.
+     *
      * @param cli CLI definition
      * @param clazz class used to derive the package of the sub-commands
      * @param args raw command line arguments
      */
-    public static void execute(CLIDefinition cli, Class clazz, String... args) {
+    public static void execute(CLIDefinition cli, Class<?> clazz, String... args) {
         CommandRegistry registry = CommandRegistry.load(clazz);
         CommandContext context = CommandContext.create(registry, cli);
-        try {
-            CommandRunner.execute(context, args);
-            context.exitAction().run();
-        } catch (Throwable failure) {
-            context.error(failure).run();
-        }
+        CommandRunner.execute(context, args);
+        context.exitAction().run();
     }
 }
