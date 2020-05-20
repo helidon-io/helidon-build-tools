@@ -176,7 +176,8 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             if (helidonVersion == null) {
                 helidonVersion = prompt("Helidon version", helidonVersion);
             }
-            String f = prompt("Helidon flavor", new String[]{"SE", "MP"}, 0);
+            String f = prompt("Helidon flavor", new String[]{"SE", "MP"},
+                    flavor == Flavor.SE ? 0 : 1);
             flavor = Flavor.valueOf(f);
         }
 

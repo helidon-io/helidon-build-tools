@@ -57,7 +57,7 @@ public class InitInteractiveTest extends BaseCommandTest {
     public void testInitSe() throws Exception {
         File input = new File(InitCommand.class.getResource("input.txt").getFile());
         TestUtils.ExecResult res = execWithDirAndInput(targetDir.toFile(), input,
-                "init", "--version ", HELIDON_SNAPSHOT_VERSION);
+                "init", "--version", HELIDON_SNAPSHOT_VERSION);
         System.out.println(res.output);
         assertThat(res.code, is(equalTo(0)));
         assertPackageExist(targetDir.resolve(DEFAULT_NAME), DEFAULT_PACKAGE);
@@ -66,6 +66,28 @@ public class InitInteractiveTest extends BaseCommandTest {
     @Test
     @Order(2)
     public void testCleanSe() {
+        Path projectDir = targetDir.resolve(DEFAULT_NAME);
+        assertTrue(TestFiles.deleteDirectory(projectDir.toFile()));
+        System.out.println("Directory " + projectDir + " deleted");
+    }
+
+    @Test
+    @Order(3)
+    public void testInitMp() throws Exception {
+        File input = new File(InitCommand.class.getResource("input.txt").getFile());
+        TestUtils.ExecResult res = execWithDirAndInput(targetDir.toFile(), input,
+                "init", "--version", HELIDON_SNAPSHOT_VERSION, "--flavor", "MP");
+        System.out.println(res.output);
+        assertThat(res.code, is(equalTo(0)));
+        assertPackageExist(targetDir.resolve(DEFAULT_NAME), DEFAULT_PACKAGE);
+        Path config = targetDir.resolve(DEFAULT_NAME)
+                .resolve("src/main/resources/META-INF/microprofile-config.properties");
+        assertTrue(config.toFile().exists());
+    }
+
+    @Test
+    @Order(4)
+    public void testCleanMp() {
         Path projectDir = targetDir.resolve(DEFAULT_NAME);
         assertTrue(TestFiles.deleteDirectory(projectDir.toFile()));
         System.out.println("Directory " + projectDir + " deleted");
