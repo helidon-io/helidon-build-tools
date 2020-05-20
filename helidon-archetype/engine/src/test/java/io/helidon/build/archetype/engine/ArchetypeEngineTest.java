@@ -46,7 +46,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Test {@link ArchetypeEngine}.
  */
-public class ArchetypeEngineTest {
+public class ArchetypeEngineTest extends ArchetypeBaseTest {
 
     @Test
     public void testResolveProperties() {
@@ -127,7 +127,7 @@ public class ArchetypeEngineTest {
                     .forEach(File::delete);
         }
         assertThat(Files.exists(outputDirPath), is(false));
-        new ArchetypeEngine(ArchetypeEngineTest.class.getClassLoader(), properties).generate(outputDir);
+        new ArchetypeEngine(targetDir(), properties).generate(outputDir);
         assertThat(Files.exists(outputDirPath), is(true));
         assertThat(Files.walk(outputDirPath)
                 .filter(p -> !Files.isDirectory(p))

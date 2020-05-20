@@ -16,9 +16,7 @@
 package io.helidon.build.archetype.engine;
 
 import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
+import java.io.IOException;
 
 /**
  * Helidon archetype engine main class.
@@ -43,11 +41,11 @@ public final class Main {
             System.exit(1);
         }
 
-        URLClassLoader cl;
+        ArchetypeLoader loader;
         try {
-            cl = new URLClassLoader(new URL[] {templateJar.toURI().toURL()}, null);
-        } catch (MalformedURLException ex) {
-            throw new RuntimeException(ex);
+            loader = new ArchetypeLoader(templateJar);
+        } catch (IOException e){
+            throw new RuntimeException(e);
         }
 
         File outputDir = new File(args[1]);
@@ -55,6 +53,6 @@ public final class Main {
             System.err.println(outputDir + " exists");
             System.exit(1);
         }
-        new ArchetypeEngine(cl, Maps.fromProperties(System.getProperties())).generate(outputDir);
+        new ArchetypeEngine(loader, Maps.fromProperties(System.getProperties())).generate(outputDir);
     }
 }

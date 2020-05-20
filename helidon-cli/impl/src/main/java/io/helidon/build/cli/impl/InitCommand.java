@@ -17,11 +17,9 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
-import java.net.MalformedURLException;
+import java.io.IOException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.List;
@@ -31,6 +29,7 @@ import java.util.function.Predicate;
 
 import io.helidon.build.archetype.engine.ArchetypeDescriptor;
 import io.helidon.build.archetype.engine.ArchetypeEngine;
+import io.helidon.build.archetype.engine.ArchetypeLoader;
 import io.helidon.build.archetype.engine.Maps;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
@@ -192,75 +191,77 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             appType = prompt("Select application type", appTypes, 0);
         }
 
-        // Find jar and set up class loader
-        URLClassLoader cl;
+        // Find jar and set up loader
+        ArchetypeLoader loader;
         try {
             File jarFile = browser.archetypeJar(appType).toFile();
             if (!jarFile.exists()) {
                 context.exitAction(ExitStatus.FAILURE, jarFile + " does not exist");
                 return;
             }
-            cl = new URLClassLoader(new URL[]{jarFile.toURI().toURL()}, null);
-        } catch (MalformedURLException ex) {
+            loader = new ArchetypeLoader(jarFile);
+        } catch (IOException ex) {
             context.exitAction(ExitStatus.FAILURE, ex.getMessage());
             return;
         }
 
         // Initialize mutable set of properties and engine
         Map<String, String> properties = initProperties();
-        ArchetypeEngine engine = new ArchetypeEngine(cl, properties);
+        try (ArchetypeEngine engine = new ArchetypeEngine(loader, properties)) {
+            // Run input flow if not in batch mode
+            if (!batch) {
+                ArchetypeDescriptor descriptor = engine.descriptor();
+                ArchetypeDescriptor.InputFlow inputFlow = descriptor.inputFlow();
 
-        // Run input flow if not in batch mode
-        if (!batch) {
-            ArchetypeDescriptor descriptor = engine.descriptor();
-            ArchetypeDescriptor.InputFlow inputFlow = descriptor.inputFlow();
-
-            // Process input flow from template and updates properties
-            inputFlow.nodes().stream()
-                    .map(n -> FlowNodeControllers.create(n, properties))
-                    .forEach(FlowNodeController::execute);
-        }
-
-        // Generate project using archetype engine
-        Path parentDirectory = commonOptions.project().toPath();
-        Path projectDir = parentDirectory.resolve(properties.get("name"));
-        if (projectDir.toFile().exists()) {
-            context.exitAction(ExitStatus.FAILURE, projectDir + " exists");
-            return;
-        }
-        engine.generate(projectDir.toFile());
-
-        // Pom needs correct plugin version, with extensions enabled for devloop
-        ensureHelidonPluginConfig(projectDir, BuildToolsProperties.instance().version());
-
-        // Create config file that includes feature information
-        ProjectConfig configFile = projectConfig(projectDir);
-        configFile.property(PROJECT_DIRECTORY, projectDir.toString());
-        configFile.property(PROJECT_FLAVOR, flavor.toString());
-        configFile.property(HELIDON_VERSION_PROPERTY, helidonVersion);
-        cliConfig.forEach((key, value) -> {
-            String propName = (String) key;
-            if (propName.startsWith(FEATURE_PREFIX)) {      // Applies to both SE or MP
-                configFile.property(propName, (String) value);
-            } else if (propName.startsWith(flavor.toString())) {       // Project's flavor
-                configFile.property(
-                        propName.substring(flavor.toString().length() + 1),
-                        (String) value);
+                // Process input flow from template and updates properties
+                inputFlow.nodes().stream()
+                        .map(n -> FlowNodeControllers.create(n, properties))
+                        .forEach(FlowNodeController::execute);
             }
-        });
-        configFile.store();
 
-        String dir = BoldBrightCyan.apply(parentDirectory + Constants.DIR_SEP + projectDir.getFileName());
-        Prompter.displayLine("Switch directory to " + dir + " to use CLI");
-
-        if (!batch) {
-            Prompter.displayLine("");
-            boolean startDev = Prompter.promptYesNo("Start development loop?", false);
-            if (startDev) {
-                DevCommand devCommand = new DevCommand(new CommonOptions(projectDir.toFile()),
-                        true, false);
-                devCommand.execute(context);
+            // Generate project using archetype engine
+            Path parentDirectory = commonOptions.project().toPath();
+            Path projectDir = parentDirectory.resolve(properties.get("name"));
+            if (projectDir.toFile().exists()) {
+                context.exitAction(ExitStatus.FAILURE, projectDir + " exists");
+                return;
             }
+            engine.generate(projectDir.toFile());
+
+            // Pom needs correct plugin version, with extensions enabled for devloop
+            ensureHelidonPluginConfig(projectDir, BuildToolsProperties.instance().version());
+
+            // Create config file that includes feature information
+            ProjectConfig configFile = projectConfig(projectDir);
+            configFile.property(PROJECT_DIRECTORY, projectDir.toString());
+            configFile.property(PROJECT_FLAVOR, flavor.toString());
+            configFile.property(HELIDON_VERSION_PROPERTY, helidonVersion);
+            cliConfig.forEach((key, value) -> {
+                String propName = (String) key;
+                if (propName.startsWith(FEATURE_PREFIX)) {      // Applies to both SE or MP
+                    configFile.property(propName, (String) value);
+                } else if (propName.startsWith(flavor.toString())) {       // Project's flavor
+                    configFile.property(
+                            propName.substring(flavor.toString().length() + 1),
+                            (String) value);
+                }
+            });
+            configFile.store();
+
+            String dir = BoldBrightCyan.apply(parentDirectory + Constants.DIR_SEP + projectDir.getFileName());
+            Prompter.displayLine("Switch directory to " + dir + " to use CLI");
+
+            if (!batch) {
+                Prompter.displayLine("");
+                boolean startDev = Prompter.promptYesNo("Start development loop?", false);
+                if (startDev) {
+                    DevCommand devCommand = new DevCommand(new CommonOptions(projectDir.toFile()),
+                            true, false);
+                    devCommand.execute(context);
+                }
+            }
+        } catch (IOException e) {
+            context.exitAction(ExitStatus.FAILURE, e.getMessage());
         }
     }
 
