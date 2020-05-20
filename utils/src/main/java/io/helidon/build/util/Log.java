@@ -16,6 +16,7 @@
 
 package io.helidon.build.util;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
@@ -23,8 +24,11 @@ import static java.util.Objects.requireNonNull;
 /**
  * Simple, centralized logging.
  */
-public abstract class Log {
+public class Log {
     private static final AtomicReference<Writer> WRITER = new AtomicReference<>();
+    private static final AtomicInteger MESSAGES = new AtomicInteger();
+    private static final AtomicInteger WARNINGS = new AtomicInteger();
+    private static final AtomicInteger ERRORS = new AtomicInteger();
 
     /**
      * Levels.
@@ -87,14 +91,14 @@ public abstract class Log {
          *
          * @return {@code true} if enabled.
          */
-        boolean isDebugEnabled();
+        boolean isDebug();
 
         /**
          * Returns whether or not verbose messages will be written.
          *
          * @return {@code true} if enabled.
          */
-        boolean isVerboseEnabled();
+        boolean isVerbose();
     }
 
     /**
@@ -111,8 +115,8 @@ public abstract class Log {
      *
      * @return {@code true} if enabled.
      */
-    public static boolean isDebugEnabled() {
-        return WRITER.get().isDebugEnabled();
+    public static boolean isDebug() {
+        return WRITER.get().isDebug();
     }
 
     /**
@@ -120,8 +124,35 @@ public abstract class Log {
      *
      * @return {@code true} if enabled.
      */
-    public static boolean isVerboseEnabled() {
-        return WRITER.get().isVerboseEnabled();
+    public static boolean isVerbose() {
+        return WRITER.get().isVerbose();
+    }
+
+    /**
+     * Returns the number of messages logged.
+     *
+     * @return The count.
+     */
+    public static int messages() {
+        return MESSAGES.get();
+    }
+
+    /**
+     * Returns the number of WARN messages logged.
+     *
+     * @return The count.
+     */
+    public static int warnings() {
+        return WARNINGS.get();
+    }
+
+    /**
+     * Returns the number of ERROR messages logged.
+     *
+     * @return The count.
+     */
+    public static int errors() {
+        return ERRORS.get();
     }
 
     /**
@@ -223,6 +254,12 @@ public abstract class Log {
      * @param args The message args.
      */
     public static void log(Level level, Throwable thrown, String message, Object... args) {
+        MESSAGES.incrementAndGet();
+        if (level == Level.WARN) {
+            WARNINGS.incrementAndGet();
+        } else if (level == Level.ERROR) {
+            ERRORS.incrementAndGet();
+        }
         writer().write(level, thrown, message, args);
     }
 

@@ -37,6 +37,7 @@ import static io.helidon.build.util.Log.Level.ERROR;
 import static io.helidon.build.util.Log.Level.INFO;
 import static io.helidon.build.util.Log.Level.VERBOSE;
 import static io.helidon.build.util.Log.Level.WARN;
+import static io.helidon.build.util.Style.Red;
 
 /**
  * The command context.
@@ -153,12 +154,12 @@ public final class CommandContext {
                 case FAILURE:
                     if (failure != null) {
                         Requirements.toFailure(failure).ifPresentOrElse(ce -> {
-                            // Assume message is already rendered
-                            exit(ce.getMessage(), null, INFO, 1);
-                        }, () -> {
-                            // Otherwise just use the message in the exception
-                            exit("", failure, ERROR, 1);
-                        });
+                            if (Style.isStyled(ce.getMessage())) {
+                                exit(ce.getMessage(), null, INFO, 1);
+                            } else {
+                                exit(Red.apply(ce.getMessage()), null, INFO, 1);
+                            }
+                        }, () -> exit("", failure, ERROR, 1));
                     } else {
                         exit(message, null, ERROR, 1);
                     }
@@ -173,13 +174,17 @@ public final class CommandContext {
 
         private void exit(String message, Throwable error, Level level, int statusCode) {
             if (message != null && !message.isEmpty()) {
-                Log.info();
+                if (Log.isVerbose()) {
+                    Log.info();
+                }
                 if (Style.isStyled(message)) {
                     Log.info(message);
                 } else {
                     Log.log(level, error, message);
                 }
-                Log.info();
+                if (Log.isVerbose()) {
+                    Log.info();
+                }
             }
             System.exit(statusCode);
         }
@@ -322,16 +327,16 @@ public final class CommandContext {
      */
     void commandNotFoundError(String command) {
         List<String> allCommandNames = registry.commandsByName()
-                                               .values()
-                                               .stream()
-                                               .map(CommandModel::command)
-                                               .map(CommandInfo::name)
-                                               .collect(Collectors.toList());
+                .values()
+                .stream()
+                .map(CommandModel::command)
+                .map(CommandInfo::name)
+                .collect(Collectors.toList());
         String match = CommandMatcher.match(command, allCommandNames);
         String cliName = cli.name();
         if (match != null) {
             error(String.format("'%s' is not a valid command.%nDid you mean '%s'?%nSee '%s --help' for more information",
-                                command, match, cliName));
+                    command, match, cliName));
         } else {
             error(String.format("'%s' is not a valid command.%nSee '%s --help' for more information", command, cliName));
         }

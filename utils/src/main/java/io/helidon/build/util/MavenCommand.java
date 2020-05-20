@@ -53,6 +53,11 @@ public class MavenCommand {
     private static final AtomicReference<Path> MAVEN_EXECUTABLE = new AtomicReference<>();
     private static final AtomicReference<Path> MAVEN_HOME = new AtomicReference<>();
     private static final AtomicReference<MavenVersion> MAVEN_VERSION = new AtomicReference<>();
+    private static final String VERSION_ERROR = "$(RED Found Maven version %s.)"
+                                                + EOL
+                                                + "$(bold Version) $(GREEN %s) $(bold or later is required.) "
+                                                + "Please update from %s and prepend your PATH or set the MAVEN_HOME or MVN_HOME "
+                                                + "environment variable.";
 
     private final String name;
     private final ProcessBuilder processBuilder;
@@ -144,12 +149,6 @@ public class MavenCommand {
         return MAVEN_VERSION.get();
     }
 
-    private static final String VERSION_ERROR = "$(bold Maven version) $(GREEN! %s) "
-                                                + "$(bold or later is required, found) $(RED! %s)$(bold .)"
-                                                + EOL
-                                                + "Please update from %s and prepend your PATH or set the MAVEN_HOME or MVN_HOME "
-                                                + "environment variable.";
-
     /**
      * Assert that then installed Maven version is at least the given minimum.
      *
@@ -159,7 +158,7 @@ public class MavenCommand {
     public static void assertRequiredMavenVersion(MavenVersion requiredMinimumVersion) {
         MavenVersion installed = installedVersion();
         requires(installed.isGreaterThanOrEqualTo(requiredMinimumVersion),
-                 VERSION_ERROR, requiredMinimumVersion, installed, MAVEN_DOWNLOAD_URL);
+                 VERSION_ERROR, installed, requiredMinimumVersion, MAVEN_DOWNLOAD_URL);
     }
 
     /**

@@ -47,13 +47,13 @@ public class MavenLogWriter implements io.helidon.build.util.Log.Writer {
     }
 
     @Override
-    public boolean isDebugEnabled() {
+    public boolean isDebug() {
         return log.isDebugEnabled();
     }
 
     @Override
-    public boolean isVerboseEnabled() {
-        return isDebugEnabled();
+    public boolean isVerbose() {
+        return isDebug();
     }
 
     @Override
