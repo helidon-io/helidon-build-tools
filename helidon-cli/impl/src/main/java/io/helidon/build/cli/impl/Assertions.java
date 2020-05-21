@@ -27,13 +27,9 @@ import static io.helidon.build.util.MavenVersion.toMavenVersion;
  */
 public class Assertions {
 
-    static final MavenVersion MINIMUM_HELIDON_VERSION = toMavenVersion("2.0.0-M4");
-    static final MavenVersion ALLOWED_HELIDON_SNAPSHOT_VERSION = toMavenVersion("2.0.0-SNAPSHOT");
-    static final MavenVersion MINIMUM_REQUIRED_MAVEN_VERSION = toMavenVersion("3.6.0");
-
-    /**
-     * Helidon version not supported message.
-     */
+    private static final MavenVersion MINIMUM_HELIDON_VERSION = toMavenVersion("2.0.0-M4");
+    private static final MavenVersion ALLOWED_HELIDON_SNAPSHOT_VERSION = toMavenVersion("2.0.0-SNAPSHOT");
+    private static final MavenVersion MINIMUM_REQUIRED_MAVEN_VERSION = toMavenVersion("3.6.0");
     private static final String UNSUPPORTED_HELIDON_VERSION = "$(red Helidon version) $(RED %s) $(red is not supported.)";
 
     /**
