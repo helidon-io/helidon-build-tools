@@ -266,6 +266,15 @@ public class Log {
         writer().write(level, thrown, message, args);
     }
 
+    /**
+     * Tests whether or not a writer has been set.
+     *
+     * @return {@code true} if set.
+     */
+    public static boolean hasWriter() {
+        return WRITER.get() != null;
+    }
+
     private static Writer writer() {
         Writer writer = WRITER.get();
         if (writer == null) {
