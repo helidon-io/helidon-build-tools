@@ -30,7 +30,7 @@ import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
  * The {@code build} command.
  */
 @Command(name = "build", description = "Build the application")
-public final class BuildCommand extends MavenBaseCommand implements CommandExecution {
+public final class BuildCommand extends BaseCommand implements CommandExecution {
 
     private static final String JLINK_OPTION = "-Pjlink-image";
     private static final String NATIVE_OPTION = "-Pnative-image";
@@ -56,10 +56,8 @@ public final class BuildCommand extends MavenBaseCommand implements CommandExecu
     }
 
     @Override
-    public void execute(CommandContext context) {
-        if (isMavenVersionOutOfDate(context)) {
-            return;
-        }
+    public void execute(CommandContext context) throws Exception {
+        Assertions.assertRequiredMavenVersion();
 
         MavenCommand.Builder builder = MavenCommand.builder()
                                                    .verbose(context.verbosity() != NORMAL)

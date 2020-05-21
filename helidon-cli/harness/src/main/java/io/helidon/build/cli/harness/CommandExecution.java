@@ -23,7 +23,9 @@ public interface CommandExecution {
 
     /**
      * Execute the command.
+     *
      * @param context command context
+     * @throws Exception if an error occurs.
      */
-    void execute(CommandContext context);
+    void execute(CommandContext context) throws Exception;
 }

@@ -186,7 +186,7 @@ public final class Application implements ResourceContainer {
 
     private List<Jar> collectClassPath() {
         final List<Jar> classPath = addClassPath(mainJar, new HashSet<>(), new ArrayList<>());
-        if (Log.isDebugEnabled()) {
+        if (Log.isDebug()) {
             Log.debug("Application classpath:");
             classPath.forEach(jar -> Log.debug("    %s", jar));
         }

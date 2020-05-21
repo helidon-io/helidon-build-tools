@@ -95,13 +95,13 @@ public abstract class BaseCommand {
                 if (l.size() > 0) {
                     builder.append(key).append(":");
                     l.forEach(s -> builder.append("\n")
-                                          .append(SPACES, 0, 2 * (level + 1))
-                                          .append("- ").append(s));
+                            .append(SPACES, 0, 2 * (level + 1))
+                            .append("- ").append(s));
                     builder.append("\n");
                 }
             } else if (v != null) {     // ignore key if value is null
                 builder.append(key).append(":").append(" ")
-                       .append(v.toString()).append("\n");
+                        .append(v.toString()).append("\n");
             }
         });
         return builder.toString();

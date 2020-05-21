@@ -18,17 +18,16 @@ package io.helidon.build.test;
 
 /**
  * Helidon test versions.
- * <em>IMPORTANT:</em> The constants must be kept up to date as new releases occur.
+ * <em>IMPORTANT:</em> The constants must be kept up to date as new Helidon releases occur.
  */
 public class HelidonTestVersions {
-    private static final String CURRENT_HELIDON_RELEASE_VERSION = "2.0.0-M2";
     private static final String CURRENT_HELIDON_SNAPSHOT_VERSION = "2.0.0-SNAPSHOT";
+    private static final String CURRENT_HELIDON_RELEASE_VERSION = "2.0.0-M2";
     private static final String PREVIOUS_HELIDON_RELEASE_VERSION = "2.0.0-M1";
-
-    private static final String CURRENT_HELIDON_BUILD_TOOLS_RELEASE_VERSION = "2.0.0-M2";
+    private static final String CURRENT_HELIDON_BUILD_TOOLS_RELEASE_VERSION = "2.0.0-M3";
 
     /**
-     * Returns the current release version.
+     * Returns the current Helidon release version.
      *
      * @return the version.
      */
@@ -37,7 +36,7 @@ public class HelidonTestVersions {
     }
 
     /**
-     * Returns the current snapshot version.
+     * Returns the current Helidon snapshot version.
      *
      * @return the version.
      */
@@ -46,7 +45,7 @@ public class HelidonTestVersions {
     }
 
     /**
-     * Returns the previous release version.
+     * Returns the previous Helidon release version.
      *
      * @return the version.
      */
@@ -55,7 +54,7 @@ public class HelidonTestVersions {
     }
 
     /**
-     * Returns the current release version.
+     * Returns the current Helidon build tools release version.
      *
      * @return the version.
      */
