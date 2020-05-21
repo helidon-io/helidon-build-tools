@@ -29,7 +29,7 @@ public class ArchetypeBaseTest {
 
     @BeforeAll
     static void initialize() {
-        URL url = ArchetypeEngineTest.class.getClassLoader().getResource("test-se.jar");
+        URL url = ArchetypeEngineTest.class.getClassLoader().getResource("pom.xml.mustache");
         assert url != null;
         targetDir = new File(url.getFile()).getParentFile();
     }

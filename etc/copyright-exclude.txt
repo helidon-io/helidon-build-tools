@@ -16,4 +16,3 @@ vuex-router-sync.js
 .mustache
 .json
 javax.annotation.processing.Processor
-.jar
