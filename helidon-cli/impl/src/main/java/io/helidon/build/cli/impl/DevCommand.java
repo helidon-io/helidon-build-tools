@@ -84,7 +84,7 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
 
         // Ensure preconditions
 
-        assertRequiredMavenVersion();
+        Assertions.assertRequiredMavenVersion();
         assertValidConfig();
 
         // Clear terminal and print header if in terminal mode

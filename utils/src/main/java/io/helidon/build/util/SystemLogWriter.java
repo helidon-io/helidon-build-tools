@@ -50,7 +50,7 @@ public final class SystemLogWriter implements Log.Writer {
         styles.put(DEBUG, Italic);
         styles.put(Level.VERBOSE, Plain);
         styles.put(Level.INFO, Plain);
-        styles.put(Level.WARN, Italic);
+        styles.put(Level.WARN, Plain);
         styles.put(Level.ERROR, ItalicRed);
         return styles;
     }

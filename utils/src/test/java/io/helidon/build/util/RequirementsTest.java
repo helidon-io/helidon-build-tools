@@ -44,7 +44,7 @@ class RequirementsTest {
     @Test
     void testDoesNotConvert() {
         Throwable throwable = new Error();
-        Optional<Requirements.Failure> conversion = Requirements.toFailure(throwable);
+        Optional<RequirementsFailure> conversion = Requirements.toFailure(throwable);
         assertThat(conversion, is(not(nullValue())));
         assertThat(conversion.isPresent(), is(false));
     }
@@ -52,15 +52,15 @@ class RequirementsTest {
     @Test
     void testNestedDoesNotConvert() {
         Throwable throwable = new RuntimeException(new IOException(new Error()));
-        Optional<Requirements.Failure> conversion = Requirements.toFailure(throwable);
+        Optional<RequirementsFailure> conversion = Requirements.toFailure(throwable);
         assertThat(conversion, is(not(nullValue())));
         assertThat(conversion.isPresent(), is(false));
     }
 
     @Test
     void testConverts() {
-        Throwable throwable = new Requirements.Failure("fail");
-        Optional<Requirements.Failure> conversion = Requirements.toFailure(throwable);
+        Throwable throwable = new RequirementsFailure("fail");
+        Optional<RequirementsFailure> conversion = Requirements.toFailure(throwable);
         assertThat(conversion, is(not(nullValue())));
         assertThat(conversion.isPresent(), is(true));
         assertThat(conversion.get(), is(sameInstance(throwable)));
@@ -68,9 +68,9 @@ class RequirementsTest {
 
     @Test
     void testNestedConverts() {
-        Throwable nested = new Requirements.Failure("fail");
+        Throwable nested = new RequirementsFailure("fail");
         Throwable throwable = new RuntimeException(new Error(new IOException(nested)));
-        Optional<Requirements.Failure> conversion = Requirements.toFailure(throwable);
+        Optional<RequirementsFailure> conversion = Requirements.toFailure(throwable);
         assertThat(conversion, is(not(nullValue())));
         assertThat(conversion.isPresent(), is(true));
         assertThat(conversion.get(), is(sameInstance(nested)));
@@ -83,7 +83,7 @@ class RequirementsTest {
         try {
             failed("This is $(RED %s) text, and this is $(cyan %s) text.", "bold red", "cyan");
             fail("Should have failed!");
-        } catch (Requirements.Failure e) {
+        } catch (RequirementsFailure e) {
             assertThat(e.getMessage(), is(expected));
             System.out.println("Got expected message: " + e.getMessage());
         }

@@ -47,6 +47,7 @@ import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
 
 import static io.helidon.build.cli.harness.CommandContext.ExitStatus;
+import static io.helidon.build.cli.impl.Assertions.assertRequiredMavenVersion;
 import static io.helidon.build.cli.impl.Prompter.displayLine;
 import static io.helidon.build.cli.impl.Prompter.prompt;
 import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;
@@ -151,7 +152,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         if (build == Build.MAVEN) {
             assertRequiredMavenVersion();
         } else {
-            failed("Gradle support is not implemented");
+            failed("$(red Gradle is not yet supported.)");
         }
 
         // Read CLI config file

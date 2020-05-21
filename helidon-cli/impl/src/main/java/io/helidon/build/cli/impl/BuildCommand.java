@@ -57,7 +57,7 @@ public final class BuildCommand extends BaseCommand implements CommandExecution 
 
     @Override
     public void execute(CommandContext context) throws Exception {
-        assertRequiredMavenVersion();
+        Assertions.assertRequiredMavenVersion();
 
         MavenCommand.Builder builder = MavenCommand.builder()
                                                    .verbose(context.verbosity() != NORMAL)

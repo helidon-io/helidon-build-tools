@@ -19,28 +19,10 @@ package io.helidon.build.util;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * Assertions with message strings formatted via {@link Style#render(String, Object...)}.
  */
-public class Requirements extends RuntimeException {
-
-    /**
-     * Requirement failed exception.
-     */
-    public static final class Failure extends IllegalStateException {
-        Failure(String message, Object... args) {
-            super(render(message, args));
-        }
-
-        private static String render(String message, Object... args) {
-            if (requireNonNull(message).isEmpty()) {
-                throw new IllegalArgumentException("empty message");
-            }
-            return Style.render(message, args);
-        }
-    }
+public class Requirements {
 
     /**
      * Conditionally throws a {@code Failure} with a message formatted via {@link Style#render(String, Object...)}.
@@ -48,7 +30,7 @@ public class Requirements extends RuntimeException {
      * @param condition The condition.
      * @param message The message.
      * @param args The message args.
-     * @throws Failure if the condition returns {@code false}.
+     * @throws RequirementsFailure if the condition returns {@code false}.
      */
     public static void requires(Supplier<Boolean> condition, String message, Object... args) {
         requires(condition.get(), message, args);
@@ -60,7 +42,7 @@ public class Requirements extends RuntimeException {
      * @param condition The condition.
      * @param message The message.
      * @param args The message args.
-     * @throws Failure if the condition is {@code false}.
+     * @throws RequirementsFailure if the condition is {@code false}.
      */
     public static void requires(boolean condition, String message, Object... args) {
         if (!condition) {
@@ -73,25 +55,28 @@ public class Requirements extends RuntimeException {
      *
      * @param message The message.
      * @param args The message args.
-     * @throws Failure always.
+     * @throws RequirementsFailure always.
      */
     public static void failed(String message, Object... args) {
-        throw new Failure(message, args);
+        throw new RequirementsFailure(message, args);
     }
 
     /**
-     * Convert the given error to a {@link Failure} if it is or was caused by this type.
+     * Convert the given error to a {@link RequirementsFailure} if it is or was caused by this type.
      *
      * @param error The error.
-     * @return The optional {@link Failure}.
+     * @return The optional {@link RequirementsFailure}.
      */
-    public static Optional<Failure> toFailure(Throwable error) {
+    public static Optional<RequirementsFailure> toFailure(Throwable error) {
         if (error == null) {
             return Optional.empty();
-        } else if (error instanceof Failure) {
-            return Optional.of((Failure) error);
+        } else if (error instanceof RequirementsFailure) {
+            return Optional.of((RequirementsFailure) error);
         }
         // Recurse
         return toFailure(error.getCause()).or(Optional::empty);
+    }
+
+    private Requirements() {
     }
 }

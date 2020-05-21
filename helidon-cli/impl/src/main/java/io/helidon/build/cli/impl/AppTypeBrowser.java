@@ -33,6 +33,7 @@ import io.helidon.build.util.Requirements;
 
 import org.apache.maven.model.Model;
 
+import static io.helidon.build.cli.impl.Assertions.assertSupportedHelidonVersion;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
 import static io.helidon.build.util.PomUtils.readPomModel;
 
@@ -98,7 +99,7 @@ class AppTypeBrowser {
 
     AppTypeBrowser(Flavor flavor, String helidonVersion) {
         this.flavor = flavor;
-        this.helidonVersion = helidonVersion;
+        this.helidonVersion = assertSupportedHelidonVersion(helidonVersion);
         String userHome = System.getProperty("user.home");
         Objects.requireNonNull(userHome);
         this.localCacheDir = ensureDirectory(Path.of(userHome, ".helidon", "cache"));  // $HOME/.helidon/cache

@@ -27,19 +27,14 @@ import java.util.Map;
 import java.util.Properties;
 
 import io.helidon.build.util.AnsiConsoleInstaller;
-import io.helidon.build.util.MavenCommand;
-import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
-import io.helidon.build.util.Requirements;
 
-import static io.helidon.build.util.MavenVersion.toMavenVersion;
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 
 /**
  * Class BaseCommand.
  */
 public abstract class BaseCommand {
-    static final MavenVersion MINIMUM_REQUIRED_MAVEN_VERSION = toMavenVersion("3.6.0");
 
     static final String HELIDON_PROPERTIES = "helidon.properties";
     static final String HELIDON_VERSION_PROPERTY = "helidon.version";
@@ -47,15 +42,6 @@ public abstract class BaseCommand {
     private Properties cliConfig;
     private ProjectConfig projectConfig;
     private Path projectDir;
-
-    /**
-     * Assert that the installed Maven version is at least the required minimum.
-     *
-     * @throws Requirements.Failure If the installed version does not meet the requirement.
-     */
-    protected static void assertRequiredMavenVersion() {
-        MavenCommand.assertRequiredMavenVersion(MINIMUM_REQUIRED_MAVEN_VERSION);
-    }
 
     protected BaseCommand() {
         AnsiConsoleInstaller.ensureInstalled();
@@ -109,13 +95,13 @@ public abstract class BaseCommand {
                 if (l.size() > 0) {
                     builder.append(key).append(":");
                     l.forEach(s -> builder.append("\n")
-                                          .append(SPACES, 0, 2 * (level + 1))
-                                          .append("- ").append(s));
+                            .append(SPACES, 0, 2 * (level + 1))
+                            .append("- ").append(s));
                     builder.append("\n");
                 }
             } else if (v != null) {     // ignore key if value is null
                 builder.append(key).append(":").append(" ")
-                       .append(v.toString()).append("\n");
+                        .append(v.toString()).append("\n");
             }
         });
         return builder.toString();
