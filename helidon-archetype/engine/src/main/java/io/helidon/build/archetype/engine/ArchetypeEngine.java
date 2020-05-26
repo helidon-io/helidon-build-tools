@@ -16,14 +16,12 @@
 package io.helidon.build.archetype.engine;
 
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.util.Collections;
 import java.util.HashMap;
@@ -49,7 +47,7 @@ import com.github.mustachejava.MustacheFactory;
 /**
  * Archetype engine.
  */
-public final class ArchetypeEngine {
+public final class ArchetypeEngine implements Closeable {
 
     /**
      * Constant for the archetype descriptor path.
@@ -62,7 +60,7 @@ public final class ArchetypeEngine {
     public static final String RESOURCES_LIST = "META-INF/helidon-archetype-resources.txt";
 
     private final MustacheFactory mf;
-    private final ClassLoader cl;
+    private final ArchetypeLoader loader;
     private final ArchetypeDescriptor descriptor;
     private final Map<String, String> properties;
     private final Map<String, List<Transformation>> templates;
@@ -72,27 +70,27 @@ public final class ArchetypeEngine {
      * Create a new archetype engine instance.
      * @param archetype archetype file
      * @param properties user properties
-     * @throws MalformedURLException if an error occurred converting the file to a URL
+     * @throws IOException if an error occurred opening the jar file
      */
-    public ArchetypeEngine(File archetype, Map<String, String> properties) throws MalformedURLException {
-        this(new URLClassLoader(new URL[] {archetype.toURI().toURL()}), properties);
+    public ArchetypeEngine(File archetype, Map<String, String> properties) throws IOException {
+        this(new ArchetypeLoader(archetype), properties);
     }
 
     /**
      * Create a new archetype engine instance.
-     * @param cl class loader used to load the archetype
-     * @param properties a mutable map of properties referenced by this engine
+     * @param loader jar file loader
+     * @param properties user properties
      */
-    public ArchetypeEngine(ClassLoader cl, Map<String, String> properties) {
-        this.cl = Objects.requireNonNull(cl, "class-loader is null");
+    public ArchetypeEngine(ArchetypeLoader loader, Map<String, String> properties) {
+        this.loader = loader;
         this.mf = new DefaultMustacheFactory();
-        this.descriptor = loadDescriptor(cl);
+        this.descriptor = loadDescriptor(loader);
         Objects.requireNonNull(properties, "properties is null");
         descriptor.properties().stream()
                 .filter(p -> p.defaultValue().isPresent() && !properties.containsKey(p.id()))
                 .forEach(p -> properties.put(p.id(), p.defaultValue().get()));
         this.properties = properties;
-        List<SourcePath> paths = loadResourcesList(cl);
+        List<SourcePath> paths = loadResourcesList(loader);
         this.templates = resolveFileSets(descriptor.templateSets().map(TemplateSets::templateSets).orElseGet(LinkedList::new),
                 descriptor.templateSets().map(TemplateSets::transformations).orElseGet(Collections::emptyList), paths,
                 properties);
@@ -109,29 +107,34 @@ public final class ArchetypeEngine {
         return descriptor;
     }
 
-    private static ArchetypeDescriptor loadDescriptor(ClassLoader cl) {
-        InputStream descIs = cl.getResourceAsStream(DESCRIPTOR_RESOURCE_NAME);
-        if (descIs == null) {
-            throw new IllegalStateException(DESCRIPTOR_RESOURCE_NAME + " not found in class-path");
+    private static ArchetypeDescriptor loadDescriptor(ArchetypeLoader loader) {
+        try (InputStream descIs = loader.loadResourceAsStream(DESCRIPTOR_RESOURCE_NAME)) {
+            if (descIs == null) {
+                throw new IllegalStateException(DESCRIPTOR_RESOURCE_NAME + " not found in class-path");
+            }
+            return ArchetypeDescriptor.read(descIs);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        return ArchetypeDescriptor.read(descIs);
     }
 
-    private static List<SourcePath> loadResourcesList(ClassLoader cl) {
-        InputStream rListIs = cl.getResourceAsStream(RESOURCES_LIST);
-        if (rListIs == null) {
-            throw new IllegalStateException(RESOURCES_LIST + " not found in class-path");
-        }
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(rListIs))) {
-            return br.lines().map(SourcePath::new).collect(Collectors.toList());
+    private static List<SourcePath> loadResourcesList(ArchetypeLoader loader) {
+        try (InputStream rListIs = loader.loadResourceAsStream(RESOURCES_LIST)) {
+            if (rListIs == null) {
+                throw new IllegalStateException(RESOURCES_LIST + " not found in class-path");
+            }
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(rListIs))) {
+                return br.lines().map(SourcePath::new).collect(Collectors.toList());
+            }
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
     }
 
-    private static Map<String, List<Transformation>> resolveFileSets(List<FileSet> fileSets, List<Transformation> transformations,
-            List<SourcePath> paths, Map<String, String> properties) {
-
+    private static Map<String, List<Transformation>> resolveFileSets(List<FileSet> fileSets,
+                                                                     List<Transformation> transformations,
+                                                                     List<SourcePath> paths,
+                                                                     Map<String, String> properties) {
         Map<String, List<Transformation>> resolved = new HashMap<>();
         for (FileSet fileSet : fileSets) {
             if (evaluateConditional(fileSet, properties)) {
@@ -184,7 +187,7 @@ public final class ArchetypeEngine {
             ifProps = Collections.emptyList();
         }
         for (Property prop : ifProps) {
-            if (!Boolean.valueOf(props.get(prop.id()))) {
+            if (!Boolean.parseBoolean(props.get(prop.id()))) {
                 return false;
             }
         }
@@ -193,7 +196,7 @@ public final class ArchetypeEngine {
             unlessProps = Collections.emptyList();
         }
         for (Property prop : unlessProps) {
-            if (Boolean.valueOf(props.get(prop.id()))) {
+            if (Boolean.parseBoolean(props.get(prop.id()))) {
                 return false;
             }
         }
@@ -205,34 +208,44 @@ public final class ArchetypeEngine {
      * @param outputDirectory output directory
      */
     public void generate(File outputDirectory) {
-        for (Entry<String, List<Transformation>> entry : templates.entrySet()) {
-            String resourcePath = entry.getKey().substring(1);
-            InputStream is = cl.getResourceAsStream(resourcePath);
-            if (is == null) {
-                throw new IllegalStateException(resourcePath + " not found in class-path");
+        try {
+            for (Entry<String, List<Transformation>> entry : templates.entrySet()) {
+                String resourcePath = entry.getKey().substring(1);
+                try (InputStream is = loader.loadResourceAsStream(resourcePath)) {
+                    if (is == null) {
+                        throw new IllegalStateException(resourcePath + " not found in class-path");
+                    }
+                    Mustache m = mf.compile(new InputStreamReader(is), resourcePath);
+                    File outputFile = new File(outputDirectory, transform(resourcePath, entry.getValue(), properties));
+                    outputFile.getParentFile().mkdirs();
+                    try (FileWriter writer = new FileWriter(outputFile)) {
+                        m.execute(writer, properties).flush();
+                    }
+                }
             }
-            Mustache m = mf.compile(new InputStreamReader(is), resourcePath);
-            File outputFile = new File(outputDirectory, transform(resourcePath, entry.getValue(), properties));
-            outputFile.getParentFile().mkdirs();
-            try (FileWriter writer = new FileWriter(outputFile)) {
-                m.execute(writer, properties).flush();
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
+            for (Entry<String, List<Transformation>> entry : files.entrySet()) {
+                String resourcePath = entry.getKey().substring(1);
+                try (InputStream is = loader.loadResourceAsStream(resourcePath)) {
+                    if (is == null) {
+                        throw new IllegalStateException(resourcePath + " not found in class-path");
+                    }
+                    File outputFile = new File(outputDirectory, transform(resourcePath, entry.getValue(), properties));
+                    outputFile.getParentFile().mkdirs();
+                    Files.copy(is, outputFile.toPath());
+                }
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        for (Entry<String, List<Transformation>> entry : files.entrySet()) {
-            String resourcePath = entry.getKey().substring(1);
-            InputStream is = cl.getResourceAsStream(resourcePath);
-            if (is == null) {
-                throw new IllegalStateException(resourcePath + " not found in class-path");
-            }
-            File outputFile = new File(outputDirectory, transform(resourcePath, entry.getValue(), properties));
-            outputFile.getParentFile().mkdirs();
-            try {
-                Files.copy(is, outputFile.toPath());
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
+    }
+
+    /**
+     * Close underlying loader.
+     *
+     * @throws IOException If an error occurs.
+     */
+    @Override
+    public void close() throws IOException {
+        loader.close();
     }
 }
