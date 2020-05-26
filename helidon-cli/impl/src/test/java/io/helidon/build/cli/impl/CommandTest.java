@@ -64,7 +64,6 @@ public class CommandTest extends BaseCommandTest {
                 "--groupid", DEFAULT_GROUP_ID,
                 "--name", DEFAULT_NAME,
                 "--batch");
-        System.out.println(res.output);
         assertThat(res.code, is(equalTo(0)));
         Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
         assertTrue(Files.exists(projectDir));
@@ -76,7 +75,6 @@ public class CommandTest extends BaseCommandTest {
         Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
         TestUtils.ExecResult res = exec("build",
                 "--project ", projectDir.toString());
-        System.out.println(res.output);
         assertThat(res.code, is(equalTo(0)));
         assertTrue(Files.exists(projectDir.resolve("target/" + DEFAULT_ARTIFACT_ID + ".jar")));
     }
@@ -87,7 +85,6 @@ public class CommandTest extends BaseCommandTest {
         Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
         TestUtils.ExecResult res = exec("info",
                 "--project ", projectDir.toString());
-        System.out.println(res.output);
         assertThat(res.code, is(equalTo(0)));
     }
 
@@ -97,7 +94,6 @@ public class CommandTest extends BaseCommandTest {
         Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
         TestUtils.ExecResult res = exec("version",
                 "--project ", projectDir.toString());
-        System.out.println(res.output);
         assertThat(res.code, is(equalTo(0)));
     }
 

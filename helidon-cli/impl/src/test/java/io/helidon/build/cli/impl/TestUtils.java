@@ -77,13 +77,12 @@ class TestUtils {
     }
 
     static ExecResult exec(String... args) throws IOException, InterruptedException {
-        List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-cp", "\"" + System.getProperty("java.class.path") + "\""));
-        String version = System.getProperty(HELIDON_VERSION_PROPERTY);
         return execWithDirAndInput(null, null, args);
     }
 
     static ExecResult execWithDirAndInput(File wd, File input, String... args) throws IOException, InterruptedException {
-        List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-cp", "\"" + System.getProperty("java.class.path") + "\""));
+        String classPath = System.getProperty("surefire.test.class.path", System.getProperty("java.class.path"));
+        List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-cp", "\"" + classPath + "\""));
         String version = System.getProperty(HELIDON_VERSION_PROPERTY);
         if (version != null) {
             cmdArgs.add("-D" + HELIDON_VERSION_PROPERTY + "=" + version);
@@ -102,6 +101,7 @@ class TestUtils {
         if (!p.waitFor(10, TimeUnit.SECONDS)) {
             throw new IllegalStateException("timeout waiting for process");
         }
+        System.out.println(output);
         return new ExecResult(p.exitValue(), stripAnsi(output));
     }
 
