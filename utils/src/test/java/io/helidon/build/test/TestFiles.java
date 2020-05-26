@@ -50,7 +50,6 @@ import static java.util.Objects.requireNonNull;
  */
 public class TestFiles implements BeforeAllCallback {
     private static final String HELIDON_QUICKSTART_PREFIX = "helidon-quickstart-";
-    private static final String SIGNED_JAR_COORDINATES = "org.bouncycastle:bcpkix-jdk15on:1.60";
     private static final String VERSION_1_4_1 = "1.4.1";
     private static final AtomicReference<Path> TARGET_DIR = new AtomicReference<>();
     private static final Instance<Path> SE_JAR = new Instance<>(TestFiles::getOrCreateQuickstartSeJar);
@@ -261,26 +260,28 @@ public class TestFiles implements BeforeAllCallback {
 
     private static Path createQuickstartProject(HelidonVariant variant) {
         return QuickstartGenerator.generator()
-                                  .helidonVariant(variant)
-                                  .parentDirectory(targetDir())
-                                  .helidonVersion(currentHelidonReleaseVersion())
-                                  .pluginVersion(currentHelidonBuildToolsReleaseVersion())
-                                  .generate();
+                .helidonVariant(variant)
+                .parentDirectory(targetDir())
+                .helidonVersion(currentHelidonReleaseVersion())
+                .pluginVersion(currentHelidonBuildToolsReleaseVersion())
+                .generate();
     }
 
     private static Path buildQuickstartProject(HelidonVariant variant, Path projectDir) {
         final String id = quickstartId(variant);
         Log.info("Building %s", id);
-
-        MavenCommand.builder()
+        try {
+            MavenCommand.builder()
                     .directory(projectDir)
                     .addArgument("clean")
                     .addArgument("package")
                     .addArgument("-DskipTests")
                     .build()
                     .execute();
-
-        return quickstartJar(projectDir, id);
+            return quickstartJar(projectDir, id);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static Path quickstartJar(Path projectDir, String id) {

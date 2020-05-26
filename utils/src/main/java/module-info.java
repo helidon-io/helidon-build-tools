@@ -19,5 +19,6 @@ module helidon.build.utils {
     requires org.fusesource.jansi;
     requires info.picocli.jansi.graalvm;
     requires maven.model;
+    requires java.logging;
     requires maven.artifact;
 }

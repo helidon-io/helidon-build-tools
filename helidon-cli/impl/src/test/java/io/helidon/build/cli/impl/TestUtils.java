@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.build.cli.impl.InitCommand.Flavor;
+import io.helidon.build.util.Log;
+import io.helidon.build.util.RequirementsFailure;
 
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.test.StripAnsi.stripAnsi;
@@ -81,8 +83,7 @@ class TestUtils {
     }
 
     static ExecResult execWithDirAndInput(File wd, File input, String... args) throws IOException, InterruptedException {
-        List<String> cmdArgs = new ArrayList<>();
-        cmdArgs.addAll(List.of(javaPath(), "-cp", "\"" + System.getProperty("java.class.path") + "\""));
+        List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-cp", "\"" + System.getProperty("java.class.path") + "\""));
         String version = System.getProperty(HELIDON_VERSION_PROPERTY);
         if (version != null) {
             cmdArgs.add("-D" + HELIDON_VERSION_PROPERTY + "=" + version);
@@ -116,12 +117,16 @@ class TestUtils {
     }
 
     static boolean apptypeArchetypeFound(Flavor flavor, String helidonVersion, String apptype) {
-        AppTypeBrowser browser = new AppTypeBrowser(flavor, helidonVersion);
-        boolean found = browser.appTypes().contains(apptype);
-        if (!found) {
-            String msg = String.format("WARNING: Unable to find archetype %s for flavor %s and version %s",
-                    apptype, flavor, helidonVersion);
-            System.err.println(msg);
+        boolean found;
+        try {
+            AppTypeBrowser browser = new AppTypeBrowser(flavor, helidonVersion);
+            found = browser.appTypes().contains(apptype);
+            if (!found) {
+                Log.warn("Unable to find archetype %s for flavor %s and version %s", apptype, flavor, helidonVersion);
+            }
+        } catch (RequirementsFailure e) {
+            Log.warn("IGNORING '%s'. Fix this once we have a Helidon release with new archetypes!", e.getMessage());
+            found = false;
         }
         return found;
     }

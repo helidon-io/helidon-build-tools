@@ -15,9 +15,9 @@
  */
 package io.helidon.build.cli.impl;
 
-import org.junit.jupiter.api.BeforeAll;
-
 import io.helidon.build.test.HelidonTestVersions;
+
+import org.junit.jupiter.api.BeforeAll;
 
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.util.PomUtils.HELIDON_PLUGIN_VERSION_PROPERTY;

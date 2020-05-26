@@ -22,6 +22,7 @@ import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
+import io.helidon.build.util.Log;
 import io.helidon.build.util.ProjectConfig;
 
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
@@ -60,6 +61,6 @@ public final class InfoCommand extends BaseCommand implements CommandExecution {
         project.put("sourceDirs", projectConfig.propertyAsList(PROJECT_SOURCEDIRS));
         project.put("classesDirs", projectConfig.propertyAsList(PROJECT_CLASSDIRS));
         project.put("resourceDirs", projectConfig.propertyAsList(PROJECT_RESOURCEDIRS));
-        context.logInfo(formatMapAsYaml("project", project));
+        Log.info(formatMapAsYaml("project", project));
     }
 }

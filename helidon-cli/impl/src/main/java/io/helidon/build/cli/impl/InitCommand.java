@@ -46,6 +46,7 @@ import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
 
 import static io.helidon.build.cli.harness.CommandContext.ExitStatus;
+import static io.helidon.build.cli.impl.Assertions.assertRequiredMavenVersion;
 import static io.helidon.build.cli.impl.Prompter.displayLine;
 import static io.helidon.build.cli.impl.Prompter.prompt;
 import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;
@@ -53,6 +54,7 @@ import static io.helidon.build.util.PomUtils.ensureHelidonPluginConfig;
 import static io.helidon.build.util.ProjectConfig.FEATURE_PREFIX;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
+import static io.helidon.build.util.Requirements.failed;
 import static io.helidon.build.util.Style.BoldBrightCyan;
 
 /**
@@ -143,11 +145,13 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
     }
 
     @Override
-    public void execute(CommandContext context) {
+    public void execute(CommandContext context) throws Exception {
         // Check build type
-        if (build == Build.GRADLE) {
-            context.exitAction(ExitStatus.FAILURE, "Gradle support is not implemented");
-            return;
+
+        if (build == Build.MAVEN) {
+            assertRequiredMavenVersion();
+        } else {
+            failed("$(red Gradle is not yet supported.)");
         }
 
         // Read CLI config file
@@ -157,7 +161,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         if (helidonVersion == null) {
             try {
                 helidonVersion = defaultHelidonVersion();
-                context.logInfo("Using Helidon version " + helidonVersion);
+                Log.info("Using Helidon version " + helidonVersion);
             } catch (Exception e) {
                 // If in batch mode we cannot proceed
                 if (batch) {
@@ -172,7 +176,8 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             if (helidonVersion == null) {
                 helidonVersion = prompt("Helidon version", helidonVersion);
             }
-            String f = prompt("Helidon flavor", new String[]{"SE", "MP"}, 0);
+            String f = prompt("Helidon flavor", new String[]{"SE", "MP"},
+                    flavor == Flavor.SE ? 0 : 1);
             flavor = Flavor.valueOf(f);
         }
 

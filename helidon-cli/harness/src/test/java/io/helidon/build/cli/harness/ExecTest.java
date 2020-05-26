@@ -23,13 +23,14 @@ import java.nio.charset.StandardCharsets;
 
 import io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
+import io.helidon.build.util.Log;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.test.StripAnsi.stripAnsi;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static io.helidon.build.test.StripAnsi.stripAnsi;
 
 /**
  * Test the built-in commands and options.
@@ -127,11 +128,11 @@ public class ExecTest {
         public CommandExecution createExecution(CommandParser parser) {
             return (context) -> {
                 if (parser.resolve(FOO)) {
-                    context.logInfo("foo");
+                    Log.info("foo");
                 } else if (parser.resolve(BAR)) {
-                    context.logInfo("bar");
+                    Log.info("bar");
                 } else {
-                    context.logInfo("noop");
+                    Log.info("noop");
                 }
             };
         }
@@ -153,9 +154,9 @@ public class ExecTest {
             return (context) -> {
                 String key = COMMON_OPTIONS.resolve(parser).key;
                 if (parser.resolve(FOO)) {
-                    context.logInfo("foo: " + key);
+                    Log.info("foo: " + key);
                 } else {
-                    context.logInfo(key);
+                    Log.info(key);
                 }
             };
         }

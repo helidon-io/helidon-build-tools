@@ -25,6 +25,7 @@ import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
+import io.helidon.build.util.Log;
 import io.helidon.build.util.ProjectConfig;
 
 import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
@@ -66,7 +67,7 @@ final class VersionCommand extends BaseCommand implements CommandExecution {
             String propValue = getVersionProperty(props, KEY_PREFIX + propName.toLowerCase());
             helidonProps.put(propName, propValue);
         }
-        context.logInfo(formatMapAsYaml("helidon", helidonProps));
+        Log.info(formatMapAsYaml("helidon", helidonProps));
 
         ProjectConfig projectConfig = projectConfig(commonOptions.project().toPath());
         if (!projectConfig.exists()) {
@@ -75,7 +76,7 @@ final class VersionCommand extends BaseCommand implements CommandExecution {
         }
         Map<String, Object> projectProps = new LinkedHashMap<>();
         projectProps.put("version", projectConfig.property(PROJECT_VERSION));
-        context.logInfo(formatMapAsYaml("project", projectProps));
+        Log.info(formatMapAsYaml("project", projectProps));
     }
 
     private static String getVersionProperty(Properties props, String key) {

@@ -16,6 +16,7 @@
 
 package io.helidon.build.util;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
@@ -23,8 +24,14 @@ import static java.util.Objects.requireNonNull;
 /**
  * Simple, centralized logging.
  */
-public abstract class Log {
+public class Log {
     private static final AtomicReference<Writer> WRITER = new AtomicReference<>();
+    private static final AtomicInteger MESSAGES = new AtomicInteger();
+    private static final AtomicInteger WARNINGS = new AtomicInteger();
+    private static final AtomicInteger ERRORS = new AtomicInteger();
+
+    private Log() {
+    }
 
     /**
      * Levels.
@@ -33,19 +40,38 @@ public abstract class Log {
         /**
          * Debug level.
          */
-        DEBUG,
+        DEBUG(java.util.logging.Level.FINEST),
+        /**
+         * Verbose level.
+         */
+        VERBOSE(java.util.logging.Level.FINE),
         /**
          * Info level.
          */
-        INFO,
+        INFO(java.util.logging.Level.INFO),
         /**
          * Warn level.
          */
-        WARN,
+        WARN((java.util.logging.Level.WARNING)),
         /**
          * Error level.
          */
-        ERROR
+        ERROR(java.util.logging.Level.SEVERE);
+
+        /**
+         * Returns the corresponding java.util.logging.Level level.
+         *
+         * @return The level.
+         */
+        java.util.logging.Level toJulLevel() {
+            return julLevel;
+        }
+
+        private final java.util.logging.Level julLevel;
+
+        Level(java.util.logging.Level julLevel) {
+            this.julLevel = julLevel;
+        }
     }
 
     /**
@@ -68,7 +94,14 @@ public abstract class Log {
          *
          * @return {@code true} if enabled.
          */
-        boolean isDebugEnabled();
+        boolean isDebug();
+
+        /**
+         * Returns whether or not verbose messages will be written.
+         *
+         * @return {@code true} if enabled.
+         */
+        boolean isVerbose();
     }
 
     /**
@@ -76,7 +109,7 @@ public abstract class Log {
      *
      * @param writer The writer.
      */
-    public static void setWriter(Writer writer) {
+    public static void writer(Writer writer) {
         WRITER.set(requireNonNull(writer));
     }
 
@@ -85,18 +118,64 @@ public abstract class Log {
      *
      * @return {@code true} if enabled.
      */
-    public static boolean isDebugEnabled() {
-        return WRITER.get().isDebugEnabled();
+    public static boolean isDebug() {
+        return WRITER.get().isDebug();
     }
 
     /**
-     * Log a message at FINE level.
+     * Returns whether or not verbose messages will be written.
+     *
+     * @return {@code true} if enabled.
+     */
+    public static boolean isVerbose() {
+        return WRITER.get().isVerbose();
+    }
+
+    /**
+     * Returns the number of messages logged.
+     *
+     * @return The count.
+     */
+    public static int messages() {
+        return MESSAGES.get();
+    }
+
+    /**
+     * Returns the number of WARN messages logged.
+     *
+     * @return The count.
+     */
+    public static int warnings() {
+        return WARNINGS.get();
+    }
+
+    /**
+     * Returns the number of ERROR messages logged.
+     *
+     * @return The count.
+     */
+    public static int errors() {
+        return ERRORS.get();
+    }
+
+    /**
+     * Log a message at DEBUG level.
      *
      * @param message The message.
      * @param args The message args.
      */
     public static void debug(String message, Object... args) {
         log(Level.DEBUG, message, args);
+    }
+
+    /**
+     * Log a message at VERBOSE level.
+     *
+     * @param message The message.
+     * @param args The message args.
+     */
+    public static void verbose(String message, Object... args) {
+        log(Level.VERBOSE, message, args);
     }
 
     /**
@@ -178,14 +257,29 @@ public abstract class Log {
      * @param args The message args.
      */
     public static void log(Level level, Throwable thrown, String message, Object... args) {
+        MESSAGES.incrementAndGet();
+        if (level == Level.WARN) {
+            WARNINGS.incrementAndGet();
+        } else if (level == Level.ERROR) {
+            ERRORS.incrementAndGet();
+        }
         writer().write(level, thrown, message, args);
+    }
+
+    /**
+     * Tests whether or not a writer has been set.
+     *
+     * @return {@code true} if set.
+     */
+    public static boolean hasWriter() {
+        return WRITER.get() != null;
     }
 
     private static Writer writer() {
         Writer writer = WRITER.get();
         if (writer == null) {
             writer = SystemLogWriter.create();
-            setWriter(writer);
+            writer(writer);
         }
         return writer;
     }

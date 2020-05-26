@@ -28,93 +28,185 @@ import static org.fusesource.jansi.Ansi.ansi;
 public enum Style implements Function<Object, String> {
 
     /**
-     * Blue.
+     * Plain.
      */
-    Blue(false, false, Ansi.Color.BLUE),
-
-    /**
-     * Bold blue.
-     */
-    BoldBlue(true, false, Ansi.Color.BLUE),
-
-    /**
-     * Bold, bright blue.
-     */
-    BoldBrightBlue(true, true, Ansi.Color.BLUE),
-
-    /**
-     * Cyan.
-     */
-    Cyan(false, false, Ansi.Color.CYAN),
-
-    /**
-     * Bold cyan.
-     */
-    BoldCyan(true, false, Ansi.Color.CYAN),
-
-    /**
-     * Bold, bright cyan.
-     */
-    BoldBrightCyan(true, true, Ansi.Color.CYAN),
-
-    /**
-     * Green.
-     */
-    Green(false, false, Ansi.Color.GREEN),
-
-    /**
-     * Bold green.
-     */
-    BoldGreen(false, false, Ansi.Color.GREEN),
-
-    /**
-     * Bold, bright green.
-     */
-    BoldBrightGreen(false, true, Ansi.Color.GREEN),
-
-    /**
-     * Yellow.
-     */
-    Yellow(false, false, Ansi.Color.YELLOW),
-
-    /**
-     * Bold yellow.
-     */
-    BoldYellow(false, false, Ansi.Color.YELLOW),
-
-    /**
-     * Bold, bright yellow.
-     */
-    BoldBrightYellow(false, true, Ansi.Color.YELLOW),
-
-    /**
-     * Red.
-     */
-    Red(false, false, Ansi.Color.RED),
-
-    /**
-     * Bold red.
-     */
-    BoldRed(false, false, Ansi.Color.RED),
-
-    /**
-     * Bold, bright red.
-     */
-    BoldBrightRed(false, true, Ansi.Color.RED),
+    Plain(false, false, false, null),
 
     /**
      * Bold.
      */
-    Bold(true, false, null);
+    Bold(true, false, false, null),
+
+    /**
+     * Italic.
+     */
+    Italic(false, false, true, null),
+
+    /**
+     * Bold, italic.
+     */
+    BoldItalic(true, false, true, null),
+
+    /**
+     * Blue.
+     */
+    Blue(false, false, false, Ansi.Color.BLUE),
+
+    /**
+     * Italic blue.
+     */
+    ItalicBlue(false, false, true, Ansi.Color.BLUE),
+
+    /**
+     * Bold blue.
+     */
+    BoldBlue(true, false, false, Ansi.Color.BLUE),
+    /**
+     * Bold, italic blue.
+     */
+    BoldItalicBlue(true, false, true, Ansi.Color.BLUE),
+
+    /**
+     * Bold, bright blue.
+     */
+    BoldBrightBlue(true, true, false, Ansi.Color.BLUE),
+
+    /**
+     * Bold, bright, italic blue.
+     */
+    BoldBrightItalicBlue(true, true, true, Ansi.Color.BLUE),
+
+    /**
+     * Cyan.
+     */
+    Cyan(false, false, false, Ansi.Color.CYAN),
+
+    /**
+     * Italic cyan.
+     */
+    ItalicCyan(false, false, true, Ansi.Color.CYAN),
+
+    /**
+     * Bold cyan.
+     */
+    BoldCyan(true, false, false, Ansi.Color.CYAN),
+
+    /**
+     * Bold, italic cyan.
+     */
+    BoldItalicCyan(true, false, true, Ansi.Color.CYAN),
+
+    /**
+     * Bold, bright cyan.
+     */
+    BoldBrightCyan(true, true, false, Ansi.Color.CYAN),
+
+    /**
+     * Bold, bright, italic cyan.
+     */
+    BoldBrightItalicCyan(true, true, true, Ansi.Color.CYAN),
+
+    /**
+     * Green.
+     */
+    Green(false, false, false, Ansi.Color.GREEN),
+
+    /**
+     * Italic green.
+     */
+    ItalicGreen(false, false, true, Ansi.Color.GREEN),
+
+    /**
+     * Bold green.
+     */
+    BoldGreen(true, false, false, Ansi.Color.GREEN),
+
+    /**
+     * Bold, italic green.
+     */
+    BoldItalicGreen(true, false, true, Ansi.Color.GREEN),
+
+    /**
+     * Bold, bright green.
+     */
+    BoldBrightGreen(true, true, false, Ansi.Color.GREEN),
+
+    /**
+     * Bold, bright, italic green.
+     */
+    BoldBrightItalicGreen(true, true, true, Ansi.Color.GREEN),
+
+    /**
+     * Yellow.
+     */
+    Yellow(false, false, false, Ansi.Color.YELLOW),
+
+    /**
+     * Italic yellow.
+     */
+    ItalicYellow(false, false, true, Ansi.Color.YELLOW),
+
+    /**
+     * Bold yellow.
+     */
+    BoldYellow(true, false, false, Ansi.Color.YELLOW),
+
+    /**
+     * Bold, italic yellow.
+     */
+    BoldItalicYellow(true, false, true, Ansi.Color.YELLOW),
+
+    /**
+     * Bold, bright yellow.
+     */
+    BoldBrightYellow(true, true, false, Ansi.Color.YELLOW),
+
+    /**
+     * Bold, bright, italic yellow.
+     */
+    BoldBrightItalicYellow(true, true, true, Ansi.Color.YELLOW),
+
+    /**
+     * Red.
+     */
+    Red(false, false, false, Ansi.Color.RED),
+
+    /**
+     * Italic red.
+     */
+    ItalicRed(false, false, true, Ansi.Color.RED),
+
+    /**
+     * Bold red.
+     */
+    BoldRed(true, false, false, Ansi.Color.RED),
+
+    /**
+     * Bold, italic red.
+     */
+    BoldItalicRed(true, false, true, Ansi.Color.RED),
+
+    /**
+     * Bold, bright red.
+     */
+    BoldBrightRed(true, true, false, Ansi.Color.RED),
+
+    /**
+     * Bold, bright, italic red.
+     */
+    BoldBrightItalicRed(true, true, true, Ansi.Color.RED);
 
     private static final boolean ENABLED = AnsiConsoleInstaller.ensureInstalled();
+    private static final String ANSI_ESCAPE_BEGIN = "\033[";
     private final boolean bold;
     private final boolean bright;
+    private final boolean italic;
     private final Ansi.Color color;
 
-    Style(boolean bold, boolean bright, Ansi.Color color) {
+    Style(boolean bold, boolean bright, boolean italic, Ansi.Color color) {
         this.bold = bold;
         this.bright = bright;
+        this.italic = italic;
         this.color = color;
     }
 
@@ -142,6 +234,9 @@ public enum Style implements Function<Object, String> {
             if (bold) {
                 ansi.bold();
             }
+            if (italic) {
+                ansi.a(Ansi.Attribute.ITALIC);
+            }
             if (bright) {
                 ansi.fgBright(color);
             } else if (color != null) {
@@ -151,5 +246,26 @@ public enum Style implements Function<Object, String> {
         } else {
             return message.toString();
         }
+    }
+
+    /**
+     * Renders the embedded {@link StyleRenderer style DSL}, if styles are supported, after formatting.
+     *
+     * @param format The message format.
+     * @param args The message arguments.
+     * @return The message.
+     */
+    public static String render(String format, Object... args) {
+        return StyleRenderer.render(String.format(format, args));
+    }
+
+    /**
+     * Tests whether or not the given text contains an Ansi escape sequence.
+     *
+     * @param text The text.
+     * @return {@code true} if an Ansi escape sequence found.
+     */
+    public static boolean isStyled(String text) {
+        return text.contains(ANSI_ESCAPE_BEGIN);
     }
 }

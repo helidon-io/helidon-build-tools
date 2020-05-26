@@ -56,6 +56,7 @@ public class AnsiConsoleInstaller {
     private static final String JANSI_PACKAGE_PREFIX = "org.fusesource.jansi";
     private static final String JANSI_STRIP_STREAM_CLASS_NAME = "org.fusesource.jansi.AnsiPrintStream";
     private static final boolean IS_HELIDON_CHILD_PROCESS = Boolean.getBoolean(HELIDON_CHILD_PROCESS_PROPERTY);
+    private static final boolean DEBUG = "debug".equals(System.getProperty("log.level"));
     private static final AtomicBoolean INSTALLED = new AtomicBoolean();
     private static final AtomicReference<ConsoleType> CONSOLE_TYPE = new AtomicReference<>();
     private static final AtomicBoolean ENABLED = new AtomicBoolean();
@@ -177,19 +178,19 @@ public class AnsiConsoleInstaller {
 
     private static ConsoleType desiredConsoleType() {
         if (Boolean.getBoolean(JANSI_FORCE_PROPERTY)) {
-            Log.debug("Jansi streams requested: %s=true", JANSI_FORCE_PROPERTY);
+            debug("Jansi streams requested: %s=true", JANSI_FORCE_PROPERTY);
             return ConsoleType.ANSI;
         } else if (Boolean.getBoolean(JANSI_STRIP_PROPERTY)) {
-            Log.debug("Jansi strip streams requested: %s=true", JANSI_STRIP_PROPERTY);
+            debug("Jansi strip streams requested: %s=true", JANSI_STRIP_PROPERTY);
             return ConsoleType.STRIP_ANSI;
         } else if (Boolean.getBoolean(JANSI_PASS_THROUGH_PROPERTY)) {
-            Log.debug("Jansi pass through streams requested: %s=true", JANSI_PASS_THROUGH_PROPERTY);
+            debug("Jansi pass through streams requested: %s=true", JANSI_PASS_THROUGH_PROPERTY);
             return ConsoleType.STRIP_ANSI;
         } else if (System.console() != null) {
-            Log.debug("No Jansi request, but Console is available");
+            debug("No Jansi request, but Console is available");
             return ConsoleType.ANSI;
         } else {
-            Log.debug("No Jansi request and Console is not available");
+            debug("No Jansi request and Console is not available");
             return ConsoleType.DEFAULT;
         }
     }
@@ -200,24 +201,32 @@ public class AnsiConsoleInstaller {
             // We have a Jansi type installed, check if it is the type that strips escapes
             if (systemOutClass.equals(JANSI_STRIP_STREAM_CLASS_NAME)) {
                 if (desiredType != ConsoleType.STRIP_ANSI) {
-                    Log.debug("Desired = %s, but Ansi escapes will be stripped by system streams.", desiredType);
+                    debug("Desired = %s, but Ansi escapes will be stripped by system streams.", desiredType);
                 }
                 return ConsoleType.STRIP_ANSI;
             } else {
                 if (desiredType != ConsoleType.ANSI) {
-                    Log.debug("Desired = %s, but Ansi escapes should be supported by system streams.", desiredType);
+                    debug("Desired = %s, but Ansi escapes should be supported by system streams.", desiredType);
                 }
                 return ConsoleType.ANSI;
             }
         } else {
             if (desiredType != ConsoleType.DEFAULT) {
-                Log.debug("Desired = %s, but System.out not a Jansi type (%s) ao Ansi escapes should not be stripped",
+                debug("Desired = %s, but System.out not a Jansi type (%s) ao Ansi escapes should not be stripped",
                         desiredType, systemOutClass);
             }
             return ConsoleType.DEFAULT;
         }
     }
 
+    private static void debug(String message, Object... args) {
+        // Do NOT write to Log.debug() if it does not already have a writer, as that will result in a cycle
+        if (Log.hasWriter()) {
+            Log.debug(message, args);
+        } else if (DEBUG) {
+            System.out.println(String.format(message, args));
+        }
+    }
 
     private AnsiConsoleInstaller() {
     }

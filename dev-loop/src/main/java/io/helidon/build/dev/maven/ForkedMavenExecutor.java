@@ -48,7 +48,7 @@ public class ForkedMavenExecutor extends BuildExecutor {
     }
 
     @Override
-    public void execute(String... args) {
+    public void execute(String... args) throws Exception {
         MavenCommand.builder()
                     .directory(projectDirectory())
                     .arguments(Arrays.asList(args))
