@@ -17,7 +17,6 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
@@ -45,7 +44,6 @@ import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
 
-import static io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import static io.helidon.build.cli.impl.Assertions.assertRequiredMavenVersion;
 import static io.helidon.build.cli.impl.Prompter.displayLine;
 import static io.helidon.build.cli.impl.Prompter.prompt;
@@ -55,6 +53,7 @@ import static io.helidon.build.util.ProjectConfig.FEATURE_PREFIX;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
 import static io.helidon.build.util.Requirements.failed;
+import static io.helidon.build.util.Requirements.requires;
 import static io.helidon.build.util.Style.BoldBrightCyan;
 
 /**
@@ -165,8 +164,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             } catch (Exception e) {
                 // If in batch mode we cannot proceed
                 if (batch) {
-                    context.exitAction(ExitStatus.FAILURE, e.getMessage());
-                    return;
+                    throw e;
                 }
             }
         }
@@ -185,11 +183,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         AppTypeBrowser browser = new AppTypeBrowser(flavor, helidonVersion);
         displayLine("Gathering application types ... ");
         List<String> appTypes = browser.appTypes();
-        if (appTypes.size() == 0) {
-            context.exitAction(ExitStatus.FAILURE, "Unable to find application types for "
-                    + flavor + " and " + helidonVersion);
-            return;
-        }
+        requires(!appTypes.isEmpty(), "Unable to find application types for %s and %s.", flavor, helidonVersion);
 
         // Select application type interactively
         if (!batch) {
@@ -198,75 +192,61 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
 
         // Find jar and set up loader
         ArchetypeLoader loader;
-        try {
-            File jarFile = browser.archetypeJar(appType).toFile();
-            if (!jarFile.exists()) {
-                context.exitAction(ExitStatus.FAILURE, jarFile + " does not exist");
-                return;
-            }
-            loader = new ArchetypeLoader(jarFile);
-        } catch (IOException ex) {
-            context.exitAction(ExitStatus.FAILURE, ex.getMessage());
-            return;
-        }
+        File jarFile = browser.archetypeJar(appType).toFile();
+        requires(jarFile.exists(), "%s does not exist", jarFile);
+        loader = new ArchetypeLoader(jarFile);
 
         // Initialize mutable set of properties and engine
         Map<String, String> properties = initProperties();
-        try (ArchetypeEngine engine = new ArchetypeEngine(loader, properties)) {
-            // Run input flow if not in batch mode
-            if (!batch) {
-                ArchetypeDescriptor descriptor = engine.descriptor();
-                ArchetypeDescriptor.InputFlow inputFlow = descriptor.inputFlow();
+        ArchetypeEngine engine = new ArchetypeEngine(loader, properties);
+        // Run input flow if not in batch mode
+        if (!batch) {
+            ArchetypeDescriptor descriptor = engine.descriptor();
+            ArchetypeDescriptor.InputFlow inputFlow = descriptor.inputFlow();
 
-                // Process input flow from template and updates properties
-                inputFlow.nodes().stream()
-                        .map(n -> FlowNodeControllers.create(n, properties))
-                        .forEach(FlowNodeController::execute);
+            // Process input flow from template and updates properties
+            inputFlow.nodes().stream()
+                    .map(n -> FlowNodeControllers.create(n, properties))
+                    .forEach(FlowNodeController::execute);
+        }
+
+        // Generate project using archetype engine
+        Path parentDirectory = commonOptions.project().toPath();
+        Path projectDir = parentDirectory.resolve(properties.get("name"));
+        requires(!projectDir.toFile().exists(), "%s exists", projectDir);
+        engine.generate(projectDir.toFile());
+
+        // Pom needs correct plugin version, with extensions enabled for devloop
+        ensureHelidonPluginConfig(projectDir, BuildToolsProperties.instance().version());
+
+        // Create config file that includes feature information
+        ProjectConfig configFile = projectConfig(projectDir);
+        configFile.property(PROJECT_DIRECTORY, projectDir.toString());
+        configFile.property(PROJECT_FLAVOR, flavor.toString());
+        configFile.property(HELIDON_VERSION_PROPERTY, helidonVersion);
+        cliConfig.forEach((key, value) -> {
+            String propName = (String) key;
+            if (propName.startsWith(FEATURE_PREFIX)) {      // Applies to both SE or MP
+                configFile.property(propName, (String) value);
+            } else if (propName.startsWith(flavor.toString())) {       // Project's flavor
+                configFile.property(
+                        propName.substring(flavor.toString().length() + 1),
+                        (String) value);
             }
+        });
+        configFile.store();
 
-            // Generate project using archetype engine
-            Path parentDirectory = commonOptions.project().toPath();
-            Path projectDir = parentDirectory.resolve(properties.get("name"));
-            if (projectDir.toFile().exists()) {
-                context.exitAction(ExitStatus.FAILURE, projectDir + " exists");
-                return;
+        String dir = BoldBrightCyan.apply(parentDirectory + Constants.DIR_SEP + projectDir.getFileName());
+        Prompter.displayLine("Switch directory to " + dir + " to use CLI");
+
+        if (!batch) {
+            Prompter.displayLine("");
+            boolean startDev = Prompter.promptYesNo("Start development loop?", false);
+            if (startDev) {
+                DevCommand devCommand = new DevCommand(new CommonOptions(projectDir.toFile()),
+                        true, false);
+                devCommand.execute(context);
             }
-            engine.generate(projectDir.toFile());
-
-            // Pom needs correct plugin version, with extensions enabled for devloop
-            ensureHelidonPluginConfig(projectDir, BuildToolsProperties.instance().version());
-
-            // Create config file that includes feature information
-            ProjectConfig configFile = projectConfig(projectDir);
-            configFile.property(PROJECT_DIRECTORY, projectDir.toString());
-            configFile.property(PROJECT_FLAVOR, flavor.toString());
-            configFile.property(HELIDON_VERSION_PROPERTY, helidonVersion);
-            cliConfig.forEach((key, value) -> {
-                String propName = (String) key;
-                if (propName.startsWith(FEATURE_PREFIX)) {      // Applies to both SE or MP
-                    configFile.property(propName, (String) value);
-                } else if (propName.startsWith(flavor.toString())) {       // Project's flavor
-                    configFile.property(
-                            propName.substring(flavor.toString().length() + 1),
-                            (String) value);
-                }
-            });
-            configFile.store();
-
-            String dir = BoldBrightCyan.apply(parentDirectory + Constants.DIR_SEP + projectDir.getFileName());
-            Prompter.displayLine("Switch directory to " + dir + " to use CLI");
-
-            if (!batch) {
-                Prompter.displayLine("");
-                boolean startDev = Prompter.promptYesNo("Start development loop?", false);
-                if (startDev) {
-                    DevCommand devCommand = new DevCommand(new CommonOptions(projectDir.toFile()),
-                            true, false);
-                    devCommand.execute(context);
-                }
-            }
-        } catch (IOException e) {
-            context.exitAction(ExitStatus.FAILURE, e.getMessage());
         }
     }
 

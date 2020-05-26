@@ -79,6 +79,11 @@ class AppTypeBrowser {
     private static final String HELIDON_VERSION_NOT_FOUND = "$(red Helidon version) $(RED %s) $(red not found.)";
 
     /**
+     * Helidon app type not found message.
+     */
+    private static final String TYPE_NOT_FOUND = "$(red Type \")$(RED %s)$(red \" not found in Helidon version %s.)";
+
+    /**
      * Download failed message.
      */
     private static final String DOWNLOAD_FAILED = "Unable to download %s from %s";
@@ -157,7 +162,7 @@ class AppTypeBrowser {
                         ARCHETYPE_PREFIX, flavor, apptype, helidonVersion, jar);
                 downloadArtifact(new URL(location), localJarPath);
             } catch (ConnectException | FileNotFoundException e) {
-                downloadFailed(jar, repo, e);
+                downloadFailed(apptype, jar, repo, e);
                 return null;
             } catch (IOException e1) {
                 throw new RuntimeException(e1);
@@ -193,7 +198,7 @@ class AppTypeBrowser {
             URL url = new URL(location);
             downloadArtifact(url, localPomPath);
         } catch (ConnectException | FileNotFoundException e) {
-            downloadFailed(pom, repo, e);
+            downloadFailed(null, pom, repo, e);
             // Falls through
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -221,18 +226,23 @@ class AppTypeBrowser {
     /**
      * Handle download failed error.
      *
+     * @param type The application type.
      * @param file The file.
      * @param repo The repo.
      * @param error The error
      */
-    private void downloadFailed(String file, String repo, Throwable error) {
+    private void downloadFailed(String type, String file, String repo, Throwable error) {
         boolean local = repo.equals(LOCAL_REPO);
         boolean notFound = error instanceof FileNotFoundException;
         boolean snapshot = helidonVersion.endsWith(SNAPSHOT_SUFFIX);
         Log.Level level = local || snapshot ? Log.Level.DEBUG : Log.Level.WARN;
         Log.log(level, error, DOWNLOAD_FAILED, file, repo);
         if (notFound && local) {
-            Requirements.failed(HELIDON_VERSION_NOT_FOUND, helidonVersion);
+            if (type == null) {
+                Requirements.failed(HELIDON_VERSION_NOT_FOUND, helidonVersion);
+            } else {
+                Requirements.failed(TYPE_NOT_FOUND, type, helidonVersion);
+            }
         }
     }
 }
