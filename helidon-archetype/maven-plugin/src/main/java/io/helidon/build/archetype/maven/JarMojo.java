@@ -167,7 +167,6 @@ public class JarMojo extends AbstractMojo {
         }
 
         File jarFile = new File(outputDirectory, finalName + ".jar");
-        getLog().info("Building archetype jar: " + jarFile);
 
         MavenArchiver archiver = new MavenArchiver();
         archiver.setCreatedBy("Helidon Archetype Plugin", "io.helidon.build-tools.archetype", "helidon-archetype-maven-plugin");
