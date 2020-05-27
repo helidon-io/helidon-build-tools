@@ -31,6 +31,7 @@ import io.helidon.build.util.Style;
 
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
+import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_STARTING;
@@ -75,7 +76,7 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
         this.fork = fork;
     }
 
-    private void assertValidConfig() {
+    private void requireValidConfig() {
         ensureHelidonCliConfig(WORKING_DIR, null);
     }
 
@@ -84,8 +85,8 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
 
         // Ensure preconditions
 
-        Assertions.assertRequiredMavenVersion();
-        assertValidConfig();
+        requireMinimumMavenVersion();
+        requireValidConfig();
 
         // Clear terminal and print header if in terminal mode
 

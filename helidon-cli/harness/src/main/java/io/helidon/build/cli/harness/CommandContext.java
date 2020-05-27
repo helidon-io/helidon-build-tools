@@ -159,7 +159,7 @@ public final class CommandContext {
                             } else {
                                 exit(Red.apply(ce.getMessage()), null, INFO, 1);
                             }
-                        }, () -> exit("", failure, ERROR, 1));
+                        }, () -> exit(failure.getMessage(), failure, ERROR, 1));
                     } else {
                         exit(message, null, ERROR, 1);
                     }
@@ -173,7 +173,7 @@ public final class CommandContext {
         }
 
         private void exit(String message, Throwable error, Level level, int statusCode) {
-            if (message != null && !message.isEmpty()) {
+            if (message != null || error != null) {
                 if (Log.isVerbose()) {
                     Log.info();
                 }

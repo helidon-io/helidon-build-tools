@@ -21,7 +21,7 @@ import java.util.List;
 
 import io.helidon.build.cli.impl.InitCommand.Flavor;
 import io.helidon.build.util.Log;
-import io.helidon.build.util.RequirementsFailure;
+import io.helidon.build.util.RequirementFailure;
 
 import org.junit.jupiter.api.Test;
 
@@ -48,7 +48,7 @@ public class AppTypeBrowserTest extends BaseCommandTest {
             browser.downloadArtifact(new URL(REMOTE_REPO + "/io/helidon/build-tools/maven-metadata.xml"), file);
             assertThat(file.toFile().exists(), is(true));
             assertThat(file.toFile().delete(), is(true));
-        } catch (RequirementsFailure e) {
+        } catch (RequirementFailure e) {
             Log.warn("IGNORING '%s'. Fix this once we have a Helidon release with new archetypes!", e.getMessage());
         }
     }
@@ -63,7 +63,7 @@ public class AppTypeBrowserTest extends BaseCommandTest {
             List<String> appTypes = browser.appTypes();
             assertThat(appTypes.size(), is(greaterThanOrEqualTo(0)));
             assertThat(appTypes.stream().map(browser::archetypeJar).count(), is(greaterThanOrEqualTo(0L)));
-        } catch (RequirementsFailure e) {
+        } catch (RequirementFailure e) {
             Log.warn("IGNORING '%s'. Fix this once we have a Helidon release with new archetypes!", e.getMessage());
         }
     }
@@ -78,7 +78,7 @@ public class AppTypeBrowserTest extends BaseCommandTest {
             List<String> appTypes = browser.appTypes();
             assertThat(appTypes.size(), is(greaterThanOrEqualTo(0)));
             assertThat(appTypes.stream().map(browser::archetypeJar).count(), is(greaterThanOrEqualTo(0L)));
-        } catch (RequirementsFailure e) {
+        } catch (RequirementFailure e) {
             Log.warn("IGNORING '%s'. Fix this once we have a Helidon release with new archetypes!", e.getMessage());
         }
     }

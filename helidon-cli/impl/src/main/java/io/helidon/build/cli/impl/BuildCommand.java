@@ -25,6 +25,7 @@ import io.helidon.build.cli.harness.Option.KeyValue;
 import io.helidon.build.util.MavenCommand;
 
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
+import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 
 /**
  * The {@code build} command.
@@ -57,7 +58,7 @@ public final class BuildCommand extends BaseCommand implements CommandExecution 
 
     @Override
     public void execute(CommandContext context) throws Exception {
-        Assertions.assertRequiredMavenVersion();
+        requireMinimumMavenVersion();
 
         MavenCommand.Builder builder = MavenCommand.builder()
                                                    .verbose(context.verbosity() != NORMAL)

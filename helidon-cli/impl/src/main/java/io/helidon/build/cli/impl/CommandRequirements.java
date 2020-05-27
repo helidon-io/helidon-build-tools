@@ -17,15 +17,16 @@ package io.helidon.build.cli.impl;
 
 import io.helidon.build.util.MavenCommand;
 import io.helidon.build.util.MavenVersion;
+import io.helidon.build.util.RequirementFailure;
 import io.helidon.build.util.Requirements;
-import io.helidon.build.util.RequirementsFailure;
+import io.helidon.build.util.Style;
 
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
 
 /**
- * Common assertions.
+ * Command assertions with message strings formatted via {@link Style#render(String, Object...)}.
  */
-public class Assertions {
+public class CommandRequirements {
 
     private static final MavenVersion MINIMUM_HELIDON_VERSION = toMavenVersion("2.0.0-M4");
     private static final MavenVersion ALLOWED_HELIDON_SNAPSHOT_VERSION = toMavenVersion("2.0.0-SNAPSHOT");
@@ -37,10 +38,10 @@ public class Assertions {
      *
      * @param helidonVersion The version.
      * @return The version, for chaining.
-     * @throws RequirementsFailure If the version does not meet the requirement.
+     * @throws RequirementFailure If the version does not meet the requirement.
      */
-    static String assertSupportedHelidonVersion(String helidonVersion) {
-        assertSupportedHelidonVersion(toMavenVersion(helidonVersion));
+    static String requireSupportedHelidonVersion(String helidonVersion) {
+        requireSupportedHelidonVersion(toMavenVersion(helidonVersion));
         return helidonVersion;
     }
 
@@ -49,10 +50,10 @@ public class Assertions {
      *
      * @param helidonVersion The version.
      * @return The version, for chaining.
-     * @throws RequirementsFailure If the version does not meet the requirement.
+     * @throws RequirementFailure If the version does not meet the requirement.
      */
-    static MavenVersion assertSupportedHelidonVersion(MavenVersion helidonVersion) {
-        Requirements.requires(helidonVersion.equals(ALLOWED_HELIDON_SNAPSHOT_VERSION)
+    static MavenVersion requireSupportedHelidonVersion(MavenVersion helidonVersion) {
+        Requirements.require(helidonVersion.equals(ALLOWED_HELIDON_SNAPSHOT_VERSION)
                         || helidonVersion.isGreaterThanOrEqualTo(MINIMUM_HELIDON_VERSION),
                 UNSUPPORTED_HELIDON_VERSION, helidonVersion);
         return helidonVersion;
@@ -61,12 +62,12 @@ public class Assertions {
     /**
      * Assert that the installed Maven version is at least the required minimum.
      *
-     * @throws RequirementsFailure If the installed version does not meet the requirement.
+     * @throws RequirementFailure If the installed version does not meet the requirement.
      */
-    static void assertRequiredMavenVersion() {
+    static void requireMinimumMavenVersion() {
         MavenCommand.assertRequiredMavenVersion(MINIMUM_REQUIRED_MAVEN_VERSION);
     }
 
-    private Assertions() {
+    private CommandRequirements() {
     }
 }

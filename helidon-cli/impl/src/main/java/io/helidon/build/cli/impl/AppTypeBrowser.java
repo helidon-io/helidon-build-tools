@@ -22,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
@@ -33,7 +34,7 @@ import io.helidon.build.util.Requirements;
 
 import org.apache.maven.model.Model;
 
-import static io.helidon.build.cli.impl.Assertions.assertSupportedHelidonVersion;
+import static io.helidon.build.cli.impl.CommandRequirements.requireSupportedHelidonVersion;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
 import static io.helidon.build.util.PomUtils.readPomModel;
 
@@ -79,6 +80,11 @@ class AppTypeBrowser {
     private static final String HELIDON_VERSION_NOT_FOUND = "$(red Helidon version) $(RED %s) $(red not found.)";
 
     /**
+     * Helidon app type not found message.
+     */
+    private static final String TYPE_NOT_FOUND = "$(red Type \")$(RED %s)$(red \" not found in Helidon version %s.)";
+
+    /**
      * Download failed message.
      */
     private static final String DOWNLOAD_FAILED = "Unable to download %s from %s";
@@ -99,7 +105,7 @@ class AppTypeBrowser {
 
     AppTypeBrowser(Flavor flavor, String helidonVersion) {
         this.flavor = flavor;
-        this.helidonVersion = assertSupportedHelidonVersion(helidonVersion);
+        this.helidonVersion = requireSupportedHelidonVersion(helidonVersion);
         String userHome = System.getProperty("user.home");
         Objects.requireNonNull(userHome);
         this.localCacheDir = ensureDirectory(Path.of(userHome, ".helidon", "cache"));  // $HOME/.helidon/cache
@@ -157,7 +163,7 @@ class AppTypeBrowser {
                         ARCHETYPE_PREFIX, flavor, apptype, helidonVersion, jar);
                 downloadArtifact(new URL(location), localJarPath);
             } catch (ConnectException | FileNotFoundException e) {
-                downloadFailed(jar, repo, e);
+                downloadFailed(apptype, jar, repo, e);
                 return null;
             } catch (IOException e1) {
                 throw new RuntimeException(e1);
@@ -174,7 +180,7 @@ class AppTypeBrowser {
     List<String> appTypesLocalRepo() {
         String pomFile = String.format(APPTYPE_POM, flavor, helidonVersion);
         Path path = localCacheDir.resolve(pomFile);
-        if (path.toFile().exists()) {
+        if (Files.exists(path)) {
             Model model = readPomModel(path);
             return model.getModules();
         }
@@ -193,7 +199,7 @@ class AppTypeBrowser {
             URL url = new URL(location);
             downloadArtifact(url, localPomPath);
         } catch (ConnectException | FileNotFoundException e) {
-            downloadFailed(pom, repo, e);
+            downloadFailed(null, pom, repo, e);
             // Falls through
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -221,18 +227,23 @@ class AppTypeBrowser {
     /**
      * Handle download failed error.
      *
+     * @param type The application type.
      * @param file The file.
      * @param repo The repo.
      * @param error The error
      */
-    private void downloadFailed(String file, String repo, Throwable error) {
+    private void downloadFailed(String type, String file, String repo, Throwable error) {
         boolean local = repo.equals(LOCAL_REPO);
         boolean notFound = error instanceof FileNotFoundException;
         boolean snapshot = helidonVersion.endsWith(SNAPSHOT_SUFFIX);
         Log.Level level = local || snapshot ? Log.Level.DEBUG : Log.Level.WARN;
         Log.log(level, error, DOWNLOAD_FAILED, file, repo);
         if (notFound && local) {
-            Requirements.failed(HELIDON_VERSION_NOT_FOUND, helidonVersion);
+            if (type == null) {
+                Requirements.failed(HELIDON_VERSION_NOT_FOUND, helidonVersion);
+            } else {
+                Requirements.failed(TYPE_NOT_FOUND, type, helidonVersion);
+            }
         }
     }
 }

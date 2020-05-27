@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.build.cli.impl.InitCommand.Flavor;
 import io.helidon.build.util.Log;
-import io.helidon.build.util.RequirementsFailure;
+import io.helidon.build.util.RequirementFailure;
 
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.test.StripAnsi.stripAnsi;
@@ -124,7 +124,7 @@ class TestUtils {
             if (!found) {
                 Log.warn("Unable to find archetype %s for flavor %s and version %s", apptype, flavor, helidonVersion);
             }
-        } catch (RequirementsFailure e) {
+        } catch (RequirementFailure e) {
             Log.warn("IGNORING '%s'. Fix this once we have a Helidon release with new archetypes!", e.getMessage());
             found = false;
         }
