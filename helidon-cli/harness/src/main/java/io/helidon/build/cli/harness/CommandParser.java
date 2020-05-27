@@ -88,13 +88,7 @@ public final class CommandParser {
             }
             rawArg = rawArg.trim();
             String arg = rawArg.trim().toLowerCase();
-            if (!GLOBAL_OPTIONS.contains(arg) && commandName == null) {
-                if (!Command.NAME_PREDICATE.test(arg)) {
-                    error = INVALID_COMMAND_NAME + ": " + rawArg;
-                    break;
-                }
-                commandName = arg;
-            } else if (rawArg.length() > 2 && rawArg.charAt(0) == '-' && rawArg.charAt(1) == 'D') {
+            if (rawArg.length() > 2 && rawArg.charAt(0) == '-' && rawArg.charAt(1) == 'D') {
                 String prop = rawArg.substring(2);
                 if (prop.length() >= 3) {
                     int index = prop.indexOf('=');
@@ -107,6 +101,12 @@ public final class CommandParser {
                 }
                 error = INVALID_PROPERTY + ": " + prop;
                 break;
+            } else if (!GLOBAL_OPTIONS.contains(arg) && commandName == null) {
+                if (!Command.NAME_PREDICATE.test(arg)) {
+                    error = INVALID_COMMAND_NAME + ": " + rawArg;
+                    break;
+                }
+                commandName = arg;
             } else if (arg.length() > 2 && arg.charAt(0) == '-' && arg.charAt(1) == '-') {
                 String optionName = arg.substring(2);
                 if (!Option.NAME_PREDICATE.test(optionName)) {
