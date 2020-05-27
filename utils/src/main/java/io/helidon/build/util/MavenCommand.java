@@ -35,7 +35,6 @@ import static io.helidon.build.util.AnsiConsoleInstaller.isHelidonChildProcess;
 import static io.helidon.build.util.Constants.EOL;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.listFiles;
-import static io.helidon.build.util.Requirements.requires;
 import static io.helidon.build.util.Style.Bold;
 import static java.io.File.pathSeparatorChar;
 import static java.util.Objects.requireNonNull;
@@ -157,7 +156,7 @@ public class MavenCommand {
      */
     public static void assertRequiredMavenVersion(MavenVersion requiredMinimumVersion) {
         MavenVersion installed = installedVersion();
-        requires(installed.isGreaterThanOrEqualTo(requiredMinimumVersion),
+        Requirements.require(installed.isGreaterThanOrEqualTo(requiredMinimumVersion),
                 VERSION_ERROR, installed, requiredMinimumVersion, MAVEN_DOWNLOAD_URL);
     }
 

@@ -20,14 +20,14 @@ import static java.util.Objects.requireNonNull;
 /**
  * Requirement failed exception with message strings formatted via {@link Style#render(String, Object...)}.
  */
-public final class RequirementsFailure extends IllegalStateException {
+public final class RequirementFailure extends IllegalStateException {
     /**
      * Constructor.
      *
      * @param message The message.
      * @param args The message arguments.
      */
-    RequirementsFailure(String message, Object... args) {
+    RequirementFailure(String message, Object... args) {
         super(render(message, args));
     }
 

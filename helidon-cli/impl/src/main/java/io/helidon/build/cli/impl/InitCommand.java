@@ -43,8 +43,9 @@ import io.helidon.build.util.HelidonVersions;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
+import io.helidon.build.util.Requirements;
 
-import static io.helidon.build.cli.impl.Assertions.assertRequiredMavenVersion;
+import static io.helidon.build.cli.impl.CliRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.cli.impl.Prompter.displayLine;
 import static io.helidon.build.cli.impl.Prompter.prompt;
 import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;
@@ -53,7 +54,6 @@ import static io.helidon.build.util.ProjectConfig.FEATURE_PREFIX;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
 import static io.helidon.build.util.Requirements.failed;
-import static io.helidon.build.util.Requirements.requires;
 import static io.helidon.build.util.Style.BoldBrightCyan;
 
 /**
@@ -148,7 +148,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         // Check build type
 
         if (build == Build.MAVEN) {
-            assertRequiredMavenVersion();
+            requireMinimumMavenVersion();
         } else {
             failed("$(red Gradle is not yet supported.)");
         }
@@ -183,7 +183,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         AppTypeBrowser browser = new AppTypeBrowser(flavor, helidonVersion);
         displayLine("Gathering application types ... ");
         List<String> appTypes = browser.appTypes();
-        requires(!appTypes.isEmpty(), "Unable to find application types for %s and %s.", flavor, helidonVersion);
+        Requirements.require(!appTypes.isEmpty(), "Unable to find application types for %s and %s.", flavor, helidonVersion);
 
         // Select application type interactively
         if (!batch) {
@@ -193,7 +193,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         // Find jar and set up loader
         ArchetypeLoader loader;
         File jarFile = browser.archetypeJar(appType).toFile();
-        requires(jarFile.exists(), "%s does not exist", jarFile);
+        Requirements.require(jarFile.exists(), "%s does not exist", jarFile);
         loader = new ArchetypeLoader(jarFile);
 
         // Initialize mutable set of properties and engine
@@ -213,7 +213,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         // Generate project using archetype engine
         Path parentDirectory = commonOptions.project().toPath();
         Path projectDir = parentDirectory.resolve(properties.get("name"));
-        requires(!projectDir.toFile().exists(), "%s exists", projectDir);
+        Requirements.require(!projectDir.toFile().exists(), "%s exists", projectDir);
         engine.generate(projectDir.toFile());
 
         // Pom needs correct plugin version, with extensions enabled for devloop

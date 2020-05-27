@@ -25,53 +25,53 @@ import java.util.function.Supplier;
 public class Requirements {
 
     /**
-     * Conditionally throws a {@code Failure} with a message formatted via {@link Style#render(String, Object...)}.
+     * Conditionally throws a {@code RequirementFailure} with a message formatted via {@link Style#render(String, Object...)}.
      *
      * @param condition The condition.
      * @param message The message.
      * @param args The message args.
-     * @throws RequirementsFailure if the condition returns {@code false}.
+     * @throws RequirementFailure if the condition returns {@code false}.
      */
-    public static void requires(Supplier<Boolean> condition, String message, Object... args) {
-        requires(condition.get(), message, args);
+    public static void require(Supplier<Boolean> condition, String message, Object... args) {
+        require(condition.get(), message, args);
     }
 
     /**
-     * Conditionally throws a {@code CommandException} with a message formatted via {@link Style#render(String, Object...)}.
+     * Conditionally throws a {@code RequirementFailure} with a message formatted via {@link Style#render(String, Object...)}.
      *
      * @param condition The condition.
      * @param message The message.
      * @param args The message args.
-     * @throws RequirementsFailure if the condition is {@code false}.
+     * @throws RequirementFailure if the condition is {@code false}.
      */
-    public static void requires(boolean condition, String message, Object... args) {
+    public static void require(boolean condition, String message, Object... args) {
         if (!condition) {
             failed(message, args);
         }
     }
 
     /**
-     * Throws a {@code CommandException} with a message formatted via {@link Style#render(String, Object...)}.
+     * Throws a {@code RequirementFailure} with a message formatted via {@link Style#render(String, Object...)}.
      *
      * @param message The message.
      * @param args The message args.
-     * @throws RequirementsFailure always.
+     * @throws RequirementFailure always.
      */
     public static void failed(String message, Object... args) {
-        throw new RequirementsFailure(message, args);
+        throw new RequirementFailure(message, args);
     }
 
     /**
-     * Convert the given error to a {@link RequirementsFailure} if it is or was caused by this type.
+     * Convert the given error to a {@link RequirementFailure} if it is or was caused by this type.
      *
      * @param error The error.
-     * @return The optional {@link RequirementsFailure}.
+     * @return The optional {@link RequirementFailure}.
      */
-    public static Optional<RequirementsFailure> toFailure(Throwable error) {
+    public static Optional<RequirementFailure> toFailure(Throwable error) {
         if (error == null) {
             return Optional.empty();
-        } else if (error instanceof RequirementsFailure) {
-            return Optional.of((RequirementsFailure) error);
+        } else if (error instanceof RequirementFailure) {
+            return Optional.of((RequirementFailure) error);
         }
         // Recurse
         return toFailure(error.getCause()).or(Optional::empty);
