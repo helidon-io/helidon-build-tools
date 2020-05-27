@@ -36,7 +36,6 @@
                     <lifecycle>
                         <id>default</id>
                         <phases>
-                            <process-resources>org.apache.maven.plugins:maven-resources-plugin:resources</process-resources>
                             <process-test-resources>org.apache.maven.plugins:maven-resources-plugin:testResources</process-test-resources>
                             <package>io.helidon.build-tools.archetype:helidon-archetype-maven-plugin:jar</package>
                             <integration-test>io.helidon.build-tools.archetype:helidon-archetype-maven-plugin:integration-test</integration-test>
