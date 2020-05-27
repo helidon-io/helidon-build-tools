@@ -22,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
@@ -179,7 +180,7 @@ class AppTypeBrowser {
     List<String> appTypesLocalRepo() {
         String pomFile = String.format(APPTYPE_POM, flavor, helidonVersion);
         Path path = localCacheDir.resolve(pomFile);
-        if (path.toFile().exists()) {
+        if (Files.exists(path)) {
             Model model = readPomModel(path);
             return model.getModules();
         }

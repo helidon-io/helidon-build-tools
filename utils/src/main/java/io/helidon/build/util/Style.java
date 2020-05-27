@@ -266,6 +266,6 @@ public enum Style implements Function<Object, String> {
      * @return {@code true} if an Ansi escape sequence found.
      */
     public static boolean isStyled(String text) {
-        return text.contains(ANSI_ESCAPE_BEGIN);
+        return text != null && text.contains(ANSI_ESCAPE_BEGIN);
     }
 }
