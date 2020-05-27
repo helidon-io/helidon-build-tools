@@ -45,7 +45,7 @@ import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.Requirements;
 
-import static io.helidon.build.cli.impl.CliRequirements.requireMinimumMavenVersion;
+import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.cli.impl.Prompter.displayLine;
 import static io.helidon.build.cli.impl.Prompter.prompt;
 import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;

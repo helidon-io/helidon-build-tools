@@ -24,9 +24,9 @@ import io.helidon.build.util.Style;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
 
 /**
- * CLI assertions with message strings formatted via {@link Style#render(String, Object...)}.
+ * Command assertions with message strings formatted via {@link Style#render(String, Object...)}.
  */
-public class CliRequirements {
+public class CommandRequirements {
 
     private static final MavenVersion MINIMUM_HELIDON_VERSION = toMavenVersion("2.0.0-M4");
     private static final MavenVersion ALLOWED_HELIDON_SNAPSHOT_VERSION = toMavenVersion("2.0.0-SNAPSHOT");
@@ -68,6 +68,6 @@ public class CliRequirements {
         MavenCommand.assertRequiredMavenVersion(MINIMUM_REQUIRED_MAVEN_VERSION);
     }
 
-    private CliRequirements() {
+    private CommandRequirements() {
     }
 }

@@ -33,7 +33,7 @@ import io.helidon.build.util.Requirements;
 
 import org.apache.maven.model.Model;
 
-import static io.helidon.build.cli.impl.CliRequirements.requireSupportedHelidonVersion;
+import static io.helidon.build.cli.impl.CommandRequirements.requireSupportedHelidonVersion;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
 import static io.helidon.build.util.PomUtils.readPomModel;
 

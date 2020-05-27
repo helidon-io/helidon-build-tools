@@ -25,7 +25,7 @@ import io.helidon.build.cli.harness.Option.KeyValue;
 import io.helidon.build.util.MavenCommand;
 
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
-import static io.helidon.build.cli.impl.CliRequirements.requireMinimumMavenVersion;
+import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 
 /**
  * The {@code build} command.

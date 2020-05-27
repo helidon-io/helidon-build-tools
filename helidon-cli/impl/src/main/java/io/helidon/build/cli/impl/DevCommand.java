@@ -31,7 +31,7 @@ import io.helidon.build.util.Style;
 
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
-import static io.helidon.build.cli.impl.CliRequirements.requireMinimumMavenVersion;
+import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_STARTING;
