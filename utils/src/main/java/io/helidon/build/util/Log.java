@@ -275,6 +275,15 @@ public class Log {
         return WRITER.get() != null;
     }
 
+    /**
+     * Tests whether or not the writer is the {@link SystemLogWriter}.
+     *
+     * @return {@code true} If the writer is the {@link SystemLogWriter}.
+     */
+    public static boolean isSystemWriter() {
+        return WRITER.get() instanceof SystemLogWriter;
+    }
+
     private static Writer writer() {
         Writer writer = WRITER.get();
         if (writer == null) {

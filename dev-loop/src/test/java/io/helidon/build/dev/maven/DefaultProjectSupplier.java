@@ -39,6 +39,7 @@ import static io.helidon.build.dev.BuildComponent.createBuildComponent;
 import static io.helidon.build.dev.BuildFile.createBuildFile;
 import static io.helidon.build.dev.BuildRoot.createBuildRoot;
 import static io.helidon.build.dev.ProjectDirectory.createProjectDirectory;
+import static io.helidon.build.util.Constants.ENABLE_HELIDON_CLI;
 import static io.helidon.build.util.FileUtils.ChangeDetectionType.FIRST;
 import static io.helidon.build.util.FileUtils.ChangeDetectionType.LATEST;
 import static io.helidon.build.util.FileUtils.assertDir;
@@ -49,8 +50,8 @@ import static io.helidon.build.util.FileUtils.ensureDirectory;
  * Builds a project assuming a default pom.xml.
  */
 public class DefaultProjectSupplier implements ProjectSupplier {
-    private static final List<String> CLEAN_BUILD_COMMAND = List.of("clean", "prepare-package", "-DskipTests");
-    private static final List<String> BUILD_COMMAND = List.of("prepare-package", "-DskipTests");
+    private static final List<String> CLEAN_BUILD_CMD = List.of("clean", "prepare-package", "-DskipTests", ENABLE_HELIDON_CLI);
+    private static final List<String> BUILD_CMD = List.of("prepare-package", "-DskipTests", ENABLE_HELIDON_CLI);
     private static final String POM_FILE = "pom.xml";
     private static final String JAVA_DIR = "src/main/java";
     private static final String RESOURCES_DIR = "src/main/resources";
@@ -64,12 +65,12 @@ public class DefaultProjectSupplier implements ProjectSupplier {
     }
 
     @Override
-    public Project newProject(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception {
+    public Project newProject(BuildExecutor executor, boolean clean, boolean allowSkip, int cycleNumber) throws Exception {
         final BuildType buildType = BuildType.completeType(executor.willFork(), clean);
         final Project project = createProject(executor.projectDirectory(), buildType);
-        if (clean || !project.isBuildUpToDate()) {
+        if (clean || (allowSkip && !project.isBuildUpToDate())) {
             executor.monitor().onBuildStart(cycleNumber, buildType);
-            executor.execute(clean ? CLEAN_BUILD_COMMAND : BUILD_COMMAND);
+            executor.execute(clean ? CLEAN_BUILD_CMD : BUILD_CMD);
             project.update(true);
         }
         return project;

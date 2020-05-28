@@ -53,6 +53,11 @@ public class DevLoopMessages {
     public static final String DEV_LOOP_BUILD_STARTING = "building";
 
     /**
+     * Message content when a the dev loop has failed.
+     */
+    public static final String DEV_LOOP_FAILED = "failed";
+
+    /**
      * Message content when a build has failed.
      */
     public static final String DEV_LOOP_BUILD_FAILED = "build failed";

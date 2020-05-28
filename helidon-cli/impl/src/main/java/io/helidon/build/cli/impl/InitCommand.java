@@ -23,7 +23,6 @@ import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.function.Predicate;
 
 import io.helidon.build.archetype.engine.ArchetypeDescriptor;
@@ -37,7 +36,6 @@ import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
 import io.helidon.build.cli.impl.FlowNodeControllers.FlowNodeController;
-import io.helidon.build.util.BuildToolsProperties;
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.HelidonVersions;
 import io.helidon.build.util.Log;
@@ -48,8 +46,6 @@ import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenV
 import static io.helidon.build.cli.impl.Prompter.displayLine;
 import static io.helidon.build.cli.impl.Prompter.prompt;
 import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;
-import static io.helidon.build.util.PomUtils.ensureHelidonPluginConfig;
-import static io.helidon.build.util.ProjectConfig.FEATURE_PREFIX;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
 import static io.helidon.build.util.Requirements.failed;
@@ -153,9 +149,6 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             failed("$(red Gradle is not yet supported.)");
         }
 
-        // Read CLI config file
-        Properties cliConfig = cliConfig();
-
         // Attempt to find default Helidon version if none provided
         if (helidonVersion == null) {
             try {
@@ -216,24 +209,11 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         require(!projectDir.toFile().exists(), "%s exists", projectDir);
         engine.generate(projectDir.toFile());
 
-        // Pom needs correct plugin version, with extensions enabled for devloop
-        ensureHelidonPluginConfig(projectDir, BuildToolsProperties.instance().version());
-
         // Create config file that includes feature information
         ProjectConfig configFile = projectConfig(projectDir);
         configFile.property(PROJECT_DIRECTORY, projectDir.toString());
         configFile.property(PROJECT_FLAVOR, flavor.toString());
         configFile.property(HELIDON_VERSION_PROPERTY, helidonVersion);
-        cliConfig.forEach((key, value) -> {
-            String propName = (String) key;
-            if (propName.startsWith(FEATURE_PREFIX)) {      // Applies to both SE or MP
-                configFile.property(propName, (String) value);
-            } else if (propName.startsWith(flavor.toString())) {       // Project's flavor
-                configFile.property(
-                        propName.substring(flavor.toString().length() + 1),
-                        (String) value);
-            }
-        });
         configFile.store();
 
         String dir = BoldBrightCyan.apply(parentDirectory + Constants.DIR_SEP + projectDir.getFileName());
@@ -244,7 +224,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             boolean startDev = Prompter.promptYesNo("Start development loop?", false);
             if (startDev) {
                 DevCommand devCommand = new DevCommand(new CommonOptions(projectDir.toFile()),
-                        true, false);
+                        true, false, false, null);
                 devCommand.execute(context);
             }
         }

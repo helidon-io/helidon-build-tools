@@ -18,7 +18,7 @@ package io.helidon.build.util;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
+import java.io.InputStreamReader;
 import java.util.Properties;
 
 import static java.util.Objects.requireNonNull;
@@ -29,9 +29,9 @@ import static java.util.Objects.requireNonNull;
 public class BuildToolsProperties extends Properties {
     private static final Instance<BuildToolsProperties> INSTANCE = new Instance<>(BuildToolsProperties::newInstance);
     private static final String RESOURCE_PATH = "build-tools.properties";
-    private static final String VERSION_KEY = "build.version";
-    private static final String BUILD_NUMBER_KEY = "build.number";
-    private static final String BUILD_DATE_KEY = "build.date";
+    private static final String VERSION_KEY = "version";
+    private static final String BUILD_REVISION_KEY = "revision";
+    private static final String BUILD_DATE_KEY = "date";
 
     /**
      * Returns the instance.
@@ -52,12 +52,12 @@ public class BuildToolsProperties extends Properties {
     }
 
     /**
-     * Returns the build tools build number.
+     * Returns the build tools build revision.
      *
-     * @return The build number.
+     * @return The build revision.
      */
-    public String buildNumber() {
-        return requireNonNull(getProperty(BUILD_NUMBER_KEY));
+    public String buildRevision() {
+        return requireNonNull(getProperty(BUILD_REVISION_KEY));
     }
 
     /**
@@ -69,18 +69,19 @@ public class BuildToolsProperties extends Properties {
         return requireNonNull(getProperty(BUILD_DATE_KEY));
     }
 
-    private BuildToolsProperties(InputStream stream) {
-        if (stream == null) {
-            throw new IllegalStateException(RESOURCE_PATH + " resource not found");
-        }
-        try (InputStream in = stream) {
-            load(stream);
+    private BuildToolsProperties(String resourcePath) {
+        try {
+            InputStream stream = BuildToolsProperties.class.getResourceAsStream(resourcePath);
+            Requirements.requireNonNull(stream, "%s resource not found", resourcePath);
+            try (InputStreamReader reader = new InputStreamReader(stream)) {
+                load(reader);
+            }
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw new RuntimeException(e);
         }
     }
 
     private static BuildToolsProperties newInstance() {
-        return new BuildToolsProperties(BuildToolsProperties.class.getResourceAsStream(RESOURCE_PATH));
+        return new BuildToolsProperties(RESOURCE_PATH);
     }
 }

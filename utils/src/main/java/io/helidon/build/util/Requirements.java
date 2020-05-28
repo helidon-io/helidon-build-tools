@@ -17,23 +17,25 @@
 package io.helidon.build.util;
 
 import java.util.Optional;
-import java.util.function.Supplier;
 
 /**
  * Assertions with message strings formatted via {@link Style#render(String, Object...)}.
  */
 public class Requirements {
-
     /**
-     * Conditionally throws a {@code RequirementFailure} with a message formatted via {@link Style#render(String, Object...)}.
+     * Throws a {@code RequirementFailure} with a message formatted via {@link Style#render(String, Object...)} if the
+     * given instance is {@code null}.
      *
-     * @param condition The condition.
+     * @param instance The instance.
      * @param message The message.
      * @param args The message args.
+     * @param <T> The instance type.
+     * @return The instance.
      * @throws RequirementFailure if the condition returns {@code false}.
      */
-    public static void require(Supplier<Boolean> condition, String message, Object... args) {
-        require(condition.get(), message, args);
+    public static <T> T requireNonNull(T instance, String message, Object... args) {
+        require(instance != null, message, args);
+        return instance;
     }
 
     /**

@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import io.helidon.build.util.Constants;
 import io.helidon.build.util.ProjectConfig;
 
 import org.apache.maven.AbstractMavenLifecycleParticipant;
@@ -57,6 +58,8 @@ import static org.eclipse.aether.util.filter.DependencyFilterUtils.classpathFilt
  */
 @Component(role = AbstractMavenLifecycleParticipant.class)
 public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipant {
+
+    private static final boolean ENABLED = "true".equals(System.getProperty(Constants.HELIDON_CLI_PROPERTY));
     private static final String DEBUG_PROPERTY = "project.config.collector.debug";
     private static final boolean DEBUG = "true".equals(System.getProperty(DEBUG_PROPERTY));
     private static final String MAIN_CLASS_PROPERTY = "mainClass";
@@ -81,7 +84,7 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
         assertSupportedProject(session.getProjects().size() == 1, MULTI_MODULE_PROJECT);
         final MavenProject project = session.getProjects().get(0);
         final Path projectDir = project.getBasedir().toPath();
-        assertSupportedProject(ProjectConfig.helidonCliConfigExists(projectDir), MISSING_DOT_HELIDON);
+        assertSupportedProject(ProjectConfig.projectConfigExists(projectDir), MISSING_DOT_HELIDON);
         assertSupportedProject(project.getProperties().getProperty(MAIN_CLASS_PROPERTY) != null, MISSING_MAIN_CLASS);
         debug("Helidon project is supported");
         return projectDir;
@@ -89,24 +92,29 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
 
     @Override
     public void afterProjectsRead(MavenSession session) {
-        // Init state
-        supportedProjectDir = null;
-        projectConfig = null;
-        try {
-            // Ensure that we support this project
-            supportedProjectDir = assertSupportedProject(session);
-
-            // Install our listener so we can know if compilation occurred and succeeded
-            final MavenExecutionRequest request = session.getRequest();
-            request.setExecutionListener(new EventListener(request.getExecutionListener()));
-        } catch (IllegalStateException e) {
+        if (ENABLED) {
+            // Init state
             supportedProjectDir = null;
+            projectConfig = null;
+            debug("collector enabled");
+            try {
+                // Ensure that we support this project
+                supportedProjectDir = assertSupportedProject(session);
+
+                // Install our listener so we can know if compilation occurred and succeeded
+                final MavenExecutionRequest request = session.getRequest();
+                request.setExecutionListener(new EventListener(request.getExecutionListener()));
+            } catch (IllegalStateException e) {
+                supportedProjectDir = null;
+            }
+        } else {
+            debug("collector disabled");
         }
     }
 
     @Override
     public void afterSessionEnd(MavenSession session) {
-        if (supportedProjectDir != null) {
+        if (ENABLED && supportedProjectDir != null) {
             final MavenExecutionResult result = session.getResult();
             if (result == null) {
                 debug("Build failed: no result");
@@ -126,14 +134,14 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
 
     private void collectConfig(MavenProject project, MavenSession session) {
         final Path projectDir = project.getBasedir().toPath();
-        final ProjectConfig config = ProjectConfig.loadHelidonCliConfig(projectDir);
+        final ProjectConfig config = ProjectConfig.projectConfig(projectDir);
         final List<String> dependencies = dependencies(project, session);
         final Path outputDir = projectDir.resolve(project.getBuild().getOutputDirectory());
         final List<String> classesDirs = List.of(outputDir.toString());
         final List<String> resourceDirs = project.getResources()
-                                                 .stream()
-                                                 .map(Resource::getDirectory)
-                                                 .collect(Collectors.toList());
+                .stream()
+                .map(Resource::getDirectory)
+                .collect(Collectors.toList());
         config.property(PROJECT_DEPENDENCIES, dependencies);
         config.property(PROJECT_MAINCLASS, project.getProperties().getProperty(MAIN_CLASS_PROPERTY));
         config.property(PROJECT_VERSION, project.getVersion());
@@ -146,11 +154,11 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
     private List<String> dependencies(MavenProject project, MavenSession session) {
         try {
             return dependenciesResolver.resolve(new DefaultDependencyResolutionRequest(project, session.getRepositorySession())
-                                                    .setResolutionFilter(DEPENDENCY_FILTER))
-                                       .getDependencies()
-                                       .stream()
-                                       .map(d -> d.getArtifact().getFile().toString())
-                                       .collect(Collectors.toList());
+                    .setResolutionFilter(DEPENDENCY_FILTER))
+                    .getDependencies()
+                    .stream()
+                    .map(d -> d.getArtifact().getFile().toString())
+                    .collect(Collectors.toList());
         } catch (DependencyResolutionException e) {
             throw new RuntimeException("Dependency resolution failed: " + e.getMessage());
         }
@@ -162,7 +170,7 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
     }
 
     private void invalidateConfig() {
-        projectConfig = ProjectConfig.loadHelidonCliConfig(supportedProjectDir);
+        projectConfig = ProjectConfig.projectConfig(supportedProjectDir);
         projectConfig.buildFailed();
         projectConfig.store();
     }

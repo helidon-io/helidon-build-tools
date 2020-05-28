@@ -53,6 +53,7 @@ final class CodeGenerator {
 
     /**
      * Generate a command fragment info class.
+     *
      * @param pkg java package
      * @param infoName name of the class
      * @param clazz described class
@@ -86,6 +87,7 @@ final class CodeGenerator {
 
     /**
      * Generate a command registry class.
+     *
      * @param pkg java package
      * @param infoName simple name of the class
      * @param clazz described class
@@ -108,6 +110,7 @@ final class CodeGenerator {
 
     /**
      * Generate a command model class.
+     *
      * @param pkg java package
      * @param modelName simple name of the class
      * @param command command annotation
@@ -191,7 +194,7 @@ final class CodeGenerator {
             } else if (param instanceof FlagMetaModel) {
                 Option.Flag option = ((FlagMetaModel) param).annotation();
                 s += "CommandModel.FlagInfo OPTION" + i + " = new CommandModel.FlagInfo(\""
-                        + option.name() + "\", \"" + option.description() + "\");";
+                        + option.name() + "\", \"" + option.description() + "\", " + option.visible() + ");";
             } else if (param.type() != null) {
                 String typeQualifedName = param.type().getQualifiedName().toString();
                 if (param instanceof KeyValueMetaModel) {
@@ -199,7 +202,8 @@ final class CodeGenerator {
                     s += "CommandModel.KeyValueInfo<" + typeQualifedName + "> OPTION" + i + " = new CommandModel.KeyValueInfo<>("
                             + typeQualifedName + ".class, \"" + option.name() + "\", \"" + option.description()
                             + "\", " + defaultValue(param.type(), option.defaultValue())
-                            + ", " + String.valueOf(option.required()) + ");";
+                            + ", " + String.valueOf(option.required())
+                            + ", " + String.valueOf(option.visible()) + ");";
                 } else if (param instanceof ArgumentMetaModel) {
                     Option.Argument option = ((ArgumentMetaModel) param).annotation();
                     s += "CommandModel.ArgumentInfo<" + typeQualifedName + "> OPTION" + i + " = new CommandModel.ArgumentInfo<>("

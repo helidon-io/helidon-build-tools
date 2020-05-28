@@ -34,6 +34,7 @@ import io.helidon.build.util.Log;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_COMPLETED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_STARTING;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_FAILED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_HEADER;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_PROJECT_CHANGED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_START;
@@ -72,7 +73,7 @@ public class DevLoop {
         this.terminalMode = terminalMode;
         this.monitor = new DevModeMonitor(terminalMode, projectSupplier.buildFileName());
         this.buildExecutor = forkBuilds ? new ForkedMavenExecutor(rootDir, monitor, MAX_BUILD_WAIT_SECONDS)
-                                        : new EmbeddedMavenExecutor(rootDir, monitor);
+                : new EmbeddedMavenExecutor(rootDir, monitor);
         this.initialClean = initialClean;
         this.projectSupplier = projectSupplier;
     }
@@ -206,6 +207,12 @@ public class DevLoop {
         }
 
         @Override
+        public void onLoopFail(int cycleNumber, Throwable error) {
+            Log.info();
+            log("%s %s", BoldRed.apply(DEV_LOOP_FAILED), error.getMessage());
+        }
+
+        @Override
         public void onStopped() {
             ensureStop();
         }
@@ -226,11 +233,11 @@ public class DevLoop {
 
     private BuildLoop newLoop(BuildExecutor executor, boolean initialClean, boolean watchBinariesOnly) {
         return BuildLoop.builder()
-                        .buildExecutor(executor)
-                        .clean(initialClean)
-                        .watchBinariesOnly(watchBinariesOnly)
-                        .projectSupplier(projectSupplier)
-                        .build();
+                .buildExecutor(executor)
+                .clean(initialClean)
+                .watchBinariesOnly(watchBinariesOnly)
+                .projectSupplier(projectSupplier)
+                .build();
     }
 
     private void run(BuildLoop loop, int maxWaitSeconds) throws InterruptedException, TimeoutException {
@@ -243,6 +250,5 @@ public class DevLoop {
             loop.stop(0L);
             throw new TimeoutException("While waiting for loop completion");
         }
-        loop.monitor();
     }
 }

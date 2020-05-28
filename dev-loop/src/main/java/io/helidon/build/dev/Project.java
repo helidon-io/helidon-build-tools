@@ -234,7 +234,7 @@ public class Project {
                 name = root.path().getFileName().toString();
             }
             if (config == null) {
-                config = ProjectConfig.loadHelidonCliConfig(root.path());
+                config = ProjectConfig.projectConfig(root.path());
             }
             return new Project(this);
         }

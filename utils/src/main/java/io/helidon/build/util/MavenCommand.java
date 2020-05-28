@@ -299,6 +299,19 @@ public class MavenCommand {
         }
 
         /**
+         * Add an optional Maven argument.
+         *
+         * @param argument The argument, may be {@code null}.
+         * @return This instance, for chaining.
+         */
+        public Builder addOptionalArgument(String argument) {
+            if (argument != null) {
+                addArgument(argument);
+            }
+            return this;
+        }
+
+        /**
          * Sets the Maven arguments.
          *
          * @param arguments The arguments.
