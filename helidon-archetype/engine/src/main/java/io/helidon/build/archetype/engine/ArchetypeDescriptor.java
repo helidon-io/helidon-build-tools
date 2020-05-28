@@ -22,7 +22,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Helidon archetype XML descriptor.
+ * Helidon archetype descriptor.
  */
 public final class ArchetypeDescriptor {
 
@@ -106,16 +106,28 @@ public final class ArchetypeDescriptor {
         return inputFlow;
     }
 
+    /**
+     * Archetype property.
+     */
     public static final class Property {
 
         private final String id;
-        private final String description;
-        private final Optional<String> defaultValue;
+        private final Optional<String> value;
+        private final boolean exported;
+        private final boolean readonly;
 
-        Property(String id, String description, String defaultValue) {
+        Property(String id, String value) {
+            this(id, value, true, false);
+        }
+
+        Property(String id, String value, boolean exported, boolean readonly) {
             this.id = Objects.requireNonNull(id, "id is null");
-            this.description = Objects.requireNonNull(description, "description is null");
-            this.defaultValue = Optional.ofNullable(defaultValue);
+            this.exported = exported;
+            this.readonly = readonly;
+            if (readonly && (value == null || value.isBlank())) {
+                throw new IllegalArgumentException("A readonly property requires a value");
+            }
+            this.value = Optional.ofNullable(value);
         }
 
         /**
@@ -128,28 +140,39 @@ public final class ArchetypeDescriptor {
         }
 
         /**
-         * get the property description.
-         *
-         * @return description, never {@code null}
-         */
-        public String description() {
-            return description;
-        }
-
-        /**
          * Get the default value.
          *
          * @return default value
          */
-        public Optional<String> defaultValue() {
-            return defaultValue;
+        public Optional<String> value() {
+            return value;
+        }
+
+        /**
+         * Indicate if this property is read only.
+         * A read only property always a value ; the value cannot be overridden.
+         *
+         * @return {@code true} if read only, {@code false} otherwise
+         */
+        public boolean isReadonly() {
+            return readonly;
+        }
+
+        /**
+         * Indicate if this property is exported.
+         * Properties marked as not exported are excluded converting to other descriptor formats
+         * (e.g. {@code maven/archetype-metadata.xml}.
+         *
+         * @return {@code true} if exported, {@code false} otherwise
+         */
+        public boolean isExported() {
+            return exported;
         }
 
         @Override
         public int hashCode() {
             int hash = 5;
             hash = 29 * hash + Objects.hashCode(this.id);
-            hash = 29 * hash + Objects.hashCode(this.description);
             return hash;
         }
 
@@ -165,10 +188,7 @@ public final class ArchetypeDescriptor {
                 return false;
             }
             final Property other = (Property) obj;
-            if (!Objects.equals(this.id, other.id)) {
-                return false;
-            }
-            return Objects.equals(this.description, other.description);
+            return Objects.equals(this.id, other.id);
         }
     }
 
@@ -726,6 +746,9 @@ public final class ArchetypeDescriptor {
         Choice(Property property, String text, List<Property> ifProperties, List<Property> unlessProperties) {
             super(text, ifProperties, unlessProperties);
             this.property = Objects.requireNonNull(property, "property is null");
+            if (property.isReadonly()) {
+                throw new IllegalArgumentException("Property: " + property.id() + " is readonly");
+            }
         }
 
         /**
@@ -777,6 +800,9 @@ public final class ArchetypeDescriptor {
 
             super(text, ifProperties, unlessProperties);
             this.property = Objects.requireNonNull(property, "property is null");
+            if (property.isReadonly()) {
+                throw new IllegalArgumentException("Property: " + property.id() + " is readonly");
+            }
             this.defaultValue = Optional.ofNullable(defaultValue);
         }
 

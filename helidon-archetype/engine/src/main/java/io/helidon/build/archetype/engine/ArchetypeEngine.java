@@ -87,8 +87,8 @@ public final class ArchetypeEngine implements Closeable {
         this.descriptor = loadDescriptor(loader);
         Objects.requireNonNull(properties, "properties is null");
         descriptor.properties().stream()
-                .filter(p -> p.defaultValue().isPresent() && !properties.containsKey(p.id()))
-                .forEach(p -> properties.put(p.id(), p.defaultValue().get()));
+                .filter(p -> p.value().isPresent() && !properties.containsKey(p.id()))
+                .forEach(p -> properties.put(p.id(), p.value().get()));
         this.properties = properties;
         List<SourcePath> paths = loadResourcesList(loader);
         this.templates = resolveFileSets(descriptor.templateSets().map(TemplateSets::templateSets).orElseGet(LinkedList::new),
@@ -110,7 +110,7 @@ public final class ArchetypeEngine implements Closeable {
     private static ArchetypeDescriptor loadDescriptor(ArchetypeLoader loader) {
         try (InputStream descIs = loader.loadResourceAsStream(DESCRIPTOR_RESOURCE_NAME)) {
             if (descIs == null) {
-                throw new IllegalStateException(DESCRIPTOR_RESOURCE_NAME + " not found in class-path");
+                throw new IllegalStateException(DESCRIPTOR_RESOURCE_NAME + " not found");
             }
             return ArchetypeDescriptor.read(descIs);
         } catch (IOException e) {
@@ -121,7 +121,7 @@ public final class ArchetypeEngine implements Closeable {
     private static List<SourcePath> loadResourcesList(ArchetypeLoader loader) {
         try (InputStream rListIs = loader.loadResourceAsStream(RESOURCES_LIST)) {
             if (rListIs == null) {
-                throw new IllegalStateException(RESOURCES_LIST + " not found in class-path");
+                throw new IllegalStateException(RESOURCES_LIST + " not found");
             }
             try (BufferedReader br = new BufferedReader(new InputStreamReader(rListIs))) {
                 return br.lines().map(SourcePath::new).collect(Collectors.toList());
@@ -213,7 +213,7 @@ public final class ArchetypeEngine implements Closeable {
                 String resourcePath = entry.getKey().substring(1);
                 try (InputStream is = loader.loadResourceAsStream(resourcePath)) {
                     if (is == null) {
-                        throw new IllegalStateException(resourcePath + " not found in class-path");
+                        throw new IllegalStateException(resourcePath + " not found");
                     }
                     Mustache m = mf.compile(new InputStreamReader(is), resourcePath);
                     File outputFile = new File(outputDirectory, transform(resourcePath, entry.getValue(), properties));
@@ -227,7 +227,7 @@ public final class ArchetypeEngine implements Closeable {
                 String resourcePath = entry.getKey().substring(1);
                 try (InputStream is = loader.loadResourceAsStream(resourcePath)) {
                     if (is == null) {
-                        throw new IllegalStateException(resourcePath + " not found in class-path");
+                        throw new IllegalStateException(resourcePath + " not found");
                     }
                     File outputFile = new File(outputDirectory, transform(resourcePath, entry.getValue(), properties));
                     outputFile.getParentFile().mkdirs();

@@ -37,11 +37,15 @@ final class DescriptorConverter {
     static void convert(ArchetypeDescriptor descriptor, Writer writer) {
         Xpp3Dom properties = new Xpp3Dom("requiredProperties");
         for (Property p : descriptor.properties()) {
+            if (!p.isExported()) {
+                continue;
+            }
             Xpp3Dom prop = new Xpp3Dom("requiredProperty");
             prop.setAttribute("key", p.id());
-            if (p.defaultValue().isPresent()) {
+            if (p.value().isPresent()) {
+                // TODO resolve "default" values using the input flow
                 Xpp3Dom defaultValue = new Xpp3Dom("defaultValue");
-                defaultValue.setValue(p.defaultValue().get());
+                defaultValue.setValue(p.value().get());
                 prop.addChild(defaultValue);
             }
             properties.addChild(prop);

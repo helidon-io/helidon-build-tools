@@ -27,6 +27,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <foo>pre-processed-foo</foo>
+        <bar>pre-processed-bar</bar>
     </properties>
 
     <build>

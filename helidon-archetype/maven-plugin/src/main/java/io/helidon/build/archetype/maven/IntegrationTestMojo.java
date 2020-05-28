@@ -138,6 +138,8 @@ public class IntegrationTestMojo extends AbstractMojo {
             for (Path goal : projectGoals) {
                 processIntegrationTest(goal, archetypeFile);
             }
+
+            // TODO test maven compatibility
         } catch (IOException ex) {
             throw new MojoFailureException(ex.getMessage(), ex);
         }

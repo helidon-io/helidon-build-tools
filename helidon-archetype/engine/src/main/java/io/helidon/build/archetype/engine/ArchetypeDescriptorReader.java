@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
@@ -113,8 +114,9 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
                     Property prop = new Property(
                             // TODO validate property id (dot separated alphanumerical)
                             requiredAttr("id", qName, attributes),
-                            requiredAttr("description", "property", attributes),
-                            attributes.getValue("default"));
+                            attributes.getValue("value"),
+                            Boolean.valueOf(Optional.ofNullable(attributes.getValue("exported")).orElse("true")),
+                            Boolean.valueOf(attributes.getValue("readonly")));
                     descriptor.properties().add(prop);
                     propertiesMap.put(prop.id(), prop);
                     stack.push("properties/property");

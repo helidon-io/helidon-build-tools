@@ -56,12 +56,15 @@ public class ArchetypeDescriptorTest {
         ArchetypeDescriptor desc = ArchetypeDescriptor.read(is);
         Map<String, Property> properties = desc.properties().stream().collect(Collectors.toMap(Property::id, (p) -> p));
         assertThat(properties.entrySet(), is(not(empty())));
-        assertThat(properties.size(), is(7));
-        assertThat(properties.keySet(), hasItems("gradle", "maven", "groupId", "artifactId", "version", "name", "package"));
-        assertThat(properties.values().stream().map(Property::description).collect(Collectors.toList()),
-                hasItems("Gradle based project", "Maven based project", "Project groupId", "Project artifactId", "Project version"
-                , "Project name", "Java package name"));
-        assertThat(properties.get("version").defaultValue().get(), is("1.0-SNAPSHOT"));
+        assertThat(properties.size(), is(8));
+        assertThat(properties.keySet(), hasItems("groupId", "artifactId", "version", "name", "package", "gradle", "maven", "helidonVersion"));
+        assertThat(properties.get("version").value().get(), is("1.0-SNAPSHOT"));
+        assertThat(properties.get("gradle").isExported(), is(false));
+        assertThat(properties.get("gradle").isExported(), is(false));
+        Property helidonVersion = properties.get("helidonVersion");
+        assertThat(helidonVersion.isExported(), is(false));
+        assertThat(helidonVersion.isReadonly(), is(true));
+        assertThat(helidonVersion.value().orElse(null), is("2.0.0-SNAPSHOT"));
 
         Map<String, Transformation> transformations = desc.transformations().stream()
                 .collect(Collectors.toMap(Transformation::id, (o) -> o));
