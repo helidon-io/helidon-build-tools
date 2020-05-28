@@ -20,8 +20,11 @@ import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.ConnectException;
+import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -99,6 +102,16 @@ class AppTypeBrowser {
      */
     private static final byte[] BUFFER = new byte[8 * 1024];
 
+    /**
+     * The connect timeout, in milliseconds.
+     */
+    public static final int CONNECT_TIMEOUT = 500;
+
+    /**
+     * The read timeout, in milliseconds.
+     */
+    public static final int READ_TIMEOUT = 500;
+
     private final Path localCacheDir;
     private final Flavor flavor;
     private final String helidonVersion;
@@ -119,13 +132,13 @@ class AppTypeBrowser {
      * @return List of available apptypes.
      */
     List<String> appTypes() {
-        List<String> appTypes = appTypesLocalRepo();
+        List<String> appTypes = appTypesLocalCache();
         if (appTypes.isEmpty()) {
             downloadPom(REMOTE_REPO);
-            appTypes = appTypesLocalRepo();
+            appTypes = appTypesLocalCache();
             if (appTypes.isEmpty()) {
                 downloadPom(LOCAL_REPO);
-                appTypes = appTypesLocalRepo();
+                appTypes = appTypesLocalCache();
                 return appTypes;
             }
         }
@@ -177,7 +190,7 @@ class AppTypeBrowser {
      *
      * @return List of apptype names in local POM file.
      */
-    List<String> appTypesLocalRepo() {
+    List<String> appTypesLocalCache() {
         String pomFile = String.format(APPTYPE_POM, flavor, helidonVersion);
         Path path = localCacheDir.resolve(pomFile);
         if (Files.exists(path)) {
@@ -214,7 +227,7 @@ class AppTypeBrowser {
      * @throws IOException If error occurs.
      */
     void downloadArtifact(URL url, Path localPath) throws IOException {
-        try (BufferedInputStream bis = new BufferedInputStream(url.openConnection().getInputStream())) {
+        try (BufferedInputStream bis = new BufferedInputStream(open(url))) {
             try (FileOutputStream fos = new FileOutputStream(localPath.toFile())) {
                 int n;
                 while ((n = bis.read(BUFFER, 0, BUFFER.length)) >= 0) {
@@ -222,6 +235,22 @@ class AppTypeBrowser {
                 }
             }
         }
+    }
+
+    /**
+     * Open the connect for the given URL.
+     * @param url the URL
+     * @return InputStream
+     * @throws IOException if an IO error occurs
+     */
+    private InputStream open(URL url) throws IOException {
+        final URLConnection connection = url.openConnection();
+        connection.setConnectTimeout(CONNECT_TIMEOUT);
+        connection.setReadTimeout(READ_TIMEOUT);
+        if (connection instanceof HttpURLConnection) {
+            ((HttpURLConnection) connection).setInstanceFollowRedirects(true);
+        }
+        return connection.getInputStream();
     }
 
     /**

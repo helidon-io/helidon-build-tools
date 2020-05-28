@@ -158,30 +158,35 @@ public class CommandParserTest {
 
     @Test
     public void testProperties() {
-        CommandParser parser = CommandParser.create("cli", "-Dfoo=bar", "-Dbar=foo");
+        CommandParser parser = CommandParser.create("command", "-Dfoo=bar", "-Dbar=foo");
         assertThat(parser.commandName().isPresent(), is(true));
-        assertThat(parser.commandName().get(), is("cli"));
+        assertThat(parser.commandName().get(), is("command"));
         assertThat(parser.error().isPresent(), is(false));
         assertThat(parser.properties().get("foo"), is("bar"));
         assertThat(parser.properties().get("bar"), is("foo"));
 
-        parser = CommandParser.create("cli", "-Dfoo");
+        parser = CommandParser.create("command", "-Dfoo");
         assertThat(parser.commandName().isPresent(), is(true));
-        assertThat(parser.commandName().get(), is("cli"));
+        assertThat(parser.commandName().get(), is("command"));
         assertThat(parser.error().isPresent(), is(true));
         assertThat(parser.error().get(), is(CommandParser.INVALID_PROPERTY + ": foo"));
 
-        parser = CommandParser.create("cli", "-DfOo=Bar", " -DBAR=FOO ");
+        parser = CommandParser.create("command", "-DfOo=Bar", " -DBAR=FOO ");
         assertThat(parser.commandName().isPresent(), is(true));
-        assertThat(parser.commandName().get(), is("cli"));
+        assertThat(parser.commandName().get(), is("command"));
         assertThat(parser.error().isPresent(), is(false));
         assertThat(parser.properties().get("fOo"), is("Bar"));
         assertThat(parser.properties().get("BAR"), is("FOO"));
+
+        parser = CommandParser.create("-Dfoo=bar", "command");
+        assertThat(parser.commandName().isPresent(), is(true));
+        assertThat(parser.commandName().get(), is("command"));
+        assertThat(parser.properties().get("foo"), is("bar"));
     }
 
     enum DAY {
         MONDAY,
-        TUEDAY,
+        TUESDAY,
         WEDNESDAY,
         THURSDAY,
         FRIDAY,

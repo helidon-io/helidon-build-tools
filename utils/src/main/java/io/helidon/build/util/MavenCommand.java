@@ -17,6 +17,7 @@
 package io.helidon.build.util;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -108,7 +109,11 @@ public class MavenCommand {
                                 + "your PATH or set either the MAVEN_HOME or "
                                 + "MVN_HOME environment variables."));
             }
-            MAVEN_EXECUTABLE.set(maven);
+            try {
+                MAVEN_EXECUTABLE.set(maven.toRealPath());
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex.getMessage());
+            }
         }
         return MAVEN_EXECUTABLE.get();
     }
