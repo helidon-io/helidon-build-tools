@@ -44,7 +44,7 @@ public class DescriptorConverterTest {
         testProps.load(is);
         String mavenArchetypeMetadata = testProps.getProperty("archetype-metadata.xml");
         assertThat(mavenArchetypeMetadata, is(not(nullValue())));
-        ArchetypeDescriptor desc = ArchetypeDescriptor.read(DescriptorConverterTest.class.getResourceAsStream("helidon-archetype.xml"));
+        ArchetypeDescriptor desc = ArchetypeDescriptor.read(getClass().getResourceAsStream("helidon-archetype.xml"));
         StringWriter sw = new StringWriter();
         DescriptorConverter.convert(desc, sw);
         String convertedDescriptor = sw.toString();

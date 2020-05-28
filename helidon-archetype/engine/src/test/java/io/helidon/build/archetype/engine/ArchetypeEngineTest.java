@@ -88,7 +88,7 @@ public class ArchetypeEngineTest extends ArchetypeBaseTest {
         Map<String, String> props1 = Map.of("prop1", "true");
         Map<String, String> props2 = Map.of("prop1", "true", "prop2", "true");
 
-        Property prop1 = new Property("prop1", "Prop 1", null);
+        Property prop1 = new Property("prop1", null);
         FileSet fset1 = new FileSet(List.of(), List.of(prop1), List.of());
         assertThat(ArchetypeEngine.evaluateConditional(fset1, props1), is(true));
         assertThat(ArchetypeEngine.evaluateConditional(fset1, Collections.emptyMap()), is(false));
@@ -97,7 +97,7 @@ public class ArchetypeEngineTest extends ArchetypeBaseTest {
         assertThat(ArchetypeEngine.evaluateConditional(fset2, props1), is(false));
         assertThat(ArchetypeEngine.evaluateConditional(fset2, Collections.emptyMap()), is(true));
 
-        Property prop2 = new Property("prop2", "Prop 2", null);
+        Property prop2 = new Property("prop2", null);
         FileSet fset3 = new FileSet(List.of(), List.of(prop1, prop2), List.of());
         assertThat(ArchetypeEngine.evaluateConditional(fset3, props2), is(true));
         assertThat(ArchetypeEngine.evaluateConditional(fset3, props1), is(false));
