@@ -19,7 +19,6 @@ package io.helidon.build.util;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -112,7 +111,7 @@ public class MavenCommand {
             }
             try {
                 MAVEN_EXECUTABLE.set(maven.toRealPath());
-            } catch(IOException ex) {
+            } catch (IOException ex) {
                 throw new IllegalStateException(ex.getMessage());
             }
         }
