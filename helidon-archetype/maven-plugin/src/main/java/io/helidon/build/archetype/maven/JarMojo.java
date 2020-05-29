@@ -22,30 +22,22 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.ArchetypeDescriptor;
 import io.helidon.build.archetype.engine.ArchetypeEngine;
-import io.helidon.build.archetype.engine.Maps;
 
-import com.github.mustachejava.DefaultMustacheFactory;
-import com.github.mustachejava.Mustache;
-import com.github.mustachejava.MustacheFactory;
 import org.apache.maven.archiver.MavenArchiveConfiguration;
 import org.apache.maven.archiver.MavenArchiver;
 import org.apache.maven.artifact.Artifact;
@@ -72,6 +64,12 @@ import org.codehaus.plexus.archiver.jar.ManifestException;
 import org.codehaus.plexus.util.Scanner;
 import org.sonatype.plexus.build.incremental.BuildContext;
 
+import static io.helidon.build.archetype.maven.MojoHelper.MUSTACHE_EXT;
+import static io.helidon.build.archetype.maven.MojoHelper.PLUGIN_GROUP_ID;
+import static io.helidon.build.archetype.maven.MojoHelper.PLUGIN_VERSION;
+import static io.helidon.build.archetype.maven.MojoHelper.renderMustacheTemplate;
+import static io.helidon.build.archetype.maven.MojoHelper.templateProperties;
+
 /**
  * {@code archetype:jar} mojo.
  */
@@ -80,14 +78,9 @@ import org.sonatype.plexus.build.incremental.BuildContext;
 public class JarMojo extends AbstractMojo {
 
     /**
-     * The plugin groupId.
+     * The archetype engine groupId.
      */
-    private static final String GROUP_ID = "io.helidon.build-tools.archetype";
-
-    /**
-     * The plugin artifactId.
-     */
-    private static final String PLUGIN_ARTIFACT_ID = "helidon-archetype-maven-plugin";
+    private static final String ENGINE_GROUP_ID = PLUGIN_GROUP_ID;
 
     /**
      * The archetype engine artifactId.
@@ -95,26 +88,14 @@ public class JarMojo extends AbstractMojo {
     private static final String ENGINE_ARTIFACT_ID = "helidon-archetype-engine";
 
     /**
-     * The resource name for the {@code pom.properties} file included in the plugin JAR file.
-     */
-    private static final String POM_PROPERTIES_RESOURCE_NAME = "/META-INF/maven/"
-            + GROUP_ID + "/"
-            + PLUGIN_ARTIFACT_ID + "/pom.properties";
-
-    /**
      * The archetype engine version.
      */
-    private static final String ENGINE_VERSION = getEngineVersion();
+    private static final String ENGINE_VERSION = PLUGIN_VERSION;
 
     /**
      * The name for the post groovy script.
      */
     private static final String POST_SCRIPT_NAME = "archetype-post-generate.groovy";
-
-    /**
-     * The file extension of mustache template files.
-     */
-    private static final String MUSTACHE_EXT = ".mustache";
 
     /**
      * Plexus build context used to get the scanner for scanning resources.
@@ -244,7 +225,7 @@ public class JarMojo extends AbstractMojo {
                 if (archetypeDescriptorSource == null) {
                     throw new MojoFailureException(ArchetypeEngine.DESCRIPTOR_RESOURCE_NAME + " not found");
                 }
-                getLog().info("Copying helidon-archetype.xml from " + archetypeDescriptorSource);
+                getLog().info("Copying " + archetypeDescriptorSource);
                 Files.copy(archetypeDescriptorSource, archetypeDescriptor, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException ex) {
@@ -254,7 +235,8 @@ public class JarMojo extends AbstractMojo {
 
     /**
      * Generate the resources required to make the archetype JAR compatible with the {@code maven-archetype-plugin}.
-     * @param archetypeDir the exploded archetype directory
+     *
+     * @param archetypeDir        the exploded archetype directory
      * @param archetypeDescriptor the helidon archetype descriptor
      * @throws MojoExecutionException if an IO error occurs
      */
@@ -289,7 +271,7 @@ public class JarMojo extends AbstractMojo {
             // check if the engine dependency exists
             boolean engineDependencyFound = false;
             for (Artifact artifact : project.getArtifacts()) {
-                if (artifact.getGroupId().equals(GROUP_ID)
+                if (artifact.getGroupId().equals(ENGINE_GROUP_ID)
                     && artifact.getArtifactId().equals(ENGINE_ARTIFACT_ID)
                     && artifact.getVersion().equals(ENGINE_VERSION)) {
                     engineDependencyFound = true;
@@ -302,7 +284,7 @@ public class JarMojo extends AbstractMojo {
 
                 Model projectModel = modelReader.read(project.getFile(), null);
                 Dependency dep = new Dependency();
-                dep.setGroupId(GROUP_ID);
+                dep.setGroupId(ENGINE_GROUP_ID);
                 dep.setArtifactId(ENGINE_ARTIFACT_ID);
                 dep.setVersion(ENGINE_VERSION);
                 projectModel.getDependencies().add(dep);
@@ -314,28 +296,19 @@ public class JarMojo extends AbstractMojo {
             }
 
             getLog().info("Rendering archetype-post-generate.groovy");
-
             Path postGroovyScript = archetypeDir.resolve("META-INF/" + POST_SCRIPT_NAME);
 
-            // compile the template
-            MustacheFactory mf = new DefaultMustacheFactory();
-            Mustache m = mf.compile(new InputStreamReader(
-                    getClass().getResourceAsStream("/" + POST_SCRIPT_NAME + MUSTACHE_EXT)),
-                    POST_SCRIPT_NAME);
-
             Map<String, Object> props = Map.of("propNames", desc.properties().stream()
-                    .filter(prop -> prop.isExported())
-                    .map(prop -> prop.id())
-                    .collect(Collectors.toList()),
-                    "engineGroupId", GROUP_ID,
+                            .filter(prop -> prop.isExported())
+                            .map(prop -> prop.id())
+                            .collect(Collectors.toList()),
+                    "engineGroupId", ENGINE_GROUP_ID,
                     "engineArtifactId", ENGINE_ARTIFACT_ID,
                     "engineVersion", ENGINE_VERSION);
 
-            // render
-            try (Writer writer = Files.newBufferedWriter(postGroovyScript, StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING)) {
-                m.execute(writer, props).flush();
-            }
+            renderMustacheTemplate(getClass().getResourceAsStream("/" + POST_SCRIPT_NAME + MUSTACHE_EXT),
+                    POST_SCRIPT_NAME, postGroovyScript, props);
+
         } catch (IOException ex) {
             throw new MojoExecutionException(ex.getMessage(), ex);
         }
@@ -457,6 +430,23 @@ public class JarMojo extends AbstractMojo {
     }
 
     /**
+     * Process a mustache template for an archetype descriptor.
+     *
+     * @param template            mustache template
+     * @param archetypeDescriptor the target file
+     */
+    private void preProcessDescriptor(Path template, Path archetypeDescriptor) throws MojoExecutionException {
+        getLog().info("Rendering " + template);
+        Map<String, String> props = templateProperties(properties, includeProjectProperties, project);
+        try {
+            renderMustacheTemplate(Files.newInputStream(template),
+                    ArchetypeEngine.DESCRIPTOR_RESOURCE_NAME + MUSTACHE_EXT, archetypeDescriptor, props);
+        } catch (IOException ex) {
+            throw new MojoExecutionException(ex.getMessage(), ex);
+        }
+    }
+
+    /**
      * Find a resource file.
      *
      * @param resources scanned project resources
@@ -470,45 +460,6 @@ public class JarMojo extends AbstractMojo {
                 .map(e -> baseDir.resolve(e.getKey()).resolve(name))
                 .findAny()
                 .orElse(null);
-    }
-
-
-    /**
-     * Process a mustache template for an archetype descriptor.
-     *
-     * @param template            mustache template
-     * @param archetypeDescriptor the target file
-     */
-    private void preProcessDescriptor(Path template, Path archetypeDescriptor) {
-        try {
-            getLog().info("Rendering helidon-archetype.xml from " + template);
-
-            // pre-processing properties
-            Map<String, String> props = new HashMap<>();
-            props.putAll(properties);
-            if (includeProjectProperties) {
-                Properties projectProperties = project.getProperties();
-                props.putAll(Maps.fromProperties(project.getProperties()));
-                props.put("project.groupId", project.getGroupId());
-                props.put("project.artifactId", project.getArtifactId());
-                props.put("project.version", project.getVersion());
-                props.put("project.name", project.getName());
-                props.put("project.description", project.getDescription());
-            }
-
-            // compile the template
-            MustacheFactory mf = new DefaultMustacheFactory();
-            Mustache m = mf.compile(new InputStreamReader(Files.newInputStream(template)),
-                    ArchetypeEngine.DESCRIPTOR_RESOURCE_NAME + MUSTACHE_EXT);
-
-            // render
-            try (Writer writer = Files.newBufferedWriter(archetypeDescriptor, StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING)) {
-                m.execute(writer, props).flush();
-            }
-        } catch (IOException ex) {
-            throw new IllegalStateException(ex);
-        }
     }
 
     /**
@@ -545,25 +496,5 @@ public class JarMojo extends AbstractMojo {
             }
         }
         return allResources;
-    }
-
-    /**
-     * Get the archetype engine version from the maven plugin JAR file.
-     *
-     * @return version, never {@code null}
-     * @throws IllegalStateException if the version is {@code null} or if an IO error occurs
-     */
-    private static String getEngineVersion() {
-        try {
-            Properties props = new Properties();
-            props.load(JarMojo.class.getResourceAsStream(POM_PROPERTIES_RESOURCE_NAME));
-            String version = props.getProperty("version");
-            if (version == null) {
-                throw new IllegalStateException("Unable to resolve engine version");
-            }
-            return version;
-        } catch (IOException ex) {
-            throw new IllegalStateException(ex);
-        }
     }
 }

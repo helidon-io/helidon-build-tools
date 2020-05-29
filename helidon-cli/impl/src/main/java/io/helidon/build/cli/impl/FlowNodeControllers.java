@@ -113,7 +113,8 @@ class FlowNodeControllers {
             List<String> options = choices.stream()
                     .map(ArchetypeDescriptor.Choice::text)
                     .collect(Collectors.toList());
-            String v = prompt(select.text(), options, 0);
+            int index = prompt(select.text(), options, 0);
+            String v = options.get(index);
             ArchetypeDescriptor.Property property = choices.stream()
                     .filter(c -> c.text().equals(v))
                     .map(ArchetypeDescriptor.Choice::property)

@@ -25,7 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
+import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor;
 import io.helidon.build.archetype.engine.ArchetypeEngine;
 import io.helidon.build.archetype.engine.ArchetypeLoader;
@@ -43,7 +45,9 @@ import io.helidon.build.util.HelidonVersions;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
+import io.helidon.build.util.Requirements;
 
+import static io.helidon.build.cli.impl.ArchetypeBrowser.ARCHETYPE_NOT_FOUND;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.cli.impl.Prompter.displayLine;
 import static io.helidon.build.cli.impl.Prompter.prompt;
@@ -71,7 +75,8 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
     private final boolean batch;
     private Flavor flavor;
     private final Build build;
-    private String appType;
+    private ArchetypeCatalog.ArchetypeEntry archetype;
+    private String archetypeId;
     private String helidonVersion;
     private final String groupId;
     private final String artifactId;
@@ -106,7 +111,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
     }
 
     static final String DEFAULT_FLAVOR = "SE";
-    static final String DEFAULT_APPTYPE = "bare";
+    static final String DEFAULT_ARCHETYPE_ID = "bare";
     static final String DEFAULT_GROUP_ID = "mygroupid";
     static final String DEFAULT_ARTIFACT_ID = "myartifactid";
     static final String DEFAULT_PACKAGE = "mypackage";
@@ -121,8 +126,8 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             @KeyValue(name = "build", description = "Build type",
                     defaultValue = "MAVEN") Build build,
             @KeyValue(name = "version", description = "Helidon version") String version,
-            @KeyValue(name = "apptype", description = "Application type",
-                    defaultValue = DEFAULT_APPTYPE) String appType,
+            @KeyValue(name = "archetype", description = "Archetype ID",
+                    defaultValue = DEFAULT_ARCHETYPE_ID) String archetypeId,
             @KeyValue(name = "groupid", description = "Project's group ID",
                     defaultValue = DEFAULT_GROUP_ID) String groupId,
             @KeyValue(name = "artifactid", description = "Project's artifact ID",
@@ -136,7 +141,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         this.build = build;
         this.helidonVersion = version;
         this.flavor = flavor;
-        this.appType = appType;
+        this.archetypeId = archetypeId;
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.packageName = packageName;
@@ -174,25 +179,39 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             if (helidonVersion == null) {
                 helidonVersion = prompt("Helidon version", helidonVersion);
             }
-            String f = prompt("Helidon flavor", new String[]{"SE", "MP"},
-                    flavor == Flavor.SE ? 0 : 1);
-            flavor = Flavor.valueOf(f);
+            String[] flavorOptions = new String[]{"SE", "MP"};
+            int flavorIndex = prompt("Helidon flavor", flavorOptions, flavor == Flavor.SE ? 0 : 1);
+            flavor = Flavor.valueOf(flavorOptions[flavorIndex]);
         }
 
-        // Gather application types
-        AppTypeBrowser browser = new AppTypeBrowser(flavor, helidonVersion);
-        displayLine("Gathering application types ... ");
-        List<String> appTypes = browser.appTypes();
-        require(!appTypes.isEmpty(), "Unable to find application types for %s and %s.", flavor, helidonVersion);
+        // Gather archetype names
+        ArchetypeBrowser browser = new ArchetypeBrowser(flavor, helidonVersion);
+        displayLine("Gathering archetypes ... ");
+        List<ArchetypeCatalog.ArchetypeEntry> archetypes = browser.archetypes();
+        require(!archetypes.isEmpty(), "Unable to find archetypes for %s and %s.", flavor, helidonVersion);
 
-        // Select application type interactively
         if (!batch) {
-            appType = prompt("Select application type", appTypes, 0);
+            // Select archetype interactively
+            List<String> archetypeNames = archetypes.stream()
+                    .map(ArchetypeCatalog.ArchetypeEntry::name)
+                    .collect(Collectors.toList());
+            int archetypeIndex = prompt("Select archetype", archetypeNames, 0);
+            archetype = archetypes.get(archetypeIndex);
+        } else {
+            // find the archetype that matches archetypeId and flavor
+            archetype = archetypes.stream()
+                    .filter(a -> a.id().equals(archetypeId))
+                    .findFirst()
+                    .orElse(null);
+
+            if (archetype == null) {
+                Requirements.failed(ARCHETYPE_NOT_FOUND, archetypeId, helidonVersion);
+            }
         }
 
         // Find jar and set up loader
         ArchetypeLoader loader;
-        File jarFile = browser.archetypeJar(appType).toFile();
+        File jarFile = browser.archetypeJar(archetype).toFile();
         require(jarFile.exists(), "%s does not exist", jarFile);
         loader = new ArchetypeLoader(jarFile);
 

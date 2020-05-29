@@ -30,21 +30,20 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
+import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.cli.impl.InitCommand.Flavor;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.Requirements;
 
-import org.apache.maven.model.Model;
-
 import static io.helidon.build.cli.impl.CommandRequirements.requireSupportedHelidonVersion;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
-import static io.helidon.build.util.PomUtils.readPomModel;
 
 /**
  * Class ArchetypeBrowser.
  */
-class AppTypeBrowser {
+class ArchetypeBrowser {
 
     /**
      * Maven remote repo.
@@ -60,22 +59,12 @@ class AppTypeBrowser {
     /**
      * Archetype directory.
      */
-    private static final String ARCHETYPE_DIRECTORY = "/io/helidon/archetypes";
+    private static final String CATALOG_GROUP_ID = "io.helidon.archetypes";
 
     /**
-     * Prefix for all archetypes.
+     * The catalog artifactId.
      */
-    private static final String ARCHETYPE_PREFIX = "helidon-archetypes";
-
-    /**
-     * Format is helidon-archetype-{flavor}-{apptype}-{version}.jar.
-     */
-    private static final String APPTYPE_JAR = ARCHETYPE_PREFIX + "-%s-%s-%s.jar";
-
-    /**
-     * Format is helidon-archetype-{flavor}-{version}.pom.
-     */
-    private static final String APPTYPE_POM = ARCHETYPE_PREFIX + "-%s-%s.pom";
+    private static final String CATALOG_ARTIFACT_ID = "helidon-archetype-catalog";
 
     /**
      * Helidon version not found message.
@@ -83,9 +72,9 @@ class AppTypeBrowser {
     private static final String HELIDON_VERSION_NOT_FOUND = "$(red Helidon version) $(RED %s) $(red not found.)";
 
     /**
-     * Helidon app type not found message.
+     * Archetype not found message.
      */
-    private static final String TYPE_NOT_FOUND = "$(red Type \")$(RED %s)$(red \" not found in Helidon version %s.)";
+    static final String ARCHETYPE_NOT_FOUND = "$(red Archetype \")$(RED %s)$(red \" not found.)";
 
     /**
      * Download failed message.
@@ -116,7 +105,7 @@ class AppTypeBrowser {
     private final Flavor flavor;
     private final String helidonVersion;
 
-    AppTypeBrowser(Flavor flavor, String helidonVersion) {
+    ArchetypeBrowser(Flavor flavor, String helidonVersion) {
         this.flavor = flavor;
         this.helidonVersion = requireSupportedHelidonVersion(helidonVersion);
         String userHome = System.getProperty("user.home");
@@ -125,24 +114,24 @@ class AppTypeBrowser {
     }
 
     /**
-     * Returns list of apptypes available. Checks remote repo if local cache
-     * does not include a pom file. For convenience, it also checks the local
+     * Returns list of archetypes available. Checks remote repo if local cache
+     * does not include a catalog file. For convenience, it also checks the local
      * Maven repo to support unreleased versions.
      *
-     * @return List of available apptypes.
+     * @return List of available archetype.
      */
-    List<String> appTypes() {
-        List<String> appTypes = appTypesLocalCache();
-        if (appTypes.isEmpty()) {
-            downloadPom(REMOTE_REPO);
-            appTypes = appTypesLocalCache();
-            if (appTypes.isEmpty()) {
-                downloadPom(LOCAL_REPO);
-                appTypes = appTypesLocalCache();
-                return appTypes;
+    List<ArchetypeCatalog.ArchetypeEntry> archetypes() {
+        List<ArchetypeCatalog.ArchetypeEntry> archetypes = archetypesLocalCache();
+        if (archetypes.isEmpty()) {
+            downloadCatalog(REMOTE_REPO);
+            archetypes = archetypesLocalCache();
+            if (archetypes.isEmpty()) {
+                downloadCatalog(LOCAL_REPO);
+                archetypes = archetypesLocalCache();
+                return archetypes;
             }
         }
-        return appTypes;
+        return archetypes;
     }
 
     /**
@@ -150,33 +139,33 @@ class AppTypeBrowser {
      * and not available for download. Checks remote and then local repo to
      * handle unreleased versions.
      *
-     * @param appType The application type.
+     * @param archetype The archetype.
      * @return Path to archetype jar or {@code null} if not found.
      */
-    Path archetypeJar(String appType) {
-        Path jar = downloadJar(REMOTE_REPO, appType);
-        return jar == null ? downloadJar(LOCAL_REPO, appType) : jar;
+    Path archetypeJar(ArchetypeCatalog.ArchetypeEntry archetype) {
+        Path jar = downloadJar(REMOTE_REPO, archetype);
+        return jar == null ? downloadJar(LOCAL_REPO, archetype) : jar;
     }
 
     /**
      * Downloads jar into the local cache and returns path to it.
      *
      * @param repo The repository to use.
-     * @param apptype Application type.
+     * @param archetype archetype to download.
      * @return Path to local jar or {code null} if unable.
      */
-    private Path downloadJar(String repo, String apptype) {
-        String jar = String.format(APPTYPE_JAR, flavor, apptype, helidonVersion);
-        Path localJarPath = localCacheDir.resolve(jar);
+    private Path downloadJar(String repo, ArchetypeCatalog.ArchetypeEntry archetype) {
+        String filename = String.format("%s-%s.jar", archetype.artifactId(), archetype.version());
+        Path localJarPath = localCacheDir.resolve(filename);
         if (!localJarPath.toFile().exists()) {
             String location;
             try {
                 // Attempt download of artifact
-                location = String.format("%s%s/%s-%s-%s/%s/%s", repo, ARCHETYPE_DIRECTORY,
-                        ARCHETYPE_PREFIX, flavor, apptype, helidonVersion, jar);
+                location = String.format("%s/%s/%s/%s/%s", repo, archetype.groupId().replaceAll("\\.", "/"),
+                        archetype.artifactId(), helidonVersion, filename);
                 downloadArtifact(new URL(location), localJarPath);
             } catch (ConnectException | FileNotFoundException e) {
-                downloadFailed(apptype, jar, repo, e);
+                downloadFailed(archetype.id(), filename, repo, e);
                 return null;
             } catch (IOException e1) {
                 throw new RuntimeException(e1);
@@ -186,33 +175,40 @@ class AppTypeBrowser {
     }
 
     /**
-     * Searches for apptypes in the local cache by inspecting the corresponding POM file.
+     * Searches for archetypes in the local cache by inspecting the corresponding POM file.
      *
-     * @return List of apptype names in local POM file.
+     * @return List of archetype entries from the local catalog.
      */
-    List<String> appTypesLocalCache() {
-        String pomFile = String.format(APPTYPE_POM, flavor, helidonVersion);
-        Path path = localCacheDir.resolve(pomFile);
+    List<ArchetypeCatalog.ArchetypeEntry> archetypesLocalCache() {
+        String catalogFilename = String.format("%s-%s.xml", CATALOG_ARTIFACT_ID, helidonVersion);
+        Path path = localCacheDir.resolve(catalogFilename);
         if (Files.exists(path)) {
-            Model model = readPomModel(path);
-            return model.getModules();
+            try {
+                return ArchetypeCatalog.read(Files.newInputStream(path))
+                        .entries()
+                        .stream()
+                        .filter(a -> a.tags().contains(flavor.toString().toLowerCase()))
+                        .collect(Collectors.toList());
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
         }
         return Collections.emptyList();
     }
 
     /**
-     * Downloads repository POM into local cache.
+     * Downloads the catalog into local cache.
      */
-    private void downloadPom(String repo) {
-        String pom = String.format(APPTYPE_POM, flavor, helidonVersion);
-        Path localPomPath = localCacheDir.resolve(pom);
-        String location = String.format("%s%s/%s-%s/%s/%s", repo, ARCHETYPE_DIRECTORY,
-                ARCHETYPE_PREFIX, flavor, helidonVersion, pom);
+    private void downloadCatalog(String repo) {
+        String catalogFilename = String.format("%s-%s.xml", CATALOG_ARTIFACT_ID, helidonVersion);
+        Path localCatalogPath = localCacheDir.resolve(catalogFilename);
+        String location = String.format("%s/%s/%s/%s/%s", repo, CATALOG_GROUP_ID.replaceAll("\\.", "/"),
+                CATALOG_ARTIFACT_ID, helidonVersion, catalogFilename);
         try {
             URL url = new URL(location);
-            downloadArtifact(url, localPomPath);
+            downloadArtifact(url, localCatalogPath);
         } catch (ConnectException | FileNotFoundException e) {
-            downloadFailed(null, pom, repo, e);
+            downloadFailed(null, catalogFilename, repo, e);
             // Falls through
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -256,22 +252,22 @@ class AppTypeBrowser {
     /**
      * Handle download failed error.
      *
-     * @param type The application type.
+     * @param archetypeId The archetype id.
      * @param file The file.
      * @param repo The repo.
      * @param error The error
      */
-    private void downloadFailed(String type, String file, String repo, Throwable error) {
+    private void downloadFailed(String archetypeId, String file, String repo, Throwable error) {
         boolean local = repo.equals(LOCAL_REPO);
         boolean notFound = error instanceof FileNotFoundException;
         boolean snapshot = helidonVersion.endsWith(SNAPSHOT_SUFFIX);
         Log.Level level = local || snapshot ? Log.Level.DEBUG : Log.Level.WARN;
         Log.log(level, error, DOWNLOAD_FAILED, file, repo);
         if (notFound && local) {
-            if (type == null) {
+            if (archetypeId == null) {
                 Requirements.failed(HELIDON_VERSION_NOT_FOUND, helidonVersion);
             } else {
-                Requirements.failed(TYPE_NOT_FOUND, type, helidonVersion);
+                Requirements.failed(ARCHETYPE_NOT_FOUND, archetypeId);
             }
         }
     }

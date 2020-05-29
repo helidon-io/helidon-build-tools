@@ -26,7 +26,7 @@ import org.apache.maven.model.Model;
 
 import static io.helidon.build.util.PomUtils.readPomModel;
 import static io.helidon.build.cli.impl.TestUtils.exec;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_APPTYPE;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARCHETYPE_ID;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARTIFACT_ID;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_FLAVOR;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_GROUP_ID;
@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class InitTestHelper {
 
     private String flavor = DEFAULT_FLAVOR;
-    private String apptype = DEFAULT_APPTYPE;
+    private String apptype = DEFAULT_ARCHETYPE_ID;
     private String groupId = DEFAULT_GROUP_ID;
     private String artifactId = DEFAULT_ARTIFACT_ID;
     private String packageName = DEFAULT_PACKAGE;
@@ -103,7 +103,7 @@ class InitTestHelper {
             args.add("--flavor");
             args.add(flavor);
         }
-        if (!apptype.equals(DEFAULT_APPTYPE)) {
+        if (!apptype.equals(DEFAULT_ARCHETYPE_ID)) {
             args.add("--apptype");
             args.add(apptype);
         }

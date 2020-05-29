@@ -42,6 +42,9 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import static io.helidon.build.archetype.engine.SAXHelper.readRequiredAttribute;
+import static io.helidon.build.archetype.engine.SAXHelper.validateChild;
+
 /**
  * {@link ArchetypeDescriptor} reader.
  */
@@ -113,7 +116,7 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
                     validateChild("property", parent, qName);
                     Property prop = new Property(
                             // TODO validate property id (dot separated alphanumerical)
-                            requiredAttr("id", qName, attributes),
+                            readRequiredAttribute("id", qName, attributes),
                             attributes.getValue("value"),
                             Boolean.valueOf(Optional.ofNullable(attributes.getValue("exported")).orElse("true")),
                             Boolean.valueOf(attributes.getValue("readonly")));
@@ -123,7 +126,7 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
                     break;
                 case "transformations":
                     validateChild("transformation", parent, qName);
-                    Transformation transformation = new Transformation(requiredAttr("id", qName, attributes));
+                    Transformation transformation = new Transformation(readRequiredAttribute("id", qName, attributes));
                     descriptor.transformations().add(transformation);
                     transformationsMap.put(transformation.id(), transformation);
                     stack.push("transformations/transformation");
@@ -131,8 +134,8 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
                 case "transformations/transformation":
                     validateChild("replace", parent, qName);
                     descriptor.transformations().getLast().replacements().add(new Replacement(
-                            requiredAttr("regex", qName, attributes),
-                            requiredAttr("replacement", qName, attributes)));
+                            readRequiredAttribute("regex", qName, attributes),
+                            readRequiredAttribute("replacement", qName, attributes)));
                     stack.push("transformations/transformation/replace");
                     break;
                 case "template-sets":
@@ -197,16 +200,16 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
                     switch (qName) {
                         case "select":
                             descriptor.inputFlow().nodes().add(new Select(
-                                    requiredAttr("text", qName, attributes),
+                                    readRequiredAttribute("text", qName, attributes),
                                     propertyRefs(attributes, "if", qName),
                                     propertyRefs(attributes, "unless", qName)));
                             stack.push("input-flow/select");
                             break;
                         case "input":
                             descriptor.inputFlow().nodes().add(new Input(
-                                    propertyRef(requiredAttr("property", qName, attributes), qName),
+                                    propertyRef(readRequiredAttribute("property", qName, attributes), qName),
                                     attributes.getValue("default"),
-                                    requiredAttr("text", qName, attributes),
+                                    readRequiredAttribute("text", qName, attributes),
                                     propertyRefs(attributes, "if", qName),
                                     propertyRefs(attributes, "unless", qName)));
                             stack.push("input-flow/input");
@@ -222,8 +225,8 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
                         throw new IllegalStateException("Unable to add 'choice' to flow node");
                     }
                     ((Select) lastFlowNode).choices().add(new Choice(
-                            propertyRef(requiredAttr("property", qName, attributes), qName),
-                            requiredAttr("text", qName, attributes),
+                            propertyRef(readRequiredAttribute("property", qName, attributes), qName),
+                            readRequiredAttribute("text", qName, attributes),
                             propertyRefs(attributes, "if", qName),
                             propertyRefs(attributes, "unless", qName)));
                     stack.push("input-flow/select/choice");
@@ -265,12 +268,6 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
         }
     }
 
-    private void validateChild(String child, String parent, String qName) {
-        if (!child.equals(qName)) {
-            throw new IllegalStateException("Invalid child for '" + parent + "' node: '" + qName + "'");
-        }
-    }
-
     private Property propertyRef(String name, String qName) {
         Property ref = propertiesMap.get(name);
         if (ref == null) {
@@ -306,13 +303,5 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
             refs.add(ref);
         }
         return refs;
-    }
-
-    private static String requiredAttr(String name, String qName, Attributes attr) {
-        String value = attr.getValue(name);
-        if (value == null) {
-            throw new IllegalStateException("Missing required attribute '" + name + "' for element: '" + qName + "'");
-        }
-        return value;
     }
 }
