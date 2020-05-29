@@ -145,7 +145,7 @@ public class PomUtils {
         boolean isPresent = build.getPlugins()
                                  .stream()
                                  .anyMatch(p -> p.getGroupId().equals(BUILD_TOOLS_GROUP_ID)
-                                                && p.getArtifactId().equals(BUILD_TOOLS_PLUGIN_ARTIFACT_ID));
+                                         && p.getArtifactId().equals(BUILD_TOOLS_PLUGIN_ARTIFACT_ID));
         if (isPresent) {
             // Assume it is what we want rather than updating if not equal, since
             // that could undo future archetype changes.

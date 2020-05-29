@@ -105,6 +105,14 @@ public interface BuildMonitor {
     boolean onCycleEnd(int cycleNumber);
 
     /**
+     * Called when build loop has failed.
+     *
+     * @param cycleNumber The cycle number.
+     * @param error The error.
+     */
+    void onLoopFail(int cycleNumber, Throwable error);
+
+    /**
      * Called when build loop has stopped.
      */
     void onStopped();

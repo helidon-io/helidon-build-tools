@@ -22,9 +22,11 @@ import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
-import io.helidon.build.util.Log;
 import io.helidon.build.util.ProjectConfig;
 
+import static io.helidon.build.cli.impl.VersionCommand.addProjectProperty;
+import static io.helidon.build.cli.impl.VersionCommand.log;
+import static io.helidon.build.util.ProjectConfig.HELIDON_VERSION;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
@@ -38,7 +40,6 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
  */
 @Command(name = "info", description = "Print project information")
 public final class InfoCommand extends BaseCommand implements CommandExecution {
-
     private final CommonOptions commonOptions;
 
     @Creator
@@ -48,19 +49,28 @@ public final class InfoCommand extends BaseCommand implements CommandExecution {
 
     @Override
     public void execute(CommandContext context) {
+
+        // ADD JVM info, etc!!
+
+        // build properties
+
+        VersionCommand.logBuildProperties();
+
+        // project config
+
         ProjectConfig projectConfig = projectConfig(commonOptions.project().toPath());
-        if (!projectConfig.exists()) {
-            context.exitAction(CommandContext.ExitStatus.FAILURE, "Unable to find project");
-            return;
+        if (projectConfig.exists()) {
+            Map<String, Object> projectProps = new LinkedHashMap<>();
+            addProjectProperty("version", PROJECT_VERSION, projectConfig, projectProps);
+            addProjectProperty("helidon", HELIDON_VERSION, projectConfig, projectProps);
+            addProjectProperty("flavor", PROJECT_FLAVOR, projectConfig, projectProps);
+            addProjectProperty("directory", PROJECT_DIRECTORY, projectConfig, projectProps);
+            addProjectProperty("version", PROJECT_VERSION, projectConfig, projectProps);
+            addProjectProperty("mainClass", PROJECT_MAINCLASS, projectConfig, projectProps);
+            addProjectProperty("sourceDirs", PROJECT_SOURCEDIRS, projectConfig, projectProps);
+            addProjectProperty("classesDirs", PROJECT_CLASSDIRS, projectConfig, projectProps);
+            addProjectProperty("resourceDIrs", PROJECT_RESOURCEDIRS, projectConfig, projectProps);
+            log("project", projectProps);
         }
-        Map<String, Object> project = new LinkedHashMap<>();
-        project.put("flavor", projectConfig.property(PROJECT_FLAVOR).toUpperCase());
-        project.put("directory", projectConfig.property(PROJECT_DIRECTORY));
-        project.put("version", projectConfig.property(PROJECT_VERSION));
-        project.put("mainClass", projectConfig.property(PROJECT_MAINCLASS));
-        project.put("sourceDirs", projectConfig.propertyAsList(PROJECT_SOURCEDIRS));
-        project.put("classesDirs", projectConfig.propertyAsList(PROJECT_CLASSDIRS));
-        project.put("resourceDirs", projectConfig.propertyAsList(PROJECT_RESOURCEDIRS));
-        Log.info(formatMapAsYaml("project", project));
     }
 }

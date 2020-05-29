@@ -26,6 +26,7 @@ import io.helidon.build.util.MavenCommand;
 
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
+import static io.helidon.build.util.Constants.ENABLE_HELIDON_CLI;
 
 /**
  * The {@code build} command.
@@ -48,9 +49,9 @@ public final class BuildCommand extends BaseCommand implements CommandExecution 
 
     @Creator
     BuildCommand(
-        CommonOptions commonOptions,
-        @Flag(name = "clean", description = "Perform a clean before the build") boolean clean,
-        @KeyValue(name = "mode", description = "Build mode", defaultValue = "PLAIN") BuildMode buildMode) {
+            CommonOptions commonOptions,
+            @Flag(name = "clean", description = "Perform a clean before the build") boolean clean,
+            @KeyValue(name = "mode", description = "Build mode", defaultValue = "PLAIN") BuildMode buildMode) {
         this.commonOptions = commonOptions;
         this.clean = clean;
         this.buildMode = buildMode;
@@ -58,9 +59,12 @@ public final class BuildCommand extends BaseCommand implements CommandExecution 
 
     @Override
     public void execute(CommandContext context) throws Exception {
+
         requireMinimumMavenVersion();
+        requireValidProjectConfig();
 
         MavenCommand.Builder builder = MavenCommand.builder()
+                                                   .addArgument(ENABLE_HELIDON_CLI)
                                                    .verbose(context.verbosity() != NORMAL)
                                                    .directory(commonOptions.project());
         switch (buildMode) {

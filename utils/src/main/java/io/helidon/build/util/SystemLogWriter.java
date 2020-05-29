@@ -56,12 +56,12 @@ public final class SystemLogWriter implements Log.Writer {
     }
 
     /**
-     * Binds an instance of this type to the {@code io.helidon.build.util.Log} at the given level.
+     * Installs an instance of this type as the writer in {@code io.helidon.build.util.Log} at the given level.
      *
      * @param level The level.
      * @return The instance.
      */
-    public static SystemLogWriter bind(Level level) {
+    public static SystemLogWriter install(Level level) {
         final SystemLogWriter writer = create(level);
         Log.writer(writer);
         return writer;

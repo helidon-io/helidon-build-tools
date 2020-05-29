@@ -24,14 +24,17 @@ import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandContext.Verbosity;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
+import io.helidon.build.cli.harness.Option;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.util.AnsiConsoleInstaller;
+import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenCommand;
 import io.helidon.build.util.Style;
 
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
+import static io.helidon.build.cli.impl.Config.latestPluginVersion;
 import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_STARTING;
@@ -40,8 +43,6 @@ import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_MESSAGE_PREFIX;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_SERVER_STARTING;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_START;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_STYLED_MESSAGE_PREFIX;
-import static io.helidon.build.util.FileUtils.WORKING_DIR;
-import static io.helidon.build.util.ProjectConfig.ensureHelidonCliConfig;
 import static io.helidon.build.util.Style.Bold;
 import static io.helidon.build.util.Style.BoldBrightGreen;
 
@@ -54,6 +55,7 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
     private static final String CLEAN_PROP_PREFIX = "-Ddev.clean=";
     private static final String FORK_PROP_PREFIX = "-Ddev.fork=";
     private static final String TERMINAL_MODE_PROP_PREFIX = "-Ddev.terminalMode=";
+    private static final String HELIDON_PLUGIN_VERSION_PROP_PREFIX = "-Dversion.plugin.helidon=";
     private static final String DEV_GOAL = "helidon:dev";
     private static final String MAVEN_LOG_LEVEL_START = "[";
     private static final String MAVEN_LOG_LEVEL_END = "]";
@@ -64,20 +66,24 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
     private final CommonOptions commonOptions;
     private final boolean clean;
     private final boolean fork;
+    private final boolean latestPluginVersion;
+    private final String pluginVersion;
     private TerminalModeOutput terminalModeOutput;
 
     @Creator
     DevCommand(
             CommonOptions commonOptions,
             @Flag(name = "clean", description = "Perform a clean before the first build") boolean clean,
-            @Flag(name = "fork", description = "Fork mvn execution") boolean fork) {
+            @Flag(name = "fork", description = "Fork mvn execution") boolean fork,
+            @Flag(name = "latest", description = "Use the latest helidon-maven-plugin version", visible = false)
+                    boolean latestPluginVersion,
+            @Option.KeyValue(name = "version", description = "helidon-maven-plugin version", visible = false)
+                    String pluginVersion) {
         this.commonOptions = commonOptions;
         this.clean = clean;
         this.fork = fork;
-    }
-
-    private void requireValidConfig() {
-        ensureHelidonCliConfig(WORKING_DIR, null);
+        this.latestPluginVersion = latestPluginVersion;
+        this.pluginVersion = pluginVersion;
     }
 
     @Override
@@ -86,7 +92,15 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
         // Ensure preconditions
 
         requireMinimumMavenVersion();
-        requireValidConfig();
+        requireValidProjectConfig();
+
+        // Optionally override plugin version
+
+        String overrideVersion = pluginVersion == null ? (latestPluginVersion ? latestPluginVersion() : null) : pluginVersion;
+        String overridePluginVersion = overrideVersion  == null ? null : HELIDON_PLUGIN_VERSION_PROP_PREFIX + overrideVersion;
+        if (overridePluginVersion != null) {
+            Log.verbose("Using plugin version %s", overridePluginVersion);
+        }
 
         // Clear terminal and print header if in terminal mode
 
@@ -121,6 +135,7 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
                 .addArgument(CLEAN_PROP_PREFIX + clean)
                 .addArgument(FORK_PROP_PREFIX + fork)
                 .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
+                .addOptionalArgument(overridePluginVersion)
                 .directory(commonOptions.project())
                 .build()
                 .execute();

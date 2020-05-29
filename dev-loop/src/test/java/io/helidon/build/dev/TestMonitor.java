@@ -45,6 +45,7 @@ public class TestMonitor implements BuildMonitor {
     private boolean[] buildSuccess;
     private BuildType[] buildType;
     private Throwable[] buildFailed;
+    private Throwable[] loopFailed;
     private boolean[] ready;
     private boolean[] cycleEnd;
     private boolean stopped;
@@ -60,6 +61,7 @@ public class TestMonitor implements BuildMonitor {
         this.buildSuccess = new boolean[stopCycle + 1];
         this.buildType = new BuildType[stopCycle + 1];
         this.buildFailed = new Throwable[stopCycle + 1];
+        this.loopFailed = new Throwable[stopCycle + 1];
         this.ready = new boolean[stopCycle + 1];
         this.cycleEnd = new boolean[stopCycle + 1];
     }
@@ -132,6 +134,12 @@ public class TestMonitor implements BuildMonitor {
     }
 
     @Override
+    public void onLoopFail(int cycleNumber, Throwable error) {
+        logCycle("onLoopFail", cycleNumber);
+        loopFailed[cycleNumber] = error;
+    }
+
+    @Override
     public void onStopped() {
         log("onStopped");
         stopped = true;
@@ -180,6 +188,10 @@ public class TestMonitor implements BuildMonitor {
 
     public Throwable buildFailed(int cycleNumber) {
         return buildFailed[cycleNumber];
+    }
+
+    public Throwable loopFailed(int cycleNumber) {
+        return loopFailed[cycleNumber];
     }
 
     public boolean ready(int cycleNumber) {
