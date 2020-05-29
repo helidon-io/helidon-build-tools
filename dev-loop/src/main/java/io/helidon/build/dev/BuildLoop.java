@@ -30,8 +30,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.build.util.Log;
-
 import static io.helidon.build.dev.BuildType.Complete;
 import static io.helidon.build.dev.BuildType.Incremental;
 import static io.helidon.build.dev.FileChangeAware.changedTimeOf;
@@ -41,6 +39,7 @@ import static java.util.Objects.requireNonNull;
  * A continuous incremental build loop.
  */
 public class BuildLoop {
+    private static final boolean ALLOW_SKIP = System.getProperty("version.plugin.helidon") == null;
     private static final ExecutorService LOOP_EXECUTOR = Executors.newSingleThreadExecutor();
     private final BuildExecutor buildExecutor;
     private final Path projectDirectory;
@@ -102,9 +101,7 @@ public class BuildLoop {
             task.set(LOOP_EXECUTOR.submit(() -> {
                 try {
                     loop();
-                } catch (InterruptedException ignore) {
-                } catch (Throwable t) {
-                    Log.warn(t, "BuildLoop failed");
+                } catch (Throwable ignore) {
                 } finally {
                     stopped();
                 }
@@ -162,7 +159,7 @@ public class BuildLoop {
     }
 
     @SuppressWarnings("BusyWait")
-    private void loop() throws InterruptedException {
+    private void loop() {
         started();
         while (run.get()) {
             final Project project = cycleStarted();
@@ -177,10 +174,10 @@ public class BuildLoop {
 
                     try {
                         final boolean clean = this.clean.getAndSet(false);
-                        setProject(projectSupplier.newProject(buildExecutor, clean, cycleNumber.get()));
+                        setProject(projectSupplier.newProject(buildExecutor, clean, ALLOW_SKIP, cycleNumber.get()));
                         ready();
-                    } catch (IllegalArgumentException | InterruptedException e) {
-                        throw e;
+                    } catch (IllegalStateException | IllegalArgumentException | InterruptedException e) {
+                        loopFailed(e);
                     } catch (Throwable e) {
                         buildFailed(Complete, e);
                     }
@@ -221,8 +218,8 @@ public class BuildLoop {
                             project.update(false);
                             buildSucceeded(Incremental);
                             ready();
-                        } catch (IllegalArgumentException | InterruptedException e) {
-                            throw e;
+                        } catch (IllegalStateException | IllegalArgumentException | InterruptedException e) {
+                            loopFailed(e);
                         } catch (Throwable e) {
                             buildFailed(Incremental, e);
 
@@ -282,6 +279,11 @@ public class BuildLoop {
         if (type != ChangeType.SourceFile) {
             project.set(null);
         }
+    }
+
+    private void loopFailed(Throwable error) {
+        monitor.onLoopFail(cycleNumber.get(), error);
+        throw new RuntimeException(error); // Bail out of loop!
     }
 
     private void buildSucceeded(BuildType type) {

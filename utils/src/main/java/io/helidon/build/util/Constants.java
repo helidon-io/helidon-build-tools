@@ -39,6 +39,15 @@ public final class Constants {
      * File system directory separator.
      */
     public static final String DIR_SEP = File.separator;
+    /**
+     * Property that must be set to "true" for cli extensions to be enabled.
+     */
+    public static final String HELIDON_CLI_PROPERTY = "helidon.cli";
+
+    /**
+     * The command line argument to enable cli extensions.
+     */
+    public static final String ENABLE_HELIDON_CLI = "-D" + HELIDON_CLI_PROPERTY + "=true";
 
     /**
      * Gets location of Java's home directory by checking the (@code java.home} property

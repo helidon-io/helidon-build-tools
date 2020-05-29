@@ -15,11 +15,8 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
@@ -28,6 +25,8 @@ import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.ProjectConfig;
 
+import static io.helidon.build.util.ProjectConfig.HELIDON_VERSION;
+import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
 import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
 
 /**
@@ -35,11 +34,7 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
  */
 @Command(name = "version", description = "Print version information")
 final class VersionCommand extends BaseCommand implements CommandExecution {
-
-    private static final String VERSION_PROPS_RESOURCE = "version.properties";
-    private static final String[] VERSION_PROP_NAMES = new String[] {"version", "revision", "date"};
-    private static final String KEY_PREFIX = "cli.";
-
+    private static final String FLAVOR = "flavor";
     private final CommonOptions commonOptions;
 
     @Creator
@@ -49,41 +44,51 @@ final class VersionCommand extends BaseCommand implements CommandExecution {
 
     @Override
     public void execute(CommandContext context) {
-        InputStream is = VersionCommand.class.getResourceAsStream(VERSION_PROPS_RESOURCE);
-        if (is == null) {
-            throw new IllegalStateException("version.properties resource not found");
-        }
-        Properties props = new Properties();
-        try {
-            props.load(is);
-            is.close();
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-
-        Map<String, Object> helidonProps = new LinkedHashMap<>();
-        for (int i = 0; i < VERSION_PROP_NAMES.length; i++) {
-            String propName = VERSION_PROP_NAMES[i];
-            String propValue = getVersionProperty(props, KEY_PREFIX + propName.toLowerCase());
-            helidonProps.put(propName, propValue);
-        }
-        Log.info(formatMapAsYaml("helidon", helidonProps));
+        logBuildProperties();
 
         ProjectConfig projectConfig = projectConfig(commonOptions.project().toPath());
-        if (!projectConfig.exists()) {
-            context.exitAction(CommandContext.ExitStatus.FAILURE, "Unable to find project");
-            return;
+        if (projectConfig.exists()) {
+            Map<String, Object> projectProps = new LinkedHashMap<>();
+            addProjectProperty("version", PROJECT_VERSION, projectConfig, projectProps);
+            addProjectProperty("helidon", HELIDON_VERSION, projectConfig, projectProps);
+            addProjectProperty("flavor", PROJECT_FLAVOR, projectConfig, projectProps);
+            log("project", projectProps);
         }
-        Map<String, Object> projectProps = new LinkedHashMap<>();
-        projectProps.put("version", projectConfig.property(PROJECT_VERSION));
-        Log.info(formatMapAsYaml("project", projectProps));
     }
 
-    private static String getVersionProperty(Properties props, String key) {
-        String value = props.getProperty(key);
-        if (value == null) {
-            throw new IllegalStateException(key + " property not found");
+    /**
+     * Add a project property, if available.
+     *
+     * @param key The property.
+     * @param configKey The property name in the project config.
+     * @param config The project config.
+     * @param map The map to add to.
+     */
+    static void addProjectProperty(String key, String configKey, ProjectConfig config, Map<String, Object> map) {
+        String value = config.property(configKey);
+        if (value != null) {
+            map.put(key, key.equals(FLAVOR) ? value.toUpperCase() : value);
         }
-        return value;
+    }
+
+    /**
+     * Log the build properties.
+     */
+    static void logBuildProperties() {
+        Map<String, Object> buildProps = new LinkedHashMap<>();
+        Config.buildProperties().forEach((k, v) -> buildProps.put((String) k, v));
+        log("build", buildProps);
+    }
+
+    /**
+     * Log the properties under the given name, if not empty.
+     *
+     * @param name The name.
+     * @param map The properties.
+     */
+    static void log(String name, Map<String, Object> map) {
+        if (!map.isEmpty()) {
+            Log.info(formatMapAsYaml(name, map));
+        }
     }
 }

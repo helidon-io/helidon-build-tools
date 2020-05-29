@@ -100,9 +100,9 @@ public class DevMojo extends AbstractMojo {
         }
         try {
             if (terminalMode) {
-                SystemLogWriter.bind(getLog().isDebugEnabled() ? Log.Level.DEBUG : Log.Level.INFO);
+                SystemLogWriter.install(getLog().isDebugEnabled() ? Log.Level.DEBUG : Log.Level.INFO);
             } else {
-                MavenLogWriter.bind(getLog());
+                MavenLogWriter.install(getLog());
             }
             final ProjectSupplier projectSupplier = new MavenProjectSupplier(project, session, plugins);
             final DevLoop loop = new DevLoop(devProjectDir.toPath(), projectSupplier, clean, fork, terminalMode);

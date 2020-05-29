@@ -27,6 +27,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
+import static io.helidon.build.util.Constants.ENABLE_HELIDON_CLI;
 import static io.helidon.build.test.TestFiles.helidonSeProject;
 import static io.helidon.build.test.TestFiles.helidonSeProjectCopy;
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
@@ -43,12 +44,26 @@ import static org.hamcrest.Matchers.notNullValue;
  *
  * NOTE: This test requires that the snapshot jar is already built, so is disabled by default; to run:
  * <pre>
- *    mvn install -DskipTests && mvn test -Dtest=ProjectConfigCollectorTest
+ *    mvn install -DskipTests && mvn test -Dtest=MavenProjectConfigCollectorTest
  * </pre>
  */
-@EnabledIfSystemProperty(named = "test", matches = "ProjectConfigCollectorTest")
+@EnabledIfSystemProperty(named = "test", matches = "MavenProjectConfigCollectorTest")
 class MavenProjectConfigCollectorTest {
-    private static final String DEBUG_PROPERTY = "-Dproject.config.collector.debug=true";
+    private static final String DEBUG_ARG = "-Dproject.config.collector.debug=true";
+
+    @Test
+    void testDisabledDoesNothing() throws Exception {
+        final Path projectDir = helidonSeProject();
+        final TestMonitor monitor = new TestMonitor(1);
+        final BuildExecutor executor = new ForkedMavenExecutor(projectDir, monitor, 120);
+        final Path dotHelidonFile = projectDir.resolve(DOT_HELIDON);
+
+        Files.deleteIfExists(dotHelidonFile);
+
+        executor.execute(DEBUG_ARG, "validate");
+        final String output = monitor.outputAsString();
+        assertThat(output, containsString(DOT_HELIDON + " file is missing"));
+    }
 
     @Test
     void testMissingDotHelidonFileDoesNotCauseFailure() throws Exception {
@@ -59,7 +74,7 @@ class MavenProjectConfigCollectorTest {
 
         Files.deleteIfExists(dotHelidonFile);
 
-        executor.execute(DEBUG_PROPERTY, "validate");
+        executor.execute(DEBUG_ARG, ENABLE_HELIDON_CLI, "validate");
         final String output = monitor.outputAsString();
         assertThat(output, containsString(DOT_HELIDON + " file is missing"));
     }
@@ -73,15 +88,15 @@ class MavenProjectConfigCollectorTest {
 
         Files.deleteIfExists(dotHelidonFile);
         FileUtils.touch(dotHelidonFile.toFile());
-        ProjectConfig config = ProjectConfig.loadHelidonCliConfig(projectDir);
+        ProjectConfig config = ProjectConfig.projectConfig(projectDir);
         assertThat(config.keySet().isEmpty(), is(true));
 
-        executor.execute(DEBUG_PROPERTY, "validate");
+        executor.execute(DEBUG_ARG, ENABLE_HELIDON_CLI, "validate");
         final String output = monitor.outputAsString();
         assertThat(output, containsString("Helidon project is supported"));
         assertThat(output, not(containsString("Updating config")));
 
-        config = ProjectConfig.loadHelidonCliConfig(projectDir);
+        config = ProjectConfig.projectConfig(projectDir);
         assertThat(config.keySet().isEmpty(), is(true));
     }
 
@@ -94,16 +109,16 @@ class MavenProjectConfigCollectorTest {
 
         Files.deleteIfExists(dotHelidonFile);
         FileUtils.touch(dotHelidonFile.toFile());
-        ProjectConfig config = ProjectConfig.loadHelidonCliConfig(projectDir);
+        ProjectConfig config = ProjectConfig.projectConfig(projectDir);
         assertThat(config.keySet().isEmpty(), is(true));
 
         final long startTime = System.currentTimeMillis();
-        executor.execute(DEBUG_PROPERTY, "compile");
+        executor.execute(DEBUG_ARG, ENABLE_HELIDON_CLI, "compile");
         final String output = monitor.outputAsString();
         assertThat(output, containsString("Helidon project is supported"));
         assertThat(output, containsString("Updating config"));
 
-        config = ProjectConfig.loadHelidonCliConfig(projectDir);
+        config = ProjectConfig.projectConfig(projectDir);
         assertThat(config.keySet().isEmpty(), is(false));
         assertThat(config.property(PROJECT_LAST_BUILD_SUCCESS_TIME), is(notNullValue()));
         assertThat(config.lastSuccessfulBuildTime(), is(greaterThan(startTime)));

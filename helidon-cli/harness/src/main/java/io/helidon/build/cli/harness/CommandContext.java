@@ -43,7 +43,7 @@ import static io.helidon.build.util.Style.Red;
  * The command context.
  */
 public final class CommandContext {
-    private static final SystemLogWriter LOG_WRITER = SystemLogWriter.bind(INFO);
+    private static final SystemLogWriter LOG_WRITER = SystemLogWriter.install(INFO);
     private final CLIDefinition cli;
     private final CommandRegistry registry;
     private Verbosity verbosity;

@@ -48,7 +48,7 @@ public @interface Option {
      */
     @Retention(RetentionPolicy.SOURCE)
     @Target(ElementType.PARAMETER)
-    public @interface KeyValues {
+    @interface KeyValues {
 
         /**
          * The option name.
@@ -88,7 +88,7 @@ public @interface Option {
      */
     @Retention(RetentionPolicy.SOURCE)
     @Target(ElementType.PARAMETER)
-    public @interface KeyValue {
+    @interface KeyValue {
 
         /**
          * The option name.
@@ -120,6 +120,13 @@ public @interface Option {
         boolean required() default false;
 
         /**
+         * The visible flag.
+         *
+         * @return {@code true} if visible, {@code false} if not
+         */
+        boolean visible() default true;
+
+        /**
          * Supported value types.
          */
         List<Class<?>> SUPPORTED_TYPES = List.of(String.class, Integer.class, File.class, Enum.class);
@@ -135,7 +142,7 @@ public @interface Option {
      */
     @Retention(RetentionPolicy.SOURCE)
     @Target(ElementType.PARAMETER)
-    public @interface Flag {
+    @interface Flag {
 
         /**
          * The option name.
@@ -151,6 +158,13 @@ public @interface Option {
          * @return description
          */
         String description();
+
+        /**
+         * The visible flag.
+         *
+         * @return {@code true} if visible, {@code false} if not
+         */
+        boolean visible() default true;
     }
 
     /**

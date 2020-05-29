@@ -31,12 +31,13 @@ public interface ProjectSupplier {
      *
      * @param executor The build executor.
      * @param clean {@code true} if the project should be cleaned and built.
+     * @param allowSkip {@code true} if the project build can be skipped if up to date.
      * @param cycleNumber The cycle number.
      * @return The project instance, guaranteed to have been successfully built.
      * @throws IllegalArgumentException if the project directory is not a valid.
      * @throws Exception if the build fails.
      */
-    Project newProject(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception;
+    Project newProject(BuildExecutor executor, boolean clean, boolean allowSkip, int cycleNumber) throws Exception;
 
     /**
      * Returns whether or not any project file has a modified time more recent than the given time.

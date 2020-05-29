@@ -17,29 +17,25 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import io.helidon.build.util.AnsiConsoleInstaller;
 import io.helidon.build.util.ProjectConfig;
 
+import static io.helidon.build.util.FileUtils.WORKING_DIR;
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
+import static io.helidon.build.util.ProjectConfig.ensureProjectConfig;
 
 /**
  * Class BaseCommand.
  */
 public abstract class BaseCommand {
 
-    static final String HELIDON_PROPERTIES = "helidon.properties";
     static final String HELIDON_VERSION_PROPERTY = "helidon.version";
 
-    private Properties cliConfig;
     private ProjectConfig projectConfig;
     private Path projectDir;
 
@@ -57,20 +53,8 @@ public abstract class BaseCommand {
         return projectConfig;
     }
 
-    protected Properties cliConfig() {
-        if (cliConfig != null) {
-            return cliConfig;
-        }
-        try {
-            InputStream sourceStream = getClass().getResourceAsStream(HELIDON_PROPERTIES);
-            try (InputStreamReader isr = new InputStreamReader(sourceStream)) {
-                cliConfig = new Properties();
-                cliConfig.load(isr);
-                return cliConfig;
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    protected void requireValidProjectConfig() {
+        ensureProjectConfig(WORKING_DIR, null);
     }
 
     private static final String SPACES = "                                                        ";

@@ -19,6 +19,7 @@ package io.helidon.build.dev.maven;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,6 +38,7 @@ import io.helidon.build.dev.ProjectDirectory;
 import io.helidon.build.dev.ProjectSupplier;
 import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.ProjectConfig;
+import io.helidon.build.util.Requirements;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -47,6 +49,7 @@ import static io.helidon.build.dev.BuildFile.createBuildFile;
 import static io.helidon.build.dev.BuildRoot.createBuildRoot;
 import static io.helidon.build.dev.BuildType.Skipped;
 import static io.helidon.build.dev.ProjectDirectory.createProjectDirectory;
+import static io.helidon.build.util.Constants.ENABLE_HELIDON_CLI;
 import static io.helidon.build.util.FileUtils.ChangeDetectionType.FIRST;
 import static io.helidon.build.util.FileUtils.ChangeDetectionType.LATEST;
 import static io.helidon.build.util.FileUtils.assertDir;
@@ -57,15 +60,17 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_DEPENDENCIES;
 import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_RESOURCEDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCEDIRS;
-import static io.helidon.build.util.ProjectConfig.loadHelidonCliConfig;
+import static io.helidon.build.util.ProjectConfig.projectConfig;
 import static java.util.Objects.requireNonNull;
 
 /**
  * A {@code ProjectSupplier} for Maven projects.
  */
 public class MavenProjectSupplier implements ProjectSupplier {
-    private static final List<String> CLEAN_BUILD_COMMAND = List.of("clean", "process-classes", "-DskipTests");
-    private static final List<String> BUILD_COMMAND = List.of("process-classes", "-DskipTests");
+    private static final String HELIDON_PLUGIN_VERSION_PROP = "version.plugin.helidon";
+    private static final String HELIDON_PLUGIN_VERSION = System.getProperty(HELIDON_PLUGIN_VERSION_PROP);
+    private static final List<String> CLEAN_BUILD_CMD = List.of("clean", "process-classes", "-DskipTests", ENABLE_HELIDON_CLI);
+    private static final List<String> BUILD_CMD = List.of("process-classes", "-DskipTests", ENABLE_HELIDON_CLI);
     private static final String TARGET_DIR_NAME = "target";
     private static final String POM_FILE = "pom.xml";
     private static final String DOT = ".";
@@ -127,7 +132,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
     }
 
     @Override
-    public Project newProject(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception {
+    public Project newProject(BuildExecutor executor, boolean clean, boolean allowSkip, int cycleNumber) throws Exception {
         final Path projectDir = executor.projectDirectory();
 
         // Get the updated config, performing the full build if needed
@@ -135,7 +140,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
         buildType = BuildType.completeType(executor.willFork(), clean);
         if (clean) {
             build(executor, true, cycleNumber);
-        } else if (canSkipBuild(projectDir)) {
+        } else if (allowSkip && canSkipBuild(projectDir)) {
             buildType = Skipped;
             executor.monitor().onBuildStart(cycleNumber, BuildType.Skipped);
         } else {
@@ -152,9 +157,16 @@ public class MavenProjectSupplier implements ProjectSupplier {
     }
 
     private void build(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception {
+        List<String> command = clean ? CLEAN_BUILD_CMD : BUILD_CMD;
+        if (HELIDON_PLUGIN_VERSION != null) {
+            command = new ArrayList<>(command);
+            command.add("-D" + HELIDON_PLUGIN_VERSION_PROP + "=" + HELIDON_PLUGIN_VERSION);
+        }
         executor.monitor().onBuildStart(cycleNumber, buildType);
-        executor.execute(clean ? CLEAN_BUILD_COMMAND : BUILD_COMMAND);
-        config = loadHelidonCliConfig(executor.projectDirectory());
+        executor.execute(command);
+        config = projectConfig(executor.projectDirectory());
+        Requirements.require(config.lastSuccessfulBuildTime() > 0,
+                "$(cyan helidon-maven-plugin) must be configured as an extension");
     }
 
     private boolean canSkipBuild(Path projectDir) {
@@ -166,7 +178,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
             // Yes. We can skip the build IFF we have a previously completed build from another session whose build time
             // is more recent than any file in the project (excluding target/* and .*)
 
-            config = loadHelidonCliConfig(projectDir);
+            config = projectConfig(projectDir);
             return !hasChanges(projectDir, FileTime.fromMillis(config.lastSuccessfulBuildTime()));
         }
         return false;
@@ -224,19 +236,19 @@ public class MavenProjectSupplier implements ProjectSupplier {
 
     private BuildStep compileStep() {
         return MavenGoalBuildStep.builder()
-                                 .mavenProject(project)
-                                 .mavenSession(session)
-                                 .pluginManager(plugins)
-                                 .goal(MavenGoalBuildStep.compileGoal())
-                                 .build();
+                .mavenProject(project)
+                .mavenSession(session)
+                .pluginManager(plugins)
+                .goal(MavenGoalBuildStep.compileGoal())
+                .build();
     }
 
     private BuildStep resourcesStep() {
         return MavenGoalBuildStep.builder()
-                                 .mavenProject(project)
-                                 .mavenSession(session)
-                                 .pluginManager(plugins)
-                                 .goal(MavenGoalBuildStep.resourcesGoal())
-                                 .build();
+                .mavenProject(project)
+                .mavenSession(session)
+                .pluginManager(plugins)
+                .goal(MavenGoalBuildStep.resourcesGoal())
+                .build();
     }
 }

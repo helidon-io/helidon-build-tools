@@ -262,7 +262,7 @@ public abstract class CommandModel extends CommandParameters {
          * @param description flag description
          * @param visible flag visible, {@code false} to make it hidden
          */
-        FlagInfo(String name, String description, boolean visible) {
+        public FlagInfo(String name, String description, boolean visible) {
             super(Boolean.class, name, description, visible);
         }
 
@@ -297,11 +297,24 @@ public abstract class CommandModel extends CommandParameters {
          * @param description option description
          * @param defaultValue default value, may be {@code null} if the option is not required
          * @param required option required
+         * @param visible option visible
          */
-        public KeyValueInfo(Class<T> type, String name, String description, T defaultValue, boolean required) {
-            super(type, name, description);
+        public KeyValueInfo(Class<T> type, String name, String description, T defaultValue, boolean required, boolean visible) {
+            super(type, name, description, visible);
             this.defaultValue = defaultValue;
             this.required = required;
+        }
+
+        /**
+         * Create a new key value info.
+         * @param type option type
+         * @param name option name
+         * @param description option description
+         * @param defaultValue default value, may be {@code null} if the option is not required
+         * @param required option required
+         */
+        public KeyValueInfo(Class<T> type, String name, String description, T defaultValue, boolean required) {
+            this(type, name, description, defaultValue, required, true);
         }
 
         /**
