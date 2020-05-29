@@ -30,12 +30,13 @@
     </properties>
 
     <build>
-        <extensions>
-            <extension>
+        <plugins>
+            <plugin>
                 <groupId>io.helidon.build-tools.archetype</groupId>
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
-                <version>@project.version@</version>
-            </extension>
-        </extensions>
+                <version>2.0.0-M4-SNAPSHOT</version>
+                <extensions>true</extensions>
+            </plugin>
+        </plugins>
     </build>
 </project>
