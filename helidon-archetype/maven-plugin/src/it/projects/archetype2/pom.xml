@@ -36,7 +36,7 @@
             <extension>
                 <groupId>io.helidon.build-tools.archetype</groupId>
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
-                <version>${project.version}</version>
+                <version>@project.version@</version>
             </extension>
         </extensions>
     </build>
