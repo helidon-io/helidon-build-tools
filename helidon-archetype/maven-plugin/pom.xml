@@ -93,6 +93,7 @@
                         </goals>
                         <phase>pre-integration-test</phase>
                         <configuration>
+                            <ignoreFailures>false</ignoreFailures>
                             <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
                             <pomIncludes>
                                 <pomInclude>projects/*/pom.xml</pomInclude>
