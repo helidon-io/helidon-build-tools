@@ -53,11 +53,11 @@ class Prompter {
         }
     }
 
-    static String prompt(String question, List<String> options, int defaultOption) {
+    static int prompt(String question, List<String> options, int defaultOption) {
         return prompt(question, options.toArray(new String[]{}), defaultOption);
     }
 
-    static String prompt(String question, String[] options, int defaultOption) {
+    static int prompt(String question, String[] options, int defaultOption) {
         Objects.checkIndex(defaultOption, options.length);
         try {
             System.out.println(Bold.apply(question));
@@ -71,13 +71,13 @@ class Prompter {
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             String response = reader.readLine();
             if (response == null || response.trim().length() == 0) {
-                return options[defaultOption];
+                return defaultOption;
             }
             int option = Integer.parseInt(response.trim());
             if (option <= 0 || option > options.length) {
                 return prompt(question, options, defaultOption);
             }
-            return options[option - 1];
+            return option - 1;
         } catch (NumberFormatException e) {
             return prompt(question, options, defaultOption);
         } catch (IOException e) {
@@ -112,7 +112,8 @@ class Prompter {
         String r = prompt("Helidon version", "2.0.0-SNAPSHOT");
         System.out.println("Response is '" + r + "'");
 
-        r = prompt("Helidon flavor", new String[]{"SE", "MP"}, 0);
-        System.out.println("Response is '" + r + "'");
+        String[] flavorOptions = new String[]{"SE", "MP"};
+        int flavorIndex = prompt("Helidon flavor", flavorOptions, 0);
+        System.out.println("Response is '" + flavorOptions[flavorIndex] + "'");
     }
 }

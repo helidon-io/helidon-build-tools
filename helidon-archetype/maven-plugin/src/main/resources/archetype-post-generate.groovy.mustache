@@ -42,9 +42,9 @@ def engineGav = "{{engineGroupId}}:{{engineArtifactId}}:{{engineVersion}}"
 
 // resolve the engine dependencies
 def engineDependencies = repoSystem.resolveDependencies(repoSession, new DependencyRequest(
-new CollectRequest().setRoot(new Dependency(new DefaultArtifact(engineGav), "compile")),
-DependencyFilterUtils.classpathFilter("runtime"))).getArtifactResults()
-    .collect { it.getArtifact().getFile().toURI().toURL() }
+    new CollectRequest().setRoot(new Dependency(new DefaultArtifact(engineGav), "compile")),
+    DependencyFilterUtils.classpathFilter("runtime"))).getArtifactResults()
+        .collect { it.getArtifact().getFile().toURI().toURL() }
 
 // create a class-loader with the engine dependencies to "dynamically" load the engine
 def classLoader = new java.net.URLClassLoader(engineDependencies.toArray(new java.net.URL[engineDependencies.size()]),

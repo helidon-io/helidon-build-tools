@@ -119,8 +119,8 @@ class TestUtils {
     static boolean apptypeArchetypeFound(Flavor flavor, String helidonVersion, String apptype) {
         boolean found;
         try {
-            AppTypeBrowser browser = new AppTypeBrowser(flavor, helidonVersion);
-            found = browser.appTypes().contains(apptype);
+            ArchetypeBrowser browser = new ArchetypeBrowser(flavor, helidonVersion);
+            found = browser.archetypes().contains(apptype);
             if (!found) {
                 Log.warn("Unable to find archetype %s for flavor %s and version %s", apptype, flavor, helidonVersion);
             }

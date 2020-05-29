@@ -29,7 +29,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_NAME;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_PACKAGE;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_APPTYPE;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARCHETYPE_ID;
 import static io.helidon.build.cli.impl.TestUtils.assertPackageExist;
 import static io.helidon.build.cli.impl.TestUtils.execWithDirAndInput;
 
@@ -49,7 +49,7 @@ public class InitInteractiveTest extends BaseCommandTest {
 
     @BeforeEach
     public void precondition() {
-        assumeTrue(TestUtils.apptypeArchetypeFound(Flavor.SE, HELIDON_SNAPSHOT_VERSION, DEFAULT_APPTYPE));
+        assumeTrue(TestUtils.apptypeArchetypeFound(Flavor.SE, HELIDON_SNAPSHOT_VERSION, DEFAULT_ARCHETYPE_ID));
     }
 
     @Test

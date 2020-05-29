@@ -26,13 +26,34 @@ import java.util.Optional;
  */
 public final class ArchetypeDescriptor {
 
-    private final LinkedList<Property> properties = new LinkedList<>();
-    private final LinkedList<Transformation> transformations = new LinkedList<>();
-    private TemplateSets templateSets;
-    private FileSets fileSets;
-    private final InputFlow inputFlow = new InputFlow();
+    /**
+     * The current version of the archetype descriptor model.
+     */
+    public static final String MODEL_VERSION = "1.0";
 
-    ArchetypeDescriptor() {
+    private final String modelVersion;
+    private final String name;
+    private final List<Property> properties;
+    private final List<Transformation> transformations;
+    private final TemplateSets templateSets;
+    private final FileSets fileSets;
+    private final InputFlow inputFlow;
+
+    ArchetypeDescriptor(String modelVersion,
+                        String name,
+                        List<Property> properties,
+                        List<Transformation> transformations,
+                        TemplateSets templateSets,
+                        FileSets fileSets,
+                        InputFlow inputFlow) {
+
+        this.modelVersion = Objects.requireNonNull(modelVersion, "modelVersion is null");
+        this.name = Objects.requireNonNull(name, "name is null");
+        this.properties = Objects.requireNonNull(properties, "properties is null");
+        this.transformations = Objects.requireNonNull(transformations, "transformations is null");
+        this.templateSets = templateSets;
+        this.fileSets = fileSets;
+        this.inputFlow = Objects.requireNonNull(inputFlow, "inputFlow is null");
     }
 
     /**
@@ -46,11 +67,31 @@ public final class ArchetypeDescriptor {
     }
 
     /**
+     * Get the archetype descriptor model version.
+     *
+     * @return model version, never {@code null}
+     */
+    public String modelVersion() {
+        return modelVersion;
+    }
+
+    /**
+     * Get the archetype descriptor name.
+     * The name is informative only, the source of truth is the catalog.
+     *
+     * @return name, never {@code null}
+     * @see ArchetypeCatalog.ArchetypeEntry#name()
+     */
+    public String name() {
+        return name;
+    }
+
+    /**
      * Get the archetype properties.
      *
      * @return list of {@link Property}, never {@code null}
      */
-    public LinkedList<Property> properties() {
+    public List<Property> properties() {
         return properties;
     }
 
@@ -59,7 +100,7 @@ public final class ArchetypeDescriptor {
      *
      * @return list of {@link Transformation}, never {@code null}
      */
-    public LinkedList<Transformation> transformations() {
+    public List<Transformation> transformations() {
         return transformations;
     }
 
@@ -73,28 +114,12 @@ public final class ArchetypeDescriptor {
     }
 
     /**
-     * Set the template sets.
-     * @param templateSets template sets
-     */
-    void templateSets(TemplateSets templateSets) {
-        this.templateSets = Objects.requireNonNull(templateSets, "templateSets is null");
-    }
-
-    /**
      * Get the file sets.
      *
      * @return optional of file sets, never {@code null}
      */
     public Optional<FileSets> fileSets() {
         return Optional.ofNullable(fileSets);
-    }
-
-    /**
-     * Set the file sets.
-     * @param fileSets file sets
-     */
-    void fileSets(FileSets fileSets) {
-        this.fileSets = Objects.requireNonNull(fileSets, "fileSets is null");
     }
 
     /**
@@ -106,13 +131,39 @@ public final class ArchetypeDescriptor {
         return inputFlow;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ArchetypeDescriptor that = (ArchetypeDescriptor) o;
+        return modelVersion.equals(that.modelVersion)
+                && properties.equals(that.properties)
+                && transformations.equals(that.transformations)
+                && Objects.equals(templateSets, that.templateSets)
+                && Objects.equals(fileSets, that.fileSets)
+                && inputFlow.equals(that.inputFlow);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(modelVersion, properties, transformations, templateSets, fileSets, inputFlow);
+    }
+
+    @Override
+    public String toString() {
+        return "ArchetypeDescriptor{"
+                + "modelVersion='" + modelVersion + '\''
+                + ", name='" + name + '\''
+                + '}';
+    }
+
     /**
      * Archetype property.
      */
     public static final class Property {
 
         private final String id;
-        private final Optional<String> value;
+        private final String value;
         private final boolean exported;
         private final boolean readonly;
 
@@ -124,10 +175,10 @@ public final class ArchetypeDescriptor {
             this.id = Objects.requireNonNull(id, "id is null");
             this.exported = exported;
             this.readonly = readonly;
-            if (readonly && (value == null || value.isBlank())) {
+            if (readonly && (value == null || value.isEmpty())) {
                 throw new IllegalArgumentException("A readonly property requires a value");
             }
-            this.value = Optional.ofNullable(value);
+            this.value = value;
         }
 
         /**
@@ -145,7 +196,7 @@ public final class ArchetypeDescriptor {
          * @return default value
          */
         public Optional<String> value() {
-            return value;
+            return Optional.ofNullable(value);
         }
 
         /**
@@ -170,25 +221,29 @@ public final class ArchetypeDescriptor {
         }
 
         @Override
-        public int hashCode() {
-            int hash = 5;
-            hash = 29 * hash + Objects.hashCode(this.id);
-            return hash;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Property property = (Property) o;
+            return exported == property.exported
+                    && readonly == property.readonly
+                    && id.equals(property.id)
+                    && Objects.equals(value, property.value);
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final Property other = (Property) obj;
-            return Objects.equals(this.id, other.id);
+        public int hashCode() {
+            return Objects.hash(id, value, exported, readonly);
+        }
+
+        @Override
+        public String toString() {
+            return "Property{"
+                    + "id='" + id + '\''
+                    + ", value='" + value + '\''
+                    + ", exported=" + exported
+                    + ", readonly=" + readonly
+                    + '}';
         }
     }
 
@@ -217,36 +272,32 @@ public final class ArchetypeDescriptor {
         /**
          * Get the replacements.
          *
-         * @return linked list of replacement, never {@code null}
+         * @return list of replacement, never {@code null}
          */
         public LinkedList<Replacement> replacements() {
             return replacements;
         }
 
         @Override
-        public int hashCode() {
-            int hash = 3;
-            hash = 41 * hash + Objects.hashCode(this.id);
-            hash = 41 * hash + Objects.hashCode(this.replacements);
-            return hash;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Transformation that = (Transformation) o;
+            return id.equals(that.id)
+                    && replacements.equals(that.replacements);
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final Transformation other = (Transformation) obj;
-            if (!Objects.equals(this.id, other.id)) {
-                return false;
-            }
-            return Objects.equals(this.replacements, other.replacements);
+        public int hashCode() {
+            return Objects.hash(id, replacements);
+        }
+
+        @Override
+        public String toString() {
+            return "Transformation{"
+                    + "id='" + id + '\''
+                    + ", replacements=" + replacements
+                    + '}';
         }
     }
 
@@ -282,29 +333,25 @@ public final class ArchetypeDescriptor {
         }
 
         @Override
-        public int hashCode() {
-            int hash = 7;
-            hash = 23 * hash + Objects.hashCode(this.regex);
-            hash = 23 * hash + Objects.hashCode(this.replacement);
-            return hash;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Replacement that = (Replacement) o;
+            return regex.equals(that.regex)
+                    && replacement.equals(that.replacement);
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final Replacement other = (Replacement) obj;
-            if (!Objects.equals(this.regex, other.regex)) {
-                return false;
-            }
-            return Objects.equals(this.replacement, other.replacement);
+        public int hashCode() {
+            return Objects.hash(regex, replacement);
+        }
+
+        @Override
+        public String toString() {
+            return "Replacement{"
+                    + "regex='" + regex + '\''
+                    + ", replacement='" + replacement + '\''
+                    + '}';
         }
     }
 
@@ -340,29 +387,17 @@ public final class ArchetypeDescriptor {
         }
 
         @Override
-        public int hashCode() {
-            int hash = 5;
-            hash = 17 * hash + Objects.hashCode(this.ifProperties);
-            hash = 17 * hash + Objects.hashCode(this.unlessProperties);
-            return hash;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Conditional that = (Conditional) o;
+            return ifProperties.equals(that.ifProperties)
+                    && unlessProperties.equals(that.unlessProperties);
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final Conditional other = (Conditional) obj;
-            if (!Objects.equals(this.ifProperties, other.ifProperties)) {
-                return false;
-            }
-            return Objects.equals(this.unlessProperties, other.unlessProperties);
+        public int hashCode() {
+            return Objects.hash(ifProperties, unlessProperties);
         }
     }
 
@@ -387,28 +422,25 @@ public final class ArchetypeDescriptor {
         }
 
         @Override
-        public int hashCode() {
-            int hash = 5;
-            hash = 31 * hash + Objects.hashCode(this.templateSets);
-            return hash;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+            TemplateSets that = (TemplateSets) o;
+            return templateSets.equals(that.templateSets);
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            if (!super.equals((PathSets) obj)) {
-                return false;
-            }
-            final TemplateSets other = (TemplateSets) obj;
-            return Objects.equals(this.templateSets, other.templateSets);
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), templateSets);
+        }
+
+        @Override
+        public String toString() {
+            return "TemplateSets{"
+                    + "templateSets=" + templateSets
+                    + ", transformations=" + transformations()
+                    + '}';
         }
     }
 
@@ -433,28 +465,25 @@ public final class ArchetypeDescriptor {
         }
 
         @Override
-        public int hashCode() {
-            int hash = 5;
-            hash = 31 * hash + Objects.hashCode(this.fileSets);
-            return hash;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+            FileSets fileSets1 = (FileSets) o;
+            return fileSets.equals(fileSets1.fileSets);
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            if (!super.equals((PathSets) obj)) {
-                return false;
-            }
-            final FileSets other = (FileSets) obj;
-            return Objects.equals(this.fileSets, other.fileSets);
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), fileSets);
+        }
+
+        @Override
+        public String toString() {
+            return "FileSets{"
+                    + "fileSets=" + fileSets
+                    + ", transformations=" + transformations()
+                    + '}';
         }
     }
 
@@ -479,25 +508,16 @@ public final class ArchetypeDescriptor {
         }
 
         @Override
-        public int hashCode() {
-            int hash = 3;
-            hash = 11 * hash + Objects.hashCode(this.transformations);
-            return hash;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            PathSets pathSets = (PathSets) o;
+            return transformations.equals(pathSets.transformations);
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final PathSets other = (PathSets) obj;
-            return Objects.equals(this.transformations, other.transformations);
+        public int hashCode() {
+            return Objects.hash(transformations);
         }
     }
 
@@ -563,41 +583,32 @@ public final class ArchetypeDescriptor {
         }
 
         @Override
-        public int hashCode() {
-            int hash = 7;
-            hash += super.hashCode();
-            hash = 67 * hash + Objects.hashCode(this.transformations);
-            hash = 67 * hash + Objects.hashCode(this.directory);
-            hash = 67 * hash + Objects.hashCode(this.includes);
-            hash = 67 * hash + Objects.hashCode(this.excludes);
-            return hash;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+            FileSet fileSet = (FileSet) o;
+            return transformations.equals(fileSet.transformations)
+                    && includes.equals(fileSet.includes)
+                    && excludes.equals(fileSet.excludes)
+                    && directory.equals(fileSet.directory);
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            if (!super.equals(obj)) {
-                return false;
-            }
-            final FileSet other = (FileSet) obj;
-            if (!Objects.equals(this.directory, other.directory)) {
-                return false;
-            }
-            if (!Objects.equals(this.transformations, other.transformations)) {
-                return false;
-            }
-            if (!Objects.equals(this.includes, other.includes)) {
-                return false;
-            }
-            return Objects.equals(this.excludes, other.excludes);
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), transformations, includes, excludes, directory);
+        }
+
+        @Override
+        public String toString() {
+            return "FileSet{"
+                    + "ifProperties=" + ifProperties()
+                    + ", unlessProperties=" + unlessProperties()
+                    + ", transformations=" + transformations
+                    + ", includes=" + includes
+                    + ", excludes=" + excludes
+                    + ", directory='" + directory + '\''
+                    + '}';
         }
     }
 
@@ -618,25 +629,23 @@ public final class ArchetypeDescriptor {
         }
 
         @Override
-        public int hashCode() {
-            int hash = 7;
-            hash = 29 * hash + Objects.hashCode(this.nodes);
-            return hash;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            InputFlow inputFlow = (InputFlow) o;
+            return Objects.equals(nodes, inputFlow.nodes);
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final InputFlow other = (InputFlow) obj;
-            return Objects.equals(this.nodes, other.nodes);
+        public int hashCode() {
+            return Objects.hash(nodes);
+        }
+
+        @Override
+        public String toString() {
+            return "InputFlow{"
+                    + "nodes=" + nodes
+                    + '}';
         }
     }
 
@@ -662,29 +671,17 @@ public final class ArchetypeDescriptor {
         }
 
         @Override
-        public int hashCode() {
-            int hash = 7;
-            hash += super.hashCode();
-            hash = 11 * hash + Objects.hashCode(this.text);
-            return hash;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+            FlowNode flowNode = (FlowNode) o;
+            return text.equals(flowNode.text);
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            if (!super.equals(obj)) {
-                return false;
-            }
-            final FlowNode other = (FlowNode) obj;
-            return Objects.equals(this.text, other.text);
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), text);
         }
     }
 
@@ -710,29 +707,27 @@ public final class ArchetypeDescriptor {
         }
 
         @Override
-        public int hashCode() {
-            int hash = 7;
-            hash += super.hashCode();
-            hash = 89 * hash + Objects.hashCode(this.choices);
-            return hash;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+            Select select = (Select) o;
+            return choices.equals(select.choices);
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            if (!super.equals(obj)) {
-                return false;
-            }
-            final Select other = (Select) obj;
-            return Objects.equals(this.choices, other.choices);
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), choices);
+        }
+
+        @Override
+        public String toString() {
+            return "Select{"
+                    + "ifProperties=" + ifProperties()
+                    + ", unlessProperties=" + unlessProperties()
+                    + ", text='" + text() + '\''
+                    + ", choices=" + choices
+                    + '}';
         }
     }
 
@@ -761,29 +756,27 @@ public final class ArchetypeDescriptor {
         }
 
         @Override
-        public int hashCode() {
-            int hash = 7;
-            hash += super.hashCode();
-            hash = 79 * hash + Objects.hashCode(this.property);
-            return hash;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+            Choice choice = (Choice) o;
+            return Objects.equals(property, choice.property);
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            if (!super.equals(obj)) {
-                return false;
-            }
-            final Choice other = (Choice) obj;
-            return Objects.equals(this.property, other.property);
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), property);
+        }
+
+        @Override
+        public String toString() {
+            return "Choice{"
+                    + "ifProperties=" + ifProperties()
+                    + ", unlessProperties=" + unlessProperties()
+                    + ", text='" + text() + '\''
+                    + ", property=" + property
+                    + '}';
         }
     }
 
@@ -825,33 +818,29 @@ public final class ArchetypeDescriptor {
         }
 
         @Override
-        public int hashCode() {
-            int hash = 5;
-            hash += super.hashCode();
-            hash = 17 * hash + Objects.hashCode(this.property);
-            hash = 17 * hash + Objects.hashCode(this.defaultValue);
-            return hash;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+            Input input = (Input) o;
+            return property.equals(input.property)
+                    && defaultValue.equals(input.defaultValue);
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            if (!super.equals(obj)) {
-                return false;
-            }
-            final Input other = (Input) obj;
-            if (!Objects.equals(this.defaultValue, other.defaultValue)) {
-                return false;
-            }
-            return Objects.equals(this.property, other.property);
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), property, defaultValue);
+        }
+
+        @Override
+        public String toString() {
+            return "Input{"
+                    + "ifProperties=" + ifProperties()
+                    + ", unlessProperties=" + unlessProperties()
+                    + ", text='" + text() + '\''
+                    + ", property=" + property
+                    + ", defaultValue=" + defaultValue
+                    + '}';
         }
     }
 }

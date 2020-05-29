@@ -16,26 +16,26 @@
     limitations under the License.
 
 -->
-<archetype-descriptor modelVersion="1.0" name="test">
+<archetype-descriptor modelVersion="1.0" name="archetype2">
     <properties>
-        <property id="groupId" />
+        <!-- TODO validation -->
+        <property id="groupId"/>
         <property id="artifactId" />
         <property id="version" value="1.0-SNAPSHOT" />
         <property id="name" />
         <property id="package" />
         <property id="gradle" exported="false" />
-        <property id="maven" exported="false" />
-        <property id="helidonVersion" exported="false" readonly="true" value="2.0.0-SNAPSHOT"/>
+        <property id="maven" exported="false"/>
+        <property id="zeVersion" exported="false" readonly="true" value="1.0-SNAPSHOT" />
     </properties>
-    <path-transformations>
-        <path-transformation id="packaged">
-            <replace regex="__pkg__" replacement="${package}" />
-            <replace regex="\\." replacement="\\/" />
-        </path-transformation>
-        <path-transformation id="mustache">
+    <transformations>
+        <transformation id="packaged">
+            <replace regex="__pkg__" replacement="${package/\./\/}" />
+        </transformation>
+        <transformation id="mustache">
             <replace regex="\.mustache$" replacement="" />
-        </path-transformation>
-    </path-transformations>
+        </transformation>
+    </transformations>
     <template-sets transformations="mustache">
         <template-set transformations="packaged">
             <directory>src/main/java</directory>
@@ -53,6 +53,12 @@
             <directory>.</directory>
             <includes>
                 <include>build.gradle.mustache</include>
+            </includes>
+        </template-set>
+        <template-set if="maven">
+            <directory>.</directory>
+            <includes>
+                <include>pom.xml.mustache</include>
             </includes>
         </template-set>
     </template-sets>
@@ -83,14 +89,16 @@
         </file-set>
     </file-sets>
     <input-flow>
-        <select id="build" text="Select a build system">
+        <select text="Select a build system">
             <choice property="maven" text="Maven" />
             <choice property="gradle" text="Gradle" />
         </select>
-        <input id="groupId" property="groupId" text="Enter a project groupId" if="maven"/>
-        <input id="artifactId" property="artifactId" text="Enter a project artifactId" />
-        <input id="version" property="version" text="Enter a project version" default="1.0-SNAPSHOT" />
-        <input id="name" property="name" text="Enter a project name" default="${artifactId}" />
-        <input id="package" property="package" text="Enter a Java package name" default="${groupId}" />
+        <!-- TODO input value transformation -->
+        <!-- TODO choice node at the top for yes/no properties -->
+        <input property="groupId" text="Enter a project groupId" if="maven"/>
+        <input property="artifactId" text="Enter a project artifactId" />
+        <input property="version" text="Enter a project version" />
+        <input property="name" text="Enter a project name" default="${artifactId}" />
+        <input property="package" text="Enter a Java package name" default="${groupId}" />
     </input-flow>
 </archetype-descriptor>

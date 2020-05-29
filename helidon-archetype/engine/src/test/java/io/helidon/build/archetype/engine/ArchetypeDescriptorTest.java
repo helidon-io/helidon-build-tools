@@ -54,6 +54,8 @@ public class ArchetypeDescriptorTest {
         assertThat(is, is(notNullValue()));
 
         ArchetypeDescriptor desc = ArchetypeDescriptor.read(is);
+        assertThat(desc.modelVersion(), is(ArchetypeDescriptor.MODEL_VERSION));
+        assertThat(desc.name(), is("test"));
         Map<String, Property> properties = desc.properties().stream().collect(Collectors.toMap(Property::id, (p) -> p));
         assertThat(properties.entrySet(), is(not(empty())));
         assertThat(properties.size(), is(8));

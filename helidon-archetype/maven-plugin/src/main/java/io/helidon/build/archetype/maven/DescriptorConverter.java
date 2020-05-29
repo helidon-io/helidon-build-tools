@@ -43,7 +43,6 @@ final class DescriptorConverter {
             Xpp3Dom prop = new Xpp3Dom("requiredProperty");
             prop.setAttribute("key", p.id());
             if (p.value().isPresent()) {
-                // TODO resolve "default" values using the input flow
                 Xpp3Dom defaultValue = new Xpp3Dom("defaultValue");
                 defaultValue.setValue(p.value().get());
                 prop.addChild(defaultValue);

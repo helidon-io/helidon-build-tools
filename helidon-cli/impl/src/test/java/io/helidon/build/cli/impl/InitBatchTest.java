@@ -30,7 +30,7 @@ import static io.helidon.build.cli.impl.InitCommand.DEFAULT_NAME;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARTIFACT_ID;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_GROUP_ID;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_PACKAGE;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_APPTYPE;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARCHETYPE_ID;
 import static io.helidon.build.cli.impl.TestUtils.assertPackageExist;
 import static io.helidon.build.cli.impl.TestUtils.exec;
 
@@ -51,7 +51,7 @@ public class InitBatchTest extends BaseCommandTest {
 
     @BeforeEach
     public void precondition() {
-        assumeTrue(TestUtils.apptypeArchetypeFound(flavor, HELIDON_SNAPSHOT_VERSION, DEFAULT_APPTYPE));
+        assumeTrue(TestUtils.apptypeArchetypeFound(flavor, HELIDON_SNAPSHOT_VERSION, DEFAULT_ARCHETYPE_ID));
     }
 
     @Test
