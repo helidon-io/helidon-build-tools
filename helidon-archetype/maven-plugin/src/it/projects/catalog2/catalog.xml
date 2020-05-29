@@ -16,7 +16,10 @@
     limitations under the License.
 
 -->
-<archetype-catalog id="test-catalog" groupId="io.helidon.archetypes" version="2.0-SNAPSHOT">
+<archetype-catalog modelVersion="1.0"
+                   name="catalog2"
+                   groupId="io.helidon.archetypes"
+                   version="2.0-SNAPSHOT">
 
     <archetype name="quickstart"
                title="Helidon Quickstart SE"

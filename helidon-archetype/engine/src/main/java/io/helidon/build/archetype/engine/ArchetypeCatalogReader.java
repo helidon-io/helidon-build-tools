@@ -38,7 +38,8 @@ import static io.helidon.build.archetype.engine.SAXHelper.validateChild;
  */
 final class ArchetypeCatalogReader extends DefaultHandler {
 
-    private String id;
+    private String modelVersion;
+    private String name;
     private String groupId;
     private String version;
     private final LinkedList<ArchetypeEntry> entries;
@@ -60,7 +61,8 @@ final class ArchetypeCatalogReader extends DefaultHandler {
         try {
             ArchetypeCatalogReader reader = new ArchetypeCatalogReader();
             factory.newSAXParser().parse(is, reader);
-            return new ArchetypeCatalog(reader.id, reader.groupId, reader.version, reader.entries);
+            return new ArchetypeCatalog(reader.modelVersion, reader.name, reader.groupId, reader.version,
+                    reader.entries);
         } catch (IOException | ParserConfigurationException | SAXException ex) {
             throw new RuntimeException(ex);
         }
@@ -74,7 +76,8 @@ final class ArchetypeCatalogReader extends DefaultHandler {
             if (!"archetype-catalog".equals(qName)) {
                 throw new IllegalStateException("Invalid root element '" + qName + "'");
             }
-            id = readRequiredAttribute("id", qName, attributes);
+            modelVersion = readRequiredAttribute("modelVersion", qName, attributes);
+            name = readRequiredAttribute("name", qName, attributes);
             groupId = readRequiredAttribute("groupId", qName, attributes);
             version = readRequiredAttribute("version", qName, attributes);
             stack.push("archetype-catalog");

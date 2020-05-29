@@ -96,7 +96,7 @@ public class ArchetypeLoaderTest extends ArchetypeBaseTest {
             }
             String s = sb.toString();
             assertThat(s.length(), is(greaterThan(0)));
-            assertThat(s, containsString("<archetype-descriptor>"));
+            assertThat(s, containsString("<archetype-descriptor"));
             assertThat(s, containsString("</archetype-descriptor>"));
         }
     }

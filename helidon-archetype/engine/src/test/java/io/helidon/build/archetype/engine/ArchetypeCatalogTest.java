@@ -36,7 +36,8 @@ public class ArchetypeCatalogTest {
         assertThat(is, is(notNullValue()));
 
         ArchetypeCatalog catalog = ArchetypeCatalog.read(is);
-        assertThat(catalog.id(), is("test-catalog"));
+        assertThat(catalog.modelVersion(), is(ArchetypeCatalog.MODEL_VERSION));
+        assertThat(catalog.name(), is("test"));
         assertThat(catalog.groupId(), is("io.helidon.archetypes"));
         assertThat(catalog.version(), is("2.0.0-SNAPSHOT"));
 
@@ -51,7 +52,8 @@ public class ArchetypeCatalogTest {
         assertThat(quickstartSe.title(), is("Helidon Quickstart SE"));
         assertThat(quickstartSe.summary(), is("Simple Hello World REST service using Helidon SE"));
         assertThat(quickstartSe.description().isPresent(), is(true));
-        assertThat(quickstartSe.description().get(), is("A simple project that shows how to implement a REST service using Helidon SE"));
+        assertThat(quickstartSe.description().get(),
+                is("A simple project that shows how to implement a REST service using Helidon SE"));
         assertThat(quickstartSe.tags(), hasItems("se", "rest"));
 
         ArchetypeCatalog.ArchetypeEntry quickstartMp = entries.get(1);

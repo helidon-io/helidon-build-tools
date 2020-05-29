@@ -25,13 +25,20 @@ import java.util.Optional;
  */
 public final class ArchetypeCatalog  {
 
+    /**
+     * The current version of the catalog model.
+     */
+    public static final String MODEL_VERSION = "1.0";
+
+    private final String modelVersion;
+    private final String name;
     private final String groupId;
     private final String version;
-    private final String id;
     private final List<ArchetypeEntry> entries;
 
-    ArchetypeCatalog(String id, String groupId, String version, List<ArchetypeEntry> entries) {
-        this.id = Objects.requireNonNull(id, "id is null");
+    ArchetypeCatalog(String modelVersion, String name, String groupId, String version, List<ArchetypeEntry> entries) {
+        this.modelVersion = Objects.requireNonNull(modelVersion, "modelVersion is null");
+        this.name = Objects.requireNonNull(name, "id is null");
         this.groupId = Objects.requireNonNull(groupId, "groupId is null");
         this.version = Objects.requireNonNull(version, "version is null");
         this.entries = entries;
@@ -48,12 +55,22 @@ public final class ArchetypeCatalog  {
     }
 
     /**
-     * Get the catalog id.
+     * Get the catalog model version.
      *
-     * @return id, never {@code null}
+     * @return model version, never {@code null}
      */
-    public String id() {
-        return id;
+    public String modelVersion() {
+        return modelVersion;
+    }
+
+    /**
+     * Get the catalog name.
+     * The name is informative only.
+     *
+     * @return name, never {@code null}
+     */
+    public String name() {
+        return name;
     }
 
     /**
@@ -88,23 +105,25 @@ public final class ArchetypeCatalog  {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ArchetypeCatalog that = (ArchetypeCatalog) o;
-        return groupId.equals(that.groupId)
+        return modelVersion.equals(that.modelVersion)
+                && name.equals(that.name)
+                && groupId.equals(that.groupId)
                 && version.equals(that.version)
-                && id.equals(that.id)
                 && entries.equals(that.entries);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(groupId, version, id, entries);
+        return Objects.hash(modelVersion, name, groupId, version, entries);
     }
 
     @Override
     public String toString() {
         return "ArchetypeCatalog{"
-                + "id='" + id + '\''
+                + "id='" + name + '\''
                 + ", groupId='" + groupId + '\''
                 + ", version='" + version + '\''
+                + ", modelVersion='" + modelVersion + '\''
                 + '}';
     }
 

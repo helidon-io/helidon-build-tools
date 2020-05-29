@@ -32,6 +32,7 @@ import io.helidon.build.archetype.engine.ArchetypeDescriptor.FileSet;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.FileSets;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.FlowNode;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.Input;
+import io.helidon.build.archetype.engine.ArchetypeDescriptor.InputFlow;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.Property;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.Replacement;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.Select;
@@ -50,13 +51,18 @@ import static io.helidon.build.archetype.engine.SAXHelper.validateChild;
  */
 final class ArchetypeDescriptorReader extends DefaultHandler {
 
-    private final ArchetypeDescriptor descriptor;
+    private String modelVersion;
+    private String name;
+    private final LinkedList<Property> properties = new LinkedList<>();
+    private final LinkedList<Transformation> transformations = new LinkedList<>();
+    private TemplateSets templateSets;
+    private FileSets fileSets;
+    private final InputFlow inputFlow = new InputFlow();
     private final LinkedList<String> stack;
     private final Map<String, Property> propertiesMap;
     private final Map<String, Transformation> transformationsMap;
 
     private ArchetypeDescriptorReader() {
-        descriptor =  new ArchetypeDescriptor();
         stack = new LinkedList<>();
         propertiesMap = new HashMap<>();
         transformationsMap = new HashMap<>();
@@ -72,7 +78,8 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
         try {
             ArchetypeDescriptorReader reader = new ArchetypeDescriptorReader();
             factory.newSAXParser().parse(is, reader);
-            return reader.descriptor;
+            return new ArchetypeDescriptor(reader.modelVersion, reader.name, reader.properties, reader.transformations,
+                    reader.templateSets, reader.fileSets, reader.inputFlow);
         } catch (IOException | ParserConfigurationException | SAXException ex) {
             throw new RuntimeException(ex);
         }
@@ -86,6 +93,8 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
             if (!"archetype-descriptor".equals(qName)) {
                 throw new IllegalStateException("Invalid root element '" + qName + "'");
             }
+            modelVersion = readRequiredAttribute("modelVersion", qName, attributes);
+            name = readRequiredAttribute("name", qName, attributes);
             stack.push("archetype-descriptor");
         } else {
             switch (parent) {
@@ -98,11 +107,11 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
                             stack.push(qName);
                             break;
                         case "template-sets":
-                            descriptor.templateSets(new TemplateSets(transformationRefs(attributes, qName)));
+                            templateSets = new TemplateSets(transformationRefs(attributes, qName));
                             stack.push(qName);
                             break;
                         case "file-sets":
-                            descriptor.fileSets(new FileSets(transformationRefs(attributes, qName)));
+                            fileSets = new FileSets(transformationRefs(attributes, qName));
                             stack.push(qName);
                             break;
                         case "input-flow":
@@ -120,27 +129,27 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
                             attributes.getValue("value"),
                             Boolean.valueOf(Optional.ofNullable(attributes.getValue("exported")).orElse("true")),
                             Boolean.valueOf(attributes.getValue("readonly")));
-                    descriptor.properties().add(prop);
+                    properties.add(prop);
                     propertiesMap.put(prop.id(), prop);
                     stack.push("properties/property");
                     break;
                 case "transformations":
                     validateChild("transformation", parent, qName);
                     Transformation transformation = new Transformation(readRequiredAttribute("id", qName, attributes));
-                    descriptor.transformations().add(transformation);
+                    transformations.add(transformation);
                     transformationsMap.put(transformation.id(), transformation);
                     stack.push("transformations/transformation");
                     break;
                 case "transformations/transformation":
                     validateChild("replace", parent, qName);
-                    descriptor.transformations().getLast().replacements().add(new Replacement(
+                    transformations.getLast().replacements().add(new Replacement(
                             readRequiredAttribute("regex", qName, attributes),
                             readRequiredAttribute("replacement", qName, attributes)));
                     stack.push("transformations/transformation/replace");
                     break;
                 case "template-sets":
                     validateChild("template-set", parent, qName);
-                    descriptor.templateSets().get().templateSets().add(new FileSet(
+                    templateSets.templateSets().add(new FileSet(
                             transformationRefs(attributes, qName),
                                     propertyRefs(attributes, "if", qName),
                                     propertyRefs(attributes, "unless", qName)));
@@ -169,7 +178,7 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
                     break;
                 case "file-sets":
                     validateChild("file-set", parent, qName);
-                    descriptor.fileSets().get().fileSets().add(new FileSet(
+                    fileSets.fileSets().add(new FileSet(
                             transformationRefs(attributes, qName),
                                     propertyRefs(attributes, "if", qName),
                                     propertyRefs(attributes, "unless", qName)));
@@ -199,14 +208,14 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
                 case "input-flow":
                     switch (qName) {
                         case "select":
-                            descriptor.inputFlow().nodes().add(new Select(
+                            inputFlow.nodes().add(new Select(
                                     readRequiredAttribute("text", qName, attributes),
                                     propertyRefs(attributes, "if", qName),
                                     propertyRefs(attributes, "unless", qName)));
                             stack.push("input-flow/select");
                             break;
                         case "input":
-                            descriptor.inputFlow().nodes().add(new Input(
+                            inputFlow.nodes().add(new Input(
                                     propertyRef(readRequiredAttribute("property", qName, attributes), qName),
                                     attributes.getValue("default"),
                                     readRequiredAttribute("text", qName, attributes),
@@ -220,7 +229,7 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
                     break;
                 case "input-flow/select":
                     validateChild("choice", parent, qName);
-                    FlowNode lastFlowNode = descriptor.inputFlow().nodes().getLast();
+                    FlowNode lastFlowNode = inputFlow.nodes().getLast();
                     if (!(lastFlowNode instanceof Select)) {
                         throw new IllegalStateException("Unable to add 'choice' to flow node");
                     }
@@ -247,22 +256,22 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
         String value = new String(ch, start, length);
         switch (stack.peek()) {
             case "template-sets/template-set/directory":
-                descriptor.templateSets().get().templateSets().getLast().directory(value);
+                templateSets.templateSets().getLast().directory(value);
                 break;
             case "template-sets/template-set/includes/include":
-                descriptor.templateSets().get().templateSets().getLast().includes().add(value);
+                templateSets.templateSets().getLast().includes().add(value);
                 break;
             case "template-sets/template-set/excludes/exclude":
-                descriptor.templateSets().get().templateSets().getLast().excludes().add(value);
+                templateSets.templateSets().getLast().excludes().add(value);
                 break;
             case "file-sets/file-set/directory":
-                descriptor.fileSets().get().fileSets().getLast().directory(value);
+                fileSets.fileSets().getLast().directory(value);
                 break;
             case "file-sets/file-set/includes/include":
-                descriptor.fileSets().get().fileSets().getLast().includes().add(value);
+                fileSets.fileSets().getLast().includes().add(value);
                 break;
             case "file-sets/file-set/excludes/exclude":
-                descriptor.fileSets().get().fileSets().getLast().excludes().add(value);
+                fileSets.fileSets().getLast().excludes().add(value);
                 break;
             default:
         }
