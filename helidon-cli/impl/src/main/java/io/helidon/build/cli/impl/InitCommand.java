@@ -72,7 +72,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
     private Flavor flavor;
     private final Build build;
     private ArchetypeCatalog.ArchetypeEntry archetype;
-    private String archetypeId;
+    private String archetypeName;
     private String helidonVersion;
     private final String groupId;
     private final String artifactId;
@@ -122,8 +122,8 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             @KeyValue(name = "build", description = "Build type",
                     defaultValue = "MAVEN") Build build,
             @KeyValue(name = "version", description = "Helidon version") String version,
-            @KeyValue(name = "archetype", description = "Archetype ID",
-                    defaultValue = DEFAULT_ARCHETYPE_ID) String archetypeId,
+            @KeyValue(name = "archetype", description = "Archetype name",
+                    defaultValue = DEFAULT_ARCHETYPE_ID) String archetypeName,
             @KeyValue(name = "groupid", description = "Project's group ID",
                     defaultValue = DEFAULT_GROUP_ID) String groupId,
             @KeyValue(name = "artifactid", description = "Project's artifact ID",
@@ -137,7 +137,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         this.build = build;
         this.helidonVersion = version;
         this.flavor = flavor;
-        this.archetypeId = archetypeId;
+        this.archetypeName = archetypeName;
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.packageName = packageName;
@@ -185,20 +185,20 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
 
         if (!batch) {
             // Select archetype interactively
-            List<String> archetypeNames = archetypes.stream()
-                    .map(ArchetypeCatalog.ArchetypeEntry::name)
+            List<String> archetypeTitles = archetypes.stream()
+                    .map(ArchetypeCatalog.ArchetypeEntry::title)
                     .collect(Collectors.toList());
-            int archetypeIndex = prompt("Select archetype", archetypeNames, 0);
+            int archetypeIndex = prompt("Select archetype", archetypeTitles, 0);
             archetype = archetypes.get(archetypeIndex);
         } else {
-            // find the archetype that matches archetypeId and flavor
+            // find the archetype that matches archetypeName
             archetype = archetypes.stream()
-                    .filter(a -> a.id().equals(archetypeId))
+                    .filter(a -> a.name().equals(archetypeName))
                     .findFirst()
                     .orElse(null);
 
             if (archetype == null) {
-                Requirements.failed(ARCHETYPE_NOT_FOUND, archetypeId, helidonVersion);
+                Requirements.failed(ARCHETYPE_NOT_FOUND, archetypeName, helidonVersion);
             }
         }
 

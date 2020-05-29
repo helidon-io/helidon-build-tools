@@ -16,17 +16,19 @@
     limitations under the License.
 
 -->
-<archetype-catalog groupId="{{project.groupId}}" version="{{project.version}}">
+<archetype-catalog id="test-catalog" groupId="{{project.groupId}}" version="{{project.version}}">
 
-    <archetype id="quickstart"
-               name="Helidon Quickstart SE"
+    <archetype name="quickstart"
+               title="Helidon Quickstart SE"
                artifactId="helidon-quickstart-se"
-               description="Simple Hello World REST service using Helidon SE"
+               summary="Simple Hello World REST service using Helidon SE"
+               description="A simple project that shows how to implement a REST service using Helidon SE"
                tags="se,rest" />
 
-    <archetype id="quickstart"
+    <archetype name="quickstart"
+               title="Helidon Quickstart MP"
                artifactId="helidon-quickstart-mp"
-               name="Helidon Quickstart MP"
-               description="Simple Hello World REST service using MicroProfile"
+               summary="Simple Hello World REST service using MicroProfile"
+               description="A simple project that shows how to implement a REST service using MicroProfile and Helidon MP"
                tags="mp,rest" />
 </archetype-catalog>

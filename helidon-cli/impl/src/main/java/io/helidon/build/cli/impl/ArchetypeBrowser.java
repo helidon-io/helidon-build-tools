@@ -165,7 +165,7 @@ class ArchetypeBrowser {
                         archetype.artifactId(), helidonVersion, filename);
                 downloadArtifact(new URL(location), localJarPath);
             } catch (ConnectException | FileNotFoundException e) {
-                downloadFailed(archetype.id(), filename, repo, e);
+                downloadFailed(archetype.name(), filename, repo, e);
                 return null;
             } catch (IOException e1) {
                 throw new RuntimeException(e1);

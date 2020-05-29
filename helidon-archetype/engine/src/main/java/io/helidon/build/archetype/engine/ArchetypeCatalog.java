@@ -18,6 +18,7 @@ package io.helidon.build.archetype.engine;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Helidon archetype catalog.
@@ -26,9 +27,11 @@ public final class ArchetypeCatalog  {
 
     private final String groupId;
     private final String version;
+    private final String id;
     private final List<ArchetypeEntry> entries;
 
-    ArchetypeCatalog(String groupId, String version, List<ArchetypeEntry> entries) {
+    ArchetypeCatalog(String id, String groupId, String version, List<ArchetypeEntry> entries) {
+        this.id = Objects.requireNonNull(id, "id is null");
         this.groupId = Objects.requireNonNull(groupId, "groupId is null");
         this.version = Objects.requireNonNull(version, "version is null");
         this.entries = entries;
@@ -42,6 +45,15 @@ public final class ArchetypeCatalog  {
      */
     public static ArchetypeCatalog read(InputStream is) {
         return ArchetypeCatalogReader.read(is);
+    }
+
+    /**
+     * Get the catalog id.
+     *
+     * @return id, never {@code null}
+     */
+    public String id() {
+        return id;
     }
 
     /**
@@ -78,18 +90,20 @@ public final class ArchetypeCatalog  {
         ArchetypeCatalog that = (ArchetypeCatalog) o;
         return groupId.equals(that.groupId)
                 && version.equals(that.version)
+                && id.equals(that.id)
                 && entries.equals(that.entries);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(groupId, version, entries);
+        return Objects.hash(groupId, version, id, entries);
     }
 
     @Override
     public String toString() {
         return "ArchetypeCatalog{"
-                + "groupId='" + groupId + '\''
+                + "id='" + id + '\''
+                + ", groupId='" + groupId + '\''
                 + ", version='" + version + '\''
                 + '}';
     }
@@ -99,34 +113,26 @@ public final class ArchetypeCatalog  {
      */
     public static final class ArchetypeEntry {
 
-        private final String id;
         private final String groupId;
         private final String artifactId;
         private final String version;
         private final String name;
+        private final String title;
+        private final String summary;
         private final String description;
         private final List<String> tags;
 
-        ArchetypeEntry(String id, String groupId, String artifactId, String version, String name, String description,
-                       List<String> tags) {
+        ArchetypeEntry(String groupId, String artifactId, String version, String name, String title, String summary,
+                       String description, List<String> tags) {
 
-            this.id = Objects.requireNonNull(id, "id is null");
+            this.name = Objects.requireNonNull(name, "name is null");
             this.groupId = Objects.requireNonNull(groupId, "groupId is null");
             this.artifactId = Objects.requireNonNull(artifactId, "artifactId is null");
             this.version = Objects.requireNonNull(version, "version is null");
-            this.name = Objects.requireNonNull(name, "name is null");
-            this.description = Objects.requireNonNull(description, "description is null");
+            this.title = Objects.requireNonNull(title, "title is null");
+            this.summary = Objects.requireNonNull(summary, "summary is null");
+            this.description = description;
             this.tags = Objects.requireNonNull(tags, "tags is null");
-        }
-
-        /**
-         * Get the archetype id.
-         * This is <strong>NOT</strong> a unique ID, multiple archetype may have the same id.
-         *
-         * @return id, never {@code null}
-         */
-        public String id() {
-            return id;
         }
 
         /**
@@ -159,19 +165,37 @@ public final class ArchetypeCatalog  {
         /**
          * Get the archetype name.
          *
-         * @return name, never {@code null}
+         * @return id, never {@code null}
          */
         public String name() {
             return name;
         }
 
         /**
+         * Get the archetype name.
+         *
+         * @return name, never {@code null}
+         */
+        public String title() {
+            return title;
+        }
+
+        /**
+         * Get the archetype summary.
+         *
+         * @return summary, never {@code null}
+         */
+        public String summary() {
+            return summary;
+        }
+
+        /**
          * Get the archetype description.
          *
-         * @return description, never {@code null}
+         * @return optional, never {@code null}
          */
-        public String description() {
-            return description;
+        public Optional<String> description() {
+            return Optional.ofNullable(description);
         }
 
         /**
@@ -188,28 +212,30 @@ public final class ArchetypeCatalog  {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             ArchetypeEntry that = (ArchetypeEntry) o;
-            return id.equals(that.id)
-                    && groupId.equals(that.groupId)
+            return groupId.equals(that.groupId)
                     && artifactId.equals(that.artifactId)
                     && version.equals(that.version)
                     && name.equals(that.name)
+                    && title.equals(that.title)
+                    && Objects.equals(summary, that.summary)
                     && description.equals(that.description)
                     && tags.equals(that.tags);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(id, groupId, artifactId, version, name, description, tags);
+            return Objects.hash(groupId, artifactId, version, name, title, summary, description, tags);
         }
 
         @Override
         public String toString() {
             return "ArchetypeEntry{"
-                    + "id='" + id + '\''
                     + "groupId='" + groupId + '\''
                     + ", artifactId='" + artifactId + '\''
                     + ", version='" + version + '\''
                     + ", name='" + name + '\''
+                    + ", title='" + title + '\''
+                    + ", summary='" + String.valueOf(summary) + '\''
                     + ", description='" + description + '\''
                     + '}';
         }

@@ -38,6 +38,7 @@ import static io.helidon.build.archetype.engine.SAXHelper.validateChild;
  */
 final class ArchetypeCatalogReader extends DefaultHandler {
 
+    private String id;
     private String groupId;
     private String version;
     private final LinkedList<ArchetypeEntry> entries;
@@ -59,7 +60,7 @@ final class ArchetypeCatalogReader extends DefaultHandler {
         try {
             ArchetypeCatalogReader reader = new ArchetypeCatalogReader();
             factory.newSAXParser().parse(is, reader);
-            return new ArchetypeCatalog(reader.groupId, reader.version, reader.entries);
+            return new ArchetypeCatalog(reader.id, reader.groupId, reader.version, reader.entries);
         } catch (IOException | ParserConfigurationException | SAXException ex) {
             throw new RuntimeException(ex);
         }
@@ -73,6 +74,7 @@ final class ArchetypeCatalogReader extends DefaultHandler {
             if (!"archetype-catalog".equals(qName)) {
                 throw new IllegalStateException("Invalid root element '" + qName + "'");
             }
+            id = readRequiredAttribute("id", qName, attributes);
             groupId = readRequiredAttribute("groupId", qName, attributes);
             version = readRequiredAttribute("version", qName, attributes);
             stack.push("archetype-catalog");
@@ -83,12 +85,13 @@ final class ArchetypeCatalogReader extends DefaultHandler {
                         case "archetype":
                             validateChild("archetype", parent, qName);
                             entries.add(new ArchetypeEntry(
-                                    readRequiredAttribute("id", qName, attributes),
                                     readAttribute("groupId", qName, attributes, groupId),
                                     readRequiredAttribute("artifactId", qName, attributes),
                                     readAttribute("version", qName, attributes, version),
                                     readRequiredAttribute("name", qName, attributes),
-                                    readRequiredAttribute("description", qName, attributes),
+                                    readRequiredAttribute("title", qName, attributes),
+                                    readRequiredAttribute("summary", qName, attributes),
+                                    attributes.getValue("description"),
                                     readAttributeList("tags", qName, attributes)
                             ));
                             stack.push(qName);

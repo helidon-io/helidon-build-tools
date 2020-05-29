@@ -36,6 +36,7 @@ public class ArchetypeCatalogTest {
         assertThat(is, is(notNullValue()));
 
         ArchetypeCatalog catalog = ArchetypeCatalog.read(is);
+        assertThat(catalog.id(), is("test-catalog"));
         assertThat(catalog.groupId(), is("io.helidon.archetypes"));
         assertThat(catalog.version(), is("2.0.0-SNAPSHOT"));
 
@@ -43,21 +44,24 @@ public class ArchetypeCatalogTest {
         assertThat(entries.size(), is(2));
 
         ArchetypeCatalog.ArchetypeEntry quickstartSe = entries.get(0);
-        assertThat(quickstartSe.id(), is("quickstart"));
         assertThat(quickstartSe.groupId(), is("io.helidon.archetypes"));
         assertThat(quickstartSe.artifactId(), is("helidon-quickstart-se"));
         assertThat(quickstartSe.version(), is("2.0.0-SNAPSHOT"));
-        assertThat(quickstartSe.name(), is("Helidon Quickstart SE"));
-        assertThat(quickstartSe.description(), is("Simple Hello World REST service using Helidon SE"));
+        assertThat(quickstartSe.name(), is("quickstart"));
+        assertThat(quickstartSe.title(), is("Helidon Quickstart SE"));
+        assertThat(quickstartSe.summary(), is("Simple Hello World REST service using Helidon SE"));
+        assertThat(quickstartSe.description().isPresent(), is(true));
+        assertThat(quickstartSe.description().get(), is("A simple project that shows how to implement a REST service using Helidon SE"));
         assertThat(quickstartSe.tags(), hasItems("se", "rest"));
 
         ArchetypeCatalog.ArchetypeEntry quickstartMp = entries.get(1);
-        assertThat(quickstartMp.id(), is("quickstart"));
         assertThat(quickstartMp.groupId(), is("io.helidon.archetypes"));
         assertThat(quickstartMp.artifactId(), is("helidon-quickstart-mp"));
         assertThat(quickstartMp.version(), is("2.0.0-SNAPSHOT"));
-        assertThat(quickstartMp.name(), is("Helidon Quickstart MP"));
-        assertThat(quickstartMp.description(), is("Simple Hello World REST service using MicroProfile"));
+        assertThat(quickstartMp.name(), is("quickstart"));
+        assertThat(quickstartMp.title(), is("Helidon Quickstart MP"));
+        assertThat(quickstartMp.summary(), is("Simple Hello World REST service using MicroProfile"));
+        assertThat(quickstartMp.description().isPresent(), is(false));
         assertThat(quickstartMp.tags(), hasItems("mp", "rest"));
     }
 }
