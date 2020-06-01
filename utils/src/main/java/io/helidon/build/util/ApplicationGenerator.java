@@ -29,33 +29,21 @@ import static io.helidon.build.util.Style.Blue;
 import static io.helidon.build.util.Style.BoldBrightCyan;
 
 /**
- * Simple generator for a quickstart project. This class does not import any Maven classes
+ * Simple generator for a application project. This class does not import any Maven classes
  * and is currently used to avoid problems with Graal native compilation.
  */
-public class QuickstartGenerator {
+public class ApplicationGenerator {
 
-    /**
-     * Maven executable.
-     */
-    protected static final String MAVEN_EXEC = Constants.OS.mavenExec();
-
-    /**
-     * Group ID for archetypes.
-     */
-    protected static final String ARCHETYPES_GROUP_ID = "io.helidon.archetypes";
-
-    /**
-     * Helidon quickstart prefix.
-     */
-    protected static final String HELIDON_QUICKSTART_PREFIX = "helidon-quickstart-";
-
-    /**
-     * Quickstart package prefix.
-     */
-    protected static final String QUICKSTART_PACKAGE_PREFIX = "io.helidon.examples.quickstart.";
+    private static final String MAVEN_EXEC = Constants.OS.mavenExec();
+    private static final String ARCHETYPES_GROUP_ID = "io.helidon.archetypes";
+    private static final String HELIDON_ARTIFACT_ID_PREFIX = "helidon-app-";
+    private static final String HELIDON_ARCHETYPES_PREFIX = "helidon-";
+    private static final String DEFAULT_ARCHETYPE_NAME = "bare";
+    private static final String APPLICATION_PACKAGE_PREFIX = "io.helidon.examples.";
 
     private Path parentDirectory;
     private HelidonVariant variant;
+    private String archetypeName;
     private boolean quiet;
     private String groupId;
     private String artifactId;
@@ -68,12 +56,23 @@ public class QuickstartGenerator {
      *
      * @return The generator.
      */
-    public static QuickstartGenerator generator() {
-        return new QuickstartGenerator();
+    public static ApplicationGenerator generator() {
+        return new ApplicationGenerator();
     }
 
-    private QuickstartGenerator() {
+    private ApplicationGenerator() {
         pluginVersion = BuildToolsProperties.instance().version();
+    }
+
+    /**
+     * Set the archetype name.
+     *
+     * @param archetypeName The name.
+     * @return The generator.
+     */
+    public ApplicationGenerator archetypeName(String archetypeName) {
+        this.archetypeName = archetypeName;
+        return this;
     }
 
     /**
@@ -82,7 +81,7 @@ public class QuickstartGenerator {
      * @param groupId The artifact ID.
      * @return The generator.
      */
-    public QuickstartGenerator groupId(String groupId) {
+    public ApplicationGenerator groupId(String groupId) {
         this.groupId = groupId;
         return this;
     }
@@ -93,7 +92,7 @@ public class QuickstartGenerator {
      * @param artifactId The artifact ID.
      * @return The generator.
      */
-    public QuickstartGenerator artifactId(String artifactId) {
+    public ApplicationGenerator artifactId(String artifactId) {
         this.artifactId = artifactId;
         return this;
     }
@@ -104,7 +103,7 @@ public class QuickstartGenerator {
      * @param packageName The package.
      * @return The generator.
      */
-    public QuickstartGenerator packageName(String packageName) {
+    public ApplicationGenerator packageName(String packageName) {
         this.packageName = packageName;
         return this;
     }
@@ -115,7 +114,7 @@ public class QuickstartGenerator {
      * @param version The version.
      * @return This instance, for chaining.
      */
-    public QuickstartGenerator helidonVersion(String version) {
+    public ApplicationGenerator helidonVersion(String version) {
         Objects.requireNonNull(version);
         this.version = version;
         return this;
@@ -127,7 +126,7 @@ public class QuickstartGenerator {
      * @param helidonVariant The variant.
      * @return This instance, for chaining.
      */
-    public QuickstartGenerator helidonVariant(HelidonVariant helidonVariant) {
+    public ApplicationGenerator helidonVariant(HelidonVariant helidonVariant) {
         this.variant = helidonVariant;
         return this;
     }
@@ -138,7 +137,7 @@ public class QuickstartGenerator {
      * @param pluginVersion The version.
      * @return This instance, for chaining.
      */
-    public QuickstartGenerator pluginVersion(String pluginVersion) {
+    public ApplicationGenerator pluginVersion(String pluginVersion) {
         Objects.requireNonNull(pluginVersion);
         this.pluginVersion = pluginVersion;
         return this;
@@ -150,7 +149,7 @@ public class QuickstartGenerator {
      * @param quiet {@code true} if log messages should not be written.
      * @return This instance, for chaining.
      */
-    public QuickstartGenerator quiet(boolean quiet) {
+    public ApplicationGenerator quiet(boolean quiet) {
         this.quiet = quiet;
         return this;
     }
@@ -161,7 +160,7 @@ public class QuickstartGenerator {
      * @param parentDirectory The parent directory.
      * @return This instance, for chaining.
      */
-    public QuickstartGenerator parentDirectory(Path parentDirectory) {
+    public ApplicationGenerator parentDirectory(Path parentDirectory) {
         this.parentDirectory = assertDir(parentDirectory);
         return this;
     }
@@ -174,21 +173,22 @@ public class QuickstartGenerator {
     public Path generate() {
         initialize();
         Log.info("Creating %s using version %s", BoldBrightCyan.apply(artifactId), Blue.apply(version));
-        String archetypeId = HELIDON_QUICKSTART_PREFIX + variant.toString();
+        String archetypeId = "helidon-quickstart-" + variant.toString(); // NOTE: Remove this once new CATALOG fix is in place!
+// CATALOG        String archetypeId = HELIDON_ARCHETYPES_PREFIX + variant.toString() + "-" + archetypeName;
         execute(new ProcessBuilder().directory(parentDirectory.toFile())
                                     .command(List.of(MAVEN_EXEC,
-                                                     "archetype:generate",
-                                                     "-DinteractiveMode=false",
-                                                     "-DarchetypeGroupId=" + ARCHETYPES_GROUP_ID,
-                                                     "-DarchetypeArtifactId=" + archetypeId,
-                                                     "-DarchetypeVersion=" + version,
-                                                     "-DgroupId=" + groupId,
-                                                     "-DartifactId=" + artifactId,
-                                                     "-Dpackage=" + packageName
+                                            "archetype:generate",
+                                            "-DinteractiveMode=false",
+                                            "-DarchetypeGroupId=" + ARCHETYPES_GROUP_ID,
+                                            "-DarchetypeArtifactId=" + archetypeId,
+                                            "-DarchetypeVersion=" + version,
+                                            "-DgroupId=" + groupId,
+                                            "-DartifactId=" + artifactId,
+                                            "-Dpackage=" + packageName
                                     )));
         final Path projectDir = assertDir(parentDirectory.resolve(artifactId));
         ensureProjectConfig(projectDir, version);
-        ensureHelidonPluginConfig(projectDir, pluginVersion);  // NOTE: Remove this once new archetype is completed!
+        ensureHelidonPluginConfig(projectDir, pluginVersion);  // NOTE: Remove this once new CATALOG fix is in place!
         log("Created %s", projectDir);
         return projectDir;
     }
@@ -209,11 +209,14 @@ public class QuickstartGenerator {
         if (groupId == null) {
             groupId = "test";
         }
+        if (archetypeName == null) {
+            archetypeName = DEFAULT_ARCHETYPE_NAME;
+        }
         if (artifactId == null) {
-            artifactId = HELIDON_QUICKSTART_PREFIX + variant.toString();
+            artifactId = HELIDON_ARTIFACT_ID_PREFIX + variant.toString();
         }
         if (packageName == null) {
-            packageName = QUICKSTART_PACKAGE_PREFIX + variant.toString();
+            packageName = APPLICATION_PACKAGE_PREFIX + variant.toString();
         }
         final Path projectDir = parentDirectory.resolve(artifactId);
         if (Files.exists(projectDir)) {

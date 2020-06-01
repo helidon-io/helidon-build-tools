@@ -24,17 +24,16 @@ import io.helidon.build.test.TestFiles;
 
 import org.apache.maven.model.Model;
 
-import static io.helidon.build.util.PomUtils.readPomModel;
-import static io.helidon.build.cli.impl.TestUtils.exec;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARCHETYPE_ID;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARTIFACT_ID;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_FLAVOR;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_GROUP_ID;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_NAME;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_PACKAGE;
-import static io.helidon.build.cli.impl.BaseCommandTest.HELIDON_SNAPSHOT_VERSION;
 import static io.helidon.build.cli.impl.TestUtils.assertPackageExist;
-
+import static io.helidon.build.cli.impl.TestUtils.exec;
+import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
+import static io.helidon.build.util.PomUtils.readPomModel;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -96,7 +95,7 @@ class InitTestHelper {
         args.add("init");
         args.add("--batch");
         args.add("--version");
-        args.add(HELIDON_SNAPSHOT_VERSION);
+        args.add(helidonTestVersion());
         args.add("--project");
         args.add(targetDir.toString());
         if (!flavor.equals(DEFAULT_FLAVOR)) {

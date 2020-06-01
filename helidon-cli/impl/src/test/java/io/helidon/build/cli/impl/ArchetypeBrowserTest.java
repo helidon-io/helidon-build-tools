@@ -21,12 +21,11 @@ import java.util.List;
 
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.cli.impl.InitCommand.Flavor;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.RequirementFailure;
 
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.cli.impl.ArchetypeBrowser.REMOTE_REPO;
+import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -43,15 +42,11 @@ public class ArchetypeBrowserTest extends BaseCommandTest {
      */
     @Test
     public void testDownload() throws Exception {
-        try {
-            Path file = Path.of("maven-metadata.xml");
-            ArchetypeBrowser browser = new ArchetypeBrowser(Flavor.SE, HELIDON_VERSION_TEST);
-            browser.downloadArtifact(new URL(REMOTE_REPO + "/io/helidon/build-tools/maven-metadata.xml"), file);
-            assertThat(file.toFile().exists(), is(true));
-            assertThat(file.toFile().delete(), is(true));
-        } catch (RequirementFailure e) {
-            Log.warn("IGNORING '%s'. Fix this once we have a Helidon release with new archetypes!", e.getMessage());
-        }
+        Path file = Path.of("maven-metadata.xml");
+        ArchetypeBrowser browser = new ArchetypeBrowser(Flavor.SE, helidonTestVersion());
+        browser.downloadArtifact(new URL(REMOTE_REPO + "/io/helidon/build-tools/maven-metadata.xml"), file);
+        assertThat(file.toFile().exists(), is(true));
+        assertThat(file.toFile().delete(), is(true));
     }
 
     /**
@@ -59,14 +54,10 @@ public class ArchetypeBrowserTest extends BaseCommandTest {
      */
     @Test
     public void testMpBrowser() {
-        try {
-            ArchetypeBrowser browser = new ArchetypeBrowser(Flavor.MP, HELIDON_SNAPSHOT_VERSION);
-            List<ArchetypeCatalog.ArchetypeEntry> archetypes = browser.archetypes();
-            assertThat(archetypes.size(), is(greaterThanOrEqualTo(0)));
-            assertThat(archetypes.stream().map(browser::archetypeJar).count(), is(greaterThanOrEqualTo(0L)));
-        } catch (RequirementFailure e) {
-            Log.warn("IGNORING '%s'. Fix this once we have a Helidon release with new archetypes!", e.getMessage());
-        }
+        ArchetypeBrowser browser = new ArchetypeBrowser(Flavor.MP, helidonTestVersion());
+        List<ArchetypeCatalog.ArchetypeEntry> archetypes = browser.archetypes();
+        assertThat(archetypes.size(), is(greaterThanOrEqualTo(0)));
+        assertThat(archetypes.stream().map(browser::archetypeJar).count(), is(greaterThanOrEqualTo(0L)));
     }
 
     /**
@@ -74,13 +65,9 @@ public class ArchetypeBrowserTest extends BaseCommandTest {
      */
     @Test
     public void testSeBrowser() {
-        try {
-            ArchetypeBrowser browser = new ArchetypeBrowser(Flavor.SE, HELIDON_SNAPSHOT_VERSION);
-            List<ArchetypeCatalog.ArchetypeEntry> archetypes = browser.archetypes();
-            assertThat(archetypes.size(), is(greaterThanOrEqualTo(0)));
-            assertThat(archetypes.stream().map(browser::archetypeJar).count(), is(greaterThanOrEqualTo(0L)));
-        } catch (RequirementFailure e) {
-            Log.warn("IGNORING '%s'. Fix this once we have a Helidon release with new archetypes!", e.getMessage());
-        }
+        ArchetypeBrowser browser = new ArchetypeBrowser(Flavor.SE, helidonTestVersion());
+        List<ArchetypeCatalog.ArchetypeEntry> archetypes = browser.archetypes();
+        assertThat(archetypes.size(), is(greaterThanOrEqualTo(0)));
+        assertThat(archetypes.stream().map(browser::archetypeJar).count(), is(greaterThanOrEqualTo(0L)));
     }
 }

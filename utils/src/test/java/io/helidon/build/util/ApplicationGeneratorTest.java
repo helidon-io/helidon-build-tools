@@ -35,10 +35,10 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
 /**
- * Unit test for class {@link QuickstartGenerator}.
+ * Unit test for class {@link ApplicationGenerator}.
  */
-class QuickstartGeneratorTest {
-    private static final Path TARGET_DIR = TestFiles.targetDir(QuickstartGeneratorTest.class);
+class ApplicationGeneratorTest {
+    private static final Path TARGET_DIR = TestFiles.targetDir(ApplicationGeneratorTest.class);
     private Path generated;
 
     @AfterEach
@@ -72,11 +72,11 @@ class QuickstartGeneratorTest {
     }
 
     private void testGeneration(HelidonVariant variant, String version) {
-        generated = QuickstartGenerator.generator()
-                                       .parentDirectory(TARGET_DIR)
-                                       .helidonVariant(variant)
-                                       .helidonVersion(version)
-                                       .generate();
+        generated = ApplicationGenerator.generator()
+                                        .parentDirectory(TARGET_DIR)
+                                        .helidonVariant(variant)
+                                        .helidonVersion(version)
+                                        .generate();
 
         assertThat(generated, is(not(nullValue())));
         assertThat(Files.isDirectory(generated), is(true));

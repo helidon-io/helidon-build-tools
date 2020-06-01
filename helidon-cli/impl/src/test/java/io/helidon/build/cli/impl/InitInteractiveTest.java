@@ -18,10 +18,8 @@ package io.helidon.build.cli.impl;
 import java.io.File;
 import java.nio.file.Path;
 
-import io.helidon.build.cli.impl.InitCommand.Flavor;
 import io.helidon.build.test.TestFiles;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -29,14 +27,12 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_NAME;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_PACKAGE;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARCHETYPE_ID;
 import static io.helidon.build.cli.impl.TestUtils.assertPackageExist;
 import static io.helidon.build.cli.impl.TestUtils.execWithDirAndInput;
-
+import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -47,17 +43,12 @@ public class InitInteractiveTest extends BaseCommandTest {
 
     private final Path targetDir = TestFiles.targetDir();
 
-    @BeforeEach
-    public void precondition() {
-        assumeTrue(TestUtils.apptypeArchetypeFound(Flavor.SE, HELIDON_SNAPSHOT_VERSION, DEFAULT_ARCHETYPE_ID));
-    }
-
     @Test
     @Order(1)
     public void testInitSe() throws Exception {
         File input = new File(InitCommand.class.getResource("input.txt").getFile());
         TestUtils.ExecResult res = execWithDirAndInput(targetDir.toFile(), input,
-                "init", "--version", HELIDON_SNAPSHOT_VERSION);
+                "init", "--version", helidonTestVersion());
         System.out.println(res.output);
         assertThat(res.code, is(equalTo(0)));
         assertPackageExist(targetDir.resolve(DEFAULT_NAME), DEFAULT_PACKAGE);
@@ -76,7 +67,7 @@ public class InitInteractiveTest extends BaseCommandTest {
     public void testInitMp() throws Exception {
         File input = new File(InitCommand.class.getResource("input.txt").getFile());
         TestUtils.ExecResult res = execWithDirAndInput(targetDir.toFile(), input,
-                "init", "--version", HELIDON_SNAPSHOT_VERSION, "--flavor", "MP");
+                "init", "--version", helidonTestVersion(), "--flavor", "MP");
         System.out.println(res.output);
         assertThat(res.code, is(equalTo(0)));
         assertPackageExist(targetDir.resolve(DEFAULT_NAME), DEFAULT_PACKAGE);
