@@ -93,7 +93,12 @@
     </scm>
 
     <properties>
-        <java.version>8</java.version>
+
+        <!--
+        Specifies the default release for the compiler plugin.
+        Also used explicitly for the javadoc plugin.
+        -->
+        <maven.compiler.release>11</maven.compiler.release>
 
         <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF-8</surefire.argLine>
         <surefire.coverage.argline/>
@@ -190,8 +195,6 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${version.plugin.compiler}</version>
                     <configuration>
-                        <source>9</source>
-                        <target>9</target>
                         <compilerArgs>
                             <arg>-Xlint:unchecked</arg>
                         </compilerArgs>
@@ -202,8 +205,7 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>${version.plugin.javadoc}</version>
                     <configuration>
-                        <source>11</source>
-                        <release>11</release>
+                        <release>${maven.compiler.release}</release>
                         <failOnError>false</failOnError>
                         <quiet>true</quiet>
                         <sourceFileExcludes>
