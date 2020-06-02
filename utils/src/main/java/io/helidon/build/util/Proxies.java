@@ -143,10 +143,22 @@ public class Proxies {
         final String value = envVar(envVarName, env);
         if (value != null) {
             final String[] split = value.split(":");
-            if (split.length == 2) {
+            String host = null;
+            String port = null;
+            if (split.length == 3) {
+                host = split[1];
+                port = split[2];
+                if (host.startsWith("//")) {
+                    host = host.substring(2);
+                }
+            } else if (split.length == 2) {
+                host = split[0];
+                port = split[1];
+            }
+            if (host != null && port != null) {
                 final String protocol = envVarName.startsWith(HTTPS_PREFIX) ? HTTPS_PROP_PREFIX : HTTP_PROP_PREFIX;
-                setProperty(protocol + PROXY_HOST_PROP_SUFFIX, split[0], properties);
-                setProperty(protocol + PROXY_PORT_PROP_SUFFIX, split[1], properties);
+                setProperty(protocol + PROXY_HOST_PROP_SUFFIX, host, properties);
+                setProperty(protocol + PROXY_PORT_PROP_SUFFIX, port, properties);
             }
         }
     }
