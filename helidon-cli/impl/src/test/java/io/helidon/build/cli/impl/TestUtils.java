@@ -26,6 +26,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.build.util.ProxyUtils;
+
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.test.StripAnsi.stripAnsi;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -82,6 +84,10 @@ class TestUtils {
         String version = System.getProperty(HELIDON_VERSION_PROPERTY);
         if (version != null) {
             cmdArgs.add("-D" + HELIDON_VERSION_PROPERTY + "=" + version);
+        }
+        String proxyArgs = ProxyUtils.javaProxyArgs();
+        if (!proxyArgs.isEmpty()) {
+            cmdArgs.add(proxyArgs);
         }
         cmdArgs.add(Main.class.getName());
         cmdArgs.addAll(Arrays.asList(args));
