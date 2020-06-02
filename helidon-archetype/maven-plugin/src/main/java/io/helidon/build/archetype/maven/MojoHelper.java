@@ -25,9 +25,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import com.github.mustachejava.DefaultMustacheVisitor;
+import com.github.mustachejava.MustacheException;
+import com.github.mustachejava.MustacheVisitor;
+import com.github.mustachejava.TemplateContext;
+import com.github.mustachejava.codes.ValueCode;
 import io.helidon.build.archetype.engine.Maps;
 
 import com.github.mustachejava.DefaultMustacheFactory;
@@ -71,7 +77,7 @@ final class MojoHelper {
     /**
      * Mustache factory.
      */
-    private static final MustacheFactory MUSTACHE_FACTORY = new DefaultMustacheFactory();
+    private static final MustacheFactory MUSTACHE_FACTORY = new MustacheFactoryImpl();
 
     private MojoHelper() {
     }
@@ -163,6 +169,56 @@ final class MojoHelper {
             return version;
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
+        }
+    }
+
+    /**
+     * Mustache object that shall not be encoded.
+     */
+    interface NotEncoded {
+    }
+
+    /**
+     * Mustache string that shall not be encoded.
+     */
+    static final class RawString implements NotEncoded {
+
+        private final String value;
+
+        RawString(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return value;
+        }
+    }
+
+    private static final class MustacheFactoryImpl extends  DefaultMustacheFactory {
+        @Override
+        public MustacheVisitor createMustacheVisitor() {
+            return new DefaultMustacheVisitor(this) {
+                @Override
+                public void value(TemplateContext tc, String variable, boolean encoded) {
+                    list.add(new ValueCode(tc, df, variable, encoded) {
+                        @Override
+                        public Writer execute(Writer writer, List<Object> scopes) {
+                            try {
+                                final Object object = get(scopes);
+                                if (object instanceof NotEncoded) {
+                                    writer.write(oh.stringify(object));
+                                    return appendText(run(writer, scopes));
+                                } else {
+                                    return super.execute(writer, scopes);
+                                }
+                            } catch (Exception e) {
+                                throw new MustacheException("Failed to get value for " + name, e, tc);
+                            }
+                        }
+                    });
+                }
+            };
         }
     }
 }
