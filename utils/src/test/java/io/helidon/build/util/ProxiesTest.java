@@ -78,37 +78,37 @@ class ProxiesTest {
 
     @Test
     void testHttpProxySet() {
-        Map<String,String> env = Map.of("http_proxy", "www-proxy-hqdc.us.oracle.com:80");
+        Map<String,String> env = Map.of("http_proxy", "www-proxy.us.acme.com:80");
         Properties props = new Properties();
         Proxies.setProxyPropertiesFrom(env, props);
         assertThat(props.size(), is(2));
-        assertThat(props.get("http.proxyHost"), is("www-proxy-hqdc.us.oracle.com"));
+        assertThat(props.get("http.proxyHost"), is("www-proxy.us.acme.com"));
         assertThat(props.get("http.proxyPort"), is("80"));
     }
 
     @Test
     void testHttpsProxySet() {
-        Map<String,String> env = Map.of("https_proxy", "www-proxy-hqdc.us.oracle.com:80");
+        Map<String,String> env = Map.of("https_proxy", "www-proxy.us.acme.com:80");
         Properties props = new Properties();
         Proxies.setProxyPropertiesFrom(env, props);
         assertThat(props.size(), is(2));
-        assertThat(props.get("https.proxyHost"), is("www-proxy-hqdc.us.oracle.com"));
+        assertThat(props.get("https.proxyHost"), is("www-proxy.us.acme.com"));
         assertThat(props.get("https.proxyPort"), is("80"));
     }
 
     @Test
     void testNonProxySet() {
-        Map<String,String> env = Map.of("no_proxy", "localhost,127.0.0.1,.oraclecorp.com,.oracle.com,.jenkins,.vault");
+        Map<String,String> env = Map.of("no_proxy", "localhost,127.0.0.1,.acmecorp.com,.acme.com,.jenkins,.vault");
         Properties props = new Properties();
         Proxies.setProxyPropertiesFrom(env, props);
         assertThat(props.size(), is(2));
-        assertThat(props.get("http.nonProxyHosts"), is("localhost|127.0.0.1|*.oraclecorp.com|*.oracle.com|*.jenkins|*.vault"));
-        assertThat(props.get("https.nonProxyHosts"), is("localhost|127.0.0.1|*.oraclecorp.com|*.oracle.com|*.jenkins|*.vault"));
+        assertThat(props.get("http.nonProxyHosts"), is("localhost|127.0.0.1|*.acmecorp.com|*.acme.com|*.jenkins|*.vault"));
+        assertThat(props.get("https.nonProxyHosts"), is("localhost|127.0.0.1|*.acmecorp.com|*.acme.com|*.jenkins|*.vault"));
     }
 
     @Test
     void testSkipIfSet() {
-        Map<String,String> env = Map.of("http_proxy", "www-proxy-hqdc.us.oracle.com:80");
+        Map<String,String> env = Map.of("http_proxy", "www-proxy.us.acme.com:80");
         Properties props = new Properties();
         props.setProperty("http.proxyHost", "acme.com");
         props.setProperty("http.proxyPort", "8192");
