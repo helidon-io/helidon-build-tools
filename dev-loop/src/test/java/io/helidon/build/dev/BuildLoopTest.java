@@ -61,7 +61,7 @@ class BuildLoopTest {
     private Path newSeProject(boolean willModify) {
         final Path rootDir = willModify ? helidonSeProjectCopy() : helidonSeProject();
         pomFile = assertFile(rootDir.resolve("pom.xml"));
-        javaFile = assertFile(rootDir.resolve("src/main/java/io/helidon/examples/quickstart/se/GreetService.java"));
+        javaFile = assertFile(rootDir.resolve("src/main/java/io/helidon/examples/se/GreetService.java"));
         resourceFile = assertFile(rootDir.resolve("src/main/resources/application.yaml"));
         return rootDir;
     }
@@ -110,7 +110,7 @@ class BuildLoopTest {
     }
 
     @Test
-    void testQuickstartSeUpToDate() throws Exception {
+    void testSeUpToDate() throws Exception {
         final Path rootDir = newSeProject(false);
         final BuildLoop loop = TestUtils.newLoop(rootDir, false, false, 1);
         final TestMonitor monitor = TestUtils.run(loop);
@@ -149,7 +149,7 @@ class BuildLoopTest {
     }
 
     @Test
-    void testQuickstartSeCleanInitialBuild() throws Exception {
+    void testSeCleanInitialBuild() throws Exception {
         final Path rootDir = newSeProject(true);
         final BuildLoop loop = TestUtils.newLoop(rootDir, true, false, 1);
         final TestMonitor monitor = TestUtils.run(loop);
@@ -191,7 +191,7 @@ class BuildLoopTest {
     }
 
     @Test
-    void testQuickstartSeSourceChangeWhileRunning() throws Exception {
+    void testSeSourceChangeWhileRunning() throws Exception {
         final Path rootDir = newSeProject(true);
         final AtomicInteger sourceFilesTouched = new AtomicInteger();
         final TestMonitor monitor = new TestMonitor(3) {
@@ -255,7 +255,7 @@ class BuildLoopTest {
     }
 
     @Test
-    void testQuickstartSeResourceChangeWhileRunning() throws Exception {
+    void testSeResourceChangeWhileRunning() throws Exception {
         final Path rootDir = newSeProject(true);
         final AtomicInteger resourceFilesTouched = new AtomicInteger();
         final TestMonitor monitor = new TestMonitor(3) {
@@ -319,7 +319,7 @@ class BuildLoopTest {
     }
 
     @Test
-    void testQuickstartSePomFileChangeWhileRunning() throws Exception {
+    void testSePomFileChangeWhileRunning() throws Exception {
         final Path rootDir = newSeProject(true);
         final TestMonitor monitor = new TestMonitor(3) {
             @Override
@@ -381,7 +381,7 @@ class BuildLoopTest {
     }
 
     @Test
-    void testQuickstartSeSourceChangeWhileBuildingAfterFailure() throws Exception {
+    void testSeSourceChangeWhileBuildingAfterFailure() throws Exception {
         final Path rootDir = newSeProject(true);
         final AtomicReference<FileTime> breakJavaTime = new AtomicReference<>();
         final AtomicReference<FileTime> fixJavaTime = new AtomicReference<>();

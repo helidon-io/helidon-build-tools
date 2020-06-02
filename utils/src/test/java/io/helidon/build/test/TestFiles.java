@@ -27,12 +27,12 @@ import java.nio.file.attribute.FileTime;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.build.util.ApplicationGenerator;
 import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.HelidonVariant;
 import io.helidon.build.util.Instance;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenCommand;
-import io.helidon.build.util.QuickstartGenerator;
 
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -49,11 +49,11 @@ import static java.util.Objects.requireNonNull;
  * Test file utilities.
  */
 public class TestFiles implements BeforeAllCallback {
-    private static final String HELIDON_QUICKSTART_PREFIX = "helidon-quickstart-";
+    private static final String HELIDON_APP_PREFIX = "helidon-app-";
     private static final String VERSION_1_4_1 = "1.4.1";
     private static final AtomicReference<Path> TARGET_DIR = new AtomicReference<>();
-    private static final Instance<Path> SE_JAR = new Instance<>(TestFiles::getOrCreateQuickstartSeJar);
-    private static final Instance<Path> MP_JAR = new Instance<>(TestFiles::getOrCreateQuickstartMpJar);
+    private static final Instance<Path> SE_JAR = new Instance<>(TestFiles::getOrCreateApplicationSeJar);
+    private static final Instance<Path> MP_JAR = new Instance<>(TestFiles::getOrCreateApplicationMpJar);
     private static final Instance<Path> SIGNED_JAR = new Instance<>(TestFiles::fetchSignedJar);
     private static final AtomicInteger SE_COPY_NUMBER = new AtomicInteger(1);
     private static final AtomicInteger MP_COPY_NUMBER = new AtomicInteger(1);
@@ -86,7 +86,7 @@ public class TestFiles implements BeforeAllCallback {
     }
 
     /**
-     * Returns the quickstart SE main jar created from the latest archetype version.
+     * Returns the SE main jar created from the latest archetype version.
      *
      * @return The jar.
      */
@@ -95,26 +95,26 @@ public class TestFiles implements BeforeAllCallback {
     }
 
     /**
-     * Returns the quickstart SE project directory created from the latest archetype version.
+     * Returns the SE project directory created from the latest archetype version.
      *
      * @return The directory.
      */
     public static Path helidonSeProject() {
         helidonSeJar(); // ensure created.
-        return targetDir().resolve(quickstartId(HelidonVariant.SE));
+        return targetDir().resolve(applicationId(HelidonVariant.SE));
     }
 
     /**
-     * Returns the directory of a new copy of the quickstart SE project.
+     * Returns the directory of a new copy of the SE project.
      *
      * @return The directory.
      */
     public static Path helidonSeProjectCopy() {
-        return copyQuickstartProject(HelidonVariant.SE, SE_COPY_NUMBER);
+        return copyApplicationProject(HelidonVariant.SE, SE_COPY_NUMBER);
     }
 
     /**
-     * Returns the quickstart MP main jar created from the latest archetype version.
+     * Returns the MP main jar created from the latest archetype version.
      *
      * @return The jar.
      */
@@ -123,22 +123,22 @@ public class TestFiles implements BeforeAllCallback {
     }
 
     /**
-     * Returns the quickstart MP project directory created from the latest archetype version.
+     * Returns the MP project directory created from the latest archetype version.
      *
      * @return The directory.
      */
     public static Path helidonMpProject() {
         helidonMpJar(); // ensure created.
-        return targetDir().resolve(quickstartId(HelidonVariant.MP));
+        return targetDir().resolve(applicationId(HelidonVariant.MP));
     }
 
     /**
-     * Returns the directory of a new copy of the quickstart MP project.
+     * Returns the directory of a new copy of the MP project.
      *
      * @return The directory.
      */
     public static Path helidonMpProjectCopy() {
-        return copyQuickstartProject(HelidonVariant.MP, MP_COPY_NUMBER);
+        return copyApplicationProject(HelidonVariant.MP, MP_COPY_NUMBER);
     }
 
     /**
@@ -207,12 +207,12 @@ public class TestFiles implements BeforeAllCallback {
     }
 
     /**
-     * ID or directory for quickstart.
+     * ID or directory for application.
      *
      * @param variant The Helidon variant.
      */
-    public static String quickstartId(HelidonVariant variant) {
-        return HELIDON_QUICKSTART_PREFIX + variant;
+    public static String applicationId(HelidonVariant variant) {
+        return HELIDON_APP_PREFIX + variant;
     }
 
 
@@ -235,65 +235,65 @@ public class TestFiles implements BeforeAllCallback {
         throw new IllegalStateException("not yet implemented, see https://github.com/oracle/helidon-build-tools/issues/110");
     }
 
-    private static Path getOrCreateQuickstartSeJar() {
-        return getOrCreateQuickstartJar(HelidonVariant.SE);
+    private static Path getOrCreateApplicationSeJar() {
+        return getOrCreateApplicationJar(HelidonVariant.SE);
     }
 
-    private static Path getOrCreateQuickstartMpJar() {
-        return getOrCreateQuickstartJar(HelidonVariant.MP);
+    private static Path getOrCreateApplicationMpJar() {
+        return getOrCreateApplicationJar(HelidonVariant.MP);
     }
 
-    private static Path getOrCreateQuickstartJar(HelidonVariant variant) {
-        final String id = quickstartId(variant);
+    private static Path getOrCreateApplicationJar(HelidonVariant variant) {
+        final String id = applicationId(variant);
         final Path sourceDir = targetDir().resolve(id);
         if (Files.exists(sourceDir)) {
-            return quickstartJar(sourceDir, id);
+            return applicationJar(sourceDir, id);
         } else {
-            return createQuickstartJar(variant);
+            return createApplicationJar(variant);
         }
     }
 
-    private static Path createQuickstartJar(HelidonVariant variant) {
-        final Path projectDir = createQuickstartProject(variant);
-        return buildQuickstartProject(variant, projectDir);
+    private static Path createApplicationJar(HelidonVariant variant) {
+        final Path projectDir = createApplicationProject(variant);
+        return buildApplicationProject(variant, projectDir);
     }
 
-    private static Path createQuickstartProject(HelidonVariant variant) {
-        return QuickstartGenerator.generator()
-                .helidonVariant(variant)
-                .parentDirectory(targetDir())
-                .helidonVersion(currentHelidonReleaseVersion())
-                .pluginVersion(currentHelidonBuildToolsReleaseVersion())
-                .generate();
+    private static Path createApplicationProject(HelidonVariant variant) {
+        return ApplicationGenerator.generator()
+                                   .helidonVariant(variant)
+                                   .parentDirectory(targetDir())
+                                   .helidonVersion(currentHelidonReleaseVersion())
+                                   .pluginVersion(currentHelidonBuildToolsReleaseVersion())
+                                   .generate();
     }
 
-    private static Path buildQuickstartProject(HelidonVariant variant, Path projectDir) {
-        final String id = quickstartId(variant);
+    private static Path buildApplicationProject(HelidonVariant variant, Path projectDir) {
+        final String id = applicationId(variant);
         Log.info("Building %s", id);
         try {
             MavenCommand.builder()
-                    .directory(projectDir)
-                    .addArgument("clean")
-                    .addArgument("package")
-                    .addArgument("-DskipTests")
-                    .build()
-                    .execute();
-            return quickstartJar(projectDir, id);
+                        .directory(projectDir)
+                        .addArgument("clean")
+                        .addArgument("package")
+                        .addArgument("-DskipTests")
+                        .build()
+                        .execute();
+            return applicationJar(projectDir, id);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static Path quickstartJar(Path projectDir, String id) {
+    private static Path applicationJar(Path projectDir, String id) {
         return assertFile(projectDir.resolve("target" + DIR_SEP + id + ".jar"));
     }
 
     private static Path directory(HelidonVariant variant, int copyNumber) {
-        final String id = quickstartId(variant) + "-" + copyNumber;
+        final String id = applicationId(variant) + "-" + copyNumber;
         return targetDir().resolve(id);
     }
 
-    private static Path copyQuickstartProject(HelidonVariant variant, AtomicInteger copyNumber) {
+    private static Path copyApplicationProject(HelidonVariant variant, AtomicInteger copyNumber) {
         final Path sourceDir = helidonSeProject();
         Path copyDir = directory(variant, copyNumber.getAndIncrement());
         while (Files.exists(copyDir)) {

@@ -21,10 +21,29 @@ package io.helidon.build.test;
  * <em>IMPORTANT:</em> The constants must be kept up to date as new Helidon releases occur.
  */
 public class HelidonTestVersions {
+
+    // IMPORTANT: These constants must be kept up to date as new Helidon releases occur.
     private static final String CURRENT_HELIDON_SNAPSHOT_VERSION = "2.0.0-SNAPSHOT";
-    private static final String CURRENT_HELIDON_RELEASE_VERSION = "2.0.0-M2";
-    private static final String PREVIOUS_HELIDON_RELEASE_VERSION = "2.0.0-M1";
-    private static final String CURRENT_HELIDON_BUILD_TOOLS_RELEASE_VERSION = "2.0.0-M3";
+    private static final String CURRENT_HELIDON_RELEASE_VERSION = "2.0.0-M4";
+    private static final String PREVIOUS_HELIDON_RELEASE_VERSION = "2.0.0-M3";
+    private static final String CURRENT_HELIDON_BUILD_TOOLS_RELEASE_VERSION = "2.0.0-M4";
+
+    /**
+     * The test version override property.
+     */
+    public static final String HELIDON_TEST_VERSION_PROPERTY = "helidon.test.version";
+    private static final String HELIDON_TEST_VERSION = System.getProperty(HELIDON_TEST_VERSION_PROPERTY,
+            CURRENT_HELIDON_RELEASE_VERSION);
+
+    /**
+     * Returns the current Helidon release version by default. Can be overridden by setting the {@code "helidon.test.version"}
+     * system property.
+     *
+     * @return The version.
+     */
+    public static String helidonTestVersion() {
+        return HELIDON_TEST_VERSION;
+    }
 
     /**
      * Returns the current Helidon release version.

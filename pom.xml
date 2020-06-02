@@ -114,13 +114,13 @@
 
         Changing these version requires approval for a new third party dependency!
         -->
+        <version.lib.helidon>0.9.0</version.lib.helidon>
         <version.lib.asciidoctorj>1.6.0-RC.2</version.lib.asciidoctorj>
         <version.lib.asciidoctorj-diagram>1.5.4.1</version.lib.asciidoctorj-diagram>
         <version.lib.checkstyle>8.29</version.lib.checkstyle>
         <version.lib.diffutils>2.2</version.lib.diffutils>
         <version.lib.doxia>1.9.1</version.lib.doxia>
         <version.lib.freemarker>2.3.23</version.lib.freemarker>
-        <version.lib.helidon>0.9.0</version.lib.helidon>
         <version.lib.junit>5.6.0</version.lib.junit>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.invoker>3.0.1</version.lib.invoker>
@@ -676,6 +676,12 @@
                 <groupId>org.apache.maven.shared</groupId>
                 <artifactId>maven-invoker</artifactId>
                 <version>${version.lib.invoker}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.config</groupId>
+                <artifactId>helidon-config-test-infrastructure</artifactId>
+                <version>${version.lib.helidon}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

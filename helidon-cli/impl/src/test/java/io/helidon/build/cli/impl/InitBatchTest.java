@@ -20,25 +20,22 @@ import java.nio.file.Path;
 import io.helidon.build.cli.impl.InitCommand.Flavor;
 import io.helidon.build.test.TestFiles;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_NAME;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARTIFACT_ID;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_GROUP_ID;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_NAME;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_PACKAGE;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARCHETYPE_ID;
 import static io.helidon.build.cli.impl.TestUtils.assertPackageExist;
 import static io.helidon.build.cli.impl.TestUtils.exec;
-
+import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Class InitCommandTest.
@@ -49,11 +46,6 @@ public class InitBatchTest extends BaseCommandTest {
     private final Flavor flavor = Flavor.MP;
     private final Path targetDir = TestFiles.targetDir();
 
-    @BeforeEach
-    public void precondition() {
-        assumeTrue(TestUtils.apptypeArchetypeFound(flavor, HELIDON_SNAPSHOT_VERSION, DEFAULT_ARCHETYPE_ID));
-    }
-
     @Test
     @Order(1)
     public void testInit() throws Exception {
@@ -61,7 +53,7 @@ public class InitBatchTest extends BaseCommandTest {
                 "--batch",
                 "--flavor", flavor.toString(),
                 "--project ", targetDir.toString(),
-                "--version ", HELIDON_SNAPSHOT_VERSION,
+                "--version ", helidonTestVersion(),
                 "--groupid", DEFAULT_GROUP_ID,
                 "--artifactid", DEFAULT_ARTIFACT_ID,
                 "--package", DEFAULT_PACKAGE);

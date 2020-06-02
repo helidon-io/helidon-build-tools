@@ -55,8 +55,8 @@ class MavenProjectSupplierTest {
     public static void beforeAll() {
         rootDir = helidonSeProjectCopy();
         pomFile = assertFile(rootDir.resolve("pom.xml"));
-        javaFile = assertFile(rootDir.resolve("src/main/java/io/helidon/examples/quickstart/se/GreetService.java"));
-        classFile = assertFile(rootDir.resolve("target/classes/io/helidon/examples/quickstart/se/GreetService.class"));
+        javaFile = assertFile(rootDir.resolve("src/main/java/io/helidon/examples/se/GreetService.java"));
+        classFile = assertFile(rootDir.resolve("target/classes/io/helidon/examples/se/GreetService.class"));
     }
 
     private static FileTime changedTime(FileTime checkTime, FileUtils.ChangeDetectionType type) {

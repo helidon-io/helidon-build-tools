@@ -15,24 +15,12 @@
  */
 package io.helidon.build.cli.impl;
 
-import io.helidon.build.cli.impl.InitCommand.Flavor;
-
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARCHETYPE_ID;
 
 /**
  * Class InitDefaultTest.
  */
 public class InitDefaultTest extends BaseCommandTest {
-
-    @BeforeEach
-    public void precondition() {
-        assumeTrue(TestUtils.apptypeArchetypeFound(Flavor.SE, HELIDON_SNAPSHOT_VERSION, DEFAULT_ARCHETYPE_ID));
-        assumeTrue(TestUtils.apptypeArchetypeFound(Flavor.MP, HELIDON_SNAPSHOT_VERSION, DEFAULT_ARCHETYPE_ID));
-    }
 
     @Test
     public void testDefaults() throws Exception {

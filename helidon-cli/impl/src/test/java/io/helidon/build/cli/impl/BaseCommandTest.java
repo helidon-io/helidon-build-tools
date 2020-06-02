@@ -15,11 +15,10 @@
  */
 package io.helidon.build.cli.impl;
 
-import io.helidon.build.test.HelidonTestVersions;
-
 import org.junit.jupiter.api.BeforeAll;
 
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
+import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
 import static io.helidon.build.util.PomUtils.HELIDON_PLUGIN_VERSION_PROPERTY;
 
 /**
@@ -27,16 +26,13 @@ import static io.helidon.build.util.PomUtils.HELIDON_PLUGIN_VERSION_PROPERTY;
  */
 public class BaseCommandTest {
 
-    static final String HELIDON_VERSION_TEST = HelidonTestVersions.currentHelidonReleaseVersion();
-    static final String HELIDON_SNAPSHOT_VERSION = HelidonTestVersions.currentHelidonSnapshotVersion();
-
     /**
      * Overrides version under test. This property must be propagated to all
      * forked processes.
      */
     @BeforeAll
     public static void setHelidonVersion() {
-        System.setProperty(HELIDON_VERSION_PROPERTY, HELIDON_SNAPSHOT_VERSION);
-        System.setProperty(HELIDON_PLUGIN_VERSION_PROPERTY, HELIDON_VERSION_TEST);
+        System.setProperty(HELIDON_VERSION_PROPERTY, helidonTestVersion());
+        System.setProperty(HELIDON_PLUGIN_VERSION_PROPERTY, helidonTestVersion());
     }
 }
