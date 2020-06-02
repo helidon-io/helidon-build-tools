@@ -42,6 +42,9 @@ class HelidonVersionsIT {
 
     private static final Predicate<MavenVersion> UNQUALIFIED_2_0_0_MINIMUM = unqualifiedMinimum(TWO_0_0_VERSION_STRING);
     private static final Predicate<MavenVersion> UNQUALIFIED_HIGH_MINIMUM = unqualifiedMinimum(HIGH_VERSION_STRING);
+    static {
+        Proxies.setProxyPropertiesFromEnv();
+    }
 
     @Test
     void testFilteredFallbackIsEmpty() {

@@ -18,6 +18,7 @@ package io.helidon.build.cli.harness;
 import java.util.Objects;
 
 import io.helidon.build.cli.harness.CommandParser.CommandParserException;
+import io.helidon.build.util.Proxies;
 
 /**
  * Command runner.
@@ -115,6 +116,7 @@ public final class CommandRunner {
      * @param args raw command line arguments
      */
     public static void execute(CLIDefinition cli, Class<?> clazz, String... args) {
+        Proxies.setProxyPropertiesFromEnv();
         CommandRegistry registry = CommandRegistry.load(clazz);
         CommandContext context = CommandContext.create(registry, cli);
         CommandRunner.execute(context, args);
