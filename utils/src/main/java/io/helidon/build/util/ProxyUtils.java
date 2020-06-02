@@ -46,7 +46,8 @@ public class ProxyUtils {
     }
 
     /**
-     * Returns the command line arguments to set proxy properties, iff any of the following are already set:
+     * Returns the command line arguments to set proxy properties, iff any of the proxy properties are already set.
+     * The proxy properties are:
      * <ul>
      * <li>http.proxyHost</li>
      * <li>http.proxyPort</li>
