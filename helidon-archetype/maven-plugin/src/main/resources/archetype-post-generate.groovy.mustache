@@ -14,41 +14,209 @@
 * limitations under the License.
 */
 
-import org.apache.maven.repository.internal.MavenRepositorySystemUtils
-import org.eclipse.aether.artifact.DefaultArtifact
-import org.eclipse.aether.collection.CollectRequest
-import org.eclipse.aether.RepositorySystem
-import org.eclipse.aether.graph.Dependency
-import org.eclipse.aether.graph.DependencyFilter
-import org.eclipse.aether.resolution.ArtifactRequest
-import org.eclipse.aether.resolution.DependencyRequest
-import org.eclipse.aether.util.filter.DependencyFilterUtils
+def mavenLibDir = new File(System.getProperty("maven.home"), "lib")
 
-// TODO check requirements ?
-// i.e maven version + JDK version
+// check Maven version
+def mavenCoreName = mavenLibDir.list().find { it.startsWith("maven-core-") }
+if (mavenCoreName == null) {
+    throw new IllegalStateException("Unable to determine Maven version")
+}
+def mavenVersionStr = mavenCoreName.substring("maven-core-".length(), mavenCoreName.length() - ".jar".length());
+def minMavenVersion = new org.apache.maven.artifact.versioning.ComparableVersion("3.2.5")
+def mavenVersion = new org.apache.maven.artifact.versioning.ComparableVersion(mavenVersionStr)
+if (mavenVersion.compareTo(minMavenVersion) < 0) {
+    throw new IllegalStateException("Requires Maven >= 3.2.5")
+}
 
+// check Java version
+def javaVersion = System.getProperty("java.version")
+if (javaVersion == null || !javaVersion.startsWith("11")) {
+    throw new IllegalStateException("Requires Java >= 11")
+}
+
+def ccl =  Thread.currentThread().getContextClassLoader()
+
+// the current class loader is restricted and there is no way to bootstrap aether as-is
+// create a class-loader with the maven core libraries found under ${maven.home}/lib
+def mavenLibs = []
+mavenLibDir.eachFile { mavenLibs.add(it.toURI().toURL()) }
+def mcl = new URLClassLoader(mavenLibs.toArray(new URL[mavenLibs.size()]), ccl)
+
+// set-it as the context thread class loader for plexus to work properly...
+Thread.currentThread().setContextClassLoader(mcl)
+
+// ----------------------------------------
+// load classes from the created class-loader
+// ----------------------------------------
+
+def mavenRepoSystemUtilsClass = mcl.loadClass("org.apache.maven.repository.internal.MavenRepositorySystemUtils")
+def localRepositoryClass = mcl.loadClass("org.eclipse.aether.repository.LocalRepository")
+def repoConnectorFactoryClass = mcl.loadClass("org.eclipse.aether.spi.connector.RepositoryConnectorFactory")
+def basicRepoConnectorFactoryClass = mcl.loadClass("org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory")
+def transporterFactoryClass = mcl.loadClass("org.eclipse.aether.spi.connector.transport.TransporterFactory")
+def wagonTransporterFactoryClass = mcl.loadClass("org.eclipse.aether.transport.wagon.WagonTransporterFactory")
+def wagonProviderClass = mcl.loadClass("org.eclipse.aether.transport.wagon.WagonProvider")
+def wagonClass = mcl.loadClass("org.apache.maven.wagon.Wagon")
+def httpWagonClass = mcl.loadClass("org.apache.maven.wagon.providers.http.HttpWagon")
+def plexusContainerClass = mcl.loadClass("org.codehaus.plexus.PlexusContainer")
+def defaultPlexusContainerClass = mcl.loadClass("org.codehaus.plexus.DefaultPlexusContainer")
+def plexusDescClass = mcl.loadClass("org.codehaus.plexus.component.repository.ComponentDescriptor")
+def plexusWagonProviderClass = mcl.loadClass("org.eclipse.aether.internal.transport.wagon.PlexusWagonProvider")
+def repoSystemClass = mcl.loadClass("org.eclipse.aether.RepositorySystem")
+def remoteRepoBuilderClass = mcl.loadClass("org.eclipse.aether.repository.RemoteRepository\$Builder")
+def repoPolicyClass = mcl.loadClass("org.eclipse.aether.repository.RepositoryPolicy")
+def proxyClass = mcl.loadClass("org.eclipse.aether.repository.Proxy")
+def authenticationClass = mcl.loadClass("org.eclipse.aether.repository.Authentication")
+def authenticationBuilderClass = mcl.loadClass("org.eclipse.aether.util.repository.AuthenticationBuilder")
+def artifactRequestClass = mcl.loadClass("org.eclipse.aether.resolution.ArtifactRequest")
+def defaultArtifactClass = mcl.loadClass("org.eclipse.aether.artifact.DefaultArtifact")
+def dependencyClass = mcl.loadClass("org.eclipse.aether.graph.Dependency")
+def artifactClass = mcl.loadClass("org.eclipse.aether.artifact.Artifact")
+def collectRequestClass = mcl.loadClass("org.eclipse.aether.collection.CollectRequest")
+def dependencyRequestClass = mcl.loadClass("org.eclipse.aether.resolution.DependencyRequest")
+def dependencyFilterUtilsClass = mcl.loadClass("org.eclipse.aether.util.filter.DependencyFilterUtils")
+
+// ----------------------------------------
+// setup wagon
+// ----------------------------------------
+
+def createPlexusDescriptor(plexusDescClass, roleClass, roleHint, implClass, strategy) {
+    def desc = plexusDescClass
+        .getConstructor()
+        .newInstance()
+    desc.setRoleClass(roleClass)
+    desc.setRoleHint(roleHint)
+    desc.setImplementationClass(implClass)
+    desc.setInstantiationStrategy(strategy)
+    return desc
+}
+
+def plexusContainer = defaultPlexusContainerClass
+    .getConstructor()
+    .newInstance()
+plexusContainer.addComponentDescriptor(createPlexusDescriptor(plexusDescClass, httpWagonClass, "http", httpWagonClass,
+    "per-lookup"))
+plexusContainer.addComponentDescriptor(createPlexusDescriptor(plexusDescClass, httpWagonClass, "https", httpWagonClass,
+    "per-lookup"))
+
+def wagonProvider = plexusWagonProviderClass
+    .getConstructor(plexusContainerClass)
+    .newInstance(plexusContainer)
+
+// ----------------------------------------
 // setup aether
-def repoSystem = MavenRepositorySystemUtils.newServiceLocator().getService(RepositorySystem.class);
-def repoSession = request.getProjectBuildingRequest().getRepositorySession()
+// ----------------------------------------
 
-// resolve the archetype file
-def archetypeFile = repoSystem.resolveArtifact(repoSession,
-new ArtifactRequest().setArtifact(new DefaultArtifact(request.getArchetypeGroupId(),
-request.getArchetypeArtifactId(), "jar", request.getArchetypeVersion())))
+def repoSystem = mavenRepoSystemUtilsClass
+    .getMethod("newServiceLocator")
+    .invoke(null)
+    .setServices(wagonProviderClass, wagonProvider)
+    .addService(transporterFactoryClass, wagonTransporterFactoryClass)
+    .addService(repoConnectorFactoryClass, basicRepoConnectorFactoryClass)
+    .getService(repoSystemClass);
+
+def localRepo = localRepositoryClass
+    .getConstructor(File.class)
+    .newInstance(request
+    .getProjectBuildingRequest()
+    .getRepositorySession()
+    .getLocalRepository()
+    .getBasedir());
+
+def repoSession = mavenRepoSystemUtilsClass
+    .getMethod("newSession")
+    .invoke(null)
+repoSession.setLocalRepositoryManager(repoSystem.newLocalRepositoryManager(repoSession, localRepo))
+
+// ----------------------------------------
+// remote repositories configuration
+// ----------------------------------------
+
+def repoCtor = remoteRepoBuilderClass.getConstructor(String.class, String.class, String.class)
+def policyCtor = repoPolicyClass.getConstructor(Boolean.TYPE, String.class, String.class)
+def proxyCtor = proxyClass.getConstructor(String.class, String.class, Integer.TYPE, authenticationClass)
+
+def remoteRepositories = request.getProjectBuildingRequest().getRemoteRepositories()
+.collect {
+    def builder = repoCtor.newInstance(it.getId(), it.getLayout().getId(), it.getUrl());
+    def releases = it.getReleases()
+    if (releases != null) {
+        def releasePolicy = policyCtor.newInstance(releases.isEnabled(), releases.getUpdatePolicy(),
+            releases.getChecksumPolicy())
+        builder.setReleasePolicy(releasePolicy)
+    }
+    def snapshots = it.getSnapshots()
+    if (snapshots != null) {
+        def snapshotPolicy = policyCtor.newInstance(snapshots.isEnabled(), snapshots.getUpdatePolicy(),
+            snapshots.getChecksumPolicy())
+        builder.setSnapshotPolicy(snapshotPolicy)
+    }
+    def proxy = it.getProxy()
+    if (proxy != null) {
+        def authentication = authenticationBuilderClass
+            .getConstructor()
+            .newInstance()
+            .addUsername(proxy.getUserName())
+            .addPassword((String) proxy.getPassword())
+            .build()
+        builder.setProxy(proxyCtor.newInstance(proxy.getProtocol(), proxy.getHost(), proxy.getPort(),
+            authentication));
+    }
+    return builder.build();
+}
+
+// resolve the archetype file from the local repository
+def archetypeArtifact = defaultArtifactClass
+    .getConstructor(String.class, String.class, String.class, String.class)
+    .newInstance(request.getArchetypeGroupId(),
+    request.getArchetypeArtifactId(),
+    "jar",
+    request.getArchetypeVersion())
+
+def archetypeArtifactRequest = artifactRequestClass
+    .getConstructor()
+    .newInstance()
+    .setArtifact(archetypeArtifact)
+
+def archetypeFile = repoSystem
+    .resolveArtifact(repoSession, archetypeArtifactRequest)
     .getArtifact()
     .getFile()
 
 def engineGav = "{{engineGroupId}}:{{engineArtifactId}}:{{engineVersion}}"
 
 // resolve the engine dependencies
-def engineDependencies = repoSystem.resolveDependencies(repoSession, new DependencyRequest(
-    new CollectRequest().setRoot(new Dependency(new DefaultArtifact(engineGav), "compile")),
-    DependencyFilterUtils.classpathFilter("runtime"))).getArtifactResults()
-        .collect { it.getArtifact().getFile().toURI().toURL() }
+def engineArtifact = defaultArtifactClass
+    .getConstructor(String.class)
+    .newInstance(engineGav)
 
-// create a class-loader with the engine dependencies to "dynamically" load the engine
-def classLoader = new java.net.URLClassLoader(engineDependencies.toArray(new java.net.URL[engineDependencies.size()]),
-    Thread.currentThread().getContextClassLoader())
+def engineDependency = dependencyClass
+    .getConstructor(artifactClass, String.class)
+    .newInstance(engineArtifact, "compile")
+
+def collectRequest = collectRequestClass
+    .getConstructor()
+    .newInstance()
+    .setRoot(engineDependency)
+    .setRepositories(remoteRepositories)
+
+def filter = dependencyFilterUtilsClass
+    .getMethod("classpathFilter", Collection.class)
+    .invoke(null, ["runtime"])
+
+def dependencyRequest = dependencyRequestClass
+    .getConstructor()
+    .newInstance()
+    .setCollectRequest(collectRequest)
+    .setFilter(filter)
+
+def engineDependencies = repoSystem
+    .resolveDependencies(repoSession, dependencyRequest)
+    .getArtifactResults()
+    .collect { it.getArtifact().getFile().toURI().toURL() }
+
+// create a class-loader with the engine dependencies
+def ecl = new URLClassLoader(engineDependencies.toArray(new URL[engineDependencies.size()]), ccl)
 
 def archetypeProperties = request.getProperties()
 def props = [
@@ -62,7 +230,8 @@ def rootDir = new File(request.getOutputDirectory() + "/" + request.getArtifactI
 new File(rootDir, "pom.xml").delete() // delete place place-holder pom
 
 // generate !
-def engineClass = classLoader.loadClass("io.helidon.build.archetype.engine.ArchetypeEngine")
+def engine = ecl.loadClass("io.helidon.build.archetype.engine.ArchetypeEngine")
     .getConstructor(File.class, Map.class)
     .newInstance(archetypeFile, props)
-    .generate(rootDir)
+
+engine.generate(rootDir)
