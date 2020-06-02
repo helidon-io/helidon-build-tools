@@ -15,12 +15,8 @@
  */
 package io.helidon.build.archetype.maven;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -40,11 +36,8 @@ import io.helidon.build.archetype.engine.ArchetypeEngine;
 
 import org.apache.maven.archiver.MavenArchiveConfiguration;
 import org.apache.maven.archiver.MavenArchiver;
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.Dependency;
-import org.apache.maven.model.Model;
 import org.apache.maven.model.Resource;
 import org.apache.maven.model.io.ModelReader;
 import org.apache.maven.model.io.ModelWriter;
@@ -139,12 +132,6 @@ public class JarMojo extends AbstractMojo {
      */
     @Component
     private ModelReader modelReader;
-
-    /**
-     * The pom writer.
-     */
-    @Component
-    private ModelWriter modelWriter;
 
     /**
      * The archive configuration to use.
@@ -268,33 +255,6 @@ public class JarMojo extends AbstractMojo {
                 Files.createFile(mavenArchetypePom);
             }
 
-            // check if the engine dependency exists
-            boolean engineDependencyFound = false;
-            for (Artifact artifact : project.getArtifacts()) {
-                if (artifact.getGroupId().equals(ENGINE_GROUP_ID)
-                    && artifact.getArtifactId().equals(ENGINE_ARTIFACT_ID)
-                    && artifact.getVersion().equals(ENGINE_VERSION)) {
-                    engineDependencyFound = true;
-                    break;
-                }
-            }
-
-            if (!engineDependencyFound) {
-                getLog().info("Updating project pom to include a dependency on helidon-archetype-engine");
-
-                Model projectModel = modelReader.read(project.getFile(), null);
-                Dependency dep = new Dependency();
-                dep.setGroupId(ENGINE_GROUP_ID);
-                dep.setArtifactId(ENGINE_ARTIFACT_ID);
-                dep.setVersion(ENGINE_VERSION);
-                projectModel.getDependencies().add(dep);
-                // write the updated version of the pom
-                File newPomFile = new File(outputDirectory, "pom.xml");
-                writeModel(projectModel, project.getFile(), newPomFile);
-                // attach it
-                project.setFile(newPomFile);
-            }
-
             getLog().info("Rendering archetype-post-generate.groovy");
             Path postGroovyScript = archetypeDir.resolve("META-INF/" + POST_SCRIPT_NAME);
 
@@ -309,53 +269,6 @@ public class JarMojo extends AbstractMojo {
             renderMustacheTemplate(getClass().getResourceAsStream("/" + POST_SCRIPT_NAME + MUSTACHE_EXT),
                     POST_SCRIPT_NAME, postGroovyScript, props);
 
-        } catch (IOException ex) {
-            throw new MojoExecutionException(ex.getMessage(), ex);
-        }
-    }
-
-    /**
-     * Write a model to a file.
-     * This implementation preserves the comment (copyright headers).
-     *
-     * @param model      the model to write
-     * @param pomFile    the source pom file
-     * @param newPomFile the target pom file
-     * @throws MojoExecutionException if an IO error occurs
-     */
-    private void writeModel(Model model, File pomFile, File newPomFile) throws MojoExecutionException {
-        try (FileWriter fw = new FileWriter(newPomFile)) {
-            // write comments from base pom
-            String line;
-            BufferedReader br = new BufferedReader(new FileReader(pomFile));
-            while (true) {
-                line = br.readLine();
-                if (line == null || line.startsWith("<project")) {
-                    break;
-                }
-                fw.write(line);
-                fw.write('\n');
-            }
-
-            // write new pom and skip first line (xml header)
-            String pom = modelAsString(model);
-            int ind = pom.indexOf("<project");
-            fw.write(pom.substring(ind));
-        } catch (IOException ex) {
-            throw new MojoExecutionException(ex.getMessage(), ex);
-        }
-    }
-
-    /**
-     * Write the project model into as String.
-     * @return String
-     * @throws MojoExecutionException if an IO error occurs
-     */
-    private String modelAsString(Model model) throws MojoExecutionException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
-            modelWriter.write(baos, /* options */ null, model);
-            return new String(baos.toByteArray());
         } catch (IOException ex) {
             throw new MojoExecutionException(ex.getMessage(), ex);
         }
