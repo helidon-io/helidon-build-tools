@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -88,6 +89,13 @@ public class JarMojo extends AbstractMojo {
      * The name for the post groovy script.
      */
     private static final String POST_SCRIPT_NAME = "archetype-post-generate.groovy";
+
+    /**
+     * The scripts included by the post groovy script.
+     */
+    private static final Map<String, String> POST_SCRIPT_INCLUDES = Map.of(
+            "aetherScript", "groovy/Aether.groovy",
+            "engineScript", "groovy/HelidonEngine.groovy");
 
     /**
      * Plexus build context used to get the scanner for scanning resources.
@@ -257,13 +265,21 @@ public class JarMojo extends AbstractMojo {
             getLog().info("Rendering archetype-post-generate.groovy");
             Path postGroovyScript = archetypeDir.resolve("META-INF/" + POST_SCRIPT_NAME);
 
-            Map<String, Object> props = Map.of("propNames", desc.properties().stream()
-                            .filter(prop -> prop.isExported())
-                            .map(prop -> prop.id())
-                            .collect(Collectors.toList()),
-                    "engineGroupId", ENGINE_GROUP_ID,
-                    "engineArtifactId", ENGINE_ARTIFACT_ID,
-                    "engineVersion", ENGINE_VERSION);
+            // template properties
+            Map<String, Object> props = new HashMap<>();
+            for (String include : POST_SCRIPT_INCLUDES.keySet()) {
+                String resourcePath = "/" + POST_SCRIPT_INCLUDES.get(include);
+                String script = new String(getClass().getResourceAsStream(resourcePath).readAllBytes(),
+                        StandardCharsets.UTF_8);
+                props.put(include, new MojoHelper.RawString(script));
+            }
+            props.put("propNames", desc.properties().stream()
+                    .filter(prop -> prop.isExported())
+                    .map(prop -> prop.id())
+                    .collect(Collectors.toList()));
+            props.put("engineGroupId", ENGINE_GROUP_ID);
+            props.put("engineArtifactId", ENGINE_ARTIFACT_ID);
+            props.put("engineVersion", ENGINE_VERSION);
 
             renderMustacheTemplate(getClass().getResourceAsStream("/" + POST_SCRIPT_NAME + MUSTACHE_EXT),
                     POST_SCRIPT_NAME, postGroovyScript, props);
