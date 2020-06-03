@@ -29,16 +29,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import com.github.mustachejava.DefaultMustacheVisitor;
-import com.github.mustachejava.MustacheException;
-import com.github.mustachejava.MustacheVisitor;
-import com.github.mustachejava.TemplateContext;
-import com.github.mustachejava.codes.ValueCode;
 import io.helidon.build.archetype.engine.Maps;
 
 import com.github.mustachejava.DefaultMustacheFactory;
+import com.github.mustachejava.DefaultMustacheVisitor;
 import com.github.mustachejava.Mustache;
+import com.github.mustachejava.MustacheException;
 import com.github.mustachejava.MustacheFactory;
+import com.github.mustachejava.MustacheVisitor;
+import com.github.mustachejava.TemplateContext;
+import com.github.mustachejava.codes.ValueCode;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 
