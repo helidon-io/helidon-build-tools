@@ -437,21 +437,15 @@ final class SimpleXMLParser {
     private void validateAttrValueChar(char c) {
         if (c == MARKUP_START || c == MARKUP_END || c == '&') {
             throw new IllegalStateException(String.format(
-                    "Invalid character: '%c', attribute: %s, name: %s", c, attrNameBuilder, nameBuilder));
+                    "Invalid character found in value: '%c', line: %d, char: %d", c, lineNo, charNo));
         }
     }
 
     private void validateNameChar(char c, boolean firstChar) {
-        if (firstChar && !(Character.isLetter(c) || c == '_')) {
-            throw new IllegalStateException(String.format("Invalid name start: '%c', line: %d, char: %d",
-                    c, lineNo, charNo));
-        } else if (!(Character.isLetter(c)
-                || Character.isDigit(c)
-                || c == '_'
-                || c == '.'
-                || c == '-')) {
-            throw new IllegalStateException(String.format("Invalid name character: '%c', line: %d, char: %d",
-                    c, lineNo, charNo));
+        if (firstChar && !(Character.isLetter(c) || c == '_')
+            || !(Character.isLetter(c) || Character.isDigit(c) || c == '_' || c == '.' || c == '-')) {
+            throw new IllegalStateException(String.format(
+                    "Invalid character found in name: '%c', line: %d, char: %d", c, lineNo, charNo));
         }
     }
 
