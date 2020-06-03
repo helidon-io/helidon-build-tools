@@ -63,14 +63,16 @@ final class SimpleXMLParser {
 
         /**
          * Validate that a child element has a given name.
-         * @param child expected child name
+         *
+         * @param child  expected child name
          * @param parent parent name
-         * @param qName element name to be compared
+         * @param qName  element name to be compared
          * @throws IllegalStateException if the child name does not match qName
          */
         default void validateChild(String child, String parent, String qName) throws IllegalStateException {
             if (!child.equals(qName)) {
-                throw new IllegalStateException("Invalid child for '" + parent + "' node: '" + qName + "'");
+                throw new IllegalStateException(String.format(
+                        "Invalid child for '%s', node: '%s'", parent, qName));
             }
         }
 
@@ -100,10 +102,13 @@ final class SimpleXMLParser {
          * @return attribute value, never {@code null}
          * @throws IllegalStateException if the attribute is not found
          */
-        default String readRequiredAttribute(String name, String qName, Map<String, String> attr) throws IllegalStateException {
+        default String readRequiredAttribute(String name, String qName, Map<String, String> attr)
+                throws IllegalStateException {
+
             String value = attr.get(name);
             if (value == null) {
-                throw new IllegalStateException("Missing required attribute '" + name + "' for element: '" + qName + "'");
+                throw new IllegalStateException(String.format(
+                        "Missing required attribute '%s', element: '%s'", name, qName));
             }
             return value;
         }
