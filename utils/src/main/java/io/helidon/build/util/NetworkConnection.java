@@ -96,8 +96,14 @@ public class NetworkConnection {
         @Override
         public void execute(int attempt, int maxAttempts) {
             try {
-                Log.info("  $(italic retry %d of %d)", attempt, maxAttempts);
-                Thread.sleep(initialDelay + (attempt * increment));
+                final long delay = initialDelay + (attempt * increment);
+                if (Log.isVerbose()) {
+                    final float seconds = delay / 1000F;
+                    Log.info("  $(italic retry %d of %d, sleeping for %.1f seconds)", attempt, maxAttempts, seconds);
+                } else {
+                    Log.info("  $(italic retry %d of %d)", attempt, maxAttempts);
+                }
+                Thread.sleep(delay);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
