@@ -74,4 +74,11 @@ class MavenVersionTest {
         assertThat(greaterThanOrEqualTo(ONE_0_0_STRING).test(ONE_0_0), is(true));
         assertThat(greaterThanOrEqualTo(TWO_0_0_SNAPSHOT_STRING).test(TWO_0_0), is(true));
     }
+
+    @Test
+    void testReleaseCandidateVersions() {
+        assertThat(toMavenVersion("2.0.0-RC1"), is(org.hamcrest.Matchers.greaterThan(toMavenVersion("2.0.0-M4"))));
+        assertThat(toMavenVersion("2.0.0-RC2"), is(org.hamcrest.Matchers.greaterThan(toMavenVersion("2.0.0-RC1"))));
+        assertThat(toMavenVersion("2.0.0"), is(org.hamcrest.Matchers.greaterThan(toMavenVersion("2.0.0-RC2"))));
+    }
 }

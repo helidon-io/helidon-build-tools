@@ -18,13 +18,11 @@ package io.helidon.build.util;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
@@ -87,8 +85,8 @@ public class MavenVersions {
     @Override
     public String toString() {
         return "MavenVersions{"
-               + "source='" + source + '\''
-               + ", versions=" + versions + '}';
+                + "source='" + source + '\''
+                + ", versions=" + versions + '}';
     }
 
     /**
@@ -290,13 +288,11 @@ public class MavenVersions {
         }
 
         private InputStream open(URL url) throws IOException {
-            final URLConnection connection = url.openConnection();
-            connection.setConnectTimeout(connectTimeout);
-            connection.setReadTimeout(readTimeout);
-            if (connection instanceof HttpURLConnection) {
-                ((HttpURLConnection) connection).setInstanceFollowRedirects(true);
-            }
-            return connection.getInputStream();
+            return NetworkConnection.builder()
+                                    .url(url)
+                                    .connectTimeout(connectTimeout)
+                                    .readTimeout(readTimeout)
+                                    .open();
         }
 
         private static String toPath(String id) {
