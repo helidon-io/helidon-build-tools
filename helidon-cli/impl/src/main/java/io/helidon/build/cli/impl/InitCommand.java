@@ -17,8 +17,6 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.List;
@@ -43,13 +41,12 @@ import io.helidon.build.util.HelidonVersions;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
-import io.helidon.build.util.Requirements;
 
 import static io.helidon.build.cli.impl.ArchetypeBrowser.ARCHETYPE_NOT_FOUND;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.cli.impl.Prompter.displayLine;
 import static io.helidon.build.cli.impl.Prompter.prompt;
-import static io.helidon.build.util.MavenVersion.unqualifiedMinimum;
+import static io.helidon.build.util.MavenVersion.greaterThanOrEqualTo;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
 import static io.helidon.build.util.Requirements.failed;
@@ -62,17 +59,13 @@ import static io.helidon.build.util.Style.BoldBrightCyan;
 @Command(name = "init", description = "Generate a new project")
 public final class InitCommand extends BaseCommand implements CommandExecution {
 
-    private static final String MINIMUM_HELIDON_VERSION = "2.0.0";
-    private static final int LATEST_HELIDON_VERSION_LOOKUP_RETRIES = 5;
-    private static final long HELIDON_VERSION_LOOKUP_INITIAL_RETRY_DELAY = 500;
-    private static final long HELIDON_VERSION_LOOKUP_RETRY_DELAY_INCREMENT = 500;
+    private static final String MINIMUM_HELIDON_VERSION = "2.0.0-RC1";
 
     private final CommonOptions commonOptions;
     private final boolean batch;
     private Flavor flavor;
     private final Build build;
-    private ArchetypeCatalog.ArchetypeEntry archetype;
-    private String archetypeName;
+    private final String archetypeName;
     private String helidonVersion;
     private final String groupId;
     private final String artifactId;
@@ -183,22 +176,23 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         List<ArchetypeCatalog.ArchetypeEntry> archetypes = browser.archetypes();
         require(!archetypes.isEmpty(), "Unable to find archetypes for %s and %s.", flavor, helidonVersion);
 
+        ArchetypeCatalog.ArchetypeEntry archetype;
         if (!batch) {
             // Select archetype interactively
             List<String> archetypeTitles = archetypes.stream()
-                    .map(ArchetypeCatalog.ArchetypeEntry::title)
-                    .collect(Collectors.toList());
+                                                     .map(ArchetypeCatalog.ArchetypeEntry::title)
+                                                     .collect(Collectors.toList());
             int archetypeIndex = prompt("Select archetype", archetypeTitles, 0);
             archetype = archetypes.get(archetypeIndex);
         } else {
             // find the archetype that matches archetypeName
             archetype = archetypes.stream()
-                    .filter(a -> a.name().equals(archetypeName))
-                    .findFirst()
-                    .orElse(null);
+                                  .filter(a -> a.name().equals(archetypeName))
+                                  .findFirst()
+                                  .orElse(null);
 
             if (archetype == null) {
-                Requirements.failed(ARCHETYPE_NOT_FOUND, archetypeName, helidonVersion);
+                failed(ARCHETYPE_NOT_FOUND, archetypeName, helidonVersion);
             }
         }
 
@@ -218,8 +212,8 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
 
             // Process input flow from template and updates properties
             inputFlow.nodes().stream()
-                    .map(n -> FlowNodeControllers.create(n, properties))
-                    .forEach(FlowNodeController::execute);
+                     .map(n -> FlowNodeControllers.create(n, properties))
+                     .forEach(FlowNodeController::execute);
         }
 
         // Generate project using archetype engine
@@ -260,43 +254,26 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         return properties;
     }
 
-    private static String defaultHelidonVersion() throws InterruptedException {
+    private static String defaultHelidonVersion() {
         // Check the system property first, primarily to support tests
         String version = System.getProperty(HELIDON_VERSION_PROPERTY);
         if (version == null) {
-            version = lookupLatestHelidonVersion(LATEST_HELIDON_VERSION_LOOKUP_RETRIES,
-                    HELIDON_VERSION_LOOKUP_INITIAL_RETRY_DELAY,
-                    HELIDON_VERSION_LOOKUP_RETRY_DELAY_INCREMENT);
-        }
-        return version;
-    }
-
-    private static String lookupLatestHelidonVersion(int retries,
-                                                     long retryDelay,
-                                                     long retryDelayIncrement) throws InterruptedException {
-        Log.info("Looking up latest Helidon version");
-        Predicate<MavenVersion> filter = unqualifiedMinimum(MINIMUM_HELIDON_VERSION);
-        int remainingRetries = retries;
-        while (remainingRetries > 0) {
+            Log.info("Looking up latest Helidon version");
             try {
-                String version = HelidonVersions.releases(filter).latest().toString();
+                Predicate<MavenVersion> filter = greaterThanOrEqualTo(MINIMUM_HELIDON_VERSION);
+                version = HelidonVersions.releases(filter).latest().toString();
                 Log.debug("Latest Helidon version found: %s", version);
-                return version;
-            } catch (UnknownHostException | SocketException | SocketTimeoutException e) {
-                if (--remainingRetries > 0) {
-                    Log.info("  retry %d of %d", retries - remainingRetries + 1, retries);
-                    Thread.sleep(retryDelay);
-                    retryDelay += retryDelayIncrement;
-                }
             } catch (IllegalStateException e) {
-                throw new IllegalStateException("No versions >= "
-                        + MINIMUM_HELIDON_VERSION
-                        + " found, please specify with --version option.");
+                Log.info("$(italic,red No versions exist >= %s)", MINIMUM_HELIDON_VERSION);
+                failed("$(bold Please specify with --version option.)");
+            } catch (UnknownHostException e) {
+                Log.info("$(italic,red Unknown host: %s)", e.getMessage());
+                failed("$(bold Cannot lookup version, please specify with --version option.)");
             } catch (Exception e) {
-                Log.debug("Lookup failed: %s", e.toString());
-                break;
+                Log.info("$(italic,red %s)", e.getMessage());
+                failed("$(bold Cannot lookup version, please specify with --version option.)");
             }
         }
-        throw new IllegalStateException("Version lookup failed, please specify with --version option.");
+        return version;
     }
 }

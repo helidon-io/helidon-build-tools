@@ -48,14 +48,45 @@ public final class FileUtils {
     /**
      * The Java Home directory for the running JVM.
      */
-    public static final Path CURRENT_JAVA_HOME_DIR = Paths.get(Constants.javaHome());
+    public static final Path CURRENT_JAVA_HOME_DIR = requiredDirectory(Constants.javaHome(), false);
 
     /**
      * The working directory.
      */
-    public static final Path WORKING_DIR = Paths.get(System.getProperty("user.dir")).toAbsolutePath();
+    public static final Path WORKING_DIR = requiredDirectoryFromProperty("user.dir", false);
+
+    /**
+     * The user home directory.
+     */
+    public static final Path USER_HOME_DIR = requiredDirectoryFromProperty("user.home", false);
+
 
     private static final String PATH_VAR = "PATH";
+
+    /**
+     * Returns a directory path from the given system property name, creating it if required.
+     *
+     * @param systemPropertyName The property name.
+     * @param createIfRequired {@code true} If the directory should be created if it does not exist.
+     * @return The directory.
+     */
+    public static Path requiredDirectoryFromProperty(String systemPropertyName, boolean createIfRequired) {
+        final String path = Requirements.requireNonNull(System.getProperty(systemPropertyName),
+                "Required system property %s not set", systemPropertyName);
+        return requiredDirectory(path, createIfRequired);
+    }
+
+    /**
+     * Returns a directory path from the given path, creating it if required.
+     *
+     * @param path The path.
+     * @param createIfRequired {@code true} If the directory should be created if it does not exist.
+     * @return The directory.
+     */
+    public static Path requiredDirectory(String path, boolean createIfRequired) {
+        final Path dir = Path.of(requireNonNull(path, "valid path required"));
+        return createIfRequired ? ensureDirectory(dir) : assertDir(dir);
+    }
 
     /**
      * Returns the relative path from the working directory for the given path, if possible.
@@ -149,7 +180,7 @@ public final class FileUtils {
     public static List<Path> listFiles(Path directory, Predicate<String> fileNameFilter, int maxDepth) {
         try {
             return Files.find(assertDir(directory), maxDepth, (path, attrs) ->
-                attrs.isRegularFile() && fileNameFilter.test(path.getFileName().toString())
+                    attrs.isRegularFile() && fileNameFilter.test(path.getFileName().toString())
             ).collect(Collectors.toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);

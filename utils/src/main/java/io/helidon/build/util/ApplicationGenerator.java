@@ -23,7 +23,6 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static io.helidon.build.util.FileUtils.assertDir;
-import static io.helidon.build.util.PomUtils.ensureHelidonPluginConfig;
 import static io.helidon.build.util.ProjectConfig.ensureProjectConfig;
 import static io.helidon.build.util.Style.Blue;
 import static io.helidon.build.util.Style.BoldBrightCyan;
@@ -173,8 +172,7 @@ public class ApplicationGenerator {
     public Path generate() {
         initialize();
         Log.info("Creating %s using version %s", BoldBrightCyan.apply(artifactId), Blue.apply(version));
-        String archetypeId = "helidon-quickstart-" + variant.toString(); // NOTE: Remove this once new CATALOG fix is in place!
-// CATALOG        String archetypeId = HELIDON_ARCHETYPES_PREFIX + variant.toString() + "-" + archetypeName;
+        String archetypeId = HELIDON_ARCHETYPES_PREFIX + archetypeName  + "-" + variant.toString();
         execute(new ProcessBuilder().directory(parentDirectory.toFile())
                                     .command(List.of(MAVEN_EXEC,
                                             "archetype:generate",
@@ -188,7 +186,7 @@ public class ApplicationGenerator {
                                     )));
         final Path projectDir = assertDir(parentDirectory.resolve(artifactId));
         ensureProjectConfig(projectDir, version);
-        ensureHelidonPluginConfig(projectDir, pluginVersion);  // NOTE: Remove this once new CATALOG fix is in place!
+//        ensureHelidonPluginConfig(projectDir, pluginVersion);  // NOTE: Remove this once new CATALOG fix is in place!
         log("Created %s", projectDir);
         return projectDir;
     }

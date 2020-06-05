@@ -15,12 +15,16 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import io.helidon.build.util.BuildToolsProperties;
+import io.helidon.build.util.UserConfig;
 
 /**
  * Utilities to access configuration.
  */
 public class Config {
+    private static final AtomicReference<UserConfig> USER_CONFIG = new AtomicReference<>();
 
     /**
      * Returns the build version.
@@ -47,6 +51,18 @@ public class Config {
      */
     public static BuildToolsProperties buildProperties() {
         return BuildToolsProperties.instance();
+    }
+
+    /**
+     * Returns the user config instance.
+     *
+     * @return The instance.
+     */
+    public static UserConfig userConfig() {
+        if (USER_CONFIG.get() == null) {
+            USER_CONFIG.set(UserConfig.create());
+        }
+        return USER_CONFIG.get();
     }
 
     private Config() {

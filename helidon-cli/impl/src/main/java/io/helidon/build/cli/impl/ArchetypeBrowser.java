@@ -22,23 +22,21 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ConnectException;
-import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.cli.impl.InitCommand.Flavor;
 import io.helidon.build.util.Log;
+import io.helidon.build.util.NetworkConnection;
 import io.helidon.build.util.Requirements;
 
 import static io.helidon.build.cli.impl.CommandRequirements.requireSupportedHelidonVersion;
-import static io.helidon.build.util.FileUtils.ensureDirectory;
+import static io.helidon.build.cli.impl.Config.userConfig;
 
 /**
  * Class ArchetypeBrowser.
@@ -91,16 +89,6 @@ class ArchetypeBrowser {
      */
     private static final byte[] BUFFER = new byte[8 * 1024];
 
-    /**
-     * The connect timeout, in milliseconds.
-     */
-    public static final int CONNECT_TIMEOUT = 500;
-
-    /**
-     * The read timeout, in milliseconds.
-     */
-    public static final int READ_TIMEOUT = 500;
-
     private final Path localCacheDir;
     private final Flavor flavor;
     private final String helidonVersion;
@@ -108,9 +96,7 @@ class ArchetypeBrowser {
     ArchetypeBrowser(Flavor flavor, String helidonVersion) {
         this.flavor = flavor;
         this.helidonVersion = requireSupportedHelidonVersion(helidonVersion);
-        String userHome = System.getProperty("user.home");
-        Objects.requireNonNull(userHome);
-        this.localCacheDir = ensureDirectory(Path.of(userHome, ".helidon", "cache"));  // $HOME/.helidon/cache
+        this.localCacheDir = userConfig().cacheDir();  // $HOME/.helidon/cache
     }
 
     /**
@@ -185,10 +171,10 @@ class ArchetypeBrowser {
         if (Files.exists(path)) {
             try {
                 return ArchetypeCatalog.read(Files.newInputStream(path))
-                        .entries()
-                        .stream()
-                        .filter(a -> a.tags().contains(flavor.toString().toLowerCase()))
-                        .collect(Collectors.toList());
+                                       .entries()
+                                       .stream()
+                                       .filter(a -> a.tags().contains(flavor.toString().toLowerCase()))
+                                       .collect(Collectors.toList());
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
@@ -235,18 +221,15 @@ class ArchetypeBrowser {
 
     /**
      * Open the connect for the given URL.
+     *
      * @param url the URL
      * @return InputStream
      * @throws IOException if an IO error occurs
      */
     private InputStream open(URL url) throws IOException {
-        final URLConnection connection = url.openConnection();
-        connection.setConnectTimeout(CONNECT_TIMEOUT);
-        connection.setReadTimeout(READ_TIMEOUT);
-        if (connection instanceof HttpURLConnection) {
-            ((HttpURLConnection) connection).setInstanceFollowRedirects(true);
-        }
-        return connection.getInputStream();
+        return NetworkConnection.builder()
+                                .url(url)
+                                .open();
     }
 
     /**
