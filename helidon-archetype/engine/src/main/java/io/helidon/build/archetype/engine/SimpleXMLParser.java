@@ -148,8 +148,8 @@ final class SimpleXMLParser {
         DOUBLE_QUOTED_VALUE,
     }
 
-    private static final String PREAMBLE_START = "<?xml";
-    private static final String PREAMBLE_END = "?>";
+    private static final String PROLOG_START = "<?";
+    private static final String PROLOG_END = "?>";
     private static final String COMMENT_START = "<!--";
     private static final String COMMENT_END = "-->";
     private static final String ELEMENT_SELF_CLOSE = "/>";
@@ -196,18 +196,18 @@ final class SimpleXMLParser {
     }
 
     private void processStart() {
-        if (hasToken(buf, PREAMBLE_START)) {
+        if (hasToken(buf, PROLOG_START)) {
             state = STATE.PREAMBLE;
-            position += PREAMBLE_START.length();
+            position += PROLOG_START.length();
         } else {
             position++;
         }
     }
 
-    private void processPreamble() {
-        if (hasToken(buf, PREAMBLE_END)) {
+    private void processProlog() {
+        if (hasToken(buf, PROLOG_END)) {
             state = STATE.ELEMENT;
-            position += PREAMBLE_END.length();
+            position += PROLOG_END.length();
         } else {
             position++;
         }
@@ -264,7 +264,7 @@ final class SimpleXMLParser {
             }
             position++;
             state = STATE.ELEMENT;
-            reader.elementText(textBuilder.toString());
+            reader.elementText(decode(textBuilder.toString()));
             reader.endElement(name);
             nameBuilder = new StringBuilder();
             textBuilder = new StringBuilder();
@@ -323,7 +323,7 @@ final class SimpleXMLParser {
         if (hasToken(buf, SINGLE_QUOTE)) {
             position++;
             state = STATE.ATTRIBUTES;
-            attributes.put(attrNameBuilder.toString(), attrValueBuilder.toString());
+            attributes.put(attrNameBuilder.toString(), decode(attrValueBuilder.toString()));
             attrNameBuilder = new StringBuilder();
             attrValueBuilder = new StringBuilder();
         } else {
@@ -337,7 +337,7 @@ final class SimpleXMLParser {
         if (hasToken(buf, DOUBLE_QUOTE)) {
             position++;
             state = STATE.ATTRIBUTES;
-            attributes.put(attrNameBuilder.toString(), attrValueBuilder.toString());
+            attributes.put(attrNameBuilder.toString(), decode(attrValueBuilder.toString()));
             attrNameBuilder = new StringBuilder();
             attrValueBuilder = new StringBuilder();
         } else if (hasToken(buf, SINGLE_QUOTE)) {
@@ -390,7 +390,7 @@ final class SimpleXMLParser {
                         processStart();
                         break;
                     case PREAMBLE:
-                        processPreamble();
+                        processProlog();
                         break;
                     case ELEMENT:
                         processElement();
@@ -456,5 +456,13 @@ final class SimpleXMLParser {
     private boolean hasToken(char[] buf, CharSequence expected) {
         return position + expected.length() <= limit
                 && String.valueOf(buf, position, expected.length()).contentEquals(expected);
+    }
+
+    private static String decode(String value) {
+        return value.replaceAll("&gt;",">")
+                .replaceAll("&lt;", "<")
+                .replaceAll("&amp;", "&")
+                .replaceAll("&quot;", "\"")
+                .replaceAll("&apos;", "'");
     }
 }
