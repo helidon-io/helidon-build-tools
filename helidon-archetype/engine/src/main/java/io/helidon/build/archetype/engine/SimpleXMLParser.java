@@ -459,7 +459,7 @@ final class SimpleXMLParser {
     }
 
     private static String decode(String value) {
-        return value.replaceAll("&gt;",">")
+        return value.replaceAll("&gt;", ">")
                 .replaceAll("&lt;", "<")
                 .replaceAll("&amp;", "&")
                 .replaceAll("&quot;", "\"")
