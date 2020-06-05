@@ -136,7 +136,7 @@ final class SimpleXMLParser {
 
     private enum STATE {
         START,
-        PREAMBLE,
+        PROLOG,
         COMMENT,
         ELEMENT,
         END_ELEMENT,
@@ -197,7 +197,7 @@ final class SimpleXMLParser {
 
     private void processStart() {
         if (hasToken(buf, PROLOG_START)) {
-            state = STATE.PREAMBLE;
+            state = STATE.PROLOG;
             position += PROLOG_START.length();
         } else {
             position++;
@@ -389,7 +389,7 @@ final class SimpleXMLParser {
                     case START:
                         processStart();
                         break;
-                    case PREAMBLE:
+                    case PROLOG:
                         processProlog();
                         break;
                     case ELEMENT:
