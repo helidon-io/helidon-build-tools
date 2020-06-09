@@ -59,7 +59,8 @@ public class Plugins {
             final Path jar = Config.userConfig().pluginsDir().resolve(jarName);
             if (!Files.exists(jar)) {
                 final String resourcePath = JAR_RESOURCE_DIR + "/" + jarName;
-                final InputStream input = requireNonNull(Plugins.class.getClassLoader().getResourceAsStream(resourcePath));
+                final ClassLoader loader = Plugins.class.getClassLoader();
+                final InputStream input = requireNonNull(loader.getResourceAsStream(resourcePath), resourcePath + " not found!");
                 Log.debug("Creating %s", jar);
                 Files.copy(input, jar);
             }

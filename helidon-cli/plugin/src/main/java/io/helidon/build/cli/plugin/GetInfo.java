@@ -34,36 +34,11 @@ import static java.util.Objects.requireNonNull;
 public class GetInfo extends Plugin {
     private static final String BUILD_PROPERTIES_PATH = "build.properties";
     private static final AtomicReference<Properties> BUILD_PROPERTIES = new AtomicReference<>();
-    private static final String BUILD_PREFIX = "build";
+    private static final String BUILD_PREFIX = "plugin.build.";
+    private static final String PAD = " ";
 
-    @Override
-    void execute() {
-        final Map<String, String> info = new LinkedHashMap<>();
-        buildProperties().forEach((key, value) -> {
-            final String name = key.toString();
-            final String label = BUILD_PREFIX + Character.toUpperCase(name.charAt(0)) + name.substring(1);
-            info.put(label, value.toString());
-        });
-        info.put("JRE", Runtime.version().toString());
-        info.put("OS", System.getProperty("os.name", "<unknown>"));
-        log(info);
-    }
-
-    private void log(Map<String, String> info) {
-        int maxLen = 0;
-        for (String key : info.keySet()) {
-            final int len = key.length();
-            if (len > maxLen) {
-                maxLen = len;
-            }
-        }
-        final String labelFormat = "%" + maxLen + "s";
-        Log.info("plugin:");
-        info.forEach((key, value) -> {
-            final String paddedLabel = String.format(labelFormat, key);
-            Log.info("  %s: %s", italic(paddedLabel), boldBlue(value));
-        });
-    }
+    private final Map<String, String> info;
+    private int maxWidth;
 
     /**
      * Returns the build properties.
@@ -86,5 +61,63 @@ public class GetInfo extends Plugin {
             }
         }
         return result;
+    }
+
+    /**
+     * Constructor.
+     */
+    public GetInfo() {
+        info = new LinkedHashMap<>();
+    }
+
+    @Override
+    int parseArg(String arg, int argIndex, String[] allArgs) {
+        if (arg.equals("--maxWidth")) {
+            maxWidth = Integer.parseInt(nextArg(argIndex, allArgs));
+            return argIndex + 1;
+        } else {
+            return argIndex;
+        }
+    }
+
+    @Override
+    void execute() {
+        buildProperties().forEach((key, value) -> info.put(BUILD_PREFIX + key, value.toString()));
+        addSystemProperty("os.name");
+        addSystemProperty("os.version");
+        addSystemProperty("os.arch");
+        addSystemProperty("java.version");
+        addSystemProperty("java.vm.name");
+        addSystemProperty("java.home");
+        addSystemProperty("user.home");
+        log(info);
+    }
+
+    private void addSystemProperty(String name) {
+        info.put(name, System.getProperty(name));
+    }
+
+    private void log(Map<String, String> info) {
+        info.keySet().stream().sorted().forEach(key -> {
+            final String padding = padding(maxWidth, key);
+            final String value = info.get(key).replace(")", "\\)");
+            Log.info("%s %s %s", italic(key), padding, boldBlue(value));
+        });
+    }
+
+    /**
+     * Returns a padding string.
+     *
+     * @param maxKeyWidth The maximum key width.
+     * @param key The key.
+     * @return The padding.
+     */
+    static String padding(int maxKeyWidth, String key) {
+        final int keyLen = key.length();
+        if (maxKeyWidth > keyLen) {
+            return PAD.repeat(maxKeyWidth - keyLen);
+        } else {
+            return "";
+        }
     }
 }
