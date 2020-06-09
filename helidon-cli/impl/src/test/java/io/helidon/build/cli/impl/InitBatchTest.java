@@ -32,9 +32,6 @@ import static io.helidon.build.cli.impl.InitCommand.DEFAULT_PACKAGE;
 import static io.helidon.build.cli.impl.TestUtils.assertPackageExist;
 import static io.helidon.build.cli.impl.TestUtils.exec;
 import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -49,7 +46,7 @@ public class InitBatchTest extends BaseCommandTest {
     @Test
     @Order(1)
     public void testInit() throws Exception {
-        TestUtils.ExecResult res = exec("init",
+        exec("init",
                 "--batch",
                 "--flavor", flavor.toString(),
                 "--project ", targetDir.toString(),
@@ -57,8 +54,6 @@ public class InitBatchTest extends BaseCommandTest {
                 "--groupid", DEFAULT_GROUP_ID,
                 "--artifactid", DEFAULT_ARTIFACT_ID,
                 "--package", DEFAULT_PACKAGE);
-        System.out.println(res.output);
-        assertThat(res.code, is(equalTo(0)));
         assertPackageExist(targetDir.resolve(DEFAULT_NAME), DEFAULT_PACKAGE);
     }
 

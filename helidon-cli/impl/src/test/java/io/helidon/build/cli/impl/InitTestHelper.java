@@ -35,7 +35,6 @@ import static io.helidon.build.cli.impl.TestUtils.exec;
 import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
 import static io.helidon.build.util.PomUtils.readPomModel;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -128,8 +127,7 @@ class InitTestHelper {
         System.out.println();
 
         // Execute and verify process exit code
-        TestUtils.ExecResult res = TestUtils.exec(argsArray);
-        assertThat(res.code, is(equalTo(0)));
+        TestUtils.exec(argsArray);
         verify();
     }
 
@@ -162,9 +160,7 @@ class InitTestHelper {
 
     private void build() throws Exception {
         Path projectDir = targetDir.resolve(Path.of(name));
-        TestUtils.ExecResult res = exec("build", "--project ", projectDir.toString());
-        System.out.println(res.output);
-        assertThat(res.code, is(equalTo(0)));
+        exec("build", "--project ", projectDir.toString());
         assertTrue(Files.exists(projectDir.resolve("target/" + artifactId + ".jar")));
     }
 

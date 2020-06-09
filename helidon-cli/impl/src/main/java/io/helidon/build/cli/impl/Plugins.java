@@ -30,6 +30,7 @@ import io.helidon.build.util.Constants;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.ProcessMonitor;
 
+import static io.helidon.build.cli.impl.CommandRequirements.unsupportedJavaVersion;
 import static java.io.File.pathSeparatorChar;
 import static java.util.Objects.requireNonNull;
 
@@ -39,9 +40,9 @@ import static java.util.Objects.requireNonNull;
 public class Plugins {
     private static final AtomicBoolean UNPACKED = new AtomicBoolean();
     private static final AtomicReference<Path> PLUGINS_JAR = new AtomicReference<>();
-    private static final String PLUGINS_DIR_NAME = "plugins";
     private static final String JAR_NAME_PREFIX = "cli-plugins-";
     private static final String JAR_NAME_SUFFIX = ".jar";
+    private static final String JAR_RESOURCE_DIR = "plugins";
     private static final String DEBUG_PORT_PROPERTY = "plugin.debug.port";
     private static final int DEFAULT_DEBUG_PORT = Integer.getInteger(DEBUG_PORT_PROPERTY, 0);
     private static final String DEBUG_ARG_PREFIX = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:";
@@ -49,14 +50,15 @@ public class Plugins {
     private static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
     private static final String PATH_VAR = "PATH";
     private static final String JAVA_HOME_VAR = "JAVA_HOME";
+    private static final String UNSUPPORTED_CLASS_VERSION_ERROR = UnsupportedClassVersionError.class.getName();
 
     private static Path pluginJar() throws Exception {
         if (!UNPACKED.getAndSet(true)) {
             final String cliVersion = Config.buildProperties().buildRevision();
             final String jarName = JAR_NAME_PREFIX + cliVersion + JAR_NAME_SUFFIX;
-            final Path jar = Config.userConfig().cacheDir().resolve(jarName);
+            final Path jar = Config.userConfig().pluginsDir().resolve(jarName);
             if (!Files.exists(jar)) {
-                final String resourcePath = PLUGINS_DIR_NAME + "/" + jarName;
+                final String resourcePath = JAR_RESOURCE_DIR + "/" + jarName;
                 final InputStream input = requireNonNull(Plugins.class.getClassLoader().getResourceAsStream(resourcePath));
                 Log.debug("Creating %s", jar);
                 Files.copy(input, jar);
@@ -110,7 +112,7 @@ public class Plugins {
 
         // Ensure we use the current Java versions
 
-        Map<String, String> env = processBuilder.environment();
+        final Map<String, String> env = processBuilder.environment();
         String path = JAVA_HOME_BIN + pathSeparatorChar + env.get(PATH_VAR);
         env.put(PATH_VAR, path);
         env.put(JAVA_HOME_VAR, JAVA_HOME);
@@ -119,14 +121,32 @@ public class Plugins {
 
         Log.debug("Executing %s", command);
 
+        final List<String> stdErr = new ArrayList<>();
         ProcessMonitor processMonitor = ProcessMonitor.builder()
                                                       .processBuilder(processBuilder)
                                                       .stdOut(Log::info)
-                                                      .stdErr(Log::error)
+                                                      .stdErr(stdErr::add)
                                                       .capture(false)
                                                       .build()
                                                       .start();
-        processMonitor.waitForCompletion(maxWaitSeconds, TimeUnit.SECONDS);
+        try {
+            processMonitor.waitForCompletion(maxWaitSeconds, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            processError(e, stdErr);
+        }
+    }
+
+    private static void processError(Exception error, List<String> stdErr) throws Exception {
+        if (containsUnsupportedClassVersionError(stdErr)) {
+            unsupportedJavaVersion();
+        } else {
+            stdErr.forEach(Log::error);
+            throw error;
+        }
+    }
+
+    private static boolean containsUnsupportedClassVersionError(List<String> stdErr) {
+        return stdErr.stream().anyMatch(line -> line.contains(UNSUPPORTED_CLASS_VERSION_ERROR));
     }
 
     private Plugins() {

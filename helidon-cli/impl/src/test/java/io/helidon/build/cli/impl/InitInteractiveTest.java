@@ -30,9 +30,6 @@ import static io.helidon.build.cli.impl.InitCommand.DEFAULT_PACKAGE;
 import static io.helidon.build.cli.impl.TestUtils.assertPackageExist;
 import static io.helidon.build.cli.impl.TestUtils.execWithDirAndInput;
 import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -47,10 +44,8 @@ public class InitInteractiveTest extends BaseCommandTest {
     @Order(1)
     public void testInitSe() throws Exception {
         File input = new File(InitCommand.class.getResource("input.txt").getFile());
-        TestUtils.ExecResult res = execWithDirAndInput(targetDir.toFile(), input,
+        execWithDirAndInput(targetDir.toFile(), input,
                 "init", "--version", helidonTestVersion());
-        System.out.println(res.output);
-        assertThat(res.code, is(equalTo(0)));
         assertPackageExist(targetDir.resolve(DEFAULT_NAME), DEFAULT_PACKAGE);
     }
 
@@ -66,10 +61,8 @@ public class InitInteractiveTest extends BaseCommandTest {
     @Order(3)
     public void testInitMp() throws Exception {
         File input = new File(InitCommand.class.getResource("input.txt").getFile());
-        TestUtils.ExecResult res = execWithDirAndInput(targetDir.toFile(), input,
+        execWithDirAndInput(targetDir.toFile(), input,
                 "init", "--version", helidonTestVersion(), "--flavor", "MP");
-        System.out.println(res.output);
-        assertThat(res.code, is(equalTo(0)));
         assertPackageExist(targetDir.resolve(DEFAULT_NAME), DEFAULT_PACKAGE);
         Path config = targetDir.resolve(DEFAULT_NAME)
                 .resolve("src/main/resources/META-INF/microprofile-config.properties");

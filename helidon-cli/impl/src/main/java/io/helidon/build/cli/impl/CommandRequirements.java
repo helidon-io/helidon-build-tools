@@ -15,6 +15,7 @@
  */
 package io.helidon.build.cli.impl;
 
+import io.helidon.build.util.Constants;
 import io.helidon.build.util.MavenCommand;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.RequirementFailure;
@@ -32,6 +33,7 @@ public class CommandRequirements {
     private static final MavenVersion ALLOWED_HELIDON_SNAPSHOT_VERSION = toMavenVersion("2.0.0-SNAPSHOT");
     private static final MavenVersion MINIMUM_REQUIRED_MAVEN_VERSION = toMavenVersion("3.6.0");
     private static final String UNSUPPORTED_HELIDON_VERSION = "$(red Helidon version) $(RED %s) $(red is not supported.)";
+    private static final String UNSUPPORTED_JAVA_VERSION = "$(red Java version at %s is not supported: 11 or later is required)";
 
     /**
      * Assert that the given Helidon version is supported.
@@ -57,6 +59,13 @@ public class CommandRequirements {
                         || helidonVersion.isGreaterThanOrEqualTo(MINIMUM_HELIDON_VERSION),
                 UNSUPPORTED_HELIDON_VERSION, helidonVersion);
         return helidonVersion;
+    }
+
+    /**
+     * An unsupported Java version was found.
+     */
+    static void unsupportedJavaVersion() {
+        Requirements.failed(UNSUPPORTED_JAVA_VERSION, Constants.javaHome());
     }
 
     /**

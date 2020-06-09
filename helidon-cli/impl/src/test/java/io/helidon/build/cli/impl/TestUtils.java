@@ -26,8 +26,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.build.util.Log;
+import io.helidon.build.util.ProcessMonitor;
+
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.test.StripAnsi.stripAnsi;
+import static io.helidon.build.util.Constants.EOL;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -61,22 +65,11 @@ class TestUtils {
         }
     }
 
-    static class ExecResult {
-
-        final int code;
-        final String output;
-
-        ExecResult(int code, String output) {
-            this.code = code;
-            this.output = output;
-        }
-    }
-
-    static ExecResult exec(String... args) throws IOException, InterruptedException {
+    static String exec(String... args) throws Exception {
         return execWithDirAndInput(null, null, args);
     }
 
-    static ExecResult execWithDirAndInput(File wd, File input, String... args) throws IOException, InterruptedException {
+    static String execWithDirAndInput(File wd, File input, String... args) throws Exception {
         String classPath = System.getProperty("surefire.test.class.path", System.getProperty("java.class.path"));
         List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-cp", "\"" + classPath + "\""));
         String version = System.getProperty(HELIDON_VERSION_PROPERTY);
@@ -86,19 +79,22 @@ class TestUtils {
         cmdArgs.add(Main.class.getName());
         cmdArgs.addAll(Arrays.asList(args));
         ProcessBuilder pb = new ProcessBuilder(cmdArgs);
+
         if (wd != null) {
             pb.directory(wd);
         }
-        if (input != null) {
-            pb.redirectInput(input);
-        }
-        Process p = pb.redirectErrorStream(true).start();
-        String output = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        if (!p.waitFor(10, TimeUnit.SECONDS)) {
-            throw new IllegalStateException("timeout waiting for process");
-        }
-        System.out.println(output);
-        return new ExecResult(p.exitValue(), stripAnsi(output));
+
+        ProcessMonitor monitor = ProcessMonitor.builder()
+                                               .processBuilder(pb)
+                                               .stdIn(input)
+                                               .stdOut(Log::info)
+                                               .stdErr(Log::error)
+                                               .capture(true)
+                                               .build()
+                                               .start()
+                                               .waitForCompletion(60, TimeUnit.SECONDS);
+        String output = String.join(EOL, monitor.output());
+        return stripAnsi(output);
     }
 
     static void assertPackageExist(Path projectPath, String packageName) {
