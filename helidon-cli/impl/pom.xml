@@ -80,6 +80,11 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools.cli</groupId>
+            <artifactId>helidon-cli-plugins</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -109,6 +114,7 @@
                             <overWriteIfNewer>true</overWriteIfNewer>
                             <includeScope>runtime</includeScope>
                             <excludeScope>test</excludeScope>
+                            <excludeArtifactIds>helidon-cli-plugins</excludeArtifactIds>
                         </configuration>
                     </execution>
                     <execution>
@@ -120,7 +126,7 @@
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
-                                    <groupId>${project.groupId}</groupId>
+                                    <groupId>io.helidon.build-tools.cli</groupId>
                                     <artifactId>helidon-cli-plugins</artifactId>
                                     <version>${project.version}</version>
                                     <type>jar</type>
