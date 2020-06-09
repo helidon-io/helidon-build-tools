@@ -29,6 +29,7 @@ init() {
     local -r attach="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005"
     local -r attachMvn="-Dmvn.debug.port=5006"
     local -r attachMvnChild="-Dmvn.child.debug.port=5007"
+    local -r attachPlugin="-Dplugin.debug.port=5006"
     local jvm
     local args
     action=exec
@@ -38,6 +39,7 @@ init() {
             --attach) appendVar jvm "${attach}" ;;
             --attachMvn) appendVar args "${attachMvn}" ;;
             --attachMvnChild) appendVar args "${attachMvnChild}" ;;
+            --attachPlugin) appendVar args "${attachPlugin}" ;;
             --dryRun) action=echo ;;
             *) appendVar args "${1}" ;;
         esac

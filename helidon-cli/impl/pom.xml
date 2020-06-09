@@ -111,6 +111,29 @@
                             <excludeScope>test</excludeScope>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>copy-plugin</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>helidon-cli-plugins</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <destFileName>cli-plugins-${buildNumber}.jar</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                            <outputDirectory>${project.build.outputDirectory}/plugins</outputDirectory>
+                            <overWriteReleases>false</overWriteReleases>
+                            <overWriteSnapshots>false</overWriteSnapshots>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>

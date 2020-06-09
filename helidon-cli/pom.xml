@@ -32,6 +32,7 @@
         <module>harness</module>
         <module>codegen</module>
         <module>impl</module>
+        <module>plugin</module>
     </modules>
 
 </project>

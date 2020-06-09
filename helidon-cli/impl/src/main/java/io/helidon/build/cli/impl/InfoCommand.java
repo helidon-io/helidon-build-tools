@@ -48,15 +48,20 @@ public final class InfoCommand extends BaseCommand implements CommandExecution {
     }
 
     @Override
-    public void execute(CommandContext context) {
+    public void execute(CommandContext context) throws Exception {
 
-        // ADD JVM info, etc!!
+        // System info
 
-        // build properties
+        Map<String, Object> system = new LinkedHashMap<>();
+        system.put("JRE", Runtime.version().toString());
+        system.put("OS", System.getProperty("os.name", "<unknown>"));
+        log("system", system);
+
+        // Build properties
 
         VersionCommand.logBuildProperties();
 
-        // project config
+        // Project config
 
         ProjectConfig projectConfig = projectConfig(commonOptions.project().toPath());
         if (projectConfig.exists()) {
@@ -72,5 +77,8 @@ public final class InfoCommand extends BaseCommand implements CommandExecution {
             addProjectProperty("resourceDIrs", PROJECT_RESOURCEDIRS, projectConfig, projectProps);
             log("project", projectProps);
         }
+
+        // Plugin info
+        Plugins.execute("GetInfo", 5);
     }
 }

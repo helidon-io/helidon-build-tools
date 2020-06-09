@@ -28,6 +28,8 @@ import io.helidon.build.util.ProjectConfig;
 import static io.helidon.build.util.FileUtils.WORKING_DIR;
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 import static io.helidon.build.util.ProjectConfig.ensureProjectConfig;
+import static io.helidon.build.util.Style.BoldBlue;
+import static io.helidon.build.util.Style.Italic;
 
 /**
  * Class BaseCommand.
@@ -68,24 +70,34 @@ public abstract class BaseCommand {
 
     @SuppressWarnings("unchecked")
     private static String formatMapAsYaml(Map<String, Object> map, int level) {
+        int maxLen = 0;
+        for (String key : map.keySet()) {
+            final int len = key.length();
+            if (len > maxLen) {
+                maxLen = len;
+            }
+        }
+        final int labelWidth = maxLen;
+
         StringBuilder builder = new StringBuilder();
         map.forEach((key, v) -> {
-            builder.append(SPACES, 0, 2 * level);
+            int padding = labelWidth - key.length();
+            builder.append(SPACES, 0, (2 * level) + padding);
             if (v instanceof Map<?, ?>) {
-                builder.append(key).append(":\n");
+                builder.append(Italic.apply(key)).append(":\n");
                 builder.append(formatMapAsYaml((Map<String, Object>) v, level + 1));
             } else if (v instanceof List<?>) {
                 List<String> l = (List<String>) v;
                 if (l.size() > 0) {
-                    builder.append(key).append(":");
+                    builder.append(Italic.apply(key)).append(":");
                     l.forEach(s -> builder.append("\n")
                             .append(SPACES, 0, 2 * (level + 1))
-                            .append("- ").append(s));
+                            .append("- ").append(BoldBlue.apply(s)));
                     builder.append("\n");
                 }
             } else if (v != null) {     // ignore key if value is null
-                builder.append(key).append(":").append(" ")
-                        .append(v.toString()).append("\n");
+                builder.append(Italic.apply(key)).append(":").append(" ")
+                        .append(BoldBlue.apply(v.toString())).append("\n");
             }
         });
         return builder.toString();
