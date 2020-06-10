@@ -75,26 +75,27 @@ public class GetInfo extends Plugin {
         if (arg.equals("--maxWidth")) {
             maxWidth = Integer.parseInt(nextArg(argIndex, allArgs));
             return argIndex + 1;
-        } else {
-            return argIndex;
         }
+        return argIndex;
     }
 
     @Override
     void execute() {
         buildProperties().forEach((key, value) -> info.put(BUILD_PREFIX + key, value.toString()));
-        addSystemProperty("os.name");
-        addSystemProperty("os.version");
-        addSystemProperty("os.arch");
-        addSystemProperty("java.version");
-        addSystemProperty("java.vm.name");
-        addSystemProperty("java.home");
-        addSystemProperty("user.home");
+        addSystemProperty("os.name", false);
+        addSystemProperty("os.version", false);
+        addSystemProperty("os.arch", false);
+        addSystemProperty("java.version", false);
+        addSystemProperty("java.vm.name", false);
+        addSystemProperty("java.home", true);
+        addSystemProperty("user.home", true);
         log(info);
     }
 
-    private void addSystemProperty(String name) {
-        info.put(name, System.getProperty(name));
+    private void addSystemProperty(String name, boolean verboseOnly) {
+        if (Log.isVerbose() || !verboseOnly) {
+            info.put(name, System.getProperty(name));
+        }
     }
 
     private void log(Map<String, String> info) {

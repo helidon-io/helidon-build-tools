@@ -94,11 +94,11 @@ public class Plugins {
 
         final List<String> command = new ArrayList<>();
         command.add("java");
+        if (DEFAULT_DEBUG_PORT > 0) {
+            command.add(DEBUG_ARG_PREFIX + DEFAULT_DEBUG_PORT);
+        }
         command.add("-jar");
         command.add(pluginJar().toString());
-        if (DEFAULT_DEBUG_PORT > 0) {
-            command.add("-D" + DEBUG_ARG_PREFIX + "=" + DEFAULT_DEBUG_PORT);
-        }
         command.add(requireNonNull(pluginName));
         if (Log.isDebug()) {
             command.add("--debug");

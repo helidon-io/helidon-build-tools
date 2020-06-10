@@ -42,11 +42,14 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
  */
 @Command(name = "info", description = "Print project information")
 public final class InfoCommand extends BaseCommand implements CommandExecution {
+    private static final int MIN_WIDTH = "plugin.build.revision".length();
     private final CommonOptions commonOptions;
+    private final boolean verbose;
 
     @Creator
     InfoCommand(CommonOptions commonOptions) {
         this.commonOptions = commonOptions;
+        this.verbose = Log.isVerbose();
     }
 
     @Override
@@ -60,22 +63,26 @@ public final class InfoCommand extends BaseCommand implements CommandExecution {
         // System properties
 
         Map<String, String> systemProps = new LinkedHashMap<>();
-        System.getProperties().keySet().stream().sorted().forEach(key -> {
-            String name = key.toString();
-            String value = System.getProperty(name);
-            value = value.replace("\n", "\\n");
-            value = value.replace("\r", "\\r");
-            value = value.replace("\b", "\\b");
-            systemProps.put(key.toString(), value);
-        });
+        if (verbose) {
+            System.getProperties().keySet().stream().sorted().forEach(key -> {
+                String name = key.toString();
+                String value = System.getProperty(name);
+                value = value.replace("\n", "\\n");
+                value = value.replace("\r", "\\r");
+                value = value.replace("\b", "\\b");
+                systemProps.put(key.toString(), value);
+            });
+        }
 
         // Env vars
 
         Map<String, String> envVars = new LinkedHashMap<>();
-        System.getenv().keySet().stream().sorted().forEach(key -> {
-            String value = System.getenv(key);
-            envVars.put(key, value);
-        });
+        if (verbose) {
+            System.getenv().keySet().stream().sorted().forEach(key -> {
+                String value = System.getenv(key);
+                envVars.put(key, value);
+            });
+        }
 
         // Project config
 
@@ -95,13 +102,17 @@ public final class InfoCommand extends BaseCommand implements CommandExecution {
 
         // Log them all
 
-        int maxWidth = maxKeyWidth(buildProps, systemProps, envVars, projectProps);
+        int maxWidth = Math.max(maxKeyWidth(buildProps, systemProps, envVars, projectProps), MIN_WIDTH);
         log("Project Config", projectProps, maxWidth);
         log("Build", buildProps, maxWidth);
         log("System Properties", systemProps, maxWidth);
         log("Environment Variables", envVars, maxWidth);
         logHeader("Plugin Build");
-        Plugins.execute("GetInfo", List.of("--maxWidth", Integer.toString(maxWidth)), 5);
+        Plugins.execute("GetInfo", pluginArgs(maxWidth), 5);
+    }
+
+    private List<String> pluginArgs(int maxWidth) {
+        return List.of("--maxWidth", Integer.toString(maxWidth));
     }
 
     private static void logHeader(String header) {

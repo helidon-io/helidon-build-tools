@@ -84,6 +84,7 @@
             <groupId>io.helidon.build-tools.cli</groupId>
             <artifactId>helidon-cli-plugins</artifactId>
             <version>${project.version}</version>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 
@@ -119,7 +120,7 @@
                     </execution>
                     <execution>
                         <id>copy-plugin</id>
-                        <phase>prepare-package</phase>
+                        <phase>process-resources</phase>
                         <goals>
                             <goal>copy</goal>
                         </goals>
