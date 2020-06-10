@@ -72,7 +72,7 @@ public class CommandTest extends BaseCommandTest {
     @Test
     @Order(3)
     public void testInfo() throws Exception {
-        FileUtils.deleteDirectory(Config.userConfig().configDir());
+        FileUtils.deleteDirectory(Config.userConfig().pluginsDir());
         Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
         String result = exec("info",
                 "--project ", projectDir.toString());
