@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import io.helidon.build.test.TestFiles;
+import io.helidon.build.util.FileUtils;
 
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -31,9 +32,8 @@ import static io.helidon.build.cli.impl.InitCommand.DEFAULT_NAME;
 import static io.helidon.build.cli.impl.InitCommand.Flavor;
 import static io.helidon.build.cli.impl.TestUtils.exec;
 import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -48,7 +48,7 @@ public class CommandTest extends BaseCommandTest {
     @Test
     @Order(1)
     public void testInit() throws Exception {
-        TestUtils.ExecResult res = exec("init",
+        exec("init",
                 "--flavor", flavor.toString(),
                 "--project ", targetDir.toString(),
                 "--version ", helidonTestVersion(),
@@ -56,7 +56,6 @@ public class CommandTest extends BaseCommandTest {
                 "--groupid", DEFAULT_GROUP_ID,
                 "--name", DEFAULT_NAME,
                 "--batch");
-        assertThat(res.code, is(equalTo(0)));
         Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
         assertTrue(Files.exists(projectDir));
     }
@@ -65,28 +64,27 @@ public class CommandTest extends BaseCommandTest {
     @Order(2)
     public void testBuild() throws Exception {
         Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
-        TestUtils.ExecResult res = exec("build",
+        exec("build",
                 "--project ", projectDir.toString());
-        assertThat(res.code, is(equalTo(0)));
         assertTrue(Files.exists(projectDir.resolve("target/" + DEFAULT_ARTIFACT_ID + ".jar")));
     }
 
     @Test
     @Order(3)
     public void testInfo() throws Exception {
+        FileUtils.deleteDirectory(Config.userConfig().pluginsDir());
         Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
-        TestUtils.ExecResult res = exec("info",
+        String result = exec("info",
                 "--project ", projectDir.toString());
-        assertThat(res.code, is(equalTo(0)));
+        assertThat(result, containsString("plugin"));
     }
 
     @Test
     @Order(4)
     public void testVersion() throws Exception {
         Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
-        TestUtils.ExecResult res = exec("version",
+        exec("version",
                 "--project ", projectDir.toString());
-        assertThat(res.code, is(equalTo(0)));
     }
 
     @Test

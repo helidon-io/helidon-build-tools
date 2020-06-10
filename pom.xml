@@ -439,6 +439,7 @@
                 <configuration>
                     <timestampFormat>{0,date,yyyy-MM-dd HH:mm:ss z}</timestampFormat>
                     <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
+                    <shortRevisionLength>8</shortRevisionLength>
                 </configuration>
             </plugin>
             <plugin>

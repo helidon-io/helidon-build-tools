@@ -28,6 +28,8 @@ import io.helidon.build.util.ProjectConfig;
 import static io.helidon.build.util.ProjectConfig.HELIDON_VERSION;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
 import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
+import static io.helidon.build.util.Style.BoldBlue;
+import static io.helidon.build.util.Style.Italic;
 
 /**
  * The {@code version} command.
@@ -35,6 +37,7 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
 @Command(name = "version", description = "Print version information")
 final class VersionCommand extends BaseCommand implements CommandExecution {
     private static final String FLAVOR = "flavor";
+    private static final String PAD = " ";
     private final CommonOptions commonOptions;
 
     @Creator
@@ -44,16 +47,17 @@ final class VersionCommand extends BaseCommand implements CommandExecution {
 
     @Override
     public void execute(CommandContext context) {
-        logBuildProperties();
+        Map<String, String> map = new LinkedHashMap<>();
+        addBuildProperties(map);
 
         ProjectConfig projectConfig = projectConfig(commonOptions.project().toPath());
         if (projectConfig.exists()) {
-            Map<String, Object> projectProps = new LinkedHashMap<>();
-            addProjectProperty("version", PROJECT_VERSION, projectConfig, projectProps);
-            addProjectProperty("helidon", HELIDON_VERSION, projectConfig, projectProps);
-            addProjectProperty("flavor", PROJECT_FLAVOR, projectConfig, projectProps);
-            log("project", projectProps);
+            addProjectProperty("version", PROJECT_VERSION, projectConfig, map);
+            addProjectProperty("helidon.version", HELIDON_VERSION, projectConfig, map);
+            addProjectProperty("flavor", PROJECT_FLAVOR, projectConfig, map);
         }
+
+        log(map, maxKeyWidth(map));
     }
 
     /**
@@ -64,31 +68,70 @@ final class VersionCommand extends BaseCommand implements CommandExecution {
      * @param config The project config.
      * @param map The map to add to.
      */
-    static void addProjectProperty(String key, String configKey, ProjectConfig config, Map<String, Object> map) {
+    static void addProjectProperty(String key, String configKey, ProjectConfig config, Map<String, String> map) {
         String value = config.property(configKey);
         if (value != null) {
-            map.put(key, key.equals(FLAVOR) ? value.toUpperCase() : value);
+            map.put("project." + key, key.equals(FLAVOR) ? value.toUpperCase() : value);
         }
     }
 
     /**
-     * Log the build properties.
-     */
-    static void logBuildProperties() {
-        Map<String, Object> buildProps = new LinkedHashMap<>();
-        Config.buildProperties().forEach((k, v) -> buildProps.put((String) k, v));
-        log("build", buildProps);
-    }
-
-    /**
-     * Log the properties under the given name, if not empty.
+     * Add the build properties.
      *
-     * @param name The name.
-     * @param map The properties.
+     * @param map The map to add to.
      */
-    static void log(String name, Map<String, Object> map) {
+    static void addBuildProperties(Map<String, String> map) {
+        Config.buildProperties().forEach((k, v) -> map.put("build." + k, v.toString()));
+    }
+
+    /**
+     * Log the entries, if not empty.
+     *
+     * @param map The entries.
+     * @param maxKeyWidth The maximum key width.
+     */
+    static void log(Map<String, String> map, int maxKeyWidth) {
         if (!map.isEmpty()) {
-            Log.info(formatMapAsYaml(name, map));
+            map.forEach((key, value) -> {
+                final String padding = padding(maxKeyWidth, key);
+                Log.info("%s %s %s", Italic.apply(key), padding, BoldBlue.apply(value));
+            });
         }
+    }
+
+    /**
+     * Returns a padding string.
+     *
+     * @param maxKeyWidth The maximum key width.
+     * @param key The key.
+     * @return The padding.
+     */
+    static String padding(int maxKeyWidth, String key) {
+        final int keyLen = key.length();
+        if (maxKeyWidth > keyLen) {
+            return PAD.repeat(maxKeyWidth - keyLen);
+        } else {
+            return "";
+        }
+    }
+
+    /**
+     * Returns the maximum key width.
+     *
+     * @param maps The maps.
+     * @return The max key width.
+     */
+    @SafeVarargs
+    static int maxKeyWidth(Map<String, String>... maps) {
+        int maxLen = 0;
+        for (Map<String, String> map : maps) {
+            for (String key : map.keySet()) {
+                final int len = key.length();
+                if (len > maxLen) {
+                    maxLen = len;
+                }
+            }
+        }
+        return maxLen;
     }
 }

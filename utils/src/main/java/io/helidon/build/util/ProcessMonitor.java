@@ -17,6 +17,7 @@
 package io.helidon.build.util;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -27,6 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -46,10 +48,12 @@ public final class ProcessMonitor {
     private final List<String> capturedStdOut;
     private final List<String> capturedStdErr;
     private final Consumer<String> monitorOut;
+    private final ProcessBuilder.Redirect stdIn;
     private final Consumer<String> stdOut;
     private final Consumer<String> stdErr;
     private final Predicate<String> filter;
     private final Function<String, String> transform;
+    private final AtomicBoolean running;
     private volatile Process process;
     private volatile Future<?> out;
     private volatile Future<?> err;
@@ -71,6 +75,7 @@ public final class ProcessMonitor {
         private String description;
         private boolean capture;
         private Consumer<String> monitorOut;
+        private ProcessBuilder.Redirect stdIn;
         private Consumer<String> stdOut;
         private Consumer<String> stdErr;
         private Predicate<String> filter;
@@ -109,6 +114,31 @@ public final class ProcessMonitor {
          */
         public Builder capture(boolean capture) {
             this.capture = capture;
+            return this;
+        }
+
+        /**
+         * Sets the input for process.
+         *
+         * @param stdIn The input.
+         * @return This builder.
+         */
+        public Builder stdIn(File stdIn) {
+            if (stdIn != null) {
+                return stdIn(ProcessBuilder.Redirect.from(stdIn));
+            } else {
+                return this;
+            }
+        }
+
+        /**
+         * Sets the input for process.
+         *
+         * @param stdIn The input.
+         * @return This builder.
+         */
+        public Builder stdIn(ProcessBuilder.Redirect stdIn) {
+            this.stdIn = stdIn;
             return this;
         }
 
@@ -190,6 +220,7 @@ public final class ProcessMonitor {
         this.description = builder.description;
         this.capturing = builder.capture;
         this.monitorOut = builder.monitorOut;
+        this.stdIn = builder.stdIn;
         this.stdOut = builder.stdOut;
         this.stdErr = builder.stdErr;
         this.capturedOutput = capturing ? new ArrayList<>() : emptyList();
@@ -197,6 +228,7 @@ public final class ProcessMonitor {
         this.capturedStdErr = capturing ? new ArrayList<>() : emptyList();
         this.filter = builder.filter;
         this.transform = builder.transform;
+        this.running = new AtomicBoolean();
     }
 
     /**
@@ -212,9 +244,9 @@ public final class ProcessMonitor {
      */
     @SuppressWarnings({"checkstyle:JavadocMethod", "checkstyle:ThrowsCount"})
     public ProcessMonitor execute(long timeout, TimeUnit unit) throws IOException,
-                                                                      ProcessTimeoutException,
-                                                                      ProcessFailedException,
-                                                                      InterruptedException {
+            ProcessTimeoutException,
+            ProcessFailedException,
+            InterruptedException {
         return start().waitForCompletion(timeout, unit);
     }
 
@@ -232,9 +264,13 @@ public final class ProcessMonitor {
         if (description != null) {
             monitorOut.accept(description);
         }
+        if (stdIn != null) {
+            builder.redirectInput(stdIn);
+        }
         process = builder.start();
-        out = monitor(process.getInputStream(), filter, transform, capturing ? this::captureStdOut : stdOut);
-        err = monitor(process.getErrorStream(), filter, transform, capturing ? this::captureStdErr : stdErr);
+        running.set(true);
+        out = monitor(process.getInputStream(), filter, transform, capturing ? this::captureStdOut : stdOut, running);
+        err = monitor(process.getErrorStream(), filter, transform, capturing ? this::captureStdErr : stdErr, running);
         return this;
     }
 
@@ -261,10 +297,11 @@ public final class ProcessMonitor {
      */
     @SuppressWarnings("checkstyle:JavadocMethod")
     public ProcessMonitor stop(long timeout, TimeUnit unit) throws ProcessTimeoutException,
-                                                                   ProcessFailedException,
-                                                                   InterruptedException {
+            ProcessFailedException,
+            InterruptedException {
         assertRunning();
         process.destroy();
+        running.set(false);
         return waitForCompletion(timeout, unit);
     }
 
@@ -299,12 +336,12 @@ public final class ProcessMonitor {
      */
     @SuppressWarnings("checkstyle:JavadocMethod")
     public ProcessMonitor waitForCompletion(long timeout, TimeUnit unit) throws ProcessTimeoutException,
-                                                                                ProcessFailedException,
-                                                                                InterruptedException {
+            ProcessFailedException,
+            InterruptedException {
         assertRunning();
         final boolean completed = process.waitFor(timeout, unit);
-        cancelTasks();
         if (completed) {
+            stopTasks();
             if (process.exitValue() != 0) {
                 throw new ProcessFailedException(this);
             }
@@ -336,7 +373,7 @@ public final class ProcessMonitor {
      * @throws IllegalStateException If the process was not started.
      */
     public List<String> output() {
-        assertRunning();
+        assertStarted();
         return capturedOutput;
     }
 
@@ -424,6 +461,23 @@ public final class ProcessMonitor {
         return process;
     }
 
+    private void stopTasks() {
+        if (out != null) {
+            running.set(false);
+            join(out);
+            join(err);
+            out = null;
+            err = null;
+        }
+    }
+
+    private void join(Future<?> task) {
+        try {
+            task.get();
+        } catch (Exception ignore) {
+        }
+    }
+
     private void cancelTasks() {
         if (out != null) {
             out.cancel(true);
@@ -433,11 +487,16 @@ public final class ProcessMonitor {
         }
     }
 
-    private void assertRunning() {
+    private Process assertStarted() {
         final Process process = this.process;
         if (process == null) {
             throw new IllegalStateException("not started");
         }
+        return process;
+    }
+
+    private void assertRunning() {
+        final Process process = assertStarted();
         if (!process.isAlive()) {
             throw new IllegalStateException("already completed");
         }
@@ -484,12 +543,17 @@ public final class ProcessMonitor {
     private static Future<?> monitor(InputStream input,
                                      Predicate<String> filter,
                                      Function<String, String> transform,
-                                     Consumer<String> output) {
+                                     Consumer<String> output,
+                                     AtomicBoolean running) {
         final BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
-        return EXECUTOR.submit(() -> reader.lines().forEach(line -> {
-            if (filter.test(line)) {
-                output.accept(transform.apply(line));
+        return EXECUTOR.submit(() -> {
+            while (running.get()) {
+                reader.lines().forEach(line -> {
+                    if (filter.test(line)) {
+                        output.accept(transform.apply(line));
+                    }
+                });
             }
-        }));
+        });
     }
 }

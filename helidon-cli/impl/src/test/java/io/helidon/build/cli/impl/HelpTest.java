@@ -15,14 +15,12 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.io.IOException;
-
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.cli.impl.TestUtils.exec;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 
 /**
  * Class HelpTest.
@@ -30,35 +28,41 @@ import static org.hamcrest.CoreMatchers.is;
 public class HelpTest {
 
     @Test
-    public void testHelp() throws IOException, InterruptedException {
-        TestUtils.ExecResult res = exec("build" ,"--help");
-        assertThat(res.code, is(equalTo(0)));
+    void testCliHelp() throws Exception {
+        String output = exec("help");
+        assertThat(output, containsString("Helidon Project command line tool"));
+    }
 
-        res = exec("help" ,"build");
-        assertThat(res.code, is(equalTo(0)));
+    private static String assertCommandHelp(String command) throws Exception {
+        String commandHelp = exec(command, "--help");
+        String helpCommand = exec("help", command);
+        assertThat(helpCommand, is(commandHelp));
+        assertThat(helpCommand, containsString("Usage:\thelidon " + command));
+        return helpCommand;
+    }
 
-        res = exec("dev" ,"--help");
-        assertThat(res.code, is(equalTo(0)));
+    @Test
+    public void testBuildCommandHelp() throws Exception {
+        assertCommandHelp("build");
+    }
 
-        res = exec("help" ,"dev");
-        assertThat(res.code, is(equalTo(0)));
+    @Test
+    public void testDevCommandHelp() throws Exception {
+        assertCommandHelp("dev");
+    }
 
-        res = exec("info" ,"--help");
-        assertThat(res.code, is(equalTo(0)));
+    @Test
+    public void testInfoCommandHelp() throws Exception {
+        assertCommandHelp("info");
+    }
 
-        res = exec("help", "info");
-        assertThat(res.code, is(equalTo(0)));
+    @Test
+    public void testInitCommandHelp() throws Exception {
+        assertCommandHelp("init");
+    }
 
-        res = exec("init" ,"--help");
-        assertThat(res.code, is(equalTo(0)));
-
-        res = exec("help", "init");
-        assertThat(res.code, is(equalTo(0)));
-
-        res = exec("version" ,"--help");
-        assertThat(res.code, is(equalTo(0)));
-
-        res = exec("help", "version");
-        assertThat(res.code, is(equalTo(0)));
+    @Test
+    public void testVersionCommandHelp() throws Exception {
+        assertCommandHelp("version");
     }
 }

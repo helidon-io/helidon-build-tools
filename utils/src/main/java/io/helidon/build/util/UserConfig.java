@@ -24,9 +24,11 @@ import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
  */
 public class UserConfig {
     private static final String CACHE_DIR_NAME = "cache";
+    private static final String PLUGINS_DIR_NAME = "plugins";
     private final Path homeDir;
     private final Path configDir;
     private final Path cacheDir;
+    private final Path pluginsDir;
 
     /**
      * Returns a new instance using {@link #homeDir()} as the root.
@@ -51,6 +53,7 @@ public class UserConfig {
         this.homeDir = homeDir;
         this.configDir = FileUtils.ensureDirectory(homeDir.resolve(DOT_HELIDON));
         this.cacheDir = FileUtils.ensureDirectory(configDir.resolve(CACHE_DIR_NAME));
+        this.pluginsDir = FileUtils.ensureDirectory(configDir.resolve(PLUGINS_DIR_NAME));
     }
 
     /**
@@ -78,5 +81,13 @@ public class UserConfig {
      */
     public Path cacheDir() {
         return cacheDir;
+    }
+    /**
+     * Returns the user plugins directory, normally {@code ${HOME}/.helidon/plugins}.
+     *
+     * @return The directory.
+     */
+    public Path pluginsDir() {
+        return pluginsDir;
     }
 }
