@@ -15,14 +15,20 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.nio.file.Path;
+
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.MavenCommand;
 import io.helidon.build.util.MavenVersion;
+import io.helidon.build.util.PomUtils;
 import io.helidon.build.util.RequirementFailure;
 import io.helidon.build.util.Requirements;
 import io.helidon.build.util.Style;
 
+import static io.helidon.build.util.FileUtils.WORKING_DIR;
+import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
+import static io.helidon.build.util.ProjectConfig.ensureProjectConfig;
 
 /**
  * Command assertions with message strings formatted via {@link Style#render(String, Object...)}.
@@ -33,7 +39,9 @@ public class CommandRequirements {
     private static final MavenVersion ALLOWED_HELIDON_SNAPSHOT_VERSION = toMavenVersion("2.0.0-SNAPSHOT");
     private static final MavenVersion MINIMUM_REQUIRED_MAVEN_VERSION = toMavenVersion("3.6.0");
     private static final String UNSUPPORTED_HELIDON_VERSION = "$(red Helidon version) $(RED %s) $(red is not supported.)";
-    private static final String UNSUPPORTED_JAVA_VERSION = "$(red Java version at %s is not supported: 11 or later is required)";
+    private static final String UNSUPPORTED_JAVA_VERSION = "$(red Java version at %s is not supported: 11 or later is required.)";
+    private static final String NOT_A_PROJECT_DIR = "$(italic Please cd to a project directory.)";
+    private static final String UNKNOWN_VERSION = "$(italic Version %s not found.)";
 
     /**
      * Assert that the given Helidon version is supported.
@@ -75,6 +83,36 @@ public class CommandRequirements {
      */
     static void requireMinimumMavenVersion() {
         MavenCommand.assertRequiredMavenVersion(MINIMUM_REQUIRED_MAVEN_VERSION);
+    }
+
+    /**
+     * Require that a valid Maven project configuration exists.
+     */
+    static void requireValidMavenProjectConfig() {
+        try {
+            PomUtils.toPomFile(WORKING_DIR);
+        } catch (IllegalArgumentException e) {
+            String message = e.getMessage();
+            if (message.contains("does not exist")) {
+                message = NOT_A_PROJECT_DIR;
+            }
+            Requirements.failed(message);
+        }
+        ensureProjectConfig(WORKING_DIR, null);
+    }
+
+    /**
+     * Assert that the given version directory exists.
+     *
+     * @throws RequirementFailure If the directory does not exist.
+     */
+    static Path requireHelidonVersionDir(Path versionDir) {
+        try {
+            return assertDir(versionDir);
+        } catch (Exception e) {
+            Requirements.failed(UNKNOWN_VERSION, versionDir.getFileName());
+            return null;
+        }
     }
 
     private CommandRequirements() {

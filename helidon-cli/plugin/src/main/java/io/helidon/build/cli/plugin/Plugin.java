@@ -31,6 +31,8 @@ public abstract class Plugin {
                 final Plugin plugin = Plugin.newInstance(args[0]);
                 plugin.parse(args).execute();
             }
+        } catch (ClassNotFoundException e) {
+            fail(e.toString());
         } catch (Throwable e) {
             fail(e.getMessage());
         }
@@ -76,12 +78,36 @@ public abstract class Plugin {
     }
 
     /**
+     * Assert that the given argument is valid.
+     *
+     * @param argName The argument name.
+     * @param argument The argument.
+     * @throws IllegalArgumentException If argument is {@code null}
+     */
+    static void assertRequiredArg(String argName, Object argument) {
+        if (argument == null) {
+            missingRequiredArg(argName);
+        }
+    }
+
+    /**
+     * Fail with a missing argument exception.
+     *
+     * @param argName The argument name.
+     * @throws IllegalArgumentException always.
+     */
+    static void missingRequiredArg(String argName) {
+        throw new IllegalArgumentException("missing required argument: " + argName);
+    }
+
+    /**
      * Parse the arguments.
      *
      * @param args The arguments.
      * @return This instance, for chaining.
+     * @throws Exception if an error occurs.
      */
-    Plugin parse(String[] args) {
+    Plugin parse(String[] args) throws Exception {
         for (int index = 1; index < args.length; index++) {
             final String arg = args[index];
             if (arg.equalsIgnoreCase("--verbose")) {
@@ -92,6 +118,7 @@ public abstract class Plugin {
                 index = parseArg(arg, index, args);
             }
         }
+        validateArgs();
         return this;
     }
 
@@ -102,13 +129,23 @@ public abstract class Plugin {
      * @param argIndex The argument index.
      * @param allArgs All arguments.
      * @return The new index.
+     * @throws Exception if an error occurs.
      */
-    int parseArg(String arg, int argIndex, String[] allArgs) {
+    int parseArg(String arg, int argIndex, String[] allArgs) throws Exception {
         throw new IllegalArgumentException("unknown arg: " + arg);
     }
 
     /**
-     * Execute the plugin.
+     * Validate arguments.
+     *
+     * @throws Exception If an exception occurs.
      */
-    abstract void execute();
+    abstract void validateArgs() throws Exception;
+
+    /**
+     * Execute the plugin.
+     *
+     * @throws Exception if an error occurs.
+     */
+    abstract void execute() throws Exception;
 }

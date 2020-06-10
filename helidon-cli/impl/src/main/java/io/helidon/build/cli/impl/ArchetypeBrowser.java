@@ -161,7 +161,7 @@ class ArchetypeBrowser {
     }
 
     /**
-     * Searches for archetypes in the local cache by inspecting the corresponding POM file.
+     * Searches for archetypes in the local cache by inspecting the local catalog.
      *
      * @return List of archetype entries from the local catalog.
      */

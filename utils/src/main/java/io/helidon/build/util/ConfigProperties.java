@@ -21,6 +21,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,8 +37,8 @@ public class ConfigProperties {
 
     private static final String DELIMITER = ",";
 
-    private File file;
-    private Properties properties;
+    private final File file;
+    private final Properties properties;
 
     /**
      * Constructor from file name.
@@ -46,6 +47,15 @@ public class ConfigProperties {
      */
     public ConfigProperties(String fileName) {
         this(new File(fileName));
+    }
+
+    /**
+     * Constructor from file.
+     *
+     * @param file The file.
+     */
+    public ConfigProperties(Path file) {
+        this(file.toFile());
     }
 
     /**

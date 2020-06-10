@@ -92,7 +92,7 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
         // Ensure preconditions
 
         requireMinimumMavenVersion();
-        requireValidProjectConfig(true);
+        CommandRequirements.requireValidMavenProjectConfig();
 
         // Optionally override plugin version
 

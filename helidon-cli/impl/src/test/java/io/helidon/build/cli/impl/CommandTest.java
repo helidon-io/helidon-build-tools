@@ -19,7 +19,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import io.helidon.build.test.TestFiles;
-import io.helidon.build.util.FileUtils;
 
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -72,7 +71,7 @@ public class CommandTest extends BaseCommandTest {
     @Test
     @Order(3)
     public void testInfo() throws Exception {
-        FileUtils.deleteDirectory(Config.userConfig().pluginsDir());
+        Config.userConfig().clearPlugins();
         Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
         String result = exec("info",
                 "--project ", projectDir.toString());

@@ -15,6 +15,7 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.build.util.BuildToolsProperties;
@@ -24,6 +25,7 @@ import io.helidon.build.util.UserConfig;
  * Utilities to access configuration.
  */
 public class Config {
+    private static final AtomicReference<Path> USER_HOME_DIR = new AtomicReference<>();
     private static final AtomicReference<UserConfig> USER_CONFIG = new AtomicReference<>();
 
     /**
@@ -59,10 +61,27 @@ public class Config {
      * @return The instance.
      */
     public static UserConfig userConfig() {
-        if (USER_CONFIG.get() == null) {
-            USER_CONFIG.set(UserConfig.create());
+        UserConfig config = USER_CONFIG.get();
+        if (config == null) {
+            if (USER_HOME_DIR.get() == null) {
+                config = Config.userConfig();
+            } else {
+                config = UserConfig.create(USER_HOME_DIR.get());
+            }
+            USER_CONFIG.set(config);
         }
-        return USER_CONFIG.get();
+        return config;
+    }
+
+    /**
+     * Set the user home dir.
+     *
+     * @param dir The directory.
+     * @return The directory.
+     */
+    static Path setUserHome(Path dir) {
+        USER_HOME_DIR.set(dir);
+        return dir;
     }
 
     private Config() {

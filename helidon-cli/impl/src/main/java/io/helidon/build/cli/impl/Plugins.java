@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.ProcessMonitor;
+import io.helidon.build.util.Proxies;
 
 import static io.helidon.build.cli.impl.CommandRequirements.unsupportedJavaVersion;
 import static java.io.File.pathSeparatorChar;
@@ -96,6 +97,10 @@ public class Plugins {
         command.add("java");
         if (DEFAULT_DEBUG_PORT > 0) {
             command.add(DEBUG_ARG_PREFIX + DEFAULT_DEBUG_PORT);
+        }
+        final String proxyArgs = Proxies.javaProxyArgs();
+        if (proxyArgs != null && !proxyArgs.isEmpty()) {
+            command.add(proxyArgs);
         }
         command.add("-jar");
         command.add(pluginJar().toString());

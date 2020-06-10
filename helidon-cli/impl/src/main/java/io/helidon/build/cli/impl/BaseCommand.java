@@ -52,14 +52,4 @@ public abstract class BaseCommand {
         return projectConfig;
     }
 
-    protected void requireValidProjectConfig(boolean checkPom) {
-        if (checkPom) {
-            try {
-                PomUtils.toPomFile(WORKING_DIR);
-            } catch (IllegalArgumentException e) {
-                Requirements.failed(e.getMessage());
-            }
-        }
-        ensureProjectConfig(WORKING_DIR, null);
-    }
 }
