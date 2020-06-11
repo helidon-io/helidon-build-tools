@@ -103,6 +103,15 @@ abstract class MetaModel<T> {
         public String description() {
             return option.description();
         }
+
+        @Override
+        public String toString() {
+            return ArgumentMetaModel.class.getSimpleName()
+                    + '{'
+                    + "type=" + type().getQualifiedName()
+                    + ", description=" + option.description()
+                    + '}';
+        }
     }
 
     /**
@@ -129,6 +138,15 @@ abstract class MetaModel<T> {
         @Override
         public String name() {
             return option.name();
+        }
+
+        @Override
+        public String toString() {
+            return FlagMetaModel.class.getSimpleName()
+                    + '{'
+                    + "name=" + option.name()
+                    + ", description=" + option.description()
+                    + '}';
         }
     }
 
@@ -157,6 +175,16 @@ abstract class MetaModel<T> {
         @Override
         public String description() {
             return option.description();
+        }
+
+        @Override
+        public String toString() {
+            return KeyValueMetaModel.class.getSimpleName()
+                    + '{'
+                    + "type=" + type().getQualifiedName()
+                    + ", name=" + option.name()
+                    + ", description=" + option.description()
+                    + '}';
         }
     }
 
@@ -195,6 +223,16 @@ abstract class MetaModel<T> {
          */
         TypeElement paramType() {
             return paramTypeElt;
+        }
+
+        @Override
+        public String toString() {
+            return KeyValuesMetaModel.class.getSimpleName()
+                    + '{'
+                    + "paramType=" + paramTypeElt.getQualifiedName()
+                    + ", name=" + option.name()
+                    + ", description=" + option.description()
+                    + '}';
         }
     }
 
@@ -272,6 +310,15 @@ abstract class MetaModel<T> {
         CommandFragmentMetaModel(TypeElement typeElt, String pkg, List<MetaModel<?>> params) {
             super(null, typeElt, pkg, params);
         }
+
+        @Override
+        public String toString() {
+            return CommandFragmentMetaModel.class.getSimpleName()
+                    + '{'
+                    + "type=" + type().getQualifiedName()
+                    + ", params=" + params()
+                    + '}';
+        }
     }
 
     /**
@@ -291,6 +338,15 @@ abstract class MetaModel<T> {
         @Override
         public int compareTo(CommandMetaModel cmd) {
             return annotation().name().compareTo(cmd.annotation().name());
+        }
+
+        @Override
+        public String toString() {
+            return CommandMetaModel.class.getSimpleName()
+                    + '{'
+                    + "type=" + type().getQualifiedName()
+                    + ", params=" + params()
+                    + '}';
         }
     }
 }
