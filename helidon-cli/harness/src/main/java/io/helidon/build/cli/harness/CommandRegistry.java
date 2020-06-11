@@ -39,6 +39,7 @@ public class CommandRegistry {
 
     /**
      * Create a new command registry.
+     *
      * @param pkg the java package this registry is identified with
      */
     protected CommandRegistry(String pkg) {
@@ -51,6 +52,7 @@ public class CommandRegistry {
 
     /**
      * Register a command model in the registry.
+     *
      * @param model command model to register
      */
     protected final void register(CommandModel model) {
@@ -64,6 +66,7 @@ public class CommandRegistry {
 
     /**
      * Get the commands by name.
+     *
      * @return map of command model keyed by name
      */
     final Map<String, CommandModel> commandsByName() {
@@ -72,6 +75,7 @@ public class CommandRegistry {
 
     /**
      * Get all the commands.
+     *
      * @return list of all visible registered commands
      */
     public final List<CommandModel> all() {
@@ -80,6 +84,7 @@ public class CommandRegistry {
 
     /**
      * Get a command by name.
+     *
      * @param name command name
      * @return optional of {@link CommandModel}
      */
@@ -89,6 +94,7 @@ public class CommandRegistry {
 
     /**
      * Get the package this command registry belongs to.
+     *
      * @return package name
      */
     public final String pkg() {
@@ -97,6 +103,7 @@ public class CommandRegistry {
 
     /**
      * Load a {@link CommandRegistry} instance.
+     *
      * @param clazz a class to derive the package namespace the registry is associated with
      * @return command registry, never {@code null}
      */

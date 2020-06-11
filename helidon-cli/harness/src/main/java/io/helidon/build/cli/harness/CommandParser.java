@@ -72,6 +72,7 @@ public final class CommandParser {
 
     /**
      * Parse the command line arguments.
+     *
      * @param rawArgs arguments to parse
      * @return parser
      */
@@ -163,6 +164,7 @@ public final class CommandParser {
 
     /**
      * Get the first parsing error if any.
+     *
      * @return parsing error, or {@code null} if there is no error.
      */
     Optional<String> error() {
@@ -171,6 +173,7 @@ public final class CommandParser {
 
     /**
      * Get the parsed command name.
+     *
      * @return command name
      */
     Optional<String> commandName() {
@@ -179,6 +182,7 @@ public final class CommandParser {
 
     /**
      * Get the parsed parameters.
+     *
      * @return map of parameter
      */
     Map<String, Parameter> params() {
@@ -187,6 +191,7 @@ public final class CommandParser {
 
     /**
      * Get the parsed properties.
+     *
      * @return properties, never {@code null}
      */
     Properties properties() {
@@ -228,6 +233,7 @@ public final class CommandParser {
 
     /**
      * Resolve the given flag option.
+     *
      * @param option the option to resolve
      * @return {@code true} if the option is present, {@code false} otherwise
      * @throws CommandParserException if an error occurs while resolving the option
@@ -244,7 +250,8 @@ public final class CommandParser {
 
     /**
      * Resolve the given key-value option.
-     * @param <T> option type
+     *
+     * @param <T>    option type
      * @param option the option to resolve
      * @return resolved value for the option
      * @throws CommandParserException if an error occurs while resolving the option
@@ -270,7 +277,8 @@ public final class CommandParser {
 
     /**
      * Resolve the given key-values option.
-     * @param <T> item type
+     *
+     * @param <T>    item type
      * @param option the option to resolve
      * @return collection of resolved values for the option
      * @throws CommandParserException if an error occurs while resolving the option
@@ -297,7 +305,8 @@ public final class CommandParser {
 
     /**
      * Resolve the given argument option.
-     * @param <T> argument type
+     *
+     * @param <T>    argument type
      * @param option the argument to resolve
      * @return resolved value for the argument
      * @throws CommandParserException if an error occurs while resolving the option
@@ -416,6 +425,7 @@ public final class CommandParser {
 
         /**
          * Get the values.
+         *
          * @return values, never {@code null}
          */
         public LinkedList<String> values() {
@@ -437,6 +447,7 @@ public final class CommandParser {
 
         /**
          * Get the value.
+         *
          * @return value, never {@code null}
          */
         public String value() {

@@ -102,7 +102,7 @@ public final class CommandRunner {
      * Execute a sub-command.
      *
      * @param context command context
-     * @param args raw command line arguments
+     * @param args    raw command line arguments
      */
     static void execute(CommandContext context, String... args) {
         new CommandRunner(context, args).execute();
@@ -111,9 +111,9 @@ public final class CommandRunner {
     /**
      * Execute a command.
      *
-     * @param cli CLI definition
+     * @param cli   CLI definition
      * @param clazz class used to derive the package of the sub-commands
-     * @param args raw command line arguments
+     * @param args  raw command line arguments
      */
     public static void execute(CLIDefinition cli, Class<?> clazz, String... args) {
         Proxies.setProxyPropertiesFromEnv();

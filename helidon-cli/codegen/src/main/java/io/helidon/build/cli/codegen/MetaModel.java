@@ -25,7 +25,7 @@ import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.Option;
 
 /**
- * Meta model to represent the processed annotations.
+ * Meta model API to represent the processed annotations.
  */
 abstract class MetaModel<T> {
 
@@ -44,6 +44,7 @@ abstract class MetaModel<T> {
 
     /**
      * Get the annotation value.
+     *
      * @return annotation value
      */
     T annotation() {
@@ -52,6 +53,7 @@ abstract class MetaModel<T> {
 
     /**
      * Get the type for this meta-model.
+     *
      * @return type
      */
     TypeElement type() {
@@ -65,6 +67,7 @@ abstract class MetaModel<T> {
 
         /**
          * Get the description.
+         *
          * @return description, never {@code null}
          */
         String description();
@@ -77,6 +80,7 @@ abstract class MetaModel<T> {
 
         /**
          * Get the name.
+         *
          * @return name, never {@code null}
          */
         String name();
@@ -91,8 +95,9 @@ abstract class MetaModel<T> {
 
         /**
          * Create a new argument meta-model.
+         *
          * @param typeElt annotated variable type
-         * @param option annotation
+         * @param option  annotation
          */
         ArgumentMetaModel(TypeElement typeElt, Option.Argument option) {
             super(option, typeElt);
@@ -123,6 +128,7 @@ abstract class MetaModel<T> {
 
         /**
          * Create a new flag meta-model.
+         *
          * @param option annotation
          */
         FlagMetaModel(Option.Flag option) {
@@ -159,8 +165,9 @@ abstract class MetaModel<T> {
 
         /**
          * Create a new key-value meta-model.
+         *
          * @param typeElt annotated variable type
-         * @param option annotation
+         * @param option  annotation
          */
         KeyValueMetaModel(TypeElement typeElt, Option.KeyValue option) {
             super(option, typeElt);
@@ -198,8 +205,9 @@ abstract class MetaModel<T> {
 
         /**
          * Create a new key-values meta-model.
+         *
          * @param paramTypeElt annotated variable collection parameter type
-         * @param option annotation
+         * @param option       annotation
          */
         KeyValuesMetaModel(TypeElement paramTypeElt, Option.KeyValues option) {
             super(option);
@@ -219,6 +227,7 @@ abstract class MetaModel<T> {
 
         /**
          * Get the generic parameter type.
+         *
          * @return type
          */
         TypeElement paramType() {
@@ -237,7 +246,8 @@ abstract class MetaModel<T> {
     }
 
     /**
-     * Meta-model for {@link io.helidon.build.cli.harness.CommandFragment}.
+     * Base meta-model for {@link io.helidon.build.cli.harness.CommandFragment} and
+     * {@link io.helidon.build.cli.harness.Command}.
      */
     abstract static class ParametersMetaModel<T> extends MetaModel<T> {
 
@@ -252,6 +262,7 @@ abstract class MetaModel<T> {
 
         /**
          * Get the parameters.
+         *
          * @return list of models for the parameters
          */
         final List<MetaModel<?>> params() {
@@ -260,6 +271,7 @@ abstract class MetaModel<T> {
 
         /**
          * Get the java package.
+         *
          * @return java package name
          */
         final String pkg() {
@@ -268,6 +280,7 @@ abstract class MetaModel<T> {
 
         /**
          * Get the option names.
+         *
          * @return option names
          */
         final List<String> optionNames() {
@@ -282,6 +295,7 @@ abstract class MetaModel<T> {
 
         /**
          * Get the duplicates between the given option names and the current option names of this fragment.
+         *
          * @param optionNames option names to compare duplicates for
          * @return list of duplicated option names
          */
@@ -297,15 +311,16 @@ abstract class MetaModel<T> {
     }
 
     /**
-     * Meta-model for {@link io.helidon.build.cli.harness.Command}.
+     * Meta-model for {@link io.helidon.build.cli.harness.CommandFragment}.
      */
     static final class CommandFragmentMetaModel extends ParametersMetaModel<Void> {
 
         /**
          * Create a new command fragment meta-model.
+         *
          * @param typeElt annotated class type
-         * @param pkg java package
-         * @param params all options for this fragment
+         * @param pkg     java package
+         * @param params  all options for this fragment
          */
         CommandFragmentMetaModel(TypeElement typeElt, String pkg, List<MetaModel<?>> params) {
             super(null, typeElt, pkg, params);
@@ -328,7 +343,10 @@ abstract class MetaModel<T> {
 
         /**
          * Create a new command meta-model.
-         * @param optionsModel fragment meta model to compose this command model with
+         *
+         * @param typeElt annotated class type
+         * @param pkg     java package
+         * @param params  all options for this fragment
          * @param command command annotation
          */
         CommandMetaModel(TypeElement typeElt, String pkg, List<MetaModel<?>> params, Command annotation) {
