@@ -31,6 +31,7 @@ import io.helidon.build.util.MavenVersion;
 
 import static io.helidon.build.cli.impl.CommandRequirements.requireHelidonVersionDir;
 import static io.helidon.build.util.FileUtils.assertFile;
+import static io.helidon.build.util.FileUtils.touch;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -39,19 +40,21 @@ import static java.util.Objects.requireNonNull;
  * CLI metadata access.
  */
 public class Metadata {
-    private static final String BASE_URL = "https://helidon.io/cli-data";
+    private static final String DEFAULT_BASE_URL = "https://helidon.io/cli-data";
     private static final String LATEST_VERSION_FILE_NAME = "latest";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     private static final String METADATA_FILE_NAME = "metadata.properties";
     private static final String CATALOG_FILE_NAME = "archetype-catalog.xml";
     private static final String PLUGIN_NAME = "UpdateMetadata";
-    private static final int MAX_WAIT_SECONDS = 30;
-    private static final int DEFAULT_HOURS_BETWEEN_UPDATES = 24;
+    private static final String JAR_SUFFIX = ".jar";
+    private static final int DEFAULT_UPDATE_DELAY_HOURS = 24;
+    private static final int PLUGIN_MAX_WAIT_SECONDS = 30;
 
     private final Path rootDir;
     private final String baseUrl;
     private final Path latestVersionFile;
-    private final int hoursBetweenUpdates;
+    private final int updateDelayHours;
+    private final boolean debugPlugin;
     private final AtomicReference<MavenVersion> latestVersion;
 
     /**
@@ -60,7 +63,9 @@ public class Metadata {
      * @return The instance.
      */
     public static Metadata newInstance() {
-        return newInstance(Config.userConfig().cacheDir(), BASE_URL, DEFAULT_HOURS_BETWEEN_UPDATES);
+        final Path cacheDir = Config.userConfig().cacheDir();
+        final boolean debug = Log.isDebug();
+        return newInstance(cacheDir, DEFAULT_BASE_URL, DEFAULT_UPDATE_DELAY_HOURS, debug);
     }
 
     /**
@@ -68,18 +73,20 @@ public class Metadata {
      *
      * @param rootDir The root directory.
      * @param baseUrl The base url.
-     * @param hoursBetweenUpdates The number of hours between updates.
+     * @param updateDelayHours The number of hours between updates.
+     * @param debugPlugin {@code true} if should enable debug logging in plugin.
      * @return The instance.
      */
-    public static Metadata newInstance(Path rootDir, String baseUrl, int hoursBetweenUpdates) {
-        return new Metadata(rootDir, baseUrl, hoursBetweenUpdates);
+    public static Metadata newInstance(Path rootDir, String baseUrl, int updateDelayHours, boolean debugPlugin) {
+        return new Metadata(rootDir, baseUrl, updateDelayHours, debugPlugin);
     }
 
-    private Metadata(Path rootDir, String baseUrl, int hoursBetweenUpdates) {
+    private Metadata(Path rootDir, String baseUrl, int updateDelayHours, boolean debugPlugin) {
         this.rootDir = rootDir;
         this.baseUrl = baseUrl;
         this.latestVersionFile = rootDir.resolve(LATEST_VERSION_FILE_NAME);
-        this.hoursBetweenUpdates = hoursBetweenUpdates;
+        this.updateDelayHours = updateDelayHours;
+        this.debugPlugin = debugPlugin;
         this.latestVersion = new AtomicReference<>();
     }
 
@@ -103,6 +110,17 @@ public class Metadata {
      * @return The properties.
      * @throws Exception If an error occurs.
      */
+    public ConfigProperties properties(String version) throws Exception {
+        return properties(toMavenVersion(version));
+    }
+
+    /**
+     * Returns the metadata properties for the given Helidon version.
+     *
+     * @param version The version.
+     * @return The properties.
+     * @throws Exception If an error occurs.
+     */
     public ConfigProperties properties(MavenVersion version) throws Exception {
         return new ConfigProperties(versionedFile(version, METADATA_FILE_NAME));
     }
@@ -114,46 +132,94 @@ public class Metadata {
      * @return The catalog.
      * @throws Exception If an error occurs.
      */
+    public ArchetypeCatalog catalog(String version) throws Exception {
+        return catalog(toMavenVersion(version));
+    }
+
+    /**
+     * Returns the catalog for the given Helidon version.
+     *
+     * @param version The version.
+     * @return The catalog.
+     * @throws Exception If an error occurs.
+     */
     public ArchetypeCatalog catalog(MavenVersion version) throws Exception {
-        return ArchetypeCatalog.read(versionedFile(version, METADATA_FILE_NAME));
+        return ArchetypeCatalog.read(versionedFile(version, CATALOG_FILE_NAME));
+    }
+
+    /**
+     * Returns the path to the archetype jar for the given catalog entry.
+     *
+     * @param catalogEntry The catalog entry.
+     * @return The path to the archetype jar.
+     * @throws Exception If an error occurs.
+     */
+    public Path archetype(ArchetypeCatalog.ArchetypeEntry catalogEntry) throws Exception {
+        final MavenVersion version = toMavenVersion(catalogEntry.version());
+        final String fileName = catalogEntry.artifactId() + "-" + version + JAR_SUFFIX;
+        return versionedFile(version, fileName);
     }
 
     @SuppressWarnings("ConstantConditions")
-    private Path versionedFile(MavenVersion version, String file) throws Exception {
+    private Path versionedFile(MavenVersion version, String fileName) throws Exception {
         final Path versionDir = rootDir.resolve(requireNonNull(version).toString());
         final Path checkFile = versionDir.resolve(LAST_UPDATE_FILE_NAME);
         checkForUpdates(version, checkFile);
-        return assertFile(requireHelidonVersionDir(versionDir).resolve(file));
+        return assertFile(requireHelidonVersionDir(versionDir).resolve(fileName));
     }
 
-    boolean checkForUpdates(MavenVersion version, Path checkFile) throws Exception {
+    private boolean checkForUpdates(MavenVersion version, Path checkFile) throws Exception {
         return checkForUpdates(version, checkFile, System.currentTimeMillis());
     }
 
     boolean checkForUpdates(MavenVersion version, Path checkFile, long currentTimeMillis) throws Exception {
         if (isStale(checkFile, currentTimeMillis)) {
             update(version);
+            touch(checkFile);
             return true;
         } else {
             return false;
         }
     }
 
+    private boolean isStale(Path file, long currentTimeMillis) {
+        if (Files.exists(file)) {
+            if (updateDelayHours > 0) {
+                final FileTime lastModified = FileUtils.lastModifiedTime(file);
+                final FileTime current = FileTime.fromMillis(currentTimeMillis);
+                final long currentHours = current.to(TimeUnit.HOURS);
+                final long lastCheckedHours = lastModified.to(TimeUnit.HOURS);
+                final long delta = currentHours - lastCheckedHours;
+                final boolean stale = delta > updateDelayHours;
+                Log.debug("%s stale: %s", file, stale);
+                return stale;
+            } else {
+                Log.debug("%s forced stale: zero delay", file);
+                return true;
+            }
+        } else {
+            Log.debug("%s not found", file);
+            return true;
+        }
+    }
+
     private void update(MavenVersion version) throws Exception {
         final List<String> args = new ArrayList<>();
-        args.add("--debug"); // TODO REMOVE
         args.add("--baseUrl");
         args.add(baseUrl);
         args.add("--cacheDir");
         args.add(rootDir.toAbsolutePath().toString());
         if (version == null) {
-            Log.info("Looking up latest version");
+            Log.info("Looking up latest Helidon version");
         } else {
-            Log.info("Updating metadata for version %s", version);
+            Log.info("Updating metadata for Helidon version %s", version);
             args.add("--version");
             args.add(version.toString());
         }
-        Plugins.execute(PLUGIN_NAME, args, MAX_WAIT_SECONDS);
+        if (debugPlugin) {
+            args.add("--debug");
+        }
+        Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS);
     }
 
     private MavenVersion readLatestVersion() throws Exception {
@@ -166,25 +232,11 @@ public class Metadata {
         throw new IllegalStateException("No version in " + latestVersionFile);
     }
 
+    private void info(String message, Object... args) {
+        Log.info(message, args);
+    }
 
-    boolean isStale(Path file, long currentTimeMillis) {
-        if (Files.exists(file)) {
-            if (hoursBetweenUpdates > 0) {
-                final FileTime lastModified = FileUtils.lastModifiedTime(file);
-                final FileTime current = FileTime.fromMillis(currentTimeMillis);
-                final long currentHours = current.to(TimeUnit.HOURS);
-                final long lastCheckedHours = lastModified.to(TimeUnit.HOURS);
-                final long delta = currentHours - lastCheckedHours;
-                final boolean stale = delta > hoursBetweenUpdates;
-                Log.debug("%s stale: %s", file, stale);
-                return stale;
-            } else {
-                Log.debug("%s forced stale: zero delay", file);
-                return true;
-            }
-        } else {
-            Log.debug("%s not found", file);
-            return true;
-        }
+    private void debug(String message, Object... args) {
+        Log.debug(message, args);
     }
 }

@@ -20,13 +20,9 @@ import java.io.File;
 import java.nio.file.Path;
 
 import io.helidon.build.util.AnsiConsoleInstaller;
-import io.helidon.build.util.PomUtils;
 import io.helidon.build.util.ProjectConfig;
-import io.helidon.build.util.Requirements;
 
-import static io.helidon.build.util.FileUtils.WORKING_DIR;
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
-import static io.helidon.build.util.ProjectConfig.ensureProjectConfig;
 
 /**
  * Class BaseCommand.
@@ -51,5 +47,4 @@ public abstract class BaseCommand {
         projectDir = dir;
         return projectConfig;
     }
-
 }

@@ -27,7 +27,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.test.TestFiles.helidonSeProjectCopy;
-import static io.helidon.build.test.TestFiles.touch;
+import static io.helidon.build.util.FileUtils.touch;
 import static io.helidon.build.util.FileUtils.ChangeDetectionType.FIRST;
 import static io.helidon.build.util.FileUtils.ChangeDetectionType.LATEST;
 import static io.helidon.build.util.FileUtils.assertFile;

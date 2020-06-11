@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.Log;
@@ -74,11 +75,14 @@ public class Plugins {
      * Execute a plugin and wait for it to complete.
      *
      * @param pluginName The plugin name.
+     * @param pluginArgs The plugin args.
      * @param maxWaitSeconds The maximum number of seconds to wait for completion.
      * @throws Exception If an error occurs.
      */
-    public static void execute(String pluginName, int maxWaitSeconds) throws Exception {
-        execute(pluginName, List.of(), maxWaitSeconds);
+    public static void execute(String pluginName,
+                               List<String> pluginArgs,
+                               int maxWaitSeconds) throws Exception {
+        execute(pluginName, pluginArgs, maxWaitSeconds, Log::info);
     }
 
     /**
@@ -87,9 +91,13 @@ public class Plugins {
      * @param pluginName The plugin name.
      * @param pluginArgs The plugin args.
      * @param maxWaitSeconds The maximum number of seconds to wait for completion.
+     * @param stdOut The std out consumer.
      * @throws Exception If an error occurs.
      */
-    public static void execute(String pluginName, List<String> pluginArgs, int maxWaitSeconds) throws Exception {
+    public static void execute(String pluginName,
+                               List<String> pluginArgs,
+                               int maxWaitSeconds,
+                               Consumer<String> stdOut) throws Exception {
 
         // Create the command
 
@@ -130,7 +138,7 @@ public class Plugins {
         final List<String> stdErr = new ArrayList<>();
         ProcessMonitor processMonitor = ProcessMonitor.builder()
                                                       .processBuilder(processBuilder)
-                                                      .stdOut(Log::info)
+                                                      .stdOut(stdOut)
                                                       .stdErr(stdErr::add)
                                                       .capture(false)
                                                       .build()

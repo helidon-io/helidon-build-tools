@@ -53,7 +53,7 @@ class BuildRootTest {
         final BuildRoot sourceDir = sourceDirectory(true);
         final Path sourceFile = new ArrayList<>(sourceDir.list()).get(0).path();
 
-        TestFiles.touch(sourceFile);
+        FileUtils.touch(sourceFile);
         BuildRoot.Changes changes = sourceDir.changes();
         assertThat(changes.isEmpty(), is(false));
         assertThat(changes.isEmpty(), is(false));
@@ -84,7 +84,7 @@ class BuildRootTest {
     void testFileAdditionDetected() {
         final BuildRoot sourceDir = sourceDirectory(true);
 
-        final Path newSourceFile = TestFiles.ensureFile(sourceDir.path().resolve("NewSource.java"));
+        final Path newSourceFile = FileUtils.ensureFile(sourceDir.path().resolve("NewSource.java"));
         BuildRoot.Changes changes = sourceDir.changes();
         assertThat(changes, is(not(nullValue())));
         assertThat(changes.isEmpty(), is(false));
@@ -101,10 +101,10 @@ class BuildRootTest {
         final List<BuildFile> sources = new ArrayList<>(sourceDir.list());
         assertThat(sources.size(), is(greaterThanOrEqualTo(3)));
         final Path newPackageDir = FileUtils.ensureDirectory(sourceDir.path().resolve("foo"));
-        final Path added1 = TestFiles.ensureFile(sourceDir.path().resolve("NewSource.java"));
-        final Path added2 = TestFiles.ensureFile(newPackageDir.resolve("FooSource.java"));
-        final Path modified1 = TestFiles.touch(sources.get(0).path());
-        final Path modified2 = TestFiles.touch(sources.get(1).path());
+        final Path added1 = FileUtils.ensureFile(sourceDir.path().resolve("NewSource.java"));
+        final Path added2 = FileUtils.ensureFile(newPackageDir.resolve("FooSource.java"));
+        final Path modified1 = FileUtils.touch(sources.get(0).path());
+        final Path modified2 = FileUtils.touch(sources.get(1).path());
         final Path deleted = FileUtils.delete(sources.get(2).path());
 
         BuildRoot.Changes changes = sourceDir.changes();

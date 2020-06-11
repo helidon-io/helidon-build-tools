@@ -85,8 +85,9 @@ public class UpdateMetadata extends Plugin {
             case READ_TIMEOUT_ARG:
                 readTimeout = Integer.parseInt(nextArg(argIndex, allArgs));
                 return argIndex + 1;
+            default:
+                return argIndex;
         }
-        return argIndex;
     }
 
     @Override
@@ -154,12 +155,14 @@ public class UpdateMetadata extends Plugin {
                                                           .readTimeout(readTimeout)
                                                           .connect();
         download(connection, versionDir);
+
+        // Update the .lastUpdate file with etag if available or a constant if not
+
         final String etag = connection.getHeaderField(ETAG_HEADER);
-        if (etag != null) {
-            final InputStream input = new ByteArrayInputStream(etag.getBytes(UTF_8));
-            Files.copy(input, lastUpdatedFile, StandardCopyOption.REPLACE_EXISTING);
-            Log.debug("updated %s with etag %s", lastUpdatedFile, etag);
-        }
+        final String content = etag == null ? "<none>" : etag;
+        final InputStream input = new ByteArrayInputStream(content.getBytes(UTF_8));
+        Files.copy(input, lastUpdatedFile, StandardCopyOption.REPLACE_EXISTING);
+        Log.debug("updated %s with etag %s", lastUpdatedFile, content);
     }
 
     private void download(URLConnection connection, Path versionDir) throws IOException {

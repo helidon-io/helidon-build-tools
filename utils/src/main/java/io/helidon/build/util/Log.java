@@ -114,6 +114,20 @@ public class Log {
     }
 
     /**
+     * Returns the writer.
+     *
+     * @return The writer.
+     */
+    public static Writer writer() {
+        Writer writer = WRITER.get();
+        if (writer == null) {
+            writer = SystemLogWriter.create();
+            writer(writer);
+        }
+        return writer;
+    }
+
+    /**
      * Returns whether or not debug messages will be written.
      *
      * @return {@code true} if enabled.
@@ -282,14 +296,5 @@ public class Log {
      */
     public static boolean isSystemWriter() {
         return WRITER.get() instanceof SystemLogWriter;
-    }
-
-    private static Writer writer() {
-        Writer writer = WRITER.get();
-        if (writer == null) {
-            writer = SystemLogWriter.create();
-            writer(writer);
-        }
-        return writer;
     }
 }

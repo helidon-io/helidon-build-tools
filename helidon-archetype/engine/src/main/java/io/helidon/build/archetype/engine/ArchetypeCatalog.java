@@ -47,6 +47,7 @@ public final class ArchetypeCatalog  {
         this.entries = entries;
     }
 
+
     /**
      * Create a archetype descriptor instance from a file.
      *

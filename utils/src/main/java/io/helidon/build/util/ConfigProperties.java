@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 
@@ -67,6 +68,20 @@ public class ConfigProperties {
         this.file = file;
         this.properties = new Properties();
         load();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ConfigProperties)) return false;
+        final ConfigProperties that = (ConfigProperties) o;
+        return Objects.equals(file, that.file)
+                && Objects.equals(properties, that.properties);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(file, properties);
     }
 
     /**

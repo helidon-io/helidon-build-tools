@@ -64,7 +64,7 @@ public class Config {
         UserConfig config = USER_CONFIG.get();
         if (config == null) {
             if (USER_HOME_DIR.get() == null) {
-                config = Config.userConfig();
+                config = UserConfig.create();
             } else {
                 config = UserConfig.create(USER_HOME_DIR.get());
             }

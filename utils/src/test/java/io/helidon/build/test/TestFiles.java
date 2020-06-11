@@ -17,13 +17,10 @@
 package io.helidon.build.test;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.FileTime;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -42,7 +39,6 @@ import static io.helidon.build.test.HelidonTestVersions.currentHelidonReleaseVer
 import static io.helidon.build.util.Constants.DIR_SEP;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
-import static io.helidon.build.util.FileUtils.lastModifiedSeconds;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -148,46 +144,6 @@ public class TestFiles implements BeforeAllCallback {
      */
     public static Path signedJar() {
         return SIGNED_JAR.instance();
-    }
-
-    /**
-     * Creates the given file (with no content) if it does not already exist.
-     *
-     * @param file The file.
-     * @return The file.
-     */
-    public static Path ensureFile(Path file) {
-        if (!Files.exists(file)) {
-            try {
-                Files.createFile(file);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-        return file;
-    }
-
-    /**
-     * Ensure that the given file exists, and update the modified time if it does.
-     *
-     * @param file The file.
-     * @return The file.
-     */
-    public static Path touch(Path file) {
-        if (Files.exists(file)) {
-            final long currentTime = System.currentTimeMillis();
-            final long lastModified = lastModifiedSeconds(file);
-            final long lastModifiedPlusOneSecond = lastModified + 1000;
-            final long newTime = Math.max(currentTime, lastModifiedPlusOneSecond);
-            try {
-                Files.setLastModifiedTime(file, FileTime.fromMillis(newTime));
-                return file;
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        } else {
-            return ensureFile(file);
-        }
     }
 
     /**

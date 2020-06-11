@@ -27,6 +27,7 @@ public class Style {
      *
      * @param style The style name. May be a comma separated list.
      * @param message The message.
+     * @param args The message args.
      * @return The formatted message.
      */
     public static String style(String style, Object message, Object... args) {
