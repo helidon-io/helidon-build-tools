@@ -51,7 +51,7 @@ public class UserConfig {
     }
 
     private UserConfig(Path homeDir) {
-        this.homeDir = homeDir;
+        this.homeDir = homeDir.toAbsolutePath();
         this.configDir = FileUtils.ensureDirectory(homeDir.resolve(DOT_HELIDON));
         this.cacheDir = FileUtils.ensureDirectory(configDir.resolve(CACHE_DIR_NAME));
         this.pluginsDir = FileUtils.ensureDirectory(configDir.resolve(PLUGINS_DIR_NAME));

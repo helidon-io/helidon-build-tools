@@ -34,6 +34,7 @@ import io.helidon.build.util.Style;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
+import static io.helidon.build.cli.impl.CommandRequirements.requireValidMavenProjectConfig;
 import static io.helidon.build.cli.impl.Config.latestPluginVersion;
 import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
@@ -92,12 +93,12 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
         // Ensure preconditions
 
         requireMinimumMavenVersion();
-        CommandRequirements.requireValidMavenProjectConfig();
+        requireValidMavenProjectConfig(commonOptions);
 
         // Optionally override plugin version
 
         String overrideVersion = pluginVersion == null ? (latestPluginVersion ? latestPluginVersion() : null) : pluginVersion;
-        String overridePluginVersion = overrideVersion  == null ? null : HELIDON_PLUGIN_VERSION_PROP_PREFIX + overrideVersion;
+        String overridePluginVersion = overrideVersion == null ? null : HELIDON_PLUGIN_VERSION_PROP_PREFIX + overrideVersion;
         if (overridePluginVersion != null) {
             Log.verbose("Using plugin version %s", overridePluginVersion);
         }
@@ -127,18 +128,18 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
                 : DevCommand::printAllLines;
 
         MavenCommand.builder()
-                .verbose(verbosity == DEBUG)
-                .stdOut(stdOut)
-                .stdErr(stdErr)
-                .filter(filter)
-                .addArgument(DEV_GOAL)
-                .addArgument(CLEAN_PROP_PREFIX + clean)
-                .addArgument(FORK_PROP_PREFIX + fork)
-                .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
-                .addOptionalArgument(overridePluginVersion)
-                .directory(commonOptions.project())
-                .build()
-                .execute();
+                    .verbose(verbosity == DEBUG)
+                    .stdOut(stdOut)
+                    .stdErr(stdErr)
+                    .filter(filter)
+                    .addArgument(DEV_GOAL)
+                    .addArgument(CLEAN_PROP_PREFIX + clean)
+                    .addArgument(FORK_PROP_PREFIX + fork)
+                    .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
+                    .addOptionalArgument(overridePluginVersion)
+                    .directory(commonOptions.project())
+                    .build()
+                    .execute();
     }
 
     private static boolean printAllLines(String line) {

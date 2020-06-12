@@ -31,7 +31,7 @@ public abstract class Plugin {
                 final Plugin plugin = Plugin.newInstance(args[0]);
                 plugin.parse(args).execute();
             }
-        } catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException | LinkageError e) {
             fail(e.toString());
         } catch (Throwable e) {
             fail(e.getMessage());
@@ -116,6 +116,9 @@ public abstract class Plugin {
                 Log.verbosity(Log.Verbosity.DEBUG);
             } else {
                 index = parseArg(arg, index, args);
+                if (index < 0) {
+                    throw new IllegalArgumentException("unknown argument: " + arg);
+                }
             }
         }
         validateArgs();
@@ -128,11 +131,11 @@ public abstract class Plugin {
      * @param arg The argument.
      * @param argIndex The argument index.
      * @param allArgs All arguments.
-     * @return The new index.
+     * @return The new index, or -1 if an unknown argument.
      * @throws Exception if an error occurs.
      */
     int parseArg(String arg, int argIndex, String[] allArgs) throws Exception {
-        throw new IllegalArgumentException("unknown arg: " + arg);
+        return -1;
     }
 
     /**

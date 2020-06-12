@@ -62,7 +62,7 @@ public final class BuildCommand extends BaseCommand implements CommandExecution 
     public void execute(CommandContext context) throws Exception {
 
         requireMinimumMavenVersion();
-        requireValidMavenProjectConfig();
+        requireValidMavenProjectConfig(commonOptions);
 
         MavenCommand.Builder builder = MavenCommand.builder()
                                                    .addArgument(ENABLE_HELIDON_CLI)

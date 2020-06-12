@@ -87,10 +87,12 @@ public class CommandRequirements {
 
     /**
      * Require that a valid Maven project configuration exists.
+     *
+     * @param commonOptions The options.
      */
-    static void requireValidMavenProjectConfig() {
+    static void requireValidMavenProjectConfig(CommonOptions commonOptions) {
         try {
-            PomUtils.toPomFile(WORKING_DIR);
+            PomUtils.toPomFile(commonOptions.project().toPath());
         } catch (IllegalArgumentException e) {
             String message = e.getMessage();
             if (message.contains("does not exist")) {

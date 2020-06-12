@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import io.helidon.build.util.Log;
+import io.helidon.build.util.SystemLogWriter;
 
 /**
  * A {@link Log#writer} that captures all output.
@@ -31,6 +32,9 @@ public class CapturingLogWriter implements Log.Writer {
     private CapturingLogWriter() {
         this.delegate = Log.writer();
         this.entries = new ArrayList<>();
+        if (delegate instanceof SystemLogWriter) {
+            ((SystemLogWriter) delegate).level(Log.Level.DEBUG);
+        }
     }
 
     /**
@@ -68,12 +72,12 @@ public class CapturingLogWriter implements Log.Writer {
         }
 
         /**
-         * Returns the message, formatted with the arguments.
+         * Returns the message.
          *
-         * @return The formatted message.
+         * @return The message.
          */
         public String message() {
-            return String.format(message, args);
+            return message;
         }
 
         /**
@@ -87,7 +91,13 @@ public class CapturingLogWriter implements Log.Writer {
 
         @Override
         public String toString() {
-            return message();
+            final StringBuilder sb = new StringBuilder();
+            sb.append("[").append(level.toString().toLowerCase()).append("] ");
+            sb.append(String.format(message, args));
+            if (thrown != null) {
+                sb.append(" (threw ").append(thrown).append(")");
+            }
+            return sb.toString();
         }
     }
 
@@ -131,7 +141,7 @@ public class CapturingLogWriter implements Log.Writer {
      * @return The messages.
      */
     public List<String> messages() {
-        return entries.stream().map(LogEntry::message).collect(Collectors.toList());
+        return entries.stream().map(LogEntry::toString).collect(Collectors.toList());
     }
 
     @Override

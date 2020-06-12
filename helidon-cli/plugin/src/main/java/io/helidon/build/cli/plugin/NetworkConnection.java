@@ -285,12 +285,12 @@ public class NetworkConnection {
             if (url == null) {
                 throw new IllegalStateException("url is required");
             }
-            Log.debug("attempting to open %s", url);
+            Log.debug("connecting to %s", url);
             IOException lastCaught = null;
             for (int attempt = 1; attempt <= maxRetries; attempt++) {
                 try {
                     URLConnection result = connector.connect(url, headers, connectTimeout, readTimeout);
-                    Log.debug("connected to %s", url);
+                    Log.debug("connected to %s, headers=%s", url, result.getHeaderFields());
                     return result;
                 } catch (UnknownHostException | SocketException | SocketTimeoutException e) {
                     lastCaught = e;

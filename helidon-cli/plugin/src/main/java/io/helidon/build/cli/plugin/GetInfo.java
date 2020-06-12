@@ -77,7 +77,7 @@ public class GetInfo extends Plugin {
             maxWidth = Integer.parseInt(nextArg(argIndex, allArgs));
             return argIndex + 1;
         }
-        return argIndex;
+        return -1;
     }
 
     @Override

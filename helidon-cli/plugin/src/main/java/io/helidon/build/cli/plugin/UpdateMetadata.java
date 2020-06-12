@@ -86,7 +86,7 @@ public class UpdateMetadata extends Plugin {
                 readTimeout = Integer.parseInt(nextArg(argIndex, allArgs));
                 return argIndex + 1;
             default:
-                return argIndex;
+                return -1;
         }
     }
 

@@ -277,6 +277,15 @@ public class Log {
         } else if (level == Level.ERROR) {
             ERRORS.incrementAndGet();
         }
+        if (message == null) {
+            message = "<null>";
+        } else {
+            for (int i = 0; i < args.length; i++) {
+                if (args[i] == null) {
+                    args[i] = "<null>";
+                }
+            }
+        }
         writer().write(level, thrown, message, args);
     }
 

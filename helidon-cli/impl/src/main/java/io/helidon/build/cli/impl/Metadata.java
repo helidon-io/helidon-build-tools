@@ -18,6 +18,7 @@ package io.helidon.build.cli.impl;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -47,13 +48,14 @@ public class Metadata {
     private static final String CATALOG_FILE_NAME = "archetype-catalog.xml";
     private static final String PLUGIN_NAME = "UpdateMetadata";
     private static final String JAR_SUFFIX = ".jar";
-    private static final int DEFAULT_UPDATE_DELAY_HOURS = 24;
+    private static final TimeUnit DEFAULT_UPDATE_DELAY_UNITS = TimeUnit.HOURS;
+    private static final long DEFAULT_UPDATE_FREQUENCY = 24;
     private static final int PLUGIN_MAX_WAIT_SECONDS = 30;
 
     private final Path rootDir;
     private final String baseUrl;
     private final Path latestVersionFile;
-    private final int updateDelayHours;
+    private final long updateFrequencyMillis;
     private final boolean debugPlugin;
     private final AtomicReference<MavenVersion> latestVersion;
 
@@ -65,7 +67,7 @@ public class Metadata {
     public static Metadata newInstance() {
         final Path cacheDir = Config.userConfig().cacheDir();
         final boolean debug = Log.isDebug();
-        return newInstance(cacheDir, DEFAULT_BASE_URL, DEFAULT_UPDATE_DELAY_HOURS, debug);
+        return newInstance(cacheDir, DEFAULT_BASE_URL, DEFAULT_UPDATE_FREQUENCY, DEFAULT_UPDATE_DELAY_UNITS, debug);
     }
 
     /**
@@ -73,19 +75,28 @@ public class Metadata {
      *
      * @param rootDir The root directory.
      * @param baseUrl The base url.
-     * @param updateDelayHours The number of hours between updates.
+     * @param updateFrequency The update frequency.
+     * @param updateFrequencyUnits The update frequency units.
      * @param debugPlugin {@code true} if should enable debug logging in plugin.
      * @return The instance.
      */
-    public static Metadata newInstance(Path rootDir, String baseUrl, int updateDelayHours, boolean debugPlugin) {
-        return new Metadata(rootDir, baseUrl, updateDelayHours, debugPlugin);
+    public static Metadata newInstance(Path rootDir,
+                                       String baseUrl,
+                                       long updateFrequency,
+                                       TimeUnit updateFrequencyUnits,
+                                       boolean debugPlugin) {
+        return new Metadata(rootDir, baseUrl, updateFrequency, updateFrequencyUnits, debugPlugin);
     }
 
-    private Metadata(Path rootDir, String baseUrl, int updateDelayHours, boolean debugPlugin) {
+    private Metadata(Path rootDir,
+                     String baseUrl,
+                     long updateFrequency,
+                     TimeUnit updateFrequencyUnits,
+                     boolean debugPlugin) {
         this.rootDir = rootDir;
         this.baseUrl = baseUrl;
         this.latestVersionFile = rootDir.resolve(LATEST_VERSION_FILE_NAME);
-        this.updateDelayHours = updateDelayHours;
+        this.updateFrequencyMillis = updateFrequencyUnits.toMillis(updateFrequency);
         this.debugPlugin = debugPlugin;
         this.latestVersion = new AtomicReference<>();
     }
@@ -184,21 +195,24 @@ public class Metadata {
 
     private boolean isStale(Path file, long currentTimeMillis) {
         if (Files.exists(file)) {
-            if (updateDelayHours > 0) {
+            if (updateFrequencyMillis > 0) {
                 final FileTime lastModified = FileUtils.lastModifiedTime(file);
                 final FileTime current = FileTime.fromMillis(currentTimeMillis);
-                final long currentHours = current.to(TimeUnit.HOURS);
-                final long lastCheckedHours = lastModified.to(TimeUnit.HOURS);
-                final long delta = currentHours - lastCheckedHours;
-                final boolean stale = delta > updateDelayHours;
-                Log.debug("%s stale: %s", file, stale);
+                final long currentMillis = current.to(TimeUnit.MILLISECONDS);
+                final long lastCheckedMillis = lastModified.to(TimeUnit.MILLISECONDS);
+                final long delta = currentMillis - lastCheckedMillis;
+                final boolean stale = delta > updateFrequencyMillis;
+                final Duration elapsed = Duration.ofMillis(delta);
+                Log.debug("stale check (%d days, %d hours, %d minutes %d seconds) is %s for %s",
+                        elapsed.toDaysPart(), elapsed.toHoursPart(), elapsed.toMinutesPart(), elapsed.toSecondsPart(),
+                        stale, file);
                 return stale;
             } else {
-                Log.debug("%s forced stale: zero delay", file);
+                Log.debug("stale check forced (zero delay) for %s", file);
                 return true;
             }
         } else {
-            Log.debug("%s not found", file);
+            Log.debug("stale check forced (not found) for %s", file);
             return true;
         }
     }
