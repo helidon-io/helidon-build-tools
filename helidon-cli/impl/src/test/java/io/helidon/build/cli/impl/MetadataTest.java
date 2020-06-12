@@ -31,6 +31,7 @@ import io.helidon.build.archetype.engine.ArchetypeCatalog.ArchetypeEntry;
 import io.helidon.build.test.CapturingLogWriter;
 import io.helidon.build.test.TestFiles;
 import io.helidon.build.util.ConfigProperties;
+import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.UserConfig;
 
@@ -62,6 +63,9 @@ public class MetadataTest {
     private String baseUrl;
     private Path cacheDir;
     private CapturingLogWriter output;
+    private long initTime;
+    private Metadata meta;
+    private MavenVersion latestVersion;
 
     /**
      * Provide a way for subclasses to set the base url.
@@ -87,6 +91,146 @@ public class MetadataTest {
     @AfterEach
     public void afterEach() {
         output.uninstall();
+    }
+
+    @Test
+    void smokeTest() throws Exception {
+        initAndAssertLatestVersionDoesUpdate(24, TimeUnit.HOURS);
+
+        // Check properties. Should not perform update.
+
+        clearLog();
+        ConfigProperties props = meta.properties(latestVersion);
+        assertThat(props, is(not(nullValue())));
+        assertThat(props.keySet().isEmpty(), is(false));
+        assertThat(props.property("helidon.version"), is("2.0.0-RC1"));
+        assertThat(props.property("build-tools.version"), is("2.0.0-RC1"));
+        assertThat(props.property("cli.version"), is("2.0.0-RC1"));
+        assertThat(props.contains("cli.2.0.0-M2.message"), is(true));
+        assertThat(props.contains("cli.2.0.0-M3.message"), is(false));
+        assertThat(props.contains("cli.2.0.0-M4.message"), is(true));
+        assertThat(props.contains("cli.2.0.0-RC1.message"), is(true));
+        assertThat(logEntries().isEmpty(), is(false));
+
+        assertThat(logMessages().size(), is(1));
+        assertThat(countLogged("stale check", "is false", "2.0.0-RC1/.lastUpdate"), is(1));
+
+        // Check catalog. Should not perform update.
+
+        clearLog();
+        ArchetypeCatalog catalog = meta.catalog(latestVersion);
+        assertThat(catalog, is(not(nullValue())));
+        assertThat(catalog.entries().size(), is(2));
+        Map<String, ArchetypeEntry> entriesById = catalog.entries()
+                                                         .stream()
+                                                         .collect(Collectors.toMap(ArchetypeEntry::artifactId, entry -> entry));
+        assertThat(entriesById.size(), is(2));
+        assertThat(entriesById.get("helidon-bare-se"), is(notNullValue()));
+        assertThat(entriesById.get("helidon-bare-se").name(), is("bare"));
+        assertThat(entriesById.get("helidon-bare-mp"), is(notNullValue()));
+        assertThat(entriesById.get("helidon-bare-mp").name(), is("bare"));
+        assertThat(logMessages().size(), is(1));
+        assertThat(countLogged("stale check", "is false", "2.0.0-RC1/.lastUpdate"), is(1));
+
+        // Check archetype. Should not perform update.
+
+        clearLog();
+        Path archetypeJar = meta.archetype(entriesById.get("helidon-bare-se"));
+        assertThat(archetypeJar, is(not(nullValue())));
+        assertThat(Files.exists(archetypeJar), is(true));
+        assertThat(archetypeJar.getFileName().toString(), is("helidon-bare-se-2.0.0-RC1.jar"));
+        assertThat(logMessages().size(), is(1));
+        assertThat(countLogged("stale check", "is false", "2.0.0-RC1/.lastUpdate"), is(1));
+
+        // Check that more calls do not update
+
+        clearLog();
+        assertThat(meta.latestVersion(), is(latestVersion));
+        assertThat(meta.properties(latestVersion), is(props));
+        assertThat(meta.catalog(latestVersion), is(catalog));
+
+        assertThat(logMessages().size(), is(3));
+        assertThat(countLogged("stale check", "is false", "latest"), is(1));
+        assertThat(countLogged("stale check", "is false", "2.0.0-RC1/.lastUpdate"), is(2));
+    }
+
+    @Test
+    void testLatestVersionUpdatesAfterDelay() throws Exception {
+        initAndAssertLatestVersionDoesUpdate(1, TimeUnit.SECONDS);
+
+        // Wait 1.25 seconds and check version. Should perform update.
+
+        Log.info("sleeping 1.25 seconds before recheck");
+        clearLog();
+        Thread.sleep(1250);
+        assertThat(meta.latestVersion(), is(latestVersion));
+
+        assertThat(countLogged("stale check", "is true", "latest"), is(1));
+        assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag <none>"), is(1));
+        assertLogged("Looking up latest Helidon version");
+        assertNotLogged("Updating metadata for Helidon version 2.0.0-RC1");
+    }
+
+    @Test
+    void testPropertiesUpdatesAfterDelay() throws Exception {
+        initAndAssertLatestVersionDoesUpdate(1, TimeUnit.SECONDS);
+
+        // Wait 1.25 seconds and check properties. Should perform update.
+
+        Log.info("sleeping 1.25 seconds before recheck");
+        clearLog();
+        Thread.sleep(1250);
+        assertThat(meta.properties(latestVersion), is(not(nullValue())));
+
+        assertThat(countLogged("stale check", "is true", "2.0.0-RC1/.lastUpdate"), is(1));
+        assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag <none>"), is(1));
+        assertNotLogged("Looking up latest Helidon version");
+        assertLogged("Updating metadata for Helidon version 2.0.0-RC1");
+    }
+
+    @Test
+    void testCatalogUpdatesAfterDelay() throws Exception {
+        initAndAssertLatestVersionDoesUpdate(1, TimeUnit.SECONDS);
+
+        // Wait 1.25 seconds and check catalog. Should perform update.
+
+        Log.info("sleeping 1.25 seconds before recheck");
+        clearLog();
+        Thread.sleep(1250);
+        assertThat(meta.catalog(latestVersion), is(not(nullValue())));
+
+        assertThat(countLogged("stale check", "is true", "2.0.0-RC1/.lastUpdate"), is(1));
+        assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag <none>"), is(1));
+        assertNotLogged("Looking up latest Helidon version");
+        assertLogged("Updating metadata for Helidon version 2.0.0-RC1");
+    }
+
+    protected void initAndAssertLatestVersionDoesUpdate(long updateFrequency, TimeUnit updateFrequencyUnits) throws Exception {
+        initTime = System.currentTimeMillis();
+        meta = newInstance(updateFrequency, updateFrequencyUnits);
+
+        // Check latest version. Should update both latest file and latest archetype.
+
+        clearLog();
+        latestVersion = meta.latestVersion();
+        assertThat(latestVersion, is(not(nullValue())));
+        assertThat(latestVersion, is(toMavenVersion("2.0.0-RC1")));
+        assertLogged("Looking up latest Helidon version");
+        assertNotLogged("Updating metadata for Helidon version 2.0.0-RC1");
+
+        assertThat(countLogged("stale check", "(not found)", "latest"), is(1));
+        assertThat(countLogged("unpacked", "cli-plugins-", ".jar"), is(1));
+        assertThat(countLogged("executing", "cli-plugins-", "UpdateMetadata"), is(1));
+        assertThat(countLogged("downloading", "latest"), is(1));
+        assertThat(countLogged("connecting", "latest"), is(1));
+        assertThat(countLogged("connected", "latest"), is(1));
+        assertThat(countLogged("downloading", "2.0.0-RC1/cli-data.zip"), is(1));
+        assertThat(countLogged("connecting", "2.0.0-RC1/cli-data.zip"), is(1));
+        assertThat(countLogged("connected", "2.0.0-RC1/cli-data.zip"), is(1));
+
+        assertThat(countLogged("unzipping", "2.0.0-RC1/cli-data.zip"), is(1));
+        assertThat(countLogged("deleting", "2.0.0-RC1/cli-data.zip"), is(1));
+        assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag <none>"), is(1));
     }
 
     protected Metadata newInstance() {
@@ -169,90 +313,5 @@ public class MetadataTest {
                                                                .filter(line -> line.contains(fragment2))
                                                                .filter(line -> line.contains(fragment3))
                                                                .count();
-    }
-
-    @Test
-    void smokeTest() throws Exception {
-        Metadata meta = newInstance();
-
-        // Check latest version. Should update both latest file and latest archetype.
-
-        clearLog();
-        MavenVersion version = meta.latestVersion();
-        assertThat(version, is(not(nullValue())));
-        assertThat(version, is(toMavenVersion("2.0.0-RC1")));
-        assertLogged("Looking up latest Helidon version");
-        assertNotLogged("Updating metadata for Helidon version 2.0.0-RC1");
-
-        assertThat(countLogged("stale check", "(not found)", "latest"), is(1));
-        assertThat(countLogged("unpacked", "cli-plugins-", ".jar"), is(1));
-        assertThat(countLogged("executing", "cli-plugins-", "UpdateMetadata"), is(1));
-        assertThat(countLogged("downloading", "latest"), is(1));
-        assertThat(countLogged("connecting", "latest"), is(1));
-        assertThat(countLogged("connected", "latest"), is(1));
-        assertThat(countLogged("downloading", "2.0.0-RC1/cli-data.zip"), is(1));
-        assertThat(countLogged("connecting", "2.0.0-RC1/cli-data.zip"), is(1));
-        assertThat(countLogged("connected", "2.0.0-RC1/cli-data.zip"), is(1));
-
-        assertThat(countLogged("unzipping", "2.0.0-RC1/cli-data.zip"), is(1));
-        assertThat(countLogged("deleting", "2.0.0-RC1/cli-data.zip"), is(1));
-        assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag <none>"), is(1));
-
-        // Check properties. Should not perform update.
-
-        clearLog();
-        ConfigProperties props = meta.properties(version);
-        assertThat(props, is(not(nullValue())));
-        assertThat(props.keySet().isEmpty(), is(false));
-        assertThat(props.property("helidon.version"), is("2.0.0-RC1"));
-        assertThat(props.property("build-tools.version"), is("2.0.0-RC1"));
-        assertThat(props.property("cli.version"), is("2.0.0-RC1"));
-        assertThat(props.contains("cli.2.0.0-M2.message"), is(true));
-        assertThat(props.contains("cli.2.0.0-M3.message"), is(false));
-        assertThat(props.contains("cli.2.0.0-M4.message"), is(true));
-        assertThat(props.contains("cli.2.0.0-RC1.message"), is(true));
-        assertThat(logEntries().isEmpty(), is(false));
-
-        assertThat(logMessages().size(), is(1));
-        assertThat(countLogged("stale check", "is false", "2.0.0-RC1/.lastUpdate"), is(1));
-
-        // Check catalog. Should not perform update.
-
-        clearLog();
-        ArchetypeCatalog catalog = meta.catalog(version);
-        assertThat(catalog, is(not(nullValue())));
-        assertThat(catalog.entries().size(), is(2));
-        Map<String, ArchetypeEntry> entriesById = catalog.entries()
-                                                         .stream()
-                                                         .collect(Collectors.toMap(ArchetypeEntry::artifactId, entry -> entry));
-        assertThat(entriesById.size(), is(2));
-        assertThat(entriesById.get("helidon-bare-se"), is(notNullValue()));
-        assertThat(entriesById.get("helidon-bare-se").name(), is("bare"));
-        assertThat(entriesById.get("helidon-bare-mp"), is(notNullValue()));
-        assertThat(entriesById.get("helidon-bare-mp").name(), is("bare"));
-        assertThat(logMessages().size(), is(1));
-        assertThat(countLogged("stale check", "is false", "2.0.0-RC1/.lastUpdate"), is(1));
-
-        // Check archetype. Should not perform update.
-
-        clearLog();
-        Path archetypeJar = meta.archetype(entriesById.get("helidon-bare-se"));
-        assertThat(archetypeJar, is(not(nullValue())));
-        assertThat(Files.exists(archetypeJar), is(true));
-        assertThat(archetypeJar.getFileName().toString(), is("helidon-bare-se-2.0.0-RC1.jar"));
-        assertThat(logMessages().size(), is(1));
-        assertThat(countLogged("stale check", "is false", "2.0.0-RC1/.lastUpdate"), is(1));
-
-
-        // Check that more calls do not update
-
-        clearLog();
-        assertThat(meta.latestVersion(), is(version));
-        assertThat(meta.properties(version), is(props));
-        assertThat(meta.catalog(version), is(catalog));
-
-        assertThat(logMessages().size(), is(3));
-        assertThat(countLogged("stale check", "is false", "latest"), is(1));
-        assertThat(countLogged("stale check", "is false", "2.0.0-RC1/.lastUpdate"), is(2));
     }
 }
