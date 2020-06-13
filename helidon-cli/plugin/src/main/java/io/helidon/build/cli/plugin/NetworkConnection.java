@@ -208,7 +208,7 @@ public class NetworkConnection {
          * @return This instance, for chaining.
          */
         public Builder headers(Map<String, String> headers) {
-            headers.putAll(requireNonNull(headers));
+            this.headers.putAll(requireNonNull(headers));
             return this;
         }
 
@@ -285,7 +285,7 @@ public class NetworkConnection {
             if (url == null) {
                 throw new IllegalStateException("url is required");
             }
-            Log.debug("connecting to %s", url);
+            Log.debug("connecting to %s, headers=%s", url, headers);
             IOException lastCaught = null;
             for (int attempt = 1; attempt <= maxRetries; attempt++) {
                 try {

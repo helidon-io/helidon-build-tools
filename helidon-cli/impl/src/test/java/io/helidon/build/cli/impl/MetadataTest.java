@@ -16,13 +16,13 @@
 package io.helidon.build.cli.impl;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -38,8 +38,10 @@ import io.helidon.build.util.UserConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockserver.integration.ClientAndServer;
 
 import static io.helidon.build.util.Constants.EOL;
+import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
 import static java.util.Objects.requireNonNull;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -48,33 +50,30 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 
 /**
  * Unit test for class {@link Metadata}.
  */
 public class MetadataTest {
-
-    static String testBaseUrl() {
-        return requireNonNull(MetadataTest.class.getClassLoader().getResource("cli-data")).toExternalForm();
-    }
-
-    private static final AtomicReference<String> BASE_URL = new AtomicReference<>(testBaseUrl());
+    static final URL TEST_CLI_DATA_URL = requireNonNull(MetadataTest.class.getClassLoader().getResource("cli-data"));
+    static final Path TEST_CLI_DATA_PATH = assertDir(Path.of(TEST_CLI_DATA_URL.getFile()));
+    static final int MOCK_SERVER_PORT = 8087;
+    static final String MOCK_SERVER_BASE_URL = "http://localhost:" + MOCK_SERVER_PORT;
+    static final String ETAG_HEADER = "Etag";
+    static final String IF_NONE_MATCH_HEADER = "If-None-Match";
+    static final String NO_ETAG = "<no-etag>";
+    static final String NO_FILE_ETAG = "<no-file>";
+    static final String INITIAL_ETAG = "<initial>";
+    static final String CHANGED_ETAG = "<changed>";
 
     private String baseUrl;
     private Path cacheDir;
     private CapturingLogWriter output;
-    private long initTime;
     private Metadata meta;
     private MavenVersion latestVersion;
-
-    /**
-     * Provide a way for subclasses to set the base url.
-     *
-     * @param baseUrl The base url.
-     */
-    protected static void useBaseUrl(String baseUrl) {
-        BASE_URL.set(requireNonNull(baseUrl));
-    }
+    private ClientAndServer mockServer;
 
     @BeforeEach
     public void beforeEach() throws IOException {
@@ -83,7 +82,7 @@ public class MetadataTest {
         userConfig.clearCache();
         userConfig.clearPlugins();
         Plugins.clearPluginJar();
-        baseUrl = BASE_URL.get();
+        useTestCliDataBaseUrl();
         cacheDir = userConfig.cacheDir();
         output = CapturingLogWriter.install();
     }
@@ -91,11 +90,14 @@ public class MetadataTest {
     @AfterEach
     public void afterEach() {
         output.uninstall();
+        if (mockServer != null) {
+            mockServer.stop();
+        }
     }
 
     @Test
     void smokeTest() throws Exception {
-        initAndAssertLatestVersionDoesUpdate(24, TimeUnit.HOURS);
+        initAndAssertLatestVersionDoesUpdate(24, TimeUnit.HOURS, NO_ETAG);
 
         // Check properties. Should not perform update.
 
@@ -156,7 +158,7 @@ public class MetadataTest {
 
     @Test
     void testLatestVersionUpdatesAfterDelay() throws Exception {
-        initAndAssertLatestVersionDoesUpdate(1, TimeUnit.SECONDS);
+        initAndAssertLatestVersionDoesUpdate(1, TimeUnit.SECONDS, NO_ETAG);
 
         // Wait 1.25 seconds and check version. Should perform update.
 
@@ -166,14 +168,14 @@ public class MetadataTest {
         assertThat(meta.latestVersion(), is(latestVersion));
 
         assertThat(countLogged("stale check", "is true", "latest"), is(1));
-        assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag <none>"), is(1));
+        assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag " + NO_ETAG), is(1));
         assertLogged("Looking up latest Helidon version");
         assertNotLogged("Updating metadata for Helidon version 2.0.0-RC1");
     }
 
     @Test
     void testPropertiesUpdatesAfterDelay() throws Exception {
-        initAndAssertLatestVersionDoesUpdate(1, TimeUnit.SECONDS);
+        initAndAssertLatestVersionDoesUpdate(1, TimeUnit.SECONDS, NO_ETAG);
 
         // Wait 1.25 seconds and check properties. Should perform update.
 
@@ -183,14 +185,14 @@ public class MetadataTest {
         assertThat(meta.properties(latestVersion), is(not(nullValue())));
 
         assertThat(countLogged("stale check", "is true", "2.0.0-RC1/.lastUpdate"), is(1));
-        assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag <none>"), is(1));
+        assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag " + NO_ETAG), is(1));
         assertNotLogged("Looking up latest Helidon version");
         assertLogged("Updating metadata for Helidon version 2.0.0-RC1");
     }
 
     @Test
     void testCatalogUpdatesAfterDelay() throws Exception {
-        initAndAssertLatestVersionDoesUpdate(1, TimeUnit.SECONDS);
+        initAndAssertLatestVersionDoesUpdate(1, TimeUnit.SECONDS, NO_ETAG);
 
         // Wait 1.25 seconds and check catalog. Should perform update.
 
@@ -200,13 +202,56 @@ public class MetadataTest {
         assertThat(meta.catalog(latestVersion), is(not(nullValue())));
 
         assertThat(countLogged("stale check", "is true", "2.0.0-RC1/.lastUpdate"), is(1));
-        assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag <none>"), is(1));
+        assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag " + NO_ETAG), is(1));
         assertNotLogged("Looking up latest Helidon version");
         assertLogged("Updating metadata for Helidon version 2.0.0-RC1");
     }
 
-    protected void initAndAssertLatestVersionDoesUpdate(long updateFrequency, TimeUnit updateFrequencyUnits) throws Exception {
-        initTime = System.currentTimeMillis();
+    @Test
+    void testUpdatesWhenEtagMatches() throws Exception {
+        byte[] zipData = Files.readAllBytes(TEST_CLI_DATA_PATH.resolve("2.0.0-RC1/cli-data.zip"));
+
+        // Setup mock server
+
+        startMockServer();
+
+        // Always return latest version
+
+        mockServer.when(request().withMethod("GET")
+                                 .withPath("/latest"))
+                  .respond(response().withBody("2.0.0-RC1"));
+
+        // Always return zip data when If-None-Match header is "<no-file>" (plugin defines this)
+
+        mockServer.when(request().withMethod("GET")
+                                 .withHeader(IF_NONE_MATCH_HEADER, NO_FILE_ETAG)
+                                 .withPath("/2.0.0-RC1/cli-data.zip"))
+                  .respond(response().withHeader(ETAG_HEADER, INITIAL_ETAG)
+                                     .withBody(zipData));
+
+        // Always return 304 when If-None-Match is "<initial>"
+
+        mockServer.when(request().withMethod("GET")
+                                 .withHeader(IF_NONE_MATCH_HEADER, INITIAL_ETAG)
+                                 .withPath("/2.0.0-RC1/cli-data.zip"))
+                  .respond(response().withHeader(ETAG_HEADER, INITIAL_ETAG)
+                                     .withStatusCode(304));
+
+        // Make the initial latestVersion call and validate the result
+
+        initAndAssertLatestVersionDoesUpdate(0, TimeUnit.NANOSECONDS, INITIAL_ETAG);
+
+        // Now get the properties again and make sure we skip the download
+
+        clearLog();
+        assertThat(meta.properties(latestVersion), is(not(nullValue())));
+        assertThat(countLogged("not modified", "2.0.0-RC1/cli-data.zip"), is(1));
+        assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag " + INITIAL_ETAG), is(1));
+    }
+
+    protected void initAndAssertLatestVersionDoesUpdate(long updateFrequency,
+                                                        TimeUnit updateFrequencyUnits,
+                                                        String expectedEtag) throws Exception {
         meta = newInstance(updateFrequency, updateFrequencyUnits);
 
         // Check latest version. Should update both latest file and latest archetype.
@@ -230,8 +275,38 @@ public class MetadataTest {
 
         assertThat(countLogged("unzipping", "2.0.0-RC1/cli-data.zip"), is(1));
         assertThat(countLogged("deleting", "2.0.0-RC1/cli-data.zip"), is(1));
-        assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag <none>"), is(1));
+        assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag " + expectedEtag), is(1));
     }
+
+    /**
+     * Use the test cli-data directory as the base url.
+     */
+    protected void useTestCliDataBaseUrl() {
+        useBaseUrl(TEST_CLI_DATA_URL.toExternalForm());
+    }
+
+    /**
+     * Use the given url as the base url.
+     *
+     * @param baseUrl The base url.
+     */
+    protected void useBaseUrl(String baseUrl) {
+        this.baseUrl = requireNonNull(baseUrl);
+    }
+
+
+    /**
+     * Starts the mock server and client and sets the base url pointing to it.
+     *
+     * @return The server and client.
+     */
+    protected ClientAndServer startMockServer() {
+        mockServer = ClientAndServer.startClientAndServer(MOCK_SERVER_PORT);
+        Log.info("Using mock server at %s", MOCK_SERVER_BASE_URL);
+        useBaseUrl(MOCK_SERVER_BASE_URL);
+        return mockServer;
+    }
+
 
     protected Metadata newInstance() {
         return Metadata.newInstance(cacheDir, baseUrl, 24, TimeUnit.HOURS, true);

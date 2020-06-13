@@ -20,6 +20,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
@@ -49,8 +50,13 @@ public class UpdateMetadata extends Plugin {
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     private static final String ETAG_HEADER = "Etag";
     private static final String IF_NONE_MATCH_HEADER = "If-None-Match";
+    private static final String NO_FILE_ETAG = "<no-file>";
+    private static final String NO_ETAG = "<no-etag>";
     private static final String ZIP_FILE_NAME = "cli-data.zip";
     private static final String REMOTE_DATA_FILE_SUFFIX = "/" + ZIP_FILE_NAME;
+    private static final int STATUS_OK = 200;
+    private static final int STATUS_NOT_MODIFIED = 304;
+
 
     private String version;
     private URL baseUrl;
@@ -144,9 +150,10 @@ public class UpdateMetadata extends Plugin {
         if (Files.exists(lastUpdatedFile)) {
             final String etag = Files.readString(lastUpdatedFile);
             headers.put(IF_NONE_MATCH_HEADER, etag);
-            Log.debug("maybe downloading %s, etag=%s", url, etag);
+            Log.debug("maybe downloading %s, headers=%s", url, headers);
         } else {
-            Log.debug("downloading %s", url);
+            headers.put(IF_NONE_MATCH_HEADER, NO_FILE_ETAG); // make mocking easier
+            Log.debug("downloading %s, headers=%s", url, headers);
         }
         final URLConnection connection = NetworkConnection.builder()
                                                           .url(url)
@@ -154,12 +161,26 @@ public class UpdateMetadata extends Plugin {
                                                           .connectTimeout(connectTimeout)
                                                           .readTimeout(readTimeout)
                                                           .connect();
-        download(connection, versionDir);
+        int status = STATUS_OK; // In case not http
+        if (connection instanceof HttpURLConnection) {
+            status = ((HttpURLConnection)connection).getResponseCode();
+        }
+        if (status == STATUS_OK) {
+            download(connection, versionDir);
+        } else if (status == STATUS_NOT_MODIFIED) {
+            Log.debug("not modified %s", url);
+        } else {
+            throw new IllegalStateException("connection failed with " + status + " " + url);
+        }
 
-        // Update the .lastUpdate file with etag if available or a constant if not
+        // Update the .lastUpdate file with etag if available or a constant if not.
+        //
+        // Note that we need to write this file even when we get a not modified response, just
+        // to updating the last modified time on the file. This allows the Metadata class to
+        // avoid calling this plugin again until the update frequency dictates.
 
         final String etag = connection.getHeaderField(ETAG_HEADER);
-        final String content = etag == null ? "<none>" : etag;
+        final String content = etag == null ? NO_ETAG : etag;
         final InputStream input = new ByteArrayInputStream(content.getBytes(UTF_8));
         Files.copy(input, lastUpdatedFile, StandardCopyOption.REPLACE_EXISTING);
         Log.debug("updated %s with etag %s", lastUpdatedFile, content);
