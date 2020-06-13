@@ -19,11 +19,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
@@ -40,7 +37,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
 
-import static io.helidon.build.util.Constants.EOL;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
 import static java.util.Objects.requireNonNull;
@@ -49,7 +45,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
@@ -66,11 +61,10 @@ public class MetadataTest {
     static final String NO_ETAG = "<no-etag>";
     static final String NO_FILE_ETAG = "<no-file>";
     static final String INITIAL_ETAG = "<initial>";
-    static final String CHANGED_ETAG = "<changed>";
 
     private String baseUrl;
     private Path cacheDir;
-    private CapturingLogWriter output;
+    private CapturingLogWriter logged;
     private Metadata meta;
     private MavenVersion latestVersion;
     private ClientAndServer mockServer;
@@ -84,15 +78,55 @@ public class MetadataTest {
         Plugins.clearPluginJar();
         useTestCliDataBaseUrl();
         cacheDir = userConfig.cacheDir();
-        output = CapturingLogWriter.install();
+        logged = CapturingLogWriter.install();
     }
 
     @AfterEach
     public void afterEach() {
-        output.uninstall();
+        logged.uninstall();
         if (mockServer != null) {
             mockServer.stop();
         }
+    }
+
+    /**
+     * Use the test cli-data directory as the base url.
+     */
+    protected void useTestCliDataBaseUrl() {
+        useBaseUrl(TEST_CLI_DATA_URL.toExternalForm());
+    }
+
+    /**
+     * Use the given url as the base url.
+     *
+     * @param baseUrl The base url.
+     */
+    protected void useBaseUrl(String baseUrl) {
+        this.baseUrl = requireNonNull(baseUrl);
+    }
+
+
+    /**
+     * Starts the mock server and client and sets the base url pointing to it.
+     *
+     * @return The server and client.
+     */
+    protected ClientAndServer startMockServer() {
+        mockServer = ClientAndServer.startClientAndServer(MOCK_SERVER_PORT);
+        Log.info("Using mock server at %s", MOCK_SERVER_BASE_URL);
+        useBaseUrl(MOCK_SERVER_BASE_URL);
+        return mockServer;
+    }
+
+    /**
+     * Returns a new {@link Metadata} instance with the given frequency.
+     *
+     * @param updateFrequency The update frequency.
+     * @param updateFrequencyUnits The update frequency units.
+     * @return The instance.
+     */
+    protected Metadata newInstance(long updateFrequency, TimeUnit updateFrequencyUnits) {
+        return Metadata.newInstance(cacheDir, baseUrl, updateFrequency, updateFrequencyUnits, true);
     }
 
     @Test
@@ -101,7 +135,7 @@ public class MetadataTest {
 
         // Check properties. Should not perform update.
 
-        clearLog();
+        logged.clear();
         ConfigProperties props = meta.properties(latestVersion);
         assertThat(props, is(not(nullValue())));
         assertThat(props.keySet().isEmpty(), is(false));
@@ -112,14 +146,12 @@ public class MetadataTest {
         assertThat(props.contains("cli.2.0.0-M3.message"), is(false));
         assertThat(props.contains("cli.2.0.0-M4.message"), is(true));
         assertThat(props.contains("cli.2.0.0-RC1.message"), is(true));
-        assertThat(logEntries().isEmpty(), is(false));
-
-        assertThat(logMessages().size(), is(1));
-        assertThat(countLogged("stale check", "is false", "2.0.0-RC1/.lastUpdate"), is(1));
+        assertThat(logged.size(), is(1));
+        assertThat(logged.countLinesContaining("stale check", "is false", "2.0.0-RC1/.lastUpdate"), is(1));
 
         // Check catalog. Should not perform update.
 
-        clearLog();
+        logged.clear();
         ArchetypeCatalog catalog = meta.catalog(latestVersion);
         assertThat(catalog, is(not(nullValue())));
         assertThat(catalog.entries().size(), is(2));
@@ -131,29 +163,29 @@ public class MetadataTest {
         assertThat(entriesById.get("helidon-bare-se").name(), is("bare"));
         assertThat(entriesById.get("helidon-bare-mp"), is(notNullValue()));
         assertThat(entriesById.get("helidon-bare-mp").name(), is("bare"));
-        assertThat(logMessages().size(), is(1));
-        assertThat(countLogged("stale check", "is false", "2.0.0-RC1/.lastUpdate"), is(1));
+        assertThat(logged.size(), is(1));
+        assertThat(logged.countLinesContaining("stale check", "is false", "2.0.0-RC1/.lastUpdate"), is(1));
 
         // Check archetype. Should not perform update.
 
-        clearLog();
+        logged.clear();
         Path archetypeJar = meta.archetype(entriesById.get("helidon-bare-se"));
         assertThat(archetypeJar, is(not(nullValue())));
         assertThat(Files.exists(archetypeJar), is(true));
         assertThat(archetypeJar.getFileName().toString(), is("helidon-bare-se-2.0.0-RC1.jar"));
-        assertThat(logMessages().size(), is(1));
-        assertThat(countLogged("stale check", "is false", "2.0.0-RC1/.lastUpdate"), is(1));
+        assertThat(logged.size(), is(1));
+        assertThat(logged.countLinesContaining("stale check", "is false", "2.0.0-RC1/.lastUpdate"), is(1));
 
         // Check that more calls do not update
 
-        clearLog();
+        logged.clear();
         assertThat(meta.latestVersion(), is(latestVersion));
         assertThat(meta.properties(latestVersion), is(props));
         assertThat(meta.catalog(latestVersion), is(catalog));
 
-        assertThat(logMessages().size(), is(3));
-        assertThat(countLogged("stale check", "is false", "latest"), is(1));
-        assertThat(countLogged("stale check", "is false", "2.0.0-RC1/.lastUpdate"), is(2));
+        assertThat(logged.size(), is(3));
+        assertThat(logged.countLinesContaining("stale check", "is false", "latest"), is(1));
+        assertThat(logged.countLinesContaining("stale check", "is false", "2.0.0-RC1/.lastUpdate"), is(2));
     }
 
     @Test
@@ -163,37 +195,37 @@ public class MetadataTest {
         // Wait 1.25 seconds and check version. Should perform update.
 
         Log.info("sleeping 1.25 seconds before recheck");
-        clearLog();
+        logged.clear();
         Thread.sleep(1250);
         assertThat(meta.latestVersion(), is(latestVersion));
 
-        assertThat(countLogged("stale check", "is true", "latest"), is(1));
-        assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag " + NO_ETAG), is(1));
-        assertLogged("Looking up latest Helidon version");
-        assertNotLogged("Updating metadata for Helidon version 2.0.0-RC1");
-        assertThat(countLogged("downloading", "latest"), is(1));
-        assertThat(countLogged("connected", "latest"), is(1));
-        assertThat(countLogged("wrote", "latest"), is(1));
+        assertThat(logged.countLinesContaining("stale check", "is true", "latest"), is(1));
+        assertThat(logged.countLinesContaining("updated", "2.0.0-RC1/.lastUpdate", "etag " + NO_ETAG), is(1));
+        logged.assertLinesContaining("Looking up latest Helidon version");
+        logged.assertNoLinesContaining("Updating metadata for Helidon version 2.0.0-RC1");
+        assertThat(logged.countLinesContaining("downloading", "latest"), is(1));
+        assertThat(logged.countLinesContaining("connected", "latest"), is(1));
+        assertThat(logged.countLinesContaining("wrote", "latest"), is(1));
     }
 
     @Test
     void testPropertiesUpdatesAfterDelay() throws Exception {
-        initAndAssertLatestVersionDoesUpdate(1, TimeUnit.SECONDS,"2.0.0-RC1",  NO_ETAG);
+        initAndAssertLatestVersionDoesUpdate(1, TimeUnit.SECONDS, "2.0.0-RC1", NO_ETAG);
 
         // Wait 1.25 seconds and check properties. Should perform update.
 
         Log.info("sleeping 1.25 seconds before recheck");
-        clearLog();
+        logged.clear();
         Thread.sleep(1250);
         assertThat(meta.properties(latestVersion), is(not(nullValue())));
 
-        assertThat(countLogged("stale check", "is true", "2.0.0-RC1/.lastUpdate"), is(1));
-        assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag " + NO_ETAG), is(1));
-        assertNotLogged("Looking up latest Helidon version");
-        assertLogged("Updating metadata for Helidon version 2.0.0-RC1");
-        assertThat(countLogged("downloading", "latest"), is(1));
-        assertThat(countLogged("connected", "latest"), is(1));
-        assertThat(countLogged("wrote", "latest"), is(1));
+        assertThat(logged.countLinesContaining("stale check", "is true", "2.0.0-RC1/.lastUpdate"), is(1));
+        assertThat(logged.countLinesContaining("updated", "2.0.0-RC1/.lastUpdate", "etag " + NO_ETAG), is(1));
+        logged.assertNoLinesContaining("Looking up latest Helidon version");
+        logged.assertLinesContaining("Updating metadata for Helidon version 2.0.0-RC1");
+        assertThat(logged.countLinesContaining("downloading", "latest"), is(1));
+        assertThat(logged.countLinesContaining("connected", "latest"), is(1));
+        assertThat(logged.countLinesContaining("wrote", "latest"), is(1));
     }
 
     @Test
@@ -203,17 +235,17 @@ public class MetadataTest {
         // Wait 1.25 seconds and check catalog. Should perform update.
 
         Log.info("sleeping 1.25 seconds before recheck");
-        clearLog();
+        logged.clear();
         Thread.sleep(1250);
         assertThat(meta.catalog(latestVersion), is(not(nullValue())));
 
-        assertThat(countLogged("stale check", "is true", "2.0.0-RC1/.lastUpdate"), is(1));
-        assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag " + NO_ETAG), is(1));
-        assertNotLogged("Looking up latest Helidon version");
-        assertLogged("Updating metadata for Helidon version 2.0.0-RC1");
-        assertThat(countLogged("downloading", "latest"), is(1));
-        assertThat(countLogged("connected", "latest"), is(1));
-        assertThat(countLogged("wrote", "latest"), is(1));
+        assertThat(logged.countLinesContaining("stale check", "is true", "2.0.0-RC1/.lastUpdate"), is(1));
+        assertThat(logged.countLinesContaining("updated", "2.0.0-RC1/.lastUpdate", "etag " + NO_ETAG), is(1));
+        logged.assertNoLinesContaining("Looking up latest Helidon version");
+        logged.assertLinesContaining("Updating metadata for Helidon version 2.0.0-RC1");
+        assertThat(logged.countLinesContaining("downloading", "latest"), is(1));
+        assertThat(logged.countLinesContaining("connected", "latest"), is(1));
+        assertThat(logged.countLinesContaining("wrote", "latest"), is(1));
     }
 
     @Test
@@ -253,13 +285,13 @@ public class MetadataTest {
         // Now get the properties again and make sure we skip the zip download but still
         // updated the latest version
 
-        clearLog();
+        logged.clear();
         assertThat(meta.properties(latestVersion), is(not(nullValue())));
-        assertThat(countLogged("not modified", "2.0.0-RC1/cli-data.zip"), is(1));
-        assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag " + INITIAL_ETAG), is(1));
-        assertThat(countLogged("downloading", "latest"), is(1));
-        assertThat(countLogged("connected", "latest"), is(1));
-        assertThat(countLogged("wrote", "latest"), is(1));
+        assertThat(logged.countLinesContaining("not modified", "2.0.0-RC1/cli-data.zip"), is(1));
+        assertThat(logged.countLinesContaining("updated", "2.0.0-RC1/.lastUpdate", "etag " + INITIAL_ETAG), is(1));
+        assertThat(logged.countLinesContaining("downloading", "latest"), is(1));
+        assertThat(logged.countLinesContaining("connected", "latest"), is(1));
+        assertThat(logged.countLinesContaining("wrote", "latest"), is(1));
     }
 
     @Test
@@ -299,13 +331,13 @@ public class MetadataTest {
         // Now get the properties again and make sure we skip the zip download but still
         // updated the latest version
 
-        clearLog();
+        logged.clear();
         assertThat(meta.properties(latestVersion), is(not(nullValue())));
-        assertThat(countLogged("not modified", "2.0.0-RC2/cli-data.zip"), is(1));
-        assertThat(countLogged("updated", "2.0.0-RC2/.lastUpdate", "etag " + INITIAL_ETAG), is(1));
-        assertThat(countLogged("downloading", "latest"), is(1));
-        assertThat(countLogged("connected", "latest"), is(1));
-        assertThat(countLogged("wrote", "latest"), is(1));
+        assertThat(logged.countLinesContaining("not modified", "2.0.0-RC2/cli-data.zip"), is(1));
+        assertThat(logged.countLinesContaining("updated", "2.0.0-RC2/.lastUpdate", "etag " + INITIAL_ETAG), is(1));
+        assertThat(logged.countLinesContaining("downloading", "latest"), is(1));
+        assertThat(logged.countLinesContaining("connected", "latest"), is(1));
+        assertThat(logged.countLinesContaining("wrote", "latest"), is(1));
 
     }
 
@@ -320,137 +352,25 @@ public class MetadataTest {
 
         // Check latest version. Should update both latest file and latest archetype.
 
-        clearLog();
+        logged.clear();
         latestVersion = meta.latestVersion();
         assertThat(latestVersion, is(not(nullValue())));
         assertThat(latestVersion, is(toMavenVersion(expectedVersion)));
-        assertLogged("Looking up latest Helidon version");
-        assertNotLogged("Updating metadata for Helidon version " + expectedVersion);
+        logged.assertLinesContaining("Looking up latest Helidon version");
+        logged.assertNoLinesContaining("Updating metadata for Helidon version " + expectedVersion);
 
-        assertThat(countLogged("stale check", "(not found)", "latest"), is(1));
-        assertThat(countLogged("unpacked", "cli-plugins-", ".jar"), is(1));
-        assertThat(countLogged("executing", "cli-plugins-", "UpdateMetadata"), is(1));
-        assertThat(countLogged("downloading", "latest"), is(1));
-        assertThat(countLogged("connecting", "latest"), is(1));
-        assertThat(countLogged("connected", "latest"), is(1));
-        assertThat(countLogged("downloading", zipPath), is(1));
-        assertThat(countLogged("connecting", zipPath), is(1));
-        assertThat(countLogged("connected", zipPath), is(1));
+        assertThat(logged.countLinesContaining("stale check", "(not found)", "latest"), is(1));
+        assertThat(logged.countLinesContaining("unpacked", "cli-plugins-", ".jar"), is(1));
+        assertThat(logged.countLinesContaining("executing", "cli-plugins-", "UpdateMetadata"), is(1));
+        assertThat(logged.countLinesContaining("downloading", "latest"), is(1));
+        assertThat(logged.countLinesContaining("connecting", "latest"), is(1));
+        assertThat(logged.countLinesContaining("connected", "latest"), is(1));
+        assertThat(logged.countLinesContaining("downloading", zipPath), is(1));
+        assertThat(logged.countLinesContaining("connecting", zipPath), is(1));
+        assertThat(logged.countLinesContaining("connected", zipPath), is(1));
 
-        assertThat(countLogged("unzipping", zipPath), is(1));
-        assertThat(countLogged("deleting", zipPath), is(1));
-        assertThat(countLogged("updated", lastUpdatePath, "etag " + expectedEtag), is(1));
-    }
-
-    /**
-     * Use the test cli-data directory as the base url.
-     */
-    protected void useTestCliDataBaseUrl() {
-        useBaseUrl(TEST_CLI_DATA_URL.toExternalForm());
-    }
-
-    /**
-     * Use the given url as the base url.
-     *
-     * @param baseUrl The base url.
-     */
-    protected void useBaseUrl(String baseUrl) {
-        this.baseUrl = requireNonNull(baseUrl);
-    }
-
-
-    /**
-     * Starts the mock server and client and sets the base url pointing to it.
-     *
-     * @return The server and client.
-     */
-    protected ClientAndServer startMockServer() {
-        mockServer = ClientAndServer.startClientAndServer(MOCK_SERVER_PORT);
-        Log.info("Using mock server at %s", MOCK_SERVER_BASE_URL);
-        useBaseUrl(MOCK_SERVER_BASE_URL);
-        return mockServer;
-    }
-
-
-    protected Metadata newInstance() {
-        return Metadata.newInstance(cacheDir, baseUrl, 24, TimeUnit.HOURS, true);
-    }
-
-    protected Metadata newInstance(long updateFrequency, TimeUnit updateFrequencyUnits) {
-        return Metadata.newInstance(cacheDir, baseUrl, updateFrequency, updateFrequencyUnits, true);
-    }
-
-    protected void clearLog() {
-        output.clear();
-    }
-
-    protected List<CapturingLogWriter.LogEntry> logEntries() {
-        return output.entries();
-    }
-
-    protected List<String> logMessages() {
-        return output.messages();
-    }
-
-    protected List<String> logLines(Predicate<String> filter) {
-        return logMessages().stream().filter(filter).collect(Collectors.toList());
-    }
-
-    protected void assertLogged(String... messageFragments) {
-        assertLogged(line -> true, messageFragments);
-    }
-
-    protected void assertNotLogged(String... messageFragments) {
-        assertNotLogged(line -> true, messageFragments);
-    }
-
-    protected void assertLogged(Predicate<String> filter, String... messageFragments) {
-        if (!isLogged(filter, messageFragments)) {
-            fail("log does not contain one of the following: " + Arrays.toString(messageFragments) + EOL + logMessages());
-        }
-    }
-
-    protected void assertNotLogged(Predicate<String> filter, String... messageFragments) {
-        if (isLogged(filter, messageFragments)) {
-            fail("log should not contain one of the following: " + Arrays.toString(messageFragments) + EOL + logMessages());
-        }
-    }
-
-    protected boolean isLogged(Predicate<String> filter, String... messageFragments) {
-        int count = messageFragments.length;
-        for (String line : logLines(filter)) {
-            for (String fragment : messageFragments) {
-                if (line.contains(fragment)) {
-                    count--;
-                    if (count == 0) {
-                        return true;
-                    } else {
-                        break;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    protected long countLogged(Predicate<String> filter, String fragment) {
-        return logLines(filter).stream().filter(line -> line.contains(fragment)).count();
-    }
-
-    protected int countLogged(String fragment1) {
-        return logLines(line -> line.contains(fragment1)).size();
-    }
-
-    protected int countLogged(String fragment1, String fragment2) {
-        return (int) logLines(line -> line.contains(fragment1)).stream()
-                                                               .filter(line -> line.contains(fragment2))
-                                                               .count();
-    }
-
-    protected int countLogged(String fragment1, String fragment2, String fragment3) {
-        return (int) logLines(line -> line.contains(fragment1)).stream()
-                                                               .filter(line -> line.contains(fragment2))
-                                                               .filter(line -> line.contains(fragment3))
-                                                               .count();
+        assertThat(logged.countLinesContaining("unzipping", zipPath), is(1));
+        assertThat(logged.countLinesContaining("deleting", zipPath), is(1));
+        assertThat(logged.countLinesContaining("updated", lastUpdatePath, "etag " + expectedEtag), is(1));
     }
 }

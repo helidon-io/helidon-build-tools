@@ -16,11 +16,15 @@
 package io.helidon.build.test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import io.helidon.build.util.Log;
 import io.helidon.build.util.SystemLogWriter;
+
+import static io.helidon.build.util.Constants.EOL;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * A {@link Log#writer} that captures all output.
@@ -112,6 +116,22 @@ public class CapturingLogWriter implements Log.Writer {
         return writer;
     }
 
+    @Override
+    public void write(Log.Level level, Throwable thrown, String message, Object... args) {
+        delegate.write(level, thrown, message, args);
+        entries.add(new LogEntry(level, thrown, message, args));
+    }
+
+    @Override
+    public boolean isDebug() {
+        return delegate.isDebug();
+    }
+
+    @Override
+    public boolean isVerbose() {
+        return delegate.isVerbose();
+    }
+
     /**
      * Clear the entries.
      */
@@ -145,18 +165,69 @@ public class CapturingLogWriter implements Log.Writer {
     }
 
     @Override
-    public void write(Log.Level level, Throwable thrown, String message, Object... args) {
-        delegate.write(level, thrown, message, args);
-        entries.add(new LogEntry(level, thrown, message, args));
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        messages().forEach(msg -> sb.append(msg).append(EOL));
+        return sb.toString();
     }
 
-    @Override
-    public boolean isDebug() {
-        return delegate.isDebug();
+    /**
+     * Returns the number of messages logged.
+     *
+     * @return The size.
+     */
+    public int size() {
+        return entries.size();
     }
 
-    @Override
-    public boolean isVerbose() {
-        return delegate.isVerbose();
+    /**
+     * Assert that there is at least one log line that contains all given fragments.
+     *
+     * @param fragments The fragments.
+     */
+    public void assertLinesContaining(String... fragments) {
+        if (!atLeastOneLineContaining(fragments)) {
+            fail("log does not contain one of the following: " + Arrays.toString(fragments) + EOL + this);
+        }
+    }
+
+    /**
+     * Assert that there are no log line that contains all given fragments.
+     *
+     * @param fragments The fragments.
+     */
+    public void assertNoLinesContaining(String... fragments) {
+        if (atLeastOneLineContaining(fragments)) {
+            fail("log should not contain one of the following: " + Arrays.toString(fragments) + EOL + this);
+        }
+    }
+
+    /**
+     * Test whether or not there is at least one log line that contains all given fragments.
+     *
+     * @param fragments The fragments.
+     * @return {@code true} if at least one line matches all.
+     */
+    public boolean atLeastOneLineContaining(String... fragments) {
+        return countLinesContaining(fragments) > 0;
+    }
+
+    /**
+     * Returns the count of log lines that contains all given fragments.
+     *
+     * @param fragments The fragments.
+     * @return The count.
+     */
+    public int countLinesContaining(String... fragments) {
+        return (int) messages().stream().filter(msg -> containsAll(msg, fragments)).count();
+    }
+
+    private static boolean containsAll(String msg, String... fragments) {
+        for (String fragment : fragments) {
+            if (!msg.contains(fragment)) {
+                return false;
+            }
+        }
+        return true;
     }
 }
