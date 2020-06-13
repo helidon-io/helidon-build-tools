@@ -55,6 +55,7 @@ import static org.mockserver.model.HttpResponse.response;
 public class MetadataTest {
     static final URL TEST_CLI_DATA_URL = requireNonNull(MetadataTest.class.getClassLoader().getResource("cli-data"));
     static final Path TEST_CLI_DATA_PATH = assertDir(Path.of(TEST_CLI_DATA_URL.getFile()));
+    static final String MOCKSERVER_LOG_LEVEL = "mockserver.logLevel";
     static final int MOCK_SERVER_PORT = 8087;
     static final String MOCK_SERVER_BASE_URL = "http://localhost:" + MOCK_SERVER_PORT;
     static final String ETAG_HEADER = "Etag";
@@ -130,6 +131,7 @@ public class MetadataTest {
      * @return The server and client.
      */
     protected ClientAndServer startMockServer() {
+        System.setProperty(MOCKSERVER_LOG_LEVEL, "INFO");
         mockServer = ClientAndServer.startClientAndServer(MOCK_SERVER_PORT);
         Log.info("Using mock server at %s", MOCK_SERVER_BASE_URL);
         useBaseUrl(MOCK_SERVER_BASE_URL);
@@ -267,7 +269,7 @@ public class MetadataTest {
     }
 
     @Test
-    void testUpdatesWhenEtagMatches() throws Exception {
+    void testZipNotDownloadedWhenEtagMatches() throws Exception {
 
         // Setup mock server
 
@@ -347,7 +349,6 @@ public class MetadataTest {
     }
 
     private void setupMockServer(String latest) {
-        System.setProperty("mockserver.logLevel", "CONFIG");
 
         // Start server
 
