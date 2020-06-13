@@ -115,6 +115,7 @@
         Changing these version requires approval for a new third party dependency!
         -->
         <version.lib.helidon>0.9.0</version.lib.helidon>
+        <version.lib.ant>1.10.7</version.lib.ant>
         <version.lib.asciidoctorj>1.6.0-RC.2</version.lib.asciidoctorj>
         <version.lib.asciidoctorj-diagram>1.5.4.1</version.lib.asciidoctorj-diagram>
         <version.lib.checkstyle>8.29</version.lib.checkstyle>
@@ -185,6 +186,7 @@
         <module>snakeyaml-codegen-maven-plugin</module>
         <module>utils</module>
         <module>dev-loop</module>
+        <module>stager-maven-plugin</module>
     </modules>
 
     <build>
@@ -318,15 +320,15 @@
                     <artifactId>glassfish-copyright-maven-plugin</artifactId>
                     <version>${version.plugin.glassfish-copyright}</version>
                     <configuration>
+                        <!--suppress UnresolvedMavenProperty -->
                         <templateFile>${copyright.template}</templateFile>
+                        <!--suppress UnresolvedMavenProperty -->
                         <excludeFile>${copyright.exclude}</excludeFile>
                         <scm>git</scm>
                         <debug>false</debug>
                         <scmOnly>true</scmOnly>
                         <warn>true</warn>
                         <ignoreYear>false</ignoreYear>
-                        <useComma>true</useComma>
-                        <doHidden>true</doHidden>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -357,8 +359,11 @@
                     <artifactId>spotbugs-maven-plugin</artifactId>
                     <version>${version.plugin.spotbugs}</version>
                     <configuration>
+                        <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
                         <skip>${spotbugs.skip}</skip>
+                        <!--suppress UnresolvedMavenProperty -->
                         <threshold>${spotbugs.threshold}</threshold>
+                        <!--suppress UnresolvedMavenProperty -->
                         <excludeFilterFile>${spotbugs.exclude}</excludeFilterFile>
                         <xmlOutput>true</xmlOutput>
                     </configuration>
@@ -394,6 +399,7 @@
                         <nexusUrl>https://oss.sonatype.org/</nexusUrl>
                         <autoReleaseAfterClose>true</autoReleaseAfterClose>
                         <skipStagingRepositoryClose>true</skipStagingRepositoryClose>
+                        <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
                         <skipNexusStagingDeployMojo>${maven.deploy.skip}</skipNexusStagingDeployMojo>
                     </configuration>
                 </plugin>
@@ -472,6 +478,7 @@
                             <outputDirectory>${project.build.outputDirectory}</outputDirectory>
                             <resources>
                                 <resource>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <directory>${top.parent.basedir}</directory>
                                     <targetPath>META-INF/</targetPath>
                                     <includes>
@@ -679,6 +686,11 @@
                 <version>${version.lib.invoker}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.ant</groupId>
+                <artifactId>ant</artifactId>
+                <version>${version.lib.ant}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.config</groupId>
                 <artifactId>helidon-config-test-infrastructure</artifactId>
                 <version>${version.lib.helidon}</version>
@@ -739,7 +751,9 @@
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <configLocation>${top.parent.basedir}/etc/checkstyle.xml</configLocation>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <suppressionsLocation>${top.parent.basedir}/etc/checkstyle-suppressions.xml
                                     </suppressionsLocation>
                                 </configuration>
@@ -764,7 +778,9 @@
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
                                 </configuration>
                             </execution>
@@ -775,7 +791,9 @@
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
                                 </configuration>
                             </execution>
@@ -862,6 +880,7 @@
                 </file>
             </activation>
             <properties>
+                <!--suppress UnresolvedMavenProperty -->
                 <jdkToolchainVersion>${maven.compiler.target}</jdkToolchainVersion>
             </properties>
             <build>

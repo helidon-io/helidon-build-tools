@@ -18,6 +18,7 @@ package io.helidon.build.archetype.maven;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
 
@@ -31,9 +32,9 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-import static io.helidon.build.archetype.maven.MojoHelper.MUSTACHE_EXT;
-import static io.helidon.build.archetype.maven.MojoHelper.renderMustacheTemplate;
 import static io.helidon.build.archetype.maven.MojoHelper.templateProperties;
+import static io.helidon.build.util.MustacheHelper.MUSTACHE_EXT;
+import static io.helidon.build.util.MustacheHelper.renderMustacheTemplate;
 
 /**
  * {@code archetype:catalog} mojo.
@@ -79,8 +80,12 @@ public class CatalogMojo extends AbstractMojo {
             getLog().info("Rendering " + archetypeCatalogTemplate);
             Path generatedCatalog = outputDirectory.toPath().resolve(CATALOG_FILENAME);
             Map<String, String> props = templateProperties(Map.of(), true, project);
-            renderMustacheTemplate(archetypeCatalogTemplate, CATALOG_FILENAME + MUSTACHE_EXT,
-                    generatedCatalog, props);
+            try {
+                renderMustacheTemplate(archetypeCatalogTemplate, CATALOG_FILENAME + MUSTACHE_EXT,
+                        generatedCatalog, props);
+            } catch (IOException ex) {
+                throw new MojoExecutionException(ex.getMessage(), ex);
+            }
             archetypeCatalog = generatedCatalog.toFile();
         } else {
             throw new MojoFailureException("No catalog.xml or catalog.xml.mustache found");

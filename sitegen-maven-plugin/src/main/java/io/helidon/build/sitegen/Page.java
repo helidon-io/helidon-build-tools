@@ -16,6 +16,8 @@
 
 package io.helidon.build.sitegen;
 
+import io.helidon.build.util.SourcePath;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;

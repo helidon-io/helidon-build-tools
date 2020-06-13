@@ -19,15 +19,24 @@
 <project>
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.build-tools.archetype</groupId>
-        <artifactId>helidon-archetype-project</artifactId>
+        <groupId>io.helidon.build-tools</groupId>
+        <artifactId>helidon-build-tools-project</artifactId>
         <version>2.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>helidon-archetype-maven-plugin</artifactId>
-    <name>Helidon Archetype Maven Plugin</name>
+    <artifactId>helidon-stager-maven-plugin</artifactId>
+    <name>Helidon Stager Maven Plugin</name>
     <packaging>maven-plugin</packaging>
 
     <dependencies>
+        <dependency>
+            <groupId>io.helidon.build-tools</groupId>
+            <artifactId>helidon-utils</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.ant</groupId>
+            <artifactId>ant</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
@@ -35,21 +44,6 @@
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.build-tools.archetype</groupId>
-            <artifactId>helidon-archetype-engine</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.sonatype.plexus</groupId>
@@ -68,14 +62,14 @@
             <artifactId>plexus-archiver</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.maven.shared</groupId>
-            <artifactId>maven-invoker</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.build-tools</groupId>
-            <artifactId>helidon-utils</artifactId>
-            <version>2.0.0-SNAPSHOT</version>
-            <scope>compile</scope>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -90,6 +84,18 @@
                         <goals>
                             <goal>install</goal>
                         </goals>
+                        <configuration>
+                            <extraArtifacts>
+                                <extraArtifact>io.helidon:helidon-docs:2.0.0-RC1:jar</extraArtifact>
+                                <extraArtifact>io.helidon:helidon-docs:1.4.3:jar</extraArtifact>
+                                <extraArtifact>io.helidon:helidon-docs:1.4.2:jar</extraArtifact>
+                                <extraArtifact>io.helidon:helidon-docs:1.4.1:jar</extraArtifact>
+                                <extraArtifact>io.helidon:helidon-docs:1.4.0:jar</extraArtifact>
+                                <extraArtifact>io.helidon.archetypes:helidon-bare-se:2.0.0-RC1:jar</extraArtifact>
+                                <extraArtifact>io.helidon.archetypes:helidon-bare-mp:2.0.0-RC1:jar</extraArtifact>
+                                <extraArtifact>io.helidon.archetypes:helidon-archetype-catalog:2.0.0-RC1:xml</extraArtifact>
+                            </extraArtifacts>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>invoker-it</id>
@@ -110,6 +116,7 @@
                             </goals>
                             <streamLogs>true</streamLogs>
                             <showErrors>true</showErrors>
+                            <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
                             <skipInvocation>${maven.test.skip}</skipInvocation>
                         </configuration>
                     </execution>
