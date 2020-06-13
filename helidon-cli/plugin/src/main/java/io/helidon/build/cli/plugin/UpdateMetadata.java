@@ -25,7 +25,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +34,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * A plugin that fetches the latest metadata and updates the cache.
@@ -113,6 +113,7 @@ public class UpdateMetadata extends Plugin {
             updateVersion(readLatestVersion());
         } else {
             updateVersion(version);
+            updateLatestVersion(); // since we're here already, also update the latest
         }
     }
 
@@ -139,51 +140,60 @@ public class UpdateMetadata extends Plugin {
                                                           .connectTimeout(connectTimeout)
                                                           .readTimeout(readTimeout)
                                                           .connect();
-        Files.copy(connection.getInputStream(), latestVersionFile, StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(connection.getInputStream(), latestVersionFile, REPLACE_EXISTING);
+        Log.debug("wrote %s", latestVersionFile);
     }
 
     private void updateVersion(String version) throws Exception {
         final Path versionDir = cacheDir.resolve(version);
-        final Path lastUpdatedFile = versionDir.resolve(LAST_UPDATE_FILE_NAME);
+        final Path lastUpdateFile = versionDir.resolve(LAST_UPDATE_FILE_NAME);
         final URL url = resolve(version + REMOTE_DATA_FILE_SUFFIX);
-        final Map<String, String> headers = new HashMap<>();
-        if (Files.exists(lastUpdatedFile)) {
-            final String etag = Files.readString(lastUpdatedFile);
-            headers.put(IF_NONE_MATCH_HEADER, etag);
-            Log.debug("maybe downloading %s, headers=%s", url, headers);
-        } else {
-            headers.put(IF_NONE_MATCH_HEADER, NO_FILE_ETAG); // make mocking easier
-            Log.debug("downloading %s, headers=%s", url, headers);
-        }
+        final Map<String, String> headers = headers(lastUpdateFile, url);
         final URLConnection connection = NetworkConnection.builder()
                                                           .url(url)
                                                           .headers(headers)
                                                           .connectTimeout(connectTimeout)
                                                           .readTimeout(readTimeout)
                                                           .connect();
-        int status = STATUS_OK; // In case not http
-        if (connection instanceof HttpURLConnection) {
-            status = ((HttpURLConnection)connection).getResponseCode();
-        }
+        final int status = status(connection);
         if (status == STATUS_OK) {
             download(connection, versionDir);
+            writeLastUpdate(connection, lastUpdateFile);
         } else if (status == STATUS_NOT_MODIFIED) {
             Log.debug("not modified %s", url);
+            writeLastUpdate(connection, lastUpdateFile); // just to touch it
         } else {
             throw new IllegalStateException("connection failed with " + status + " " + url);
         }
+    }
 
-        // Update the .lastUpdate file with etag if available or a constant if not.
-        //
-        // Note that we need to write this file even when we get a not modified response, just
-        // to updating the last modified time on the file. This allows the Metadata class to
-        // avoid calling this plugin again until the update frequency dictates.
+    private Map<String, String> headers(Path lastUpdateFile, URL url) throws IOException {
+        final Map<String, String> headers = new HashMap<>();
+        if (Files.exists(lastUpdateFile)) {
+            final String etag = Files.readString(lastUpdateFile);
+            headers.put(IF_NONE_MATCH_HEADER, etag);
+            Log.debug("maybe downloading %s, headers=%s", url, headers);
+        } else {
+            headers.put(IF_NONE_MATCH_HEADER, NO_FILE_ETAG); // make mocking easier
+            Log.debug("downloading %s, headers=%s", url, headers);
+        }
+        return headers;
+    }
 
+    private int status(URLConnection connection) throws IOException {
+        if (connection instanceof HttpURLConnection) {
+            return ((HttpURLConnection)connection).getResponseCode();
+        } else {
+            return STATUS_OK;
+        }
+    }
+
+    private void writeLastUpdate(URLConnection connection, Path lastUpdateFile) throws IOException {
         final String etag = connection.getHeaderField(ETAG_HEADER);
         final String content = etag == null ? NO_ETAG : etag;
         final InputStream input = new ByteArrayInputStream(content.getBytes(UTF_8));
-        Files.copy(input, lastUpdatedFile, StandardCopyOption.REPLACE_EXISTING);
-        Log.debug("updated %s with etag %s", lastUpdatedFile, content);
+        Files.copy(input, lastUpdateFile, REPLACE_EXISTING);
+        Log.debug("updated %s with etag %s", lastUpdateFile, content);
     }
 
     private void download(URLConnection connection, Path versionDir) throws IOException {

@@ -32,7 +32,6 @@ import io.helidon.build.util.MavenVersion;
 
 import static io.helidon.build.cli.impl.CommandRequirements.requireHelidonVersionDir;
 import static io.helidon.build.util.FileUtils.assertFile;
-import static io.helidon.build.util.FileUtils.touch;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -186,7 +185,6 @@ public class Metadata {
     boolean checkForUpdates(MavenVersion version, Path checkFile, long currentTimeMillis) throws Exception {
         if (isStale(checkFile, currentTimeMillis)) {
             update(version);
-            touch(checkFile);
             return true;
         } else {
             return false;

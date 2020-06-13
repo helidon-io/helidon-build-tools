@@ -97,7 +97,7 @@ public class MetadataTest {
 
     @Test
     void smokeTest() throws Exception {
-        initAndAssertLatestVersionDoesUpdate(24, TimeUnit.HOURS, NO_ETAG);
+        initAndAssertLatestVersionDoesUpdate(24, TimeUnit.HOURS, "2.0.0-RC1", NO_ETAG);
 
         // Check properties. Should not perform update.
 
@@ -158,7 +158,7 @@ public class MetadataTest {
 
     @Test
     void testLatestVersionUpdatesAfterDelay() throws Exception {
-        initAndAssertLatestVersionDoesUpdate(1, TimeUnit.SECONDS, NO_ETAG);
+        initAndAssertLatestVersionDoesUpdate(1, TimeUnit.SECONDS, "2.0.0-RC1", NO_ETAG);
 
         // Wait 1.25 seconds and check version. Should perform update.
 
@@ -171,11 +171,14 @@ public class MetadataTest {
         assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag " + NO_ETAG), is(1));
         assertLogged("Looking up latest Helidon version");
         assertNotLogged("Updating metadata for Helidon version 2.0.0-RC1");
+        assertThat(countLogged("downloading", "latest"), is(1));
+        assertThat(countLogged("connected", "latest"), is(1));
+        assertThat(countLogged("wrote", "latest"), is(1));
     }
 
     @Test
     void testPropertiesUpdatesAfterDelay() throws Exception {
-        initAndAssertLatestVersionDoesUpdate(1, TimeUnit.SECONDS, NO_ETAG);
+        initAndAssertLatestVersionDoesUpdate(1, TimeUnit.SECONDS,"2.0.0-RC1",  NO_ETAG);
 
         // Wait 1.25 seconds and check properties. Should perform update.
 
@@ -188,11 +191,14 @@ public class MetadataTest {
         assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag " + NO_ETAG), is(1));
         assertNotLogged("Looking up latest Helidon version");
         assertLogged("Updating metadata for Helidon version 2.0.0-RC1");
+        assertThat(countLogged("downloading", "latest"), is(1));
+        assertThat(countLogged("connected", "latest"), is(1));
+        assertThat(countLogged("wrote", "latest"), is(1));
     }
 
     @Test
     void testCatalogUpdatesAfterDelay() throws Exception {
-        initAndAssertLatestVersionDoesUpdate(1, TimeUnit.SECONDS, NO_ETAG);
+        initAndAssertLatestVersionDoesUpdate(1, TimeUnit.SECONDS, "2.0.0-RC1", NO_ETAG);
 
         // Wait 1.25 seconds and check catalog. Should perform update.
 
@@ -205,11 +211,14 @@ public class MetadataTest {
         assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag " + NO_ETAG), is(1));
         assertNotLogged("Looking up latest Helidon version");
         assertLogged("Updating metadata for Helidon version 2.0.0-RC1");
+        assertThat(countLogged("downloading", "latest"), is(1));
+        assertThat(countLogged("connected", "latest"), is(1));
+        assertThat(countLogged("wrote", "latest"), is(1));
     }
 
     @Test
     void testUpdatesWhenEtagMatches() throws Exception {
-        byte[] zipData = Files.readAllBytes(TEST_CLI_DATA_PATH.resolve("2.0.0-RC1/cli-data.zip"));
+        byte[] rc1Zip = Files.readAllBytes(TEST_CLI_DATA_PATH.resolve("2.0.0-RC1/cli-data.zip"));
 
         // Setup mock server
 
@@ -227,7 +236,7 @@ public class MetadataTest {
                                  .withHeader(IF_NONE_MATCH_HEADER, NO_FILE_ETAG)
                                  .withPath("/2.0.0-RC1/cli-data.zip"))
                   .respond(response().withHeader(ETAG_HEADER, INITIAL_ETAG)
-                                     .withBody(zipData));
+                                     .withBody(rc1Zip));
 
         // Always return 304 when If-None-Match is "<initial>"
 
@@ -239,19 +248,74 @@ public class MetadataTest {
 
         // Make the initial latestVersion call and validate the result
 
-        initAndAssertLatestVersionDoesUpdate(0, TimeUnit.NANOSECONDS, INITIAL_ETAG);
+        initAndAssertLatestVersionDoesUpdate(0, TimeUnit.NANOSECONDS, "2.0.0-RC1", INITIAL_ETAG);
 
-        // Now get the properties again and make sure we skip the download
+        // Now get the properties again and make sure we skip the zip download but still
+        // updated the latest version
 
         clearLog();
         assertThat(meta.properties(latestVersion), is(not(nullValue())));
         assertThat(countLogged("not modified", "2.0.0-RC1/cli-data.zip"), is(1));
         assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag " + INITIAL_ETAG), is(1));
+        assertThat(countLogged("downloading", "latest"), is(1));
+        assertThat(countLogged("connected", "latest"), is(1));
+        assertThat(countLogged("wrote", "latest"), is(1));
+    }
+
+    @Test
+    void testUpdateWhenLatestChanges() throws Exception {
+        byte[] rc2Zip = Files.readAllBytes(TEST_CLI_DATA_PATH.resolve("2.0.0-RC2/cli-data.zip"));
+
+        // Setup mock server
+
+        startMockServer();
+
+        // Always return latest version
+
+        mockServer.when(request().withMethod("GET")
+                                 .withPath("/latest"))
+                  .respond(response().withBody("2.0.0-RC2"));
+
+        // Always return zip data when If-None-Match header is "<no-file>" (plugin defines this)
+
+        mockServer.when(request().withMethod("GET")
+                                 .withHeader(IF_NONE_MATCH_HEADER, NO_FILE_ETAG)
+                                 .withPath("/2.0.0-RC2/cli-data.zip"))
+                  .respond(response().withHeader(ETAG_HEADER, INITIAL_ETAG)
+                                     .withBody(rc2Zip));
+
+        // Always return 304 when If-None-Match is "<initial>"
+
+        mockServer.when(request().withMethod("GET")
+                                 .withHeader(IF_NONE_MATCH_HEADER, INITIAL_ETAG)
+                                 .withPath("/2.0.0-RC2/cli-data.zip"))
+                  .respond(response().withHeader(ETAG_HEADER, INITIAL_ETAG)
+                                     .withStatusCode(304));
+
+        // Make the initial latestVersion call and validate the result
+
+        initAndAssertLatestVersionDoesUpdate(0, TimeUnit.NANOSECONDS, "2.0.0-RC2", INITIAL_ETAG);
+
+        // Now get the properties again and make sure we skip the zip download but still
+        // updated the latest version
+
+        clearLog();
+        assertThat(meta.properties(latestVersion), is(not(nullValue())));
+        assertThat(countLogged("not modified", "2.0.0-RC2/cli-data.zip"), is(1));
+        assertThat(countLogged("updated", "2.0.0-RC2/.lastUpdate", "etag " + INITIAL_ETAG), is(1));
+        assertThat(countLogged("downloading", "latest"), is(1));
+        assertThat(countLogged("connected", "latest"), is(1));
+        assertThat(countLogged("wrote", "latest"), is(1));
+
     }
 
     protected void initAndAssertLatestVersionDoesUpdate(long updateFrequency,
                                                         TimeUnit updateFrequencyUnits,
+                                                        String expectedVersion,
                                                         String expectedEtag) throws Exception {
+        String zipPath = expectedVersion + "/cli-data.zip";
+        String lastUpdatePath = expectedVersion + "/.lastUpdate";
+
         meta = newInstance(updateFrequency, updateFrequencyUnits);
 
         // Check latest version. Should update both latest file and latest archetype.
@@ -259,9 +323,9 @@ public class MetadataTest {
         clearLog();
         latestVersion = meta.latestVersion();
         assertThat(latestVersion, is(not(nullValue())));
-        assertThat(latestVersion, is(toMavenVersion("2.0.0-RC1")));
+        assertThat(latestVersion, is(toMavenVersion(expectedVersion)));
         assertLogged("Looking up latest Helidon version");
-        assertNotLogged("Updating metadata for Helidon version 2.0.0-RC1");
+        assertNotLogged("Updating metadata for Helidon version " + expectedVersion);
 
         assertThat(countLogged("stale check", "(not found)", "latest"), is(1));
         assertThat(countLogged("unpacked", "cli-plugins-", ".jar"), is(1));
@@ -269,13 +333,13 @@ public class MetadataTest {
         assertThat(countLogged("downloading", "latest"), is(1));
         assertThat(countLogged("connecting", "latest"), is(1));
         assertThat(countLogged("connected", "latest"), is(1));
-        assertThat(countLogged("downloading", "2.0.0-RC1/cli-data.zip"), is(1));
-        assertThat(countLogged("connecting", "2.0.0-RC1/cli-data.zip"), is(1));
-        assertThat(countLogged("connected", "2.0.0-RC1/cli-data.zip"), is(1));
+        assertThat(countLogged("downloading", zipPath), is(1));
+        assertThat(countLogged("connecting", zipPath), is(1));
+        assertThat(countLogged("connected", zipPath), is(1));
 
-        assertThat(countLogged("unzipping", "2.0.0-RC1/cli-data.zip"), is(1));
-        assertThat(countLogged("deleting", "2.0.0-RC1/cli-data.zip"), is(1));
-        assertThat(countLogged("updated", "2.0.0-RC1/.lastUpdate", "etag " + expectedEtag), is(1));
+        assertThat(countLogged("unzipping", zipPath), is(1));
+        assertThat(countLogged("deleting", zipPath), is(1));
+        assertThat(countLogged("updated", lastUpdatePath, "etag " + expectedEtag), is(1));
     }
 
     /**
