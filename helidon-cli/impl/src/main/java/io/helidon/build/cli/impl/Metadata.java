@@ -20,9 +20,12 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.util.ConfigProperties;
@@ -50,6 +53,18 @@ public class Metadata {
     private static final TimeUnit DEFAULT_UPDATE_DELAY_UNITS = TimeUnit.HOURS;
     private static final long DEFAULT_UPDATE_FREQUENCY = 24;
     private static final int PLUGIN_MAX_WAIT_SECONDS = 30;
+    private static final String CLI_MESSAGE_PREFIX = "cli.";
+    private static final String CLI_MESSAGE_SUFFIX = ".message";
+
+    /**
+     * The build tools version property name.
+     */
+    public static final String BUILD_TOOLS_VERSION_PROPERTY = "build-tools.version";
+
+    /**
+     * The CLI version property name.
+     */
+    public static final String CLI_VERSION_PROPERTY = "cli.version";
 
     private final Path rootDir;
     private final String baseUrl;
@@ -109,52 +124,113 @@ public class Metadata {
     public MavenVersion latestVersion() throws Exception {
         if (checkForUpdates(null, latestVersionFile)) {
             latestVersion.set(readLatestVersion());
+        } else if (latestVersion.get() == null) {
+            latestVersion.set(readLatestVersion());
         }
         return latestVersion.get();
     }
 
     /**
-     * Returns the metadata properties for the given Helidon version.
+     * Returns the build tools version for the given Helidon version.
      *
-     * @param version The version.
+     * @param helidonVersion The version.
      * @return The properties.
      * @throws Exception If an error occurs.
      */
-    public ConfigProperties properties(String version) throws Exception {
-        return properties(toMavenVersion(version));
+    public MavenVersion buildToolsVersionOf(MavenVersion helidonVersion) throws Exception {
+        return toMavenVersion(requiredProperty(helidonVersion, BUILD_TOOLS_VERSION_PROPERTY));
+    }
+
+    /**
+     * Returns the CLI version for the given Helidon version.
+     *
+     * @param helidonVersion The version.
+     * @return The properties.
+     * @throws Exception If an error occurs.
+     */
+    public MavenVersion cliVersionOf(MavenVersion helidonVersion) throws Exception {
+        return toMavenVersion(requiredProperty(helidonVersion, CLI_VERSION_PROPERTY));
+    }
+
+    /**
+     * Returns the release notes for the given Helidon version that are more recent than the current CLI version.
+     *
+     * @param helidonVersion The version.
+     * @return The notes, in sorted order.
+     * @throws Exception If an error occurs.
+     */
+    public Map<MavenVersion, String> cliReleaseNotesOf(MavenVersion helidonVersion) throws Exception {
+        return cliReleaseNotesOf(helidonVersion, toMavenVersion(Config.buildVersion()));
+
+    }
+
+    /**
+     * Returns the release notes for the given Helidon version that are more recent than the given CLI version.
+     *
+     * @param helidonVersion The version.
+     * @param sinceCliVersion The CLI version.
+     * @return The notes, in sorted order.
+     * @throws Exception If an error occurs.
+     */
+    public Map<MavenVersion, String> cliReleaseNotesOf(MavenVersion helidonVersion,
+                                                       MavenVersion sinceCliVersion) throws Exception {
+        requireNonNull(sinceCliVersion, "sinceCliVersion must not be null");
+        final ConfigProperties props = propertiesOf(helidonVersion);
+        final List<MavenVersion> versions = props.keySet()
+                                                 .stream()
+                                                 .filter(Metadata::isCliMessageKey)
+                                                 .map(Metadata::versionOfCliMessageKey)
+                                                 .map(MavenVersion::toMavenVersion)
+                                                 .filter(v -> v.isGreaterThan(sinceCliVersion))
+                                                 .sorted()
+                                                 .collect(Collectors.toList());
+        final Map<MavenVersion, String> result = new LinkedHashMap<>();
+        versions.forEach(v -> result.put(v, props.property(toCliMessageKey(v))));
+        return result;
     }
 
     /**
      * Returns the metadata properties for the given Helidon version.
      *
-     * @param version The version.
+     * @param helidonVersion The version.
      * @return The properties.
      * @throws Exception If an error occurs.
      */
-    public ConfigProperties properties(MavenVersion version) throws Exception {
-        return new ConfigProperties(versionedFile(version, METADATA_FILE_NAME));
+    public ConfigProperties propertiesOf(String helidonVersion) throws Exception {
+        return propertiesOf(toMavenVersion(helidonVersion));
+    }
+
+    /**
+     * Returns the metadata properties for the given Helidon version.
+     *
+     * @param helidonVersion The version.
+     * @return The properties.
+     * @throws Exception If an error occurs.
+     */
+    public ConfigProperties propertiesOf(MavenVersion helidonVersion) throws Exception {
+        return new ConfigProperties(versionedFile(helidonVersion, METADATA_FILE_NAME));
     }
 
     /**
      * Returns the catalog for the given Helidon version.
      *
-     * @param version The version.
+     * @param helidonVersion The version.
      * @return The catalog.
      * @throws Exception If an error occurs.
      */
-    public ArchetypeCatalog catalog(String version) throws Exception {
-        return catalog(toMavenVersion(version));
+    public ArchetypeCatalog catalogOf(String helidonVersion) throws Exception {
+        return catalogOf(toMavenVersion(helidonVersion));
     }
 
     /**
      * Returns the catalog for the given Helidon version.
      *
-     * @param version The version.
+     * @param helidonVersion The version.
      * @return The catalog.
      * @throws Exception If an error occurs.
      */
-    public ArchetypeCatalog catalog(MavenVersion version) throws Exception {
-        return ArchetypeCatalog.read(versionedFile(version, CATALOG_FILE_NAME));
+    public ArchetypeCatalog catalogOf(MavenVersion helidonVersion) throws Exception {
+        return ArchetypeCatalog.read(versionedFile(helidonVersion, CATALOG_FILE_NAME));
     }
 
     /**
@@ -164,27 +240,43 @@ public class Metadata {
      * @return The path to the archetype jar.
      * @throws Exception If an error occurs.
      */
-    public Path archetype(ArchetypeCatalog.ArchetypeEntry catalogEntry) throws Exception {
-        final MavenVersion version = toMavenVersion(catalogEntry.version());
-        final String fileName = catalogEntry.artifactId() + "-" + version + JAR_SUFFIX;
-        return versionedFile(version, fileName);
+    public Path archetypeOf(ArchetypeCatalog.ArchetypeEntry catalogEntry) throws Exception {
+        final MavenVersion helidonVersion = toMavenVersion(catalogEntry.version());
+        final String fileName = catalogEntry.artifactId() + "-" + helidonVersion + JAR_SUFFIX;
+        return versionedFile(helidonVersion, fileName);
+    }
+
+    private String requiredProperty(MavenVersion helidonVersion, String propertyName) throws Exception {
+        return requireNonNull(propertiesOf(helidonVersion).property(propertyName), "missing " + propertyName);
+    }
+
+    private static boolean isCliMessageKey(String key) {
+        return key.startsWith(CLI_MESSAGE_PREFIX) && key.endsWith(CLI_MESSAGE_SUFFIX);
+    }
+
+    private static String versionOfCliMessageKey(String key) {
+        return key.substring(CLI_MESSAGE_PREFIX.length(), key.length() - CLI_MESSAGE_SUFFIX.length());
+    }
+
+    private static String toCliMessageKey(MavenVersion version) {
+        return CLI_MESSAGE_PREFIX + version.toString() + CLI_MESSAGE_SUFFIX;
     }
 
     @SuppressWarnings("ConstantConditions")
-    private Path versionedFile(MavenVersion version, String fileName) throws Exception {
-        final Path versionDir = rootDir.resolve(requireNonNull(version).toString());
+    private Path versionedFile(MavenVersion helidonVersion, String fileName) throws Exception {
+        final Path versionDir = rootDir.resolve(requireNonNull(helidonVersion).toString());
         final Path checkFile = versionDir.resolve(LAST_UPDATE_FILE_NAME);
-        checkForUpdates(version, checkFile);
+        checkForUpdates(helidonVersion, checkFile);
         return assertFile(requireHelidonVersionDir(versionDir).resolve(fileName));
     }
 
-    private boolean checkForUpdates(MavenVersion version, Path checkFile) throws Exception {
-        return checkForUpdates(version, checkFile, System.currentTimeMillis());
+    private boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile) throws Exception {
+        return checkForUpdates(helidonVersion, checkFile, System.currentTimeMillis());
     }
 
-    boolean checkForUpdates(MavenVersion version, Path checkFile, long currentTimeMillis) throws Exception {
+    boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, long currentTimeMillis) throws Exception {
         if (isStale(checkFile, currentTimeMillis)) {
-            update(version);
+            update(helidonVersion);
             return true;
         } else {
             return false;
@@ -215,18 +307,18 @@ public class Metadata {
         }
     }
 
-    private void update(MavenVersion version) throws Exception {
+    private void update(MavenVersion helidonVersion) throws Exception {
         final List<String> args = new ArrayList<>();
         args.add("--baseUrl");
         args.add(baseUrl);
         args.add("--cacheDir");
         args.add(rootDir.toAbsolutePath().toString());
-        if (version == null) {
+        if (helidonVersion == null) {
             Log.info("Looking up latest Helidon version");
         } else {
-            Log.info("Updating metadata for Helidon version %s", version);
+            Log.info("Updating metadata for Helidon version %s", helidonVersion);
             args.add("--version");
-            args.add(version.toString());
+            args.add(helidonVersion.toString());
         }
         if (debugPlugin) {
             args.add("--debug");

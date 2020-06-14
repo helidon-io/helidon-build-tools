@@ -182,7 +182,7 @@ public class UpdateMetadata extends Plugin {
 
     private int status(URLConnection connection) throws IOException {
         if (connection instanceof HttpURLConnection) {
-            return ((HttpURLConnection)connection).getResponseCode();
+            return ((HttpURLConnection) connection).getResponseCode();
         } else {
             return STATUS_OK;
         }

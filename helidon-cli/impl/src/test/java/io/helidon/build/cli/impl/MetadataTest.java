@@ -20,6 +20,8 @@ import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -46,6 +48,7 @@ import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
 import static java.util.Objects.requireNonNull;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -172,7 +175,7 @@ public class MetadataTest {
         // Check properties. Should not perform update.
 
         logged.clear();
-        ConfigProperties props = meta.properties(latestVersion);
+        ConfigProperties props = meta.propertiesOf(latestVersion);
         assertThat(props, is(not(nullValue())));
         assertThat(props.keySet().isEmpty(), is(false));
         assertThat(props.property("helidon.version"), is(RC1));
@@ -188,7 +191,7 @@ public class MetadataTest {
         // Check catalog. Should not perform update.
 
         logged.clear();
-        ArchetypeCatalog catalog = meta.catalog(latestVersion);
+        ArchetypeCatalog catalog = meta.catalogOf(latestVersion);
         assertThat(catalog, is(not(nullValue())));
         assertThat(catalog.entries().size(), is(2));
         Map<String, ArchetypeEntry> entriesById = catalog.entries()
@@ -205,7 +208,7 @@ public class MetadataTest {
         // Check archetype. Should not perform update.
 
         logged.clear();
-        Path archetypeJar = meta.archetype(entriesById.get("helidon-bare-se"));
+        Path archetypeJar = meta.archetypeOf(entriesById.get("helidon-bare-se"));
         assertThat(archetypeJar, is(not(nullValue())));
         assertThat(Files.exists(archetypeJar), is(true));
         assertThat(archetypeJar.getFileName().toString(), is("helidon-bare-se-2.0.0-RC1.jar"));
@@ -216,12 +219,55 @@ public class MetadataTest {
 
         logged.clear();
         assertThat(meta.latestVersion(), is(latestVersion));
-        assertThat(meta.properties(latestVersion), is(props));
-        assertThat(meta.catalog(latestVersion), is(catalog));
+        assertThat(meta.propertiesOf(latestVersion), is(props));
+        assertThat(meta.catalogOf(latestVersion), is(catalog));
 
         assertThat(logged.size(), is(3));
         logged.assertLinesContainingAll(1, "stale check", "is false", LATEST_FILE_NAME);
         logged.assertLinesContainingAll(2, "stale check", "is false", RC1_LAST_UPDATE);
+
+        // Check the build tools and CLI versions
+
+        logged.clear();
+        MavenVersion expected = toMavenVersion(RC1);
+        assertThat(meta.buildToolsVersionOf(latestVersion), is(expected));
+        assertThat(meta.cliVersionOf(latestVersion), is(expected));
+    }
+
+    @Test
+    void testReleaseNotes() throws Exception {
+        meta = newInstance(24, TimeUnit.HOURS);
+        MavenVersion helidonVersion = toMavenVersion(RC2);
+
+        // Check from M1
+
+        Map<MavenVersion, String> notes = meta.cliReleaseNotesOf(helidonVersion, toMavenVersion("2.0.0-M1"));
+        assertThat(notes, is(not(nullValue())));
+        List<MavenVersion> keys = new ArrayList<>(notes.keySet());
+        assertThat(keys.size(), is(4));
+        assertThat(keys.get(0), is(toMavenVersion("2.0.0-M2")));
+        assertThat(keys.get(1), is(toMavenVersion("2.0.0-M4")));
+        assertThat(keys.get(2), is(toMavenVersion("2.0.0-RC1")));
+        assertThat(keys.get(3), is(toMavenVersion("2.0.0-RC2")));
+        assertThat(notes.get(keys.get(0)), containsString("dev command"));
+        assertThat(notes.get(keys.get(1)), containsString("archetype support"));
+        assertThat(notes.get(keys.get(2)), containsString("Performance"));
+        assertThat(notes.get(keys.get(3)), containsString("DB archetype"));
+
+        // Check from latest version (RC1)
+
+        notes = meta.cliReleaseNotesOf(helidonVersion, meta.latestVersion());
+        assertThat(notes, is(not(nullValue())));
+        keys = new ArrayList<>(notes.keySet());
+        assertThat(keys.size(), is(1));
+        assertThat(keys.get(0), is(toMavenVersion("2.0.0-RC2")));
+        assertThat(notes.get(keys.get(0)), containsString("DB archetype"));
+
+        // Simulate check from current CLI version
+
+        notes = meta.cliReleaseNotesOf(helidonVersion, helidonVersion);
+        assertThat(notes, is(not(nullValue())));
+        assertThat(notes.isEmpty(), is(true));
     }
 
     @Test
@@ -253,7 +299,7 @@ public class MetadataTest {
         Log.info("sleeping 1.25 seconds before recheck");
         logged.clear();
         Thread.sleep(1250);
-        assertThat(meta.properties(latestVersion), is(not(nullValue())));
+        assertThat(meta.propertiesOf(latestVersion), is(not(nullValue())));
 
         logged.assertLinesContainingAll(1, "stale check", "is true", RC1_LAST_UPDATE);
         logged.assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + NO_ETAG);
@@ -273,7 +319,7 @@ public class MetadataTest {
         Log.info("sleeping 1.25 seconds before recheck");
         logged.clear();
         Thread.sleep(1250);
-        assertThat(meta.catalog(latestVersion), is(not(nullValue())));
+        assertThat(meta.catalogOf(latestVersion), is(not(nullValue())));
 
         logged.assertLinesContainingAll(1, "stale check", "is true", RC1_LAST_UPDATE);
         logged.assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + NO_ETAG);
@@ -300,7 +346,7 @@ public class MetadataTest {
         // updated the latest version
 
         logged.clear();
-        assertThat(meta.properties(latestVersion), is(not(nullValue())));
+        assertThat(meta.propertiesOf(latestVersion), is(not(nullValue())));
         logged.assertLinesContainingAll(1, "not modified", RC1_CLI_DATA_ZIP);
         logged.assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + INITIAL_ETAG);
         logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
@@ -324,7 +370,7 @@ public class MetadataTest {
         // updated the latest version
 
         logged.clear();
-        assertThat(meta.properties(latestVersion), is(not(nullValue())));
+        assertThat(meta.propertiesOf(latestVersion), is(not(nullValue())));
         logged.assertLinesContainingAll(1, "not modified", RC2_CLI_DATA_ZIP);
         logged.assertLinesContainingAll(1, "updated", RC2_LAST_UPDATE, "etag " + INITIAL_ETAG);
         logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
@@ -335,10 +381,10 @@ public class MetadataTest {
     @Test
     void testCatalogUpdatesWhenUnseenVersionRequested() throws Exception {
         setupMockServer(RC2);
-        assertServerUpdatesWhenUnseenVersionRequested();
+        assertServerUpdatesWhenUnseenRC2VersionRequested();
     }
 
-    protected void assertServerUpdatesWhenUnseenVersionRequested() throws Exception {
+    protected void assertServerUpdatesWhenUnseenRC2VersionRequested() throws Exception {
 
         // Make the initial catalog request and validate the result
 
@@ -349,7 +395,7 @@ public class MetadataTest {
 
         logged.clear();
         catalogRequest(RC2, false);
-        assertThat(meta.properties(RC2), is(not(nullValue())));
+        assertThat(meta.propertiesOf(RC2), is(not(nullValue())));
         logged.assertLinesContainingAll(0, "not modified", RC2_CLI_DATA_ZIP);
         logged.assertLinesContainingAll(0, "updated", RC2_LAST_UPDATE, "etag " + INITIAL_ETAG);
         logged.assertLinesContainingAll(0, "downloading", LATEST_FILE_NAME);
@@ -427,7 +473,7 @@ public class MetadataTest {
         try {
             String staleType = expectUpdate ? "(not found)" : "is false";
             String staleFilePath = version + "/" + LAST_UPDATE_FILE_NAME;
-            meta.catalog(version);
+            meta.catalogOf(version);
             logged.assertNoLinesContainingAll("Looking up latest Helidon version");
             if (expectUpdate) {
                 logged.assertLinesContainingAll("Updating metadata for Helidon version " + version);

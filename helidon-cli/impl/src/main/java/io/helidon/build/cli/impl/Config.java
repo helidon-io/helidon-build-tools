@@ -21,12 +21,15 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.build.util.BuildToolsProperties;
 import io.helidon.build.util.UserConfig;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Utilities to access configuration.
  */
 public class Config {
     private static final AtomicReference<Path> USER_HOME_DIR = new AtomicReference<>();
     private static final AtomicReference<UserConfig> USER_CONFIG = new AtomicReference<>();
+    private static final AtomicReference<BuildToolsProperties> BUILD_TOOLS_PROPERTIES = new AtomicReference<>();
 
     /**
      * Returns the build version.
@@ -52,7 +55,12 @@ public class Config {
      * @return The properties.
      */
     public static BuildToolsProperties buildProperties() {
-        return BuildToolsProperties.instance();
+        BuildToolsProperties result = BUILD_TOOLS_PROPERTIES.get();
+        if (result == null) {
+            result = BuildToolsProperties.instance();
+            BUILD_TOOLS_PROPERTIES.set(result);
+        }
+        return result;
     }
 
     /**
@@ -80,8 +88,17 @@ public class Config {
      * @return The directory.
      */
     static Path setUserHome(Path dir) {
-        USER_HOME_DIR.set(dir);
+        USER_HOME_DIR.set(requireNonNull(dir));
         return dir;
+    }
+
+    /**
+     * Sets the build tools properties from the given resource path.
+     *
+     * @param resourcePath The resource path.
+     */
+    static void setBuildToolsProperties(String resourcePath) {
+        BUILD_TOOLS_PROPERTIES.set(BuildToolsProperties.from(resourcePath));
     }
 
     private Config() {

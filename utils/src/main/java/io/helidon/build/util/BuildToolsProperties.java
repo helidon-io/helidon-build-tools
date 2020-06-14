@@ -43,6 +43,16 @@ public class BuildToolsProperties extends Properties {
     }
 
     /**
+     * Returns a new instance using the given resource path.
+     *
+     * @param resourcePath The resource path.
+     * @return The instance.
+     */
+    public static BuildToolsProperties from(String resourcePath) {
+        return new BuildToolsProperties(requireNonNull(resourcePath));
+    }
+
+    /**
      * Returns the build tools version.
      *
      * @return The version.
