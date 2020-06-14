@@ -34,8 +34,11 @@ import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.UserConfig;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.integration.ClientAndServer;
 
 import static io.helidon.build.util.FileUtils.assertDir;
@@ -56,7 +59,6 @@ import static org.mockserver.model.HttpResponse.response;
 public class MetadataTest {
     static final URL TEST_CLI_DATA_URL = requireNonNull(MetadataTest.class.getClassLoader().getResource("cli-data"));
     static final Path TEST_CLI_DATA_PATH = assertDir(Path.of(TEST_CLI_DATA_URL.getFile()));
-    static final String MOCKSERVER_LOG_LEVEL = "mockserver.logLevel";
     static final int MOCK_SERVER_PORT = 8087;
     static final String MOCK_SERVER_BASE_URL = "http://localhost:" + MOCK_SERVER_PORT;
     static final String LATEST_FILE_NAME = "latest";
@@ -99,7 +101,8 @@ public class MetadataTest {
     private ClientAndServer mockServer;
 
     @BeforeEach
-    public void beforeEach() throws IOException {
+    public void beforeEach(TestInfo info) throws IOException {
+        Log.info("%n--- %s ---------------%n", info.getTestMethod().orElseThrow().getName());
         Config.setUserHome(TestFiles.targetDir().resolve("alice"));
         final UserConfig userConfig = Config.userConfig();
         userConfig.clearCache();
@@ -137,15 +140,18 @@ public class MetadataTest {
 
     /**
      * Starts the mock server and client and sets the base url pointing to it.
-     *
-     * @return The server and client.
      */
-    protected ClientAndServer startMockServer() {
-        System.setProperty(MOCKSERVER_LOG_LEVEL, "INFO");
-        mockServer = ClientAndServer.startClientAndServer(MOCK_SERVER_PORT);
+    @SuppressWarnings("ConstantConditions")
+    protected void startMockServer() {
+        if (Thread.currentThread().getContextClassLoader() != ClassLoader.getSystemClassLoader()) {
+            final String reason = "don't yet know how to run MockServer when not in system class loader";
+            Log.info("$(italic,yellow Skipping: %s)", reason);
+            Assumptions.assumeTrue(false, reason);
+        }
+        ConfigurationProperties.logLevel("INFO");
         Log.info("Using mock server at %s", MOCK_SERVER_BASE_URL);
+        mockServer = ClientAndServer.startClientAndServer(MOCK_SERVER_PORT);
         useBaseUrl(MOCK_SERVER_BASE_URL);
-        return mockServer;
     }
 
     /**
@@ -177,7 +183,7 @@ public class MetadataTest {
         assertThat(props.contains("cli.2.0.0-M4.message"), is(true));
         assertThat(props.contains("cli.2.0.0-RC1.message"), is(true));
         assertThat(logged.size(), is(1));
-        assertThat(logged.countLinesContaining("stale check", "is false", RC1_LAST_UPDATE), is(1));
+        logged.assertLinesContainingAll(1, "stale check", "is false", RC1_LAST_UPDATE);
 
         // Check catalog. Should not perform update.
 
@@ -194,7 +200,7 @@ public class MetadataTest {
         assertThat(entriesById.get(HELIDON_BARE_MP), is(notNullValue()));
         assertThat(entriesById.get(HELIDON_BARE_MP).name(), is("bare"));
         assertThat(logged.size(), is(1));
-        assertThat(logged.countLinesContaining("stale check", "is false", RC1_LAST_UPDATE), is(1));
+        logged.assertLinesContainingAll(1, "stale check", "is false", RC1_LAST_UPDATE);
 
         // Check archetype. Should not perform update.
 
@@ -204,7 +210,7 @@ public class MetadataTest {
         assertThat(Files.exists(archetypeJar), is(true));
         assertThat(archetypeJar.getFileName().toString(), is("helidon-bare-se-2.0.0-RC1.jar"));
         assertThat(logged.size(), is(1));
-        assertThat(logged.countLinesContaining("stale check", "is false", RC1_LAST_UPDATE), is(1));
+        logged.assertLinesContainingAll(1, "stale check", "is false", RC1_LAST_UPDATE);
 
         // Check that more calls do not update
 
@@ -214,8 +220,8 @@ public class MetadataTest {
         assertThat(meta.catalog(latestVersion), is(catalog));
 
         assertThat(logged.size(), is(3));
-        assertThat(logged.countLinesContaining("stale check", "is false", LATEST_FILE_NAME), is(1));
-        assertThat(logged.countLinesContaining("stale check", "is false", RC1_LAST_UPDATE), is(2));
+        logged.assertLinesContainingAll(1, "stale check", "is false", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(2, "stale check", "is false", RC1_LAST_UPDATE);
     }
 
     @Test
@@ -229,13 +235,13 @@ public class MetadataTest {
         Thread.sleep(1250);
         assertThat(meta.latestVersion(), is(latestVersion));
 
-        assertThat(logged.countLinesContaining("stale check", "is true", LATEST_FILE_NAME), is(1));
-        assertThat(logged.countLinesContaining("updated", RC1_LAST_UPDATE, "etag " + NO_ETAG), is(1));
-        logged.assertLinesContaining("Looking up latest Helidon version");
-        logged.assertNoLinesContaining("Updating metadata for Helidon version " + RC1);
-        assertThat(logged.countLinesContaining("downloading", LATEST_FILE_NAME), is(1));
-        assertThat(logged.countLinesContaining("connected", LATEST_FILE_NAME), is(1));
-        assertThat(logged.countLinesContaining("wrote", LATEST_FILE_NAME), is(1));
+        logged.assertLinesContainingAll(1, "stale check", "is true", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + NO_ETAG);
+        logged.assertLinesContainingAll("Looking up latest Helidon version");
+        logged.assertNoLinesContainingAll("Updating metadata for Helidon version " + RC1);
+        logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
     }
 
     @Test
@@ -249,13 +255,13 @@ public class MetadataTest {
         Thread.sleep(1250);
         assertThat(meta.properties(latestVersion), is(not(nullValue())));
 
-        assertThat(logged.countLinesContaining("stale check", "is true", RC1_LAST_UPDATE), is(1));
-        assertThat(logged.countLinesContaining("updated", RC1_LAST_UPDATE, "etag " + NO_ETAG), is(1));
-        logged.assertNoLinesContaining("Looking up latest Helidon version");
-        logged.assertLinesContaining("Updating metadata for Helidon version " + RC1);
-        assertThat(logged.countLinesContaining("downloading", LATEST_FILE_NAME), is(1));
-        assertThat(logged.countLinesContaining("connected", LATEST_FILE_NAME), is(1));
-        assertThat(logged.countLinesContaining("wrote", LATEST_FILE_NAME), is(1));
+        logged.assertLinesContainingAll(1, "stale check", "is true", RC1_LAST_UPDATE);
+        logged.assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + NO_ETAG);
+        logged.assertNoLinesContainingAll("Looking up latest Helidon version");
+        logged.assertLinesContainingAll("Updating metadata for Helidon version " + RC1);
+        logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
     }
 
     @Test
@@ -269,13 +275,13 @@ public class MetadataTest {
         Thread.sleep(1250);
         assertThat(meta.catalog(latestVersion), is(not(nullValue())));
 
-        assertThat(logged.countLinesContaining("stale check", "is true", RC1_LAST_UPDATE), is(1));
-        assertThat(logged.countLinesContaining("updated", RC1_LAST_UPDATE, "etag " + NO_ETAG), is(1));
-        logged.assertNoLinesContaining("Looking up latest Helidon version");
-        logged.assertLinesContaining("Updating metadata for Helidon version " + RC1);
-        assertThat(logged.countLinesContaining("downloading", LATEST_FILE_NAME), is(1));
-        assertThat(logged.countLinesContaining("connected", LATEST_FILE_NAME), is(1));
-        assertThat(logged.countLinesContaining("wrote", LATEST_FILE_NAME), is(1));
+        logged.assertLinesContainingAll(1, "stale check", "is true", RC1_LAST_UPDATE);
+        logged.assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + NO_ETAG);
+        logged.assertNoLinesContainingAll("Looking up latest Helidon version");
+        logged.assertLinesContainingAll("Updating metadata for Helidon version " + RC1);
+        logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
     }
 
     @Test
@@ -295,11 +301,11 @@ public class MetadataTest {
 
         logged.clear();
         assertThat(meta.properties(latestVersion), is(not(nullValue())));
-        assertThat(logged.countLinesContaining("not modified", RC1_CLI_DATA_ZIP), is(1));
-        assertThat(logged.countLinesContaining("updated", RC1_LAST_UPDATE, "etag " + INITIAL_ETAG), is(1));
-        assertThat(logged.countLinesContaining("downloading", LATEST_FILE_NAME), is(1));
-        assertThat(logged.countLinesContaining("connected", LATEST_FILE_NAME), is(1));
-        assertThat(logged.countLinesContaining("wrote", LATEST_FILE_NAME), is(1));
+        logged.assertLinesContainingAll(1, "not modified", RC1_CLI_DATA_ZIP);
+        logged.assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + INITIAL_ETAG);
+        logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
     }
 
     @Test
@@ -319,11 +325,11 @@ public class MetadataTest {
 
         logged.clear();
         assertThat(meta.properties(latestVersion), is(not(nullValue())));
-        assertThat(logged.countLinesContaining("not modified", RC2_CLI_DATA_ZIP), is(1));
-        assertThat(logged.countLinesContaining("updated", RC2_LAST_UPDATE, "etag " + INITIAL_ETAG), is(1));
-        assertThat(logged.countLinesContaining("downloading", LATEST_FILE_NAME), is(1));
-        assertThat(logged.countLinesContaining("connected", LATEST_FILE_NAME), is(1));
-        assertThat(logged.countLinesContaining("wrote", LATEST_FILE_NAME), is(1));
+        logged.assertLinesContainingAll(1, "not modified", RC2_CLI_DATA_ZIP);
+        logged.assertLinesContainingAll(1, "updated", RC2_LAST_UPDATE, "etag " + INITIAL_ETAG);
+        logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
     }
 
     @Test
@@ -344,11 +350,11 @@ public class MetadataTest {
         logged.clear();
         catalogRequest(RC2, false);
         assertThat(meta.properties(RC2), is(not(nullValue())));
-        assertThat(logged.countLinesContaining("not modified", RC2_CLI_DATA_ZIP), is(0));
-        assertThat(logged.countLinesContaining("updated", RC2_LAST_UPDATE, "etag " + INITIAL_ETAG), is(0));
-        assertThat(logged.countLinesContaining("downloading", LATEST_FILE_NAME), is(0));
-        assertThat(logged.countLinesContaining("connected", LATEST_FILE_NAME), is(0));
-        assertThat(logged.countLinesContaining("wrote", LATEST_FILE_NAME), is(0));
+        logged.assertLinesContainingAll(0, "not modified", RC2_CLI_DATA_ZIP);
+        logged.assertLinesContainingAll(0, "updated", RC2_LAST_UPDATE, "etag " + INITIAL_ETAG);
+        logged.assertLinesContainingAll(0, "downloading", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(0, "connected", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(0, "wrote", LATEST_FILE_NAME);
     }
 
     protected void assertInitialLatestVersionRequestPerformsUpdate(long updateFrequency,
@@ -390,18 +396,18 @@ public class MetadataTest {
         assertFile(seJarFile);
         assertFile(mpJarFile);
 
-        assertThat(logged.countLinesContaining("unpacked", "cli-plugins-", ".jar"), is(1));
-        assertThat(logged.countLinesContaining("executing", "cli-plugins-", "UpdateMetadata"), is(1));
-        assertThat(logged.countLinesContaining("downloading", LATEST_FILE_NAME), is(1));
-        assertThat(logged.countLinesContaining("connecting", LATEST_FILE_NAME), is(1));
-        assertThat(logged.countLinesContaining("connected", LATEST_FILE_NAME), is(1));
-        assertThat(logged.countLinesContaining("downloading", zipPath), is(1));
-        assertThat(logged.countLinesContaining("connecting", zipPath), is(1));
-        assertThat(logged.countLinesContaining("connected", zipPath), is(1));
+        logged.assertLinesContainingAll(1, "unpacked", "cli-plugins-", ".jar");
+        logged.assertLinesContainingAll(1, "executing", "cli-plugins-", "UpdateMetadata");
+        logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "connecting", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "downloading", zipPath);
+        logged.assertLinesContainingAll(1, "connecting", zipPath);
+        logged.assertLinesContainingAll(1, "connected", zipPath);
 
-        assertThat(logged.countLinesContaining("unzipping", zipPath), is(1));
-        assertThat(logged.countLinesContaining("deleting", zipPath), is(1));
-        assertThat(logged.countLinesContaining("updated", lastUpdatePath, "etag " + expectedEtag), is(1));
+        logged.assertLinesContainingAll(1, "unzipping", zipPath);
+        logged.assertLinesContainingAll(1, "deleting", zipPath);
+        logged.assertLinesContainingAll(1, "updated", lastUpdatePath, "etag " + expectedEtag);
     }
 
     private void firstLatestVersionRequest(String expectedVersion) {
@@ -409,9 +415,9 @@ public class MetadataTest {
             latestVersion = meta.latestVersion();
             assertThat(latestVersion, is(not(nullValue())));
             assertThat(latestVersion, is(toMavenVersion(expectedVersion)));
-            logged.assertLinesContaining("Looking up latest Helidon version");
-            logged.assertNoLinesContaining("Updating metadata for Helidon version " + expectedVersion);
-            assertThat(logged.countLinesContaining("stale check", "(not found)", LATEST_FILE_NAME), is(1));
+            logged.assertLinesContainingAll("Looking up latest Helidon version");
+            logged.assertNoLinesContainingAll("Updating metadata for Helidon version " + expectedVersion);
+            logged.assertLinesContainingAll(1, "stale check", "(not found)", LATEST_FILE_NAME);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -422,13 +428,13 @@ public class MetadataTest {
             String staleType = expectUpdate ? "(not found)" : "is false";
             String staleFilePath = version + "/" + LAST_UPDATE_FILE_NAME;
             meta.catalog(version);
-            logged.assertNoLinesContaining("Looking up latest Helidon version");
+            logged.assertNoLinesContainingAll("Looking up latest Helidon version");
             if (expectUpdate) {
-                logged.assertLinesContaining("Updating metadata for Helidon version " + version);
+                logged.assertLinesContainingAll("Updating metadata for Helidon version " + version);
             } else {
-                logged.assertNoLinesContaining("Updating metadata for Helidon version " + version);
+                logged.assertNoLinesContainingAll("Updating metadata for Helidon version " + version);
             }
-            logged.assertLinesContaining(1, "stale check", staleType, staleFilePath);
+            logged.assertLinesContainingAll(1, "stale check", staleType, staleFilePath);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

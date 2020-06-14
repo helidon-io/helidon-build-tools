@@ -185,35 +185,35 @@ public class CapturingLogWriter implements Log.Writer {
      *
      * @param fragments The fragments.
      */
-    public void assertLinesContaining(String... fragments) {
-        if (!atLeastOneLineContaining(fragments)) {
-            final String msg = String.format("log should contain at least one line matching all of the following: %s%n%s",
+    public void assertLinesContainingAll(String... fragments) {
+        if (!atLeastOneLineContainingAll(fragments)) {
+            final String msg = String.format("log should contain at least one line with all of the following: %s%n%s",
                     Arrays.toString(fragments), this);
             fail(msg);
         }
     }
 
     /**
-     * Assert that there are no log line that contains all given fragments.
+     * Assert that there are no log lines that contain all given fragments.
      *
      * @param fragments The fragments.
      */
-    public void assertNoLinesContaining(String... fragments) {
-        if (atLeastOneLineContaining(fragments)) {
-            final String msg = String.format("log should not contain any lines matching all of the following: %s%n%s",
+    public void assertNoLinesContainingAll(String... fragments) {
+        if (atLeastOneLineContainingAll(fragments)) {
+            final String msg = String.format("log should not contain any lines with all of the following: %s%n%s",
                     Arrays.toString(fragments), this);
             fail(msg);
         }
     }
 
     /**
-     * Test whether or not there is at least one log line that contains all given fragments.
+     * Test whether or not there is at least one log line that contain all given fragments.
      *
      * @param fragments The fragments.
      * @return {@code true} if at least one line matches all.
      */
-    public boolean atLeastOneLineContaining(String... fragments) {
-        return countLinesContaining(fragments) > 0;
+    public boolean atLeastOneLineContainingAll(String... fragments) {
+        return countLinesContainingAll(fragments) > 0;
     }
 
     /**
@@ -222,10 +222,10 @@ public class CapturingLogWriter implements Log.Writer {
      * @param expectedCount The expected count.
      * @param fragments The fragments.
      */
-    public void assertLinesContaining(int expectedCount, String... fragments) {
-        final int count = countLinesContaining(fragments);
+    public void assertLinesContainingAll(int expectedCount, String... fragments) {
+        final int count = countLinesContainingAll(fragments);
         if (count != expectedCount) {
-            final String msg = String.format("log should contain %d lines containing all of the following, found %d: %s%n%s",
+            final String msg = String.format("log should contain %d lines with all of the following, found %d: %s%n%s",
                     expectedCount, count, Arrays.toString(fragments), this);
             fail(msg);
         }
@@ -237,7 +237,7 @@ public class CapturingLogWriter implements Log.Writer {
      * @param fragments The fragments.
      * @return The count.
      */
-    public int countLinesContaining(String... fragments) {
+    public int countLinesContainingAll(String... fragments) {
         return (int) messages().stream().filter(msg -> containsAll(msg, fragments)).count();
     }
 
