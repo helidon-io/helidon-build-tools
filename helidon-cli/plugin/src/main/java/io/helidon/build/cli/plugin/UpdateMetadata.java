@@ -57,7 +57,6 @@ public class UpdateMetadata extends Plugin {
     private static final int STATUS_OK = 200;
     private static final int STATUS_NOT_MODIFIED = 304;
 
-
     private String version;
     private URL baseUrl;
     private Path cacheDir;

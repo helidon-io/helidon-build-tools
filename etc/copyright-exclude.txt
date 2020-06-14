@@ -16,3 +16,6 @@ vuex-router-sync.js
 .mustache
 .json
 javax.annotation.processing.Processor
+/cli-data/latest
+cli-data.zip
+cli-data.zip
