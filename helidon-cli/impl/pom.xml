@@ -130,7 +130,7 @@
                             <overWriteIfNewer>true</overWriteIfNewer>
                             <includeScope>runtime</includeScope>
                             <excludeScope>test</excludeScope>
-                            <excludeArtifactIds>helidon-cli-plugins</excludeArtifactIds>
+                            <excludeArtifactIds>helidon-cli-plugin</excludeArtifactIds>
                         </configuration>
                     </execution>
                     <execution>
@@ -143,7 +143,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>io.helidon.build-tools.cli</groupId>
-                                    <artifactId>helidon-cli-plugins</artifactId>
+                                    <artifactId>helidon-cli-plugin</artifactId>
                                     <version>${project.version}</version>
                                     <type>jar</type>
                                     <destFileName>cli-plugins-${buildNumber}.jar</destFileName>
