@@ -82,7 +82,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.build-tools.cli</groupId>
-            <artifactId>helidon-cli-plugins</artifactId>
+            <artifactId>helidon-cli-plugin</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
