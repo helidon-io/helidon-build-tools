@@ -34,6 +34,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -170,6 +171,17 @@ public final class FileUtils {
     }
 
     /**
+     * List all files in the given directory that match the given filter. Does not recurse.
+     *
+     * @param directory The directory.
+     * @param pathFilter The filter.
+     * @return The normalized, absolute file paths.
+     */
+    public static List<Path> listFiles(Path directory, BiPredicate<Path, BasicFileAttributes> pathFilter) {
+        return listFiles(directory, pathFilter, 1);
+    }
+
+    /**
      * List all files in the given directory that match the given filter, recursively if maxDepth > 1.
      *
      * @param directory The directory.
@@ -178,10 +190,20 @@ public final class FileUtils {
      * @return The normalized, absolute file paths.
      */
     public static List<Path> listFiles(Path directory, Predicate<String> fileNameFilter, int maxDepth) {
+        return listFiles(directory, (path, attrs) -> fileNameFilter.test(path.getFileName().toString()), maxDepth);
+    }
+
+    /**
+     * List all files in the given directory that match the given filter, recursively if maxDepth > 1.
+     *
+     * @param directory The directory.
+     * @param pathFilter The filter.
+     * @param maxDepth The maximum recursion depth.
+     * @return The normalized, absolute file paths.
+     */
+    public static List<Path> listFiles(Path directory, BiPredicate<Path, BasicFileAttributes> pathFilter, int maxDepth) {
         try {
-            return Files.find(assertDir(directory), maxDepth, (path, attrs) ->
-                    attrs.isRegularFile() && fileNameFilter.test(path.getFileName().toString())
-            ).collect(Collectors.toList());
+            return Files.find(assertDir(directory), maxDepth, pathFilter).collect(Collectors.toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

@@ -25,11 +25,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
 import static io.helidon.build.util.AnsiConsoleInstaller.isHelidonChildProcess;
@@ -145,12 +147,31 @@ public class MavenCommand {
             if (jars.isEmpty()) {
                 throw new IllegalStateException(MAVEN_CORE_PREFIX + "* not found in " + libDir);
             }
-            final String fileName = jars.get(0).getFileName().toString();
-            final String versionStr = fileName.substring(MAVEN_CORE_PREFIX.length(), fileName.length() - JAR_SUFFIX.length());
+            final Path jarFile = jars.get(0);
+            final String fileName = jarFile.getFileName().toString();
+            final String versionStr = jarVersion(jarFile)
+                    .orElse(fileName.substring(MAVEN_CORE_PREFIX.length(), fileName.length() - JAR_SUFFIX.length()));
             final MavenVersion version = MavenVersion.toMavenVersion(versionStr);
             MAVEN_VERSION.set(version);
         }
         return MAVEN_VERSION.get();
+    }
+
+    /**
+     * Find implementation version from manifest file.
+     *
+     * @param jarFilePath Jar file to look for version in
+     * @return version or empty optional
+     */
+    public static Optional<String> jarVersion(Path jarFilePath) {
+        try {
+            return Optional.of(new JarFile(jarFilePath.toFile())
+                    .getManifest()
+                    .getMainAttributes()
+                    .getValue("Implementation-Version"));
+        } catch (Throwable t) {
+            return Optional.empty();
+        }
     }
 
     /**
