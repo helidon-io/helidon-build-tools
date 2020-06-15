@@ -43,7 +43,11 @@ import static java.util.Objects.requireNonNull;
  * CLI metadata access.
  */
 public class Metadata {
-    private static final String DEFAULT_BASE_URL = "https://helidon.io/cli-data";
+    /**
+     * The default base url.
+     */
+    public static final String DEFAULT_BASE_URL = "https://helidon.io/cli-data";
+
     private static final String LATEST_VERSION_FILE_NAME = "latest";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     private static final String METADATA_FILE_NAME = "metadata.properties";
@@ -79,9 +83,19 @@ public class Metadata {
      * @return The instance.
      */
     public static Metadata newInstance() {
+        return newInstance(DEFAULT_BASE_URL);
+    }
+
+    /**
+     * Returns a new instance with the given base url and default configuration.
+     *
+     * @param baseUrl The base url.
+     * @return The instance.
+     */
+    public static Metadata newInstance(String baseUrl) {
         final Path cacheDir = Config.userConfig().cacheDir();
         final boolean debug = Log.isDebug();
-        return newInstance(cacheDir, DEFAULT_BASE_URL, DEFAULT_UPDATE_FREQUENCY, DEFAULT_UPDATE_DELAY_UNITS, debug);
+        return newInstance(cacheDir, baseUrl, DEFAULT_UPDATE_FREQUENCY, DEFAULT_UPDATE_DELAY_UNITS, debug);
     }
 
     /**

@@ -150,7 +150,7 @@ public class Plugins {
                                                       .processBuilder(processBuilder)
                                                       .stdOut(stdOut)
                                                       .stdErr(stdErr::add)
-                                                      .capture(false)
+                                                      .capture(true)
                                                       .build()
                                                       .start();
         try {
@@ -161,8 +161,12 @@ public class Plugins {
     }
 
     private static void processError(Exception error, List<String> stdErr) throws Exception {
-        if (containsUnsupportedClassVersionError(stdErr)) {
-            unsupportedJavaVersion();
+        if (error instanceof ProcessMonitor.ProcessFailedException) {
+            if (containsUnsupportedClassVersionError(stdErr)) {
+                unsupportedJavaVersion();
+            } else {
+                throw error;
+            }
         } else {
             stdErr.forEach(Log::error);
             throw error;

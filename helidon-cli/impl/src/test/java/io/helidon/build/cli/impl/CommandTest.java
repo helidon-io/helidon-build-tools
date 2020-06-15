@@ -30,7 +30,6 @@ import static io.helidon.build.cli.impl.InitCommand.DEFAULT_GROUP_ID;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_NAME;
 import static io.helidon.build.cli.impl.InitCommand.Flavor;
 import static io.helidon.build.cli.impl.TestUtils.exec;
-import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -39,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Class CommandTest.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class CommandTest extends BaseCommandTest {
+public class CommandTest extends MetadataCommandTest {
 
     private final Flavor flavor = Flavor.SE;
     private final Path targetDir = TestFiles.targetDir();
@@ -47,16 +46,21 @@ public class CommandTest extends BaseCommandTest {
     @Test
     @Order(1)
     public void testInit() throws Exception {
-        exec("init",
-                "--flavor", flavor.toString(),
-                "--project ", targetDir.toString(),
-                "--version ", helidonTestVersion(),
-                "--artifactid", DEFAULT_ARTIFACT_ID,
-                "--groupid", DEFAULT_GROUP_ID,
-                "--name", DEFAULT_NAME,
-                "--batch");
-        Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
-        assertTrue(Files.exists(projectDir));
+        startMetadataAccess(false);
+        try {
+            exec("init",
+                    "--url", metadataUrl(),
+                    "--flavor", flavor.toString(),
+                    "--project ", targetDir.toString(),
+                    "--artifactid", DEFAULT_ARTIFACT_ID,
+                    "--groupid", DEFAULT_GROUP_ID,
+                    "--name", DEFAULT_NAME,
+                    "--batch");
+            Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
+            assertTrue(Files.exists(projectDir));
+        } finally {
+            stopMetadataAccess();
+        }
     }
 
     @Test

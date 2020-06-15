@@ -15,66 +15,55 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.net.URL;
-import java.nio.file.Path;
+import java.nio.file.Files;
 import java.util.List;
 
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.cli.impl.InitCommand.Flavor;
-import io.helidon.build.util.Proxies;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.cli.impl.ArchetypeBrowser.REMOTE_REPO;
 import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 
 /**
  * Class AppTypeBrowserTest.
  */
-public class ArchetypeBrowserTest extends BaseCommandTest {
+public class ArchetypeBrowserTest extends MetadataCommandTest {
 
-    @BeforeAll
-    public static void beforeAll() {
-        Proxies.setProxyPropertiesFromEnv();
+    @BeforeEach
+    public void beforeEach() {
+        startMetadataAccess(false);
     }
 
-    /**
-     * Test a simple file download from remote repo.
-     *
-     * @throws Exception If error occurs.
-     */
-    @Test
-    public void testDownload() throws Exception {
-        Path file = Path.of("maven-metadata.xml");
-        ArchetypeBrowser browser = new ArchetypeBrowser(Flavor.SE, helidonTestVersion());
-        browser.downloadArtifact(new URL(REMOTE_REPO + "/io/helidon/build-tools/maven-metadata.xml"), file);
-        assertThat(file.toFile().exists(), is(true));
-        assertThat(file.toFile().delete(), is(true));
+    @AfterEach
+    public void afterEach() {
+        stopMetadataAccess();
     }
 
-    /**
-     * Assertions should be strengthened after we have a release.
-     */
+    private ArchetypeBrowser newBrowser(Flavor flavor) throws Exception {
+        return new ArchetypeBrowser(metadata(), flavor, helidonTestVersion());
+    }
+
     @Test
-    public void testMpBrowser() {
-        ArchetypeBrowser browser = new ArchetypeBrowser(Flavor.MP, helidonTestVersion());
+    public void testMpBrowser() throws Exception {
+        ArchetypeBrowser browser = newBrowser(Flavor.MP);
         List<ArchetypeCatalog.ArchetypeEntry> archetypes = browser.archetypes();
-        assertThat(archetypes.size(), is(greaterThanOrEqualTo(0)));
-        assertThat(archetypes.stream().map(browser::archetypeJar).count(), is(greaterThanOrEqualTo(0L)));
+        assertThat(archetypes.size(), is(1));
+        assertThat(archetypes.get(0).name(), is("bare"));
+        assertThat(archetypes.get(0).artifactId(), is("helidon-bare-mp"));
+        assertThat(Files.exists(browser.archetypeJar(archetypes.get(0))), is(true));
     }
 
-    /**
-     * Assertions should be strengthen after we have a release.
-     */
     @Test
-    public void testSeBrowser() {
-        ArchetypeBrowser browser = new ArchetypeBrowser(Flavor.SE, helidonTestVersion());
+    public void testSeBrowser() throws Exception {
+        ArchetypeBrowser browser = newBrowser(Flavor.SE);
         List<ArchetypeCatalog.ArchetypeEntry> archetypes = browser.archetypes();
-        assertThat(archetypes.size(), is(greaterThanOrEqualTo(0)));
-        assertThat(archetypes.stream().map(browser::archetypeJar).count(), is(greaterThanOrEqualTo(0L)));
+        assertThat(archetypes.get(0).name(), is("bare"));
+        assertThat(archetypes.get(0).artifactId(), is("helidon-bare-se"));
+        assertThat(Files.exists(browser.archetypeJar(archetypes.get(0))), is(true));
     }
 }

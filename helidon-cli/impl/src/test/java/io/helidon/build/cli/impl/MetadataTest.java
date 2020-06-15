@@ -16,7 +16,6 @@
 package io.helidon.build.cli.impl;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,12 +35,9 @@ import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.UserConfig;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import org.mockserver.configuration.ConfigurationProperties;
-import org.mockserver.integration.ClientAndServer;
 
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
@@ -53,8 +49,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
 /**
  * Unit test for class {@link Metadata}.
@@ -75,25 +69,12 @@ public class MetadataTest {
     static final String HELIDON_BARE_MP = "helidon-bare-mp";
     static final String RC1 = "2.0.0-RC1";
     static final String RC2 = "2.0.0-RC2";
-    static final String RC1_LAST_UPDATE = RC1 + LAST_UPDATE;
-    static final String RC2_LAST_UPDATE = RC2 + LAST_UPDATE;
     static final String RC1_CLI_DATA_ZIP = RC1 + CLI_DATA;
     static final String RC2_CLI_DATA_ZIP = RC2 + CLI_DATA;
-    static final byte[] RC1_ZIP = readCliDataFile(RC1_CLI_DATA_ZIP);
-    static final byte[] RC2_ZIP = readCliDataFile(RC2_CLI_DATA_ZIP);
-    static final String ETAG_HEADER = "Etag";
-    static final String IF_NONE_MATCH_HEADER = "If-None-Match";
+    static final String RC1_LAST_UPDATE = RC1 + LAST_UPDATE;
+    static final String RC2_LAST_UPDATE = RC2 + LAST_UPDATE;
     static final String NO_ETAG = "<no-etag>";
-    static final String NO_FILE_ETAG = "<no-file>";
     static final String INITIAL_ETAG = "<initial>";
-
-    private static byte[] readCliDataFile(String file) {
-        try {
-            return Files.readAllBytes(TEST_CLI_DATA_PATH.resolve(file));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
 
     private String baseUrl;
     private Path cacheDir;
@@ -101,12 +82,13 @@ public class MetadataTest {
     private CapturingLogWriter logged;
     private Metadata meta;
     private MavenVersion latestVersion;
-    private ClientAndServer mockServer;
+    private MockMetadataServer mockServer;
 
     @BeforeEach
     public void beforeEach(TestInfo info) throws IOException {
         final String testName = info.getTestMethod().orElseThrow().getName();
         Log.info("%n--- Start $(bold %s) -------------------------------------------%n", testName);
+
         Config.setUserHome(TestFiles.targetDir().resolve("alice"));
         final UserConfig userConfig = Config.userConfig();
         userConfig.clearCache();
@@ -145,17 +127,9 @@ public class MetadataTest {
     /**
      * Starts the mock server and client and sets the base url pointing to it.
      */
-    @SuppressWarnings("ConstantConditions")
-    protected void startMockServer() {
-        if (Thread.currentThread().getContextClassLoader() != ClassLoader.getSystemClassLoader()) {
-            final String reason = "don't yet know how to run MockServer when not in system class loader";
-            Log.info("$(italic,yellow Skipping: %s)", reason);
-            Assumptions.assumeTrue(false, reason);
-        }
-        ConfigurationProperties.logLevel("WARN");
-        Log.info("Using mock server at %s", MOCK_SERVER_BASE_URL);
-        mockServer = ClientAndServer.startClientAndServer(MOCK_SERVER_PORT);
-        useBaseUrl(MOCK_SERVER_BASE_URL);
+    protected void startMockServer(String latestVersion) {
+        this.mockServer = new MockMetadataServer(false).start(latestVersion);
+        useBaseUrl(mockServer.baseUrl());
     }
 
     /**
@@ -333,7 +307,7 @@ public class MetadataTest {
 
     @Test
     void testZipIsNotDownloadedWhenEtagMatches() throws Exception {
-        setupMockServer(RC1);
+        startMockServer(RC1);
         assertZipIsNotDownloadedFromServerWhenEtagMatches();
     }
 
@@ -361,7 +335,7 @@ public class MetadataTest {
 
         // Setup mock server
 
-        setupMockServer(RC2);
+        startMockServer(RC2);
 
         // Make the initial latestVersion call and validate the result
 
@@ -381,7 +355,7 @@ public class MetadataTest {
 
     @Test
     void testCatalogUpdatesWhenUnseenVersionRequested() throws Exception {
-        setupMockServer(RC2);
+        startMockServer(RC2);
         assertServerUpdatesWhenUnseenRC2VersionRequested();
     }
 
@@ -485,46 +459,5 @@ public class MetadataTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private void setupMockServer(String latest) {
-
-        // Start server
-
-        startMockServer();
-
-        // Always return latest version
-
-        mockServer.when(request().withMethod("GET")
-                                 .withPath("/latest"))
-                  .respond(response().withBody(latest));
-
-        // Always return zip data when If-None-Match header is "<no-file>" (plugin defines this)
-
-        mockServer.when(request().withMethod("GET")
-                                 .withHeader(IF_NONE_MATCH_HEADER, NO_FILE_ETAG)
-                                 .withPath("/" + RC1_CLI_DATA_ZIP))
-                  .respond(response().withHeader(ETAG_HEADER, INITIAL_ETAG)
-                                     .withBody(RC1_ZIP));
-
-        mockServer.when(request().withMethod("GET")
-                                 .withHeader(IF_NONE_MATCH_HEADER, NO_FILE_ETAG)
-                                 .withPath("/" + RC2_CLI_DATA_ZIP))
-                  .respond(response().withHeader(ETAG_HEADER, INITIAL_ETAG)
-                                     .withBody(RC2_ZIP));
-
-        // Always return 304 when If-None-Match is "<initial>"
-
-        mockServer.when(request().withMethod("GET")
-                                 .withHeader(IF_NONE_MATCH_HEADER, INITIAL_ETAG)
-                                 .withPath("/" + RC1_CLI_DATA_ZIP))
-                  .respond(response().withHeader(ETAG_HEADER, INITIAL_ETAG)
-                                     .withStatusCode(304));
-
-        mockServer.when(request().withMethod("GET")
-                                 .withHeader(IF_NONE_MATCH_HEADER, INITIAL_ETAG)
-                                 .withPath("/" + RC2_CLI_DATA_ZIP))
-                  .respond(response().withHeader(ETAG_HEADER, INITIAL_ETAG)
-                                     .withStatusCode(304));
     }
 }

@@ -133,7 +133,7 @@ public class Log {
      * @return {@code true} if enabled.
      */
     public static boolean isDebug() {
-        return WRITER.get().isDebug();
+        return writer().isDebug();
     }
 
     /**
@@ -142,7 +142,7 @@ public class Log {
      * @return {@code true} if enabled.
      */
     public static boolean isVerbose() {
-        return WRITER.get().isVerbose();
+        return writer().isVerbose();
     }
 
     /**

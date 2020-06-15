@@ -21,7 +21,6 @@ import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
@@ -37,16 +36,13 @@ import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
 import io.helidon.build.cli.impl.FlowNodeControllers.FlowNodeController;
 import io.helidon.build.util.Constants;
-import io.helidon.build.util.HelidonVersions;
 import io.helidon.build.util.Log;
-import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
 
 import static io.helidon.build.cli.impl.ArchetypeBrowser.ARCHETYPE_NOT_FOUND;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.cli.impl.Prompter.displayLine;
 import static io.helidon.build.cli.impl.Prompter.prompt;
-import static io.helidon.build.util.MavenVersion.greaterThanOrEqualTo;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
 import static io.helidon.build.util.Requirements.failed;
@@ -59,8 +55,6 @@ import static io.helidon.build.util.Style.BoldBrightCyan;
 @Command(name = "init", description = "Generate a new project")
 public final class InitCommand extends BaseCommand implements CommandExecution {
 
-    private static final String MINIMUM_HELIDON_VERSION = "2.0.0-RC1";
-
     private final CommonOptions commonOptions;
     private final boolean batch;
     private Flavor flavor;
@@ -71,6 +65,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
     private final String artifactId;
     private final String packageName;
     private final String name;
+    private final Metadata metadata;
 
     /**
      * Helidon flavors.
@@ -124,7 +119,9 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             @KeyValue(name = "package", description = "Project's package name",
                     defaultValue = DEFAULT_PACKAGE) String packageName,
             @KeyValue(name = "name", description = "Project's name",
-                    defaultValue = DEFAULT_NAME) String projectName) {
+                    defaultValue = DEFAULT_NAME) String projectName,
+            @KeyValue(name = "url", description = "Metadata base URL",
+                    defaultValue = Metadata.DEFAULT_BASE_URL, visible = false) String metaBaseUrl) {
         this.commonOptions = commonOptions;
         this.batch = batch;
         this.build = build;
@@ -135,6 +132,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         this.artifactId = artifactId;
         this.packageName = packageName;
         this.name = projectName;
+        this.metadata = Metadata.newInstance(metaBaseUrl);
     }
 
     @Override
@@ -171,8 +169,8 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         }
 
         // Gather archetype names
-        ArchetypeBrowser browser = new ArchetypeBrowser(flavor, helidonVersion);
         displayLine("Gathering archetypes ... ");
+        ArchetypeBrowser browser = new ArchetypeBrowser(metadata, flavor, helidonVersion);
         List<ArchetypeCatalog.ArchetypeEntry> archetypes = browser.archetypes();
         require(!archetypes.isEmpty(), "Unable to find archetypes for %s and %s.", flavor, helidonVersion);
 
@@ -254,18 +252,13 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         return properties;
     }
 
-    private static String defaultHelidonVersion() {
+    private String defaultHelidonVersion() {
         // Check the system property first, primarily to support tests
         String version = System.getProperty(HELIDON_VERSION_PROPERTY);
         if (version == null) {
-            Log.info("Looking up latest Helidon version");
             try {
-                Predicate<MavenVersion> filter = greaterThanOrEqualTo(MINIMUM_HELIDON_VERSION);
-                version = HelidonVersions.releases(filter).latest().toString();
+                version = metadata.latestVersion().toString();
                 Log.debug("Latest Helidon version found: %s", version);
-            } catch (IllegalStateException e) {
-                Log.info("$(italic,red No versions exist >= %s)", MINIMUM_HELIDON_VERSION);
-                failed("$(bold Please specify with --version option.)");
             } catch (UnknownHostException e) {
                 Log.info("$(italic,red Unknown host: %s)", e.getMessage());
                 failed("$(bold Cannot lookup version, please specify with --version option.)");
