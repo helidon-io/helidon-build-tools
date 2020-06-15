@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.cli;
+package io.helidon.build.cli.plugin;
 
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.util.Map;
-
-import io.helidon.build.cli.plugin.NetworkConnection;
 
 import org.junit.jupiter.api.Test;
 

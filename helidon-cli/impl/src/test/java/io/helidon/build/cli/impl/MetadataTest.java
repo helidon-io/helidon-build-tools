@@ -105,7 +105,8 @@ public class MetadataTest {
 
     @BeforeEach
     public void beforeEach(TestInfo info) throws IOException {
-        Log.info("%n--- %s ---------------%n", info.getTestMethod().orElseThrow().getName());
+        final String testName = info.getTestMethod().orElseThrow().getName();
+        Log.info("%n--- Start $(bold %s) -------------------------------------------%n", testName);
         Config.setUserHome(TestFiles.targetDir().resolve("alice"));
         final UserConfig userConfig = Config.userConfig();
         userConfig.clearCache();
@@ -151,7 +152,7 @@ public class MetadataTest {
             Log.info("$(italic,yellow Skipping: %s)", reason);
             Assumptions.assumeTrue(false, reason);
         }
-        ConfigurationProperties.logLevel("INFO");
+        ConfigurationProperties.logLevel("WARN");
         Log.info("Using mock server at %s", MOCK_SERVER_BASE_URL);
         mockServer = ClientAndServer.startClientAndServer(MOCK_SERVER_PORT);
         useBaseUrl(MOCK_SERVER_BASE_URL);

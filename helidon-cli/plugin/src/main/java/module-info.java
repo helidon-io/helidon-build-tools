@@ -15,8 +15,9 @@
  */
 
 /**
- * Helidon CLI extension.
+ * Helidon CLI plugin.
  */
-module io.helidon.build.cli.extension {
+module io.helidon.build.cli.plugin {
     exports io.helidon.build.cli.plugin;
+    opens io.helidon.build.cli.plugin;
 }

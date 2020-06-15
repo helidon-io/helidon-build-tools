@@ -175,8 +175,8 @@
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>3.1.12</version.plugin.spotbugs>
         <version.plugin.surefire.provider.junit>1.0.3</version.plugin.surefire.provider.junit>
-        <version.plugin.surefire>2.19.1</version.plugin.surefire>
-        <version.plugin.failsafe>2.19.1</version.plugin.failsafe>
+        <version.plugin.surefire>3.0.0-M4</version.plugin.surefire>
+        <version.plugin.failsafe>3.0.0-M4</version.plugin.failsafe>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
     </properties>
 
@@ -256,11 +256,6 @@
                     </configuration>
                     <dependencies>
                         <dependency>
-                            <groupId>org.junit.platform</groupId>
-                            <artifactId>junit-platform-surefire-provider</artifactId>
-                            <version>${version.plugin.surefire.provider.junit}</version>
-                        </dependency>
-                        <dependency>
                             <groupId>org.junit.jupiter</groupId>
                             <artifactId>junit-jupiter-engine</artifactId>
                             <version>${version.lib.junit}</version>
@@ -280,11 +275,6 @@
                         </includes>
                     </configuration>
                     <dependencies>
-                        <dependency>
-                            <groupId>org.junit.platform</groupId>
-                            <artifactId>junit-platform-surefire-provider</artifactId>
-                            <version>${version.plugin.surefire.provider.junit}</version>
-                        </dependency>
                         <dependency>
                             <groupId>org.junit.jupiter</groupId>
                             <artifactId>junit-jupiter-engine</artifactId>
