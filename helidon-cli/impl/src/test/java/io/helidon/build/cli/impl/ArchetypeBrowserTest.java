@@ -21,6 +21,7 @@ import java.util.List;
 
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.cli.impl.InitCommand.Flavor;
+import io.helidon.build.util.Proxies;
 
 import org.junit.jupiter.api.Test;
 
@@ -43,6 +44,7 @@ public class ArchetypeBrowserTest extends BaseCommandTest {
     @Test
     public void testDownload() throws Exception {
         Path file = Path.of("maven-metadata.xml");
+        Proxies.setProxyPropertiesFromEnv();
         ArchetypeBrowser browser = new ArchetypeBrowser(Flavor.SE, helidonTestVersion());
         browser.downloadArtifact(new URL(REMOTE_REPO + "/io/helidon/build-tools/maven-metadata.xml"), file);
         assertThat(file.toFile().exists(), is(true));
