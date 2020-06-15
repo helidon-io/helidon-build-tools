@@ -120,7 +120,7 @@ class LinkerTest {
         Path mainAppJar = FileUtils.assertFile(appDir.resolve(mainJarName));
         assertReadOnly(mainAppJar);
         Path appLibDir = FileUtils.assertDir(appDir.resolve("libs"));
-        for (Path file : FileUtils.listFiles(appLibDir, name -> true)) {
+        for (Path file : FileUtils.listFiles(appLibDir, (path, attrs) -> attrs.isRegularFile())) {
             assertReadOnly(file);
         }
     }
