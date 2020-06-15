@@ -180,7 +180,7 @@ public final class FileUtils {
     public static List<Path> listFiles(Path directory, Predicate<String> fileNameFilter, int maxDepth) {
         try {
             return Files.find(assertDir(directory), maxDepth, (path, attrs) ->
-                    attrs.isRegularFile() && fileNameFilter.test(path.getFileName().toString())
+                    fileNameFilter.test(path.getFileName().toString())
             ).collect(Collectors.toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);

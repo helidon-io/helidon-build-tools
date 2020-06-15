@@ -180,6 +180,16 @@ public final class CommandContext {
                 if (Style.isStyled(message)) {
                     Log.info(message);
                 } else {
+                    if (message == null) {
+                        if (error.getMessage() != null) {
+                            message = error.getMessage();
+                        } else if (error.getCause() != null) {
+                            message = error.getCause().getMessage();
+                        } else {
+                            message = "Unknown error";
+                            error.printStackTrace();
+                        }
+                    }
                     Log.log(level, error, message);
                 }
                 if (Log.isVerbose()) {
