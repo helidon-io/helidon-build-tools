@@ -23,6 +23,7 @@ import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.cli.impl.InitCommand.Flavor;
 import io.helidon.build.util.Proxies;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.cli.impl.ArchetypeBrowser.REMOTE_REPO;
@@ -36,6 +37,11 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
  */
 public class ArchetypeBrowserTest extends BaseCommandTest {
 
+    @BeforeAll
+    public static void beforeAll() {
+        Proxies.setProxyPropertiesFromEnv();
+    }
+
     /**
      * Test a simple file download from remote repo.
      *
@@ -44,7 +50,6 @@ public class ArchetypeBrowserTest extends BaseCommandTest {
     @Test
     public void testDownload() throws Exception {
         Path file = Path.of("maven-metadata.xml");
-        Proxies.setProxyPropertiesFromEnv();
         ArchetypeBrowser browser = new ArchetypeBrowser(Flavor.SE, helidonTestVersion());
         browser.downloadArtifact(new URL(REMOTE_REPO + "/io/helidon/build-tools/maven-metadata.xml"), file);
         assertThat(file.toFile().exists(), is(true));
