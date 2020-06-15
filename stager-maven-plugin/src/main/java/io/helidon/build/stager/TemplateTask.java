@@ -33,7 +33,7 @@ final class TemplateTask extends StagingTask {
     private final String source;
     private final Map<String, VariableValue> variables;
 
-    TemplateTask(List<Map<String, String>> iterators,
+    TemplateTask(List<Map<String, List<String>>> iterators,
                  String source,
                  String target,
                  Map<String, VariableValue> variables) {
@@ -44,6 +44,24 @@ final class TemplateTask extends StagingTask {
         }
         this.source = source;
         this.variables = variables == null ? Collections.emptyMap() : variables;
+    }
+
+    /**
+     * Get the source.
+     *
+     * @return source, never {@code null}
+     */
+    String source() {
+        return source;
+    }
+
+    /**
+     * Get the variables.
+     *
+     * @return map of variable values, never {@code null}
+     */
+    Map<String, VariableValue> variables() {
+        return variables;
     }
 
     @Override

@@ -36,10 +36,10 @@
         </unpack-artifact>
     </unpack-artifacts>
     <symlinks>
-        <symlink resource="./${docs.latest.version}" link="docs/latest"/>
-        <symlink resource="./${docs.1.version}" link="docs/v1"/>
-        <symlink resource="./${docs.2.version}" link="docs/v2"/>
-        <symlink resource="./${cli.latest.version}" link="cli/latest"/>
+        <symlink source="./${docs.latest.version}" target="docs/latest"/>
+        <symlink source="./${docs.1.version}" target="docs/v1"/>
+        <symlink source="./${docs.2.version}" target="docs/v2"/>
+        <symlink source="./${cli.latest.version}" target="cli/latest"/>
     </symlinks>
     <downloads>
         <download url="https://helidon.io/cli-data/{version}/cli-data.zip"
@@ -93,7 +93,7 @@
                         <variable name="buildtoolsVersion"
                                   value="${cli.maven.plugin.version}"/>
                         <variable name="cliVersion"
-                                  value="${cli.latest.version>}"/>
+                                  value="${cli.latest.version}"/>
                         <variable name="cliUpdateMessages">
                             <value>
                                 <variable name="version"
@@ -129,7 +129,7 @@
                 <variable name="og-description" value="Documentation"/>
             </variables>
         </template>
-        <template source="src/redirect.html.mustache" target="guides/index.html">
+        <template source="redirect.html.mustache" target="guides/index.html">
             <variables>
                 <variable name="location"
                           value="../docs/latest/index.html#/guides/01_overview"/>
@@ -139,7 +139,7 @@
                 <variable name="og-description" value="Guides"/>
             </variables>
         </template>
-        <template source="src/redirect.html.mustache" target="javadocs/index.html">
+        <template source="redirect.html.mustache" target="javadocs/index.html">
             <variables>
                 <variable name="location"
                           value="../docs/latest/apidocs/index.html?overview-summary.html"/>

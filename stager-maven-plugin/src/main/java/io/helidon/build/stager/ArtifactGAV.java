@@ -15,7 +15,7 @@
  */
 package io.helidon.build.stager;
 
-import java.util.Objects;
+import java.util.Map;
 
 /**
  * Artifact GAV.
@@ -43,6 +43,10 @@ final class ArtifactGAV {
         this.version =  version;
         this.type = type == null ? "jar" : type;
         this.classifier = classifier;
+    }
+
+    ArtifactGAV(Map<String, String> map) {
+        this(map.get("groupId"), map.get("artifactId"), map.get("version"), map.get("type"), map.get("classifier"));
     }
 
     /**

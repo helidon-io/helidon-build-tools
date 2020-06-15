@@ -33,12 +33,20 @@ final class SymlinkTask extends StagingTask {
 
     private final String source;
 
-    SymlinkTask(List<Map<String, String>> iterators, String source, String target) {
+    SymlinkTask(List<Map<String, List<String>>> iterators, String source, String target) {
         super(iterators, target);
         if (source == null || source.isEmpty()) {
             throw new IllegalArgumentException("source is required");
         }
         this.source = source;
+    }
+
+    /**
+     * Get the symlink source.
+     * @return source, never {@code null}
+     */
+    String source() {
+        return source;
     }
 
     @Override

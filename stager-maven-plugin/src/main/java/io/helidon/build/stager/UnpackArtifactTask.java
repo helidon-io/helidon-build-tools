@@ -31,7 +31,7 @@ final class UnpackArtifactTask extends StagingTask {
     private final String includes;
     private final String excludes;
 
-    UnpackArtifactTask(List<Map<String, String>> iterators,
+    UnpackArtifactTask(List<Map<String, List<String>>> iterators,
                        ArtifactGAV gav,
                        String target,
                        String includes,
@@ -41,6 +41,30 @@ final class UnpackArtifactTask extends StagingTask {
         this.gav = Objects.requireNonNull(gav);
         this.includes = includes;
         this.excludes = excludes;
+    }
+
+    /**
+     * Get the GAV.
+     * @return GAV, never {@code null}
+     */
+    ArtifactGAV gav() {
+        return gav;
+    }
+
+    /**
+     * Get the excludes.
+     * @return excludes, may be {@code null}
+     */
+    String excludes() {
+        return excludes;
+    }
+
+    /**
+     * Get the includes.
+     * @return includes, may be {@code null}
+     */
+    String includes() {
+        return includes;
     }
 
     @Override

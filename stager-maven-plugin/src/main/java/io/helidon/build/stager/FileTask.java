@@ -31,10 +31,28 @@ final class FileTask extends StagingTask {
     private final String content;
     private final String source;
 
-    FileTask(List<Map<String, String>> iterators, String target, String content, String source) {
+    FileTask(List<Map<String, List<String>>> iterators, String target, String content, String source) {
         super(iterators, target);
         this.content = content;
         this.source = source;
+    }
+
+    /**
+     * Get the source.
+     *
+     * @return source, may be {@code null}
+     */
+    String source() {
+        return source;
+    }
+
+    /**
+     * Get the content.
+     *
+     * @return content, may be {@code null}
+     */
+    public String content() {
+        return content;
     }
 
     @Override

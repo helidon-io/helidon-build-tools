@@ -29,9 +29,18 @@ final class CopyArtifactTask extends StagingTask {
 
     private final ArtifactGAV gav;
 
-    CopyArtifactTask(List<Map<String, String>> iterators, ArtifactGAV gav, String target) {
+    CopyArtifactTask(List<Map<String, List<String>>> iterators, ArtifactGAV gav, String target) {
         super(iterators, target == null ? "{artifactId}.{type}" : target);
         this.gav = Objects.requireNonNull(gav);
+    }
+
+    /**
+     * Get the GAV.
+     *
+     * @return GAV, never {@code null}
+     */
+    ArtifactGAV gav() {
+        return gav;
     }
 
     @Override

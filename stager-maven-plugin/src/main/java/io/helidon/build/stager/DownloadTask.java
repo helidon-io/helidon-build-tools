@@ -39,12 +39,21 @@ final class DownloadTask extends StagingTask {
 
     private final String url;
 
-    DownloadTask(List<Map<String, String>> iterators, String url, String target) {
+    DownloadTask(List<Map<String, List<String>>> iterators, String url, String target) {
         super(iterators, target);
         if (url == null || url.isEmpty()) {
             throw new IllegalArgumentException("url is required");
         }
         this.url = url;
+    }
+
+    /**
+     * Get the url.
+     *
+     * @return url, never {@code null}
+     */
+    String url() {
+        return url;
     }
 
     @Override

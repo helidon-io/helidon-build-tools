@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Base class for all tasks.
@@ -29,9 +28,9 @@ import java.util.Objects;
 abstract class StagingTask {
 
     private final String target;
-    private final List<Map<String, String>> iterators;
+    private final List<Map<String, List<String>>> iterators;
 
-    StagingTask(List<Map<String, String>> iterators, String target) {
+    StagingTask(List<Map<String, List<String>>> iterators, String target) {
         if (target == null || target.isEmpty()) {
             throw new IllegalArgumentException("target is required");
         }
@@ -39,8 +38,20 @@ abstract class StagingTask {
         this.iterators = iterators == null ? Collections.emptyList() : iterators;
     }
 
+    /**
+     * Get the target.
+     * @return target, never {@code nul}
+     */
     String target() {
         return target;
+    }
+
+    /**
+     * Get the task iterators.
+     * @return task iterators as map, never {@code null}
+     */
+    List<Map<String, List<String>>> iterators() {
+        return iterators;
     }
 
     /**
@@ -53,13 +64,32 @@ abstract class StagingTask {
      * @throws IOException if an IO error occurs
      */
     void execute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
-        for (Map<String, String> iterator : iterators) {
-            Map<String, String> vars = new HashMap<>();
-            vars.putAll(variables);
-            for (Map.Entry<String, String> variable : iterator.entrySet()) {
-                vars.put(variable.getKey(), variable.getValue());
+        for (Map<String, List<String>> iterator : iterators) {
+            Map<String, String> vars = new HashMap<>(variables);
+            Map.Entry<String, List<String>>[] entries = iterator.entrySet().toArray(new Map.Entry[iterator.size()]);
+            int numIterations = 1;
+            for (Map.Entry<String, List<String>> entry : entries) {
+                numIterations *= entry.getValue().size();
             }
-            doExecute(context, dir, variables);
+            int[] indexes = new int[entries.length];
+            for (int i = 1; i <= numIterations; i++) {
+                int p = 1;
+                for (int idx = 0; idx <  entries.length; idx++) {
+                    int size = entries[idx].getValue().size();
+                    if (indexes[idx] == size) {
+                        indexes[idx] = 0;
+                    }
+                    p *= size;
+                    String val;
+                    if (i % (numIterations / p) == 0) {
+                        val = entries[idx].getValue().get(indexes[idx]++);
+                    } else {
+                        val = entries[idx].getValue().get(indexes[idx]);
+                    }
+                    vars.put(entries[idx].getKey(), val);
+                }
+                doExecute(context, dir, vars);
+            }
         }
     }
 
@@ -86,7 +116,7 @@ abstract class StagingTask {
             return source;
         }
         for (Map.Entry<String, String> variable : variables.entrySet()) {
-            source = source.replaceAll("{" + variable.getKey() + "}", variable.getValue());
+            source = source.replaceAll("\\{" + variable.getKey() + "\\}", variable.getValue());
         }
         return source;
     }

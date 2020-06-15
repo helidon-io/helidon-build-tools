@@ -37,17 +37,22 @@ final class TaskIterators implements Iterable<Variables> {
         return null;
     }
 
-    List<Map<String, String>> asList() {
-        List<Map<String, String>> list = new LinkedList<>();
+    List<Map<String, List<String>>> asList() {
+        List<Map<String, List<String>>> list = new LinkedList<>();
         for (Variables variables : variables) {
-            Map<String, String> iterator = new HashMap<>();
+            Map<String, List<String>> iterator = new HashMap<>();
             list.add(iterator);
             for (Variable variable : variables) {
-                VariableValue value = variable.value();
-                if (value.isSimple()) {
-                    iterator.put(variable.name(), value.asSimple().text());
+                List<String> values = new LinkedList<>();
+                iterator.put(variable.name(), values);
+                if (variable.value().isSimple()) {
+                    values.add(variable.value().asSimple().text());
                 } else {
-                    throw new IllegalStateException("Iterator only supports list of text values");
+                    for (VariableValue v : variable.value().asList().list()) {
+                        if (v.isSimple()) {
+                            values.add(v.asSimple().text());
+                        }
+                    }
                 }
             }
         }

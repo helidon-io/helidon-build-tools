@@ -16,7 +16,9 @@
 package io.helidon.build.stager;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Variable value.
@@ -45,6 +47,15 @@ abstract class VariableValue {
     }
 
     /**
+     * Test if this value is a map value.
+     *
+     * @return {@code true} if this is a map value, {@code false} otherwise
+     */
+    boolean isMap() {
+        return this instanceof MapValue;
+    }
+
+    /**
      * Get this value as a {@link SimpleValue}.
      *
      * @return SimpleValue
@@ -60,6 +71,15 @@ abstract class VariableValue {
      */
     ListValue asList() {
         return (ListValue) this;
+    }
+
+    /**
+     * Get this value as a {@link MapValue}.
+     *
+     * @return MapValue
+     */
+    MapValue asMap() {
+        return (MapValue) this;
     }
 
     /**
@@ -103,6 +123,35 @@ abstract class VariableValue {
          */
         List<VariableValue> list() {
             return list;
+        }
+    }
+
+
+    /**
+     * A value that holds a list of values.
+     */
+    static final class MapValue extends VariableValue {
+
+        private final Map<String, VariableValue> map;
+
+        MapValue(List<Variable> variables) {
+            if (this == null) {
+                this.map = Collections.emptyMap();
+            } else {
+                this.map = new HashMap<>();
+                for (Variable variable : variables) {
+                    map.put(variable.name(), variable.value());
+                }
+            }
+        }
+
+        /**
+         * Get the values.
+         *
+         * @return map of values, never {@code null}
+         */
+        Map<String, VariableValue> map() {
+            return map;
         }
     }
 }

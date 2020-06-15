@@ -40,6 +40,24 @@ final class StagedDirectory {
     }
 
     /**
+     * Get the target.
+     *
+     * @return target, never {@code null}
+     */
+    String target() {
+        return target;
+    }
+
+    /**
+     * Nested tasks.
+     *
+     * @return tasks, never {@code null}
+     */
+    List<StagingTask> tasks() {
+        return tasks;
+    }
+
+    /**
      * Execute the nested tasks to render the staged directory.
      *
      * @param context staging context

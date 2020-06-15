@@ -30,7 +30,7 @@ final class ArchiveTask extends StagingTask {
     private final String includes;
     private final String excludes;
 
-    ArchiveTask(List<Map<String, String>> iterators,
+    ArchiveTask(List<Map<String, List<String>>> iterators,
                 List<StagingTask> tasks,
                 String target,
                 String includes,
@@ -40,6 +40,33 @@ final class ArchiveTask extends StagingTask {
         this.tasks = tasks == null ? Collections.emptyList() : tasks;
         this.includes = includes;
         this.excludes = excludes;
+    }
+
+    /**
+     * Get the nested tasks.
+     *
+     * @return tasks, never {@code null}
+     */
+    List<StagingTask> tasks() {
+        return tasks;
+    }
+
+    /**
+     * Get the includes.
+     *
+     * @return includes, may be {@code null}
+     */
+    String includes() {
+        return includes;
+    }
+
+    /**
+     * Get the excludes.
+     *
+     * @return excludes, may be {@code null}
+     */
+    String excludes() {
+        return excludes;
     }
 
     @Override
