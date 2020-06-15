@@ -21,7 +21,9 @@ import java.util.List;
 
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.cli.impl.InitCommand.Flavor;
+import io.helidon.build.util.Proxies;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.cli.impl.ArchetypeBrowser.REMOTE_REPO;
@@ -34,6 +36,11 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
  * Class AppTypeBrowserTest.
  */
 public class ArchetypeBrowserTest extends BaseCommandTest {
+
+    @BeforeAll
+    public static void beforeAll() {
+        Proxies.setProxyPropertiesFromEnv();
+    }
 
     /**
      * Test a simple file download from remote repo.

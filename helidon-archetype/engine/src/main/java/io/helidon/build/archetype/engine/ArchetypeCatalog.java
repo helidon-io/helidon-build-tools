@@ -15,7 +15,10 @@
  */
 package io.helidon.build.archetype.engine;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -42,6 +45,18 @@ public final class ArchetypeCatalog  {
         this.groupId = Objects.requireNonNull(groupId, "groupId is null");
         this.version = Objects.requireNonNull(version, "version is null");
         this.entries = entries;
+    }
+
+
+    /**
+     * Create a archetype descriptor instance from a file.
+     *
+     * @param file the file
+     * @return ArchetypeCatalog
+     * @throws IOException on error
+     */
+    public static ArchetypeCatalog read(Path file) throws IOException {
+        return read(Files.newInputStream(file));
     }
 
     /**
@@ -254,7 +269,7 @@ public final class ArchetypeCatalog  {
                     + ", version='" + version + '\''
                     + ", name='" + name + '\''
                     + ", title='" + title + '\''
-                    + ", summary='" + String.valueOf(summary) + '\''
+                    + ", summary='" + summary + '\''
                     + ", description='" + description + '\''
                     + '}';
         }

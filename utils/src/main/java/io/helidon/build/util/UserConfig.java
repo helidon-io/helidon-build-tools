@@ -15,6 +15,7 @@
  */
 package io.helidon.build.util;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
@@ -50,7 +51,7 @@ public class UserConfig {
     }
 
     private UserConfig(Path homeDir) {
-        this.homeDir = homeDir;
+        this.homeDir = homeDir.toAbsolutePath();
         this.configDir = FileUtils.ensureDirectory(homeDir.resolve(DOT_HELIDON));
         this.cacheDir = FileUtils.ensureDirectory(configDir.resolve(CACHE_DIR_NAME));
         this.pluginsDir = FileUtils.ensureDirectory(configDir.resolve(PLUGINS_DIR_NAME));
@@ -82,6 +83,7 @@ public class UserConfig {
     public Path cacheDir() {
         return cacheDir;
     }
+
     /**
      * Returns the user plugins directory, normally {@code ${HOME}/.helidon/plugins}.
      *
@@ -89,5 +91,23 @@ public class UserConfig {
      */
     public Path pluginsDir() {
         return pluginsDir;
+    }
+
+    /**
+     * Clear all cache content.
+     *
+     * @throws IOException if an error occurs.
+     */
+    public void clearCache() throws IOException {
+        FileUtils.deleteDirectoryContent(cacheDir());
+    }
+
+    /**
+     * Clear all plugins.
+     *
+     * @throws IOException if an error occurs.
+     */
+    public void clearPlugins() throws IOException {
+        FileUtils.deleteDirectoryContent(pluginsDir());
     }
 }

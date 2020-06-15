@@ -26,6 +26,7 @@ import io.helidon.build.util.MavenCommand;
 
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
+import static io.helidon.build.cli.impl.CommandRequirements.requireValidMavenProjectConfig;
 import static io.helidon.build.util.Constants.ENABLE_HELIDON_CLI;
 
 /**
@@ -61,7 +62,7 @@ public final class BuildCommand extends BaseCommand implements CommandExecution 
     public void execute(CommandContext context) throws Exception {
 
         requireMinimumMavenVersion();
-        requireValidProjectConfig(true);
+        requireValidMavenProjectConfig(commonOptions);
 
         MavenCommand.Builder builder = MavenCommand.builder()
                                                    .addArgument(ENABLE_HELIDON_CLI)

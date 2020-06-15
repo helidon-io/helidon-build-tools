@@ -503,6 +503,46 @@ public final class FileUtils {
     }
 
     /**
+     * Creates the given file (with no content) if it does not already exist.
+     *
+     * @param file The file.
+     * @return The file.
+     */
+    public static Path ensureFile(Path file) {
+        if (!Files.exists(file)) {
+            try {
+                Files.createFile(file);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+        return file;
+    }
+
+    /**
+     * Ensure that the given file exists, and update the modified time if it does.
+     *
+     * @param file The file.
+     * @return The file.
+     */
+    public static Path touch(Path file) {
+        if (Files.exists(file)) {
+            final long currentTime = System.currentTimeMillis();
+            final long lastModified = lastModifiedSeconds(file);
+            final long lastModifiedPlusOneSecond = lastModified + 1000;
+            final long newTime = Math.max(currentTime, lastModifiedPlusOneSecond);
+            try {
+                Files.setLastModifiedTime(file, FileTime.fromMillis(newTime));
+                return file;
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        } else {
+            return ensureFile(file);
+        }
+    }
+
+    /**
      * Change detection type.
      */
     public enum ChangeDetectionType {

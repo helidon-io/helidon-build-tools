@@ -27,10 +27,11 @@ public class Style {
      *
      * @param style The style name. May be a comma separated list.
      * @param message The message.
+     * @param args The message args.
      * @return The formatted message.
      */
-    public static String style(String style, Object message) {
-        return STYLE_PREFIX + style + " " + message + STYLE_SUFFIX;
+    public static String style(String style, Object message, Object... args) {
+        return STYLE_PREFIX + style + " " + String.format(message.toString(), args) + STYLE_SUFFIX;
     }
 
     /**

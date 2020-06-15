@@ -16,6 +16,8 @@
 module helidon.linker {
     exports io.helidon.linker;
     exports io.helidon.linker.util;
+    opens io.helidon.linker;
+    opens io.helidon.linker.util;
 
     requires jdk.jlink;
     requires jdk.jdeps;

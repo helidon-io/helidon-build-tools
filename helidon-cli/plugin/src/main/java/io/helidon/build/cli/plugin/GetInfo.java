@@ -29,12 +29,13 @@ import static io.helidon.build.cli.plugin.Style.italic;
 import static java.util.Objects.requireNonNull;
 
 /**
- * An extension that logs build info.
+ * A plugin that logs build info.
  */
 public class GetInfo extends Plugin {
     private static final String BUILD_PROPERTIES_PATH = "build.properties";
     private static final AtomicReference<Properties> BUILD_PROPERTIES = new AtomicReference<>();
     private static final String BUILD_PREFIX = "plugin.build.";
+    private static final String MAX_WIDTH_ARG = "--maxWidth";
     private static final String PAD = " ";
 
     private final Map<String, String> info;
@@ -72,11 +73,18 @@ public class GetInfo extends Plugin {
 
     @Override
     int parseArg(String arg, int argIndex, String[] allArgs) {
-        if (arg.equals("--maxWidth")) {
+        if (arg.equals(MAX_WIDTH_ARG)) {
             maxWidth = Integer.parseInt(nextArg(argIndex, allArgs));
             return argIndex + 1;
         }
-        return argIndex;
+        return -1;
+    }
+
+    @Override
+    void validateArgs() {
+        if (maxWidth == 0) {
+            missingRequiredArg(MAX_WIDTH_ARG);
+        }
     }
 
     @Override

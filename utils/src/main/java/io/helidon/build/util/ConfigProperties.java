@@ -21,11 +21,13 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 
@@ -36,8 +38,8 @@ public class ConfigProperties {
 
     private static final String DELIMITER = ",";
 
-    private File file;
-    private Properties properties;
+    private final File file;
+    private final Properties properties;
 
     /**
      * Constructor from file name.
@@ -53,10 +55,33 @@ public class ConfigProperties {
      *
      * @param file The file.
      */
+    public ConfigProperties(Path file) {
+        this(file.toFile());
+    }
+
+    /**
+     * Constructor from file.
+     *
+     * @param file The file.
+     */
     public ConfigProperties(File file) {
         this.file = file;
         this.properties = new Properties();
         load();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ConfigProperties)) return false;
+        final ConfigProperties that = (ConfigProperties) o;
+        return Objects.equals(file, that.file)
+                && Objects.equals(properties, that.properties);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(file, properties);
     }
 
     /**

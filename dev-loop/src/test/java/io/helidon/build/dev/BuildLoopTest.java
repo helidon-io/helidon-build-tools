@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.build.dev.TestUtils.newLoop;
 import static io.helidon.build.test.TestFiles.helidonSeProject;
 import static io.helidon.build.test.TestFiles.helidonSeProjectCopy;
-import static io.helidon.build.test.TestFiles.touch;
+import static io.helidon.build.util.FileUtils.touch;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.lastModifiedTime;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -450,8 +450,7 @@ class BuildLoopTest {
     }
 
     @Test
-    // This is here for the occasional sanity checks; it is timing related so could cause intermittent failures
-    @Disabled
+    @Disabled("used only for occasional sanity checks; timing related, so could cause intermittent failures")
     void testChangeDetectionMethodsRelativePerformance() throws Exception {
         final Path rootDir = newSeProject(false);
         final TestMonitor monitor = new TestMonitor(0);

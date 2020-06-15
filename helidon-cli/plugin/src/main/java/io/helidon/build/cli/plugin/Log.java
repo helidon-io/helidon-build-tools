@@ -19,6 +19,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.helidon.build.cli.plugin.Style.style;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -30,8 +31,6 @@ public class Log {
     private static final String DEBUG_STYLE = "italic";
     private static final String WARN_STYLE = "YELLOW";
     private static final String ERROR_STYLE = "red";
-    private static final String WARN_PREFIX = Style.style(WARN_STYLE, "warning: ");
-    private static final String ERROR_PREFIX = Style.style(ERROR_STYLE, "error: ");
 
 
     /**
@@ -162,7 +161,7 @@ public class Log {
      * @param args The message args.
      */
     public static void warn(String message, Object... args) {
-        log(WARN_PREFIX + message, args);
+        log(style(WARN_STYLE, message, args));
     }
 
     /**
@@ -173,7 +172,7 @@ public class Log {
      * @param args Format string arguments.
      */
     public static void warn(Throwable thrown, String msg, Object... args) {
-        log(thrown, WARN_PREFIX + msg, args);
+        log(thrown, style(WARN_STYLE, msg, args));
     }
 
     /**
@@ -183,7 +182,7 @@ public class Log {
      * @param args The message args.
      */
     public static void error(String message, Object... args) {
-        log(ERROR_PREFIX + message, args);
+        log(style(ERROR_STYLE, message, args));
     }
 
     /**
@@ -194,7 +193,7 @@ public class Log {
      * @param args Format string arguments.
      */
     public static void error(Throwable thrown, String msg, Object... args) {
-        log(thrown, ERROR_PREFIX + msg, args);
+        log(thrown, style(ERROR_STYLE, msg, args));
     }
 
     private static void log(String message, Object... args) {
@@ -218,11 +217,11 @@ public class Log {
                 final StringWriter sw = new StringWriter();
                 try (PrintWriter pw = new PrintWriter(sw)) {
                     thrown.printStackTrace(pw);
-                    return Style.style(DEBUG_STYLE, sw.toString());
+                    return style(DEBUG_STYLE, sw.toString());
                 } catch (Exception ignored) {
                 }
             } else if (isVerbose()) {
-                return Style.style(DEBUG_STYLE, thrown.toString());
+                return style(DEBUG_STYLE, thrown.toString());
             }
         }
         return null;
