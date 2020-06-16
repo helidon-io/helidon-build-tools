@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 
+import io.helidon.build.util.SourcePath;
 import io.helidon.config.Config;
 
 /**

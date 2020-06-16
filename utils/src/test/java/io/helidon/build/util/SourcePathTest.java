@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.sitegen;
+package io.helidon.build.util;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -22,8 +22,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.sitegen.SourcePath.wildcardMatch;
-import static io.helidon.common.CollectionsHelper.listOf;
+import static io.helidon.build.util.SourcePath.wildcardMatch;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -117,43 +116,43 @@ public class SourcePathTest {
         assertNotNull(filtered);
         assertEquals(0, filtered.size(), "filetered list should be empty");
 
-        filtered = SourcePath.filter(paths, listOf("**/*"), null);
+        filtered = SourcePath.filter(paths, List.of("**/*"), null);
         assertNotNull(filtered);
         assertEquals(paths.size(), filtered.size(),
                 "filetered list is:\n\n" + printPaths(filtered)
                 + "\n\ninstead of: \n" + printPaths(paths));
 
-        filtered = SourcePath.filter(paths, listOf("**/*.html"), null);
+        filtered = SourcePath.filter(paths, List.of("**/*.html"), null);
         assertNotNull(filtered);
         assertEquals(paths.size(), filtered.size(),
                 "filetered list is:\n\n" + printPaths(filtered)
                 + "\n\ninstead of: \n" + printPaths(paths));
 
-        filtered = SourcePath.filter(paths, listOf("*.html"), null);
+        filtered = SourcePath.filter(paths, List.of("*.html"), null);
         assertNotNull(filtered);
         assertEquals(3, filtered.size(),
                 "filetered list is:\n\n" + printPaths(filtered)
                 + "\n\ninstead of: \n" + printPaths(paths));
 
-        filtered = SourcePath.filter(paths, listOf("abc/def/ghi/*.html"), null);
+        filtered = SourcePath.filter(paths, List.of("abc/def/ghi/*.html"), null);
         assertNotNull(filtered);
         assertEquals(3, filtered.size(),
                 "filetered list is:\n\n" + printPaths(filtered)
                 + "\n\ninstead of: \n" + printPaths(paths));
 
-        filtered = SourcePath.filter(paths, listOf("abc/**"), null);
+        filtered = SourcePath.filter(paths, List.of("abc/**"), null);
         assertNotNull(filtered);
         assertEquals(9, filtered.size(),
                 "filetered list is:\n\n" + printPaths(filtered)
                 + "\n\ninstead of: \n" + printPaths(paths));
 
-        filtered = SourcePath.filter(paths, listOf("abc/**"), listOf("*/def/ghi/*"));
+        filtered = SourcePath.filter(paths, List.of("abc/**"), List.of("*/def/ghi/*"));
         assertNotNull(filtered);
         assertEquals(6, filtered.size(),
                 "filetered list is:\n\n" + printPaths(filtered)
                 + "\n\ninstead of: \n\n" + printPaths(paths));
 
-        filtered = SourcePath.filter(paths, listOf("**"), listOf("*/def/**"));
+        filtered = SourcePath.filter(paths, List.of("**"), List.of("*/def/**"));
         assertNotNull(filtered);
         assertEquals(6, filtered.size(),
                 "filetered list is:\n\n" + printPaths(filtered)

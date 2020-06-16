@@ -32,8 +32,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+
 import io.helidon.build.archetype.engine.ArchetypeDescriptor;
 import io.helidon.build.archetype.engine.ArchetypeEngine;
+import io.helidon.build.util.MustacheHelper;
 
 import org.apache.maven.archiver.MavenArchiveConfiguration;
 import org.apache.maven.archiver.MavenArchiver;
@@ -57,11 +59,11 @@ import org.codehaus.plexus.archiver.jar.ManifestException;
 import org.codehaus.plexus.util.Scanner;
 import org.sonatype.plexus.build.incremental.BuildContext;
 
-import static io.helidon.build.archetype.maven.MojoHelper.MUSTACHE_EXT;
 import static io.helidon.build.archetype.maven.MojoHelper.PLUGIN_GROUP_ID;
 import static io.helidon.build.archetype.maven.MojoHelper.PLUGIN_VERSION;
-import static io.helidon.build.archetype.maven.MojoHelper.renderMustacheTemplate;
 import static io.helidon.build.archetype.maven.MojoHelper.templateProperties;
+import static io.helidon.build.util.MustacheHelper.MUSTACHE_EXT;
+import static io.helidon.build.util.MustacheHelper.renderMustacheTemplate;
 
 /**
  * {@code archetype:jar} mojo.
@@ -129,7 +131,7 @@ public class JarMojo extends AbstractMojo {
     private MavenSession session;
 
     /**
-     * The Jar archiver.
+     * The archivers.
      */
     @Component
     private Map<String, Archiver> archivers;
@@ -271,7 +273,7 @@ public class JarMojo extends AbstractMojo {
                 String resourcePath = "/" + POST_SCRIPT_INCLUDES.get(include);
                 String script = new String(getClass().getResourceAsStream(resourcePath).readAllBytes(),
                         StandardCharsets.UTF_8);
-                props.put(include, new MojoHelper.RawString(script));
+                props.put(include, new MustacheHelper.RawString(script));
             }
             props.put("propNames", desc.properties().stream()
                     .filter(prop -> prop.isExported())

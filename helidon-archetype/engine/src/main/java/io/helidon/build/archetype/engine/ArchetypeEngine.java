@@ -39,6 +39,7 @@ import io.helidon.build.archetype.engine.ArchetypeDescriptor.Property;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.Replacement;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.TemplateSets;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.Transformation;
+import io.helidon.build.util.SourcePath;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
@@ -68,7 +69,8 @@ public final class ArchetypeEngine implements Closeable {
 
     /**
      * Create a new archetype engine instance.
-     * @param archetype archetype file
+     *
+     * @param archetype  archetype file
      * @param properties user properties
      * @throws IOException if an error occurred opening the jar file
      */
@@ -78,7 +80,8 @@ public final class ArchetypeEngine implements Closeable {
 
     /**
      * Create a new archetype engine instance.
-     * @param loader jar file loader
+     *
+     * @param loader     jar file loader
      * @param properties user properties
      */
     public ArchetypeEngine(ArchetypeLoader loader, Map<String, String> properties) {
@@ -158,9 +161,10 @@ public final class ArchetypeEngine implements Closeable {
 
     /**
      * Transform a string with transformations.
-     * @param input input to be transformed
+     *
+     * @param input           input to be transformed
      * @param transformations transformed to apply
-     * @param properties properties values
+     * @param properties      properties values
      * @return transformation result
      */
     static String transform(String input, List<Transformation> transformations, Map<String, String> properties) {
@@ -177,8 +181,9 @@ public final class ArchetypeEngine implements Closeable {
 
     /**
      * Resolve a {@link Conditional} object.
+     *
      * @param conditional object to resolve
-     * @param props properties used to resolve the value of the declared properties
+     * @param props       properties used to resolve the value of the declared properties
      * @return evaluation results
      */
     static boolean evaluateConditional(Conditional conditional, Map<String, String> props) {
@@ -205,6 +210,7 @@ public final class ArchetypeEngine implements Closeable {
 
     /**
      * Run the archetype.
+     *
      * @param outputDirectory output directory
      */
     public void generate(File outputDirectory) {

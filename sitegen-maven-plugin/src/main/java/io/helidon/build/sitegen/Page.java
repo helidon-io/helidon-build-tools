@@ -16,6 +16,7 @@
 
 package io.helidon.build.sitegen;
 
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,6 +24,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import io.helidon.build.util.SourcePath;
 
 import static io.helidon.build.sitegen.Helper.checkNonNull;
 import static io.helidon.build.sitegen.Helper.checkNonNullNonEmpty;

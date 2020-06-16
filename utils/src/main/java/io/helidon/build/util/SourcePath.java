@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.sitegen;
+package io.helidon.build.util;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,9 +29,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-
-import static io.helidon.build.sitegen.Helper.checkNonNull;
-import static io.helidon.build.sitegen.Helper.getRelativePath;
 
 /**
  * Utility class to parse and match path segments.
@@ -58,6 +55,12 @@ public class SourcePath {
      */
     public SourcePath(String path) {
         segments = parseSegments(path);
+    }
+
+    private static String getRelativePath(File sourcedir, File source) {
+        return sourcedir.toPath().relativize(source.toPath()).toString()
+                // force UNIX style path on windows
+                .replace("\\", "/");
     }
 
     private static String[] parseSegments(String path) throws IllegalArgumentException {
@@ -319,7 +322,7 @@ public class SourcePath {
      * @return the sorted {@code List}
      */
     public static List<SourcePath> sort(List<SourcePath> sourcePaths){
-        checkNonNull(sourcePaths, "sourcePaths");
+        Objects.requireNonNull(sourcePaths, "sourcePaths");
         sourcePaths.sort(COMPARATOR);
         return sourcePaths;
     }

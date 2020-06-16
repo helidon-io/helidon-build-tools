@@ -165,7 +165,7 @@
         <version.plugin.gpg>1.6</version.plugin.gpg>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.javadoc>3.1.1</version.plugin.javadoc>
-        <version.plugin.invoker>3.2.0</version.plugin.invoker>
+        <version.plugin.invoker>3.2.1</version.plugin.invoker>
         <version.plugin.license>1.16</version.plugin.license>
         <version.plugin.plexus>2.1.0</version.plugin.plexus>
         <version.plugin.plugin-plugin>3.6.0</version.plugin.plugin-plugin>
@@ -189,6 +189,7 @@
         <module>snakeyaml-codegen-maven-plugin</module>
         <module>utils</module>
         <module>dev-loop</module>
+        <module>stager-maven-plugin</module>
     </modules>
 
     <build>
@@ -312,15 +313,15 @@
                     <artifactId>glassfish-copyright-maven-plugin</artifactId>
                     <version>${version.plugin.glassfish-copyright}</version>
                     <configuration>
+                        <!--suppress UnresolvedMavenProperty -->
                         <templateFile>${copyright.template}</templateFile>
+                        <!--suppress UnresolvedMavenProperty -->
                         <excludeFile>${copyright.exclude}</excludeFile>
                         <scm>git</scm>
                         <debug>false</debug>
                         <scmOnly>true</scmOnly>
                         <warn>true</warn>
                         <ignoreYear>false</ignoreYear>
-                        <useComma>true</useComma>
-                        <doHidden>true</doHidden>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -351,8 +352,11 @@
                     <artifactId>spotbugs-maven-plugin</artifactId>
                     <version>${version.plugin.spotbugs}</version>
                     <configuration>
+                        <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
                         <skip>${spotbugs.skip}</skip>
+                        <!--suppress UnresolvedMavenProperty -->
                         <threshold>${spotbugs.threshold}</threshold>
+                        <!--suppress UnresolvedMavenProperty -->
                         <excludeFilterFile>${spotbugs.exclude}</excludeFilterFile>
                         <xmlOutput>true</xmlOutput>
                     </configuration>
@@ -388,6 +392,7 @@
                         <nexusUrl>https://oss.sonatype.org/</nexusUrl>
                         <autoReleaseAfterClose>true</autoReleaseAfterClose>
                         <skipStagingRepositoryClose>true</skipStagingRepositoryClose>
+                        <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
                         <skipNexusStagingDeployMojo>${maven.deploy.skip}</skipNexusStagingDeployMojo>
                     </configuration>
                 </plugin>
@@ -466,6 +471,7 @@
                             <outputDirectory>${project.build.outputDirectory}</outputDirectory>
                             <resources>
                                 <resource>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <directory>${top.parent.basedir}</directory>
                                     <targetPath>META-INF/</targetPath>
                                     <includes>
@@ -751,7 +757,9 @@
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <configLocation>${top.parent.basedir}/etc/checkstyle.xml</configLocation>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <suppressionsLocation>${top.parent.basedir}/etc/checkstyle-suppressions.xml
                                     </suppressionsLocation>
                                 </configuration>
@@ -776,7 +784,9 @@
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
                                 </configuration>
                             </execution>
@@ -787,7 +797,9 @@
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
                                 </configuration>
                             </execution>
@@ -874,6 +886,7 @@
                 </file>
             </activation>
             <properties>
+                <!--suppress UnresolvedMavenProperty -->
                 <jdkToolchainVersion>${maven.compiler.target}</jdkToolchainVersion>
             </properties>
             <build>
