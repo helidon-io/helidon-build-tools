@@ -32,6 +32,7 @@ import io.helidon.build.util.ProcessMonitor;
 import io.helidon.build.util.Proxies;
 
 import static io.helidon.build.cli.impl.CommandRequirements.unsupportedJavaVersion;
+import static io.helidon.build.util.Constants.EOL;
 import static java.io.File.pathSeparatorChar;
 import static java.util.Objects.requireNonNull;
 
@@ -52,7 +53,8 @@ public class Plugins {
     private static final String JAVA_HOME_VAR = "JAVA_HOME";
     private static final String JIT_LEVEL_ONE = "-XX:TieredStopAtLevel=1";
     private static final String JIT_TWO_COMPILER_THREADS = "-XX:CICompilerCount=2";
-    private static final String UNSUPPORTED_CLASS_VERSION_ERROR = UnsupportedClassVersionError.class.getName();
+    private static final String TIMED_OUT_SUFFIX = " timed out";
+    private static final String UNSUPPORTED_CLASS_VERSION_ERROR = UnsupportedClassVersionError.class.getSimpleName();
 
     private static Path pluginJar() throws Exception {
         Path pluginJar = PLUGINS_JAR.get();
@@ -90,7 +92,7 @@ public class Plugins {
     public static void execute(String pluginName,
                                List<String> pluginArgs,
                                int maxWaitSeconds) throws Exception {
-        execute(pluginName, pluginArgs, maxWaitSeconds, Log::info);
+        execute(pluginName, pluginArgs, maxWaitSeconds, Plugins::devNull);
     }
 
     /**
@@ -150,27 +152,50 @@ public class Plugins {
                                                       .processBuilder(processBuilder)
                                                       .stdOut(stdOut)
                                                       .stdErr(stdErr::add)
-                                                      .capture(false)
+                                                      .capture(true)
                                                       .build()
                                                       .start();
         try {
             processMonitor.waitForCompletion(maxWaitSeconds, TimeUnit.SECONDS);
+        } catch (ProcessMonitor.ProcessFailedException error) {
+            if (containsUnsupportedClassVersionError(stdErr)) {
+                unsupportedJavaVersion();
+            } else {
+                throw new PluginFailed(String.join(EOL, error.monitor().output()));
+            }
+        } catch (ProcessMonitor.ProcessTimeoutException error) {
+            throw new PluginFailed(pluginName + TIMED_OUT_SUFFIX);
         } catch (Exception e) {
-            processError(e, stdErr);
+            if (stdErr.isEmpty()) {
+                throw new PluginFailed(e);
+            } else {
+                throw new PluginFailed(String.join(EOL, stdErr), e);
+            }
         }
     }
 
-    private static void processError(Exception error, List<String> stdErr) throws Exception {
-        if (containsUnsupportedClassVersionError(stdErr)) {
-            unsupportedJavaVersion();
-        } else {
-            stdErr.forEach(Log::error);
-            throw error;
+    /**
+     * Plugin failure.
+     */
+    public static class PluginFailed extends Exception {
+        private PluginFailed(String message) {
+            super(message);
+        }
+
+        private PluginFailed(Exception cause) {
+            super(cause);
+        }
+
+        private PluginFailed(String message, Exception cause) {
+            super(message, cause);
         }
     }
 
     private static boolean containsUnsupportedClassVersionError(List<String> stdErr) {
         return stdErr.stream().anyMatch(line -> line.contains(UNSUPPORTED_CLASS_VERSION_ERROR));
+    }
+
+    private static void devNull(String line) {
     }
 
     private Plugins() {

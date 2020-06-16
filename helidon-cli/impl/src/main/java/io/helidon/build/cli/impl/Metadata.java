@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -43,7 +44,11 @@ import static java.util.Objects.requireNonNull;
  * CLI metadata access.
  */
 public class Metadata {
-    private static final String DEFAULT_BASE_URL = "https://helidon.io/cli-data";
+    /**
+     * The default base url.
+     */
+    public static final String DEFAULT_BASE_URL = "https://helidon.io";
+
     private static final String LATEST_VERSION_FILE_NAME = "latest";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     private static final String METADATA_FILE_NAME = "metadata.properties";
@@ -79,9 +84,19 @@ public class Metadata {
      * @return The instance.
      */
     public static Metadata newInstance() {
+        return newInstance(DEFAULT_BASE_URL);
+    }
+
+    /**
+     * Returns a new instance with the given base url and default configuration.
+     *
+     * @param baseUrl The base url.
+     * @return The instance.
+     */
+    public static Metadata newInstance(String baseUrl) {
         final Path cacheDir = Config.userConfig().cacheDir();
         final boolean debug = Log.isDebug();
-        return newInstance(cacheDir, DEFAULT_BASE_URL, DEFAULT_UPDATE_FREQUENCY, DEFAULT_UPDATE_DELAY_UNITS, debug);
+        return newInstance(cacheDir, baseUrl, DEFAULT_UPDATE_FREQUENCY, DEFAULT_UPDATE_DELAY_UNITS, debug);
     }
 
     /**
@@ -153,6 +168,33 @@ public class Metadata {
     }
 
     /**
+     * Checks whether or not there is a more recent Helidon version available and returns the version if so.
+     *
+     * @return A valid Helidon version if a more recent CLI is available.
+     * @throws Exception If an error occurs.
+     */
+    public Optional<MavenVersion> checkForCliUpdate() throws Exception {
+        return checkForCliUpdate(toMavenVersion(Config.buildVersion()));
+    }
+
+    /**
+     * Checks whether or not there is a more recent Helidon version available and returns the version if so.
+     *
+     * @param thisCliVersion The version of this CLI.
+     * @return A valid Helidon version if a more recent CLI is available.
+     * @throws Exception If an error occurs.
+     */
+    public Optional<MavenVersion> checkForCliUpdate(MavenVersion thisCliVersion) throws Exception {
+        final MavenVersion latestHelidonVersion = latestVersion();
+        final MavenVersion latestCliVersion = cliVersionOf(latestHelidonVersion);
+        if (latestCliVersion.isGreaterThan(thisCliVersion)) {
+            return Optional.of(latestCliVersion);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    /**
      * Returns the release notes for the given Helidon version that are more recent than the current CLI version.
      *
      * @param helidonVersion The version.
@@ -161,7 +203,6 @@ public class Metadata {
      */
     public Map<MavenVersion, String> cliReleaseNotesOf(MavenVersion helidonVersion) throws Exception {
         return cliReleaseNotesOf(helidonVersion, toMavenVersion(Config.buildVersion()));
-
     }
 
     /**
@@ -322,8 +363,10 @@ public class Metadata {
         }
         if (debugPlugin) {
             args.add("--debug");
+            Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS, Log::info);
+        } else {
+            Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS);
         }
-        Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS);
     }
 
     private MavenVersion readLatestVersion() throws Exception {

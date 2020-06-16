@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Class InitCommandTest.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class InitBatchTest extends BaseCommandTest {
+public class InitBatchTest extends MetadataCommandTest {
 
     private final Flavor flavor = Flavor.MP;
     private final Path targetDir = TestFiles.targetDir();
@@ -46,15 +46,21 @@ public class InitBatchTest extends BaseCommandTest {
     @Test
     @Order(1)
     public void testInit() throws Exception {
-        exec("init",
-                "--batch",
-                "--flavor", flavor.toString(),
-                "--project ", targetDir.toString(),
-                "--version ", helidonTestVersion(),
-                "--groupid", DEFAULT_GROUP_ID,
-                "--artifactid", DEFAULT_ARTIFACT_ID,
-                "--package", DEFAULT_PACKAGE);
-        assertPackageExist(targetDir.resolve(DEFAULT_NAME), DEFAULT_PACKAGE);
+        startMetadataAccess(false, false);
+        try {
+            exec("init",
+                    "--url", metadataUrl(),
+                    "--batch",
+                    "--flavor", flavor.toString(),
+                    "--project ", targetDir.toString(),
+                    "--version ", helidonTestVersion(),
+                    "--groupid", DEFAULT_GROUP_ID,
+                    "--artifactid", DEFAULT_ARTIFACT_ID,
+                    "--package", DEFAULT_PACKAGE);
+            assertPackageExist(targetDir.resolve(DEFAULT_NAME), DEFAULT_PACKAGE);
+        } finally {
+            stopMetadataAccess();
+        }
     }
 
     @Test

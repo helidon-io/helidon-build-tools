@@ -31,10 +31,10 @@ public abstract class Plugin {
                 final Plugin plugin = Plugin.newInstance(args[0]);
                 plugin.parse(args).execute();
             }
-        } catch (ClassNotFoundException | LinkageError e) {
-            fail(e.toString());
-        } catch (Throwable e) {
+        } catch (IllegalArgumentException e) {
             fail(e.getMessage());
+        } catch (Throwable e) {
+            fail(e.toString());
         }
     }
 

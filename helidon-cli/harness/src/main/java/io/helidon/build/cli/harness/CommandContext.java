@@ -50,6 +50,7 @@ public final class CommandContext {
     private ExitAction exitAction;
     private CommandParser parser;
 
+    @SuppressWarnings("CopyConstructorMissesField")
     CommandContext(CommandContext parent) {
         this(parent.registry, parent.cli);
     }
@@ -187,7 +188,6 @@ public final class CommandContext {
                             message = error.getCause().getMessage();
                         } else {
                             message = "Unknown error";
-                            error.printStackTrace();
                         }
                     }
                     Log.log(level, error, message);

@@ -51,9 +51,12 @@ class InitTestHelper {
     private String packageName = DEFAULT_PACKAGE;
     private String name = DEFAULT_NAME;
 
-    private Path targetDir = TestFiles.targetDir();
+    private final String metadataUrl;
+    private final Path targetDir;
 
-    InitTestHelper() {
+    InitTestHelper(String metadataUrl) {
+        this.metadataUrl = metadataUrl;
+        this.targetDir =  TestFiles.targetDir();
     }
 
     public void flavor(String flavor) {
@@ -92,6 +95,8 @@ class InitTestHelper {
     private void generate() throws Exception {
         List<String> args = new ArrayList<>();
         args.add("init");
+        args.add("--url");
+        args.add(metadataUrl);
         args.add("--batch");
         args.add("--version");
         args.add(helidonTestVersion());
