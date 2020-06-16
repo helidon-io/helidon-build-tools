@@ -17,9 +17,6 @@ package io.helidon.build.stager;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,18 +25,19 @@ import java.util.Map;
 abstract class StagingTask {
 
     private final String target;
-    private final List<Map<String, List<String>>> iterators;
+    private final TaskIterators iterators;
 
-    StagingTask(List<Map<String, List<String>>> iterators, String target) {
+    StagingTask(TaskIterators iterators, String target) {
         if (target == null || target.isEmpty()) {
             throw new IllegalArgumentException("target is required");
         }
         this.target = target;
-        this.iterators = iterators == null ? Collections.emptyList() : iterators;
+        this.iterators = iterators;
     }
 
     /**
      * Get the target.
+     *
      * @return target, never {@code nul}
      */
     String target() {
@@ -48,9 +46,10 @@ abstract class StagingTask {
 
     /**
      * Get the task iterators.
-     * @return task iterators as map, never {@code null}
+     *
+     * @return task iterators, may be {@code null}
      */
-    List<Map<String, List<String>>> iterators() {
+    TaskIterators iterators() {
         return iterators;
     }
 
@@ -63,38 +62,15 @@ abstract class StagingTask {
      * @throws IOException if an IO error occurs
      * @throws IOException if an IO error occurs
      */
-    @SuppressWarnings("unchecked")
     void execute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
-        if (iterators.isEmpty()) {
+        if (iterators == null || iterators.isEmpty()) {
             doExecute(context, dir, variables);
             return;
         }
-        for (Map<String, List<String>> iterator : iterators) {
-            Map<String, String> vars = new HashMap<>(variables);
-            Map.Entry<String, List<String>>[] entries = new Map.Entry[iterator.size()];
-            entries = iterator.entrySet().toArray(entries);
-            int numIterations = 1;
-            for (Map.Entry<String, List<String>> entry : entries) {
-                numIterations *= entry.getValue().size();
-            }
-            int[] indexes = new int[entries.length];
-            for (int i = 1; i <= numIterations; i++) {
-                int p = 1;
-                for (int idx = 0; idx <  entries.length; idx++) {
-                    int size = entries[idx].getValue().size();
-                    if (indexes[idx] == size) {
-                        indexes[idx] = 0;
-                    }
-                    p *= size;
-                    String val;
-                    if (i % (numIterations / p) == 0) {
-                        val = entries[idx].getValue().get(indexes[idx]++);
-                    } else {
-                        val = entries[idx].getValue().get(indexes[idx]);
-                    }
-                    vars.put(entries[idx].getKey(), val);
-                }
-                doExecute(context, dir, vars);
+        for (TaskIterator iterator : iterators) {
+            iterator.baseVariable(variables);
+            while (iterator.hasNext()) {
+                doExecute(context, dir, iterator.next());
             }
         }
     }

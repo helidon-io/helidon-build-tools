@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 
 import io.helidon.build.util.NetworkConnection;
@@ -39,7 +38,7 @@ final class DownloadTask extends StagingTask {
 
     private final String url;
 
-    DownloadTask(List<Map<String, List<String>>> iterators, String url, String target) {
+    DownloadTask(TaskIterators iterators, String url, String target) {
         super(iterators, target);
         if (url == null || url.isEmpty()) {
             throw new IllegalArgumentException("url is required");

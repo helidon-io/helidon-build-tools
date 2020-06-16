@@ -15,14 +15,14 @@
  */
 package io.helidon.build.stager;
 
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Variable value.
+ * Internal model for variable value.
  *
  * @see io.helidon.build.stager.VariableValue.SimpleValue
  * @see io.helidon.build.stager.VariableValue.ListValue
@@ -64,8 +64,15 @@ abstract class VariableValue<T> {
 
         private final List<VariableValue> value;
 
+        ListValue(String... values) {
+            this.value = new LinkedList<>();
+            for (String v : values) {
+                this.value.add(new SimpleValue(v));
+            }
+        }
+
         ListValue(List<VariableValue> value) {
-            this.value = value == null ? Collections.emptyList() : value;
+            this.value = value == null ? List.of() : value;
         }
 
         @Override
@@ -83,7 +90,7 @@ abstract class VariableValue<T> {
 
         MapValue(List<Variable> value) {
             if (this == null) {
-                this.value = Collections.emptyMap();
+                this.value = Map.of();
             } else {
                 this.value = new HashMap<>();
                 for (Variable variable : value) {

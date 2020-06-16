@@ -17,7 +17,6 @@ package io.helidon.build.stager;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -30,14 +29,9 @@ final class ArchiveTask extends StagingTask {
     private final String includes;
     private final String excludes;
 
-    ArchiveTask(List<Map<String, List<String>>> iterators,
-                List<StagingTask> tasks,
-                String target,
-                String includes,
-                String excludes) {
-
+    ArchiveTask(TaskIterators iterators, List<StagingTask> tasks, String target, String includes, String excludes) {
         super(iterators, target);
-        this.tasks = tasks == null ? Collections.emptyList() : tasks;
+        this.tasks = tasks == null ? List.of() : tasks;
         this.includes = includes;
         this.excludes = excludes;
     }

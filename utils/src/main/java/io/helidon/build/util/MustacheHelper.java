@@ -101,6 +101,11 @@ public abstract class MustacheHelper {
 
         private final String value;
 
+        /**
+         * Create a new raw string.
+         *
+         * @param value raw string value
+         */
         public RawString(String value) {
             this.value = value;
         }

@@ -40,7 +40,7 @@ class StagedDirectoryConverterTest {
     public void testConverter() throws Exception {
         Reader reader = new InputStreamReader(StagedDirectoryConverterTest.class.getResourceAsStream("/testconfig.xml"));
         PlexusConfiguration plexusConfiguration = new XmlPlexusConfiguration(Xpp3DomBuilder.build(reader));
-        List<StagedDirectory> stagedDirectories = new StagedDirectoryConverter().fromConfiguration(plexusConfiguration);
+        List<StagedDirectory> stagedDirectories = StagedDirectoryConverter.fromConfiguration(plexusConfiguration);
         assertThat(stagedDirectories, is(not(nullValue())));
         assertThat(stagedDirectories.size(), is(1));
         StagedDirectory stagedDirectory = stagedDirectories.get(0);
@@ -57,14 +57,12 @@ class StagedDirectoryConverterTest {
         assertThat(unpack1.includes(), is(nullValue()));
         assertThat(unpack1.target(), is("docs/{version}"));
         assertThat(unpack1.iterators().size(), is(1));
-        assertThat(unpack1.iterators().get(0).size(), is(1));
-        assertThat(unpack1.iterators().get(0).containsKey("version"), is(true));
-        assertThat(unpack1.iterators().get(0).get("version").size(), is(5));
-        assertThat(unpack1.iterators().get(0).get("version").get(0), is("${docs.1.version}"));
-        assertThat(unpack1.iterators().get(0).get("version").get(1), is("1.4.3"));
-        assertThat(unpack1.iterators().get(0).get("version").get(2), is("1.4.2"));
-        assertThat(unpack1.iterators().get(0).get("version").get(3), is("1.4.1"));
-        assertThat(unpack1.iterators().get(0).get("version").get(4), is("1.4.0"));
+        assertThat(unpack1.iterators().get(0).next().get("version"), is("${docs.1.version}"));
+        assertThat(unpack1.iterators().get(0).next().get("version"), is("1.4.3"));
+        assertThat(unpack1.iterators().get(0).next().get("version"), is("1.4.2"));
+        assertThat(unpack1.iterators().get(0).next().get("version"), is("1.4.1"));
+        assertThat(unpack1.iterators().get(0).next().get("version"), is("1.4.0"));
+        assertThat(unpack1.iterators().get(0).hasNext(), is(false));
 
         assertThat(tasks.get(1), is(instanceOf(UnpackArtifactTask.class)));
         UnpackArtifactTask unpack2 = (UnpackArtifactTask) tasks.get(1);
@@ -76,10 +74,8 @@ class StagedDirectoryConverterTest {
         assertThat(unpack2.includes(), is(nullValue()));
         assertThat(unpack2.target(), is("docs/{version}"));
         assertThat(unpack2.iterators().size(), is(1));
-        assertThat(unpack2.iterators().get(0).size(), is(1));
-        assertThat(unpack2.iterators().get(0).containsKey("version"), is(true));
-        assertThat(unpack2.iterators().get(0).get("version").size(), is(1));
-        assertThat(unpack2.iterators().get(0).get("version").get(0), is("${docs.2.version}"));
+        assertThat(unpack2.iterators().get(0).next().get("version"), is("${docs.2.version}"));
+        assertThat(unpack2.iterators().get(0).hasNext(), is(false));
 
         assertThat(tasks.get(2), is(instanceOf(SymlinkTask.class)));
         SymlinkTask symlink1 = (SymlinkTask) tasks.get(2);
@@ -106,25 +102,30 @@ class StagedDirectoryConverterTest {
         assertThat(download1.url(), is("https://helidon.io/cli-data/{version}/cli-data.zip"));
         assertThat(download1.target(), is("cli-data/{version}/cli-data.zip"));
         assertThat(download1.iterators().size(), is(1));
-        assertThat(download1.iterators().get(0).size(), is(1));
-        assertThat(download1.iterators().get(0).containsKey("version"), is(true));
-        assertThat(download1.iterators().get(0).get("version").size(), is(1));
-        assertThat(download1.iterators().get(0).get("version").get(0), is("2.0.0-M1"));
+        assertThat(download1.iterators().get(0).next().get("version"), is("2.0.0-M1"));
+        assertThat(download1.iterators().get(0).hasNext(), is(false));
 
         assertThat(tasks.get(7), is(instanceOf(DownloadTask.class)));
         DownloadTask download2 = (DownloadTask) tasks.get(7);
         assertThat(download2.url(), is("${build-tools.download.url}/{version}/helidon-cli-{platform}-amd64"));
         assertThat(download2.target(), is("cli/{version}"));
         assertThat(download2.iterators().size(), is(1));
-        assertThat(download2.iterators().get(0).size(), is(2));
-        assertThat(download2.iterators().get(0).containsKey("platform"), is(true));
-        assertThat(download2.iterators().get(0).get("platform").size(), is(2));
-        assertThat(download2.iterators().get(0).get("platform").get(0), is("darwin"));
-        assertThat(download2.iterators().get(0).get("platform").get(1), is("linux"));
-        assertThat(download2.iterators().get(0).containsKey("version"), is(true));
-        assertThat(download2.iterators().get(0).get("version").size(), is(2));
-        assertThat(download2.iterators().get(0).get("version").get(0), is("${cli.latest.version}"));
-        assertThat(download2.iterators().get(0).get("version").get(1), is("2.0.0-M4"));
+        Map<String, String> download2It1 = download2.iterators().get(0).next();
+        assertThat(download2It1.get("platform"), is("darwin"));
+        assertThat(download2It1.get("version"), is("${cli.latest.version}"));
+        assertThat(download2.iterators().get(0).hasNext(), is(true));
+        Map<String, String> download2It2 = download2.iterators().get(0).next();
+        assertThat(download2It2.get("platform"), is("linux"));
+        assertThat(download2It2.get("version"), is("2.0.0-M4"));
+        assertThat(download2.iterators().get(0).hasNext(), is(true));
+        Map<String, String> download2It3 = download2.iterators().get(0).next();
+        assertThat(download2It3.get("platform"), is("darwin"));
+        assertThat(download2It3.get("version"), is("2.0.0-M4"));
+        assertThat(download2.iterators().get(0).hasNext(), is(true));
+        Map<String, String> download2It4 = download2.iterators().get(0).next();
+        assertThat(download2It4.get("platform"), is("linux"));
+        assertThat(download2It4.get("version"), is("${cli.latest.version}"));
+        assertThat(download2.iterators().get(0).hasNext(), is(false));
 
         assertThat(tasks.get(8), is(instanceOf(ArchiveTask.class)));
         ArchiveTask archive = (ArchiveTask) tasks.get(8);

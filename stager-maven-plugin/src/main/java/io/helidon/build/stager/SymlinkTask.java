@@ -18,7 +18,6 @@ package io.helidon.build.stager;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,7 +27,7 @@ final class SymlinkTask extends StagingTask {
 
     private final String source;
 
-    SymlinkTask(List<Map<String, List<String>>> iterators, String source, String target) {
+    SymlinkTask(TaskIterators iterators, String source, String target) {
         super(iterators, target);
         if (source == null || source.isEmpty()) {
             throw new IllegalArgumentException("source is required");

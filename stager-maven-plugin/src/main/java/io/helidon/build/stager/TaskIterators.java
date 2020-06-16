@@ -15,48 +15,18 @@
  */
 package io.helidon.build.stager;
 
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
- * Task iterators.
+ * Internal model for task iterators.
  */
-final class TaskIterators implements Iterable<Variables> {
+final class TaskIterators extends LinkedList<TaskIterator> {
 
-    private final List<Variables> variables;
-
-    TaskIterators(List<Variables> variables) {
-        this.variables = variables;
+    TaskIterators() {
     }
 
-    @Override
-    public Iterator<Variables> iterator() {
-        return null;
-    }
-
-    List<Map<String, List<String>>> asList() {
-        List<Map<String, List<String>>> list = new LinkedList<>();
-        for (Variables variables : variables) {
-            Map<String, List<String>> iterator = new HashMap<>();
-            list.add(iterator);
-            for (Variable variable : variables) {
-                List<String> values = new LinkedList<>();
-                iterator.put(variable.name(), values);
-                Object unwrappedValue = variable.value().unwrap();
-                if (unwrappedValue instanceof String) {
-                    values.add((String) unwrappedValue);
-                } else if (unwrappedValue instanceof List) {
-                    for (Object o : (List) unwrappedValue) {
-                        if (o instanceof String) {
-                            values.add((String) o);
-                        }
-                    }
-                }
-            }
-        }
-        return list;
+    TaskIterators(List<TaskIterator> iterators) {
+        addAll(iterators);
     }
 }

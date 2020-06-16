@@ -18,7 +18,6 @@ package io.helidon.build.stager;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -35,7 +34,7 @@ final class StagedDirectory {
             throw new IllegalArgumentException("target is required");
         }
         this.target = target;
-        this.tasks = tasks == null ? Collections.emptyList() : tasks;
+        this.tasks = tasks == null ? List.of() : tasks;
     }
 
     /**

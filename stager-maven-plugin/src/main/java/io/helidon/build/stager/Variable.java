@@ -19,6 +19,7 @@ package io.helidon.build.stager;
  * Variable model.
  */
 final class Variable {
+
     private final String name;
     private final VariableValue value;
 
@@ -33,10 +34,20 @@ final class Variable {
         this.value = value;
     }
 
+    /**
+     * Get the variable name.
+     *
+     * @return name
+     */
     String name() {
         return name;
     }
 
+    /**
+     * Get the variable value.
+     *
+     * @return value
+     */
     VariableValue value() {
         return value;
     }

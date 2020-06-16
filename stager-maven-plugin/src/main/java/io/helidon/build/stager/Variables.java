@@ -15,28 +15,18 @@
  */
 package io.helidon.build.stager;
 
-import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
- * Model for a list of variables.
+ * Internal model for a list of variables.
  */
-final class Variables implements Iterable<Variable> {
+final class Variables extends LinkedList<Variable> {
 
-    private final List<Variable> variables;
+    Variables(){
+    }
 
     Variables(List<Variable> variables) {
-        this.variables = variables;
-    }
-
-    Map<String, VariableValue> asMap() {
-        return variables.stream().collect(Collectors.toMap(Variable::name, Variable::value));
-    }
-
-    @Override
-    public Iterator<Variable> iterator() {
-        return variables.iterator();
+        addAll(variables);
     }
 }

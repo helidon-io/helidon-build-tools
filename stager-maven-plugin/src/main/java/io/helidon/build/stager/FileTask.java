@@ -18,7 +18,6 @@ package io.helidon.build.stager;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,7 +28,7 @@ final class FileTask extends StagingTask {
     private final String content;
     private final String source;
 
-    FileTask(List<Map<String, List<String>>> iterators, String target, String content, String source) {
+    FileTask(TaskIterators iterators, String target, String content, String source) {
         super(iterators, target);
         this.content = content;
         this.source = source;

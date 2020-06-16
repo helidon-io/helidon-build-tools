@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import org.codehaus.plexus.component.configurator.ConfigurationListener;
 import org.codehaus.plexus.configuration.PlexusConfiguration;
 
 /**
@@ -30,7 +29,6 @@ import org.codehaus.plexus.configuration.PlexusConfiguration;
  */
 final class StagedDirectoryConverter {
 
-    private static final NoopListener NOOP_LISTENER = new NoopListener();
     private static final List<Class<? extends StagingTask>> ALL_TASKS = List.of(
             ArchiveTask.class,
             CopyArtifactTask.class,
@@ -107,7 +105,7 @@ final class StagedDirectoryConverter {
                         addTasks(node, "file", listAs(mappings.get("file"), FileTask.class));
                         break;
                     case "iterators":
-                        addNested(node, new TaskIterators(listAs(mappings.get("variables"), Variables.class)));
+                        addNested(node, processTaskIterators(node));
                         break;
                     case "variables":
                         addNested(node, new Variables(listAs(mappings.get("variable"), Variable.class)));
@@ -152,7 +150,7 @@ final class StagedDirectoryConverter {
 
         StagingTask processTask(PlexusConfigNode node) {
             Map<String, String> attrs = node.attributes();
-            List<Map<String, List<String>>> taskIterators = nestedTaskIterators(node);
+            TaskIterators taskIterators = nestedTaskIterators(node);
             switch (node.name()) {
                 case "unpack-artifact":
                     return new UnpackArtifactTask(taskIterators,
@@ -213,6 +211,15 @@ final class StagedDirectoryConverter {
             return new Variable(varName, new VariableValue.ListValue(listAs(values, VariableValue.class)));
         }
 
+        TaskIterators processTaskIterators(PlexusConfigNode node) {
+            Map<String, List<Object>> mappings = allMappings.get(node);
+            if (mappings == null || mappings.isEmpty()) {
+                return new TaskIterators(List.of());
+            }
+            return new TaskIterators(listAs(mappings.get("variables"), Variables.class).stream()
+                    .map(TaskIterator::new).collect(Collectors.toList()));
+        }
+
         List<StagingTask> nestedTasks(PlexusConfigNode node) {
             List<StagingTask> tasks = new LinkedList<>();
             Map<String, List<Object>> mappings = allMappings.get(node);
@@ -244,22 +251,22 @@ final class StagedDirectoryConverter {
             if (variables.isEmpty()) {
                 return Map.of();
             }
-            Map<String, VariableValue> map = objectAs(variables.get(0), Variables.class).asMap();
-            return map.entrySet().stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().unwrap()));
+            return objectAs(variables.get(0), Variables.class)
+                    .stream()
+                    .collect(Collectors.toMap(Variable::name, v -> v.value().unwrap()));
         }
 
-        List<Map<String, List<String>>> nestedTaskIterators(PlexusConfigNode node) {
+        TaskIterators nestedTaskIterators(PlexusConfigNode node) {
             Map<String, List<Object>> mappings = allMappings.get(node);
             List<Object> iteratorsObjects = mappings.get("iterators");
             if (iteratorsObjects == null || iteratorsObjects.isEmpty()) {
-                return List.of();
+                return new TaskIterators();
             }
             if (iteratorsObjects.size() > 1) {
                 throw new IllegalStateException(
                         "task elements can have zero or one iterators element");
             }
-            return objectAs(iteratorsObjects.get(0), TaskIterators.class).asList();
+            return objectAs(iteratorsObjects.get(0), TaskIterators.class);
         }
     }
 
@@ -297,16 +304,5 @@ final class StagedDirectoryConverter {
             }
         }
         return taskName;
-    }
-
-    private static final class NoopListener implements ConfigurationListener {
-
-        @Override
-        public void notifyFieldChangeUsingReflection(String name, Object value, Object component) {
-        }
-
-        @Override
-        public void notifyFieldChangeUsingSetter(String name, Object value, Object component) {
-        }
     }
 }

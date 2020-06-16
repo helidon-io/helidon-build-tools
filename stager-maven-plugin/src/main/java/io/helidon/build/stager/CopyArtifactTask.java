@@ -18,7 +18,6 @@ package io.helidon.build.stager;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -29,7 +28,7 @@ final class CopyArtifactTask extends StagingTask {
 
     private final ArtifactGAV gav;
 
-    CopyArtifactTask(List<Map<String, List<String>>> iterators, ArtifactGAV gav, String target) {
+    CopyArtifactTask(TaskIterators iterators, ArtifactGAV gav, String target) {
         super(iterators, target == null ? "{artifactId}.{type}" : target);
         this.gav = Objects.requireNonNull(gav);
     }

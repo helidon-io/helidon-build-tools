@@ -15,14 +15,13 @@
  */
 package io.helidon.build.stager;
 
-import org.junit.jupiter.api.Test;
-
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,30 +33,22 @@ class StagingTaskTest {
 
     @Test
     public void testIterator() throws IOException {
-        TestTask task = new TestTask(List.of(Map.of("foo", List.of("foo1", "foo2"))), "{foo}");
+        Variables variables = new Variables();
+        variables.add(new Variable("foo", new VariableValue.ListValue("foo1", "foo2")));
+        TaskIterators taskIterators = new TaskIterators(List.of(new TaskIterator(variables)));
+        TestTask task = new TestTask(taskIterators, "{foo}");
         task.execute(null, null, Map.of());
         assertThat(task.renderedTargets, hasItems("foo1", "foo2"));
     }
 
     @Test
     public void testIteratorsWithManyVariables() throws IOException {
-        Map<String, List<String>> taskIterator = new LinkedHashMap<>();
-        LinkedList<String> foos = new LinkedList<>();
-        foos.add("foo1");
-        foos.add("foo2");
-        foos.add("foo3");
-        taskIterator.put("foo", foos);
-        LinkedList<String> bars = new LinkedList<>();
-        bars.add("bar1");
-        bars.add("bar2");
-        taskIterator.put("bar", bars);
-        LinkedList<String> bobs = new LinkedList<>();
-        bobs.add("bob1");
-        bobs.add("bob2");
-        bobs.add("bob3");
-        bobs.add("bob4");
-        taskIterator.put("bob", bobs);
-        TestTask task = new TestTask(List.of(taskIterator), "{foo}-{bar}-{bob}");
+        Variables variables = new Variables();
+        variables.add(new Variable("foo", new VariableValue.ListValue("foo1", "foo2", "foo3")));
+        variables.add(new Variable("bar", new VariableValue.ListValue("bar1", "bar2")));
+        variables.add(new Variable("bob", new VariableValue.ListValue("bob1", "bob2", "bob3", "bob4")));
+        TaskIterators taskIterators = new TaskIterators(List.of(new TaskIterator(variables)));
+        TestTask task = new TestTask(taskIterators, "{foo}-{bar}-{bob}");
         task.execute(null, null, Map.of());
         assertThat(task.renderedTargets, hasItems(
                 "foo1-bar1-bob1", "foo1-bar1-bob2", "foo1-bar1-bob3", "foo1-bar1-bob4",
@@ -72,7 +63,7 @@ class StagingTaskTest {
 
         private final List<String> renderedTargets;
 
-        TestTask(List<Map<String, List<String>>> iterators, String target) {
+        TestTask(TaskIterators iterators, String target) {
             super(iterators, target);
             this.renderedTargets = new LinkedList<>();
         }

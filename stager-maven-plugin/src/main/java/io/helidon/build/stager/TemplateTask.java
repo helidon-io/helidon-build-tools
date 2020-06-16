@@ -18,9 +18,7 @@ package io.helidon.build.stager;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static io.helidon.build.util.MustacheHelper.renderMustacheTemplate;
@@ -33,17 +31,13 @@ final class TemplateTask extends StagingTask {
     private final String source;
     private final Map<String, Object> templateVariables;
 
-    TemplateTask(List<Map<String, List<String>>> iterators,
-                 String source,
-                 String target,
-                 Map<String, Object> templateVariables) {
-
+    TemplateTask(TaskIterators iterators, String source, String target, Map<String, Object> templateVariables) {
         super(iterators, target);
         if (source == null || source.isEmpty()) {
             throw new IllegalArgumentException("source is required");
         }
         this.source = source;
-        this.templateVariables = templateVariables == null ? Collections.emptyMap() : templateVariables;
+        this.templateVariables = templateVariables == null ? Map.of() : templateVariables;
     }
 
     /**

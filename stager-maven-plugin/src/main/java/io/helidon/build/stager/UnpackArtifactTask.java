@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -33,12 +32,7 @@ final class UnpackArtifactTask extends StagingTask {
     private final String includes;
     private final String excludes;
 
-    UnpackArtifactTask(List<Map<String, List<String>>> iterators,
-                       ArtifactGAV gav,
-                       String target,
-                       String includes,
-                       String excludes) {
-
+    UnpackArtifactTask(TaskIterators iterators, ArtifactGAV gav, String target, String includes, String excludes) {
         super(iterators, target);
         this.gav = Objects.requireNonNull(gav);
         this.includes = includes;
