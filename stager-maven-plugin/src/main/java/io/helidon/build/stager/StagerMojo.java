@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 import org.apache.maven.plugin.AbstractMojo;
@@ -52,18 +51,6 @@ import org.eclipse.aether.resolution.ArtifactResult;
  */
 @Mojo(name = "stage", defaultPhase = LifecyclePhase.PACKAGE, requiresProject = true)
 public class StagerMojo extends AbstractMojo {
-
-    /**
-     * The archivers.
-     */
-    @Component
-    private Map<String, Archiver> archivers;
-
-    /**
-     * The un-archivers.
-     */
-    @Component
-    private Map<String, UnArchiver> unArchivers;
 
     /**
      * Manager used to look up Archiver/UnArchiver implementations.
