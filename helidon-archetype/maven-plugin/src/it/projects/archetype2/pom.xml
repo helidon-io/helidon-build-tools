@@ -19,26 +19,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>io.helidon.build-tools.archetype.tests</groupId>
-    <artifactId>test-archetype1</artifactId>
-    <version>@project.version@</version>
+    <parent>
+        <groupId>io.helidon.build-tools.archetype.tests</groupId>
+        <artifactId>parent</artifactId>
+        <version>@project.version@</version>
+    </parent>
+    <artifactId>test-archetype2</artifactId>
     <name>Test Archetype 2</name>
     <packaging>helidon-archetype</packaging>
 
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <foo>pre-processed-foo</foo>
         <bar>pre-processed-bar</bar>
     </properties>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>io.helidon.build-tools.archetype</groupId>
-                <artifactId>helidon-archetype-maven-plugin</artifactId>
-                <version>${project.version}</version>
-                <extensions>true</extensions>
-            </plugin>
-        </plugins>
-    </build>
 </project>

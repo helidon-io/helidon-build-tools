@@ -51,7 +51,7 @@
             <role-hint>helidon-archetype-catalog</role-hint>
             <implementation>org.apache.maven.artifact.handler.DefaultArtifactHandler</implementation>
             <configuration>
-                <extension>xml</extension>
+                <extension>zip</extension>
                 <type>helidon-archetype-catalog</type>
                 <addedToClasspath>false</addedToClasspath>
             </configuration>
