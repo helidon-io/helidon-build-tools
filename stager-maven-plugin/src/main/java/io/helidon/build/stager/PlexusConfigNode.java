@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 import org.codehaus.plexus.configuration.PlexusConfiguration;
 
 /**
- * A config node that holds a node with its parent and a list of mapped children objects.
+ * A config node that holds a node with its parent.
  */
 public class PlexusConfigNode {
 

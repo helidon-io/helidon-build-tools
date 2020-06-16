@@ -29,7 +29,7 @@ final class CopyArtifactTask extends StagingTask {
     private final ArtifactGAV gav;
 
     CopyArtifactTask(TaskIterators iterators, ArtifactGAV gav, String target) {
-        super(iterators, target == null ? "{artifactId}.{type}" : target);
+        super(iterators, target == null ? "{artifactId}-{version}.{type}" : target);
         this.gav = Objects.requireNonNull(gav);
     }
 
