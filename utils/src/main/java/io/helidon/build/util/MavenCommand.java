@@ -50,6 +50,7 @@ public class MavenCommand {
     private static final String MAVEN_HOME_VAR = "MAVEN_HOME";
     private static final String MVN_HOME_VAR = "MVN_HOME";
     private static final String MAVEN_CORE_PREFIX = "maven-core-";
+    private static final String MAVEN_SHIM_TARGET = "libexec/bin/mvn";
     private static final String JAR_SUFFIX = ".jar";
     private static final String MAVEN_DOWNLOAD_URL = "https://maven.apache.org/download.cgi";
     private static final AtomicReference<Path> MAVEN_EXECUTABLE = new AtomicReference<>();
@@ -112,6 +113,11 @@ public class MavenCommand {
                                 + "MVN_HOME environment variables."));
             }
             try {
+                maven = maven.toRealPath();
+                Path shimmed = maven.getParent().getParent().resolve(MAVEN_SHIM_TARGET);
+                if (Files.exists(shimmed)) {
+                    maven = shimmed;
+                }
                 MAVEN_EXECUTABLE.set(maven.toRealPath());
             } catch (IOException ex) {
                 throw new IllegalStateException(ex.getMessage());
