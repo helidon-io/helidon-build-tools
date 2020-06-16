@@ -129,12 +129,12 @@ public class StagerMojo extends AbstractMojo {
         private final List<RemoteRepository> remoteRepos;
         private final ArchiverManager archiverManager;
 
-        public StagingContextImpl(File outputDir,
-                                  Log log,
-                                  RepositorySystem repoSystem,
-                                  RepositorySystemSession repoSession,
-                                  List<RemoteRepository> remoteRepos,
-                                  ArchiverManager archiverManager) {
+        StagingContextImpl(File outputDir,
+                           Log log,
+                           RepositorySystem repoSystem,
+                           RepositorySystemSession repoSession,
+                           List<RemoteRepository> remoteRepos,
+                           ArchiverManager archiverManager) {
 
             this.outputDir = outputDir;
             this.log = log;

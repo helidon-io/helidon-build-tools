@@ -30,7 +30,7 @@ import org.codehaus.plexus.configuration.PlexusConfiguration;
  */
 public class PlexusConfigNode {
 
-    private static AtomicInteger NEXT_ID = new AtomicInteger(0);
+    private static final AtomicInteger NEXT_ID = new AtomicInteger(0);
     private final PlexusConfiguration orig;
     private final PlexusConfigNode parent;
     private final int id;
@@ -150,8 +150,8 @@ public class PlexusConfigNode {
 
     @Override
     public String toString() {
-        return "PlexusConfigNode{" +
-                "id=" + id
+        return "PlexusConfigNode{"
+                + "id=" + id
                 + ", name=" + orig.getName()
                 + '}';
     }

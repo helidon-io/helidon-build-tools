@@ -21,7 +21,6 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static io.helidon.build.util.MustacheHelper.renderMustacheTemplate;
 

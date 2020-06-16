@@ -15,8 +15,6 @@
  */
 package io.helidon.build.stager;
 
-import io.helidon.build.util.NetworkConnection;
-
 import java.io.BufferedInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -25,7 +23,8 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+
+import io.helidon.build.util.NetworkConnection;
 
 /**
  * Download a file to a given target location.

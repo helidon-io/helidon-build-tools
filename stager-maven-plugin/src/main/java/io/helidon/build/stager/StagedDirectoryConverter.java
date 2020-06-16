@@ -294,7 +294,7 @@ public class StagedDirectoryConverter implements ConfigurationConverter {
     private static String taskName(Class<? extends StagingTask> taskClass) {
         String className = taskClass.getSimpleName().replace("Task", "");
         String taskName = "";
-        for (int i=0; i < className.length(); i++) {
+        for (int i = 0; i < className.length(); i++) {
             char c = className.charAt(i);
             if (i == 0) {
                 taskName += Character.toLowerCase(c);
