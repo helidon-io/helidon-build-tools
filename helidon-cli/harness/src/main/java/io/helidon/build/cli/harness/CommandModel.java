@@ -43,6 +43,7 @@ public abstract class CommandModel extends CommandParameters {
 
     /**
      * Indicate if the command is visible.
+     *
      * @return {@code true} if visible, {@code false} if not visible.
      */
     boolean visible() {
@@ -77,7 +78,7 @@ public abstract class CommandModel extends CommandParameters {
         /**
          * Create a new command info.
          *
-         * @param name command name.
+         * @param name        command name.
          * @param description command description
          */
         public CommandInfo(String name, String description) {
@@ -128,7 +129,8 @@ public abstract class CommandModel extends CommandParameters {
     }
 
     /**
-     * Common meta-model for {@link Argument} and {@link Option}.
+     * Common meta-model for {@link Option.Argument} and {@link Option}.
+     *
      * @param <T> mapped type
      */
     public abstract static class OptionInfo<T> implements ParameterInfo<T> {
@@ -138,7 +140,8 @@ public abstract class CommandModel extends CommandParameters {
 
         /**
          * Create a new option info.
-         * @param type corresponding type
+         *
+         * @param type        corresponding type
          * @param description description, must be non {@code null}
          */
         protected OptionInfo(Class<T> type, String description) {
@@ -162,6 +165,7 @@ public abstract class CommandModel extends CommandParameters {
 
         /**
          * Get the usage for this option.
+         *
          * @return usage, never {@code null}
          */
         abstract String usage();
@@ -169,6 +173,7 @@ public abstract class CommandModel extends CommandParameters {
 
     /**
      * Meta model for the {@link Option.Argument} annotation.
+     *
      * @param <T> mapped type
      */
     public static final class ArgumentInfo<T> extends OptionInfo<T> {
@@ -178,9 +183,9 @@ public abstract class CommandModel extends CommandParameters {
         /**
          * Create a new argument info.
          *
-         * @param type argument field type
+         * @param type        argument field type
          * @param description argument description
-         * @param required argument required flag
+         * @param required    argument required flag
          */
         public ArgumentInfo(Class<T> type, String description, boolean required) {
             super(type, description);
@@ -206,6 +211,7 @@ public abstract class CommandModel extends CommandParameters {
 
     /**
      * Meta model for the {@link Option} annotation.
+     *
      * @param <T> mapped type
      */
     public abstract static class NamedOptionInfo<T> extends OptionInfo<T> {
@@ -215,10 +221,11 @@ public abstract class CommandModel extends CommandParameters {
 
         /**
          * Create a new named option info.
-         * @param type corresponding type
-         * @param name name, must be non {@code null}
+         *
+         * @param type        corresponding type
+         * @param name        name, must be non {@code null}
          * @param description description, must be non {@code null}
-         * @param visible visible flag
+         * @param visible     visible flag
          */
         protected NamedOptionInfo(Class<T> type, String name, String description, boolean visible) {
             super(type, description);
@@ -228,8 +235,9 @@ public abstract class CommandModel extends CommandParameters {
 
         /**
          * Create a new visible named option info.
-         * @param type corresponding type
-         * @param name name, must be non {@code null}
+         *
+         * @param type        corresponding type
+         * @param name        name, must be non {@code null}
          * @param description description, must be non {@code null}
          */
         protected NamedOptionInfo(Class<T> type, String name, String description) {
@@ -258,9 +266,10 @@ public abstract class CommandModel extends CommandParameters {
 
         /**
          * Create a new flag info.
-         * @param name flag name
+         *
+         * @param name        flag name
          * @param description flag description
-         * @param visible flag visible, {@code false} to make it hidden
+         * @param visible     flag visible, {@code false} to make it hidden
          */
         public FlagInfo(String name, String description, boolean visible) {
             super(Boolean.class, name, description, visible);
@@ -268,7 +277,8 @@ public abstract class CommandModel extends CommandParameters {
 
         /**
          * Create a new flag info.
-         * @param name option name
+         *
+         * @param name        option name
          * @param description option description
          */
         public FlagInfo(String name, String description) {
@@ -283,6 +293,7 @@ public abstract class CommandModel extends CommandParameters {
 
     /**
      * Meta model for the {@link Option.KeyValue} annotation.
+     *
      * @param <T> item type
      */
     public static final class KeyValueInfo<T> extends NamedOptionInfo<T> {
@@ -292,12 +303,13 @@ public abstract class CommandModel extends CommandParameters {
 
         /**
          * Create a new key value info.
-         * @param type option type
-         * @param name option name
-         * @param description option description
+         *
+         * @param type         option type
+         * @param name         option name
+         * @param description  option description
          * @param defaultValue default value, may be {@code null} if the option is not required
-         * @param required option required
-         * @param visible option visible
+         * @param required     option required
+         * @param visible      option visible
          */
         public KeyValueInfo(Class<T> type, String name, String description, T defaultValue, boolean required, boolean visible) {
             super(type, name, description, visible);
@@ -307,11 +319,12 @@ public abstract class CommandModel extends CommandParameters {
 
         /**
          * Create a new key value info.
-         * @param type option type
-         * @param name option name
-         * @param description option description
+         *
+         * @param type         option type
+         * @param name         option name
+         * @param description  option description
          * @param defaultValue default value, may be {@code null} if the option is not required
-         * @param required option required
+         * @param required     option required
          */
         public KeyValueInfo(Class<T> type, String name, String description, T defaultValue, boolean required) {
             this(type, name, description, defaultValue, required, true);
@@ -345,6 +358,7 @@ public abstract class CommandModel extends CommandParameters {
 
     /**
      * Meta model for the {@link Option.KeyValues} annotation.
+     *
      * @param <T> item type
      */
     public static final class KeyValuesInfo<T> extends NamedOptionInfo<Collection<T>> {
@@ -354,10 +368,11 @@ public abstract class CommandModel extends CommandParameters {
 
         /**
          * Create a new key values info.
-         * @param paramType option field type parameter type
-         * @param name option name
+         *
+         * @param paramType   option field type parameter type
+         * @param name        option name
          * @param description option description
-         * @param required option required
+         * @param required    option required
          */
         public KeyValuesInfo(Class<T> paramType, String name, String description, boolean required) {
             super(null, name, description);
@@ -367,6 +382,7 @@ public abstract class CommandModel extends CommandParameters {
 
         /**
          * Get the parameter type.
+         *
          * @return type, never {@code null}
          */
         public Class<T> paramType() {

@@ -242,7 +242,7 @@ public final class CommandContext {
     /**
      * Set the error message if not already set.
      *
-     * @param status exit status
+     * @param status  exit status
      * @param message error message
      * @return exit action.
      */
@@ -357,7 +357,7 @@ public final class CommandContext {
      * Set the exit action to {@link ExitStatus#FAILURE} with the given error message.
      *
      * @param message error message
-     * @param args message args.
+     * @param args    message args.
      * @return exit action.
      */
     ExitAction error(String message, Object... args) {
@@ -378,7 +378,7 @@ public final class CommandContext {
      * Create a new command context.
      *
      * @param registry command registry
-     * @param cliDef CLI definition
+     * @param cliDef   CLI definition
      * @return command context, never {@code null}
      */
     public static CommandContext create(CommandRegistry registry, CLIDefinition cliDef) {

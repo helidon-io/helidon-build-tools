@@ -50,7 +50,8 @@ public final class CLIDefinition {
 
     /**
      * Create a new CLI definition.
-     * @param name CLI name
+     *
+     * @param name        CLI name
      * @param description CLI description
      * @return CLI definition, never {@code null}
      */

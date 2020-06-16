@@ -27,7 +27,8 @@ final class CommandMatcher {
 
     /**
      * Find the closest matching target that matches the source.
-     * @param source input string to find a closest match for
+     *
+     * @param source  input string to find a closest match for
      * @param targets the list of target that can be matched
      * @return closest match or {@code null} if no close match are found
      */

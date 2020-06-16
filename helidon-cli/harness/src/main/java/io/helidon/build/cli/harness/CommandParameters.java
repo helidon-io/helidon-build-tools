@@ -53,6 +53,7 @@ public class CommandParameters {
 
     /**
      * Meta model for parameters to retain the mapped type.
+     *
      * @param <T> mapped type
      */
     public interface ParameterInfo<T> {
@@ -75,6 +76,7 @@ public class CommandParameters {
 
     /**
      * Base class for meta-model implementations of {@link CommandFragment}.
+     *
      * @param <T> mapped type
      */
     public abstract static class CommandFragmentInfo<T> extends CommandParameters implements ParameterInfo<T> {
@@ -98,6 +100,7 @@ public class CommandParameters {
 
         /**
          * Resolve a fragment instance.
+         *
          * @param parser command parser
          * @return created fragment
          */
