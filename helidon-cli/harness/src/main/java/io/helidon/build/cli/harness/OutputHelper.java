@@ -31,6 +31,7 @@ public final class OutputHelper {
 
     /**
      * Render map as a table with the second column aligned.
+     *
      * @param map map to render
      * @return rendered table
      */
