@@ -18,25 +18,14 @@ package io.helidon.build.archetype.engine;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedList;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParserFactory;
+import java.util.Map;
 
 import io.helidon.build.archetype.engine.ArchetypeCatalog.ArchetypeEntry;
-
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
-import static io.helidon.build.archetype.engine.SAXHelper.readAttribute;
-import static io.helidon.build.archetype.engine.SAXHelper.readAttributeList;
-import static io.helidon.build.archetype.engine.SAXHelper.readRequiredAttribute;
-import static io.helidon.build.archetype.engine.SAXHelper.validateChild;
 
 /**
  * {@link ArchetypeCatalog} reader.
  */
-final class ArchetypeCatalogReader extends DefaultHandler {
+final class ArchetypeCatalogReader implements SimpleXMLParser.Reader {
 
     private String modelVersion;
     private String name;
@@ -57,20 +46,18 @@ final class ArchetypeCatalogReader extends DefaultHandler {
      * @return catalog, never {@code null}
      */
     static ArchetypeCatalog read(InputStream is) {
-        SAXParserFactory factory = SAXParserFactory.newInstance();
         try {
             ArchetypeCatalogReader reader = new ArchetypeCatalogReader();
-            factory.newSAXParser().parse(is, reader);
-            return new ArchetypeCatalog(reader.modelVersion, reader.name, reader.groupId, reader.version,
-                    reader.entries);
-        } catch (IOException | ParserConfigurationException | SAXException ex) {
+            SimpleXMLParser.parse(is, reader);
+            return new ArchetypeCatalog(reader.modelVersion, reader.name, reader.groupId, reader.version, reader.entries);
+        } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
     }
 
     @Override
     @SuppressWarnings("checkstyle:MethodLength")
-    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+    public void startElement(String qName, Map<String, String> attributes) {
         String parent = stack.peek();
         if (parent == null) {
             if (!"archetype-catalog".equals(qName)) {
@@ -94,7 +81,7 @@ final class ArchetypeCatalogReader extends DefaultHandler {
                                     readRequiredAttribute("name", qName, attributes),
                                     readRequiredAttribute("title", qName, attributes),
                                     readRequiredAttribute("summary", qName, attributes),
-                                    attributes.getValue("description"),
+                                    attributes.get("description"),
                                     readAttributeList("tags", qName, attributes)
                             ));
                             stack.push(qName);
@@ -110,12 +97,13 @@ final class ArchetypeCatalogReader extends DefaultHandler {
     }
 
     @Override
-    public void endElement(String uri, String localName, String qName) throws SAXException {
+    public void endElement(String name) {
         stack.pop();
     }
 
+
     @Override
-    public void characters(char[] ch, int start, int length) throws SAXException {
+    public void elementText(String data) {
         // all data is in the attributes
     }
 }

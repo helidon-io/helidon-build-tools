@@ -24,9 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParserFactory;
-
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.Choice;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.FileSet;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.FileSets;
@@ -39,17 +36,10 @@ import io.helidon.build.archetype.engine.ArchetypeDescriptor.Select;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.TemplateSets;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.Transformation;
 
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
-import static io.helidon.build.archetype.engine.SAXHelper.readRequiredAttribute;
-import static io.helidon.build.archetype.engine.SAXHelper.validateChild;
-
 /**
  * {@link ArchetypeDescriptor} reader.
  */
-final class ArchetypeDescriptorReader extends DefaultHandler {
+final class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
 
     private String modelVersion;
     private String name;
@@ -74,35 +64,33 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
      * @return descriptor, never {@code null}
      */
     static ArchetypeDescriptor read(InputStream is) {
-        SAXParserFactory factory = SAXParserFactory.newInstance();
         try {
             ArchetypeDescriptorReader reader = new ArchetypeDescriptorReader();
-            factory.newSAXParser().parse(is, reader);
+            SimpleXMLParser.parse(is, reader);
             return new ArchetypeDescriptor(reader.modelVersion, reader.name, reader.properties, reader.transformations,
                     reader.templateSets, reader.fileSets, reader.inputFlow);
-        } catch (IOException | ParserConfigurationException | SAXException ex) {
+        } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
     }
 
     @Override
     @SuppressWarnings("checkstyle:MethodLength")
-    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+    public void startElement(String qName, Map<String, String> attributes) {
         String parent = stack.peek();
         if (parent == null) {
             if (!"archetype-descriptor".equals(qName)) {
                 throw new IllegalStateException("Invalid root element '" + qName + "'");
             }
             modelVersion = readRequiredAttribute("modelVersion", qName, attributes);
-            name = readRequiredAttribute("name", qName, attributes);
+            this.name = readRequiredAttribute("name", qName, attributes);
             stack.push("archetype-descriptor");
         } else {
             switch (parent) {
                 case "archetype-descriptor":
                     switch (qName) {
                         case "properties":
-                            stack.push(qName);
-                            break;
+                        case "input-flow":
                         case "transformations":
                             stack.push(qName);
                             break;
@@ -114,9 +102,6 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
                             fileSets = new FileSets(transformationRefs(attributes, qName));
                             stack.push(qName);
                             break;
-                        case "input-flow":
-                            stack.push(qName);
-                            break;
                         default:
                             throw new IllegalStateException("Invalid top-level element: " + qName);
                     }
@@ -126,9 +111,9 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
                     Property prop = new Property(
                             // TODO validate property id (dot separated alphanumerical)
                             readRequiredAttribute("id", qName, attributes),
-                            attributes.getValue("value"),
-                            Boolean.valueOf(Optional.ofNullable(attributes.getValue("exported")).orElse("true")),
-                            Boolean.valueOf(attributes.getValue("readonly")));
+                            attributes.get("value"),
+                            Boolean.valueOf(Optional.ofNullable(attributes.get("exported")).orElse("true")),
+                            Boolean.valueOf(attributes.get("readonly")));
                     properties.add(prop);
                     propertiesMap.put(prop.id(), prop);
                     stack.push("properties/property");
@@ -217,7 +202,7 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
                         case "input":
                             inputFlow.nodes().add(new Input(
                                     propertyRef(readRequiredAttribute("property", qName, attributes), qName),
-                                    attributes.getValue("default"),
+                                    attributes.get("default"),
                                     readRequiredAttribute("text", qName, attributes),
                                     propertyRefs(attributes, "if", qName),
                                     propertyRefs(attributes, "unless", qName)));
@@ -247,13 +232,12 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
     }
 
     @Override
-    public void endElement(String uri, String localName, String qName) throws SAXException {
+    public void endElement(String name) {
         stack.pop();
     }
 
     @Override
-    public void characters(char[] ch, int start, int length) throws SAXException {
-        String value = new String(ch, start, length);
+    public void elementText(String value) {
         switch (stack.peek()) {
             case "template-sets/template-set/directory":
                 templateSets.templateSets().getLast().directory(value);
@@ -277,16 +261,16 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
         }
     }
 
-    private Property propertyRef(String name, String qName) {
-        Property ref = propertiesMap.get(name);
+    private Property propertyRef(String propName, String qName) {
+        Property ref = propertiesMap.get(propName);
         if (ref == null) {
-            throw new IllegalStateException("Unknown property reference: '" + name + "' in element: '" + qName + "'");
+            throw new IllegalStateException("Unknown property reference: '" + propName + "' in element: '" + qName + "'");
         }
         return ref;
     }
 
-    private List<Property> propertyRefs(Attributes attr, String attrName, String qName) {
-        String refNames = attr.getValue(attrName);
+    private List<Property> propertyRefs(Map<String, String> attr, String attrName, String qName) {
+        String refNames = attr.get(attrName);
         if (refNames == null) {
             return Collections.emptyList();
         }
@@ -297,8 +281,8 @@ final class ArchetypeDescriptorReader extends DefaultHandler {
         return refs;
     }
 
-    private List<Transformation> transformationRefs(Attributes attr, String qName) {
-        String refNames = attr.getValue("transformations");
+    private List<Transformation> transformationRefs(Map<String, String> attr, String qName) {
+        String refNames = attr.get("transformations");
         if (refNames == null) {
             return Collections.emptyList();
         }
