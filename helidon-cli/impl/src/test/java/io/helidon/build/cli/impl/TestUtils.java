@@ -92,7 +92,7 @@ class TestUtils {
                                                .capture(true)
                                                .build()
                                                .start()
-                                               .waitForCompletion(60, TimeUnit.SECONDS);
+                                               .waitForCompletion(120, TimeUnit.SECONDS);
         String output = String.join(EOL, monitor.output());
         return stripAnsi(output);
     }
