@@ -15,12 +15,24 @@
  */
 package io.helidon.build.cli.impl;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
  * Class InitDefaultTest.
  */
-public class InitDefaultTest extends BaseCommandTest {
+public class InitDefaultTest extends MetadataCommandTest {
+
+    @BeforeEach
+    public void beforeEach() {
+        startMetadataAccess(false);
+    }
+
+    @AfterEach
+    public void afterEach() {
+        stopMetadataAccess();
+    }
 
     @Test
     public void testDefaults() throws Exception {
