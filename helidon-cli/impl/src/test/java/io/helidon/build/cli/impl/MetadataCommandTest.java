@@ -15,26 +15,25 @@
  */
 package io.helidon.build.cli.impl;
 
+import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 import io.helidon.build.test.TestFiles;
-
-import static io.helidon.build.cli.impl.MetadataTest.RC1;
 
 /**
  * Base class for command tests that require the {@link Metadata}.
  */
 public class MetadataCommandTest extends BaseCommandTest {
 
-    private MockMetadataServer server;
+    private MetadataTestServer server;
     private Metadata metadata;
 
     public void startMetadataAccess(boolean verbose) {
         Config.setUserHome(TestFiles.targetDir().resolve("alice"));
-        server = new MockMetadataServer(verbose).start(RC1);
-        metadata = Metadata.newInstance(MockMetadataServer.DEFAULT_URL);
+        server = new MetadataTestServer(TestVersion.RC1, verbose).start();
+        metadata = Metadata.newInstance(server.url());
     }
 
     public String metadataUrl() {
-        return server.baseUrl();
+        return server.url();
     }
 
     public Metadata metadata() {
