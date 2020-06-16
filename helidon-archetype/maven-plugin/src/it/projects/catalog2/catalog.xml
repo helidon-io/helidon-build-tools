@@ -18,20 +18,20 @@
 -->
 <archetype-catalog modelVersion="1.0"
                    name="catalog2"
-                   groupId="io.helidon.archetypes"
-                   version="2.0-SNAPSHOT">
+                   groupId="io.helidon.build-tools.archetype.tests"
+                   version="2.0.0-SNAPSHOT">
 
-    <archetype name="quickstart"
-               title="Helidon Quickstart SE"
-               artifactId="helidon-quickstart-se"
-               summary="Simple Hello World REST service using Helidon SE"
-               description="A simple project that shows how to implement a REST service using Helidon SE"
-               tags="se,rest" />
+    <archetype name="test-archetype1"
+               title="Test Archetype #1"
+               artifactId="test-archetype1"
+               summary="The first test archetype"
+               description="A simple archetype test project"
+               tags="test" />
 
-    <archetype name="quickstart"
-               title="Helidon Quickstart MP"
-               artifactId="helidon-quickstart-mp"
-               summary="Simple Hello World REST service using MicroProfile"
-               description="A simple project that shows how to implement a REST service using MicroProfile and Helidon MP"
-               tags="mp,rest" />
+    <archetype name="test-archetype2"
+               title="Test Archetype #2"
+               artifactId="test-archetype2"
+               summary="The 2nd test archetype"
+               description="Another simple archetype test project"
+               tags="test" />
 </archetype-catalog>

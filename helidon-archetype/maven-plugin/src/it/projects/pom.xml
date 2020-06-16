@@ -19,25 +19,30 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>io.helidon.build-tools.archetype.tests</groupId>
-        <artifactId>parent</artifactId>
-        <version>@project.version@</version>
-    </parent>
-    <artifactId>test-catalog1</artifactId>
-    <name>Test Archetype Catalog 1</name>
-    <packaging>helidon-archetype-catalog</packaging>
+    <groupId>io.helidon.build-tools.archetype.tests</groupId>
+    <artifactId>parent</artifactId>
+    <version>@project.version@</version>
+    <name>Parent</name>
+    <packaging>pom</packaging>
 
-    <dependencies>
-        <dependency>
-            <groupId>io.helidon.build-tools.archetype.tests</groupId>
-            <artifactId>test-archetype1</artifactId>
-            <version>@project.version@</version>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.build-tools.archetype.tests</groupId>
-            <artifactId>test-archetype2</artifactId>
-            <version>@project.version@</version>
-        </dependency>
-    </dependencies>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <modules>
+        <module>archetype1</module>
+        <module>archetype2</module>
+        <module>catalog1</module>
+        <module>catalog2</module>
+    </modules>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.helidon.build-tools.archetype</groupId>
+                <artifactId>helidon-archetype-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <extensions>true</extensions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

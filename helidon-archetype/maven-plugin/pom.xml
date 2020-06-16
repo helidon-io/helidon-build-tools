@@ -78,6 +78,24 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-invoker-plugin</artifactId>
+                <configuration>
+                    <localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>
+                    <ignoreFailures>false</ignoreFailures>
+                    <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+                    <pomIncludes>
+                        <pomInclude>projects/pom.xml</pomInclude>
+                    </pomIncludes>
+                    <goals>
+                        <goal>clean</goal>
+                        <goal>install</goal>
+                    </goals>
+                    <streamLogs>true</streamLogs>
+                    <showErrors>true</showErrors>
+                    <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
+                    <skipInvocation>${maven.test.skip}</skipInvocation>
+                    <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
+                    <skipInstallation>${maven.test.skip}</skipInstallation>
+                </configuration>
                 <executions>
                     <execution>
                         <id>invoker-install</id>
@@ -92,20 +110,6 @@
                             <goal>verify</goal>
                         </goals>
                         <phase>pre-integration-test</phase>
-                        <configuration>
-                            <ignoreFailures>false</ignoreFailures>
-                            <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
-                            <pomIncludes>
-                                <pomInclude>projects/*/pom.xml</pomInclude>
-                            </pomIncludes>
-                            <goals>
-                                <goal>clean</goal>
-                                <goal>verify</goal>
-                            </goals>
-                            <streamLogs>true</streamLogs>
-                            <showErrors>true</showErrors>
-                            <skipInvocation>${maven.test.skip}</skipInvocation>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
