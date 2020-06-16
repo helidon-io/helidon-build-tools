@@ -34,10 +34,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.ant</groupId>
-            <artifactId>ant</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
         </dependency>
@@ -86,7 +82,7 @@
                         </goals>
                         <configuration>
                             <extraArtifacts>
-                                <extraArtifact>io.helidon:helidon-docs:2.0.0-RC1:jar</extraArtifact>
+                                <extraArtifact>io.helidon:helidon-project:2.0.0-RC1:jar:site</extraArtifact>
                                 <extraArtifact>io.helidon:helidon-docs:1.4.3:jar</extraArtifact>
                                 <extraArtifact>io.helidon:helidon-docs:1.4.2:jar</extraArtifact>
                                 <extraArtifact>io.helidon:helidon-docs:1.4.1:jar</extraArtifact>

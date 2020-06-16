@@ -44,6 +44,14 @@ interface StagingContext {
     void archive(Path directory, Path target, String excludes, String includes);
 
     /**
+     * Resolve a path in the project.
+     *
+     * @param path path to resolve
+     * @return Path
+     */
+    Path resolve(String path);
+
+    /**
      * Resolve the given GAV.
      *
      * @param gav the GAV to resolve

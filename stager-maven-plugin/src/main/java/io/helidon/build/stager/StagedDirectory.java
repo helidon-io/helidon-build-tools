@@ -19,8 +19,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Generate a directory using a set of tasks.
@@ -64,9 +64,9 @@ final class StagedDirectory {
      */
     void execute(StagingContext context, Path dir) throws IOException {
         Path targetDir = dir.resolve(target);
-        Files.createDirectory(targetDir);
+        Files.createDirectories(targetDir);
         for (StagingTask task : tasks) {
-            task.execute(context, targetDir, Map.of());
+            task.execute(context, targetDir, new HashMap<>());
         }
     }
 }

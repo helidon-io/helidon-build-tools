@@ -37,6 +37,7 @@ import org.codehaus.plexus.archiver.manager.ArchiverManager;
 import org.codehaus.plexus.archiver.manager.NoSuchArchiverException;
 import org.codehaus.plexus.archiver.util.DefaultFileSet;
 import org.codehaus.plexus.components.io.fileselectors.IncludeExcludeFileSelector;
+import org.codehaus.plexus.configuration.PlexusConfiguration;
 import org.codehaus.plexus.util.StringUtils;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
@@ -95,21 +96,28 @@ public class StagerMojo extends AbstractMojo {
     private File outputDirectory;
 
     /**
+     * The project base directory. (e.g. {@code ./})
+     */
+    @Parameter(defaultValue = "${project.basedir}", readonly = true, required = true)
+    private File baseDirectory;
+
+    /**
      * The directories to stage.
      */
     @Parameter(required = true)
-    private List<StagedDirectory> directories;
+    private PlexusConfiguration directories;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (directories == null) {
             return;
         }
-        StagingContext context = new StagingContextImpl(outputDirectory, getLog(), repoSystem, repoSession, remoteRepos,
-                archiverManager);
+        StagingContext context = new StagingContextImpl(baseDirectory, outputDirectory, getLog(), repoSystem,
+                repoSession, remoteRepos, archiverManager);
         Path dir = outputDirectory.toPath();
+
         try {
-            for (StagedDirectory stagedDir : directories) {
+            for (StagedDirectory stagedDir : StagedDirectoryConverter.fromConfiguration(directories)) {
                 stagedDir.execute(context, dir);
             }
         } catch (IOException ex) {
@@ -123,19 +131,22 @@ public class StagerMojo extends AbstractMojo {
     private static final class StagingContextImpl implements StagingContext {
 
         private final Log log;
+        private final File baseDir;
         private final File outputDir;
         private final RepositorySystem repoSystem;
         private final RepositorySystemSession repoSession;
         private final List<RemoteRepository> remoteRepos;
         private final ArchiverManager archiverManager;
 
-        StagingContextImpl(File outputDir,
+        StagingContextImpl(File baseDir,
+                           File outputDir,
                            Log log,
                            RepositorySystem repoSystem,
                            RepositorySystemSession repoSession,
                            List<RemoteRepository> remoteRepos,
                            ArchiverManager archiverManager) {
 
+            this.baseDir = baseDir;
             this.outputDir = outputDir;
             this.log = log;
             this.repoSystem = repoSystem;
@@ -195,6 +206,11 @@ public class StagerMojo extends AbstractMojo {
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
+        }
+
+        @Override
+        public Path resolve(String path) {
+            return baseDir.toPath().resolve(path);
         }
 
         @Override

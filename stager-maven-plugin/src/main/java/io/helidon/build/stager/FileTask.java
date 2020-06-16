@@ -60,7 +60,7 @@ final class FileTask extends StagingTask {
         String resolvedContent = resolveVar(content, variables);
         Path targetFile = dir.resolve(resolvedTarget);
         if (resolvedSource != null && !resolvedSource.isEmpty()) {
-            Path sourceFile = dir.resolve(resolvedSource);
+            Path sourceFile = context.resolve(resolvedSource);
             if (!Files.exists(sourceFile)) {
                 throw new IllegalStateException(sourceFile + " does not exist");
             }

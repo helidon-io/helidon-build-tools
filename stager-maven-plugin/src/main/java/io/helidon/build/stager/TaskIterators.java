@@ -45,12 +45,13 @@ final class TaskIterators implements Iterable<Variables> {
             for (Variable variable : variables) {
                 List<String> values = new LinkedList<>();
                 iterator.put(variable.name(), values);
-                if (variable.value().isSimple()) {
-                    values.add(variable.value().asSimple().text());
-                } else {
-                    for (VariableValue v : variable.value().asList().list()) {
-                        if (v.isSimple()) {
-                            values.add(v.asSimple().text());
+                Object unwrappedValue = variable.value().unwrap();
+                if (unwrappedValue instanceof String) {
+                    values.add((String) unwrappedValue);
+                } else if (unwrappedValue instanceof List) {
+                    for (Object o : (List) unwrappedValue) {
+                        if (o instanceof String) {
+                            values.add((String) o);
                         }
                     }
                 }

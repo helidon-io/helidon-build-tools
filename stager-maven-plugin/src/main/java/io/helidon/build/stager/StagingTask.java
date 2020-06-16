@@ -63,10 +63,16 @@ abstract class StagingTask {
      * @throws IOException if an IO error occurs
      * @throws IOException if an IO error occurs
      */
+    @SuppressWarnings("unchecked")
     void execute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
+        if (iterators.isEmpty()) {
+            doExecute(context, dir, variables);
+            return;
+        }
         for (Map<String, List<String>> iterator : iterators) {
             Map<String, String> vars = new HashMap<>(variables);
-            Map.Entry<String, List<String>>[] entries = iterator.entrySet().toArray(new Map.Entry[iterator.size()]);
+            Map.Entry<String, List<String>>[] entries = new Map.Entry[iterator.size()];
+            entries = iterator.entrySet().toArray(entries);
             int numIterations = 1;
             for (Map.Entry<String, List<String>> entry : entries) {
                 numIterations *= entry.getValue().size();

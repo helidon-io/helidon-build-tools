@@ -20,6 +20,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -58,9 +59,10 @@ final class DownloadTask extends StagingTask {
     @Override
     protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
         String resolvedTarget = resolveVar(target(), variables);
-        String resolvedUrl = resolveVar(url, variables);
+        URL resolvedUrl = new URL(resolveVar(url, variables));
         context.logInfo("Downloading %s to %s", resolvedUrl, resolvedTarget);
         Path targetFile = dir.resolve(resolvedTarget);
+        Files.createDirectories(targetFile.getParent());
         try (BufferedInputStream bis = new BufferedInputStream(open(resolvedUrl))) {
             try (FileOutputStream fos = new FileOutputStream(targetFile.toFile())) {
                 int n;
@@ -71,9 +73,9 @@ final class DownloadTask extends StagingTask {
         }
     }
 
-    private InputStream open(String url) throws IOException {
+    private InputStream open(URL url) throws IOException {
         return NetworkConnection.builder()
-                .url(new URL(url))
+                .url(url)
                 .open();
     }
 }

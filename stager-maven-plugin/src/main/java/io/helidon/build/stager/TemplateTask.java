@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,19 +31,19 @@ import static io.helidon.build.util.MustacheHelper.renderMustacheTemplate;
 final class TemplateTask extends StagingTask {
 
     private final String source;
-    private final Map<String, VariableValue> variables;
+    private final Map<String, Object> templateVariables;
 
     TemplateTask(List<Map<String, List<String>>> iterators,
                  String source,
                  String target,
-                 Map<String, VariableValue> variables) {
+                 Map<String, Object> templateVariables) {
 
         super(iterators, target);
         if (source == null || source.isEmpty()) {
             throw new IllegalArgumentException("source is required");
         }
         this.source = source;
-        this.variables = variables == null ? Collections.emptyMap() : variables;
+        this.templateVariables = templateVariables == null ? Collections.emptyMap() : templateVariables;
     }
 
     /**
@@ -59,19 +60,20 @@ final class TemplateTask extends StagingTask {
      *
      * @return map of variable values, never {@code null}
      */
-    Map<String, VariableValue> variables() {
-        return variables;
+    Map<String, Object> templateVariables() {
+        return templateVariables;
     }
 
     @Override
     protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
         String resolvedTarget = resolveVar(target(), variables);
         String resolvedSource = resolveVar(source, variables);
-        Path sourceFile = dir.resolve(resolvedSource);
+        Path sourceFile = context.resolve(resolvedSource);
         if (!Files.exists(sourceFile)) {
             throw new IllegalStateException(sourceFile + " does not exist");
         }
         Path targetFile = dir.resolve(resolvedTarget);
-        renderMustacheTemplate(sourceFile.toFile(), resolvedSource, targetFile, variables);
+        Map<String, Object> scope = new HashMap<>();
+        renderMustacheTemplate(sourceFile.toFile(), resolvedSource, targetFile, templateVariables);
     }
 }

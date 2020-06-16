@@ -15,8 +15,11 @@
  */
 package io.helidon.build.stager;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -87,6 +90,13 @@ final class UnpackArtifactTask extends StagingTask {
         Path artifact = context.resolve(resolvedGav);
         Path targetDir = dir.resolve(resolvedTarget);
         context.logInfo("Unpacking %s to %s", artifact, targetDir);
-        context.unpack(artifact, targetDir, includes, excludes);
+        if (Files.exists(targetDir)) {
+            Files.walk(targetDir)
+                    .sorted(Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(File::delete);
+        }
+        Files.createDirectories(targetDir);
+        context.unpack(artifact, targetDir, excludes, includes);
     }
 }

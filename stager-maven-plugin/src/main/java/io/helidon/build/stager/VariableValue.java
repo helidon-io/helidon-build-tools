@@ -19,73 +19,28 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Variable value.
  *
- * @see SimpleValue
- * @see ListValue
+ * @see io.helidon.build.stager.VariableValue.SimpleValue
+ * @see io.helidon.build.stager.VariableValue.ListValue
+ * @param <T> value type
  */
-abstract class VariableValue {
+abstract class VariableValue<T> {
 
     /**
-     * Test if this value is a simple value.
+     * Convert this value to a plain object.
      *
-     * @return {@code true} if this is a simple value, {@code false} otherwise
+     * @return T
      */
-    boolean isSimple() {
-        return this instanceof SimpleValue;
-    }
-
-    /**
-     * Test if this value is a list value.
-     *
-     * @return {@code true} if this is a list value, {@code false} otherwise
-     */
-    boolean isList() {
-        return this instanceof ListValue;
-    }
-
-    /**
-     * Test if this value is a map value.
-     *
-     * @return {@code true} if this is a map value, {@code false} otherwise
-     */
-    boolean isMap() {
-        return this instanceof MapValue;
-    }
-
-    /**
-     * Get this value as a {@link SimpleValue}.
-     *
-     * @return SimpleValue
-     */
-    SimpleValue asSimple() {
-        return (SimpleValue) this;
-    }
-
-    /**
-     * Get this value as a {@link ListValue}.
-     *
-     * @return ListValue
-     */
-    ListValue asList() {
-        return (ListValue) this;
-    }
-
-    /**
-     * Get this value as a {@link MapValue}.
-     *
-     * @return MapValue
-     */
-    MapValue asMap() {
-        return (MapValue) this;
-    }
+    abstract T unwrap();
 
     /**
      * Simple text value.
      */
-    static final class SimpleValue extends VariableValue {
+    static final class SimpleValue extends VariableValue<String> {
 
         private final String text;
 
@@ -96,11 +51,8 @@ abstract class VariableValue {
             this.text = text;
         }
 
-        /**
-         * Get the text of this simple value.
-         * @return text, never {@code null}
-         */
-        String text() {
+        @Override
+        String unwrap() {
             return text;
         }
     }
@@ -108,50 +60,41 @@ abstract class VariableValue {
     /**
      * A value that holds a list of values.
      */
-    static final class ListValue extends VariableValue {
+    static final class ListValue extends VariableValue<List<Object>> {
 
-        private final List<VariableValue> list;
+        private final List<VariableValue> value;
 
-        ListValue(List<VariableValue> list) {
-            this.list = list == null ? Collections.emptyList() : list;
+        ListValue(List<VariableValue> value) {
+            this.value = value == null ? Collections.emptyList() : value;
         }
 
-        /**
-         * Get the values.
-         *
-         * @return list of text values, never {@code null}
-         */
-        List<VariableValue> list() {
-            return list;
+        @Override
+        List<Object> unwrap() {
+            return value.stream().map(VariableValue::unwrap).collect(Collectors.toList());
         }
     }
-
 
     /**
      * A value that holds a list of values.
      */
-    static final class MapValue extends VariableValue {
+    static final class MapValue extends VariableValue<Map<String, Object>> {
 
-        private final Map<String, VariableValue> map;
+        private final Map<String, VariableValue> value;
 
-        MapValue(List<Variable> variables) {
+        MapValue(List<Variable> value) {
             if (this == null) {
-                this.map = Collections.emptyMap();
+                this.value = Collections.emptyMap();
             } else {
-                this.map = new HashMap<>();
-                for (Variable variable : variables) {
-                    map.put(variable.name(), variable.value());
+                this.value = new HashMap<>();
+                for (Variable variable : value) {
+                    this.value.put(variable.name(), variable.value());
                 }
             }
         }
 
-        /**
-         * Get the values.
-         *
-         * @return map of values, never {@code null}
-         */
-        Map<String, VariableValue> map() {
-            return map;
+        @Override
+        Map<String, Object> unwrap() {
+            return value.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().unwrap()));
         }
     }
 }

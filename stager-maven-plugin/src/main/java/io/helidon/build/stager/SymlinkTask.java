@@ -16,14 +16,10 @@
 package io.helidon.build.stager;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.tools.ant.BuildEvent;
-import org.apache.tools.ant.BuildListener;
-import org.apache.tools.ant.Project;
-import org.apache.tools.ant.taskdefs.optional.unix.Symlink;
 
 /**
  * Create a symlink.
@@ -50,57 +46,9 @@ final class SymlinkTask extends StagingTask {
 
     @Override
     protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
-        String resolvedTarget = resolveVar(target(), variables);
-        String resolvedSource = resolveVar(source, variables);
-        context.logInfo("Creating symlink source: %s, target: %s", resolvedSource, resolvedTarget);
-        Project antProject = new Project();
-        antProject.setBaseDir(dir.toFile());
-        antProject.addBuildListener(new AntBuildListener(context));
-        Symlink symlink = new Symlink();
-        symlink.setProject(antProject);
-        symlink.setResource(resolvedSource);
-        symlink.setLink(resolvedTarget);
-        symlink.execute();
-    }
-
-    /**
-     * {@code BuilderListener} implementation to log Ant events.
-     */
-    private static final class AntBuildListener implements BuildListener {
-
-        private final StagingContext context;
-
-        private AntBuildListener(final StagingContext context) {
-            this.context = context;
-        }
-
-        @Override
-        public void buildStarted(final BuildEvent event) {
-        }
-
-        @Override
-        public void buildFinished(final BuildEvent event) {
-        }
-
-        @Override
-        public void targetStarted(final BuildEvent event) {
-        }
-
-        @Override
-        public void targetFinished(final BuildEvent event) {
-        }
-
-        @Override
-        public void taskStarted(final BuildEvent event) {
-        }
-
-        @Override
-        public void taskFinished(final BuildEvent event) {
-        }
-
-        @Override
-        public void messageLogged(final BuildEvent event) {
-            context.logDebug("[symlink] %s", event.getMessage());
-        }
+        Path link = dir.resolve(resolveVar(target(), variables));
+        Path linkTarget = link.getParent().relativize(dir.resolve(resolveVar(source, variables)));
+        context.logInfo("Creating symlink source: %s, target: %s", link, linkTarget);
+        Files.createSymbolicLink(link, linkTarget);
     }
 }

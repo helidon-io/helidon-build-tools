@@ -22,17 +22,13 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import org.codehaus.plexus.component.configurator.ComponentConfigurationException;
 import org.codehaus.plexus.component.configurator.ConfigurationListener;
-import org.codehaus.plexus.component.configurator.converters.ConfigurationConverter;
-import org.codehaus.plexus.component.configurator.converters.lookup.ConverterLookup;
-import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluator;
 import org.codehaus.plexus.configuration.PlexusConfiguration;
 
 /**
  * Configuration converter for {@link StagedDirectory}.
  */
-public class StagedDirectoryConverter implements ConfigurationConverter {
+final class StagedDirectoryConverter {
 
     private static final NoopListener NOOP_LISTENER = new NoopListener();
     private static final List<Class<? extends StagingTask>> ALL_TASKS = List.of(
@@ -47,43 +43,20 @@ public class StagedDirectoryConverter implements ConfigurationConverter {
             .map(c -> taskName(c))
             .collect(Collectors.toList());
 
-    @Override
-    public boolean canConvert(Class<?> type) {
-        return StagedDirectory.class.getName().equals(type.getName());
+    private StagedDirectoryConverter() {
     }
 
-    @Override
-    public Object fromConfiguration(ConverterLookup lookup,
-                                    PlexusConfiguration configuration,
-                                    Class<?> type,
-                                    Class<?> enclosingType,
-                                    ClassLoader loader,
-                                    ExpressionEvaluator evaluator) throws ComponentConfigurationException {
-
-        return fromConfiguration(lookup, configuration, type, enclosingType, loader, evaluator, NOOP_LISTENER);
-    }
-
-    @Override
-    public StagedDirectory fromConfiguration(ConverterLookup lookup,
-                                    PlexusConfiguration configuration,
-                                    Class<?> type,
-                                    Class<?> enclosingType,
-                                    ClassLoader loader,
-                                    ExpressionEvaluator evaluator,
-                                    ConfigurationListener listener) throws ComponentConfigurationException {
-
-        try {
-            PlexusConfigNode parent = new PlexusConfigNode(configuration, null);
-            VisitorImpl visitor = new VisitorImpl();
-            parent.visit(visitor);
-            return new StagedDirectory(parent.attributes().get("target"), visitor.nestedTasks(parent));
-        } catch (IllegalArgumentException | IllegalStateException ex) {
-            throw new ComponentConfigurationException(ex.getMessage(), ex);
-        }
-    }
-
-    StagedDirectory fromConfiguration(PlexusConfiguration configuration) throws ComponentConfigurationException {
-        return fromConfiguration(null, configuration, null, null, null, null, NOOP_LISTENER);
+    /**
+     * Convert a {@link PlexusConfiguration} instance to a list of {@link StagedDirectory}.
+     *
+     * @param configuration plexus configuration
+     * @return list of {@link StagedDirectory}
+     */
+    static List<StagedDirectory> fromConfiguration(PlexusConfiguration configuration) {
+        PlexusConfigNode parent = new PlexusConfigNode(configuration, null);
+        VisitorImpl visitor = new VisitorImpl();
+        parent.visit(visitor);
+        return visitor.nestedDirectories(parent);
     }
 
     private static final class VisitorImpl implements Consumer<PlexusConfigNode> {
@@ -107,6 +80,9 @@ public class StagedDirectoryConverter implements ConfigurationConverter {
                 addTasks(node, node.name(), List.of(processTask(node)));
             } else {
                 switch (node.name()) {
+                    case "directory":
+                        addNested(node, "directory", List.of(processDirectory(node)));
+                        break;
                     case "unpack-artifacts":
                         addTasks(node, "unpack-artifact",
                                 listAs(mappings.get("unpack-artifact"), UnpackArtifactTask.class));
@@ -170,6 +146,10 @@ public class StagedDirectoryConverter implements ConfigurationConverter {
             addNested(node, name, tasks);
         }
 
+        StagedDirectory processDirectory(PlexusConfigNode node) {
+            return new StagedDirectory(node.attributes().get("target"), nestedTasks(node));
+        }
+
         StagingTask processTask(PlexusConfigNode node) {
             Map<String, String> attrs = node.attributes();
             List<Map<String, List<String>>> taskIterators = nestedTaskIterators(node);
@@ -202,7 +182,7 @@ public class StagedDirectoryConverter implements ConfigurationConverter {
                     return new TemplateTask(taskIterators,
                             attrs.get("source"),
                             attrs.get("target"),
-                            templateVariables(node));
+                            nestedTemplateVariables(node));
                 case "file":
                     return new FileTask(taskIterators,
                             attrs.get("target"),
@@ -244,7 +224,17 @@ public class StagedDirectoryConverter implements ConfigurationConverter {
             return tasks;
         }
 
-        Map<String, VariableValue> templateVariables(PlexusConfigNode node) {
+        List<StagedDirectory> nestedDirectories(PlexusConfigNode node) {
+            List<StagingTask> tasks = new LinkedList<>();
+            Map<String, List<Object>> mappings = allMappings.get(node);
+            List<Object> directories = mappings.get("directory");
+            if (directories == null) {
+                return List.of();
+            }
+            return listAs(directories, StagedDirectory.class);
+        }
+
+        Map<String, Object> nestedTemplateVariables(PlexusConfigNode node) {
             Map<String, List<Object>> mappings = allMappings.get(node);
             List<Object> variables = mappings.get("variables");
             if (variables.size() > 1) {
@@ -254,7 +244,9 @@ public class StagedDirectoryConverter implements ConfigurationConverter {
             if (variables.isEmpty()) {
                 return Map.of();
             }
-            return objectAs(variables.get(0), Variables.class).asMap();
+            Map<String, VariableValue> map = objectAs(variables.get(0), Variables.class).asMap();
+            return map.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().unwrap()));
         }
 
         List<Map<String, List<String>>> nestedTaskIterators(PlexusConfigNode node) {
