@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -167,6 +168,33 @@ public class Metadata {
     }
 
     /**
+     * Checks whether or not there is a more recent Helidon version available and returns the version if so.
+     *
+     * @return A valid Helidon version if a more recent CLI is available.
+     * @throws Exception If an error occurs.
+     */
+    public Optional<MavenVersion> checkForCliUpdate() throws Exception {
+        return checkForCliUpdate(toMavenVersion(Config.buildVersion()));
+    }
+
+    /**
+     * Checks whether or not there is a more recent Helidon version available and returns the version if so.
+     *
+     * @param thisCliVersion The version of this CLI.
+     * @return A valid Helidon version if a more recent CLI is available.
+     * @throws Exception If an error occurs.
+     */
+    public Optional<MavenVersion> checkForCliUpdate(MavenVersion thisCliVersion) throws Exception {
+        final MavenVersion latestHelidonVersion = latestVersion();
+        final MavenVersion latestCliVersion = cliVersionOf(latestHelidonVersion);
+        if (latestCliVersion.isGreaterThan(thisCliVersion)) {
+            return Optional.of(latestCliVersion);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    /**
      * Returns the release notes for the given Helidon version that are more recent than the current CLI version.
      *
      * @param helidonVersion The version.
@@ -175,7 +203,6 @@ public class Metadata {
      */
     public Map<MavenVersion, String> cliReleaseNotesOf(MavenVersion helidonVersion) throws Exception {
         return cliReleaseNotesOf(helidonVersion, toMavenVersion(Config.buildVersion()));
-
     }
 
     /**

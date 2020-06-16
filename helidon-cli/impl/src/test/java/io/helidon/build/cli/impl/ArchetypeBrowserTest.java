@@ -36,7 +36,7 @@ public class ArchetypeBrowserTest extends MetadataCommandTest {
 
     @BeforeEach
     public void beforeEach() {
-        startMetadataAccess(false);
+        startMetadataAccess(false, false);
     }
 
     @AfterEach

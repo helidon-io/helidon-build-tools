@@ -24,9 +24,12 @@ import org.junit.jupiter.api.Test;
  */
 public class InitDefaultTest extends MetadataCommandTest {
 
+    private InitTestHelper helper;
+
     @BeforeEach
     public void beforeEach() {
-        startMetadataAccess(false);
+        startMetadataAccess(false, false);
+        helper = new InitTestHelper(metadataUrl());
     }
 
     @AfterEach
@@ -36,41 +39,35 @@ public class InitDefaultTest extends MetadataCommandTest {
 
     @Test
     public void testDefaults() throws Exception {
-        InitTestHelper helper = new InitTestHelper();
         helper.execute();
     }
 
     @Test
     public void testFlavor() throws Exception {
-        InitTestHelper helper = new InitTestHelper();
         helper.flavor("MP");
         helper.execute();
     }
 
     @Test
     public void testGroupId() throws Exception {
-        InitTestHelper helper = new InitTestHelper();
         helper.groupId("io.helidon.basicapp");
         helper.execute();
     }
 
     @Test
     public void testArtifactId() throws Exception {
-        InitTestHelper helper = new InitTestHelper();
         helper.artifactId("basicapp");
         helper.execute();
     }
 
     @Test
     public void testPackage() throws Exception {
-        InitTestHelper helper = new InitTestHelper();
         helper.packageName("io.helidon.mypackage");
         helper.execute();
     }
 
     @Test
     public void testName() throws Exception {
-        InitTestHelper helper = new InitTestHelper();
         helper.name("mybasicproject");
         helper.execute();
     }

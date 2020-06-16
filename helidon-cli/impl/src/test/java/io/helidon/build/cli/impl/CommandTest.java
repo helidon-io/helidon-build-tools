@@ -46,7 +46,7 @@ public class CommandTest extends MetadataCommandTest {
     @Test
     @Order(1)
     public void testInit() throws Exception {
-        startMetadataAccess(false);
+        startMetadataAccess(false, false);
         try {
             exec("init",
                     "--url", metadataUrl(),

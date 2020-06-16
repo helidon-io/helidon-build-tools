@@ -61,7 +61,7 @@ public class MetadataTest {
     private CapturingLogWriter logged;
     private Metadata meta;
     private MavenVersion latestVersion;
-    private MetadataTestServer mockServer;
+    private MetadataTestServer testServer;
 
     @BeforeEach
     public void beforeEach(TestInfo info) throws IOException {
@@ -82,8 +82,8 @@ public class MetadataTest {
     @AfterEach
     public void afterEach() {
         logged.uninstall();
-        if (mockServer != null) {
-            mockServer.stop();
+        if (testServer != null) {
+            testServer.stop();
         }
     }
 
@@ -104,13 +104,13 @@ public class MetadataTest {
     }
 
     /**
-     * Starts the mock server and client and sets the base url pointing to it.
+     * Starts the metadata test server and client and sets the base url pointing to it.
      *
      * @param latestVersion The version to return from "/latest"
      */
-    protected void startMockServer(TestVersion latestVersion) {
-        mockServer = new MetadataTestServer(latestVersion, false).start();
-        useBaseUrl(mockServer.url());
+    protected void startMetadataTestServer(TestVersion latestVersion) {
+        testServer = new MetadataTestServer(latestVersion, false).start();
+        useBaseUrl(testServer.url());
     }
 
     /**
@@ -192,6 +192,25 @@ public class MetadataTest {
         MavenVersion expected = toMavenVersion(TestMetadata.RC1);
         assertThat(meta.buildToolsVersionOf(latestVersion), is(expected));
         assertThat(meta.cliVersionOf(latestVersion), is(expected));
+    }
+
+    @Test
+    void testCheckForCliUpdate() throws Exception {
+
+        // Setup with RC2 as latest
+
+        startMetadataTestServer(TestVersion.RC2);
+        meta = newDefaultInstance();
+
+        // Simulate different cli versions
+
+        MavenVersion cliVersionRc1 = toMavenVersion(TestMetadata.RC1);
+        MavenVersion cliVersionRc2 = toMavenVersion(TestMetadata.RC2);
+
+        assertThat(meta.checkForCliUpdate(cliVersionRc2).isPresent(), is(false));
+
+        assertThat(meta.checkForCliUpdate(cliVersionRc1).isPresent(), is(true));
+        assertThat(meta.checkForCliUpdate(cliVersionRc1).orElseThrow(), is(cliVersionRc2));
     }
 
     @Test
@@ -292,7 +311,7 @@ public class MetadataTest {
 
     @Test
     void testZipIsNotDownloadedWhenEtagMatches() throws Exception {
-        startMockServer(TestVersion.RC1);
+        startMetadataTestServer(TestVersion.RC1);
         assertZipIsNotDownloadedFromServerWhenEtagMatches();
     }
 
@@ -315,12 +334,13 @@ public class MetadataTest {
     }
 
     @Test
-        // NOTE: This test case can only work against mock server
     void testUpdateWhenLatestChanges() throws Exception {
 
-        // Setup mock server with latest set to RC2
+        // NOTE: This test case can only work against test server since it will uses the "<initial> etag
 
-        startMockServer(TestVersion.RC2);
+        // Setup test server with latest set to RC2
+
+        startMetadataTestServer(TestVersion.RC2);
 
         // Make the initial latestVersion call and validate the result
 
@@ -340,7 +360,7 @@ public class MetadataTest {
 
     @Test
     void testCatalogUpdatesWhenUnseenVersionRequested() throws Exception {
-        startMockServer(TestVersion.RC2);
+        startMetadataTestServer(TestVersion.RC2);
         assertServerUpdatesWhenUnseenRC2VersionRequested();
     }
 

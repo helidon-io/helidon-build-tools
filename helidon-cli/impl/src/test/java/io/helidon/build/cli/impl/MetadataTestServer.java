@@ -121,7 +121,6 @@ public class MetadataTestServer {
      */
     @SuppressWarnings("BusyWait")
     public MetadataTestServer start() {
-        Log.info("Starting metadata test server with latest=%s at %s", latest, url);
         mockServer = ClientAndServer.startClientAndServer(port);
 
         // Set the version to return for "/latest"
@@ -166,7 +165,7 @@ public class MetadataTestServer {
                 throw new RuntimeException(e);
             }
             if (--retries > 0) {
-                Log.info("Waiting for server start, remaining retries = %s", retries);
+                Log.info("Waiting for metadata test server to start, remaining retries = %s", retries);
             } else {
                 stop();
                 throw new IllegalStateException("Metadata test server did not start.");

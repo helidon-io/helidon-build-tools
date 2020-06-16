@@ -43,11 +43,11 @@ public class InitInteractiveTest extends MetadataCommandTest {
     @Test
     @Order(1)
     public void testInitSe() throws Exception {
-        startMetadataAccess(false);
+        startMetadataAccess(false, false);
         try {
             File input = new File(InitCommand.class.getResource("input.txt").getFile());
             execWithDirAndInput(targetDir.toFile(), input,
-                    "init", "--version", helidonTestVersion());
+                    "init", "--url", metadataUrl(), "--version", helidonTestVersion());
             assertPackageExist(targetDir.resolve(DEFAULT_NAME), DEFAULT_PACKAGE);
         } finally {
             stopMetadataAccess();
@@ -65,13 +65,18 @@ public class InitInteractiveTest extends MetadataCommandTest {
     @Test
     @Order(3)
     public void testInitMp() throws Exception {
-        File input = new File(InitCommand.class.getResource("input.txt").getFile());
-        execWithDirAndInput(targetDir.toFile(), input,
-                "init", "--version", helidonTestVersion(), "--flavor", "MP");
-        assertPackageExist(targetDir.resolve(DEFAULT_NAME), DEFAULT_PACKAGE);
-        Path config = targetDir.resolve(DEFAULT_NAME)
-                               .resolve("src/main/resources/META-INF/microprofile-config.properties");
-        assertTrue(config.toFile().exists());
+        startMetadataAccess(false, false);
+        try {
+            File input = new File(InitCommand.class.getResource("input.txt").getFile());
+            execWithDirAndInput(targetDir.toFile(), input,
+                    "init", "--url", metadataUrl(), "--version", helidonTestVersion(), "--flavor", "MP");
+            assertPackageExist(targetDir.resolve(DEFAULT_NAME), DEFAULT_PACKAGE);
+            Path config = targetDir.resolve(DEFAULT_NAME)
+                                   .resolve("src/main/resources/META-INF/microprofile-config.properties");
+            assertTrue(config.toFile().exists());
+        } finally {
+            stopMetadataAccess();
+        }
     }
 
     @Test

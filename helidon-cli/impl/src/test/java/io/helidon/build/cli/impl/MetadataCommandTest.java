@@ -15,8 +15,12 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 import io.helidon.build.test.TestFiles;
+import io.helidon.build.util.UserConfig;
 
 /**
  * Base class for command tests that require the {@link Metadata}.
@@ -26,8 +30,16 @@ public class MetadataCommandTest extends BaseCommandTest {
     private MetadataTestServer server;
     private Metadata metadata;
 
-    public void startMetadataAccess(boolean verbose) {
+    public void startMetadataAccess(boolean verbose, boolean clearCache) {
         Config.setUserHome(TestFiles.targetDir().resolve("alice"));
+        if (clearCache) {
+            final UserConfig userConfig = Config.userConfig();
+            try {
+                userConfig.clearCache();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
         server = new MetadataTestServer(TestVersion.RC1, verbose).start();
         metadata = Metadata.newInstance(server.url());
     }
