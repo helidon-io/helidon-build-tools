@@ -57,7 +57,6 @@ public class MetadataTest {
     static final URL TEST_CLI_DATA_URL = requireNonNull(MetadataTest.class.getClassLoader().getResource("cli-data"));
     static final Path TEST_CLI_DATA_PATH = assertDir(Path.of(TEST_CLI_DATA_URL.getFile()));
     static final int MOCK_SERVER_PORT = 8087;
-    static final String MOCK_SERVER_BASE_URL = "http://localhost:" + MOCK_SERVER_PORT;
     static final String LATEST_FILE_NAME = "latest";
     static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     static final String CLI_DATA_FILE_NAME = "cli-data.zip";
@@ -87,7 +86,7 @@ public class MetadataTest {
     @BeforeEach
     public void beforeEach(TestInfo info) throws IOException {
         final String testName = info.getTestMethod().orElseThrow().getName();
-        Log.info("%n--- Start $(bold %s) -------------------------------------------%n", testName);
+        Log.info("%n--- MetadataTest $(bold %s) -------------------------------------------%n", testName);
 
         Config.setUserHome(TestFiles.targetDir().resolve("alice"));
         final UserConfig userConfig = Config.userConfig();
@@ -141,6 +140,10 @@ public class MetadataTest {
      */
     protected Metadata newInstance(long updateFrequency, TimeUnit updateFrequencyUnits) {
         return Metadata.newInstance(cacheDir, baseUrl, updateFrequency, updateFrequencyUnits, true);
+    }
+
+    private Metadata newDefaultInstance() {
+        return newInstance(24, TimeUnit.HOURS);
     }
 
     @Test
@@ -211,7 +214,7 @@ public class MetadataTest {
 
     @Test
     void testReleaseNotes() throws Exception {
-        meta = newInstance(24, TimeUnit.HOURS);
+        meta = newDefaultInstance();
         MavenVersion helidonVersion = toMavenVersion(RC2);
 
         // Check from M1

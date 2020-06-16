@@ -108,7 +108,7 @@ public final class InfoCommand extends BaseCommand implements CommandExecution {
         log("System Properties", systemProps, maxWidth);
         log("Environment Variables", envVars, maxWidth);
         logHeader("Plugin Build");
-        Plugins.execute("GetInfo", pluginArgs(maxWidth), 5);
+        Plugins.execute("GetInfo", pluginArgs(maxWidth), 5, Log::info);
     }
 
     private List<String> pluginArgs(int maxWidth) {

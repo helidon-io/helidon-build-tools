@@ -65,7 +65,7 @@ public class MockMetadataServer {
     private ClientAndServer mockServer;
 
     public static void main(String[] args) {
-        new MockMetadataServer(true).start(RC1);
+        new MockMetadataServer(8080, true).start(RC1);
     }
 
     public MockMetadataServer(boolean verbose) {

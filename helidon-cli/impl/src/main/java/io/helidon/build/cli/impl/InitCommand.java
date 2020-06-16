@@ -17,7 +17,6 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
-import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +40,6 @@ import io.helidon.build.util.ProjectConfig;
 
 import static io.helidon.build.cli.impl.ArchetypeBrowser.ARCHETYPE_NOT_FOUND;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
-import static io.helidon.build.cli.impl.Prompter.displayLine;
 import static io.helidon.build.cli.impl.Prompter.prompt;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
@@ -169,7 +167,6 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         }
 
         // Gather archetype names
-        displayLine("Gathering archetypes ... ");
         ArchetypeBrowser browser = new ArchetypeBrowser(metadata, flavor, helidonVersion);
         List<ArchetypeCatalog.ArchetypeEntry> archetypes = browser.archetypes();
         require(!archetypes.isEmpty(), "Unable to find archetypes for %s and %s.", flavor, helidonVersion);
@@ -259,8 +256,8 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             try {
                 version = metadata.latestVersion().toString();
                 Log.debug("Latest Helidon version found: %s", version);
-            } catch (UnknownHostException e) {
-                Log.info("$(italic,red Unknown host: %s)", e.getMessage());
+            } catch (Plugins.PluginFailed e) {
+                Log.info(e.getMessage());
                 failed("$(bold Cannot lookup version, please specify with --version option.)");
             } catch (Exception e) {
                 Log.info("$(italic,red %s)", e.getMessage());

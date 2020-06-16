@@ -46,7 +46,7 @@ public class Metadata {
     /**
      * The default base url.
      */
-    public static final String DEFAULT_BASE_URL = "https://helidon.io/cli-data";
+    public static final String DEFAULT_BASE_URL = "https://helidon.io";
 
     private static final String LATEST_VERSION_FILE_NAME = "latest";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
@@ -336,8 +336,10 @@ public class Metadata {
         }
         if (debugPlugin) {
             args.add("--debug");
+            Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS, Log::info);
+        } else {
+            Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS);
         }
-        Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS);
     }
 
     private MavenVersion readLatestVersion() throws Exception {
