@@ -23,7 +23,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -32,6 +31,7 @@ import io.helidon.build.util.Log;
 import io.helidon.linker.util.JavaRuntime;
 
 import static io.helidon.linker.util.Constants.DIR_SEP;
+import static java.util.jar.Attributes.Name.IMPLEMENTATION_VERSION;
 
 /**
  * A Helidon application supporting Java dependency collection and installation into a Java Home.
@@ -224,25 +224,12 @@ public final class Application implements ResourceContainer {
     }
 
     private String extractHelidonVersion() {
-        return versionFromFileName(classPath.stream()
-                                            .map(Jar::name)
-                                            .filter(name -> name.startsWith(HELIDON_JAR_NAME_PREFIX))
-                                            .findFirst()
-                                            .orElseThrow(() -> new IllegalStateException("No helidon jars found!")));
-    }
-
-
-    static String versionFromFileName(String fileName) {
-        final int lastDot = fileName.lastIndexOf('.');
-        if (lastDot >= 0) {
-            final String name = fileName.substring(0, lastDot);
-            final boolean snapshot = name.toUpperCase(Locale.ENGLISH).endsWith(SNAPSHOT);
-            final String nonSnapshotName = snapshot ? name.substring(0, name.length() - SNAPSHOT.length()) : name;
-            final int lastDash = nonSnapshotName.lastIndexOf('-');
-            if (lastDash >= 0 && Character.isDigit(name.charAt(lastDash + 1))) {
-                return name.substring(lastDash + 1);
-            }
-        }
-        return UNKNOWN_VERSION;
+        return classPath.stream()
+                        .filter(jar -> jar.name().startsWith(HELIDON_JAR_NAME_PREFIX))
+                        .filter(jar -> jar.manifest() != null)
+                        .filter(jar -> jar.manifest().getMainAttributes().containsKey(IMPLEMENTATION_VERSION))
+                        .map(jar -> jar.manifest().getMainAttributes().getValue(IMPLEMENTATION_VERSION))
+                        .findFirst()
+                        .orElse(UNKNOWN_VERSION);
     }
 }

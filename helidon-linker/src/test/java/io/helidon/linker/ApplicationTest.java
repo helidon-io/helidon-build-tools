@@ -16,11 +16,16 @@
 
 package io.helidon.linker;
 
+import java.nio.file.Path;
+
+import io.helidon.build.test.TestFiles;
+
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.linker.Application.versionFromFileName;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * Unit test for class {@link Application}.
@@ -28,12 +33,12 @@ import static org.hamcrest.Matchers.is;
 class ApplicationTest {
 
     @Test
-    void testVersionParsing() {
-        assertThat(versionFromFileName("helidon-config-1.4.2.jar"), is("1.4.2"));
-        assertThat(versionFromFileName("helidon-config-1.4.3-SNAPSHOT.jar"), is("1.4.3-SNAPSHOT"));
-        assertThat(versionFromFileName("helidon-config-2.0.jar"), is("2.0"));
-        assertThat(versionFromFileName("helidon-config-2.0-SNAPSHOT.jar"), is("2.0-SNAPSHOT"));
-        assertThat(versionFromFileName("helidon-config.jar"), is("0.0.0"));
+    void testHelidonVersion() {
+        Path mainJar = TestFiles.helidonMpJar();
+        Application app = Application.create(mainJar);
+        String version = app.helidonVersion();
+        assertThat(version, is(notNullValue()));
+        assertThat(version, is(not("0.0.0")));
     }
 
     @Test
