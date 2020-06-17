@@ -21,28 +21,41 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.archetype.engine.ArchetypeCatalog.ArchetypeEntry;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
-import io.helidon.build.test.CapturingLogWriter;
-import io.helidon.build.test.TestFiles;
 import io.helidon.build.util.ConfigProperties;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
-import io.helidon.build.util.UserConfig;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
-import static io.helidon.build.util.FileUtils.assertDir;
-import static io.helidon.build.util.FileUtils.assertFile;
+import static io.helidon.build.cli.impl.TestMetadata.CLI_DATA_PATH;
+import static io.helidon.build.cli.impl.TestMetadata.HELIDON_BARE_MP;
+import static io.helidon.build.cli.impl.TestMetadata.HELIDON_BARE_SE;
+import static io.helidon.build.cli.impl.TestMetadata.LATEST_FILE_NAME;
+import static io.helidon.build.cli.impl.TestMetadata.MAVEN_VERSION_RC1;
+import static io.helidon.build.cli.impl.TestMetadata.MAVEN_VERSION_RC2;
+import static io.helidon.build.cli.impl.TestMetadata.NO_ETAG;
+import static io.helidon.build.cli.impl.TestMetadata.RC1_CLI_DATA_ZIP_FILE_NAME;
+import static io.helidon.build.cli.impl.TestMetadata.RC1_ETAG;
+import static io.helidon.build.cli.impl.TestMetadata.RC1_LAST_UPDATE;
+import static io.helidon.build.cli.impl.TestMetadata.RC2_CLI_DATA_ZIP_FILE_NAME;
+import static io.helidon.build.cli.impl.TestMetadata.RC2_ETAG;
+import static io.helidon.build.cli.impl.TestMetadata.RC2_LAST_UPDATE;
+import static io.helidon.build.cli.impl.TestMetadata.TEST_CLI_DATA_URL;
+import static io.helidon.build.cli.impl.TestMetadata.TestVersion.RC2;
+import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC1;
+import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC2;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
-import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -53,84 +66,21 @@ import static org.hamcrest.Matchers.nullValue;
 /**
  * Unit test for class {@link Metadata}.
  */
-public class MetadataTest {
-
-    private String baseUrl;
-    private Path cacheDir;
-    private Path latestFile;
-    private CapturingLogWriter logged;
-    private Metadata meta;
-    private MavenVersion latestVersion;
-    private MetadataTestServer testServer;
+public class MetadataTest extends BaseMetadataTest {
 
     @BeforeEach
     public void beforeEach(TestInfo info) throws IOException {
-        final String testName = info.getTestMethod().orElseThrow().getName();
-        Log.info("%n--- MetadataTest $(bold %s) -------------------------------------------%n", testName);
-
-        Config.setUserHome(TestFiles.targetDir().resolve("alice"));
-        final UserConfig userConfig = Config.userConfig();
-        userConfig.clearCache();
-        userConfig.clearPlugins();
-        Plugins.clearPluginJar();
-        useTestCliDataBaseUrl();
-        cacheDir = userConfig.cacheDir();
-        latestFile = cacheDir.resolve(TestMetadata.LATEST_FILE_NAME);
-        logged = CapturingLogWriter.install();
+        prepareEach(info, TEST_CLI_DATA_URL.toExternalForm());
     }
 
     @AfterEach
     public void afterEach() {
-        logged.uninstall();
-        if (testServer != null) {
-            testServer.stop();
-        }
-    }
-
-    /**
-     * Use the test cli-data directory as the base url.
-     */
-    protected void useTestCliDataBaseUrl() {
-        useBaseUrl(TestMetadata.TEST_CLI_DATA_URL.toExternalForm());
-    }
-
-    /**
-     * Use the given url as the base url.
-     *
-     * @param baseUrl The base url.
-     */
-    protected void useBaseUrl(String baseUrl) {
-        this.baseUrl = requireNonNull(baseUrl);
-    }
-
-    /**
-     * Starts the metadata test server and client and sets the base url pointing to it.
-     *
-     * @param latestVersion The version to return from "/latest"
-     */
-    protected void startMetadataTestServer(TestVersion latestVersion) {
-        testServer = new MetadataTestServer(latestVersion, false).start();
-        useBaseUrl(testServer.url());
-    }
-
-    /**
-     * Returns a new {@link Metadata} instance with the given frequency.
-     *
-     * @param updateFrequency The update frequency.
-     * @param updateFrequencyUnits The update frequency units.
-     * @return The instance.
-     */
-    protected Metadata newInstance(long updateFrequency, TimeUnit updateFrequencyUnits) {
-        return Metadata.newInstance(cacheDir, baseUrl, updateFrequency, updateFrequencyUnits, true);
-    }
-
-    private Metadata newDefaultInstance() {
-        return newInstance(24, TimeUnit.HOURS);
+        cleanupEach();
     }
 
     @Test
     void smokeTest() throws Exception {
-        assertInitialLatestVersionRequestPerformsUpdate(24, TimeUnit.HOURS, TestMetadata.RC1, TestMetadata.NO_ETAG);
+        assertInitialLatestVersionRequestPerformsUpdate(24, HOURS, VERSION_RC1, NO_ETAG, false);
 
         // Check properties. Should not perform update.
 
@@ -138,15 +88,15 @@ public class MetadataTest {
         ConfigProperties props = meta.propertiesOf(latestVersion);
         assertThat(props, is(not(nullValue())));
         assertThat(props.keySet().isEmpty(), is(false));
-        assertThat(props.property("helidon.version"), is(TestMetadata.RC1));
-        assertThat(props.property("build-tools.version"), is(TestMetadata.RC1));
-        assertThat(props.property("cli.version"), is(TestMetadata.RC1));
+        assertThat(props.property("helidon.version"), is(VERSION_RC1));
+        assertThat(props.property("build-tools.version"), is(VERSION_RC1));
+        assertThat(props.property("cli.version"), is(VERSION_RC1));
         assertThat(props.contains("cli.2.0.0-M2.message"), is(true));
         assertThat(props.contains("cli.2.0.0-M3.message"), is(false));
         assertThat(props.contains("cli.2.0.0-M4.message"), is(true));
         assertThat(props.contains("cli.2.0.0-RC1.message"), is(true));
         assertThat(logged.size(), is(1));
-        logged.assertLinesContainingAll(1, "stale check", "is false", TestMetadata.RC1_LAST_UPDATE);
+        logged.assertLinesContainingAll(1, "stale check", "is false", RC1_LAST_UPDATE);
 
         // Check catalog. Should not perform update.
 
@@ -158,12 +108,12 @@ public class MetadataTest {
                                                          .stream()
                                                          .collect(Collectors.toMap(ArchetypeEntry::artifactId, entry -> entry));
         assertThat(entriesById.size(), is(2));
-        assertThat(entriesById.get(TestMetadata.HELIDON_BARE_SE), is(notNullValue()));
-        assertThat(entriesById.get(TestMetadata.HELIDON_BARE_SE).name(), is("bare"));
-        assertThat(entriesById.get(TestMetadata.HELIDON_BARE_MP), is(notNullValue()));
-        assertThat(entriesById.get(TestMetadata.HELIDON_BARE_MP).name(), is("bare"));
+        assertThat(entriesById.get(HELIDON_BARE_SE), is(notNullValue()));
+        assertThat(entriesById.get(HELIDON_BARE_SE).name(), is("bare"));
+        assertThat(entriesById.get(HELIDON_BARE_MP), is(notNullValue()));
+        assertThat(entriesById.get(HELIDON_BARE_MP).name(), is("bare"));
         assertThat(logged.size(), is(1));
-        logged.assertLinesContainingAll(1, "stale check", "is false", TestMetadata.RC1_LAST_UPDATE);
+        logged.assertLinesContainingAll(1, "stale check", "is false", RC1_LAST_UPDATE);
 
         // Check archetype. Should not perform update.
 
@@ -173,7 +123,7 @@ public class MetadataTest {
         assertThat(Files.exists(archetypeJar), is(true));
         assertThat(archetypeJar.getFileName().toString(), is("helidon-bare-se-2.0.0-RC1.jar"));
         assertThat(logged.size(), is(1));
-        logged.assertLinesContainingAll(1, "stale check", "is false", TestMetadata.RC1_LAST_UPDATE);
+        logged.assertLinesContainingAll(1, "stale check", "is false", RC1_LAST_UPDATE);
 
         // Check that more calls do not update
 
@@ -183,13 +133,13 @@ public class MetadataTest {
         assertThat(meta.catalogOf(latestVersion), is(catalog));
 
         assertThat(logged.size(), is(3));
-        logged.assertLinesContainingAll(1, "stale check", "is false", TestMetadata.LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(2, "stale check", "is false", TestMetadata.RC1_LAST_UPDATE);
+        logged.assertLinesContainingAll(1, "stale check", "is false", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(2, "stale check", "is false", RC1_LAST_UPDATE);
 
         // Check the build tools and CLI versions
 
         logged.clear();
-        MavenVersion expected = toMavenVersion(TestMetadata.RC1);
+        MavenVersion expected = MAVEN_VERSION_RC1;
         assertThat(meta.buildToolsVersionOf(latestVersion), is(expected));
         assertThat(meta.cliVersionOf(latestVersion), is(expected));
     }
@@ -199,24 +149,41 @@ public class MetadataTest {
 
         // Setup with RC2 as latest
 
-        startMetadataTestServer(TestVersion.RC2);
+        startMetadataTestServer(RC2, false);
         meta = newDefaultInstance();
 
         // Simulate different cli versions
 
-        MavenVersion cliVersionRc1 = toMavenVersion(TestMetadata.RC1);
-        MavenVersion cliVersionRc2 = toMavenVersion(TestMetadata.RC2);
+        MavenVersion cliVersionRc1 = MAVEN_VERSION_RC1;
+        MavenVersion cliVersionRc2 = MAVEN_VERSION_RC2;
+        MavenVersion cliVersionRc2Updated = toMavenVersion("2.0.0");
 
         assertThat(meta.checkForCliUpdate(cliVersionRc2).isPresent(), is(false));
 
         assertThat(meta.checkForCliUpdate(cliVersionRc1).isPresent(), is(true));
         assertThat(meta.checkForCliUpdate(cliVersionRc1).orElseThrow(), is(cliVersionRc2));
+
+        // Now change the metadata for RC2 such that the cli version returned is newer
+
+        String updatedRc2FileName = VERSION_RC2 + "-updated" + CLI_DATA_PATH;
+        byte[] updatedRc2 = TestMetadata.readCliDataFile(updatedRc2FileName);
+        testServer.zipData(RC2, updatedRc2);
+
+        // Make sure it doesn't update now, since the update period has not expired
+
+        assertThat(meta.checkForCliUpdate(cliVersionRc2).isPresent(), is(false));
+
+        // Force expiry and validate that we get expected version update
+
+        meta = newInstance(0, HOURS);
+        assertThat(meta.checkForCliUpdate(cliVersionRc2).isPresent(), is(true));
+        assertThat(meta.checkForCliUpdate(cliVersionRc1).orElseThrow(), is(cliVersionRc2Updated));
     }
 
     @Test
     void testReleaseNotes() throws Exception {
         meta = newDefaultInstance();
-        MavenVersion helidonVersion = toMavenVersion(TestMetadata.RC2);
+        MavenVersion helidonVersion = MAVEN_VERSION_RC2;
 
         // Check from M1
 
@@ -251,7 +218,7 @@ public class MetadataTest {
 
     @Test
     void testLatestVersionUpdatesAfterDelay() throws Exception {
-        assertInitialLatestVersionRequestPerformsUpdate(1, TimeUnit.SECONDS, TestMetadata.RC1, TestMetadata.NO_ETAG);
+        assertInitialLatestVersionRequestPerformsUpdate(1, SECONDS, VERSION_RC1, NO_ETAG, false);
 
         // Wait 1.25 seconds and check version. Should perform update.
 
@@ -260,18 +227,18 @@ public class MetadataTest {
         Thread.sleep(1250);
         assertThat(meta.latestVersion(), is(latestVersion));
 
-        logged.assertLinesContainingAll(1, "stale check", "is true", TestMetadata.LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "updated", TestMetadata.RC1_LAST_UPDATE, "etag " + TestMetadata.NO_ETAG);
+        logged.assertLinesContainingAll(1, "stale check", "is true", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + NO_ETAG);
         logged.assertLinesContainingAll("Looking up latest Helidon version");
-        logged.assertNoLinesContainingAll("Updating metadata for Helidon version " + TestMetadata.RC1);
-        logged.assertLinesContainingAll(1, "downloading", TestMetadata.LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "connected", TestMetadata.LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "wrote", TestMetadata.LATEST_FILE_NAME);
+        logged.assertNoLinesContainingAll("Updating metadata for Helidon version " + VERSION_RC1);
+        logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
     }
 
     @Test
     void testPropertiesUpdatesAfterDelay() throws Exception {
-        assertInitialLatestVersionRequestPerformsUpdate(1, TimeUnit.SECONDS, TestMetadata.RC1, TestMetadata.NO_ETAG);
+        assertInitialLatestVersionRequestPerformsUpdate(1, SECONDS, VERSION_RC1, NO_ETAG, false);
 
         // Wait 1.25 seconds and check properties. Should perform update.
 
@@ -280,18 +247,18 @@ public class MetadataTest {
         Thread.sleep(1250);
         assertThat(meta.propertiesOf(latestVersion), is(not(nullValue())));
 
-        logged.assertLinesContainingAll(1, "stale check", "is true", TestMetadata.RC1_LAST_UPDATE);
-        logged.assertLinesContainingAll(1, "updated", TestMetadata.RC1_LAST_UPDATE, "etag " + TestMetadata.NO_ETAG);
+        logged.assertLinesContainingAll(1, "stale check", "is true", RC1_LAST_UPDATE);
+        logged.assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + NO_ETAG);
         logged.assertNoLinesContainingAll("Looking up latest Helidon version");
-        logged.assertLinesContainingAll("Updating metadata for Helidon version " + TestMetadata.RC1);
-        logged.assertLinesContainingAll(1, "downloading", TestMetadata.LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "connected", TestMetadata.LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "wrote", TestMetadata.LATEST_FILE_NAME);
+        logged.assertLinesContainingAll("Updating metadata for Helidon version " + VERSION_RC1);
+        logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
     }
 
     @Test
     void testCatalogUpdatesAfterDelay() throws Exception {
-        assertInitialLatestVersionRequestPerformsUpdate(1, TimeUnit.SECONDS, TestMetadata.RC1, TestMetadata.NO_ETAG);
+        assertInitialLatestVersionRequestPerformsUpdate(1, SECONDS, VERSION_RC1, NO_ETAG, false);
 
         // Wait 1.25 seconds and check catalog. Should perform update.
 
@@ -300,169 +267,83 @@ public class MetadataTest {
         Thread.sleep(1250);
         assertThat(meta.catalogOf(latestVersion), is(not(nullValue())));
 
-        logged.assertLinesContainingAll(1, "stale check", "is true", TestMetadata.RC1_LAST_UPDATE);
-        logged.assertLinesContainingAll(1, "updated", TestMetadata.RC1_LAST_UPDATE, "etag " + TestMetadata.NO_ETAG);
+        logged.assertLinesContainingAll(1, "stale check", "is true", RC1_LAST_UPDATE);
+        logged.assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + NO_ETAG);
         logged.assertNoLinesContainingAll("Looking up latest Helidon version");
-        logged.assertLinesContainingAll("Updating metadata for Helidon version " + TestMetadata.RC1);
-        logged.assertLinesContainingAll(1, "downloading", TestMetadata.LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "connected", TestMetadata.LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "wrote", TestMetadata.LATEST_FILE_NAME);
+        logged.assertLinesContainingAll("Updating metadata for Helidon version " + VERSION_RC1);
+        logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
     }
 
     @Test
     void testZipIsNotDownloadedWhenEtagMatches() throws Exception {
         startMetadataTestServer(TestVersion.RC1);
-        assertZipIsNotDownloadedFromServerWhenEtagMatches();
-    }
-
-    protected void assertZipIsNotDownloadedFromServerWhenEtagMatches() throws Exception {
 
         // Make the initial latestVersion call and validate the result
 
-        assertInitialLatestVersionRequestPerformsUpdate(0, TimeUnit.NANOSECONDS, TestMetadata.RC1, TestMetadata.INITIAL_ETAG);
+        assertInitialLatestVersionRequestPerformsUpdate(0, NANOSECONDS, VERSION_RC1, RC1_ETAG, false);
 
         // Now get the properties again and make sure we skip the zip download but still
         // updated the latest version
 
         logged.clear();
         assertThat(meta.propertiesOf(latestVersion), is(not(nullValue())));
-        logged.assertLinesContainingAll(1, "not modified", TestMetadata.RC1_CLI_DATA_ZIP);
-        logged.assertLinesContainingAll(1, "updated", TestMetadata.RC1_LAST_UPDATE, "etag " + TestMetadata.INITIAL_ETAG);
-        logged.assertLinesContainingAll(1, "downloading", TestMetadata.LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "connected", TestMetadata.LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "wrote", TestMetadata.LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "not modified", RC1_CLI_DATA_ZIP_FILE_NAME);
+        logged.assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + RC1_ETAG);
+        logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
     }
 
     @Test
     void testUpdateWhenLatestChanges() throws Exception {
 
-        // NOTE: This test case can only work against test server since it will uses the "<initial> etag
-
         // Setup test server with latest set to RC2
 
-        startMetadataTestServer(TestVersion.RC2);
+        startMetadataTestServer(RC2);
 
         // Make the initial latestVersion call and validate the result
 
-        assertInitialLatestVersionRequestPerformsUpdate(0, TimeUnit.NANOSECONDS, TestMetadata.RC2, TestMetadata.INITIAL_ETAG);
+        assertInitialLatestVersionRequestPerformsUpdate(0, NANOSECONDS, VERSION_RC2, RC2_ETAG, false);
 
         // Now get the properties again and make sure we skip the zip download but still updated the latest version.
         // Note that the update is forced here because we used a zero frequency.
 
         logged.clear();
         assertThat(meta.propertiesOf(latestVersion), is(not(nullValue())));
-        logged.assertLinesContainingAll(1, "not modified", TestMetadata.RC2_CLI_DATA_ZIP);
-        logged.assertLinesContainingAll(1, "updated", TestMetadata.RC2_LAST_UPDATE, "etag " + TestMetadata.INITIAL_ETAG);
-        logged.assertLinesContainingAll(1, "downloading", TestMetadata.LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "connected", TestMetadata.LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "wrote", TestMetadata.LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "not modified", RC2_CLI_DATA_ZIP_FILE_NAME);
+        logged.assertLinesContainingAll(1, "updated", RC2_LAST_UPDATE, "etag " + RC2_ETAG);
+        logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
+
+        // Now change the result of /latest and validate the result
+
+        logged.clear();
+        Plugins.reset(true);
+        testServer.latest(TestVersion.RC1);
+        assertInitialLatestVersionRequestPerformsUpdate(0, NANOSECONDS, VERSION_RC1, RC1_ETAG, true);
     }
 
     @Test
     void testCatalogUpdatesWhenUnseenVersionRequested() throws Exception {
-        startMetadataTestServer(TestVersion.RC2);
-        assertServerUpdatesWhenUnseenRC2VersionRequested();
-    }
-
-    protected void assertServerUpdatesWhenUnseenRC2VersionRequested() throws Exception {
+        startMetadataTestServer(RC2);
 
         // Make the initial catalog request and validate the result
 
-        final Runnable request = () -> catalogRequest(TestMetadata.RC2, true);
-        assertInitialRequestPerformsUpdate(request, 24, TimeUnit.HOURS, TestMetadata.RC2, TestMetadata.INITIAL_ETAG);
+        final Runnable request = () -> catalogRequest(VERSION_RC2, true);
+        assertInitialRequestPerformsUpdate(request, 24, HOURS, VERSION_RC2, RC2_ETAG, false);
 
         // Now request the catalog again and make sure we do no updates
 
         logged.clear();
-        catalogRequest(TestMetadata.RC2, false);
-        assertThat(meta.propertiesOf(TestMetadata.RC2), is(not(nullValue())));
-        logged.assertLinesContainingAll(0, "not modified", TestMetadata.RC2_CLI_DATA_ZIP);
-        logged.assertLinesContainingAll(0, "updated", TestMetadata.RC2_LAST_UPDATE, "etag " + TestMetadata.INITIAL_ETAG);
-        logged.assertLinesContainingAll(0, "downloading", TestMetadata.LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(0, "connected", TestMetadata.LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(0, "wrote", TestMetadata.LATEST_FILE_NAME);
-    }
-
-    protected void assertInitialLatestVersionRequestPerformsUpdate(long updateFrequency,
-                                                                   TimeUnit updateFrequencyUnits,
-                                                                   String expectedVersion,
-                                                                   String expectedEtag) {
-        final Runnable request = () -> firstLatestVersionRequest(expectedVersion);
-        assertInitialRequestPerformsUpdate(request, updateFrequency, updateFrequencyUnits, expectedVersion, expectedEtag);
-    }
-
-    protected void assertInitialRequestPerformsUpdate(Runnable request,
-                                                      long updateFrequency,
-                                                      TimeUnit updateFrequencyUnits,
-                                                      String expectedVersion,
-                                                      String expectedEtag) {
-        Path versionDir = cacheDir.resolve(expectedVersion);
-        Path propertiesFile = versionDir.resolve(TestMetadata.PROPERTIES_FILE_NAME);
-        Path catalogFile = versionDir.resolve(TestMetadata.CATALOG_FILE_NAME);
-        Path seJarFile = versionDir.resolve(TestMetadata.HELIDON_BARE_SE + "-" + expectedVersion + ".jar");
-        Path mpJarFile = versionDir.resolve(TestMetadata.HELIDON_BARE_MP + "-" + expectedVersion + ".jar");
-        String zipPath = expectedVersion + TestMetadata.CLI_DATA;
-        String lastUpdatePath = expectedVersion + TestMetadata.LAST_UPDATE;
-
-        // Ensure latest file and version directory not present
-
-        assertThat(Files.exists(latestFile), is(false));
-        assertThat(Files.exists(versionDir), is(false));
-
-        // Make request. Should update both latest file and latest archetype.
-
-        logged.clear();
-        meta = newInstance(updateFrequency, updateFrequencyUnits);
-        request.run();
-
-        assertFile(latestFile);
-        assertDir(versionDir);
-        assertFile(propertiesFile);
-        assertFile(catalogFile);
-        assertFile(seJarFile);
-        assertFile(mpJarFile);
-
-        logged.assertLinesContainingAll(1, "unpacked", "cli-plugins-", ".jar");
-        logged.assertLinesContainingAll(1, "executing", "cli-plugins-", "UpdateMetadata");
-        logged.assertLinesContainingAll(1, "downloading", TestMetadata.LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "connecting", TestMetadata.LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "connected", TestMetadata.LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "downloading", zipPath);
-        logged.assertLinesContainingAll(1, "connecting", zipPath);
-        logged.assertLinesContainingAll(1, "connected", zipPath);
-
-        logged.assertLinesContainingAll(1, "unzipping", zipPath);
-        logged.assertLinesContainingAll(1, "deleting", zipPath);
-        logged.assertLinesContainingAll(1, "updated", lastUpdatePath, "etag " + expectedEtag);
-    }
-
-    private void firstLatestVersionRequest(String expectedVersion) {
-        try {
-            latestVersion = meta.latestVersion();
-            assertThat(latestVersion, is(not(nullValue())));
-            assertThat(latestVersion, is(toMavenVersion(expectedVersion)));
-            logged.assertLinesContainingAll("Looking up latest Helidon version");
-            logged.assertNoLinesContainingAll("Updating metadata for Helidon version " + expectedVersion);
-            logged.assertLinesContainingAll(1, "stale check", "(not found)", TestMetadata.LATEST_FILE_NAME);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void catalogRequest(String version, boolean expectUpdate) {
-        try {
-            String staleType = expectUpdate ? "(not found)" : "is false";
-            String staleFilePath = version + "/" + TestMetadata.LAST_UPDATE_FILE_NAME;
-            meta.catalogOf(version);
-            logged.assertNoLinesContainingAll("Looking up latest Helidon version");
-            if (expectUpdate) {
-                logged.assertLinesContainingAll("Updating metadata for Helidon version " + version);
-            } else {
-                logged.assertNoLinesContainingAll("Updating metadata for Helidon version " + version);
-            }
-            logged.assertLinesContainingAll(1, "stale check", staleType, staleFilePath);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        catalogRequest(VERSION_RC2, false);
+        assertThat(meta.propertiesOf(VERSION_RC2), is(not(nullValue())));
+        logged.assertLinesContainingAll(0, "not modified", RC2_CLI_DATA_ZIP_FILE_NAME);
+        logged.assertLinesContainingAll(0, "updated", RC2_LAST_UPDATE, "etag " + RC2_ETAG);
+        logged.assertLinesContainingAll(0, "downloading", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(0, "connected", LATEST_FILE_NAME);
+        logged.assertLinesContainingAll(0, "wrote", LATEST_FILE_NAME);
     }
 }
