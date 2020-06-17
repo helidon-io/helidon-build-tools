@@ -35,6 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
+import static io.helidon.build.cli.impl.Metadata.DEFAULT_UPDATE_FREQUENCY;
 import static io.helidon.build.cli.impl.TestMetadata.CLI_DATA_PATH;
 import static io.helidon.build.cli.impl.TestMetadata.HELIDON_BARE_MP;
 import static io.helidon.build.cli.impl.TestMetadata.HELIDON_BARE_SE;
@@ -80,7 +81,7 @@ public class MetadataTest extends BaseMetadataTest {
 
     @Test
     void smokeTest() throws Exception {
-        assertInitialLatestVersionRequestPerformsUpdate(24, HOURS, VERSION_RC1, NO_ETAG, false);
+        assertInitialLatestVersionRequestPerformsUpdate(DEFAULT_UPDATE_FREQUENCY, HOURS, VERSION_RC1, NO_ETAG, false);
 
         // Check properties. Should not perform update.
 
@@ -333,7 +334,7 @@ public class MetadataTest extends BaseMetadataTest {
         // Make the initial catalog request and validate the result
 
         final Runnable request = () -> catalogRequest(VERSION_RC2, true);
-        assertInitialRequestPerformsUpdate(request, 24, HOURS, VERSION_RC2, RC2_ETAG, false);
+        assertInitialRequestPerformsUpdate(request, DEFAULT_UPDATE_FREQUENCY, HOURS, VERSION_RC2, RC2_ETAG, false);
 
         // Now request the catalog again and make sure we do no updates
 

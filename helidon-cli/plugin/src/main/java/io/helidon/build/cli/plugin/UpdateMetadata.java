@@ -138,8 +138,11 @@ public class UpdateMetadata extends Plugin {
                                                           .connectTimeout(connectTimeout)
                                                           .readTimeout(readTimeout)
                                                           .connect();
+
         Files.copy(connection.getInputStream(), latestVersionFile, REPLACE_EXISTING);
-        Log.debug("wrote %s", latestVersionFile);
+        if (Log.isDebug()) {
+            Log.debug("wrote %s to %s", readLatestVersion(), latestVersionFile);
+        }
     }
 
     private void updateVersion(String version) throws Exception {

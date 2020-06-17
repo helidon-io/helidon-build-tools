@@ -34,8 +34,9 @@ import org.junit.jupiter.api.TestInfo;
 import static io.helidon.build.cli.impl.TestMetadata.HELIDON_BARE_MP;
 import static io.helidon.build.cli.impl.TestMetadata.HELIDON_BARE_SE;
 import static io.helidon.build.cli.impl.TestMetadata.LATEST_FILE_NAME;
-import static io.helidon.build.cli.impl.TestMetadata.RC1_LAST_UPDATE;
-import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC1;
+import static io.helidon.build.cli.impl.TestMetadata.RC2_LAST_UPDATE;
+import static io.helidon.build.cli.impl.TestMetadata.TestVersion.RC2;
+import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC2;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -54,12 +55,11 @@ public class MetadataIT extends BaseMetadataTest {
 
         // REMOVE all of the following once the data is on helidon.io
 
-        Log.info();
         Log.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         Log.warn("!!!!! Temporarily using metadata test server, MUST be changed to use helidon.io !!!!!");
         Log.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         Log.info();
-        startMetadataTestServer(TestMetadata.TestVersion.RC1);
+        startMetadataTestServer(RC2);
     }
 
     @AfterEach
@@ -68,12 +68,12 @@ public class MetadataIT extends BaseMetadataTest {
     }
 
     @Test
-    void smokeTestRc1() throws Exception {
+    void smokeTestRc2() throws Exception {
 
-        // Do the initial catalog request for RC1
+        // Do the initial catalog request for RC2
 
-        final Runnable request = () -> catalogRequest(VERSION_RC1, true);
-        assertInitialRequestPerformsUpdate(request, 24, HOURS, VERSION_RC1, "", false);
+        final Runnable request = () -> catalogRequest(VERSION_RC2, true);
+        assertInitialRequestPerformsUpdate(request, 24, HOURS, VERSION_RC2, "", false);
 
         // Check latest version. Should not perform update.
 
@@ -85,19 +85,19 @@ public class MetadataIT extends BaseMetadataTest {
         // Check properties. Should not perform update.
 
         logged.clear();
-        ConfigProperties props = meta.propertiesOf(VERSION_RC1);
+        ConfigProperties props = meta.propertiesOf(VERSION_RC2);
         assertThat(props, is(not(nullValue())));
         assertThat(props.keySet().isEmpty(), is(false));
-        assertThat(props.property("helidon.version"), is(VERSION_RC1));
-        assertThat(props.property("build-tools.version"), is(VERSION_RC1));
-        assertThat(props.property("cli.version"), is(VERSION_RC1));
+        assertThat(props.property("helidon.version"), is(VERSION_RC2));
+        assertThat(props.property("build-tools.version"), is(VERSION_RC2));
+        assertThat(props.property("cli.version"), is(VERSION_RC2));
         assertThat(logged.size(), is(1));
-        logged.assertLinesContainingAll(1, "stale check", "is false", RC1_LAST_UPDATE);
+        logged.assertLinesContainingAll(1, "stale check", "is false", RC2_LAST_UPDATE);
 
         // Check catalog again. Should not perform update.
 
         logged.clear();
-        ArchetypeCatalog catalog = meta.catalogOf(VERSION_RC1);
+        ArchetypeCatalog catalog = meta.catalogOf(VERSION_RC2);
         assertThat(catalog, is(not(nullValue())));
         assertThat(catalog.entries().size() >= 2, is(true));
         Map<String, ArchetypeEntry> entriesById = catalog.entries()
@@ -108,7 +108,7 @@ public class MetadataIT extends BaseMetadataTest {
         assertThat(entriesById.get(HELIDON_BARE_MP), is(notNullValue()));
         assertThat(entriesById.get(HELIDON_BARE_MP).name(), is("bare"));
         assertThat(logged.size(), is(1));
-        logged.assertLinesContainingAll(1, "stale check", "is false", RC1_LAST_UPDATE);
+        logged.assertLinesContainingAll(1, "stale check", "is false", RC2_LAST_UPDATE);
 
         // Check archetype. Should not perform update.
 
@@ -116,17 +116,17 @@ public class MetadataIT extends BaseMetadataTest {
         Path archetypeJar = meta.archetypeOf(entriesById.get("helidon-bare-se"));
         assertThat(archetypeJar, is(not(nullValue())));
         assertThat(Files.exists(archetypeJar), is(true));
-        assertThat(archetypeJar.getFileName().toString(), is("helidon-bare-se-2.0.0-RC1.jar"));
+        assertThat(archetypeJar.getFileName().toString(), is("helidon-bare-se-2.0.0-RC2.jar"));
         assertThat(logged.size(), is(1));
-        logged.assertLinesContainingAll(1, "stale check", "is false", RC1_LAST_UPDATE);
+        logged.assertLinesContainingAll(1, "stale check", "is false", RC2_LAST_UPDATE);
 
         // Check that more calls do not update
 
         logged.clear();
-        assertThat(meta.propertiesOf(VERSION_RC1), is(props));
-        assertThat(meta.catalogOf(VERSION_RC1), is(catalog));
+        assertThat(meta.propertiesOf(VERSION_RC2), is(props));
+        assertThat(meta.catalogOf(VERSION_RC2), is(catalog));
 
         assertThat(logged.size(), is(2));
-        logged.assertLinesContainingAll(2, "stale check", "is false", RC1_LAST_UPDATE);
+        logged.assertLinesContainingAll(2, "stale check", "is false", RC2_LAST_UPDATE);
     }
 }
