@@ -174,11 +174,11 @@ final class SimpleXMLParser {
     private STATE state = STATE.START;
     private STATE resumeState = null;
     private LinkedList<String> stack = new LinkedList<>();
-    private final InputStream is;
     private final Reader reader;
+    private final InputStreamReader isr;
 
     SimpleXMLParser(InputStream is, Reader reader) {
-        this.is = Objects.requireNonNull(is, "input stream is null");
+        this.isr = new InputStreamReader(Objects.requireNonNull(is, "input stream is null"));
         this.reader = Objects.requireNonNull(reader, "reader is null");
     }
 
@@ -195,8 +195,8 @@ final class SimpleXMLParser {
         new SimpleXMLParser(is, reader).doParse();
     }
 
-    private void processStart() {
-        if (hasToken(buf, PROLOG_START)) {
+    private void processStart() throws IOException {
+        if (hasToken(PROLOG_START)) {
             state = STATE.PROLOG;
             position += PROLOG_START.length();
         } else {
@@ -204,8 +204,8 @@ final class SimpleXMLParser {
         }
     }
 
-    private void processProlog() {
-        if (hasToken(buf, PROLOG_END)) {
+    private void processProlog() throws IOException {
+        if (hasToken(PROLOG_END)) {
             state = STATE.ELEMENT;
             position += PROLOG_END.length();
         } else {
@@ -213,15 +213,15 @@ final class SimpleXMLParser {
         }
     }
 
-    private void processElement() {
-        if (hasToken(buf, COMMENT_START)) {
+    private void processElement() throws IOException {
+        if (hasToken(COMMENT_START)) {
             state = STATE.COMMENT;
             resumeState = STATE.ELEMENT;
             position += COMMENT_START.length();
-        } else if (hasToken(buf, CLOSE_MARKUP_START)) {
+        } else if (hasToken(CLOSE_MARKUP_START)) {
             state = STATE.END_ELEMENT;
             position++;
-        } else if (hasToken(buf, MARKUP_START)) {
+        } else if (hasToken(MARKUP_START)) {
             resumeState = STATE.ATTRIBUTES;
             state = STATE.NAME;
             position++;
@@ -235,7 +235,7 @@ final class SimpleXMLParser {
     }
 
     private void processName() {
-        if (hasToken(buf, MARKUP_END)) {
+        if (hasToken(MARKUP_END)) {
             state = resumeState;
         } else if (Character.isWhitespace(c)) {
             position++;
@@ -250,7 +250,7 @@ final class SimpleXMLParser {
     private void processEndElement() {
         if (Character.isWhitespace(c)) {
             position++;
-        } else if (hasToken(buf, MARKUP_END)) {
+        } else if (hasToken(MARKUP_END)) {
             String name = nameBuilder.toString();
             if (stack.isEmpty()) {
                 throw new IllegalStateException(String.format(
@@ -275,10 +275,10 @@ final class SimpleXMLParser {
         }
     }
 
-    private void processAttributes() {
+    private void processAttributes() throws IOException {
         if (Character.isWhitespace(c)) {
             position++;
-        } else if (hasToken(buf, ELEMENT_SELF_CLOSE)) {
+        } else if (hasToken(ELEMENT_SELF_CLOSE)) {
             position += ELEMENT_SELF_CLOSE.length();
             state = STATE.ELEMENT;
             String name = nameBuilder.toString();
@@ -286,7 +286,7 @@ final class SimpleXMLParser {
             reader.endElement(name);
             nameBuilder = new StringBuilder();
             attributes = new HashMap<>();
-        } else if (hasToken(buf, MARKUP_END)) {
+        } else if (hasToken(MARKUP_END)) {
             position++;
             state = STATE.ELEMENT;
             String name = nameBuilder.toString();
@@ -294,7 +294,7 @@ final class SimpleXMLParser {
             reader.startElement(name, attributes);
             nameBuilder = new StringBuilder();
             attributes = new HashMap<>();
-        } else if (hasToken(buf, ATTRIBUTE_VALUE)) {
+        } else if (hasToken(ATTRIBUTE_VALUE)) {
             position++;
             state = STATE.ATTRIBUTE_VALUE;
         } else {
@@ -307,10 +307,10 @@ final class SimpleXMLParser {
     private void processAttributeValue() {
         if (Character.isWhitespace(c)) {
             position++;
-        } else if (hasToken(buf, SINGLE_QUOTE)) {
+        } else if (hasToken(SINGLE_QUOTE)) {
             position++;
             state = STATE.SINGLE_QUOTED_VALUE;
-        } else if (hasToken(buf, DOUBLE_QUOTE)) {
+        } else if (hasToken(DOUBLE_QUOTE)) {
             position++;
             state = STATE.DOUBLE_QUOTED_VALUE;
         } else {
@@ -320,7 +320,7 @@ final class SimpleXMLParser {
     }
 
     private void processSingleQuoteValue() {
-        if (hasToken(buf, SINGLE_QUOTE)) {
+        if (hasToken(SINGLE_QUOTE)) {
             position++;
             state = STATE.ATTRIBUTES;
             attributes.put(attrNameBuilder.toString(), decode(attrValueBuilder.toString()));
@@ -334,13 +334,13 @@ final class SimpleXMLParser {
     }
 
     private void processDoubleQuotedValue() {
-        if (hasToken(buf, DOUBLE_QUOTE)) {
+        if (hasToken(DOUBLE_QUOTE)) {
             position++;
             state = STATE.ATTRIBUTES;
             attributes.put(attrNameBuilder.toString(), decode(attrValueBuilder.toString()));
             attrNameBuilder = new StringBuilder();
             attrValueBuilder = new StringBuilder();
-        } else if (hasToken(buf, SINGLE_QUOTE)) {
+        } else if (hasToken(SINGLE_QUOTE)) {
             throw new IllegalStateException(String.format(
                     "Invalid single quote, attribute=%s, name=%s, line: %d, char: %d",
                     attrNameBuilder, nameBuilder, lineNo, charNo));
@@ -351,12 +351,12 @@ final class SimpleXMLParser {
         }
     }
 
-    private void processText() {
-        if (hasToken(buf, COMMENT_START)) {
+    private void processText() throws IOException {
+        if (hasToken(COMMENT_START)) {
             state = STATE.COMMENT;
             resumeState = STATE.TEXT;
             position += COMMENT_START.length();
-        } else if (hasToken(buf, MARKUP_START)) {
+        } else if (hasToken(MARKUP_START)) {
             state = STATE.ELEMENT;
         } else {
             textBuilder.append(buf[position]);
@@ -364,8 +364,8 @@ final class SimpleXMLParser {
         }
     }
 
-    private void processComment() {
-        if (hasToken(buf, COMMENT_END)) {
+    private void processComment() throws IOException {
+        if (hasToken(COMMENT_END)) {
             state = resumeState;
             position += COMMENT_END.length();
         } else {
@@ -374,7 +374,6 @@ final class SimpleXMLParser {
     }
 
     private void doParse() throws IOException {
-        InputStreamReader isr = new InputStreamReader(is);
         while (limit >= 0) {
             position = 0;
             limit = isr.read(buf);
@@ -449,13 +448,19 @@ final class SimpleXMLParser {
         }
     }
 
-    private boolean hasToken(char[] buf, char expected) {
+    boolean hasToken(char expected) {
         return position < limit && buf[position] == expected;
     }
 
-    private boolean hasToken(char[] buf, CharSequence expected) {
-        return position + expected.length() <= limit
-                && String.valueOf(buf, position, expected.length()).contentEquals(expected);
+    boolean hasToken(CharSequence expected) throws IOException {
+        int len = expected.length();
+        if (position + len > limit) {
+            int offset = limit - position;
+            System.arraycopy(buf, position, buf, 0, offset);
+            limit = offset + isr.read(buf, offset, buf.length - offset);
+            position = 0;
+        }
+        return String.valueOf(buf, position, expected.length()).contentEquals(expected);
     }
 
     private static String decode(String value) {

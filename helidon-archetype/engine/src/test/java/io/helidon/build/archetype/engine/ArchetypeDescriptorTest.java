@@ -55,7 +55,7 @@ public class ArchetypeDescriptorTest {
 
         ArchetypeDescriptor desc = ArchetypeDescriptor.read(is);
         assertThat(desc.modelVersion(), is(ArchetypeDescriptor.MODEL_VERSION));
-        assertThat(desc.name(), is("test"));
+        assertThat(desc.name(), is("helidon-quickstart-se"));
         Map<String, Property> properties = desc.properties().stream().collect(Collectors.toMap(Property::id, (p) -> p));
         assertThat(properties.entrySet(), is(not(empty())));
         assertThat(properties.size(), is(8));
@@ -161,63 +161,50 @@ public class ArchetypeDescriptorTest {
         assertThat(fs4.unlessProperties(), is(empty()));
 
         InputFlow inputFlow = desc.inputFlow();
-        assertThat(inputFlow.nodes().size(), is(6));
+        assertThat(inputFlow.nodes().size(), is(5));
+
         FlowNode fn1 = inputFlow.nodes().get(0);
-        assertThat(fn1, is(instanceOf(Select.class)));
-        assertThat(((Select) fn1).text(), is("Select a build system"));
-        assertThat(((Select) fn1).choices().size(), is(2));
+        assertThat(fn1, is(instanceOf(Input.class)));
+        assertThat(((Input) fn1).property().id(), is("name"));
+        assertThat(fn1.text(), is("Project name"));
+        assertThat(((Input) fn1).defaultValue().isPresent(), is(true));
+        assertThat(((Input) fn1).defaultValue().get(), is("${name}"));
         assertThat(fn1.ifProperties(), is(empty()));
         assertThat(fn1.unlessProperties(), is(empty()));
-
-        Choice c1 = ((Select) fn1).choices().get(0);
-        assertThat(c1.property().id(), is("maven"));
-        assertThat(c1.text(), is("Maven"));
-        assertThat(c1.ifProperties(), is(empty()));
-        assertThat(c1.unlessProperties(), is(empty()));
-
-        Choice c2 = ((Select) fn1).choices().get(1);
-        assertThat(c2.property().id(), is("gradle"));
-        assertThat(c2.text(), is("Gradle"));
-        assertThat(c2.ifProperties(), is(empty()));
-        assertThat(c2.unlessProperties(), is(empty()));
 
         FlowNode fn2 = inputFlow.nodes().get(1);
         assertThat(fn2, is(instanceOf(Input.class)));
         assertThat(((Input) fn2).property().id(), is("groupId"));
-        assertThat(((Input) fn2).text(), is("Enter a project groupId"));
-        assertThat(((Input) fn2).defaultValue().isPresent(), is(false));
+        assertThat(fn2.text(), is("Project groupId"));
+        assertThat(((Input) fn2).defaultValue().isPresent(), is(true));
+        assertThat(((Input) fn2).defaultValue().get(), is("${groupId}"));
         assertThat(fn2.ifProperties().stream().map(Property::id).collect(Collectors.toList()), hasItems("maven"));
         assertThat(fn2.unlessProperties(), is(empty()));
 
         FlowNode fn3 = inputFlow.nodes().get(2);
         assertThat(fn3, is(instanceOf(Input.class)));
         assertThat(((Input) fn3).property().id(), is("artifactId"));
-        assertThat(((Input) fn3).text(), is("Enter a project artifactId"));
-        assertThat(((Input) fn3).defaultValue().isPresent(), is(false));
+        assertThat(fn3.text(), is("Project artifactId"));
+        assertThat(((Input) fn3).defaultValue().isPresent(), is(true));
+        assertThat(((Input) fn3).defaultValue().get(), is("${artifactId}"));
         assertThat(fn3.ifProperties(), is(empty()));
         assertThat(fn3.unlessProperties(), is(empty()));
 
         FlowNode fn4 = inputFlow.nodes().get(3);
         assertThat(fn4, is(instanceOf(Input.class)));
         assertThat(((Input) fn4).property().id(), is("version"));
-        assertThat(((Input) fn4).text(), is("Enter a project version"));
-        assertThat(((Input) fn4).defaultValue().isPresent(), is(false));
+        assertThat(fn4.text(), is("Project version"));
+        assertThat(((Input) fn4).defaultValue().isPresent(), is(true));
+        assertThat(((Input) fn4).defaultValue().get(), is("${version}"));
         assertThat(fn4.ifProperties(), is(empty()));
         assertThat(fn4.unlessProperties(), is(empty()));
 
         FlowNode fn5 = inputFlow.nodes().get(4);
         assertThat(fn5, is(instanceOf(Input.class)));
-        assertThat(((Input) fn5).property().id(), is("name"));
-        assertThat(((Input) fn5).text(), is("Enter a project name"));
-        assertThat(((Input) fn5).defaultValue().get(), is("${artifactId}"));
-        assertThat(fn5.ifProperties(), is(empty()));
-        assertThat(fn5.unlessProperties(), is(empty()));
-
-        FlowNode fn6 = inputFlow.nodes().get(5);
-        assertThat(fn6, is(instanceOf(Input.class)));
-        assertThat(((Input) fn6).property().id(), is("package"));
-        assertThat(((Input) fn6).text(), is("Enter a Java package name"));
-        assertThat(((Input) fn6).defaultValue().get(), is("${groupId}"));
+        assertThat(((Input) fn5).property().id(), is("package"));
+        assertThat(fn5.text(), is("Java package name"));
+        assertThat(((Input) fn5).defaultValue().isPresent(), is(true));
+        assertThat(((Input) fn5).defaultValue().get(), is("${package}"));
         assertThat(fn5.ifProperties(), is(empty()));
         assertThat(fn5.unlessProperties(), is(empty()));
     }
