@@ -176,10 +176,10 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         ArchetypeCatalog.ArchetypeEntry archetype;
         if (!batch) {
             // Select archetype interactively
-            List<String> archetypeTitles = archetypes.stream()
-                                                     .map(ArchetypeCatalog.ArchetypeEntry::title)
-                                                     .collect(Collectors.toList());
-            int archetypeIndex = prompt("Select archetype", archetypeTitles, 0);
+            List<String> descriptions = archetypes.stream()
+                                                  .map(a -> a.name() + " | " + a.description().orElse(a.summary()))
+                                                  .collect(Collectors.toList());
+            int archetypeIndex = prompt("Select archetype", descriptions, 0);
             archetype = archetypes.get(archetypeIndex);
         } else {
             // find the archetype that matches archetypeName
