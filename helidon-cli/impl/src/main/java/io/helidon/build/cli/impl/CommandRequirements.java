@@ -15,17 +15,21 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.MavenCommand;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.PomUtils;
+import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.RequirementFailure;
 import io.helidon.build.util.Requirements;
 import io.helidon.build.util.Style;
 
-import static io.helidon.build.util.FileUtils.WORKING_DIR;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.Parent;
+
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
 import static io.helidon.build.util.ProjectConfig.ensureProjectConfig;
@@ -92,7 +96,19 @@ public class CommandRequirements {
      */
     static void requireValidMavenProjectConfig(CommonOptions commonOptions) {
         try {
-            PomUtils.toPomFile(commonOptions.project().toPath());
+            Path projectDir = commonOptions.project();
+            Path pomFile = PomUtils.toPomFile(projectDir);
+            Path projectConfigFile = ProjectConfig.toDotHelidon(projectDir);
+            if (!Files.exists(projectConfigFile)) {
+                // Find the helidon version if we can and create the config file
+                Model model = PomUtils.readPomModel(pomFile);
+                Parent parent = model.getParent();
+                String helidonVersion = null;
+                if (parent != null && parent.getGroupId().startsWith("io.helidon.")) {
+                    helidonVersion = parent.getVersion();
+                }
+                ensureProjectConfig(projectDir, helidonVersion);
+            }
         } catch (IllegalArgumentException e) {
             String message = e.getMessage();
             if (message.contains("does not exist")) {
@@ -100,7 +116,6 @@ public class CommandRequirements {
             }
             Requirements.failed(message);
         }
-        ensureProjectConfig(WORKING_DIR, null);
     }
 
     /**

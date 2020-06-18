@@ -16,7 +16,6 @@
 
 package io.helidon.build.util;
 
-import java.io.File;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -115,13 +114,13 @@ public class ProjectConfig extends ConfigProperties {
     public static ProjectConfig ensureProjectConfig(Path projectDir, String helidonVersion) {
         final Path dotHelidon = toDotHelidon(projectDir);
         if (Files.isRegularFile(dotHelidon)) {
-            return new ProjectConfig(dotHelidon.toFile());
+            return new ProjectConfig(dotHelidon);
         } else {
-            ProjectConfig config = new ProjectConfig(dotHelidon.toFile());
+            ProjectConfig config = new ProjectConfig(dotHelidon);
             config.projectDir(projectDir);
             String version = System.getProperty(HELIDON_VERSION, helidonVersion);
             if (version != null) {
-                config.property(PROJECT_VERSION);
+                config.property(HELIDON_VERSION, helidonVersion);
             }
             config.store();
             return config;
@@ -136,10 +135,17 @@ public class ProjectConfig extends ConfigProperties {
      */
     public static ProjectConfig projectConfig(Path projectDir) {
         final Path dotHelidon = assertExists(toDotHelidon(projectDir));
-        return new ProjectConfig(dotHelidon.toFile());
+        return new ProjectConfig(dotHelidon);
     }
 
-    private static Path toDotHelidon(Path projectDir) {
+
+    /**
+     * Retuns the {@code .helidon} file.
+     *
+     * @param projectDir The project directory.
+     * @return The file.
+     */
+    public static Path toDotHelidon(Path projectDir) {
         return assertDir(projectDir).resolve(DOT_HELIDON);
     }
 
@@ -148,7 +154,7 @@ public class ProjectConfig extends ConfigProperties {
      *
      * @param file The file.
      */
-    public ProjectConfig(File file) {
+    public ProjectConfig(Path file) {
         super(file);
     }
 
@@ -191,19 +197,19 @@ public class ProjectConfig extends ConfigProperties {
      */
     public List<ProjectDependency> featureDeps(String feature) {
         return entrySet()
-            .stream()
-            .filter(e -> {
-                String s = e.getKey();
-                return s.equals(FEATURE_PREFIX + feature);
-            })
-            .flatMap(e -> {
-                String v = e.getValue();
-                return Arrays.stream(v.split(","))
-                             .map(d -> {
-                                 String[] ds = d.split(":");
-                                 return new ProjectDependency(ds[0], ds[1], ds.length > 2 ? ds[2] : null);
-                             });
-            }).collect(Collectors.toList());
+                .stream()
+                .filter(e -> {
+                    String s = e.getKey();
+                    return s.equals(FEATURE_PREFIX + feature);
+                })
+                .flatMap(e -> {
+                    String v = e.getValue();
+                    return Arrays.stream(v.split(","))
+                                 .map(d -> {
+                                     String[] ds = d.split(":");
+                                     return new ProjectDependency(ds[0], ds[1], ds.length > 2 ? ds[2] : null);
+                                 });
+                }).collect(Collectors.toList());
     }
 
     /**

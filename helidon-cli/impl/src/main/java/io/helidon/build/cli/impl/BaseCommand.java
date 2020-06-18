@@ -16,7 +16,6 @@
 
 package io.helidon.build.cli.impl;
 
-import java.io.File;
 import java.nio.file.Path;
 
 import io.helidon.build.util.AnsiConsoleInstaller;
@@ -38,11 +37,15 @@ public abstract class BaseCommand {
         AnsiConsoleInstaller.ensureInstalled();
     }
 
+    protected ProjectConfig projectConfig(CommonOptions options) {
+        return projectConfig(options.project());
+    }
+
     protected ProjectConfig projectConfig(Path dir) {
         if (projectConfig != null && dir.equals(projectDir)) {
             return projectConfig;
         }
-        File dotHelidon = dir.resolve(DOT_HELIDON).toFile();
+        Path dotHelidon = dir.resolve(DOT_HELIDON);
         projectConfig = new ProjectConfig(dotHelidon);
         projectDir = dir;
         return projectConfig;

@@ -36,15 +36,6 @@ public class Config {
      *
      * @return The version.
      */
-    public static String latestPluginVersion() {
-        return buildVersion(); // replace this with metadata!
-    }
-
-    /**
-     * Returns the build version.
-     *
-     * @return The version.
-     */
     public static String buildVersion() {
         return buildProperties().version();
     }
