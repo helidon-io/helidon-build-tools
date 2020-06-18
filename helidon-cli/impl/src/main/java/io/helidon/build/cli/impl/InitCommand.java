@@ -216,7 +216,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         // Generate project using archetype engine
         Path parentDirectory = commonOptions.project().toPath();
         Path projectDir = parentDirectory.resolve(properties.get("name"));
-        require(!projectDir.toFile().exists(), "%s exists", projectDir);
+        require(!projectDir.toFile().exists(), "Directory %s already exists", projectDir);
         engine.generate(projectDir.toFile());
 
         // Create config file that includes feature information
