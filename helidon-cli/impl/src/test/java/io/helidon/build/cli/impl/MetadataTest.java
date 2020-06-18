@@ -89,7 +89,6 @@ public class MetadataTest extends BaseMetadataTest {
         ConfigProperties props = meta.propertiesOf(latestVersion);
         assertThat(props, is(not(nullValue())));
         assertThat(props.keySet().isEmpty(), is(false));
-        assertThat(props.property("helidon.version"), is(VERSION_RC1));
         assertThat(props.property("build-tools.version"), is(VERSION_RC1));
         assertThat(props.property("cli.version"), is(VERSION_RC1));
         assertThat(props.contains("cli.2.0.0-M2.message"), is(true));

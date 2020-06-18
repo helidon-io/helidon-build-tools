@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.archetype.engine.ArchetypeCatalog.ArchetypeEntry;
 import io.helidon.build.util.ConfigProperties;
-import io.helidon.build.util.Log;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +34,6 @@ import static io.helidon.build.cli.impl.TestMetadata.HELIDON_BARE_MP;
 import static io.helidon.build.cli.impl.TestMetadata.HELIDON_BARE_SE;
 import static io.helidon.build.cli.impl.TestMetadata.LATEST_FILE_NAME;
 import static io.helidon.build.cli.impl.TestMetadata.RC2_LAST_UPDATE;
-import static io.helidon.build.cli.impl.TestMetadata.TestVersion.RC2;
 import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC2;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -52,14 +50,6 @@ public class MetadataIT extends BaseMetadataTest {
     @BeforeEach
     public void beforeEach(TestInfo info) throws IOException {
         prepareEach(info, Metadata.DEFAULT_BASE_URL);
-
-        // REMOVE all of the following once the data is on helidon.io
-
-        Log.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        Log.warn("!!!!! Temporarily using metadata test server, MUST be changed to use helidon.io !!!!!");
-        Log.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        Log.info();
-        startMetadataTestServer(RC2);
     }
 
     @AfterEach
@@ -88,9 +78,8 @@ public class MetadataIT extends BaseMetadataTest {
         ConfigProperties props = meta.propertiesOf(VERSION_RC2);
         assertThat(props, is(not(nullValue())));
         assertThat(props.keySet().isEmpty(), is(false));
-        assertThat(props.property("helidon.version"), is(VERSION_RC2));
-        assertThat(props.property("build-tools.version"), is(VERSION_RC2));
-        assertThat(props.property("cli.version"), is(VERSION_RC2));
+        assertThat(props.property("build-tools.version"), is("2.0.0-RC3"));
+        assertThat(props.property("cli.version"), is("2.0.0-RC3"));
         assertThat(logged.size(), is(1));
         logged.assertLinesContainingAll(1, "stale check", "is false", RC2_LAST_UPDATE);
 

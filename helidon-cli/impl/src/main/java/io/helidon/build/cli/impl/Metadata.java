@@ -47,7 +47,7 @@ public class Metadata {
     /**
      * The default base url.
      */
-    public static final String DEFAULT_BASE_URL = "https://helidon.io";
+    public static final String DEFAULT_BASE_URL = "https://helidon.io/cli-data";
 
     /**
      * The default update frequency.
