@@ -24,18 +24,19 @@ import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandContext.Verbosity;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
-import io.helidon.build.cli.harness.Option;
 import io.helidon.build.cli.harness.Option.Flag;
+import io.helidon.build.cli.harness.Option.KeyValue;
 import io.helidon.build.util.AnsiConsoleInstaller;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenCommand;
+import io.helidon.build.util.MavenVersion;
+import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.Style;
 
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.cli.impl.CommandRequirements.requireValidMavenProjectConfig;
-import static io.helidon.build.cli.impl.Config.latestPluginVersion;
 import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_STARTING;
@@ -44,6 +45,7 @@ import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_MESSAGE_PREFIX;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_SERVER_STARTING;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_START;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_STYLED_MESSAGE_PREFIX;
+import static io.helidon.build.util.MavenVersion.toMavenVersion;
 import static io.helidon.build.util.Style.Bold;
 import static io.helidon.build.util.Style.BoldBrightGreen;
 
@@ -67,7 +69,6 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
     private final CommonOptions commonOptions;
     private final boolean clean;
     private final boolean fork;
-    private final boolean latestPluginVersion;
     private final String pluginVersion;
     private TerminalModeOutput terminalModeOutput;
 
@@ -76,15 +77,38 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
             CommonOptions commonOptions,
             @Flag(name = "clean", description = "Perform a clean before the first build") boolean clean,
             @Flag(name = "fork", description = "Fork mvn execution") boolean fork,
-            @Flag(name = "latest", description = "Use the latest helidon-maven-plugin version", visible = false)
-                    boolean latestPluginVersion,
-            @Option.KeyValue(name = "version", description = "helidon-maven-plugin version", visible = false)
-                    String pluginVersion) {
+            @KeyValue(name = "version", description = "helidon-maven-plugin version", visible = false)
+                    String pluginVersion,
+            @Flag(name = "current", description = "Use the build version as the helidon-maven-plugin version", visible = false)
+                    boolean currentPluginVersion) {
         this.commonOptions = commonOptions;
         this.clean = clean;
         this.fork = fork;
-        this.latestPluginVersion = latestPluginVersion;
-        this.pluginVersion = pluginVersion;
+        this.pluginVersion = pluginVersion == null ? (currentPluginVersion ? Config.buildVersion() : null) : pluginVersion;
+    }
+
+    private String pluginOverrideVersion() {
+        if (pluginVersion == null) {
+            ProjectConfig projectConfig = projectConfig(commonOptions);
+            String helidonVersion = projectConfig.property(ProjectConfig.HELIDON_VERSION);
+            if (helidonVersion == null) {
+                helidonVersion = Config.buildVersion();
+                Log.debug("helidon.version missing in %s, using %s", projectConfig.file(), helidonVersion);
+            }
+            try {
+                Metadata meta = commonOptions.metadata();
+                MavenVersion version = meta.buildToolsVersionOf(toMavenVersion(helidonVersion));
+                return version.toString();
+            } catch (Plugins.PluginFailed e) {
+                Log.debug("unable to lookup build tools version for Helidon version %s: %s", helidonVersion, e.getMessage());
+                return null;
+            } catch (Exception e) {
+                Log.debug("unable to lookup build tools version for Helidon version %s: %s", helidonVersion, e.toString());
+                return null;
+            }
+        } else {
+            return pluginVersion;
+        }
     }
 
     @Override
@@ -95,12 +119,12 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
         requireMinimumMavenVersion();
         requireValidMavenProjectConfig(commonOptions);
 
-        // Optionally override plugin version
+        // Override plugin version
 
-        String overrideVersion = pluginVersion == null ? (latestPluginVersion ? latestPluginVersion() : null) : pluginVersion;
+        String overrideVersion = pluginOverrideVersion();
         String overridePluginVersion = overrideVersion == null ? null : HELIDON_PLUGIN_VERSION_PROP_PREFIX + overrideVersion;
         if (overridePluginVersion != null) {
-            Log.verbose("Using plugin version %s", overridePluginVersion);
+            Log.verbose("Using plugin version %s", overrideVersion);
         }
 
         // Clear terminal and print header if in terminal mode

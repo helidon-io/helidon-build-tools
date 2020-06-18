@@ -16,11 +16,11 @@
 
 package io.helidon.build.util;
 
-import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
@@ -38,17 +38,8 @@ public class ConfigProperties {
 
     private static final String DELIMITER = ",";
 
-    private final File file;
+    private final Path file;
     private final Properties properties;
-
-    /**
-     * Constructor from file name.
-     *
-     * @param fileName The file's name.
-     */
-    public ConfigProperties(String fileName) {
-        this(new File(fileName));
-    }
 
     /**
      * Constructor from file.
@@ -56,15 +47,6 @@ public class ConfigProperties {
      * @param file The file.
      */
     public ConfigProperties(Path file) {
-        this(file.toFile());
-    }
-
-    /**
-     * Constructor from file.
-     *
-     * @param file The file.
-     */
-    public ConfigProperties(File file) {
         this.file = file;
         this.properties = new Properties();
         load();
@@ -85,12 +67,21 @@ public class ConfigProperties {
     }
 
     /**
+     * Returns the properties file.
+     *
+     * @return The file.
+     */
+    public Path file() {
+        return file;
+    }
+
+    /**
      * Checks if properties file exists.
      *
      * @return Outcome of test.
      */
     public boolean exists() {
-        return file.exists();
+        return Files.exists(file);
     }
 
     /**
@@ -178,9 +169,9 @@ public class ConfigProperties {
      * Load properties from file.
      */
     public void load() {
-        if (file.exists()) {
+        if (exists()) {
             try {
-                try (FileReader reader = new FileReader(file)) {
+                try (FileReader reader = new FileReader(file.toFile())) {
                     properties.load(reader);
                 }
             } catch (IOException e) {
@@ -194,7 +185,7 @@ public class ConfigProperties {
      */
     public void store() {
         try {
-            try (FileWriter writer = new FileWriter(file)) {
+            try (FileWriter writer = new FileWriter(file.toFile())) {
                 properties.store(writer, "Helidon Project Configuration");
             }
         } catch (IOException e) {

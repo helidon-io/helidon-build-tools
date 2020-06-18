@@ -16,10 +16,14 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
+import java.nio.file.Path;
 
 import io.helidon.build.cli.harness.CommandFragment;
 import io.helidon.build.cli.harness.Creator;
+import io.helidon.build.cli.harness.Option;
 import io.helidon.build.cli.harness.Option.KeyValue;
+import io.helidon.build.util.FileUtils;
+import io.helidon.build.util.Log;
 
 /**
  * Common options.
@@ -27,16 +31,54 @@ import io.helidon.build.cli.harness.Option.KeyValue;
 @CommandFragment
 final class CommonOptions {
 
-    private static final File CWD = new File(".");
+    private static final Path CWD = FileUtils.WORKING_DIR;
 
-    private final File project;
+    private final Path projectDir;
+    private final String metadataUrl;
+    private final boolean updateMetadata;
+    private Metadata metadata;
 
     @Creator
-    CommonOptions(@KeyValue(name = "project", description = "The project directory") File project) {
-        this.project = project != null ? project : CWD;
+    CommonOptions(@KeyValue(name = "project", description = "The project directory") File projectDir,
+                  @KeyValue(name = "url", description = "Metadata base URL",
+                          defaultValue = Metadata.DEFAULT_BASE_URL, visible = false) String metadataUrl,
+                  @Option.Flag(name = "update", description = "Force metadata update", visible = false) boolean updateMetadata) {
+        this.projectDir = projectDir != null ? projectDir.toPath().toAbsolutePath() : CWD;
+        this.metadataUrl = metadataUrl;
+        this.updateMetadata = updateMetadata;
     }
 
-    File project() {
-        return project;
+    CommonOptions(Path projectDir, CommonOptions options) {
+        this.projectDir = projectDir;
+        this.metadataUrl = options.metadataUrl;
+        this.updateMetadata = options.updateMetadata;
+        this.metadata = options.metadata;
+    }
+
+    Path project() {
+        return projectDir;
+    }
+
+    String metadataUrl() {
+        return metadataUrl;
+    }
+
+    boolean updateMetadata() {
+        return updateMetadata;
+    }
+
+    Metadata metadata() {
+        if (metadata == null) {
+            if (Log.isDebug()) {
+                if (updateMetadata) {
+                    Log.debug("Forcing metadata update");
+                }
+                if (!metadataUrl.equals(Metadata.DEFAULT_BASE_URL)) {
+                    Log.debug("Using metadata url %s", metadataUrl);
+                }
+            }
+            metadata = Metadata.newInstance(metadataUrl, updateMetadata ? 0 : Metadata.DEFAULT_UPDATE_FREQUENCY);
+        }
+        return metadata;
     }
 }

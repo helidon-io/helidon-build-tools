@@ -125,7 +125,7 @@ public final class InfoCommand extends BaseCommand implements CommandExecution {
         // Project config
 
         Map<String, String> projectProps = new LinkedHashMap<>();
-        ProjectConfig projectConfig = projectConfig(commonOptions.project().toPath());
+        ProjectConfig projectConfig = projectConfig(commonOptions);
         if (projectConfig.exists()) {
             addProjectProperty("version", PROJECT_VERSION, projectConfig, projectProps);
             addProjectProperty("helidon.version", HELIDON_VERSION, projectConfig, projectProps);

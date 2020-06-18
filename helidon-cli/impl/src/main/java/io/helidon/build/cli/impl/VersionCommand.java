@@ -50,7 +50,7 @@ final class VersionCommand extends BaseCommand implements CommandExecution {
         Map<String, String> map = new LinkedHashMap<>();
         addBuildProperties(map);
 
-        ProjectConfig projectConfig = projectConfig(commonOptions.project().toPath());
+        ProjectConfig projectConfig = projectConfig(commonOptions);
         if (projectConfig.exists()) {
             addProjectProperty("version", PROJECT_VERSION, projectConfig, map);
             addProjectProperty("helidon.version", HELIDON_VERSION, projectConfig, map);
