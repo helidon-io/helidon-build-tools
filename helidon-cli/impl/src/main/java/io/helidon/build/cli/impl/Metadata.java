@@ -150,6 +150,19 @@ public class Metadata {
     }
 
     /**
+     * Returns the last time that an update occurred.
+     *
+     * @return The time.
+     */
+    public FileTime lastUpdateTime() {
+        if (latestVersionFile == null) {
+            return FileTime.fromMillis(0);
+        } else {
+            return FileUtils.lastModifiedTime(latestVersionFile);
+        }
+    }
+
+    /**
      * Returns the latest Helidon version.
      *
      * @return The version.

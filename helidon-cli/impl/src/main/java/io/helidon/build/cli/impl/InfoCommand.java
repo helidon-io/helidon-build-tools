@@ -15,15 +15,23 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
+import io.helidon.build.util.ConfigProperties;
 import io.helidon.build.util.Log;
+import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
 
 import static io.helidon.build.cli.impl.VersionCommand.addProjectProperty;
@@ -42,7 +50,9 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
  */
 @Command(name = "info", description = "Print project information")
 public final class InfoCommand extends BaseCommand implements CommandExecution {
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM-dd-yyyy kk:mm:ss z");
     private static final int MIN_WIDTH = "plugin.build.revision".length();
+
     private final CommonOptions commonOptions;
     private final boolean verbose;
 
@@ -84,6 +94,34 @@ public final class InfoCommand extends BaseCommand implements CommandExecution {
             });
         }
 
+        // Metadata
+
+        Map<String, String> metadata = new LinkedHashMap<>();
+        if (verbose) {
+            Metadata meta = Metadata.newInstance();
+            Instant lastUpdateTime = meta.lastUpdateTime().toInstant();
+            ZonedDateTime time = ZonedDateTime.ofInstant(lastUpdateTime, ZoneId.systemDefault());
+            String formattedTime = DATE_FORMATTER.format(time);
+            metadata.put("last.update.time", formattedTime);
+
+            MavenVersion latestVersion = meta.latestVersion();
+            metadata.put("latest.version", latestVersion.toString());
+
+            ConfigProperties props = meta.propertiesOf(latestVersion);
+            props.keySet().stream().sorted().forEach(key -> metadata.put(key, props.property(key)));
+
+            ArchetypeCatalog catalog = meta.catalogOf(latestVersion);
+            AtomicInteger counter = new AtomicInteger(0);
+            catalog.entries().forEach(e -> {
+                String prefix = "archetype." + counter.incrementAndGet();
+                metadata.put(prefix + ".artifactId", e.artifactId());
+                metadata.put(prefix + ".version", e.version());
+                metadata.put(prefix + ".title", e.summary());
+                metadata.put(prefix + ".name", e.name());
+                metadata.put(prefix + ".tags", toString(e.tags()));
+            });
+        }
+
         // Project config
 
         Map<String, String> projectProps = new LinkedHashMap<>();
@@ -105,6 +143,7 @@ public final class InfoCommand extends BaseCommand implements CommandExecution {
         int maxWidth = Math.max(maxKeyWidth(buildProps, systemProps, envVars, projectProps), MIN_WIDTH);
         log("Project Config", projectProps, maxWidth);
         log("Build", buildProps, maxWidth);
+        log("Metadata", metadata, maxWidth);
         log("System Properties", systemProps, maxWidth);
         log("Environment Variables", envVars, maxWidth);
         logHeader("Plugin Build");
@@ -113,6 +152,17 @@ public final class InfoCommand extends BaseCommand implements CommandExecution {
 
     private List<String> pluginArgs(int maxWidth) {
         return List.of("--maxWidth", Integer.toString(maxWidth));
+    }
+
+    private String toString(List<String> list) {
+        StringBuilder sb = new StringBuilder();
+        list.forEach(entry -> {
+            if (sb.length() > 0) {
+                sb.append(",");
+            }
+            sb.append(entry);
+        });
+        return sb.toString();
     }
 
     private static void logHeader(String header) {
