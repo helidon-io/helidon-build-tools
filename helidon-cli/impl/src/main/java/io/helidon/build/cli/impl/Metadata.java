@@ -55,7 +55,7 @@ public class Metadata {
     private static final String CATALOG_FILE_NAME = "archetype-catalog.xml";
     private static final String PLUGIN_NAME = "UpdateMetadata";
     private static final String JAR_SUFFIX = ".jar";
-    private static final TimeUnit DEFAULT_UPDATE_DELAY_UNITS = TimeUnit.HOURS;
+    private static final TimeUnit DEFAULT_UPDATE_FREQUENCY_UNITS = TimeUnit.HOURS;
     private static final long DEFAULT_UPDATE_FREQUENCY = 24;
     private static final int PLUGIN_MAX_WAIT_SECONDS = 30;
     private static final String CLI_MESSAGE_PREFIX = "cli.";
@@ -94,9 +94,20 @@ public class Metadata {
      * @return The instance.
      */
     public static Metadata newInstance(String baseUrl) {
+        return newInstance(baseUrl, DEFAULT_UPDATE_FREQUENCY);
+    }
+
+    /**
+     * Returns a new instance with the given base url and default configuration.
+     *
+     * @param baseUrl The base url.
+     * @param updateFrequencyHours The update frequency, in hours.
+     * @return The instance.
+     */
+    public static Metadata newInstance(String baseUrl, long updateFrequencyHours) {
         final Path cacheDir = Config.userConfig().cacheDir();
         final boolean debug = Log.isDebug();
-        return newInstance(cacheDir, baseUrl, DEFAULT_UPDATE_FREQUENCY, DEFAULT_UPDATE_DELAY_UNITS, debug);
+        return newInstance(cacheDir, baseUrl, updateFrequencyHours, DEFAULT_UPDATE_FREQUENCY_UNITS, debug);
     }
 
     /**
