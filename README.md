@@ -25,7 +25,7 @@ The Helidon Build Tools version is aligned with the Helidon `major.minor` versio
 
 ## Build
 
-You will need Java 9 and Maven 3.5 or newer.
+You will need Java 11 and Maven 3.6.3 or newer.
 
 **Full build**
 ```bash
