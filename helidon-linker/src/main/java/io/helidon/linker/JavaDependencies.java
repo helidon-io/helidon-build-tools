@@ -54,6 +54,7 @@ public final class JavaDependencies {
         "split package", JavaDependencies::split,
         "not found", JavaDependencies::ignore,
         "unnamed module", JavaDependencies::ignore,
+        "jdk8internals", JavaDependencies::debug,
         "JDK removed internal API", JavaDependencies::debug
     );
 

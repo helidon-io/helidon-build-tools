@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2020 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
     limitations under the License.
 
 -->
-<archetype-descriptor modelVersion="1.0" name="test">
+<archetype-descriptor modelVersion="1.0" name="helidon-quickstart-se">
     <properties>
-        <!-- TODO validation -->
         <property id="groupId" />
         <property id="artifactId" />
         <property id="version" value="1.0-SNAPSHOT" />
-        <property id="name" />
+        <property id="name" value="myproject" />
         <property id="package" />
         <property id="gradle" exported="false" />
         <property id="maven" exported="false" />
@@ -30,10 +29,10 @@
     </properties>
     <transformations>
         <transformation id="packaged">
-            <replace regex="__pkg__" replacement="${package/\./\/}" />
+            <replace regex="__pkg__" replacement="${package/\./\/}"/>
         </transformation>
         <transformation id="mustache">
-            <replace regex="\.mustache$" replacement="" />
+            <replace regex="\.mustache$" replacement=""/>
         </transformation>
     </transformations>
     <template-sets transformations="mustache">
@@ -53,12 +52,14 @@
             <directory>.</directory>
             <includes>
                 <include>build.gradle.mustache</include>
+                <include>README.md.mustache</include>
             </includes>
         </template-set>
         <template-set if="maven">
             <directory>.</directory>
             <includes>
                 <include>pom.xml.mustache</include>
+                <include>README.md.mustache</include>
             </includes>
         </template-set>
     </template-sets>
@@ -89,16 +90,10 @@
         </file-set>
     </file-sets>
     <input-flow>
-        <select text="Select a build system">
-            <choice property="maven" text="Maven" />
-            <choice property="gradle" text="Gradle" />
-        </select>
-        <!-- TODO input value transformation -->
-        <!-- TODO choice node at the top for yes/no properties -->
-        <input property="groupId" text="Enter a project groupId" if="maven"/>
-        <input property="artifactId" text="Enter a project artifactId" />
-        <input property="version" text="Enter a project version" />
-        <input property="name" text="Enter a project name" default="${artifactId}" />
-        <input property="package" text="Enter a Java package name" default="${groupId}" />
+        <input property="name" text="Project name" default="${name}"/>
+        <input property="groupId" text="Project groupId" if="maven" default="${groupId}"/>
+        <input property="artifactId" text="Project artifactId" default="${artifactId}"/>
+        <input property="version" text="Project version" default="${version}"/>
+        <input property="package" text="Java package name" default="${package}"/>
     </input-flow>
 </archetype-descriptor>

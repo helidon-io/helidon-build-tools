@@ -220,6 +220,15 @@ public final class Jar implements ResourceContainer {
     }
 
     /**
+     * Returns the manifest, if present.
+     *
+     * @return The manifest or {@code null} if not present.
+     */
+    public Manifest manifest() {
+        return manifest;
+    }
+
+    /**
      * Returns the entries in this jar.
      *
      * @return The entries.
@@ -328,10 +337,10 @@ public final class Jar implements ResourceContainer {
         if (Constants.OS.isPosix()) {
             try {
                 Files.setPosixFilePermissions(targetFile, Set.of(
-                    PosixFilePermission.OWNER_READ,
-                    PosixFilePermission.OWNER_WRITE,
-                    PosixFilePermission.GROUP_READ,
-                    PosixFilePermission.OTHERS_READ
+                        PosixFilePermission.OWNER_READ,
+                        PosixFilePermission.OWNER_WRITE,
+                        PosixFilePermission.GROUP_READ,
+                        PosixFilePermission.OTHERS_READ
                 ));
             } catch (IOException e) {
                 Log.warn("Unable to set %s read-only: %s", e.getMessage());

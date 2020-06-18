@@ -125,6 +125,11 @@ update_version(){
         -DnewVersion="${FULL_VERSION}" \
         -Dproperty="helidon.version" \
         -DprocessAllModules="true"
+
+    # Hacks to hard-coded versions
+    local file="helidon-archetype/maven-plugin/src/it/projects/catalog2/catalog.xml"
+    cat ${file} | sed s@'^\([ \t]*\)version=".*"'@"\1version=\"${FULL_VERSION}\""@g > ${file}.tmp
+    mv ${file}.tmp ${file}
 }
 
 release_build(){
