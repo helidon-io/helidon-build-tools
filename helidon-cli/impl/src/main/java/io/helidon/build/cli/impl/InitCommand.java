@@ -98,6 +98,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
     static final String DEFAULT_ARTIFACT_ID = "myartifactid";
     static final String DEFAULT_PACKAGE = "mypackage";
     static final String DEFAULT_NAME = "myproject";
+    static final int DEFAULT_UPDATE_HOURS = 12;
 
     @Creator
     InitCommand(
@@ -119,7 +120,8 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
             @KeyValue(name = "name", description = "Project's name",
                     defaultValue = DEFAULT_NAME) String projectName,
             @KeyValue(name = "url", description = "Metadata base URL",
-                    defaultValue = Metadata.DEFAULT_BASE_URL, visible = false) String metaBaseUrl) {
+                    defaultValue = Metadata.DEFAULT_BASE_URL, visible = false) String metaBaseUrl,
+            @Flag(name = "update", description = "Force metadata update", visible = false) boolean update) {
         this.commonOptions = commonOptions;
         this.batch = batch;
         this.build = build;
@@ -130,7 +132,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         this.artifactId = artifactId;
         this.packageName = packageName;
         this.name = projectName;
-        this.metadata = Metadata.newInstance(metaBaseUrl);
+        this.metadata = Metadata.newInstance(metaBaseUrl, update ? 0 : DEFAULT_UPDATE_HOURS);
     }
 
     @Override
@@ -214,7 +216,7 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         // Generate project using archetype engine
         Path parentDirectory = commonOptions.project().toPath();
         Path projectDir = parentDirectory.resolve(properties.get("name"));
-        require(!projectDir.toFile().exists(), "%s exists", projectDir);
+        require(!projectDir.toFile().exists(), "Directory %s already exists", projectDir);
         engine.generate(projectDir.toFile());
 
         // Create config file that includes feature information

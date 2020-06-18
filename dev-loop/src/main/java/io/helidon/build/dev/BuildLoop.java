@@ -55,6 +55,7 @@ public class BuildLoop {
     private final AtomicReference<Project> project;
     private final AtomicReference<ChangeType> lastChangeType;
     private final AtomicReference<FileTime> lastChangeTime;
+    private final AtomicLong lastReadyTime;
     private final AtomicLong lastFailedTime;
     private final AtomicBoolean ready;
     private final AtomicLong delay;
@@ -84,6 +85,7 @@ public class BuildLoop {
         this.lastChangeType = new AtomicReference<>();
         this.lastChangeTime = new AtomicReference<>();
         this.lastFailedTime = new AtomicLong();
+        this.lastReadyTime = new AtomicLong();
         this.ready = new AtomicBoolean();
         this.delay = new AtomicLong();
     }
@@ -221,15 +223,7 @@ public class BuildLoop {
                         } catch (IllegalStateException | IllegalArgumentException | InterruptedException e) {
                             loopFailed(e);
                         } catch (Throwable e) {
-                            buildFailed(Incremental, e);
-
-                            // Wait for further changes before re-building, if needed. Since it is possible for a file to have
-                            // changed during the build, we must ensure that we don't miss it. Do nothing if there are changes
-                            // since the last change; if there are none, update the project so that we'll wait for them.
-
-                            if (project.sourceChangesSince(lastChangeTime.get()).isEmpty()) {
-                                project.update(false);
-                            }
+                            incrementalBuildFailed(e);
                         }
                     }
                 }
@@ -266,6 +260,7 @@ public class BuildLoop {
     }
 
     private void ready() {
+        lastReadyTime.set(System.currentTimeMillis());
         if (!ready.getAndSet(true)) {
             delay.set(monitor.onReady(cycleNumber.get(), project.get()));
         }
@@ -297,6 +292,28 @@ public class BuildLoop {
             lastChangeTime.set(FileTime.fromMillis(failedTime));
         }
         delay.set(monitor.onBuildFail(cycleNumber.get(), type, e));
+    }
+
+    private void incrementalBuildFailed(Throwable e) {
+        buildFailed(Incremental, e);
+
+        // Wait for further changes before re-building, if needed. Since it is possible for a file to have changed during
+        // the build, we must ensure that we don't miss it. Do we have any changes since the last change?
+
+        final Project project = project();
+        if (project.sourceChangesSince(lastChangeTime.get()).isEmpty()) {
+
+            // No, so update the project so we will wait for them
+
+            project.update(false);
+
+        } else {
+
+            // Yes, update the last change time so that if we fail again we'll check from then to avoid
+            // continuously re-building when nothing has changed
+
+            lastChangeTime.set(FileTime.fromMillis(lastFailedTime.get()));
+        }
     }
 
     private boolean readyToCreateProject() {

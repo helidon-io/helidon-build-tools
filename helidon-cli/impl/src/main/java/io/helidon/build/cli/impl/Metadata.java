@@ -102,9 +102,20 @@ public class Metadata {
      * @return The instance.
      */
     public static Metadata newInstance(String baseUrl) {
+        return newInstance(baseUrl, DEFAULT_UPDATE_FREQUENCY);
+    }
+
+    /**
+     * Returns a new instance with the given base url and default configuration.
+     *
+     * @param baseUrl The base url.
+     * @param updateFrequencyHours The update frequency, in hours.
+     * @return The instance.
+     */
+    public static Metadata newInstance(String baseUrl, long updateFrequencyHours) {
         final Path cacheDir = Config.userConfig().cacheDir();
         final boolean debug = Log.isDebug();
-        return newInstance(cacheDir, baseUrl, DEFAULT_UPDATE_FREQUENCY, DEFAULT_UPDATE_FREQUENCY_UNITS, debug);
+        return newInstance(cacheDir, baseUrl, updateFrequencyHours, DEFAULT_UPDATE_FREQUENCY_UNITS, debug);
     }
 
     /**
@@ -385,13 +396,5 @@ public class Metadata {
             }
         }
         throw new IllegalStateException("No version in " + latestVersionFile);
-    }
-
-    private void info(String message, Object... args) {
-        Log.info(message, args);
-    }
-
-    private void debug(String message, Object... args) {
-        Log.debug(message, args);
     }
 }

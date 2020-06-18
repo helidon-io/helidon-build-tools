@@ -47,7 +47,6 @@ import org.apache.maven.project.MavenProject;
 import static io.helidon.build.dev.BuildComponent.createBuildComponent;
 import static io.helidon.build.dev.BuildFile.createBuildFile;
 import static io.helidon.build.dev.BuildRoot.createBuildRoot;
-import static io.helidon.build.dev.BuildType.Skipped;
 import static io.helidon.build.dev.ProjectDirectory.createProjectDirectory;
 import static io.helidon.build.util.Constants.ENABLE_HELIDON_CLI;
 import static io.helidon.build.util.FileUtils.ChangeDetectionType.FIRST;
@@ -141,13 +140,19 @@ public class MavenProjectSupplier implements ProjectSupplier {
         if (clean) {
             build(executor, true, cycleNumber);
         } else if (allowSkip && canSkipBuild(projectDir)) {
-            buildType = Skipped;
-            executor.monitor().onBuildStart(cycleNumber, BuildType.Skipped);
+            try {
+                Project result = createProject(executor.projectDirectory(), buildType);
+                executor.monitor().onBuildStart(cycleNumber, BuildType.Skipped);
+                return result;
+            } catch (Exception e) {
+                build(executor, false, cycleNumber);
+            }
         } else {
             build(executor, false, cycleNumber);
         }
 
         // Create and return the project based on the config
+
         return createProject(executor.projectDirectory(), buildType);
     }
 
@@ -236,19 +241,19 @@ public class MavenProjectSupplier implements ProjectSupplier {
 
     private BuildStep compileStep() {
         return MavenGoalBuildStep.builder()
-                .mavenProject(project)
-                .mavenSession(session)
-                .pluginManager(plugins)
-                .goal(MavenGoalBuildStep.compileGoal())
-                .build();
+                                 .mavenProject(project)
+                                 .mavenSession(session)
+                                 .pluginManager(plugins)
+                                 .goal(MavenGoalBuildStep.compileGoal())
+                                 .build();
     }
 
     private BuildStep resourcesStep() {
         return MavenGoalBuildStep.builder()
-                .mavenProject(project)
-                .mavenSession(session)
-                .pluginManager(plugins)
-                .goal(MavenGoalBuildStep.resourcesGoal())
-                .build();
+                                 .mavenProject(project)
+                                 .mavenSession(session)
+                                 .pluginManager(plugins)
+                                 .goal(MavenGoalBuildStep.resourcesGoal())
+                                 .build();
     }
 }
