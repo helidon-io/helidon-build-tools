@@ -21,13 +21,15 @@ import io.helidon.build.util.Log;
 import org.junit.jupiter.api.Assumptions;
 import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.integration.ClientAndServer;
+import org.mockserver.mock.Expectation;
+import org.mockserver.model.NottableString;
 import org.mockserver.netty.MockServer;
 
-import static io.helidon.build.cli.impl.TestMetadata.INITIAL_ETAG;
-import static io.helidon.build.cli.impl.TestMetadata.RC1_CLI_DATA_ZIP;
-import static io.helidon.build.cli.impl.TestMetadata.RC2_CLI_DATA_ZIP;
+import static io.helidon.build.cli.impl.TestMetadata.etag;
+import static io.helidon.build.cli.impl.TestMetadata.zipPath;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
+import static org.mockserver.model.NottableString.not;
 
 /**
  * Metadata server that serves local test data.
@@ -41,7 +43,29 @@ public class MetadataTestServer {
     private static final String URL_PREFIX = "http://localhost:";
     private static final String ETAG_HEADER = "Etag";
     private static final String IF_NONE_MATCH_HEADER = "If-None-Match";
-    private static final String NO_FILE_ETAG = "<no-file>";
+
+    private static Expectation latestRequest() {
+        return new Expectation(request().withMethod("GET")
+                                        .withPath("/latest")).withId("latest");
+    }
+
+    private static Expectation zipRequestWithoutEtag(TestVersion version) {
+        return new Expectation(request().withMethod("GET")
+                                        .withHeader(not(IF_NONE_MATCH_HEADER))
+                                        .withPath(zipPath(version))).withId(version + "-zip-without-etag");
+    }
+
+    private static Expectation zipRequestWithoutMatchingEtag(TestVersion version, byte[] data) {
+        return new Expectation(request().withMethod("GET")
+                                        .withHeader(NottableString.string(IF_NONE_MATCH_HEADER), not(etag(version, data)))
+                                        .withPath(zipPath(version))).withId(version + "-zip-without-matching-etag");
+    }
+
+    private static Expectation zipRequestWithMatchingEtag(TestVersion version, byte[] data) {
+        return new Expectation(request().withMethod("GET")
+                                        .withHeader(IF_NONE_MATCH_HEADER, etag(version, data))
+                                        .withPath(zipPath(version))).withId(version + "-zip-with-matching-etag");
+    }
 
     private final int port;
     private final String url;
@@ -123,37 +147,15 @@ public class MetadataTestServer {
     public MetadataTestServer start() {
         mockServer = ClientAndServer.startClientAndServer(port);
 
-        // Set the version to return for "/latest"
+        // Set the response for "/latest"
 
         latest(latest);
 
-        // Always return zip data when If-None-Match header is "<no-file>" (plugin defines this)
+        // Set the responses for the "${version}/cli-data.zip" requests, with and without etags
 
-        mockServer.when(request().withMethod("GET")
-                                 .withHeader(IF_NONE_MATCH_HEADER, NO_FILE_ETAG)
-                                 .withPath("/" + RC1_CLI_DATA_ZIP))
-                  .respond(response().withHeader(ETAG_HEADER, INITIAL_ETAG)
-                                     .withBody(TestMetadata.RC1_ZIP));
-
-        mockServer.when(request().withMethod("GET")
-                                 .withHeader(IF_NONE_MATCH_HEADER, NO_FILE_ETAG)
-                                 .withPath("/" + RC2_CLI_DATA_ZIP))
-                  .respond(response().withHeader(ETAG_HEADER, INITIAL_ETAG)
-                                     .withBody(TestMetadata.RC2_ZIP));
-
-        // Always return 304 when If-None-Match is "<initial>"
-
-        mockServer.when(request().withMethod("GET")
-                                 .withHeader(IF_NONE_MATCH_HEADER, INITIAL_ETAG)
-                                 .withPath("/" + RC1_CLI_DATA_ZIP))
-                  .respond(response().withHeader(ETAG_HEADER, INITIAL_ETAG)
-                                     .withStatusCode(304));
-
-        mockServer.when(request().withMethod("GET")
-                                 .withHeader(IF_NONE_MATCH_HEADER, INITIAL_ETAG)
-                                 .withPath("/" + RC2_CLI_DATA_ZIP))
-                  .respond(response().withHeader(ETAG_HEADER, INITIAL_ETAG)
-                                     .withStatusCode(304));
+        for (TestVersion version : TestVersion.values()) {
+            zipData(version, TestMetadata.zipData(version));
+        }
 
         // Ensure started
 
@@ -194,18 +196,30 @@ public class MetadataTestServer {
     }
 
     /**
-     * Sets the version to return for the "/latest" request.
+     * Sets the response for the "/latest" request.
      *
      * @param latest The version.
      */
     public void latest(TestVersion latest) {
-        if (this.latest != null && this.latest != latest) {
-            throw new Error("not yet supported, need to deactivate/deregister previous expectation!");
-        }
         this.latest = latest;
-        mockServer.when(request().withMethod("GET")
-                                 .withPath("/latest"))
-                  .respond(response().withBody(latest.toString()));
+        mockServer.upsert(latestRequest().thenRespond(response().withBody(latest.toString())));
+    }
+
+    /**
+     * Sets the response for the "${version}/cli-data.zip" request for the given version, with and without an etag.
+     * Return the data when no etag or a 304 when etag matches.
+     *
+     * @param version The version.
+     * @param data The zip data.
+     */
+    public void zipData(TestVersion version, byte[] data) {
+        final String etag = etag(version, data);
+        mockServer.upsert(zipRequestWithoutEtag(version).thenRespond(response().withHeader(ETAG_HEADER, etag)
+                                                                               .withBody(data)));
+        mockServer.upsert(zipRequestWithoutMatchingEtag(version, data).thenRespond(response().withHeader(ETAG_HEADER, etag)
+                                                                                             .withBody(data)));
+        mockServer.upsert(zipRequestWithMatchingEtag(version, data).thenRespond(response().withHeader(ETAG_HEADER, etag)
+                                                                                          .withStatusCode(304)));
     }
 
     /**

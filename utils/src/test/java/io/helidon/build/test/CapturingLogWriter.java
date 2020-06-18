@@ -167,7 +167,7 @@ public class CapturingLogWriter implements Log.Writer {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        messages().forEach(msg -> sb.append(msg).append(EOL));
+        messages().forEach(msg -> sb.append("    ").append(msg).append(EOL));
         return sb.toString();
     }
 

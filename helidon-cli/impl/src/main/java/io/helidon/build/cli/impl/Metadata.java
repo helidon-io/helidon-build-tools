@@ -47,7 +47,17 @@ public class Metadata {
     /**
      * The default base url.
      */
-    public static final String DEFAULT_BASE_URL = "https://helidon.io";
+    public static final String DEFAULT_BASE_URL = "https://helidon.io/cli-data";
+
+    /**
+     * The default update frequency.
+     */
+    public static final long DEFAULT_UPDATE_FREQUENCY = 12;
+
+    /**
+     * The default update frequency units.
+     */
+    public static final TimeUnit DEFAULT_UPDATE_FREQUENCY_UNITS = TimeUnit.HOURS;
 
     private static final String LATEST_VERSION_FILE_NAME = "latest";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
@@ -55,8 +65,6 @@ public class Metadata {
     private static final String CATALOG_FILE_NAME = "archetype-catalog.xml";
     private static final String PLUGIN_NAME = "UpdateMetadata";
     private static final String JAR_SUFFIX = ".jar";
-    private static final TimeUnit DEFAULT_UPDATE_FREQUENCY_UNITS = TimeUnit.HOURS;
-    private static final long DEFAULT_UPDATE_FREQUENCY = 24;
     private static final int PLUGIN_MAX_WAIT_SECONDS = 30;
     private static final String CLI_MESSAGE_PREFIX = "cli.";
     private static final String CLI_MESSAGE_SUFFIX = ".message";
@@ -388,13 +396,5 @@ public class Metadata {
             }
         }
         throw new IllegalStateException("No version in " + latestVersionFile);
-    }
-
-    private void info(String message, Object... args) {
-        Log.info(message, args);
-    }
-
-    private void debug(String message, Object... args) {
-        Log.debug(message, args);
     }
 }

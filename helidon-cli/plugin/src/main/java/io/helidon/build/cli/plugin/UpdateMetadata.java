@@ -50,7 +50,6 @@ public class UpdateMetadata extends Plugin {
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     private static final String ETAG_HEADER = "Etag";
     private static final String IF_NONE_MATCH_HEADER = "If-None-Match";
-    private static final String NO_FILE_ETAG = "<no-file>";
     private static final String NO_ETAG = "<no-etag>";
     private static final String ZIP_FILE_NAME = "cli-data.zip";
     private static final String REMOTE_DATA_FILE_SUFFIX = "/" + ZIP_FILE_NAME;
@@ -139,8 +138,11 @@ public class UpdateMetadata extends Plugin {
                                                           .connectTimeout(connectTimeout)
                                                           .readTimeout(readTimeout)
                                                           .connect();
+
         Files.copy(connection.getInputStream(), latestVersionFile, REPLACE_EXISTING);
-        Log.debug("wrote %s", latestVersionFile);
+        if (Log.isDebug()) {
+            Log.debug("wrote %s to %s", readLatestVersion(), latestVersionFile);
+        }
     }
 
     private void updateVersion(String version) throws Exception {
@@ -173,7 +175,6 @@ public class UpdateMetadata extends Plugin {
             headers.put(IF_NONE_MATCH_HEADER, etag);
             Log.debug("maybe downloading %s, headers=%s", url, headers);
         } else {
-            headers.put(IF_NONE_MATCH_HEADER, NO_FILE_ETAG); // make mocking easier
             Log.debug("downloading %s, headers=%s", url, headers);
         }
         return headers;

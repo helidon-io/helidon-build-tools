@@ -16,6 +16,7 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -75,9 +76,21 @@ public class Plugins {
     }
 
     /**
-     * Removes any cached plugin jar.
+     * Resets state.
+     *
+     * @param deleteJar {@code true} if plugin jar should be deleted if presesnt.
      */
-    static void clearPluginJar() {
+    static void reset(boolean deleteJar) {
+        if (deleteJar) {
+            final Path existing = PLUGINS_JAR.get();
+            if (existing != null && Files.exists(existing)) {
+                try {
+                    Files.delete(existing);
+                } catch (IOException e) {
+                    Log.warn("Could not delete %s: %s", existing, e.toString());
+                }
+            }
+        }
         PLUGINS_JAR.set(null);
     }
 
