@@ -94,8 +94,7 @@ public class VuetifyNavigation implements Model {
         List<Item> resolvedGroups = new LinkedList<>();
         for (Item group : items) {
             if (!(group instanceof Group)) {
-                throw new IllegalStateException(
-                        "top level items is not a group");
+                throw new IllegalStateException("top level items is not a group");
             }
             resolvedGroups.add(((Group) group).resolve(allPages));
         }
@@ -113,8 +112,7 @@ public class VuetifyNavigation implements Model {
             case (ITEMS_PROP):
                 return items;
             default:
-                throw new IllegalArgumentException(
-                        "Unkown attribute: " + attr);
+                throw new IllegalArgumentException("Unknown attribute: " + attr);
         }
     }
 
@@ -167,7 +165,7 @@ public class VuetifyNavigation implements Model {
                 node.get(ITEMS_PROP).ifExists(c
                         -> put(ITEMS_PROP, (c.asNodeList()
                                     .stream()
-                                    .map(n -> Item.from(n))
+                                    .map(n -> Item.from(n, true))
                                     .collect(Collectors.toList()))));
             }
             return this;
@@ -192,8 +190,7 @@ public class VuetifyNavigation implements Model {
                         items = asList(val, Item.class);
                         break;
                     default:
-                        throw new IllegalStateException(
-                                "Unkown attribute: " + attr);
+                        throw new IllegalStateException("Unknown attribute: " + attr);
                 }
             }
             return new VuetifyNavigation(title, glyph, items);
@@ -315,19 +312,16 @@ public class VuetifyNavigation implements Model {
                 case ("islink"):
                     return isLink();
                 default:
-                    throw new IllegalArgumentException(
-                            "Unkown attribute: " + attr);
+                    throw new IllegalArgumentException("Unknown attribute: " + attr);
             }
         }
 
-        private static Item from(Config node) {
+        private static Item from(Config node, boolean topLevel) {
             if (node.get(ITEMS_PROP).exists()) {
-                if (node.get(PATHPREFIX_PROP).exists()) {
-                    // TODO ensure it is not at the level of a group
-                    return SubGroup.builder().config(node).build();
-                } else {
-                    // TODO ensure it is at the level of a group
+                if (topLevel) {
                     return Group.builder().config(node).build();
+                } else {
+                    return SubGroup.builder().config(node).build();
                 }
             } else if (node.get(HREF_PROP).exists()) {
                 return Link.builder().config(node).build();
@@ -337,7 +331,7 @@ public class VuetifyNavigation implements Model {
                                 .config(node)
                                 .build());
             }
-            throw new IllegalArgumentException("Unkown navigation item type");
+            throw new IllegalArgumentException("Unknown navigation item type");
         }
 
         /**
@@ -462,8 +456,7 @@ public class VuetifyNavigation implements Model {
                             excludes = asList(val, String.class);
                             break;
                         default:
-                            throw new IllegalStateException(
-                                    "Unkown attribute: " + attr);
+                            throw new IllegalStateException("Unknown attribute: " + attr);
                     }
                 }
                 return new Pages(SourcePathFilter.builder()
@@ -487,27 +480,29 @@ public class VuetifyNavigation implements Model {
      */
     public static class Group extends Item {
 
+        private final String pathprefix;
         private final List<Item> items;
 
         /**
          * Create a new instance of {@link Group}.
          * @param title the group title
          * @param glyph the group glyph
+         * @param pathprefix the group path prefix
          * @param items the group items
          */
-        protected Group(String title, Glyph glyph, List<Item> items){
+        protected Group(String title, Glyph glyph, String pathprefix, List<Item> items){
             super(title, glyph);
             checkNonNull(items, ITEMS_PROP);
+            this.pathprefix = pathprefix;
             this.items = items;
         }
 
         /**
-         * Create a new instance of {@link Group}.
-         * @param title the group title
-         * @param items the group items
+         * Get the path prefix associated with this group.
+         * @return the path prefix, may be {@code null}
          */
-        public Group(String title, List<Item> items) {
-            this(title, null, items);
+        public String getPathprefix() {
+            return pathprefix;
         }
 
         /**
@@ -523,6 +518,9 @@ public class VuetifyNavigation implements Model {
             groupBuilder.title(getTitle());
             if (getGlyph() != null) {
                 groupBuilder.glyph(getGlyph());
+            }
+            if (pathprefix != null) {
+                groupBuilder.pathprefix(pathprefix);
             }
             groupBuilder.items(items.stream().flatMap(item -> {
                 if (item instanceof Pages) {
@@ -541,6 +539,8 @@ public class VuetifyNavigation implements Model {
             switch (attr) {
                 case (ITEMS_PROP):
                     return items;
+                case (PATHPREFIX_PROP):
+                    return pathprefix;
                 default:
                     return super.get(attr);
             }
@@ -561,6 +561,16 @@ public class VuetifyNavigation implements Model {
                 return this;
             }
 
+            /**
+             * Set the path prefix.
+             * @param pathprefix the path prefix to use
+             * @return the {@link Builder} instance
+             */
+            public Group.Builder pathprefix(String pathprefix){
+                put(PATHPREFIX_PROP, pathprefix);
+                return this;
+            }
+
             @Override
             public Builder config(Config node) {
                 super.config(node);
@@ -568,8 +578,10 @@ public class VuetifyNavigation implements Model {
                     node.get(ITEMS_PROP).ifExists(c
                             -> put(ITEMS_PROP, (c.asNodeList()
                                     .stream()
-                                    .map(n -> Item.from(n))
+                                    .map(n -> Item.from(n, false))
                                     .collect(Collectors.toList()))));
+                    node.get(PATHPREFIX_PROP).ifExists(c
+                            -> put(PATHPREFIX_PROP, c.asString()));
                 }
                 return this;
             }
@@ -578,6 +590,7 @@ public class VuetifyNavigation implements Model {
             public Group build() {
                 String title = null;
                 Glyph glyph = null;
+                String pathprefix = null;
                 List<Item> items = null;
                 for (Map.Entry<String, Object> entry : values()) {
                     String attr = entry.getKey();
@@ -592,12 +605,14 @@ public class VuetifyNavigation implements Model {
                         case (ITEMS_PROP):
                             items = asList(val, Item.class);
                             break;
+                        case (PATHPREFIX_PROP):
+                            pathprefix = asType(val, String.class);
+                            break;
                         default:
-                            throw new IllegalStateException(
-                                    "Unkown attribute: " + attr);
+                            throw new IllegalStateException("Unknown attribute: " + attr);
                     }
                 }
-                return new Group(title, glyph, items);
+                return new Group(title, glyph, pathprefix, items);
             }
         }
 
@@ -615,23 +630,9 @@ public class VuetifyNavigation implements Model {
      */
     public static class SubGroup extends Group {
 
-        private final String pathprefix;
-
-        private SubGroup(String title,
-                           Glyph glyph,
-                           String pathprefix,
-                           List<Item> items){
-            super(title, glyph, items);
+        private SubGroup(String title, Glyph glyph, String pathprefix, List<Item> items){
+            super(title, glyph, pathprefix, items);
             checkNonNullNonEmpty(pathprefix, PATHPREFIX_PROP);
-            this.pathprefix = pathprefix;
-        }
-
-        /**
-         * Get the path prefix associated with this sub-group.
-         * @return the path prefix, never {@code null}
-         */
-        public String getPathprefix() {
-            return pathprefix;
         }
 
         private SubGroup resolve(Collection<Page> allPages) {
@@ -640,7 +641,7 @@ public class VuetifyNavigation implements Model {
             if (getGlyph() != null) {
                 subGroupBuilder.glyph(getGlyph());
             }
-            subGroupBuilder.pathprefix(pathprefix);
+            subGroupBuilder.pathprefix(getPathprefix());
             subGroupBuilder.items(getItems().stream().flatMap(item -> {
                 if (item instanceof Pages) {
                     return ((Pages) item).resolve(allPages).stream();
@@ -650,40 +651,10 @@ public class VuetifyNavigation implements Model {
             return subGroupBuilder.build();
         }
 
-        @Override
-        public Object get(String attr) {
-            switch (attr) {
-                case (PATHPREFIX_PROP):
-                    return pathprefix;
-                default:
-                    return super.get(attr);
-            }
-        }
-
         /**
          * A fluent builder to create {@link SubGroup} instances.
          */
         public static class Builder extends Group.Builder {
-
-            /**
-             * Set the path prefix.
-             * @param pathprefix the path prefix to use
-             * @return the {@link Builder} instance
-             */
-            public Builder pathprefix(String pathprefix){
-                put(PATHPREFIX_PROP, pathprefix);
-                return this;
-            }
-
-            @Override
-            public Builder config(Config node) {
-                super.config(node);
-                if (node.exists()) {
-                    node.get(PATHPREFIX_PROP).ifExists(c
-                            -> put(PATHPREFIX_PROP, c.asString()));
-                }
-                return this;
-            }
 
             @Override
             public SubGroup build() {
@@ -708,8 +679,7 @@ public class VuetifyNavigation implements Model {
                             items = asList(val, Item.class);
                             break;
                         default:
-                            throw new IllegalStateException(
-                                    "Unkown attribute: " + attr);
+                            throw new IllegalStateException("Unknown attribute: " + attr);
                     }
                 }
                 return new SubGroup(title, glyph, pathprefix, items);
@@ -796,8 +766,7 @@ public class VuetifyNavigation implements Model {
                             href = asType(val, String.class);
                             break;
                         default:
-                            throw new IllegalStateException(
-                                    "Unkown attribute: " + attr);
+                            throw new IllegalStateException("Unknown attribute: " + attr);
                     }
                 }
                 return new Link(title, glyph, href);

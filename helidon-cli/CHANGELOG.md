@@ -1,31 +1,46 @@
-# Changelog
 
-All notable changes to this project will be documented in this file.
-This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+# Helidon CLI
 
-## [Unreleased]
+The Helidon CLI lets you easily create a Helidon project by picking from
+a set of archetypes. It also supports a developer loop that performs
+continuous compilation and application restart so you can easily
+iterate over source code changes.
 
-### Notes
+## Download
 
-### Fixes
+Download the latest Helidon CLI:
 
-### Improvements
+* [Mac OS](http://helidon.io/cli/latest/darwin/helidon)
+* [Linux amd64](http://helidon.io/cli/latest/linux/helidon)
 
-## Experimental
+and put it in your PATH.
 
-## Thanks!
+Windows builds to come.
 
-## [1.4.4]
+## Create a New Project
 
-### Notes
+```
+helidon init
+```
 
-### Fixes
+Then answer the questions.
 
-### Improvements
+## Developer Loop
 
-## Experimental
+```
+cd myproject
+helidon dev
+```
 
-## Thanks!
+As you make source code changes the project will automatically recompile and
+restart your application.
 
-[Unreleased]: https://github.com/oracle/helidon-build-tools/compare/2.0.0-RC3...HEAD
-[1.4.4]: https://github.com/oracle/helidon-build-tools/compare/1.4.3..1.4.4
+## Versions
+
+### [2.0.0]
+
+Initial Helidon CLI
+
+[2.0.0]: https://github.com/oracle/helidon-build-tools/compare/2.0.0-M1...HEAD
+
+

@@ -26,6 +26,7 @@ backend:
         value: "import_contacts"
       items:
         - title: "Main Documentation"
+          pathprefix: "/about"
           items:
             - title: "About"
               pathprefix: "/about"
