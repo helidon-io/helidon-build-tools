@@ -132,7 +132,7 @@ public abstract class Backend implements Model {
                         break;
                     default:
                         throw new IllegalStateException(
-                                "Unkown attribute: " + attr);
+                                "Unknown attribute: " + attr);
                 }
             }
             return (T) BackendProvider.get(name, node);

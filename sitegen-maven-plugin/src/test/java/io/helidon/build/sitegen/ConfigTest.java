@@ -161,6 +161,7 @@ public class ConfigTest {
 
         VuetifyNavigation.Group mainDocNavGroup = assertType(topNavItems.get(0), VuetifyNavigation.Group.class, "nav.items[0]");
         assertEquals("Main Documentation", mainDocNavGroup.getTitle(), "nav.items[0].title");
+        assertEquals("/about", mainDocNavGroup.getPathprefix(), "nav.items[0].pathprefix");
 
         List<VuetifyNavigation.Item> mainDocNavItems = mainDocNavGroup.getItems();
         assertList(3, mainDocNavItems, "nav.items[0].items");
