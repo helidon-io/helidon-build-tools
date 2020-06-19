@@ -77,9 +77,42 @@ function createRoutes(){
 function createNav(){
     return [
 <#if navigation??>
+        {
+            groups: [
 <#list navigation.items as navitem>
-<#if navitem.isgroup>
-        { header: '${navitem.title?js_string}' },
+<#if navitem.isgroup && navitem.pathprefix??>
+                {
+                    title: '${navitem.title?js_string}',
+                    group: '${navitem.pathprefix}',
+                    items: [
+<#list navitem.items as groupitem>
+                        {
+                            title: '${groupitem.title?js_string}',
+                            action: <#if groupitem.glyph??>'${groupitem.glyph.value}'<#else>null</#if>,
+<#if groupitem.islink>
+                            href: '${groupitem.href}',
+                            target: '_blank'
+<#elseif groupitem.isgroup>
+                            group: <#if groupitem.pathprefix??>'${groupitem.pathprefix}'<#else>null</#if>,
+                            items: [
+<#list groupitem.items as subgroupitem>
+<#if subgroupitem.islink>
+                                { href: '${subgroupitem.href}', title: '${subgroupitem.title?js_string}' }<#sep>,</#sep>
+</#if>
+</#list>
+                            ]
+</#if>
+                        }<#if groupitem?has_next>,</#if>
+</#list>
+                    ]
+                }<#if navitem?has_next>,</#if>
+</#if>
+</#list>
+            ]
+        }
+<#list navigation.items as navitem>
+<#if navitem.isgroup && !navitem.pathprefix??>
+        ,{ header: '${navitem.title?js_string}' },
 <#list navitem.items as groupitem>
         {
             title: '${groupitem.title?js_string}',
@@ -107,9 +140,6 @@ function createNav(){
             target: '_blank'
         }<#if navitem?has_next>,</#if>
 </#if>
-<#sep>
-        { divider: true },
-</#sep>
 </#list>
 </#if>
     ];
