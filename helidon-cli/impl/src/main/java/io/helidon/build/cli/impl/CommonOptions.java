@@ -31,6 +31,7 @@ import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.Style;
 
 import static io.helidon.build.util.FileUtils.WORKING_DIR;
+import static io.helidon.build.util.MavenVersion.toMavenVersion;
 
 /**
  * Common options.
@@ -43,6 +44,7 @@ final class CommonOptions {
     private final String metadataUrl;
     private final boolean updateMetadata;
     private final boolean resetCache;
+    private final MavenVersion updatesSince;
     private Metadata metadata;
 
     @Creator
@@ -50,11 +52,14 @@ final class CommonOptions {
                   @KeyValue(name = "url", description = "Metadata base URL",
                           defaultValue = Metadata.DEFAULT_URL, visible = false) String metadataUrl,
                   @Option.Flag(name = "update", description = "Force metadata update", visible = false) boolean updateMetadata,
-                  @Option.Flag(name = "reset", description = "Reset metadata cache", visible = false) boolean resetCache) {
+                  @Option.Flag(name = "reset", description = "Reset metadata cache", visible = false) boolean resetCache,
+                  @KeyValue(name = "since", description = "Check for updates from this version",
+                          visible = false) String since) {
         this.projectDir = projectDir != null ? projectDir.toPath().toAbsolutePath() : WORKING_DIR;
         this.metadataUrl = metadataUrl;
         this.updateMetadata = updateMetadata;
         this.resetCache = resetCache;
+        this.updatesSince = toMavenVersion(since == null ? Config.buildVersion() : since);
     }
 
     CommonOptions(Path projectDir, CommonOptions options) {
@@ -62,6 +67,7 @@ final class CommonOptions {
         this.metadataUrl = options.metadataUrl;
         this.updateMetadata = options.updateMetadata;
         this.resetCache = false; // Don't do it again
+        this.updatesSince = options.updatesSince;
         this.metadata = options.metadata;
     }
 
@@ -100,10 +106,11 @@ final class CommonOptions {
 
     void checkForUpdates() {
         try {
-            Optional<MavenVersion> update = metadata().checkForCliUpdate();
+            Optional<MavenVersion> update = metadata().checkForCliUpdate(updatesSince);
             if (update.isPresent()) {
                 MavenVersion newVersion = update.get();
                 Map<Object, Object> releaseNotes = releaseNotes(newVersion);
+                Log.info();
                 Log.info("$(bold Version %s of this CLI is now available.)", newVersion);
                 if (!releaseNotes.isEmpty()) {
                     Log.info();
@@ -111,6 +118,7 @@ final class CommonOptions {
                     Log.info();
                 }
                 Log.info("Please update from $(blue %s)", UPDATE_URL);
+                Log.info();
             } else {
                 Log.debug("no update available");
             }
