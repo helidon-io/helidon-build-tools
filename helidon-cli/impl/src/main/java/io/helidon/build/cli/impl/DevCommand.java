@@ -152,7 +152,7 @@ public final class DevCommand extends BaseCommand {
             }
             try {
                 Metadata meta = metadata();
-                MavenVersion version = meta.buildToolsVersionOf(toMavenVersion(helidonVersion));
+                MavenVersion version = meta.buildToolsVersionOf(toMavenVersion(helidonVersion), true);
                 return version.toString();
             } catch (Plugins.PluginFailed e) {
                 Log.debug("unable to lookup build tools version for Helidon version %s: %s", helidonVersion, e.getMessage());

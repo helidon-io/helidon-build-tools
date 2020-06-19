@@ -27,6 +27,7 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.helidon.build.cli.plugin.UpdateMetadata.escapedHeaders;
 import static java.util.Objects.requireNonNull;
 
 
@@ -285,12 +286,12 @@ public class NetworkConnection {
             if (url == null) {
                 throw new IllegalStateException("url is required");
             }
-            Log.debug("connecting to %s, headers=%s", url, headers);
+            Log.debug("connecting to %s, headers=%s", url, escapedHeaders(headers));
             IOException lastCaught = null;
             for (int attempt = 1; attempt <= maxRetries; attempt++) {
                 try {
                     URLConnection result = connector.connect(url, headers, connectTimeout, readTimeout);
-                    Log.debug("connected to %s, headers=%s", url, result.getHeaderFields());
+                    Log.debug("connected to %s, headers=%s", url, escapedHeaders(result.getHeaderFields()));
                     return result;
                 } catch (UnknownHostException | SocketException | SocketTimeoutException e) {
                     lastCaught = e;
