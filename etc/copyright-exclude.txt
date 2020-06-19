@@ -1,4 +1,5 @@
 /README.md
+/CHANGELOG.md
 /.gitignore
 /NOTICE.txt
 /LICENSE.txt

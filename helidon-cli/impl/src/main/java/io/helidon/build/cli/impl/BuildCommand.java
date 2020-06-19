@@ -18,7 +18,6 @@ package io.helidon.build.cli.impl;
 
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
-import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
@@ -33,7 +32,7 @@ import static io.helidon.build.util.Constants.ENABLE_HELIDON_CLI;
  * The {@code build} command.
  */
 @Command(name = "build", description = "Build the application")
-public final class BuildCommand extends BaseCommand implements CommandExecution {
+public final class BuildCommand extends BaseCommand {
 
     private static final String JLINK_OPTION = "-Pjlink-image";
     private static final String NATIVE_OPTION = "-Pnative-image";
@@ -49,20 +48,23 @@ public final class BuildCommand extends BaseCommand implements CommandExecution 
     }
 
     @Creator
-    BuildCommand(
-            CommonOptions commonOptions,
-            @Flag(name = "clean", description = "Perform a clean before the build") boolean clean,
-            @KeyValue(name = "mode", description = "Build mode", defaultValue = "PLAIN") BuildMode buildMode) {
+    BuildCommand(CommonOptions commonOptions,
+                 @Flag(name = "clean", description = "Perform a clean before the build") boolean clean,
+                 @KeyValue(name = "mode", description = "Build mode", defaultValue = "PLAIN") BuildMode buildMode) {
+        super(commonOptions);
         this.commonOptions = commonOptions;
         this.clean = clean;
         this.buildMode = buildMode;
     }
 
     @Override
-    public void execute(CommandContext context) throws Exception {
-
+    protected void assertPreconditions() {
         requireMinimumMavenVersion();
         requireValidMavenProjectConfig(commonOptions);
+    }
+
+    @Override
+    protected void invoke(CommandContext context) throws Exception {
 
         MavenCommand.Builder builder = MavenCommand.builder()
                                                    .addArgument(ENABLE_HELIDON_CLI)

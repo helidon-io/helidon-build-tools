@@ -45,9 +45,9 @@ import static java.util.Objects.requireNonNull;
  */
 public class Metadata {
     /**
-     * The default base url.
+     * The default url.
      */
-    public static final String DEFAULT_BASE_URL = "https://helidon.io/cli-data";
+    public static final String DEFAULT_URL = "https://helidon.io/cli-data";
 
     /**
      * The default update frequency.
@@ -80,7 +80,7 @@ public class Metadata {
     public static final String CLI_VERSION_PROPERTY = "cli.version";
 
     private final Path rootDir;
-    private final String baseUrl;
+    private final String url;
     private final Path latestVersionFile;
     private final long updateFrequencyMillis;
     private final boolean debugPlugin;
@@ -92,61 +92,79 @@ public class Metadata {
      * @return The instance.
      */
     public static Metadata newInstance() {
-        return newInstance(DEFAULT_BASE_URL);
+        return newInstance(DEFAULT_URL);
     }
 
     /**
-     * Returns a new instance with the given base url and default configuration.
+     * Returns a new instance with the given url and default configuration.
      *
-     * @param baseUrl The base url.
+     * @param url The url.
      * @return The instance.
      */
-    public static Metadata newInstance(String baseUrl) {
-        return newInstance(baseUrl, DEFAULT_UPDATE_FREQUENCY);
+    public static Metadata newInstance(String url) {
+        return newInstance(url, DEFAULT_UPDATE_FREQUENCY);
     }
 
     /**
-     * Returns a new instance with the given base url and default configuration.
+     * Returns a new instance with the given url and default configuration.
      *
-     * @param baseUrl The base url.
+     * @param url The url.
      * @param updateFrequencyHours The update frequency, in hours.
      * @return The instance.
      */
-    public static Metadata newInstance(String baseUrl, long updateFrequencyHours) {
+    public static Metadata newInstance(String url, long updateFrequencyHours) {
         final Path cacheDir = Config.userConfig().cacheDir();
         final boolean debug = Log.isDebug();
-        return newInstance(cacheDir, baseUrl, updateFrequencyHours, DEFAULT_UPDATE_FREQUENCY_UNITS, debug);
+        return newInstance(cacheDir, url, updateFrequencyHours, DEFAULT_UPDATE_FREQUENCY_UNITS, debug);
     }
 
     /**
      * Returns a new instance.
      *
      * @param rootDir The root directory.
-     * @param baseUrl The base url.
+     * @param url The url.
      * @param updateFrequency The update frequency.
      * @param updateFrequencyUnits The update frequency units.
      * @param debugPlugin {@code true} if should enable debug logging in plugin.
      * @return The instance.
      */
     public static Metadata newInstance(Path rootDir,
-                                       String baseUrl,
+                                       String url,
                                        long updateFrequency,
                                        TimeUnit updateFrequencyUnits,
                                        boolean debugPlugin) {
-        return new Metadata(rootDir, baseUrl, updateFrequency, updateFrequencyUnits, debugPlugin);
+        return new Metadata(rootDir, url, updateFrequency, updateFrequencyUnits, debugPlugin);
     }
 
     private Metadata(Path rootDir,
-                     String baseUrl,
+                     String url,
                      long updateFrequency,
                      TimeUnit updateFrequencyUnits,
                      boolean debugPlugin) {
         this.rootDir = rootDir;
-        this.baseUrl = baseUrl;
+        this.url = url;
         this.latestVersionFile = rootDir.resolve(LATEST_VERSION_FILE_NAME);
         this.updateFrequencyMillis = updateFrequencyUnits.toMillis(updateFrequency);
         this.debugPlugin = debugPlugin;
         this.latestVersion = new AtomicReference<>();
+    }
+
+    /**
+     * Returns the url.
+     *
+     * @return The url.
+     */
+    public String url() {
+        return url;
+    }
+
+    /**
+     * Returns the url.
+     *
+     * @return The url.
+     */
+    public Path rootDir() {
+        return rootDir;
     }
 
     /**
@@ -383,7 +401,7 @@ public class Metadata {
     private void update(MavenVersion helidonVersion) throws Exception {
         final List<String> args = new ArrayList<>();
         args.add("--baseUrl");
-        args.add(baseUrl);
+        args.add(url);
         args.add("--cacheDir");
         args.add(rootDir.toAbsolutePath().toString());
         if (helidonVersion == null) {

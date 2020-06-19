@@ -22,7 +22,6 @@ import java.util.function.Predicate;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandContext.Verbosity;
-import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
@@ -53,7 +52,7 @@ import static io.helidon.build.util.Style.BoldBrightGreen;
  * The {@code dev} command.
  */
 @Command(name = "dev", description = "Continuous application development")
-public final class DevCommand extends BaseCommand implements CommandExecution {
+public final class DevCommand extends BaseCommand {
 
     private static final String CLEAN_PROP_PREFIX = "-Ddev.clean=";
     private static final String FORK_PROP_PREFIX = "-Ddev.fork=";
@@ -73,51 +72,28 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
     private TerminalModeOutput terminalModeOutput;
 
     @Creator
-    DevCommand(
-            CommonOptions commonOptions,
-            @Flag(name = "clean", description = "Perform a clean before the first build") boolean clean,
-            @Flag(name = "fork", description = "Fork mvn execution") boolean fork,
-            @KeyValue(name = "version", description = "helidon-maven-plugin version", visible = false)
-                    String pluginVersion,
-            @Flag(name = "current", description = "Use the build version as the helidon-maven-plugin version", visible = false)
-                    boolean currentPluginVersion) {
+    DevCommand(CommonOptions commonOptions,
+               @Flag(name = "clean", description = "Perform a clean before the first build") boolean clean,
+               @Flag(name = "fork", description = "Fork mvn execution") boolean fork,
+               @KeyValue(name = "version", description = "helidon-maven-plugin version", visible = false)
+                       String pluginVersion,
+               @Flag(name = "current", description = "Use the build version as the helidon-maven-plugin version", visible = false)
+                       boolean currentPluginVersion) {
+        super(commonOptions);
         this.commonOptions = commonOptions;
         this.clean = clean;
         this.fork = fork;
         this.pluginVersion = pluginVersion == null ? (currentPluginVersion ? Config.buildVersion() : null) : pluginVersion;
     }
 
-    private String pluginOverrideVersion() {
-        if (pluginVersion == null) {
-            ProjectConfig projectConfig = projectConfig(commonOptions);
-            String helidonVersion = projectConfig.property(ProjectConfig.HELIDON_VERSION);
-            if (helidonVersion == null) {
-                helidonVersion = Config.buildVersion();
-                Log.debug("helidon.version missing in %s, using %s", projectConfig.file(), helidonVersion);
-            }
-            try {
-                Metadata meta = commonOptions.metadata();
-                MavenVersion version = meta.buildToolsVersionOf(toMavenVersion(helidonVersion));
-                return version.toString();
-            } catch (Plugins.PluginFailed e) {
-                Log.debug("unable to lookup build tools version for Helidon version %s: %s", helidonVersion, e.getMessage());
-                return null;
-            } catch (Exception e) {
-                Log.debug("unable to lookup build tools version for Helidon version %s: %s", helidonVersion, e.toString());
-                return null;
-            }
-        } else {
-            return pluginVersion;
-        }
+    @Override
+    protected void assertPreconditions() {
+        requireMinimumMavenVersion();
+        requireValidMavenProjectConfig(commonOptions);
     }
 
     @Override
-    public void execute(CommandContext context) throws Exception {
-
-        // Ensure preconditions
-
-        requireMinimumMavenVersion();
-        requireValidMavenProjectConfig(commonOptions);
+    protected void invoke(CommandContext context) throws Exception {
 
         // Override plugin version
 
@@ -164,6 +140,30 @@ public final class DevCommand extends BaseCommand implements CommandExecution {
                     .directory(commonOptions.project())
                     .build()
                     .execute();
+    }
+
+    private String pluginOverrideVersion() {
+        if (pluginVersion == null) {
+            ProjectConfig projectConfig = projectConfig();
+            String helidonVersion = projectConfig.property(ProjectConfig.HELIDON_VERSION);
+            if (helidonVersion == null) {
+                helidonVersion = Config.buildVersion();
+                Log.debug("helidon.version missing in %s, using %s", projectConfig.file(), helidonVersion);
+            }
+            try {
+                Metadata meta = metadata();
+                MavenVersion version = meta.buildToolsVersionOf(toMavenVersion(helidonVersion));
+                return version.toString();
+            } catch (Plugins.PluginFailed e) {
+                Log.debug("unable to lookup build tools version for Helidon version %s: %s", helidonVersion, e.getMessage());
+                return null;
+            } catch (Exception e) {
+                Log.debug("unable to lookup build tools version for Helidon version %s: %s", helidonVersion, e.toString());
+                return null;
+            }
+        } else {
+            return pluginVersion;
+        }
     }
 
     private static boolean printAllLines(String line) {

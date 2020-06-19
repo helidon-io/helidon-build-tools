@@ -18,6 +18,8 @@ package io.helidon.build.cli.impl;
 
 import java.nio.file.Path;
 
+import io.helidon.build.cli.harness.CommandContext;
+import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.util.AnsiConsoleInstaller;
 import io.helidon.build.util.ProjectConfig;
 
@@ -26,19 +28,41 @@ import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 /**
  * Class BaseCommand.
  */
-public abstract class BaseCommand {
+public abstract class BaseCommand implements CommandExecution {
 
     static final String HELIDON_VERSION_PROPERTY = "helidon.version";
 
+    private final CommonOptions commonOptions;
     private ProjectConfig projectConfig;
     private Path projectDir;
 
-    protected BaseCommand() {
+    /**
+     * Constructor.
+     *
+     * @param commonOptions The common options.
+     */
+    protected BaseCommand(CommonOptions commonOptions) {
         AnsiConsoleInstaller.ensureInstalled();
+        this.commonOptions = commonOptions;
     }
 
-    protected ProjectConfig projectConfig(CommonOptions options) {
-        return projectConfig(options.project());
+    @Override
+    public void execute(CommandContext context) throws Exception {
+        assertPreconditions();
+        checkForUpdates();
+        invoke(context);
+    }
+
+    protected abstract void assertPreconditions();
+
+    protected void checkForUpdates() {
+        commonOptions.checkForUpdates();
+    }
+
+    protected abstract void invoke(CommandContext context) throws Exception;
+
+    protected ProjectConfig projectConfig() {
+        return projectConfig(commonOptions.project());
     }
 
     protected ProjectConfig projectConfig(Path dir) {
@@ -49,5 +73,9 @@ public abstract class BaseCommand {
         projectConfig = new ProjectConfig(dotHelidon);
         projectDir = dir;
         return projectConfig;
+    }
+
+    protected Metadata metadata() {
+        return commonOptions.metadata();
     }
 }

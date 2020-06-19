@@ -29,7 +29,6 @@ import io.helidon.build.archetype.engine.ArchetypeLoader;
 import io.helidon.build.archetype.engine.Maps;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
-import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
@@ -51,7 +50,7 @@ import static io.helidon.build.util.Style.BoldBrightCyan;
  * The {@code init} command.
  */
 @Command(name = "init", description = "Generate a new project")
-public final class InitCommand extends BaseCommand implements CommandExecution {
+public final class InitCommand extends BaseCommand {
 
     private final CommonOptions commonOptions;
     private final boolean batch;
@@ -100,24 +99,24 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
     static final String DEFAULT_NAME = "myproject";
 
     @Creator
-    InitCommand(
-            CommonOptions commonOptions,
-            @Flag(name = "batch", description = "Enables non-interactive mode") boolean batch,
-            @KeyValue(name = "flavor", description = "Helidon flavor",
-                    defaultValue = DEFAULT_FLAVOR) Flavor flavor,
-            @KeyValue(name = "build", description = "Build type",
-                    defaultValue = "MAVEN") Build build,
-            @KeyValue(name = "version", description = "Helidon version") String version,
-            @KeyValue(name = "archetype", description = "Archetype name",
-                    defaultValue = DEFAULT_ARCHETYPE_ID) String archetypeName,
-            @KeyValue(name = "groupid", description = "Project's group ID",
-                    defaultValue = DEFAULT_GROUP_ID) String groupId,
-            @KeyValue(name = "artifactid", description = "Project's artifact ID",
-                    defaultValue = DEFAULT_ARTIFACT_ID) String artifactId,
-            @KeyValue(name = "package", description = "Project's package name",
-                    defaultValue = DEFAULT_PACKAGE) String packageName,
-            @KeyValue(name = "name", description = "Project's name",
-                    defaultValue = DEFAULT_NAME) String projectName) {
+    InitCommand(CommonOptions commonOptions,
+                @Flag(name = "batch", description = "Enables non-interactive mode") boolean batch,
+                @KeyValue(name = "flavor", description = "Helidon flavor",
+                        defaultValue = DEFAULT_FLAVOR) Flavor flavor,
+                @KeyValue(name = "build", description = "Build type",
+                        defaultValue = "MAVEN") Build build,
+                @KeyValue(name = "version", description = "Helidon version") String version,
+                @KeyValue(name = "archetype", description = "Archetype name",
+                        defaultValue = DEFAULT_ARCHETYPE_ID) String archetypeName,
+                @KeyValue(name = "groupid", description = "Project's group ID",
+                        defaultValue = DEFAULT_GROUP_ID) String groupId,
+                @KeyValue(name = "artifactid", description = "Project's artifact ID",
+                        defaultValue = DEFAULT_ARTIFACT_ID) String artifactId,
+                @KeyValue(name = "package", description = "Project's package name",
+                        defaultValue = DEFAULT_PACKAGE) String packageName,
+                @KeyValue(name = "name", description = "Project's name",
+                        defaultValue = DEFAULT_NAME) String projectName) {
+        super(commonOptions);
         this.commonOptions = commonOptions;
         this.batch = batch;
         this.build = build;
@@ -128,18 +127,20 @@ public final class InitCommand extends BaseCommand implements CommandExecution {
         this.artifactId = artifactId;
         this.packageName = packageName;
         this.name = projectName;
-        this.metadata = commonOptions.metadata();
+        this.metadata = metadata();
     }
 
     @Override
-    public void execute(CommandContext context) throws Exception {
-        // Check build type
-
+    protected void assertPreconditions() {
         if (build == Build.MAVEN) {
             requireMinimumMavenVersion();
         } else {
             failed("$(red Gradle is not yet supported.)");
         }
+    }
+
+    @Override
+    protected void invoke(CommandContext context) throws Exception {
 
         // Attempt to find default Helidon version if none provided
         if (helidonVersion == null) {

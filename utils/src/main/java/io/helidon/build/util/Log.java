@@ -16,9 +16,12 @@
 
 package io.helidon.build.util;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.helidon.build.util.Style.BoldBlue;
+import static io.helidon.build.util.Style.Italic;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -29,6 +32,7 @@ public class Log {
     private static final AtomicInteger MESSAGES = new AtomicInteger();
     private static final AtomicInteger WARNINGS = new AtomicInteger();
     private static final AtomicInteger ERRORS = new AtomicInteger();
+    private static final String PAD = " ";
 
     private Log() {
     }
@@ -210,6 +214,53 @@ public class Log {
     }
 
     /**
+     * Log the entries using {@link Style#Italic} for all keys and {@link Style#BoldBlue} for all keys.
+     *
+     * @param map The entries.
+     */
+    public static void info(Map<Object, Object> map) {
+        info(map, maxKeyWidth(map));
+    }
+
+    /**
+     * Log the entries using {@link Style#Italic} for all keys and {@link Style#BoldBlue} for all keys.
+     *
+     * @param map The entries.
+     * @param maxKeyWidth The maximum key width.
+     */
+    public static void info(Map<Object, Object> map, int maxKeyWidth) {
+        info(map, maxKeyWidth, Italic, BoldBlue);
+    }
+
+    /**
+     * Log the entries using the given styles.
+     *
+     * @param map The entries.
+     * @param keyStyle The style to apply to all keys.
+     * @param valueStyle The style to apply to all values.
+     */
+    public static void info(Map<Object, Object> map, Style keyStyle, Style valueStyle) {
+        info(map, maxKeyWidth(map), keyStyle, valueStyle);
+    }
+
+    /**
+     * Log the entries using the given styles.
+     *
+     * @param map The entries.
+     * @param maxKeyWidth The maximum key width.
+     * @param keyStyle The style to apply to all keys.
+     * @param valueStyle The style to apply to all values.
+     */
+    public static void info(Map<Object, Object> map, int maxKeyWidth, Style keyStyle, Style valueStyle) {
+        if (!map.isEmpty()) {
+            map.forEach((key, value) -> {
+                final String padding = padding(maxKeyWidth, key);
+                info("%s %s %s", keyStyle.apply(key), padding, valueStyle.apply(value));
+            });
+        }
+    }
+
+    /**
      * Log a message at WARNING level.
      *
      * @param message The message.
@@ -305,5 +356,34 @@ public class Log {
      */
     public static boolean isSystemWriter() {
         return WRITER.get() instanceof SystemLogWriter;
+    }
+
+    private static String padding(int maxKeyWidth, Object key) {
+        final int keyLen = key.toString().length();
+        if (maxKeyWidth > keyLen) {
+            return PAD.repeat(maxKeyWidth - keyLen);
+        } else {
+            return "";
+        }
+    }
+
+    /**
+     * Returns the maximum key width.
+     *
+     * @param maps The maps.
+     * @return The max key width.
+     */
+    @SafeVarargs
+    public static int maxKeyWidth(Map<Object, Object>... maps) {
+        int maxLen = 0;
+        for (Map<Object, Object> map : maps) {
+            for (Object key : map.keySet()) {
+                final int len = key.toString().length();
+                if (len > maxLen) {
+                    maxLen = len;
+                }
+            }
+        }
+        return maxLen;
     }
 }
