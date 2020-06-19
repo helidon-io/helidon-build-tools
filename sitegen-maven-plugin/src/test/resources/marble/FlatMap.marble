@@ -1,0 +1,3 @@
+upstream   ----[1]   ----(2)    ----|->
+Multi.flatMap(i -> Multi.just(i, i))
+downstream ----[1]--[1]--(2)--(2) --|->

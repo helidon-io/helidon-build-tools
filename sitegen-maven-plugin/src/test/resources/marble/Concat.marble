@@ -1,0 +1,4 @@
+stream1   ----[1] --(2) -- |                 ->
+stream2   ----         ----- {3} --<4> ---|  ->
+Multi.concat(stream1, stream2)
+downstream ----[1]--(2) ---  {3} --<4> ---|  ->
