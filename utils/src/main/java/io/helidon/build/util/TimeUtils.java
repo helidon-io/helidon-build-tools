@@ -16,17 +16,27 @@
 
 package io.helidon.build.util;
 
+import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
  * Time utilities.
  */
 public class TimeUtils {
-    private static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
+    private static final DateTimeFormatter ZONED_DATE_FORMATTER = DateTimeFormatter.ofPattern("MM-dd-yyyy kk:mm:ss z");
     private static final ZoneId ZONE = ZoneId.systemDefault();
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN).withZone(ZONE);
+
+    /**
+     * Returns the current time as a date time string.
+     *
+     * @return The formatted time.
+     */
+    public static String currentDateTime() {
+        return toDateTime(System.currentTimeMillis());
+    }
 
     /**
      * Returns the time as a date time string.
@@ -35,7 +45,28 @@ public class TimeUtils {
      * @return The formatted time.
      */
     public static String toDateTime(final long millis) {
-        return FORMATTER.format(Instant.ofEpochMilli(millis));
+        return toDateTime(Instant.ofEpochMilli(millis));
+    }
+
+    /**
+     * Returns the time as a date time string.
+     *
+     * @param fileTime The time.
+     * @return The formatted time.
+     */
+    public static String toDateTime(final FileTime fileTime) {
+        return toDateTime(fileTime.toInstant());
+    }
+
+    /**
+     * Returns the time as a date time string.
+     *
+     * @param instant The time.
+     * @return The formatted time.
+     */
+    public static String toDateTime(Instant instant) {
+        ZonedDateTime time = ZonedDateTime.ofInstant(instant, ZONE);
+        return ZONED_DATE_FORMATTER.format(time);
     }
 
     private TimeUtils() {

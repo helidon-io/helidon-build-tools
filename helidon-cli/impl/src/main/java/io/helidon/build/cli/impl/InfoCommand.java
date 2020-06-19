@@ -15,10 +15,7 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
+import java.nio.file.attribute.FileTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +29,7 @@ import io.helidon.build.util.ConfigProperties;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
+import io.helidon.build.util.TimeUtils;
 
 import static io.helidon.build.cli.impl.VersionCommand.addProjectProperty;
 import static io.helidon.build.util.ProjectConfig.HELIDON_VERSION;
@@ -48,7 +46,6 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
  */
 @Command(name = "info", description = "Print project information")
 public final class InfoCommand extends BaseCommand {
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM-dd-yyyy kk:mm:ss z");
     private static final int MIN_WIDTH = "plugin.build.revision".length();
 
     private final boolean verbose;
@@ -103,12 +100,11 @@ public final class InfoCommand extends BaseCommand {
             metaProps.put("base.url", meta.url());
             metaProps.put("cache.dir", meta.rootDir());
 
-            Instant lastUpdateTime = meta.lastUpdateTime().toInstant();
-            ZonedDateTime time = ZonedDateTime.ofInstant(lastUpdateTime, ZoneId.systemDefault());
-            String formattedTime = DATE_FORMATTER.format(time);
+            FileTime lastUpdateTime = meta.lastUpdateTime();
+            String formattedTime = TimeUtils.toDateTime(lastUpdateTime);
             metaProps.put("last.update.time", formattedTime);
 
-            MavenVersion latestVersion = meta.latestVersion();
+            MavenVersion latestVersion = meta.latestVersion(false);
             metaProps.put("latest.version", latestVersion.toString());
 
             ConfigProperties props = meta.propertiesOf(latestVersion);

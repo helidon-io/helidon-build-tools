@@ -22,6 +22,7 @@ import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.util.Log;
+import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
 
 import static io.helidon.build.util.ProjectConfig.HELIDON_VERSION;
@@ -45,7 +46,7 @@ final class VersionCommand extends BaseCommand {
     }
 
     @Override
-    protected void invoke(CommandContext context) {
+    protected void invoke(CommandContext context) throws Exception {
         Map<Object, Object> map = new LinkedHashMap<>();
         addBuildProperties(map);
 
@@ -55,6 +56,9 @@ final class VersionCommand extends BaseCommand {
             addProjectProperty("helidon.version", HELIDON_VERSION, projectConfig, map);
             addProjectProperty("flavor", PROJECT_FLAVOR, projectConfig, map);
         }
+
+        MavenVersion latest = metadata().latestVersion(false);
+        map.put("latest.helidon.version", latest.toString());
 
         Log.info(map);
     }

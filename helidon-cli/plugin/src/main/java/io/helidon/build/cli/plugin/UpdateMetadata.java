@@ -42,6 +42,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 public class UpdateMetadata extends Plugin {
     private static final int DEFAULT_TIMEOUT_MILLIS = 500;
     private static final String VERSION_ARG = "--version";
+    private static final String CLI_VERSION_ARG = "--cliVersion";
     private static final String BASE_URL_ARG = "--baseUrl";
     private static final String CACHE_DIR_ARG = "--cacheDir";
     private static final String CONNECT_TIMEOUT_ARG = "--connectTimeout";
@@ -49,14 +50,17 @@ public class UpdateMetadata extends Plugin {
     private static final String LATEST_VERSION_FILE_NAME = "latest";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     private static final String ETAG_HEADER = "Etag";
+    private static final String USER_AGENT_HEADER = "User-Agent";
     private static final String IF_NONE_MATCH_HEADER = "If-None-Match";
     private static final String NO_ETAG = "<no-etag>";
     private static final String ZIP_FILE_NAME = "cli-data.zip";
     private static final String REMOTE_DATA_FILE_SUFFIX = "/" + ZIP_FILE_NAME;
     private static final int STATUS_OK = 200;
     private static final int STATUS_NOT_MODIFIED = 304;
+    private static final String USER_AGENT_PREFIX = "Helidon-CLI/";
 
     private String version;
+    private String cliVersion;
     private URL baseUrl;
     private Path cacheDir;
     private int connectTimeout;
@@ -83,6 +87,9 @@ public class UpdateMetadata extends Plugin {
             case CACHE_DIR_ARG:
                 cacheDir = Path.of(nextArg(argIndex, allArgs));
                 return argIndex + 1;
+            case CLI_VERSION_ARG:
+                cliVersion = nextArg(argIndex, allArgs);
+                return argIndex + 1;
             case CONNECT_TIMEOUT_ARG:
                 connectTimeout = Integer.parseInt(nextArg(argIndex, allArgs));
                 return argIndex + 1;
@@ -98,6 +105,7 @@ public class UpdateMetadata extends Plugin {
     void validateArgs() throws Exception {
         assertRequiredArg(BASE_URL_ARG, baseUrl);
         assertRequiredArg(CACHE_DIR_ARG, cacheDir);
+        assertRequiredArg(CLI_VERSION_ARG, cliVersion);
         if (!Files.exists(cacheDir)) {
             throw new FileNotFoundException(cacheDir.toString());
         }
@@ -132,9 +140,11 @@ public class UpdateMetadata extends Plugin {
     private void updateLatestVersion() throws Exception {
         // Always update
         final URL url = resolve(LATEST_VERSION_FILE_NAME);
-        Log.debug("downloading %s", url);
+        final Map<String, String> headers = commonHeaders();
+        Log.debug("downloading %s, headers=%s", url, escapedHeaders(headers));
         final URLConnection connection = NetworkConnection.builder()
                                                           .url(url)
+                                                          .headers(headers)
                                                           .connectTimeout(connectTimeout)
                                                           .readTimeout(readTimeout)
                                                           .connect();
@@ -169,15 +179,37 @@ public class UpdateMetadata extends Plugin {
     }
 
     private Map<String, String> headers(Path lastUpdateFile, URL url) throws IOException {
-        final Map<String, String> headers = new HashMap<>();
+        final Map<String, String> headers = commonHeaders();
         if (Files.exists(lastUpdateFile)) {
             final String etag = Files.readString(lastUpdateFile);
             headers.put(IF_NONE_MATCH_HEADER, etag);
-            Log.debug("maybe downloading %s, headers=%s", url, headers);
+            Log.debug("maybe downloading %s, headers=%s", url, escapedHeaders(headers));
         } else {
-            Log.debug("downloading %s, headers=%s", url, headers);
+            Log.debug("downloading %s, headers=%s", url, escapedHeaders(headers));
         }
         return headers;
+    }
+
+    private Map<String, String> commonHeaders() {
+        final Map<String, String> headers = new HashMap<>();
+        headers.put(USER_AGENT_HEADER, userAgent());
+        return headers;
+    }
+
+    @SuppressWarnings("StringBufferReplaceableByString")
+    private String userAgent() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(USER_AGENT_PREFIX).append(cliVersion).append(" (");
+        sb.append(System.getProperty("os.name")).append("; ");
+        sb.append(System.getProperty("os.version")).append("; ");
+        sb.append(System.getProperty("os.arch")).append("; ");
+        sb.append("jvm:").append(System.getProperty("java.vm.version"));
+        sb.append(")");
+        return sb.toString();
+    }
+
+    static String escapedHeaders(Map<?, ?> headers) {
+        return headers.toString().replace(")", "\\)");
     }
 
     private int status(URLConnection connection) throws IOException {

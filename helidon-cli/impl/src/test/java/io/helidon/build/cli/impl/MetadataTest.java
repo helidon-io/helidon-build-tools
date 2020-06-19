@@ -140,8 +140,8 @@ public class MetadataTest extends BaseMetadataTest {
 
         logged.clear();
         MavenVersion expected = MAVEN_VERSION_RC1;
-        assertThat(meta.buildToolsVersionOf(latestVersion), is(expected));
-        assertThat(meta.cliVersionOf(latestVersion), is(expected));
+        assertThat(meta.buildToolsVersionOf(latestVersion, false), is(expected));
+        assertThat(meta.cliVersionOf(latestVersion, false), is(expected));
     }
 
     @Test
@@ -158,10 +158,10 @@ public class MetadataTest extends BaseMetadataTest {
         MavenVersion cliVersionRc2 = MAVEN_VERSION_RC2;
         MavenVersion cliVersionRc2Updated = toMavenVersion("2.0.0");
 
-        assertThat(meta.checkForCliUpdate(cliVersionRc2).isPresent(), is(false));
+        assertThat(meta.checkForCliUpdate(cliVersionRc2, false).isPresent(), is(false));
 
-        assertThat(meta.checkForCliUpdate(cliVersionRc1).isPresent(), is(true));
-        assertThat(meta.checkForCliUpdate(cliVersionRc1).orElseThrow(), is(cliVersionRc2));
+        assertThat(meta.checkForCliUpdate(cliVersionRc1, false).isPresent(), is(true));
+        assertThat(meta.checkForCliUpdate(cliVersionRc1, false).orElseThrow(), is(cliVersionRc2));
 
         // Now change the metadata for RC2 such that the cli version returned is newer
 
@@ -171,13 +171,13 @@ public class MetadataTest extends BaseMetadataTest {
 
         // Make sure it doesn't update now, since the update period has not expired
 
-        assertThat(meta.checkForCliUpdate(cliVersionRc2).isPresent(), is(false));
+        assertThat(meta.checkForCliUpdate(cliVersionRc2, false).isPresent(), is(false));
 
         // Force expiry and validate that we get expected version update
 
         meta = newInstance(0, HOURS);
-        assertThat(meta.checkForCliUpdate(cliVersionRc2).isPresent(), is(true));
-        assertThat(meta.checkForCliUpdate(cliVersionRc1).orElseThrow(), is(cliVersionRc2Updated));
+        assertThat(meta.checkForCliUpdate(cliVersionRc2, false).isPresent(), is(true));
+        assertThat(meta.checkForCliUpdate(cliVersionRc1, false).orElseThrow(), is(cliVersionRc2Updated));
     }
 
     @Test
