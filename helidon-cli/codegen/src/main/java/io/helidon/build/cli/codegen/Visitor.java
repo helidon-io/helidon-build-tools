@@ -326,6 +326,10 @@ final class Visitor {
                     return true;
                 }
             }
+            TypeMirror parent = type.getSuperclass();
+            if (parent != null) {
+                return implementsCommandExecution((TypeElement) env.getTypeUtils().asElement(parent));
+            }
             env.getMessager().printMessage(Diagnostic.Kind.ERROR,
                     String.format("%s does not implement %s", type, CommandExecution.class.getSimpleName()),
                     type);

@@ -27,7 +27,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
-import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.util.ConfigProperties;
 import io.helidon.build.util.Log;
@@ -35,7 +34,6 @@ import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
 
 import static io.helidon.build.cli.impl.VersionCommand.addProjectProperty;
-import static io.helidon.build.cli.impl.VersionCommand.maxKeyWidth;
 import static io.helidon.build.util.ProjectConfig.HELIDON_VERSION;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
@@ -49,30 +47,33 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
  * The {@code info} command.
  */
 @Command(name = "info", description = "Print project information")
-public final class InfoCommand extends BaseCommand implements CommandExecution {
+public final class InfoCommand extends BaseCommand {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM-dd-yyyy kk:mm:ss z");
     private static final int MIN_WIDTH = "plugin.build.revision".length();
 
-    private final CommonOptions commonOptions;
     private final boolean verbose;
 
     @Creator
     InfoCommand(CommonOptions commonOptions) {
-        this.commonOptions = commonOptions;
+        super(commonOptions);
         this.verbose = Log.isVerbose();
     }
 
     @Override
-    public void execute(CommandContext context) throws Exception {
+    protected void assertPreconditions() {
+    }
+
+    @Override
+    protected void invoke(CommandContext context) throws Exception {
 
         // Build properties
 
-        Map<String, String> buildProps = new LinkedHashMap<>();
+        Map<Object, Object> buildProps = new LinkedHashMap<>();
         VersionCommand.addBuildProperties(buildProps);
 
         // System properties
 
-        Map<String, String> systemProps = new LinkedHashMap<>();
+        Map<Object, Object> systemProps = new LinkedHashMap<>();
         if (verbose) {
             System.getProperties().keySet().stream().sorted().forEach(key -> {
                 String name = key.toString();
@@ -86,7 +87,7 @@ public final class InfoCommand extends BaseCommand implements CommandExecution {
 
         // Env vars
 
-        Map<String, String> envVars = new LinkedHashMap<>();
+        Map<Object, Object> envVars = new LinkedHashMap<>();
         if (verbose) {
             System.getenv().keySet().stream().sorted().forEach(key -> {
                 String value = System.getenv(key);
@@ -96,36 +97,39 @@ public final class InfoCommand extends BaseCommand implements CommandExecution {
 
         // Metadata
 
-        Map<String, String> metadata = new LinkedHashMap<>();
+        Map<Object, Object> metaProps = new LinkedHashMap<>();
         if (verbose) {
-            Metadata meta = Metadata.newInstance();
+            Metadata meta = metadata();
+            metaProps.put("base.url", meta.url());
+            metaProps.put("cache.dir", meta.rootDir());
+
             Instant lastUpdateTime = meta.lastUpdateTime().toInstant();
             ZonedDateTime time = ZonedDateTime.ofInstant(lastUpdateTime, ZoneId.systemDefault());
             String formattedTime = DATE_FORMATTER.format(time);
-            metadata.put("last.update.time", formattedTime);
+            metaProps.put("last.update.time", formattedTime);
 
             MavenVersion latestVersion = meta.latestVersion();
-            metadata.put("latest.version", latestVersion.toString());
+            metaProps.put("latest.version", latestVersion.toString());
 
             ConfigProperties props = meta.propertiesOf(latestVersion);
-            props.keySet().stream().sorted().forEach(key -> metadata.put(key, props.property(key)));
+            props.keySet().stream().sorted().forEach(key -> metaProps.put(key, props.property(key)));
 
             ArchetypeCatalog catalog = meta.catalogOf(latestVersion);
             AtomicInteger counter = new AtomicInteger(0);
             catalog.entries().forEach(e -> {
                 String prefix = "archetype." + counter.incrementAndGet();
-                metadata.put(prefix + ".artifactId", e.artifactId());
-                metadata.put(prefix + ".version", e.version());
-                metadata.put(prefix + ".title", e.summary());
-                metadata.put(prefix + ".name", e.name());
-                metadata.put(prefix + ".tags", toString(e.tags()));
+                metaProps.put(prefix + ".artifactId", e.artifactId());
+                metaProps.put(prefix + ".version", e.version());
+                metaProps.put(prefix + ".title", e.summary());
+                metaProps.put(prefix + ".name", e.name());
+                metaProps.put(prefix + ".tags", toString(e.tags()));
             });
         }
 
         // Project config
 
-        Map<String, String> projectProps = new LinkedHashMap<>();
-        ProjectConfig projectConfig = projectConfig(commonOptions);
+        Map<Object, Object> projectProps = new LinkedHashMap<>();
+        ProjectConfig projectConfig = projectConfig();
         if (projectConfig.exists()) {
             addProjectProperty("version", PROJECT_VERSION, projectConfig, projectProps);
             addProjectProperty("helidon.version", HELIDON_VERSION, projectConfig, projectProps);
@@ -140,10 +144,10 @@ public final class InfoCommand extends BaseCommand implements CommandExecution {
 
         // Log them all
 
-        int maxWidth = Math.max(maxKeyWidth(buildProps, systemProps, envVars, projectProps), MIN_WIDTH);
+        int maxWidth = Math.max(Log.maxKeyWidth(buildProps, systemProps, envVars, projectProps), MIN_WIDTH);
         log("Project Config", projectProps, maxWidth);
         log("Build", buildProps, maxWidth);
-        log("Metadata", metadata, maxWidth);
+        log("Metadata", metaProps, maxWidth);
         log("System Properties", systemProps, maxWidth);
         log("Environment Variables", envVars, maxWidth);
         logHeader("Plugin Build");
@@ -171,10 +175,10 @@ public final class InfoCommand extends BaseCommand implements CommandExecution {
         Log.info();
     }
 
-    private static void log(String header, Map<String, String> map, int maxKeyWidth) {
+    private static void log(String header, Map<Object, Object> map, int maxKeyWidth) {
         if (!map.isEmpty()) {
             logHeader(header);
-            VersionCommand.log(map, maxKeyWidth);
+            Log.info(map, maxKeyWidth);
         }
     }
 }

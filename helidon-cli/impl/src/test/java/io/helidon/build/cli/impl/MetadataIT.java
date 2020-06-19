@@ -49,7 +49,7 @@ public class MetadataIT extends BaseMetadataTest {
 
     @BeforeEach
     public void beforeEach(TestInfo info) throws IOException {
-        prepareEach(info, Metadata.DEFAULT_BASE_URL);
+        prepareEach(info, Metadata.DEFAULT_URL);
     }
 
     @AfterEach
