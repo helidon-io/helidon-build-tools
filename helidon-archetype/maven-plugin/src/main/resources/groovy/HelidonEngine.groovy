@@ -39,9 +39,16 @@ class HelidonEngineImpl {
      * Check that the Java version is greater or equal to 11.
      */
     void checkJavaVersion() {
-        def javaVersion = System.getProperty("java.version")
-        if (javaVersion == null || !javaVersion.startsWith("11")) {
+        try {
+            if (Runtime.class.getMethod("version") != null
+                    && Runtime.Version.getMethod("feature") != null
+                    && Runtime.getRuntime().version().feature() < 11) {
+                throw new IllegalStateException()
+            }
+        } catch (NoSuchMethodException | IllegalStateException ex) {
             throw new IllegalStateException("Requires Java >= 11")
+        } catch (Throwable ex) {
+            throw new IllegalStateException("Unable to verify Java version", ex)
         }
     }
 
