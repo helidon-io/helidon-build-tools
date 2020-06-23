@@ -86,6 +86,7 @@ public class Metadata {
     private final Path latestVersionFile;
     private final long updateFrequencyMillis;
     private final boolean debugPlugin;
+    private final AtomicReference<Exception> latestVersionFailure;
     private final AtomicReference<MavenVersion> latestVersion;
 
     /**
@@ -148,6 +149,7 @@ public class Metadata {
         this.latestVersionFile = rootDir.resolve(LATEST_VERSION_FILE_NAME);
         this.updateFrequencyMillis = updateFrequencyUnits.toMillis(updateFrequency);
         this.debugPlugin = debugPlugin;
+        this.latestVersionFailure = new AtomicReference<>();
         this.latestVersion = new AtomicReference<>();
     }
 
@@ -200,12 +202,23 @@ public class Metadata {
      * @throws Exception If an error occurs.
      */
     public MavenVersion latestVersion(boolean quiet) throws Exception {
-        if (checkForUpdates(null, latestVersionFile, quiet)) {
-            latestVersion.set(readLatestVersion());
-        } else if (latestVersion.get() == null) {
-            latestVersion.set(readLatestVersion());
+        // We only want to try this once per command, so cache any failure
+        Exception initialFailure = latestVersionFailure.get();
+        if (initialFailure == null) {
+            try {
+                if (checkForUpdates(null, latestVersionFile, quiet)) {
+                    latestVersion.set(readLatestVersion());
+                } else if (latestVersion.get() == null) {
+                    latestVersion.set(readLatestVersion());
+                }
+                return latestVersion.get();
+            } catch (Exception e) {
+                latestVersionFailure.set(e);
+                throw e;
+            }
+        } else {
+            throw initialFailure;
         }
-        return latestVersion.get();
     }
 
     /**

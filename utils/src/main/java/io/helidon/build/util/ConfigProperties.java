@@ -81,7 +81,7 @@ public class ConfigProperties {
      * @return Outcome of test.
      */
     public boolean exists() {
-        return Files.exists(file);
+        return Files.exists(file) && Files.isRegularFile(file);
     }
 
     /**

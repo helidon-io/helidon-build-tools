@@ -96,30 +96,34 @@ public final class InfoCommand extends BaseCommand {
 
         Map<Object, Object> metaProps = new LinkedHashMap<>();
         if (verbose) {
-            Metadata meta = metadata();
-            metaProps.put("base.url", meta.url());
-            metaProps.put("cache.dir", meta.rootDir());
+            try {
+                Metadata meta = metadata();
+                metaProps.put("base.url", meta.url());
+                metaProps.put("cache.dir", meta.rootDir());
 
-            FileTime lastUpdateTime = meta.lastUpdateTime();
-            String formattedTime = TimeUtils.toDateTime(lastUpdateTime);
-            metaProps.put("last.update.time", formattedTime);
+                FileTime lastUpdateTime = meta.lastUpdateTime();
+                String formattedTime = TimeUtils.toDateTime(lastUpdateTime);
+                metaProps.put("last.update.time", formattedTime);
 
-            MavenVersion latestVersion = meta.latestVersion(false);
-            metaProps.put("latest.version", latestVersion.toString());
+                MavenVersion latestVersion = meta.latestVersion(false);
+                metaProps.put("latest.version", latestVersion.toString());
 
-            ConfigProperties props = meta.propertiesOf(latestVersion);
-            props.keySet().stream().sorted().forEach(key -> metaProps.put(key, props.property(key)));
+                ConfigProperties props = meta.propertiesOf(latestVersion);
+                props.keySet().stream().sorted().forEach(key -> metaProps.put(key, props.property(key)));
 
-            ArchetypeCatalog catalog = meta.catalogOf(latestVersion);
-            AtomicInteger counter = new AtomicInteger(0);
-            catalog.entries().forEach(e -> {
-                String prefix = "archetype." + counter.incrementAndGet();
-                metaProps.put(prefix + ".artifactId", e.artifactId());
-                metaProps.put(prefix + ".version", e.version());
-                metaProps.put(prefix + ".title", e.summary());
-                metaProps.put(prefix + ".name", e.name());
-                metaProps.put(prefix + ".tags", toString(e.tags()));
-            });
+                ArchetypeCatalog catalog = meta.catalogOf(latestVersion);
+                AtomicInteger counter = new AtomicInteger(0);
+                catalog.entries().forEach(e -> {
+                    String prefix = "archetype." + counter.incrementAndGet();
+                    metaProps.put(prefix + ".artifactId", e.artifactId());
+                    metaProps.put(prefix + ".version", e.version());
+                    metaProps.put(prefix + ".title", e.summary());
+                    metaProps.put(prefix + ".name", e.name());
+                    metaProps.put(prefix + ".tags", toString(e.tags()));
+                });
+            } catch (Exception ignore) {
+                // message has already been logged
+            }
         }
 
         // Project config
