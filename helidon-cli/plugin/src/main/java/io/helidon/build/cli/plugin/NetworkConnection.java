@@ -116,9 +116,9 @@ public class NetworkConnection {
     }
 
     /**
-     * The default maximum number of retries.
+     * The default maximum number of attempts.
      */
-    public static final int DEFAULT_MAXIMUM_RETRIES = 5;
+    public static final int DEFAULT_MAXIMUM_ATTEMPTS = 5;
 
     /**
      * The default connect timeout, in milliseconds.
@@ -149,7 +149,7 @@ public class NetworkConnection {
      */
     public static class Builder {
         private URL url;
-        private int maxRetries;
+        private int maxAttempts;
         private int connectTimeout;
         private int readTimeout;
         private Connector connector;
@@ -157,7 +157,7 @@ public class NetworkConnection {
         private Map<String, String> headers;
 
         private Builder() {
-            this.maxRetries = DEFAULT_MAXIMUM_RETRIES;
+            this.maxAttempts = DEFAULT_MAXIMUM_ATTEMPTS;
             this.connectTimeout = DEFAULT_CONNECT_TIMEOUT;
             this.readTimeout = DEFAULT_READ_TIMEOUT;
             this.connector = DEFAULT_CONNECTOR;
@@ -214,16 +214,16 @@ public class NetworkConnection {
         }
 
         /**
-         * Sets the number of retries.
+         * Sets the maximum number of attempts.
          *
-         * @param maxRetries The maximum number of retries.
+         * @param maxAttempts The maximum number of attempts.
          * @return This instance, for chaining.
          */
-        public Builder maxRetries(int maxRetries) {
-            if (maxRetries <= 0) {
-                throw new IllegalArgumentException("maxRetries must be > 0");
+        public Builder maxAttempts(int maxAttempts) {
+            if (maxAttempts <= 0) {
+                throw new IllegalArgumentException("maxAttempts must be > 0");
             }
-            this.maxRetries = maxRetries;
+            this.maxAttempts = maxAttempts;
             return this;
         }
 
@@ -288,14 +288,14 @@ public class NetworkConnection {
             }
             Log.debug("connecting to %s, headers=%s", url, escapedHeaders(headers));
             IOException lastCaught = null;
-            for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            for (int attempt = 1; attempt <= maxAttempts; attempt++) {
                 try {
                     URLConnection result = connector.connect(url, headers, connectTimeout, readTimeout);
                     Log.debug("connected to %s, headers=%s", url, escapedHeaders(result.getHeaderFields()));
                     return result;
                 } catch (UnknownHostException | SocketException | SocketTimeoutException e) {
                     lastCaught = e;
-                    delay.execute(attempt, maxRetries);
+                    delay.execute(attempt, maxAttempts);
                 }
             }
             throw requireNonNull(lastCaught);

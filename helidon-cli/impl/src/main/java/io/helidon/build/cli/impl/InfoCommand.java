@@ -52,7 +52,7 @@ public final class InfoCommand extends BaseCommand {
 
     @Creator
     InfoCommand(CommonOptions commonOptions) {
-        super(commonOptions);
+        super(commonOptions, true);
         this.verbose = Log.isVerbose();
     }
 
@@ -105,7 +105,7 @@ public final class InfoCommand extends BaseCommand {
                 String formattedTime = TimeUtils.toDateTime(lastUpdateTime);
                 metaProps.put("last.update.time", formattedTime);
 
-                MavenVersion latestVersion = meta.latestVersion(false);
+                MavenVersion latestVersion = meta.latestVersion(true);
                 metaProps.put("latest.version", latestVersion.toString());
 
                 ConfigProperties props = meta.propertiesOf(latestVersion);
@@ -146,12 +146,13 @@ public final class InfoCommand extends BaseCommand {
 
         int maxWidth = Math.max(Log.maxKeyWidth(buildProps, systemProps, envVars, projectProps), MIN_WIDTH);
         log("Project Config", projectProps, maxWidth);
-        log("Build", buildProps, maxWidth);
+        log("General", buildProps, maxWidth);
+        Plugins.execute("GetInfo", pluginArgs(maxWidth), 5, Log::info);
         log("Metadata", metaProps, maxWidth);
         log("System Properties", systemProps, maxWidth);
         log("Environment Variables", envVars, maxWidth);
-        logHeader("Plugin Build");
-        Plugins.execute("GetInfo", pluginArgs(maxWidth), 5, Log::info);
+
+        Log.info("%nRun 'helidon info --verbose' for more detail.");
     }
 
     private List<String> pluginArgs(int maxWidth) {

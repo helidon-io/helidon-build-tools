@@ -116,7 +116,7 @@ public final class InitCommand extends BaseCommand {
                         defaultValue = DEFAULT_PACKAGE) String packageName,
                 @KeyValue(name = "name", description = "Project's name",
                         defaultValue = DEFAULT_NAME) String projectName) {
-        super(commonOptions);
+        super(commonOptions, version != null);
         this.commonOptions = commonOptions;
         this.batch = batch;
         this.build = build;
@@ -153,6 +153,8 @@ public final class InitCommand extends BaseCommand {
                     throw e;
                 }
             }
+        } else {
+            Log.info("Using Helidon version " + helidonVersion);
         }
 
         // Need Helidon version and flavor to proceed
@@ -254,7 +256,7 @@ public final class InitCommand extends BaseCommand {
         String version = System.getProperty(HELIDON_VERSION_PROPERTY);
         if (version == null) {
             try {
-                version = metadata.latestVersion().toString();
+                version = metadata.latestVersion(true).toString();
                 Log.debug("Latest Helidon version found: %s", version);
             } catch (Plugins.PluginFailed e) {
                 Log.info(e.getMessage());

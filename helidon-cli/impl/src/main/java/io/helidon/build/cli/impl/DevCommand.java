@@ -79,7 +79,7 @@ public final class DevCommand extends BaseCommand {
                        String pluginVersion,
                @Flag(name = "current", description = "Use the build version as the helidon-maven-plugin version", visible = false)
                        boolean currentPluginVersion) {
-        super(commonOptions);
+        super(commonOptions, true);
         this.commonOptions = commonOptions;
         this.clean = clean;
         this.fork = fork;

@@ -68,6 +68,7 @@ public class Metadata {
     private static final String PLUGIN_NAME = "UpdateMetadata";
     private static final String JAR_SUFFIX = ".jar";
     private static final int PLUGIN_MAX_WAIT_SECONDS = 30;
+    private static final int PLUGIN_MAX_ATTEMPTS = 3;
     private static final String CLI_MESSAGE_PREFIX = "cli.";
     private static final String CLI_MESSAGE_SUFFIX = ".message";
 
@@ -447,6 +448,7 @@ public class Metadata {
 
     private void update(MavenVersion helidonVersion, boolean quiet) throws Exception {
         final boolean logInfo = Log.isDebug() || !quiet;
+        final int maxAttempts = quiet ? 1 : PLUGIN_MAX_ATTEMPTS;
         final List<String> args = new ArrayList<>();
         args.add("--baseUrl");
         args.add(url);
@@ -465,6 +467,8 @@ public class Metadata {
         }
         args.add("--cliVersion");
         args.add(Config.buildVersion());
+        args.add("--maxAttempts");
+        args.add(Integer.toString(maxAttempts));
         if (debugPlugin) {
             args.add("--debug");
             Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS, Metadata::info);

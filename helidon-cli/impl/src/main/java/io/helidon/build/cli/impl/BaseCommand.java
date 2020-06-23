@@ -33,6 +33,7 @@ public abstract class BaseCommand implements CommandExecution {
     static final String HELIDON_VERSION_PROPERTY = "helidon.version";
 
     private final CommonOptions commonOptions;
+    private final boolean quietCheckForUpdates;
     private ProjectConfig projectConfig;
     private Path projectDir;
 
@@ -40,10 +41,12 @@ public abstract class BaseCommand implements CommandExecution {
      * Constructor.
      *
      * @param commonOptions The common options.
+     * @param quietCheckForUpdates {@code true} if check for updates should be quiet.
      */
-    protected BaseCommand(CommonOptions commonOptions) {
+    protected BaseCommand(CommonOptions commonOptions, boolean quietCheckForUpdates) {
         AnsiConsoleInstaller.ensureInstalled();
         this.commonOptions = commonOptions;
+        this.quietCheckForUpdates = quietCheckForUpdates;
     }
 
     @Override
@@ -56,7 +59,7 @@ public abstract class BaseCommand implements CommandExecution {
     protected abstract void assertPreconditions();
 
     protected void checkForUpdates() {
-        commonOptions.checkForUpdates();
+        commonOptions.checkForUpdates(quietCheckForUpdates);
     }
 
     protected abstract void invoke(CommandContext context) throws Exception;

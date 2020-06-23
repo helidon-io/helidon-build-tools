@@ -38,7 +38,7 @@ final class VersionCommand extends BaseCommand {
 
     @Creator
     VersionCommand(CommonOptions commonOptions) {
-        super(commonOptions);
+        super(commonOptions, true);
     }
 
     @Override
@@ -58,7 +58,7 @@ final class VersionCommand extends BaseCommand {
         }
 
         try {
-            MavenVersion latest = metadata().latestVersion(false);
+            MavenVersion latest = metadata().latestVersion(true);
             map.put("latest.helidon.version", latest.toString());
         } catch (Exception ignore) {
             // message has already been logged
