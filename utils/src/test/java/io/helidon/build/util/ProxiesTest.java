@@ -15,6 +15,8 @@
  */
 package io.helidon.build.util;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -44,18 +46,19 @@ class ProxiesTest {
     @Test
     void testNoArgsSet() {
         clearProxyProperties();
-        String args = Proxies.collectPropertyArgs();
+        List<String> args = Proxies.collectPropertyArgs();
         assertThat(args, is(not(nullValue())));
-        assertThat(args, is(""));
+        assertThat(args.isEmpty(), is(true));
     }
 
     @Test
     void testOneArgSet() {
         Properties properties = clearProxyProperties();
         properties.setProperty("http.proxyHost", "acme.com");
-        String args = Proxies.collectPropertyArgs();
+        List<String> args = Proxies.collectPropertyArgs();
         assertThat(args, is(not(nullValue())));
-        assertThat(args, is("-Dhttp.proxyHost=acme.com"));
+        assertThat(args.size(), is(1));
+        assertThat(args.get(0), is("-Dhttp.proxyHost=acme.com"));
     }
 
     @Test
@@ -63,14 +66,17 @@ class ProxiesTest {
         Properties properties = clearProxyProperties();
         properties.setProperty("http.proxyHost", "acme.com");
         properties.setProperty("http.proxyPort", "8192");
-        String args = Proxies.collectPropertyArgs();
+        List<String> args = Proxies.collectPropertyArgs();
         assertThat(args, is(not(nullValue())));
-        assertThat(args, is("-Dhttp.proxyHost=acme.com -Dhttp.proxyPort=8192"));
+        assertThat(args.size(), is(2));
+        Collections.sort(args);
+        assertThat(args.get(0), is("-Dhttp.proxyHost=acme.com"));
+        assertThat(args.get(1), is("-Dhttp.proxyPort=8192"));
     }
 
     @Test
     void testNoPropsSet() {
-        Map<String,String> env = Map.of();
+        Map<String, String> env = Map.of();
         Properties props = new Properties();
         Proxies.setProxyPropertiesFrom(env, props);
         assertThat(props.isEmpty(), is(true));
@@ -78,7 +84,7 @@ class ProxiesTest {
 
     @Test
     void testHttpProxySet() {
-        Map<String,String> env = Map.of("http_proxy", "www-proxy.us.acme.com:80");
+        Map<String, String> env = Map.of("http_proxy", "www-proxy.us.acme.com:80");
         Properties props = new Properties();
         Proxies.setProxyPropertiesFrom(env, props);
         assertThat(props.size(), is(2));
@@ -88,7 +94,7 @@ class ProxiesTest {
 
     @Test
     void testHttpsProxySet() {
-        Map<String,String> env = Map.of("https_proxy", "www-proxy.us.acme.com:80");
+        Map<String, String> env = Map.of("https_proxy", "www-proxy.us.acme.com:80");
         Properties props = new Properties();
         Proxies.setProxyPropertiesFrom(env, props);
         assertThat(props.size(), is(2));
@@ -98,7 +104,7 @@ class ProxiesTest {
 
     @Test
     void testHttpProxyUrlSet() {
-        Map<String,String> env = Map.of("http_proxy", "http://www-proxy.us.acme.com:80");
+        Map<String, String> env = Map.of("http_proxy", "http://www-proxy.us.acme.com:80");
         Properties props = new Properties();
         Proxies.setProxyPropertiesFrom(env, props);
         assertThat(props.size(), is(2));
@@ -108,7 +114,7 @@ class ProxiesTest {
 
     @Test
     void testHttpsProxyUrlSet() {
-        Map<String,String> env = Map.of("https_proxy", "https://www-proxy.us.acme.com:80");
+        Map<String, String> env = Map.of("https_proxy", "https://www-proxy.us.acme.com:80");
         Properties props = new Properties();
         Proxies.setProxyPropertiesFrom(env, props);
         assertThat(props.size(), is(2));
@@ -118,7 +124,7 @@ class ProxiesTest {
 
     @Test
     void testNonProxySet() {
-        Map<String,String> env = Map.of("no_proxy", "localhost,127.0.0.1,.acmecorp.com,.acme.com,.jenkins,.vault");
+        Map<String, String> env = Map.of("no_proxy", "localhost,127.0.0.1,.acmecorp.com,.acme.com,.jenkins,.vault");
         Properties props = new Properties();
         Proxies.setProxyPropertiesFrom(env, props);
         assertThat(props.size(), is(2));
@@ -128,7 +134,7 @@ class ProxiesTest {
 
     @Test
     void testSkipIfSet() {
-        Map<String,String> env = Map.of("http_proxy", "www-proxy.us.acme.com:80");
+        Map<String, String> env = Map.of("http_proxy", "www-proxy.us.acme.com:80");
         Properties props = new Properties();
         props.setProperty("http.proxyHost", "acme.com");
         props.setProperty("http.proxyPort", "8192");

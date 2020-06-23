@@ -46,7 +46,7 @@ final class VersionCommand extends BaseCommand {
     }
 
     @Override
-    protected void invoke(CommandContext context) throws Exception {
+    protected void invoke(CommandContext context) {
         Map<Object, Object> map = new LinkedHashMap<>();
         addBuildProperties(map);
 
@@ -57,8 +57,12 @@ final class VersionCommand extends BaseCommand {
             addProjectProperty("flavor", PROJECT_FLAVOR, projectConfig, map);
         }
 
-        MavenVersion latest = metadata().latestVersion(false);
-        map.put("latest.helidon.version", latest.toString());
+        try {
+            MavenVersion latest = metadata().latestVersion(false);
+            map.put("latest.helidon.version", latest.toString());
+        } catch (Exception ignore) {
+            // message has already been logged
+        }
 
         Log.info(map);
     }

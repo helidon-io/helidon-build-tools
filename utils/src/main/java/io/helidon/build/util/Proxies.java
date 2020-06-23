@@ -15,10 +15,12 @@
  */
 package io.helidon.build.util;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Proxy utilities.
@@ -47,7 +49,7 @@ public class Proxies {
             "https.proxyPort",
             "https.nonProxyHosts"
     );
-    private static final String PROXY_ARGS = collectPropertyArgs();
+    private static final AtomicReference<List<String>> PROXY_ARGS = new AtomicReference<>();
 
     /**
      * Sets the proxy system properties from the corresponding environment variables, if any.
@@ -88,8 +90,13 @@ public class Proxies {
      *
      * @return The args, may be empty.
      */
-    public static String javaProxyArgs() {
-        return PROXY_ARGS;
+    public static List<String> javaProxyArgs() {
+        List<String> args = PROXY_ARGS.get();
+        if (args == null) {
+            args = collectPropertyArgs();
+            PROXY_ARGS.set(args);
+        }
+        return args;
     }
 
     /**
@@ -101,18 +108,15 @@ public class Proxies {
         return PROXY_PROPS;
     }
 
-    static String collectPropertyArgs() {
-        final StringBuilder sb = new StringBuilder();
+    static List<String> collectPropertyArgs() {
+        final List<String> args = new ArrayList<>();
         PROXY_PROPS.forEach(key -> {
             final String value = System.getProperty(key);
             if (value != null) {
-                if (sb.length() > 0) {
-                    sb.append(' ');
-                }
-                sb.append("-D").append(key).append('=').append(value);
+                args.add("-D" + key + "=" + value);
             }
         });
-        return sb.toString();
+        return args;
     }
 
     static void setProxyPropertiesFrom(Map<String, String> env, Properties properties) {
