@@ -109,8 +109,8 @@ final class CommonOptions {
             } else {
                 Log.debug("no update available");
             }
-        } catch (Plugins.PluginFailed e) {
-            Log.debug("check for updates failed: %s", e.getMessage());
+        } catch (Plugins.PluginFailed ignore) {
+            // message has already been logged
         } catch (Exception e) {
             Log.debug("check for updates failed: %s", e.toString());
         }

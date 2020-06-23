@@ -131,10 +131,7 @@ public class Plugins {
         if (DEFAULT_DEBUG_PORT > 0) {
             command.add(DEBUG_ARG_PREFIX + DEFAULT_DEBUG_PORT);
         }
-        final String proxyArgs = Proxies.javaProxyArgs();
-        if (proxyArgs != null && !proxyArgs.isEmpty()) {
-            command.add(proxyArgs);
-        }
+        command.addAll(Proxies.javaProxyArgs());
         command.add("-jar");
         command.add(pluginJar().toString());
         command.add(requireNonNull(pluginName));
