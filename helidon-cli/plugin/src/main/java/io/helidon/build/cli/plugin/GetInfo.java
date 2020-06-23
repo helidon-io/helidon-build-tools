@@ -89,7 +89,6 @@ public class GetInfo extends Plugin {
 
     @Override
     void execute() {
-        buildProperties().forEach((key, value) -> info.put(BUILD_PREFIX + key, value.toString()));
         addSystemProperty("os.name", false);
         addSystemProperty("os.version", false);
         addSystemProperty("os.arch", false);
@@ -97,6 +96,7 @@ public class GetInfo extends Plugin {
         addSystemProperty("java.vm.name", false);
         addSystemProperty("java.home", true);
         addSystemProperty("user.home", true);
+        buildProperties().forEach((key, value) -> info.put(BUILD_PREFIX + key, value.toString()));
         log(info);
     }
 

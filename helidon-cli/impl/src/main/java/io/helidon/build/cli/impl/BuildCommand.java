@@ -51,7 +51,7 @@ public final class BuildCommand extends BaseCommand {
     BuildCommand(CommonOptions commonOptions,
                  @Flag(name = "clean", description = "Perform a clean before the build") boolean clean,
                  @KeyValue(name = "mode", description = "Build mode", defaultValue = "PLAIN") BuildMode buildMode) {
-        super(commonOptions);
+        super(commonOptions, true);
         this.commonOptions = commonOptions;
         this.clean = clean;
         this.buildMode = buildMode;

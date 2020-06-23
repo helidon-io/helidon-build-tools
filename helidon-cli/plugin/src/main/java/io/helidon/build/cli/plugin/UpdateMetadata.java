@@ -47,6 +47,7 @@ public class UpdateMetadata extends Plugin {
     private static final String CACHE_DIR_ARG = "--cacheDir";
     private static final String CONNECT_TIMEOUT_ARG = "--connectTimeout";
     private static final String READ_TIMEOUT_ARG = "--readTimeout";
+    private static final String MAX_ATTEMPTS_ARG = "--maxAttempts";
     private static final String LATEST_VERSION_FILE_NAME = "latest";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     private static final String ETAG_HEADER = "Etag";
@@ -65,6 +66,7 @@ public class UpdateMetadata extends Plugin {
     private Path cacheDir;
     private int connectTimeout;
     private int readTimeout;
+    private int maxAttempts;
     private Path latestVersionFile;
 
     /**
@@ -73,6 +75,7 @@ public class UpdateMetadata extends Plugin {
     public UpdateMetadata() {
         this.connectTimeout = DEFAULT_TIMEOUT_MILLIS;
         this.readTimeout = DEFAULT_TIMEOUT_MILLIS;
+        this.maxAttempts = NetworkConnection.DEFAULT_MAXIMUM_ATTEMPTS;
     }
 
     @Override
@@ -95,6 +98,9 @@ public class UpdateMetadata extends Plugin {
                 return argIndex + 1;
             case READ_TIMEOUT_ARG:
                 readTimeout = Integer.parseInt(nextArg(argIndex, allArgs));
+                return argIndex + 1;
+            case MAX_ATTEMPTS_ARG:
+                maxAttempts = Integer.parseInt(nextArg(argIndex, allArgs));
                 return argIndex + 1;
             default:
                 return -1;
@@ -148,7 +154,6 @@ public class UpdateMetadata extends Plugin {
                                                           .connectTimeout(connectTimeout)
                                                           .readTimeout(readTimeout)
                                                           .connect();
-
         Files.copy(connection.getInputStream(), latestVersionFile, REPLACE_EXISTING);
         if (Log.isDebug()) {
             Log.debug("wrote %s to %s", readLatestVersion(), latestVersionFile);
@@ -165,6 +170,7 @@ public class UpdateMetadata extends Plugin {
                                                           .headers(headers)
                                                           .connectTimeout(connectTimeout)
                                                           .readTimeout(readTimeout)
+                                                          .maxAttempts(maxAttempts)
                                                           .connect();
         final int status = status(connection);
         if (status == STATUS_OK) {

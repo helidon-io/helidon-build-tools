@@ -83,7 +83,7 @@ class NetworkConnectionTest {
         }
         assertThat(thrown, is(not(nullValue())));
         assertThat(thrown, is(expected));
-        assertThat(delay.maxAttempts, is(NetworkConnection.DEFAULT_MAXIMUM_RETRIES));
-        assertThat(delay.lastAttempt, is(NetworkConnection.DEFAULT_MAXIMUM_RETRIES));
+        assertThat(delay.maxAttempts, is(NetworkConnection.DEFAULT_MAXIMUM_ATTEMPTS));
+        assertThat(delay.lastAttempt, is(NetworkConnection.DEFAULT_MAXIMUM_ATTEMPTS));
     }
 }

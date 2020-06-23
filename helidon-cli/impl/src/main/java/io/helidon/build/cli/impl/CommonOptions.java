@@ -29,6 +29,7 @@ import io.helidon.build.cli.harness.Option.KeyValue;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.Style;
+import io.helidon.build.util.UserConfig;
 
 import static io.helidon.build.util.FileUtils.WORKING_DIR;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
@@ -75,23 +76,25 @@ final class CommonOptions {
         if (metadata == null) {
             if (resetCache) {
                 try {
-                    Log.debug("Clearing metadata cache");
-                    Config.userConfig().clearCache();
+                    UserConfig config = Config.userConfig();
+                    Log.debug("clearing plugins and metadata cache");
+                    config.clearCache();
+                    config.clearPlugins();
                 } catch (Exception e) {
-                    Log.warn("Failed to clear cache: ", e);
+                    Log.warn("reset failed: ", e);
                 }
             }
             if (!metadataUrl.equals(Metadata.DEFAULT_URL)) {
-                Log.debug("Using metadata url %s", metadataUrl);
+                Log.debug("using metadata url %s", metadataUrl);
             }
             metadata = Metadata.newInstance(metadataUrl);
         }
         return metadata;
     }
 
-    void checkForUpdates() {
+    void checkForUpdates(boolean quiet) {
         try {
-            Optional<MavenVersion> update = metadata().checkForCliUpdate(sinceCliVersion, false);
+            Optional<MavenVersion> update = metadata().checkForCliUpdate(sinceCliVersion, quiet);
             if (update.isPresent()) {
                 MavenVersion newVersion = update.get();
                 Map<Object, Object> releaseNotes = releaseNotes(newVersion);
