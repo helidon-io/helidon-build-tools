@@ -180,7 +180,7 @@ public class UpdateMetadata extends Plugin {
         // Always update
         final URL url = resolve(LATEST_VERSION_FILE_NAME);
         final Map<String, String> headers = commonHeaders();
-        Log.debug("downloading %s, headers=%s", url, escapedHeaders(headers));
+        Log.debug("downloading %s, headers=%s", url, headers);
         final URLConnection connection = NetworkConnection.builder()
                                                           .url(url)
                                                           .headers(headers)
@@ -222,9 +222,9 @@ public class UpdateMetadata extends Plugin {
         if (Files.exists(lastUpdateFile)) {
             final String etag = Files.readString(lastUpdateFile);
             headers.put(IF_NONE_MATCH_HEADER, etag);
-            Log.debug("maybe downloading %s, headers=%s", url, escapedHeaders(headers));
+            Log.debug("maybe downloading %s, headers=%s", url, headers);
         } else {
-            Log.debug("downloading %s, headers=%s", url, escapedHeaders(headers));
+            Log.debug("downloading %s, headers=%s", url, headers);
         }
         return headers;
     }
@@ -245,14 +245,6 @@ public class UpdateMetadata extends Plugin {
         sb.append("jvm:").append(System.getProperty("java.vm.version"));
         sb.append(")");
         return sb.toString();
-    }
-
-    static String escapedHeaders(Map<?, ?> headers) {
-        return escape(headers.toString());
-    }
-
-    static String escape(String input) {
-        return input.replace(")", "\\)");
     }
 
     private int status(URLConnection connection) throws IOException {
