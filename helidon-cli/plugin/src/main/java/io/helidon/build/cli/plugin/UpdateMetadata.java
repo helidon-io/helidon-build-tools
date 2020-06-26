@@ -21,17 +21,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import javax.net.ssl.SSLException;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -120,13 +125,44 @@ public class UpdateMetadata extends Plugin {
 
     @Override
     void execute() throws Exception {
-        if (version == null) {
-            updateLatestVersion();
-            updateVersion(readLatestVersion());
-        } else {
-            updateVersion(version);
-            updateLatestVersion(); // since we're here already, also update the latest
+        try {
+            if (version == null) {
+                updateLatestVersion();
+                updateVersion(readLatestVersion());
+            } else {
+                updateVersion(version);
+                updateLatestVersion(); // since we're here already, also update the latest
+            }
+        } catch (Exception e) {
+            throw failed(e);
         }
+    }
+
+    private Failed failed(Exception e) {
+        // Try to clean up common error messages
+        String message = e.toString();
+        if (e instanceof UnknownHostException) {
+            message = "host " + baseUrl.getHost() + " not found accessing " + baseUrl;
+        } else if (e instanceof SocketTimeoutException) {
+            message = "timeout accessing " + baseUrl;
+        } else if (e instanceof SSLException) {
+            message = "accessing " + baseUrl + " failed: " + cause(e).getMessage();
+        } else if (e instanceof FileNotFoundException) {
+            message = e.getMessage() + " not found";
+        } else if (e instanceof IOException) {
+            if (message.toLowerCase(Locale.ENGLISH).contains("proxy")) {
+                message = "accessing " + baseUrl + " failed: " + e.getMessage();
+            }
+        }
+        return new Failed(message);
+    }
+
+    private static Throwable cause(Exception e) {
+        Throwable result = e;
+        while (result.getCause() != null) {
+            result = result.getCause();
+        }
+        return result;
     }
 
     private String readLatestVersion() throws Exception {

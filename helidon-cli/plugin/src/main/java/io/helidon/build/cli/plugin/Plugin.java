@@ -31,10 +31,30 @@ public abstract class Plugin {
                 final Plugin plugin = Plugin.newInstance(args[0]);
                 plugin.parse(args).execute();
             }
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | Failed e) {
             fail(e.getMessage());
         } catch (Throwable e) {
             fail(e.toString());
+        }
+    }
+
+    /**
+     * Exception that is always logged with only the message.
+     */
+    public static class Failed extends Exception {
+        private final String message;
+
+        /**
+         * Constructor.
+         * @param message The message.
+         */
+        public Failed(String message) {
+            this.message = message;
+        }
+
+        @Override
+        public String getMessage() {
+            return message;
         }
     }
 
