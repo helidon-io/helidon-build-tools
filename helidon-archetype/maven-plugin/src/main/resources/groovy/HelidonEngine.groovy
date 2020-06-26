@@ -18,19 +18,38 @@ import org.apache.maven.artifact.versioning.ComparableVersion
 
 class HelidonEngineImpl {
 
-    private File mavenLibDir = new File(System.getProperty("maven.home"), "lib")
+    /**
+     * Class loader with the maven core libraries found under {@code ${maven.home}/lib}.
+     * It is used to by-pass the restricted plugin class-loader that the {@code archetype-post-generate.groovy} script
+     * is executed with.
+     */
+    private final URLClassLoader mavenCl
+
+    HelidonEngineImpl() {
+        List<URL> mavenLibs = new File(System.getProperty("maven.home"), "lib").listFiles()
+                .collect{ it.toURI().toURL() }
+        mavenCl = new URLClassLoader(mavenLibs.toArray(new URL[mavenLibs.size()]), this.getClass().getClassLoader())
+    }
+
+    /**
+     * Get the Maven version from the maven libs class loader.
+     * The implementation follows the same logic as {@code org.apache.maven.rtinfo.internal.DefaultRuntimeInformation}.
+     * @return version string, empty if not found or invalid
+     */
+    private String getMavenVersion() {
+        Properties props = new Properties()
+        props.load(mavenCl.getResourceAsStream("META-INF/maven/org.apache.maven/maven-core/pom.properties"))
+        String version = props.getProperty( "version", "").trim()
+        return version.startsWith('${') ? "" : version
+    }
 
     /**
      * Check that the Maven version is greater or equal to 3.2.5.
      */
     void checkMavenVersion() {
-        def mavenCoreJar = mavenLibDir.list().find { it.startsWith("maven-core-") }
-        if (mavenCoreJar == null) {
-            throw new IllegalStateException("Unable to determine Maven version")
-        }
-        String mavenVersion = mavenCoreJar.substring("maven-core-".length(), mavenCoreJar.length() - ".jar".length());
+        String mavenVersion = getMavenVersion()
         ComparableVersion minMavenVersion = new ComparableVersion("3.2.5")
-        if (new ComparableVersion(mavenVersion) < minMavenVersion) {
+        if (!mavenVersion.isEmpty() && new ComparableVersion(mavenVersion) < minMavenVersion) {
             throw new IllegalStateException("Requires Maven >= 3.2.5")
         }
     }
@@ -75,17 +94,10 @@ class HelidonEngineImpl {
                   Map<String, String> props,
                   File projectDir) {
 
-        // the current class loader is restricted and there is no way to bootstrap aether as-is
-        // create a class-loader with the maven core libraries found under ${maven.home}/lib
-        List<URL> mavenLibs = mavenLibDir
-                .listFiles()
-                .collect{ it.toURI().toURL() }
-        def cl = new URLClassLoader(mavenLibs.toArray(new URL[mavenLibs.size()]), this.getClass().getClassLoader())
-
         // set the context class loader for plexus to work properly.
-        Thread.currentThread().setContextClassLoader(cl)
+        Thread.currentThread().setContextClassLoader(mavenCl)
 
-        def aether = new GroovyShell(cl)
+        def aether = new GroovyShell(mavenCl)
                 .parse(aetherScript)
                 .create(localRepo, remoteRepos)
 
