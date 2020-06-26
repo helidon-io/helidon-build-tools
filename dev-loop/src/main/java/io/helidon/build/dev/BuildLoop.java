@@ -39,7 +39,7 @@ import static java.util.Objects.requireNonNull;
  * A continuous incremental build loop.
  */
 public class BuildLoop {
-    private static final boolean ALLOW_SKIP = System.getProperty("version.plugin.helidon") == null;
+    private static final boolean ALLOW_SKIP = true;
     private static final ExecutorService LOOP_EXECUTOR = Executors.newSingleThreadExecutor();
     private final BuildExecutor buildExecutor;
     private final Path projectDirectory;

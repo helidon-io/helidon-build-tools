@@ -141,7 +141,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
             build(executor, true, cycleNumber);
         } else if (allowSkip && canSkipBuild(projectDir)) {
             try {
-                Project result = createProject(executor.projectDirectory(), buildType);
+                Project result = createProject(executor.projectDirectory(), BuildType.Skipped);
                 executor.monitor().onBuildStart(cycleNumber, BuildType.Skipped);
                 return result;
             } catch (Exception e) {

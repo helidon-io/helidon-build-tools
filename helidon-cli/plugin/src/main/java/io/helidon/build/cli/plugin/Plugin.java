@@ -46,6 +46,7 @@ public abstract class Plugin {
 
         /**
          * Constructor.
+         *
          * @param message The message.
          */
         public Failed(String message) {

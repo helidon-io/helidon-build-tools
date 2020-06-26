@@ -21,6 +21,7 @@ package io.helidon.build.cli.plugin;
 public class Style {
     private static final String STYLE_PREFIX = "$(";
     private static final String STYLE_SUFFIX = ")";
+    private static final String ESCAPED_STYLE_SUFFIX = "\\)";
 
     /**
      * Converts the given message to one that will apply the given style name(s).
@@ -31,7 +32,8 @@ public class Style {
      * @return The formatted message.
      */
     public static String style(String style, Object message, Object... args) {
-        return STYLE_PREFIX + style + " " + String.format(message.toString(), args) + STYLE_SUFFIX;
+        final String msg = String.format(message.toString(), args).replace(STYLE_SUFFIX, ESCAPED_STYLE_SUFFIX);
+        return STYLE_PREFIX + style + " " + msg + STYLE_SUFFIX;
     }
 
     /**
