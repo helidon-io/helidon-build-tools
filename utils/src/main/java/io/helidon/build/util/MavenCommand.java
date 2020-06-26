@@ -49,7 +49,7 @@ public class MavenCommand {
     private static final String MAVEN_BINARY_NAME = Constants.OS.mavenExec();
     private static final String MAVEN_HOME_VAR = "MAVEN_HOME";
     private static final String MVN_HOME_VAR = "MVN_HOME";
-    private static final String MAVEN_CORE_PREFIX = "maven-core-";
+    private static final String MAVEN_CORE_PREFIX = "maven-core";
     private static final String MAVEN_SHIM_TARGET = "libexec/bin/mvn";
     private static final String JAR_SUFFIX = ".jar";
     private static final String MAVEN_DOWNLOAD_URL = "https://maven.apache.org/download.cgi";
