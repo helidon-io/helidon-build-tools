@@ -28,7 +28,7 @@ class HelidonEngineImpl {
         if (mavenCoreJar == null) {
             throw new IllegalStateException("Unable to determine Maven version")
         }
-        String mavenVersion = mavenCoreJar.substring("maven-core-".length(), mavenCoreJar.length() - ".jar".length());
+		String mavenVersion = new java.util.jar.JarFile(mavenCoreJar).manifest.mainAttributes.getValue("Implementation-Version");
         ComparableVersion minMavenVersion = new ComparableVersion("3.2.5")
         if (new ComparableVersion(mavenVersion) < minMavenVersion) {
             throw new IllegalStateException("Requires Maven >= 3.2.5")
