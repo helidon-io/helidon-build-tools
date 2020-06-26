@@ -61,8 +61,10 @@ public final class FileUtils {
      */
     public static final Path USER_HOME_DIR = requiredDirectoryFromProperty("user.home", false);
 
-
+    private static final String JAVA_BINARY_NAME = Constants.OS.javaExecutable();
+    private static final String JAVA_HOME_VAR = "JAVA_HOME";
     private static final String PATH_VAR = "PATH";
+    private static final String BIN_DIR_NAME = "bin";
 
     /**
      * Returns a directory path from the given system property name, creating it if required.
@@ -522,6 +524,59 @@ public final class FileUtils {
                      .map(path -> path.resolve(executableName))
                      .filter(Files::isExecutable)
                      .findFirst();
+    }
+
+    /**
+     * Returns the path to the java executable, searching the {@code PATH} var first, then checking {@code JAVA_HOME}.
+     *
+     * @return The path.
+     */
+    public static Optional<Path> javaExecutable() {
+        final Optional<Path> path = javaExecutableInPath();
+        if (path.isPresent()) {
+            return path;
+        } else {
+            return javaExecutableInJavaHome();
+        }
+    }
+
+    /**
+     * Returns the path to the java executable, searching the {@code PATH} var first, then checking {@code JAVA_HOME}.
+     *
+     * @return The path.
+     * @throws IllegalStateException if not found.
+     */
+    public static Path assertJavaExecutable() {
+        return javaExecutable().orElseThrow(() -> new IllegalStateException(JAVA_BINARY_NAME + " not found. Please add it to "
+                                                                            + "your PATH or set the JAVA_HOME or variable."));
+    }
+
+    /**
+     * Returns the path to the java executable using the {@code PATH} var.
+     *
+     * @return The path.
+     */
+    public static Optional<Path> javaExecutableInPath() {
+        return findExecutableInPath(JAVA_BINARY_NAME);
+    }
+
+    /**
+     * Returns the path to the java executable using the {@code JAVA_HOME} var if present and valid.
+     *
+     * @return The path.
+     */
+    public static Optional<Path> javaExecutableInJavaHome() {
+        final String javaHomePath = System.getenv(JAVA_HOME_VAR);
+        if (javaHomePath != null) {
+            final Path javaHome = Paths.get(javaHomePath);
+            final Path binary = javaHome.resolve(BIN_DIR_NAME).resolve(JAVA_BINARY_NAME);
+            if (Files.isExecutable(binary)) {
+                return Optional.of(binary);
+            } else {
+                throw new IllegalStateException(JAVA_BINARY_NAME + " not found in JAVA_HOME path: " + javaHomePath);
+            }
+        }
+        return Optional.empty();
     }
 
     /**
