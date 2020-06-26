@@ -133,28 +133,25 @@ public class UpdateMetadata extends Plugin {
                 updateVersion(version);
                 updateLatestVersion(); // since we're here already, also update the latest
             }
-        } catch (Exception e) {
-            throw failed(e);
-        }
-    }
-
-    private Failed failed(Exception e) {
-        // Try to clean up common error messages
-        String message = e.toString();
-        if (e instanceof UnknownHostException) {
-            message = "host " + baseUrl.getHost() + " not found accessing " + baseUrl;
-        } else if (e instanceof SocketTimeoutException) {
-            message = "timeout accessing " + baseUrl;
-        } else if (e instanceof SSLException) {
-            message = "accessing " + baseUrl + " failed: " + cause(e).getMessage();
-        } else if (e instanceof FileNotFoundException) {
-            message = e.getMessage() + " not found";
-        } else if (e instanceof IOException) {
+        } catch (UnknownHostException e) {
+            throw new Failed("host " + baseUrl.getHost() + " not found when accessing " + baseUrl);
+        } catch (SocketTimeoutException e) {
+            throw new Failed("timeout accessing " + baseUrl);
+        } catch (SSLException e) {
+            throw new Failed("accessing " + baseUrl + " failed: " + cause(e).getMessage());
+        } catch (FileNotFoundException e) {
+            final String message = e.getMessage();
+            throw new Failed(message.contains("No such file") ? message : message + " not found");
+        } catch (IOException e) {
+            final String message = e.getMessage();
             if (message.toLowerCase(Locale.ENGLISH).contains("proxy")) {
-                message = "accessing " + baseUrl + " failed: " + e.getMessage();
+                throw new Failed("accessing " + baseUrl + " failed: " + message);
+            } else {
+                throw new Failed(e.toString());
             }
+        } catch (Throwable e) {
+            throw new Failed(e.toString());
         }
-        return new Failed(message);
     }
 
     private static Throwable cause(Exception e) {
@@ -251,7 +248,11 @@ public class UpdateMetadata extends Plugin {
     }
 
     static String escapedHeaders(Map<?, ?> headers) {
-        return headers.toString().replace(")", "\\)");
+        return escape(headers.toString());
+    }
+
+    static String escape(String input) {
+        return input.replace(")", "\\)");
     }
 
     private int status(URLConnection connection) throws IOException {
