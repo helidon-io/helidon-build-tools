@@ -227,7 +227,7 @@ public final class JavaRuntime implements ResourceContainer {
      * @return The feature version.
      */
     public String featureVersion() {
-        return Integer.toString(version.major());
+        return Integer.toString(version.feature());
     }
 
     /**
@@ -251,7 +251,7 @@ public final class JavaRuntime implements ResourceContainer {
      * @return {@code true} if this instance is the current JVM.
      */
     public boolean isCurrent() {
-        return javaHome.equals(CURRENT_JAVA_HOME_DIR);
+        return javaHome.equals(currentJavaHomeDir());
     }
 
     /**
