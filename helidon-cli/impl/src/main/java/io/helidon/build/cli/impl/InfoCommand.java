@@ -152,7 +152,9 @@ public final class InfoCommand extends BaseCommand {
         log("System Properties", systemProps, maxWidth);
         log("Environment Variables", envVars, maxWidth);
 
-        Log.info("%nRun 'helidon info --verbose' for more detail.");
+        if (!verbose) {
+            Log.info("%nRun 'helidon info --verbose' for more detail.");
+        }
     }
 
     private List<String> pluginArgs(int maxWidth) {
