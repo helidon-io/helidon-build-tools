@@ -59,14 +59,10 @@ public final class Constants {
     public static String javaHome() {
         String javaHome = System.getProperty("java.home");
         if (javaHome == null) {
-            javaHome = System.getenv("JAVA_HOME");
-            if (javaHome == null) {
-                throw new RuntimeException("Unable to find Java installation, please set JAVA_HOME");
-            }
+            javaHome = FileUtils.assertJavaExecutable().getParent().getParent().toString();
         }
         return javaHome;
     }
-
 
     private Constants() {
     }

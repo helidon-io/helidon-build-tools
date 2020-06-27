@@ -243,10 +243,7 @@ public class MavenCommand {
      */
     public static class Builder {
         private static final String MAVEN_EXEC = Constants.OS.mavenExec();
-        private static final String JAVA_HOME = Constants.javaHome();
-        private static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
         private static final String PATH_VAR = "PATH";
-        private static final String JAVA_HOME_VAR = "JAVA_HOME";
         private static final String MAVEN_OPTS_VAR = "MAVEN_OPTS";
         private static final int SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
         private static final String DEBUG_OPT_PREFIX = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:";

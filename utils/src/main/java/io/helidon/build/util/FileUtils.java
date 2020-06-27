@@ -46,10 +46,6 @@ import static java.util.Objects.requireNonNull;
  * File utilities.
  */
 public final class FileUtils {
-    /**
-     * The Java Home directory for the running JVM.
-     */
-    public static final Path CURRENT_JAVA_HOME_DIR = requiredDirectory(Constants.javaHome(), false);
 
     /**
      * The working directory.
