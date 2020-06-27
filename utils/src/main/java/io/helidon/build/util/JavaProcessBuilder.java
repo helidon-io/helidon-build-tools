@@ -36,13 +36,13 @@ public class JavaProcessBuilder {
     public static ProcessBuilder newInstance() {
         final ProcessBuilder builder = new ProcessBuilder();
 
-        // If java is not in the PATH and we have JAVA_HOME set, add it to the PATH
+        // If java is not in the PATH and we have a valid JAVA_HOME set, prepend it to the PATH
 
         if (FileUtils.javaExecutableInPath().isEmpty()) {
-            final Optional<Path> javaHome = FileUtils.javaExecutableInJavaHome();
-            if (javaHome.isPresent()) {
+            final Optional<Path> javaHomeExecutable = FileUtils.javaExecutableInJavaHome();
+            if (javaHomeExecutable.isPresent()) {
                 final Map<String, String> env = builder.environment();
-                final String javaBinDir = javaHome.get().getParent().toString();
+                final String javaBinDir = javaHomeExecutable.get().getParent().toString();
                 final String pathVar = javaBinDir + pathSeparatorChar + env.get(PATH_VAR);
                 env.put(PATH_VAR, pathVar);
             }
