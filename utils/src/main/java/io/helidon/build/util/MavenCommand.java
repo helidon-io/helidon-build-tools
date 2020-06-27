@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 import static io.helidon.build.util.AnsiConsoleInstaller.isHelidonChildProcess;
 import static io.helidon.build.util.Constants.EOL;
 import static io.helidon.build.util.FileUtils.assertDir;
+import static io.helidon.build.util.FileUtils.assertJavaExecutable;
 import static io.helidon.build.util.FileUtils.listFiles;
 import static io.helidon.build.util.Style.Bold;
 import static java.io.File.pathSeparatorChar;
@@ -57,10 +58,10 @@ public class MavenCommand {
     private static final AtomicReference<Path> MAVEN_HOME = new AtomicReference<>();
     private static final AtomicReference<MavenVersion> MAVEN_VERSION = new AtomicReference<>();
     private static final String VERSION_ERROR = "$(RED Found Maven version %s.)"
-            + EOL
-            + "$(bold Version) $(GREEN %s) $(bold or later is required.) "
-            + "Please update from %s and prepend your PATH or set the MAVEN_HOME or MVN_HOME "
-            + "environment variable.";
+                                                + EOL
+                                                + "$(bold Version) $(GREEN %s) $(bold or later is required.) "
+                                                + "Please update from %s and prepend your PATH or set the MAVEN_HOME or MVN_HOME "
+                                                + "environment variable.";
 
     private final String name;
     private final ProcessBuilder processBuilder;
@@ -102,15 +103,20 @@ public class MavenCommand {
      */
     public static Path mavenExecutable() {
         if (MAVEN_EXECUTABLE.get() == null) {
-            Path maven = toMavenExecutable(MAVEN_HOME_VAR);
-            if (maven == null) {
-                maven = toMavenExecutable(MVN_HOME_VAR);
-            }
-            if (maven == null) {
-                maven = FileUtils.findExecutableInPath(MAVEN_BINARY_NAME)
-                        .orElseThrow(() -> new IllegalStateException(MAVEN_BINARY_NAME + " not found. Please add it to "
-                                + "your PATH or set either the MAVEN_HOME or "
-                                + "MVN_HOME environment variables."));
+            Path maven;
+            Optional<Path> path = FileUtils.findExecutableInPath(MAVEN_BINARY_NAME);
+            if (path.isPresent()) {
+                maven = path.get();
+            } else {
+                maven = toMavenExecutable(MAVEN_HOME_VAR);
+                if (maven == null) {
+                    maven = toMavenExecutable(MVN_HOME_VAR);
+                    if (maven == null) {
+                        throw new IllegalStateException(MAVEN_BINARY_NAME + " not found. Please add it to "
+                                                        + "your PATH or set either the MAVEN_HOME or "
+                                                        + "MVN_HOME environment variables.");
+                    }
+                }
             }
             try {
                 maven = maven.toRealPath();
@@ -156,7 +162,7 @@ public class MavenCommand {
             final Path jarFile = jars.get(0);
             final String fileName = jarFile.getFileName().toString();
             final String versionStr = jarVersion(jarFile)
-                    .orElse(fileName.substring(MAVEN_CORE_PREFIX.length(), fileName.length() - JAR_SUFFIX.length()));
+                    .orElse(fileName.substring(MAVEN_CORE_PREFIX.length() + 1, fileName.length() - JAR_SUFFIX.length()));
             final MavenVersion version = MavenVersion.toMavenVersion(versionStr);
             MAVEN_VERSION.set(version);
         }
@@ -203,14 +209,14 @@ public class MavenCommand {
             Log.info("%s", Bold.apply(name));
         }
         ProcessMonitor processMonitor = ProcessMonitor.builder()
-                .processBuilder(processBuilder)
-                .stdOut(stdOut)
-                .stdErr(stdErr)
-                .filter(filter)
-                .transform(transform)
-                .capture(false)
-                .build()
-                .start();
+                                                      .processBuilder(processBuilder)
+                                                      .stdOut(stdOut)
+                                                      .stdErr(stdErr)
+                                                      .filter(filter)
+                                                      .transform(transform)
+                                                      .capture(false)
+                                                      .build()
+                                                      .start();
         processMonitor.waitForCompletion(maxWaitSeconds, TimeUnit.SECONDS);
     }
 
@@ -237,10 +243,7 @@ public class MavenCommand {
      */
     public static class Builder {
         private static final String MAVEN_EXEC = Constants.OS.mavenExec();
-        private static final String JAVA_HOME = Constants.javaHome();
-        private static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
         private static final String PATH_VAR = "PATH";
-        private static final String JAVA_HOME_VAR = "JAVA_HOME";
         private static final String MAVEN_OPTS_VAR = "MAVEN_OPTS";
         private static final int SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
         private static final String DEBUG_OPT_PREFIX = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:";
@@ -453,13 +456,12 @@ public class MavenCommand {
 
             processBuilder = new ProcessBuilder().directory(directory.toFile()).command(command);
 
-            // Ensure we use the current Java and Maven versions
+            // Ensure we use the current Maven version
 
             Map<String, String> env = processBuilder.environment();
-            String mavenPath = mavenHome().resolve("bin").toString();
-            String path = JAVA_HOME_BIN + pathSeparatorChar + mavenPath + pathSeparatorChar + env.get(PATH_VAR);
+            String mavenPath = mavenExecutable().getParent().toString();
+            String path = mavenPath + pathSeparatorChar + env.get(PATH_VAR);
             env.put(PATH_VAR, path);
-            env.put(JAVA_HOME_VAR, JAVA_HOME);
 
             // Setup MAVEN_OPTS with debugger, if needed
 
@@ -486,8 +488,8 @@ public class MavenCommand {
             if (mavenOpts != null) {
                 if (mavenOpts.contains(DEBUG_OPT_PREFIX)) {
                     mavenOpts = Arrays.stream(mavenOpts.trim().split(" "))
-                            .filter(opt -> !opt.startsWith(DEBUG_OPT_PREFIX))
-                            .collect(Collectors.joining(" "));
+                                      .filter(opt -> !opt.startsWith(DEBUG_OPT_PREFIX))
+                                      .collect(Collectors.joining(" "));
                 }
             }
             return mavenOpts;
@@ -496,6 +498,7 @@ public class MavenCommand {
         private void prepare() {
             assertRequiredMavenVersion(requiredMinimumVersion);
             requireNonNull(directory, "directory required");
+            assertJavaExecutable();
             if (stdOut == null) {
                 stdOut = Builder::printLineOut;
             }

@@ -18,7 +18,7 @@ package io.helidon.build.cli.impl;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import io.helidon.build.util.Constants;
+import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.MavenCommand;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.PomUtils;
@@ -77,7 +77,7 @@ public class CommandRequirements {
      * An unsupported Java version was found.
      */
     static void unsupportedJavaVersion() {
-        Requirements.failed(UNSUPPORTED_JAVA_VERSION, Constants.javaHome());
+        Requirements.failed(UNSUPPORTED_JAVA_VERSION, FileUtils.assertJavaExecutable());
     }
 
     /**

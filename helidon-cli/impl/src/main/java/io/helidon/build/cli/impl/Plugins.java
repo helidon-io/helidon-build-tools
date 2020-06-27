@@ -15,26 +15,23 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import io.helidon.build.util.Constants;
+import io.helidon.build.util.JavaProcessBuilder;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.ProcessMonitor;
 import io.helidon.build.util.Proxies;
 
 import static io.helidon.build.cli.impl.CommandRequirements.unsupportedJavaVersion;
 import static io.helidon.build.util.Constants.EOL;
-import static java.io.File.pathSeparatorChar;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -48,10 +45,7 @@ public class Plugins {
     private static final String DEBUG_PORT_PROPERTY = "plugin.debug.port";
     private static final int DEFAULT_DEBUG_PORT = Integer.getInteger(DEBUG_PORT_PROPERTY, 0);
     private static final String DEBUG_ARG_PREFIX = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:";
-    private static final String JAVA_HOME = Constants.javaHome();
-    private static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
     private static final String PATH_VAR = "PATH";
-    private static final String JAVA_HOME_VAR = "JAVA_HOME";
     private static final String JIT_LEVEL_ONE = "-XX:TieredStopAtLevel=1";
     private static final String JIT_TWO_COMPILER_THREADS = "-XX:CICompilerCount=2";
     private static final String TIMED_OUT_SUFFIX = " timed out";
@@ -78,7 +72,7 @@ public class Plugins {
     /**
      * Resets state.
      *
-     * @param deleteJar {@code true} if plugin jar should be deleted if presesnt.
+     * @param deleteJar {@code true} if plugin jar should be deleted if present.
      */
     static void reset(boolean deleteJar) {
         if (deleteJar) {
@@ -144,14 +138,7 @@ public class Plugins {
 
         // Create the process builder
 
-        final ProcessBuilder processBuilder = new ProcessBuilder().command(command);
-
-        // Ensure we use the current Java versions
-
-        final Map<String, String> env = processBuilder.environment();
-        String path = JAVA_HOME_BIN + pathSeparatorChar + env.get(PATH_VAR);
-        env.put(PATH_VAR, path);
-        env.put(JAVA_HOME_VAR, JAVA_HOME);
+        final ProcessBuilder processBuilder = JavaProcessBuilder.newInstance().command(command);
 
         // Fork and wait...
 

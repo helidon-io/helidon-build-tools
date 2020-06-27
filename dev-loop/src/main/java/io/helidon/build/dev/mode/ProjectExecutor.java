@@ -19,12 +19,12 @@ package io.helidon.build.dev.mode;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import io.helidon.build.dev.Project;
 import io.helidon.build.util.Constants;
+import io.helidon.build.util.JavaProcessBuilder;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.ProcessMonitor;
 
@@ -48,8 +48,6 @@ public class ProjectExecutor {
     private static final String MAVEN_EXEC = Constants.OS.mavenExec();
     private static final List<String> EXEC_COMMAND = List.of(MAVEN_EXEC, "exec:java");
     private static final String JAVA_EXEC = Constants.OS.javaExecutable();
-    private static final String JAVA_HOME = Constants.javaHome();
-    private static final String JAVA_HOME_BIN = JAVA_HOME + File.separator + "bin";
     private static final String JIT_LEVEL_ONE = "-XX:TieredStopAtLevel=1";
     private static final String JIT_TWO_COMPILER_THREADS = "-XX:CICompilerCount=2";
     private static final String STARTING = BoldBrightGreen.apply(DEV_LOOP_SERVER_STARTING);
@@ -242,14 +240,9 @@ public class ProjectExecutor {
 
     private void start(List<String> command) {
         hasStdErrMessage = false;
-        ProcessBuilder processBuilder = new ProcessBuilder()
-            .directory(project.root().path().toFile())
-            .command(command);
-
-        Map<String, String> env = processBuilder.environment();
-        String path = JAVA_HOME_BIN + File.pathSeparatorChar + env.get("PATH");
-        env.put("PATH", path);
-        env.put("JAVA_HOME", JAVA_HOME);
+        ProcessBuilder processBuilder = JavaProcessBuilder.newInstance()
+                                                          .directory(project.root().path().toFile())
+                                                          .command(command);
 
         try {
             stateChanged(STARTING);

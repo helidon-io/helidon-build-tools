@@ -22,9 +22,11 @@ import java.io.UncheckedIOException;
 import java.lang.module.ModuleDescriptor;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -34,7 +36,7 @@ import io.helidon.linker.Jar;
 import io.helidon.linker.ResourceContainer;
 
 import static io.helidon.build.util.Constants.OS;
-import static io.helidon.build.util.FileUtils.CURRENT_JAVA_HOME_DIR;
+import static io.helidon.build.util.Constants.javaHome;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.fileName;
@@ -45,6 +47,7 @@ import static java.util.Objects.requireNonNull;
  * A Java Runtime directory.
  */
 public final class JavaRuntime implements ResourceContainer {
+    private static final AtomicReference<Path> CURRENT_JAVA_HOME_DIR = new AtomicReference<>();
     private static final String JMODS_DIR = "jmods";
     private static final String JMOD_SUFFIX = ".jmod";
     private static final String JAVA_BASE_JMOD = "java.base.jmod";
@@ -59,6 +62,15 @@ public final class JavaRuntime implements ResourceContainer {
     private final boolean isJdk;
     private final Path jmodsDir;
     private final Map<String, Jar> modules;
+
+    private static Path currentJavaHomeDir() {
+        Path result = CURRENT_JAVA_HOME_DIR.get();
+        if (result == null) {
+            result = Paths.get(javaHome());
+            CURRENT_JAVA_HOME_DIR.set(result);
+        }
+        return result;
+    }
 
     /**
      * Ensures a valid JRI directory path, deleting if required.
@@ -139,7 +151,8 @@ public final class JavaRuntime implements ResourceContainer {
      * @throws IllegalArgumentException If this JVM is not a valid JDK.
      */
     public static JavaRuntime current(boolean assertJdk) {
-        final Path jriDir = assertJdk ? assertJdk(CURRENT_JAVA_HOME_DIR) : assertJri(CURRENT_JAVA_HOME_DIR);
+        final Path currentJavaHome = currentJavaHomeDir();
+        final Path jriDir = assertJdk ? assertJdk(currentJavaHome) : assertJri(currentJavaHome);
         return new JavaRuntime(jriDir, null, assertJdk);
     }
 
@@ -214,7 +227,7 @@ public final class JavaRuntime implements ResourceContainer {
      * @return The feature version.
      */
     public String featureVersion() {
-        return Integer.toString(version.major());
+        return Integer.toString(version.feature());
     }
 
     /**
@@ -238,7 +251,7 @@ public final class JavaRuntime implements ResourceContainer {
      * @return {@code true} if this instance is the current JVM.
      */
     public boolean isCurrent() {
-        return javaHome.equals(CURRENT_JAVA_HOME_DIR);
+        return javaHome.equals(currentJavaHomeDir());
     }
 
     /**
