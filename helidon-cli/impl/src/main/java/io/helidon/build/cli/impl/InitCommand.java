@@ -260,10 +260,10 @@ public final class InitCommand extends BaseCommand {
                 Log.debug("Latest Helidon version found: %s", version);
             } catch (Plugins.PluginFailed e) {
                 Log.info(e.getMessage());
-                failed("$(bold Cannot lookup version, please specify with --version option.)");
+                failed("$(italic Cannot lookup version, please specify with --version option.)");
             } catch (Exception e) {
                 Log.info("$(italic,red %s)", e.getMessage());
-                failed("$(bold Cannot lookup version, please specify with --version option.)");
+                failed("$(italic Cannot lookup version, please specify with --version option.)");
             }
         }
         return version;
