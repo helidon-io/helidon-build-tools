@@ -94,20 +94,21 @@ final class CommonOptions {
 
     void checkForUpdates(boolean quiet) {
         try {
-            Optional<MavenVersion> update = metadata().checkForCliUpdate(sinceCliVersion, quiet);
-            if (update.isPresent()) {
-                MavenVersion newVersion = update.get();
-                Map<Object, Object> releaseNotes = releaseNotes(newVersion);
+            Optional<MavenVersion> cliUpdate = metadata().checkForCliUpdate(sinceCliVersion, quiet);
+            if (cliUpdate.isPresent()) {
+                MavenVersion newCliVersion = cliUpdate.get();
+                MavenVersion latestHelidonVersion = metadata().latestVersion();
+                Map<Object, Object> releaseNotes = releaseNotes(latestHelidonVersion);
                 Log.info();
                 if (releaseNotes.isEmpty()) {
-                    Log.info("$(bold Version %s of this CLI is now available.)", newVersion);
+                    Log.info("$(bold Version %s of this CLI is now available.)", newCliVersion);
                 } else {
-                    Log.info("$(bold Version %s of this CLI is now available:)", newVersion);
+                    Log.info("$(bold Version %s of this CLI is now available:)", newCliVersion);
                     Log.info();
                     Log.info(releaseNotes, Style.Italic, Style.Plain);
                     Log.info();
                 }
-                Log.info("Please see $(blue %s) for updates.", UPDATE_URL);
+                Log.info("Please see $(blue %s) to update.", UPDATE_URL);
                 Log.info();
             } else {
                 Log.debug("no update available");
@@ -119,15 +120,15 @@ final class CommonOptions {
         }
     }
 
-    private Map<Object, Object> releaseNotes(MavenVersion latestVersion) {
+    private Map<Object, Object> releaseNotes(MavenVersion latestHelidonVersion) {
         try {
             Map<Object, Object> notes = new LinkedHashMap<>();
-            metadata().cliReleaseNotesOf(latestVersion, sinceCliVersion).forEach((v, m) -> notes.put("    " + v, m));
+            metadata().cliReleaseNotesOf(latestHelidonVersion, sinceCliVersion).forEach((v, m) -> notes.put("    " + v, m));
             return notes;
         } catch (Plugins.PluginFailed e) {
-            Log.debug("accessing release notes for %s failed: %s", latestVersion, e.getMessage());
+            Log.debug("accessing release notes for %s failed: %s", latestHelidonVersion, e.getMessage());
         } catch (Exception e) {
-            Log.debug("accessing release notes for %s failed: %s", latestVersion, e.toString());
+            Log.debug("accessing release notes for %s failed: %s", latestHelidonVersion, e.toString());
         }
         return Collections.emptyMap();
     }

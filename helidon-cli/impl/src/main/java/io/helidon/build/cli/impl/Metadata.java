@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +72,7 @@ public class Metadata {
     private static final int PLUGIN_MAX_ATTEMPTS = 3;
     private static final String CLI_MESSAGE_PREFIX = "cli.";
     private static final String CLI_MESSAGE_SUFFIX = ".message";
+    private static final long STALE_RETRY_THRESHOLD = 1000;
 
     /**
      * The build tools version property name.
@@ -87,6 +89,7 @@ public class Metadata {
     private final Path latestVersionFile;
     private final long updateFrequencyMillis;
     private final boolean debugPlugin;
+    private final Map<Path, Long> lastChecked;
     private final AtomicReference<Exception> latestVersionFailure;
     private final AtomicReference<MavenVersion> latestVersion;
 
@@ -150,6 +153,7 @@ public class Metadata {
         this.latestVersionFile = rootDir.resolve(LATEST_VERSION_FILE_NAME);
         this.updateFrequencyMillis = updateFrequencyUnits.toMillis(updateFrequency);
         this.debugPlugin = debugPlugin;
+        this.lastChecked = new HashMap<>();
         this.latestVersionFailure = new AtomicReference<>();
         this.latestVersion = new AtomicReference<>();
     }
@@ -203,7 +207,7 @@ public class Metadata {
      * @throws Exception If an error occurs.
      */
     public MavenVersion latestVersion(boolean quiet) throws Exception {
-        // We only want to try this once per command, so cache any failure
+        // If we fail, we only want to do so once per command, so we cache any failure
         Exception initialFailure = latestVersionFailure.get();
         if (initialFailure == null) {
             try {
@@ -247,11 +251,11 @@ public class Metadata {
     }
 
     /**
-     * Checks whether or not there is a more recent Helidon version available and returns the version if so.
+     * Checks whether or not there is a more recent CLI version available and returns the version if so.
      *
      * @param thisCliVersion The version of this CLI.
      * @param quiet If info messages should be suppressed.
-     * @return A valid Helidon version if a more recent CLI is available.
+     * @return A valid CLI version if a more recent CLI is available.
      * @throws Exception If an error occurs.
      */
     public Optional<MavenVersion> checkForCliUpdate(MavenVersion thisCliVersion, boolean quiet) throws Exception {
@@ -265,28 +269,18 @@ public class Metadata {
     }
 
     /**
-     * Returns the release notes for the given Helidon version that are more recent than the current CLI version.
+     * Returns the release notes for the latest Helidon version that are more recent than the given CLI version.
      *
-     * @param helidonVersion The version.
+     * @param latestHelidonVersion The latest Helidon version.
+     * @param sinceCliVersion The CLI version to start with.
      * @return The notes, in sorted order.
      * @throws Exception If an error occurs.
      */
-    public Map<MavenVersion, String> cliReleaseNotesOf(MavenVersion helidonVersion) throws Exception {
-        return cliReleaseNotesOf(helidonVersion, toMavenVersion(Config.buildVersion()));
-    }
-
-    /**
-     * Returns the release notes for the given Helidon version that are more recent than the given CLI version.
-     *
-     * @param helidonVersion The version.
-     * @param sinceCliVersion The CLI version.
-     * @return The notes, in sorted order.
-     * @throws Exception If an error occurs.
-     */
-    public Map<MavenVersion, String> cliReleaseNotesOf(MavenVersion helidonVersion,
+    public Map<MavenVersion, String> cliReleaseNotesOf(MavenVersion latestHelidonVersion,
                                                        MavenVersion sinceCliVersion) throws Exception {
+        requireNonNull(latestHelidonVersion, "latestHelidonVersion must not be null");
         requireNonNull(sinceCliVersion, "sinceCliVersion must not be null");
-        final ConfigProperties props = propertiesOf(helidonVersion);
+        final ConfigProperties props = propertiesOf(latestHelidonVersion, true);
         final List<MavenVersion> versions = props.keySet()
                                                  .stream()
                                                  .filter(Metadata::isCliMessageKey)
@@ -407,42 +401,54 @@ public class Metadata {
     }
 
     private boolean isStale(Path file, long currentTimeMillis) {
-        if (Files.exists(file)) {
-            if (updateFrequencyMillis > 0) {
-                final long lastModifiedMillis = lastModifiedTime(file).to(MILLISECONDS);
-                final long elapsedMillis = currentTimeMillis - lastModifiedMillis;
-                final long remainingMillis = updateFrequencyMillis - elapsedMillis;
-                final boolean stale = remainingMillis <= 0;
-                if (Log.isDebug()) {
-                    final String lastModifiedTime = TimeUtils.toDateTime(lastModifiedMillis);
-                    final String currentTime = TimeUtils.currentDateTime();
-                    final Duration elapsed = Duration.ofMillis(elapsedMillis);
-                    final String elapsedDays = elapsed.toDaysPart() == 1 ? "day" : "days";
-                    if (stale) {
-                        Log.debug("stale check is true for %s (last: %s, now: %s, elapsed: %d %s %02d:%02d:%02d)",
-                                file, lastModifiedTime, currentTime,
-                                elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
-                                elapsed.toSecondsPart());
-                    } else {
-                        final Duration remain = Duration.ofMillis(remainingMillis);
-                        final String remainDays = remain.toDaysPart() == 1 ? "day" : "days";
-                        Log.debug("stale check is false for %s (last: %s, now: %s, elapsed: %d %s %02d:%02d:%02d, "
-                                        + "remain: %d %s %02d:%02d:%02d)",
-                                file, lastModifiedTime, currentTime,
-                                elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
-                                elapsed.toSecondsPart(),
-                                remain.toDaysPart(), remainDays, remain.toHoursPart(), remain.toMinutesPart(),
-                                remain.toSecondsPart());
+
+        // During a single command execution, we may get back here multiple times for the same
+        // file within a few milliseconds; if so, we just assume it is not stale to avoid hitting
+        // the disk again
+
+        final long sinceLast = currentTimeMillis - lastChecked.getOrDefault(file, 0L);
+        if (sinceLast > STALE_RETRY_THRESHOLD) {
+            lastChecked.put(file, currentTimeMillis);
+            if (Files.exists(file)) {
+                if (updateFrequencyMillis > 0) {
+                    final long lastModifiedMillis = lastModifiedTime(file).to(MILLISECONDS);
+                    final long elapsedMillis = currentTimeMillis - lastModifiedMillis;
+                    final long remainingMillis = updateFrequencyMillis - elapsedMillis;
+                    final boolean stale = remainingMillis <= 0;
+                    if (Log.isDebug()) {
+                        final String lastModifiedTime = TimeUtils.toDateTime(lastModifiedMillis);
+                        final String currentTime = TimeUtils.currentDateTime();
+                        final Duration elapsed = Duration.ofMillis(elapsedMillis);
+                        final String elapsedDays = elapsed.toDaysPart() == 1 ? "day" : "days";
+                        if (stale) {
+                            Log.debug("stale check is true for %s (last: %s, now: %s, elapsed: %d %s %02d:%02d:%02d)",
+                                    file, lastModifiedTime, currentTime,
+                                    elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
+                                    elapsed.toSecondsPart());
+                        } else {
+                            final Duration remain = Duration.ofMillis(remainingMillis);
+                            final String remainDays = remain.toDaysPart() == 1 ? "day" : "days";
+                            Log.debug("stale check is false for %s (last: %s, now: %s, elapsed: %d %s %02d:%02d:%02d, "
+                                      + "remain: %d %s %02d:%02d:%02d)",
+                                    file, lastModifiedTime, currentTime,
+                                    elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
+                                    elapsed.toSecondsPart(),
+                                    remain.toDaysPart(), remainDays, remain.toHoursPart(), remain.toMinutesPart(),
+                                    remain.toSecondsPart());
+                        }
                     }
+                    return stale;
+                } else {
+                    Log.debug("stale check forced (zero delay) for %s", file);
+                    return true;
                 }
-                return stale;
             } else {
-                Log.debug("stale check forced (zero delay) for %s", file);
+                Log.debug("stale check forced (not found) for %s", file);
                 return true;
             }
         } else {
-            Log.debug("stale check forced (not found) for %s", file);
-            return true;
+            Log.debug("stale check is false (retry) for %s", file);
+            return false;
         }
     }
 
