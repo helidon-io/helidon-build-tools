@@ -36,6 +36,7 @@ public class GetInfo extends Plugin {
     private static final AtomicReference<Properties> BUILD_PROPERTIES = new AtomicReference<>();
     private static final String BUILD_PREFIX = "plugin.build.";
     private static final String MAX_WIDTH_ARG = "--maxWidth";
+    private static final String PLAIN_ARG = "--plain";
     private static final String PAD = " ";
 
     private final Map<String, String> info;
@@ -73,11 +74,16 @@ public class GetInfo extends Plugin {
 
     @Override
     int parseArg(String arg, int argIndex, String[] allArgs) {
-        if (arg.equals(MAX_WIDTH_ARG)) {
-            maxWidth = Integer.parseInt(nextArg(argIndex, allArgs));
-            return argIndex + 1;
+        switch (arg) {
+            case MAX_WIDTH_ARG:
+                maxWidth = Integer.parseInt(nextArg(argIndex, allArgs));
+                return argIndex + 1;
+            case PLAIN_ARG:
+                Style.disable();
+                return argIndex;
+            default:
+                return -1;
         }
-        return -1;
     }
 
     @Override
@@ -108,8 +114,8 @@ public class GetInfo extends Plugin {
 
     private void log(Map<String, String> info) {
         info.keySet().stream().sorted().forEach(key -> {
+            final String value = info.get(key);
             final String padding = padding(maxWidth, key);
-            final String value = info.get(key).replace(")", "\\)");
             Log.info("%s %s %s", italic(key), padding, boldBlue(value));
         });
     }

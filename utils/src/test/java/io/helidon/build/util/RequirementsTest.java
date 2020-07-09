@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 class RequirementsTest {
     static {
         System.setProperty("jansi.force", "true");
-        AnsiConsoleInstaller.ensureInstalled();
+        AnsiConsoleInstaller.install();
     }
 
     @Test

@@ -37,11 +37,6 @@ import io.helidon.build.cli.harness.CommandModel.KeyValuesInfo;
  */
 public final class CommandParser {
 
-    private static final List<String> GLOBAL_OPTIONS = List.of(
-            "--" + CommandModel.HELP_OPTION.name(),
-            "--" + CommandModel.VERBOSE_OPTION.name(),
-            "--" + CommandModel.DEBUG_OPTION.name());
-
     static final String TOO_MANY_ARGUMENTS = "Too many arguments";
     static final String INVALID_REPEATING_OPTION = "Invalid repeating option";
     static final String INVALID_COMMAND_NAME = "Invalid command name";
@@ -102,7 +97,7 @@ public final class CommandParser {
                 }
                 error = INVALID_PROPERTY + ": " + prop;
                 break;
-            } else if (!GLOBAL_OPTIONS.contains(arg) && commandName == null) {
+            } else if (!GlobalOptions.isGlobalFlag(arg) && commandName == null) {
                 if (!Command.NAME_PREDICATE.test(arg)) {
                     error = INVALID_COMMAND_NAME + ": " + rawArg;
                     break;

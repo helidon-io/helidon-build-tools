@@ -57,7 +57,7 @@ class HelpCommand extends CommandModel {
                 // if the help command is forced because of --help, the actual command arg is the original command name
                 .or(() -> parser.commandName().map((command) -> "help".equals(command) ? null : command))
                 // if --help is found at this point, this is help about the help command
-                .or(() -> Optional.ofNullable(parser.resolve(HELP_OPTION) ? "help" : null));
+                .or(() -> Optional.ofNullable(parser.resolve(GlobalOptions.HELP_FLAG_INFO) ? "help" : null));
         }
 
         @Override
@@ -66,7 +66,7 @@ class HelpCommand extends CommandModel {
                     // execute
                     (commandName) -> this.doExecute(context, commandName),
                     // just help, print usage
-                    () -> context.execute());
+                    context::execute);
         }
 
         private void doExecute(CommandContext context, String commandName) {
@@ -110,10 +110,12 @@ class HelpCommand extends CommandModel {
                     options.put("--" + option.name(), optionDescription(option));
                 } else if (param instanceof CommandFragmentInfo) {
                     for (ParameterInfo<?> fragmentParam : ((CommandFragmentInfo) param).parameters()) {
-                        if (fragmentParam instanceof NamedOptionInfo) {
-                            NamedOptionInfo<?> fragmentOption = (NamedOptionInfo<?>) fragmentParam;
-                            usage += fragmentOption.usage();
-                            options.put("--" + fragmentOption.name(), optionDescription(fragmentOption));
+                        if (fragmentParam.visible()) {
+                            if (fragmentParam instanceof NamedOptionInfo) {
+                                NamedOptionInfo<?> fragmentOption = (NamedOptionInfo<?>) fragmentParam;
+                                usage += fragmentOption.usage();
+                                options.put("--" + fragmentOption.name(), optionDescription(fragmentOption));
+                            }
                         }
                     }
                 }

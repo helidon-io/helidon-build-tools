@@ -196,7 +196,7 @@ public enum Style implements Function<Object, String> {
      */
     BoldBrightItalicRed(true, true, true, Ansi.Color.RED);
 
-    private static final boolean ENABLED = AnsiConsoleInstaller.ensureInstalled();
+    private static final boolean ENABLED = AnsiConsoleInstaller.install();
     private static final String ANSI_ESCAPE_BEGIN = "\033[";
     private final boolean bold;
     private final boolean bright;

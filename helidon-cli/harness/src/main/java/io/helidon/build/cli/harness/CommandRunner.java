@@ -18,6 +18,7 @@ package io.helidon.build.cli.harness;
 import java.util.Objects;
 
 import io.helidon.build.cli.harness.CommandParser.CommandParserException;
+import io.helidon.build.util.AnsiConsoleInstaller;
 import io.helidon.build.util.Proxies;
 
 /**
@@ -65,9 +66,14 @@ public final class CommandRunner {
      * @param command command to execute
      */
     private void doExecuteCommand(CommandModel command) {
-        if (parser.resolve(CommandModel.VERBOSE_OPTION)) {
+        if (parser.resolve(GlobalOptions.PLAIN_FLAG_INFO)) {
+            AnsiConsoleInstaller.disable();
+        } else {
+            AnsiConsoleInstaller.install();
+        }
+        if (parser.resolve(GlobalOptions.VERBOSE_FLAG_INFO)) {
             context.verbosity(CommandContext.Verbosity.VERBOSE);
-        } else if (parser.resolve(CommandModel.DEBUG_OPTION)) {
+        } else if (parser.resolve(GlobalOptions.DEBUG_FLAG_INFO)) {
             context.verbosity(CommandContext.Verbosity.DEBUG);
         } else {
             context.verbosity(CommandContext.Verbosity.NORMAL);
@@ -88,7 +94,7 @@ public final class CommandRunner {
      * @return {@code help} command if the {@code --help} option is provided, otherwise the supplied fallback command
      */
     private CommandModel mapHelp(CommandModel command) {
-        return parser.resolve(CommandModel.HELP_OPTION) ? new HelpCommand() : command;
+        return parser.resolve(GlobalOptions.HELP_FLAG_INFO) ? new HelpCommand() : command;
     }
 
     /**

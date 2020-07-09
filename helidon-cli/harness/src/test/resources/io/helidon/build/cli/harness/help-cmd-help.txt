@@ -7,3 +7,4 @@ Options:
   -D<name>=<value>    Define a system property
   --verbose           Produce verbose output
   --debug             Produce debug output
+  --plain             Do not use color or styles in output

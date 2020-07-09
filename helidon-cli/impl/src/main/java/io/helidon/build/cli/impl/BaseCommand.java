@@ -20,7 +20,6 @@ import java.nio.file.Path;
 
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandExecution;
-import io.helidon.build.util.AnsiConsoleInstaller;
 import io.helidon.build.util.ProjectConfig;
 
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
@@ -44,7 +43,6 @@ public abstract class BaseCommand implements CommandExecution {
      * @param quietCheckForUpdates {@code true} if check for updates should be quiet.
      */
     protected BaseCommand(CommonOptions commonOptions, boolean quietCheckForUpdates) {
-        AnsiConsoleInstaller.ensureInstalled();
         this.commonOptions = commonOptions;
         this.quietCheckForUpdates = quietCheckForUpdates;
     }

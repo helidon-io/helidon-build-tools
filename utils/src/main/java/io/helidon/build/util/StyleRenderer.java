@@ -138,7 +138,7 @@ public class StyleRenderer {
     }
 
     private static void apply(Ansi ansi, String codeName) {
-        Consumer<Ansi> alias = aliases().get(codeName);
+        Consumer<Ansi> alias = ALIASES.get(codeName);
         if (alias != null) {
             alias.accept(ansi);
         } else {

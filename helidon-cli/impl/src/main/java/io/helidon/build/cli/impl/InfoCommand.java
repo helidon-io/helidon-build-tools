@@ -16,6 +16,7 @@
 package io.helidon.build.cli.impl;
 
 import java.nio.file.attribute.FileTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,11 +50,13 @@ public final class InfoCommand extends BaseCommand {
     private static final int MIN_WIDTH = "plugin.build.revision".length();
 
     private final boolean verbose;
+    private final boolean plain;
 
     @Creator
     InfoCommand(CommonOptions commonOptions) {
         super(commonOptions, true);
-        this.verbose = Log.isVerbose();
+        this.verbose = commonOptions.verbose();
+        this.plain = commonOptions.plain();
     }
 
     @Override
@@ -158,7 +161,13 @@ public final class InfoCommand extends BaseCommand {
     }
 
     private List<String> pluginArgs(int maxWidth) {
-        return List.of("--maxWidth", Integer.toString(maxWidth));
+        List<String> args = new ArrayList<>();
+        args.add("--maxWidth");
+        args.add(Integer.toString(maxWidth));
+        if (plain) {
+            args.add("--plain");
+        }
+        return args;
     }
 
     private String toString(List<String> list) {

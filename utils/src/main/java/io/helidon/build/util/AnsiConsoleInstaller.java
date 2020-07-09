@@ -62,6 +62,46 @@ public class AnsiConsoleInstaller {
     private static final AtomicBoolean ENABLED = new AtomicBoolean();
 
     /**
+     * Enables use of Ansi escapes and that the system streams have been installed, if possible.
+     * There are a few reasons why this may not result in enabling Ansi escapes:
+     * <ol>
+     *     <li>The {@code System.in} stream is not a tty (i.e. not connected to a terminal)</li>
+     *     <li>The {@code jansi.strip} system property is set to {@code true}</li>
+     *     <li>The operating system is not supported</li>
+     * </ol>
+     *
+     * @return {@code true} if Ansi escapes are enabled.
+     */
+    public static boolean install() {
+        if (!INSTALLED.getAndSet(true)) {
+            ConsoleType desiredType = desiredConsoleType();
+            AnsiConsole.systemInstall();
+            ConsoleType installedType = installedConsoleType(desiredType);
+            CONSOLE_TYPE.set(installedType);
+            ENABLED.set(installedType == ConsoleType.ANSI);
+        }
+        return ENABLED.get();
+    }
+
+    /**
+     * Disable use of Ansi escapes if not already enabled.
+     *
+     * @throws IllegalStateException If Ansi escapes are already enabled.
+     */
+    public static void disable() {
+        if (INSTALLED.get()) {
+            if (ENABLED.get()) {
+                throw new IllegalStateException("Color support is already enabled");
+            }
+        } else {
+            INSTALLED.set(true);
+            ENABLED.set(false);
+            System.setProperty(JANSI_STRIP_PROPERTY, "true");
+            Ansi.setEnabled(false);
+        }
+    }
+
+    /**
      * Console types.
      */
     public enum ConsoleType {
@@ -117,22 +157,22 @@ public class AnsiConsoleInstaller {
     }
 
     /**
-     * Returns whether or not Ansi escapes are enabled. Calls {@link #ensureInstalled()}.
+     * Returns whether or not Ansi escapes are enabled. Calls {@link #install()}.
      *
      * @return {@code true} if enabled.
      */
     public static ConsoleType consoleType() {
-        ensureInstalled();
+        install();
         return CONSOLE_TYPE.get();
     }
 
     /**
-     * Returns whether or not Ansi escapes are enabled. Calls {@link #ensureInstalled()}.
+     * Returns whether or not Ansi escapes are enabled. Calls {@link #install()}.
      *
      * @return {@code true} if enabled.
      */
     public static boolean areAnsiEscapesEnabled() {
-        return ensureInstalled();
+        return install();
     }
 
     /**
@@ -158,22 +198,6 @@ public class AnsiConsoleInstaller {
         } else {
             return false;
         }
-    }
-
-    /**
-     * Ensures that the system streams have been installed.
-     *
-     * @return {@code true} if Ansi escapes are enabled.
-     */
-    public static boolean ensureInstalled() {
-        if (!INSTALLED.getAndSet(true)) {
-            ConsoleType desiredType = desiredConsoleType();
-            AnsiConsole.systemInstall();
-            ConsoleType installedType = installedConsoleType(desiredType);
-            CONSOLE_TYPE.set(installedType);
-            ENABLED.set(installedType == ConsoleType.ANSI);
-        }
-        return ENABLED.get();
     }
 
     private static ConsoleType desiredConsoleType() {

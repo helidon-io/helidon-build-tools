@@ -31,6 +31,12 @@ import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.Style;
 import io.helidon.build.util.UserConfig;
 
+import static io.helidon.build.cli.harness.GlobalOptions.DEBUG_FLAG_DESCRIPTION;
+import static io.helidon.build.cli.harness.GlobalOptions.DEBUG_FLAG_NAME;
+import static io.helidon.build.cli.harness.GlobalOptions.PLAIN_FLAG_DESCRIPTION;
+import static io.helidon.build.cli.harness.GlobalOptions.PLAIN_FLAG_NAME;
+import static io.helidon.build.cli.harness.GlobalOptions.VERBOSE_FLAG_DESCRIPTION;
+import static io.helidon.build.cli.harness.GlobalOptions.VERBOSE_FLAG_NAME;
 import static io.helidon.build.util.FileUtils.WORKING_DIR;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
 
@@ -41,6 +47,9 @@ import static io.helidon.build.util.MavenVersion.toMavenVersion;
 final class CommonOptions {
     private static final String UPDATE_URL = "https://github.com/oracle/helidon-build-tools/blob/master/helidon-cli/CHANGELOG.md";
 
+    private final boolean verbose;
+    private final boolean debug;
+    private final boolean plain;
     private final Path projectDir;
     private final String metadataUrl;
     private final boolean resetCache;
@@ -48,12 +57,18 @@ final class CommonOptions {
     private Metadata metadata;
 
     @Creator
-    CommonOptions(@KeyValue(name = "project", description = "The project directory") File projectDir,
+    CommonOptions(@Option.Flag(name = VERBOSE_FLAG_NAME, description = VERBOSE_FLAG_DESCRIPTION, visible = false) boolean verbose,
+                  @Option.Flag(name = DEBUG_FLAG_NAME, description = DEBUG_FLAG_DESCRIPTION, visible = false) boolean debug,
+                  @Option.Flag(name = PLAIN_FLAG_NAME, description = PLAIN_FLAG_DESCRIPTION, visible = false) boolean plain,
+                  @KeyValue(name = "project", description = "The project directory") File projectDir,
                   @KeyValue(name = "url", description = "Metadata base URL",
                           defaultValue = Metadata.DEFAULT_URL, visible = false) String metadataUrl,
                   @Option.Flag(name = "reset", description = "Reset metadata cache", visible = false) boolean resetCache,
                   @KeyValue(name = "since", description = "Check for updates since this version",
                           visible = false) String since) {
+        this.verbose = verbose || debug;
+        this.debug = debug;
+        this.plain = plain;
         this.projectDir = projectDir != null ? projectDir.toPath().toAbsolutePath() : WORKING_DIR;
         this.metadataUrl = metadataUrl;
         this.resetCache = resetCache || since != null;
@@ -61,11 +76,26 @@ final class CommonOptions {
     }
 
     CommonOptions(Path projectDir, CommonOptions options) {
+        this.verbose = options.verbose;
+        this.debug = options.debug;
+        this.plain = options.plain;
         this.projectDir = projectDir;
         this.metadataUrl = options.metadataUrl;
         this.resetCache = false; // Don't do it again
         this.sinceCliVersion = options.sinceCliVersion;
         this.metadata = options.metadata;
+    }
+
+    boolean verbose() {
+        return verbose;
+    }
+
+    boolean debug() {
+        return debug;
+    }
+
+    boolean plain() {
+        return plain;
     }
 
     Path project() {
