@@ -194,6 +194,9 @@ public class StyleRenderer {
 
     private static Map<String, Consumer<Ansi>> aliases() {
         final Map<String, Consumer<Ansi>> aliases = new HashMap<>();
+        aliases.put("blinking", ansi -> ansi.a(Ansi.Attribute.BLINK_SLOW));
+        aliases.put("negative", ansi -> ansi.a(Ansi.Attribute.NEGATIVE_ON));
+        aliases.put("conceal", ansi -> ansi.a(Ansi.Attribute.CONCEAL_ON));
         Stream.of(Code.values()).forEach(code -> {
             if (code.isColor()) {
                 final String colorName = code.name().toLowerCase(Locale.ENGLISH);

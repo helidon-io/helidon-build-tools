@@ -1,10 +1,16 @@
 # Helidon Maven Plugin
 
-This plugin provides common utilities for Maven based Helidon applications.
+This plugin provides Maven goals specific to Helidon applications as well as goals for general usage.
 
-* [Goal: native-image](#goal-native-image)
-* [Goal: jlink-image](#goal-jlink-image)
-* [Goal: root-dir](#goal-root-dir)
+#### Goals for Helidon Applications
+
+* [native-image](#goal-native-image)
+* [jlink-image](#goal-jlink-image)
+
+#### Goals for All Applications
+
+* [root-dir](#goal-root-dir)
+* [echo](#goal-echo)
 
 ## Goal: `native-image`
 
@@ -211,3 +217,106 @@ Execution of this plugin can be defined in a build of the parent project, if req
     </plugins>
 </build>
 ```
+
+## Goal: `echo`
+
+Maven goal to echo messages during a build. Supports 
+[rich text](https://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html) via a simple DSL.
+
+### General usage
+
+Execution of this plugin must be explicitly bound to the desired phase, there is no default. The following example
+uses the `validate` phase to emit a message as early as possible:  
+
+```xml
+ <build>
+    <plugins>
+        <plugin>
+            <groupId>io.helidon.build-tools</groupId>
+            <artifactId>helidon-maven-plugin</artifactId>
+            <executions>
+                <execution>
+                    <phase>validate</phase>
+                    <goals>
+                        <goal>echo</goal>
+                    </goals>
+                </execution>
+            </executions>
+            <configuration>
+                <messages>
+                    <message></message>  
+                    <message>Starting ${project.version} build</message>
+                    <message></message>  
+                </messages>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```                 
+Leading whitespace in messages is removed by default; to preserve it, add the `xml:space="preserve"` attribute:
+```
+    <message xml:space="preserve">    this is indented</message>
+```
+This attribute is especially helpful with a multi-line message to preserve indentation.
+
+### Rich text 
+
+Rich text is enabled when the Maven command is executed in a terminal that supports it and output is not redirected.
+If the Maven output is in color, your messages can be as well: the same [Jansi](https://github.com/fusesource/jansi) library 
+is used for both.
+
+> **_NOTE:_**  Terminals often provide mappings between the standard color names used here and what they actually render. So, for
+example, you may declare `red` but a terminal could be configured to render it as an entirely different color. Further, not 
+all styles are supported or enabled in every terminal so e.g. the (really annoying) styles like `blinking` may do nothing.
+
+Basic colors and styles are applied to text enclosed by `$(` and `)`, e.g.:
+```
+   <message>Here is $(red styled) text</message>
+```                                              
+In this example, the word `styled` will (normally) appear in red. If the styled text itself contains parentheses, the closing paren should be escaped with a backslash:
+```
+   <message>Here is $(red (and example of\) styled) text</message>
+```                                              
+The DSL syntax is:
+```
+   $(code[,code] text)
+```
+where `code` is a color or other style. The eight standard color names are supported in a few different 
+(case-sensitive) variations:
+
+| Color | Plain | Bold | Bright | Bright Bold |
+| --- | --- | --- | --- | --- |
+| black | `black` | `BLACK` | `black!` | `BLACK!` |
+| red | `red` | `RED` | `red!` | `RED!` |
+| green | `green` | `GREEN` | `green!` | `GREEN!` |
+| yellow | `yellow` | `YELLOW` | `yellow!` | `YELLOW!` |
+| blue | `blue` | `BLUE` | `blue!` | `BLUE!` |
+| magenta | `magenta` | `MAGENTA` | `magenta!` | `MAGENTA!` |
+| cyan | `cyan` | `CYAN` | `cyan!` | `CYAN!` |
+| white | `white` | `WHITE` | `white!` | `WHITE!` |
+
+To use any of these as the _background_ instead of the text color, prepend `bg_` or `BG_` if bold, e.g. `bg_blue` or `BG_YELLOW!`.
+
+The following styles can also be used:
+
+ * `bold`
+ * `negative`
+ * `italic`
+ * `underline`
+ * `faint`
+ * `conceal`
+ * `blinking`
+ * `blink_fast`  
+
+Note that `bold` is preferable to `WHITE` or `BLACK` as it is independent of the background color. Similarly,
+`negative` is preferable to `bg_white` or `bg_black`.
+ 
+Examples:
+
+```
+    <message>$(RED!,italic This is a test of the emergency broadcast system.) $(bold,negative It is only a test!)</message>
+    <message>$(bold,italic This is a test of the) $(RED emergency) $(bold,italic broadcast system.)</message>
+    <message>$(blinking,negative,YELLOW!  HELP! ) I've fallen, and can't get up!</message>
+```
+
+Nesting is not supported, so the second example is slightly more verbose than it could be.
