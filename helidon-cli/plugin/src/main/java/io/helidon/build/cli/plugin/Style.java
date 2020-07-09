@@ -15,6 +15,8 @@
  */
 package io.helidon.build.cli.plugin;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * Utility to convert strings to the {@code StyleRenderer} DSL. Assumes output will be rendered.
  */
@@ -22,6 +24,14 @@ public class Style {
     private static final String STYLE_PREFIX = "$(";
     private static final String STYLE_SUFFIX = ")";
     private static final String ESCAPED_STYLE_SUFFIX = "\\)";
+    private static final AtomicBoolean ENABLED = new AtomicBoolean();
+
+    /**
+     * Disable styles.
+     */
+    public static void disable() {
+        ENABLED.set(false);
+    }
 
     /**
      * Converts the given message to one that will apply the given style name(s).
@@ -32,8 +42,12 @@ public class Style {
      * @return The formatted message.
      */
     public static String style(String style, Object message, Object... args) {
-        final String msg = String.format(message.toString(), args).replace(STYLE_SUFFIX, ESCAPED_STYLE_SUFFIX);
-        return STYLE_PREFIX + style + " " + msg + STYLE_SUFFIX;
+        if (ENABLED.get()) {
+            final String msg = String.format(message.toString(), args).replace(STYLE_SUFFIX, ESCAPED_STYLE_SUFFIX);
+            return STYLE_PREFIX + style + " " + msg + STYLE_SUFFIX;
+        } else {
+            return String.format(message.toString(), args);
+        }
     }
 
     /**

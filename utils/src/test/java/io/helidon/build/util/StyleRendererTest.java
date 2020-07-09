@@ -31,7 +31,7 @@ class StyleRendererTest {
     static {
         System.setProperty("jansi.force", "true");
         Ansi.setEnabled(true);
-        AnsiConsoleInstaller.ensureInstalled();
+        AnsiConsoleInstaller.install();
     }
 
     @Test

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import io.helidon.build.cli.harness.CommandModel.CommandInfo;
@@ -43,7 +44,7 @@ import static io.helidon.build.util.Style.Red;
  * The command context.
  */
 public final class CommandContext {
-    private static final SystemLogWriter LOG_WRITER = SystemLogWriter.install(INFO);
+    private final AtomicReference<SystemLogWriter> logWriter = new AtomicReference<>();
     private final CLIDefinition cli;
     private final CommandRegistry registry;
     private Verbosity verbosity;
@@ -314,21 +315,34 @@ public final class CommandContext {
         this.verbosity = verbosity;
         switch (verbosity) {
             case DEBUG: {
-                LOG_WRITER.level(DEBUG);
+                logWriter().level(DEBUG);
                 break;
             }
             case VERBOSE: {
-                LOG_WRITER.level(VERBOSE);
+                logWriter().level(VERBOSE);
                 break;
             }
             case NORMAL: {
-                LOG_WRITER.level(INFO);
+                logWriter().level(INFO);
                 break;
             }
             default: {
                 throw new RuntimeException("unknown verbosity: " + verbosity);
             }
         }
+    }
+
+    /**
+     * Lazily initialize and return the {@link SystemLogWriter}.
+     * @return The writer.
+     */
+    private SystemLogWriter logWriter() {
+        SystemLogWriter writer = logWriter.get();
+        if (writer == null) {
+            writer = SystemLogWriter.install(INFO);
+            logWriter.set(writer);
+        }
+        return writer;
     }
 
     /**

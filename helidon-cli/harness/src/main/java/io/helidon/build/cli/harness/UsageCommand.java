@@ -47,8 +47,9 @@ final class UsageCommand extends CommandModel {
     private static Map<String, String> createGlobalOptionsMap() {
         Map<String, String> map = new LinkedHashMap<>();
         map.put("-D<name>=<value>", "Define a system property");
-        map.put("--verbose", CommandModel.VERBOSE_OPTION.description());
-        map.put("--debug", CommandModel.DEBUG_OPTION.description());
+        map.put(GlobalOptions.VERBOSE_FLAG_ARGUMENT, GlobalOptions.VERBOSE_FLAG_DESCRIPTION);
+        map.put(GlobalOptions.DEBUG_FLAG_ARGUMENT, GlobalOptions.DEBUG_FLAG_DESCRIPTION);
+        map.put(GlobalOptions.PLAIN_FLAG_ARGUMENT, GlobalOptions.PLAIN_FLAG_DESCRIPTION);
         return map;
     }
 

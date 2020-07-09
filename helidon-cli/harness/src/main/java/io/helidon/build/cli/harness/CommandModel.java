@@ -24,10 +24,6 @@ import java.util.Objects;
  */
 public abstract class CommandModel extends CommandParameters {
 
-    static final FlagInfo HELP_OPTION = new FlagInfo("help", "Display help information", false);
-    static final FlagInfo VERBOSE_OPTION = new FlagInfo("verbose", "Produce verbose output", false);
-    static final FlagInfo DEBUG_OPTION = new FlagInfo("debug", "Produce debug output", false);
-
     private final CommandInfo commandInfo;
 
     /**
@@ -36,9 +32,11 @@ public abstract class CommandModel extends CommandParameters {
      */
     protected CommandModel(CommandInfo commandInfo) {
         this.commandInfo = Objects.requireNonNull(commandInfo, "commandInfo is null");
-        // built-in options
-        addParameter(HELP_OPTION);
-        addParameter(VERBOSE_OPTION);
+        // global options
+        addParameter(GlobalOptions.HELP_FLAG_INFO);
+        addParameter(GlobalOptions.VERBOSE_FLAG_INFO);
+        addParameter(GlobalOptions.DEBUG_FLAG_INFO);
+        addParameter(GlobalOptions.PLAIN_FLAG_INFO);
     }
 
     /**
