@@ -18,7 +18,7 @@ package io.helidon.build.util;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Requirement failed exception with message strings formatted via {@link Style#render(String, Object...)}.
+ * Requirement failed exception with message strings formatted via {@link StyleRenderer#render(String, Object...)}.
  */
 public final class RequirementFailure extends IllegalStateException {
     /**
@@ -35,6 +35,6 @@ public final class RequirementFailure extends IllegalStateException {
         if (requireNonNull(message).isEmpty()) {
             throw new IllegalArgumentException("empty message");
         }
-        return Style.render(message, args);
+        return StyleRenderer.render(message, args);
     }
 }

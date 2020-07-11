@@ -18,7 +18,7 @@ package io.helidon.build.maven.link;
 
 
 import io.helidon.build.util.Log.Level;
-import io.helidon.build.util.Style;
+import io.helidon.build.util.StyleRenderer;
 
 import org.apache.maven.plugin.logging.Log;
 
@@ -64,7 +64,7 @@ public class MavenLogWriter implements io.helidon.build.util.Log.Writer {
             case DEBUG:
             case VERBOSE:
                 if (log.isDebugEnabled()) {
-                    final String msg = Style.render(message, args);
+                    final String msg = StyleRenderer.render(message, args);
                     if (thrown == null) {
                         log.debug(msg);
                     } else {
@@ -75,7 +75,7 @@ public class MavenLogWriter implements io.helidon.build.util.Log.Writer {
 
             case INFO: {
                 if (log.isInfoEnabled()) {
-                    final String msg = Style.render(message, args);
+                    final String msg = StyleRenderer.render(message, args);
                     if (thrown == null) {
                         log.info(msg);
                     } else {
@@ -87,7 +87,7 @@ public class MavenLogWriter implements io.helidon.build.util.Log.Writer {
 
             case WARN: {
                 if (log.isWarnEnabled()) {
-                    final String msg = Style.render(message, args);
+                    final String msg = StyleRenderer.render(message, args);
                     if (thrown == null) {
                         log.warn(msg);
                     } else {
@@ -99,7 +99,7 @@ public class MavenLogWriter implements io.helidon.build.util.Log.Writer {
 
             case ERROR: {
                 if (log.isErrorEnabled()) {
-                    final String msg = Style.render(message, args);
+                    final String msg = StyleRenderer.render(message, args);
                     if (thrown == null) {
                         log.error(msg);
                     } else {

@@ -267,9 +267,9 @@ is used for both.
 
 > **_NOTE:_**  Terminals often provide mappings between the standard color names used here and what they actually render. So, for
 example, you may declare `red` but a terminal could be configured to render it as an entirely different color. Further, not 
-all styles are supported or enabled in every terminal so e.g. the (really annoying) styles like `blinking` may do nothing.
+all styles are supported or enabled in every terminal so e.g. the (really annoying) styles like `blink` may do nothing.
 
-Basic colors and styles are applied to text enclosed by `$(` and `)`, e.g.:
+Colors and styles are applied to text enclosed by `$(` and `)`, e.g.:
 ```
    <message>Here is $(red styled) text</message>
 ```                                              
@@ -279,44 +279,69 @@ In this example, the word `styled` will (normally) appear in red. If the styled 
 ```                                              
 The DSL syntax is:
 ```
-   $(code[,code] text)
+   $(style[,style]* text)
 ```
-where `code` is a color or other style. The eight standard color names are supported in a few different 
-(case-sensitive) variations:
+where `style` is a case-sensitive name for a color, background color, emphasis or an alias. Nesting is supported.
 
-| Color | Plain | Bold | Bright | Bright Bold |
-| --- | --- | --- | --- | --- |
-| black | `black` | `BLACK` | `black!` | `BLACK!` |
-| red | `red` | `RED` | `red!` | `RED!` |
-| green | `green` | `GREEN` | `green!` | `GREEN!` |
-| yellow | `yellow` | `YELLOW` | `yellow!` | `YELLOW!` |
-| blue | `blue` | `BLUE` | `blue!` | `BLUE!` |
-| magenta | `magenta` | `MAGENTA` | `magenta!` | `MAGENTA!` |
-| cyan | `cyan` | `CYAN` | `cyan!` | `CYAN!` |
-| white | `white` | `WHITE` | `white!` | `WHITE!` |
+#### Colors
 
-To use any of these as the _background_ instead of the text color, prepend `bg_` or `BG_` if bold, e.g. `bg_blue` or `BG_YELLOW!`.
+ * `red`
+ * `green`
+ * `yellow`
+ * `blue`
+ * `magenta`
+ * `cyan`
+ * `white`
+ * `black`
+ * `default`
 
-The following styles can also be used:
+#### Background Colors
+
+ * `bg_red`
+ * `bg_green`
+ * `bg_yellow`
+ * `bg_blue`
+ * `bg_magenta`
+ * `bg_cyan`
+ * `bg_white`
+ * `bg_black`
+ * `bg_default`
+
+#### Emphases
 
  * `bold`
- * `negative`
+ * `bright`
+ * `faint`
+ * `plain`
  * `italic`
  * `underline`
- * `faint`
+ * `strikethrough`
+ * `negative`
  * `conceal`
- * `blinking`
- * `blink_fast`  
+ * `blink`
 
-Note that `bold` is preferable to `WHITE` or `BLACK` as it is independent of the background color. Similarly,
-`negative` is preferable to `bg_white` or `bg_black`.
+#### Aliases  
+
+Every color has the following aliases:
+ 
+ 1. Bold variant with an uppercase name (e.g. `RED`)
+ 2. Bold variant with `'*'` prefix and suffix (e.g. `*red*`)
+ 3. Italic variant with `'_'` prefix and suffix (e.g. `_red_`)
+ 4. Bold italic variant with `'_*'` prefix and `'*_'` suffix (e.g. `_*red*_` or `*_red_*`)
+ 5. Bright variants of the color and all the above with a  `!` suffix (e.g. `red!`, `RED!`, `*red*!`, `_red_!`)
+
+Every background color has the following aliases:
+
+ 1. Bright variants with a `!` suffix (e.g. `bg_yellow!`)
+
+Use of `bold` is often preferable to bold black or white as it is independent of the background color. Similarly,
+`negative` may be preferable to background black or white.
  
 Examples:
 
 ```
     <message>$(RED!,italic This is a test of the emergency broadcast system.) $(bold,negative It is only a test!)</message>
-    <message>$(bold,italic This is a test of the) $(RED emergency) $(bold,italic broadcast system.)</message>
-    <message>$(blinking,negative,YELLOW!  HELP! ) I've fallen, and can't get up!</message>
+    <message>$(bold,italic This is a test of the $(RED emergency) broadcast system.)</message>
+    <message>$(blink,negative,YELLOW!  HELP! ) I've fallen, and I can't get up!</message>
+    <message>Whoops, $(CYAN,strikethrough this is a mistake)</message>
 ```
-
-Nesting is not supported, so the second example is slightly more verbose than it could be.

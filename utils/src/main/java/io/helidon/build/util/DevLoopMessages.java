@@ -15,7 +15,7 @@
  */
 package io.helidon.build.util;
 
-import static io.helidon.build.util.Style.Bold;
+import static io.helidon.build.util.Styles.Bold;
 
 /**
  * Constants supporting coordination between {@code DevLoop} and {@code DevCommand}.

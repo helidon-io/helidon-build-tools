@@ -39,10 +39,10 @@ import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_HEADER;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_PROJECT_CHANGED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_START;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_STYLED_MESSAGE_PREFIX;
-import static io.helidon.build.util.Style.Bold;
-import static io.helidon.build.util.Style.BoldBlue;
-import static io.helidon.build.util.Style.BoldRed;
-import static io.helidon.build.util.Style.BoldYellow;
+import static io.helidon.build.util.Styles.Bold;
+import static io.helidon.build.util.Styles.BoldBlue;
+import static io.helidon.build.util.Styles.BoldRed;
+import static io.helidon.build.util.Styles.BoldYellow;
 import static org.fusesource.jansi.Ansi.ansi;
 
 /**

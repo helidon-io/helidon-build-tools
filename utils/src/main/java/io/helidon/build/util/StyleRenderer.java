@@ -16,43 +16,100 @@
 
 package io.helidon.build.util;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
-
 import org.fusesource.jansi.Ansi;
-import org.fusesource.jansi.Ansi.Color;
 import org.fusesource.jansi.AnsiRenderer;
-import org.fusesource.jansi.AnsiRenderer.Code;
 
 import static org.fusesource.jansi.Ansi.ansi;
 
-
 /**
- * A string formatter with a substitutions for Ansi escapes. Similar to {@link AnsiRenderer}, but supports a syntax that is
+ * A string formatter with a substitutions for rich text. Similar to {@link AnsiRenderer}, but supports a syntax that is
  * easier to read and write.
  * <p></p>
- * The following syntax supports applying one or more Ansi escape codes by name to a block
- * of text enclosed by {@code "$("} and {@code ")}:
+ * Colors and styles are applied to text enclosed by {@code "$("} and {@code ")"}, e.g.:
  * <p></p>
  * <pre>
- *   <tt>$(</tt><em>code</em>[<tt>,</tt><em>code</em>]* <em>text</em><tt>)</tt>
+ *    "Here is $(red styled) text"
  * </pre>
+ * In this example, the word {@code styled} will (normally) appear in red. If the styled text itself contains parentheses,
+ * the closing paren should be escaped with a backslash:
  * <p></p>
- * Supported code names are the case insensitive names of the non-color {@link Code}s, and the case <em>sensitive</em> set of
- * aliases for all colors (i.e. {@link Code#isColor()} {@code == true}:
- * <ol>
- *     <li>plain color: lower case (e.g. {@code "red")}</li>
- *     <li>bright color: lower case + {@code '!'} (e.g. {@code "red!")}</li>
- *     <li>bold color: upper case (e.g. {@code "RED")}</li>
- *     <li>bright bold color: upper case + {@code '!'} (e.g. {@code "RED!")}</li>
- * </ol>
- *
- * Note that background colors (e.g. {@link Code#BG_BLUE}) have the same set of aliases. Examples:
- *
+ * <pre>
+ *    "Here is $(red (and example of\\) styled) text"
+ * </pre>
+ * The DSL syntax is:
+ * <p></p>
+ * <pre>
+ *   <tt>$(</tt><em>style</em>[<tt>,</tt><em>style</em>]* <em>text</em><tt>)</tt>
+ * </pre>
+ * where {@code style} is a case-sensitive name for a color, background color, emphasis or an alias. Nesting is supported.
+ * <p></p>
+ * NOTE: Terminals often provide mappings between the standard color names used here and what they actually render. So, for
+ * example, you may declare {@code red} but a terminal could be configured to render it as an entirely different color. Further,
+ * not all styles are supported or enabled in every terminal so e.g. the (really annoying) styles like {@code blink} may do
+ * nothing.
+ * <p></p>
+ * <h3>Colors</h3>
+ * <ul>
+ *     <li>{@code red}</li>
+ *     <li>{@code green}</li>
+ *     <li>{@code yellow}</li>
+ *     <li>{@code blue}</li>
+ *     <li>{@code magenta}</li>
+ *     <li>{@code cyan}</li>
+ *     <li>{@code white}</li>
+ *     <li>{@code black}</li>
+ *     <li>{@code default}</li>
+ * </ul>
+ * <p></p>
+ * <h3>Background Colors</h3>
+ * <ul>
+ *     <li>{@code bg_red}</li>
+ *     <li>{@code bg_green}</li>
+ *     <li>{@code bg_yellow}</li>
+ *     <li>{@code bg_blue}</li>
+ *     <li>{@code bg_magenta}</li>
+ *     <li>{@code bg_cyan}</li>
+ *     <li>{@code bg_white}</li>
+ *     <li>{@code bg_black}</li>
+ *     <li>{@code bg_default}</li>
+ * </ul>
+ * <p></p>
+ * <h3>Emphases</h3>
+ * <ul>
+ *     <li>{@code bold}</li>
+ *     <li>{@code bright}</li>
+ *     <li>{@code faint}</li>
+ *     <li>{@code plain}</li>
+ *     <li>{@code italic}</li>
+ *     <li>{@code underline}</li>
+ *     <li>{@code strikethrough}</li>
+ *     <li>{@code negative}</li>
+ *     <li>{@code conceal}</li>
+ *     <li>{@code blink}</li>
+ * </ul>
+ * <p></p>
+ * <h3>Aliases</h3>
+ * <p></p>
+ * Every color has the following aliases:
+ * <ul>
+ *      <li>Bold variant with an uppercase name (e.g. {@code RED})</li>
+ *      <li>Bold variant with {@code '*'} prefix and suffix (e.g. {@code *red*})</li>
+ *      <li>Italic variant with {@code '_'} prefix and suffix (e.g. {@code _red_})</li>
+ *      <li>Bold italic variant with {@code '_*'} prefix and {@code '*_'} suffix (e.g. {@code _*red*_} or {@code *_red_*})</li>
+ *      <li>Bright variants of the color and all the above with a {@code '!'} suffix
+ *      (e.g. {@code red!}, {@code RED!}, {@code *red*!}, {@code _red_!}</li>
+ * </ul>
+ * <p></p>
+ * Every background color has the following aliases:
+ * <ul>
+ *     <li> Bright variants with a {@code '!'} suffix (e.g. {@code bg_yellow!})</li>
+ * </ul>
+ * <p></p>
+ * Use of {@code bold} is often preferable bold black or white as it is independent of the background color. Similarly,
+ * {@code negative} may be preferable to background black or white.
+ * <p></p>
+ * <h3>Examples</h3>
+ * <p></p>
  * <ol>
  *     <li>
  *         {@code "This is a bold $(bold example)."}
@@ -70,7 +127,7 @@ import static org.fusesource.jansi.Ansi.ansi;
  *         {@code "This is a bold blue underlined $(BLUE,underline example)."}
  *     </li>
  *     <li>
- *         {@code "This is a bold red $(RED,BG_YELLOW! example) on a bright bold yellow background."}
+ *         {@code "This is a bold red $(RED,bg_yellow! example) on a bright yellow background."}
  *     </li>
  * </ol>
  */
@@ -78,139 +135,125 @@ public class StyleRenderer {
     private static final String START_TOKEN = "$(";
     private static final int START_TOKEN_LEN = START_TOKEN.length();
     private static final char ESCAPE_CHAR = '\\';
-    private static final char CODES_SEP_CHAR = ' ';
-    private static final String CODE_SEP = ",";
+    private static final char STYLES_SEP_CHAR = ' ';
+    private static final String STYLE_SEP = ",";
     private static final char END_TOKEN_CHAR = ')';
     private static final String ESCAPED_END_TOKEN = "\\)";
     private static final String END_TOKEN = ")";
-    private static final String BRIGHT = "!";
-    private static final Map<String, Consumer<Ansi>> ALIASES = aliases();
 
-    private StyleRenderer() {
+    private final String text;
+    private final int textLength;
+    private final Ansi ansi;
+    private int textStart;
+    private int tokenStart;
+    private int tokenEnd;
+
+    private StyleRenderer(String text, int tokenStart) {
+        this.text = text;
+        this.textLength = text.length();
+        this.ansi = ansi();
+        this.tokenStart = tokenStart;
     }
 
     /**
-     * Substitute the Ansi sequences in the given text.
+     * Substitute the DSL in the given text.
      *
      * @param text The text.
      * @return The substituted text.
      */
     public static String render(String text) {
-        final int begin = text.indexOf(START_TOKEN);
-        if (begin >= 0) {
-            return replace(text, begin, new StringBuilder()).toString();
+        final int tokenStart = text.indexOf(START_TOKEN);
+        if (tokenStart >= 0) {
+            return new StyleRenderer(text, tokenStart).render();
         } else {
             return text;
         }
     }
 
-    private static StringBuilder replace(String text, int tokenStart, StringBuilder sb) {
-        final int textLength = text.length();
-        int textStart = 0;
+    /**
+     * Substitute the DSL after formatting.
+     *
+     * @param format The message format.
+     * @param args The message arguments.
+     * @return The message.
+     */
+    public static String render(String format, Object... args) {
+        return render(String.format(format, args));
+    }
 
+    private String render() {
         while (tokenStart >= 0) {
-            sb.append(text, textStart, tokenStart);
-            final int codesStart = tokenStart + START_TOKEN_LEN;
-            final int tokenEnd = tokenEnd(text, codesStart, textLength);
-            if (tokenEnd < 0) {
-                break; // unclosed
+            if (textStart < tokenStart) {
+                ansi.a(text, textStart, tokenStart);
             }
-            final int codesEnd = text.indexOf(CODES_SEP_CHAR, codesStart);
-            if (codesEnd < 0) {
-                break; // malformed
+            if (!replaceNext(tokenStart)) {
+                break;
             }
-            final Ansi ansi = ansi();
-            final String codes = text.substring(codesStart, codesEnd);
-            final String styledText = text.substring(codesEnd + 1, tokenEnd);
-            for (final String codeName : codes.split(CODE_SEP)) {
-                apply(ansi, codeName);
-            }
-            sb.append(toStyled(ansi, styledText));
-            textStart = tokenEnd + 1;
-            tokenStart = text.indexOf(START_TOKEN, textStart);
         }
-        return textStart < textLength ? sb.append(text.substring(textStart)) : sb;
-    }
-
-    private static String toStyled(Ansi ansi, String text) {
-        final String unescaped = text.replace(ESCAPED_END_TOKEN, END_TOKEN);
-        return ansi.a(unescaped).reset().toString();
-    }
-
-    private static void apply(Ansi ansi, String codeName) {
-        Consumer<Ansi> alias = ALIASES.get(codeName);
-        if (alias != null) {
-            alias.accept(ansi);
-        } else {
-            boolean bright = false;
-            if (codeName.endsWith(BRIGHT)) {
-                bright = true;
-                codeName = codeName.substring(0, codeName.length() - 1);
-            }
-            apply(ansi, Code.valueOf(codeName.toUpperCase(Locale.ENGLISH)), bright);
+        if (textStart < textLength) {
+            ansi.a(text.substring(textStart));
         }
+        return ansi.toString();
     }
 
-    private static void apply(Ansi ansi, List<Code> codes, boolean bright) {
-        for (Code code : codes) {
-            apply(ansi, code, bright);
+    private boolean replaceNext(int tokenStart) {
+        final int stylesStart = tokenStart + START_TOKEN_LEN;
+        final int stylesEnd = text.indexOf(STYLES_SEP_CHAR, stylesStart);
+        if (stylesEnd < 0) {
+            return false; // malformed
         }
+        tokenEnd = tokenEnd(stylesEnd);
+        if (tokenEnd < 0) {
+            return false; // unclosed
+        }
+        return replaceNext(stylesStart, stylesEnd);
     }
 
-    private static void apply(Ansi ansi, Code code, boolean bright) {
-        if (code.isColor()) {
-            final Color color = code.getColor();
-            if (code.isBackground()) {
-                if (bright) {
-                    ansi.bgBright(color);
-                } else {
-                    ansi.bg(color);
+    private boolean replaceNext(int stylesStart, int stylesEnd) {
+        int nextTokenStart = tokenStart(stylesEnd);
+        final boolean nested = nextTokenStart >= 0 && nextTokenStart < tokenEnd;
+        final int styledTextStart = stylesEnd + 1;
+        final int styledTextEnd = nested ? nextTokenStart : tokenEnd;
+        final String styles = text.substring(stylesStart, stylesEnd);
+        final String styledText = text.substring(styledTextStart, styledTextEnd);
+        final String unescapedText = styledText.replace(ESCAPED_END_TOKEN, END_TOKEN);
+        final Style style = Style.of(styles.split(STYLE_SEP));
+        style.apply(ansi).a(unescapedText);
+
+        if (nested) {
+            if (replaceNext(nextTokenStart)) {
+                style.apply(ansi);
+                tokenEnd = tokenEnd(textStart);
+                if (tokenEnd < 0) {
+                    return false;
                 }
+                ansi.a(text, textStart, tokenEnd);
+                nextTokenStart = tokenStart(tokenEnd);
             } else {
-                if (bright) {
-                    ansi.fgBright(color);
-                } else {
-                    ansi.fg(color);
-                }
+                return false;
             }
-        } else if (code.isAttribute()) {
-            ansi.a(code.getAttribute());
         }
+        this.tokenStart = nextTokenStart;
+        textStart = tokenEnd + 1;
+        style.reset(ansi);
+        return true;
     }
 
-    private static int tokenEnd(String text, int codesStart, int textLength) {
-        while (codesStart < textLength) {
-            int tokenEnd = text.indexOf(END_TOKEN_CHAR, codesStart);
+    private int tokenStart(int stylesEnd) {
+        return text.indexOf(START_TOKEN, stylesEnd + 1);
+    }
+
+    private int tokenEnd(int stylesEnd) {
+        while (stylesEnd < textLength) {
+            int tokenEnd = text.indexOf(END_TOKEN_CHAR, stylesEnd);
             if (tokenEnd < 0) {
                 break;
             } else if (text.charAt(tokenEnd - 1) != ESCAPE_CHAR) {
                 return tokenEnd;
             } else {
-                codesStart = tokenEnd + 1;
+                stylesEnd = tokenEnd + 1;
             }
         }
         return -1;
-    }
-
-    private static Map<String, Consumer<Ansi>> aliases() {
-        final Map<String, Consumer<Ansi>> aliases = new HashMap<>();
-        aliases.put("blinking", ansi -> ansi.a(Ansi.Attribute.BLINK_SLOW));
-        aliases.put("negative", ansi -> ansi.a(Ansi.Attribute.NEGATIVE_ON));
-        aliases.put("conceal", ansi -> ansi.a(Ansi.Attribute.CONCEAL_ON));
-        Stream.of(Code.values()).forEach(code -> {
-            if (code.isColor()) {
-                final String colorName = code.name().toLowerCase(Locale.ENGLISH);
-                final String brightColorName = colorName + BRIGHT;
-                final String boldColorName = colorName.toUpperCase(Locale.ENGLISH);
-                final String boldBrightColorName = boldColorName + BRIGHT;
-
-                aliases.put(colorName, ansi -> StyleRenderer.apply(ansi, List.of(code), false));
-                aliases.put(brightColorName, ansi -> StyleRenderer.apply(ansi, List.of(code), true));
-                aliases.put(boldColorName, ansi -> StyleRenderer.apply(ansi, List.of(Code.BOLD, code), false));
-                aliases.put(boldBrightColorName, ansi -> StyleRenderer.apply(ansi, List.of(Code.BOLD, code), true));
-            }
-        });
-
-        return aliases;
     }
 }

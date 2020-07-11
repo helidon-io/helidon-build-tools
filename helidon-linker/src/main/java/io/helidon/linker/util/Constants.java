@@ -24,8 +24,8 @@ import java.util.function.Function;
 import io.helidon.build.util.OSType;
 
 import static io.helidon.build.util.OSType.currentOS;
-import static io.helidon.build.util.Style.Bold;
-import static io.helidon.build.util.Style.BoldBrightYellow;
+import static io.helidon.build.util.Styles.Bold;
+import static io.helidon.build.util.Styles.BoldBrightYellow;
 
 /**
  * Shared constants.
@@ -55,12 +55,12 @@ public final class Constants {
     /**
      * Whether or not JDEPS requires the missing deps option.
      */
-    public static final boolean JDEPS_REQUIRES_MISSING_DEPS_OPTION = Runtime.version().major() > 11;
+    public static final boolean JDEPS_REQUIRES_MISSING_DEPS_OPTION = Runtime.version().feature() > 11;
 
     /**
      * Whether or not CDS requires the unlock option.
      */
-    public static final boolean CDS_REQUIRES_UNLOCK_OPTION = Runtime.version().major() <= 10;
+    public static final boolean CDS_REQUIRES_UNLOCK_OPTION = Runtime.version().feature() <= 10;
 
     /**
      * The CDS unlock diagnostic options.
@@ -70,7 +70,7 @@ public final class Constants {
     /**
      * Whether or not CDS supports image copy (with preserved timestamps).
      */
-    public static final boolean CDS_SUPPORTS_IMAGE_COPY = Runtime.version().major() >= 10;
+    public static final boolean CDS_SUPPORTS_IMAGE_COPY = Runtime.version().feature() >= 10;
 
     /**
      * End of line string.

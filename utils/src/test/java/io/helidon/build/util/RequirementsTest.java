@@ -23,8 +23,8 @@ import org.fusesource.jansi.Ansi;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.util.Requirements.failed;
-import static io.helidon.build.util.Style.BoldRed;
-import static io.helidon.build.util.Style.Cyan;
+import static io.helidon.build.util.Styles.BoldRed;
+import static io.helidon.build.util.Styles.Cyan;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;

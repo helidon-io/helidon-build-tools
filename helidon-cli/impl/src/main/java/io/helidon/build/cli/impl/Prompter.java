@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static io.helidon.build.util.Style.Bold;
-import static io.helidon.build.util.Style.BoldBlue;
+import static io.helidon.build.util.Styles.Bold;
+import static io.helidon.build.util.Styles.BoldBlue;
 
 /**
  * Class Prompter.
