@@ -25,7 +25,7 @@ import io.helidon.build.util.PomUtils;
 import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.RequirementFailure;
 import io.helidon.build.util.Requirements;
-import io.helidon.build.util.Style;
+import io.helidon.build.util.StyleRenderer;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
@@ -35,7 +35,7 @@ import static io.helidon.build.util.MavenVersion.toMavenVersion;
 import static io.helidon.build.util.ProjectConfig.ensureProjectConfig;
 
 /**
- * Command assertions with message strings formatted via {@link Style#render(String, Object...)}.
+ * Command assertions with message strings formatted via {@link StyleRenderer#render(String, Object...)}.
  */
 public class CommandRequirements {
 

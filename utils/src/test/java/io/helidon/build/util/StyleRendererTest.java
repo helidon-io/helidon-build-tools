@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for class {@link StyleRenderer}.
@@ -35,8 +34,8 @@ class StyleRendererTest {
     }
 
     @Test
-    void testUnknownCode() {
-        assertThrows(IllegalArgumentException.class, () -> StyleRenderer.render("$(bogus text)"));
+    void testUnknownStyle() {
+        assertThat(StyleRenderer.render("$(bogus text)"), is("text"));
     }
 
     @Test
@@ -50,9 +49,30 @@ class StyleRendererTest {
     }
 
     @Test
-    void testOnlyFormatted() {
+    void testEmphasisRender() {
+        assertMatching("@|reset,bold PLAIN BOLD|@",
+                       "$(plain,bold PLAIN BOLD)");
+
+        assertMatching("@|faint,bold FAINT BOLD|@",
+                       "$(faint,bold FAINT BOLD)");
+
         assertMatching("@|italic,bold ITALIC BOLD|@",
                        "$(italic,bold ITALIC BOLD)");
+
+        assertMatching("@|underline,bold UNDERLINE BOLD|@",
+                       "$(underline,bold UNDERLINE BOLD)");
+
+        assertMatching("@|blink_slow,bold BLINK BOLD|@",
+                       "$(blink,bold BLINK BOLD)");
+
+        assertMatching("@|negative_on,bold NEGATIVE BOLD|@",
+                       "$(negative,bold NEGATIVE BOLD)");
+
+        assertMatching("@|conceal_on,bold CONCEAL BOLD|@",
+                       "$(conceal,bold CONCEAL BOLD)");
+
+        assertMatching("@|blue,bold BLUE BOLD|@",
+                       "$(blue,bold BLUE BOLD)");
     }
 
     @Test
@@ -126,18 +146,70 @@ class StyleRendererTest {
 
     @Test
     void testExample6() {
-        String e6 = "This is a bold red $(RED,BG_YELLOW! example) on a bright bold yellow background.";
+        String e6 = "This is a bold red $(RED,bg_yellow! example) on a bright yellow background.";
         String expected = Ansi.ansi()
                               .a("This is a bold red ")
                               .bold()
                               .fgRed()
-                              .bold()
                               .bgBright(Ansi.Color.YELLOW)
                               .a("example")
                               .reset()
-                              .a(" on a bright bold yellow background.")
+                              .a(" on a bright yellow background.")
                               .toString();
         assertMatching(expected, e6);
+    }
+
+    @Test
+    void testNestedOneLevel() {
+        // a = plain
+        // b = red
+        // c =   blue
+        // d = red
+        // e = plain
+        String nested = "a$(red b$(blue c)d)e";
+        String expected = Ansi.ansi()
+                              .a("a")
+                              .fg(Ansi.Color.RED)
+                              .a("b")
+                              .fg(Ansi.Color.BLUE)
+                              .a("c")
+                              .reset()
+                              .fg(Ansi.Color.RED)
+                              .a("d")
+                              .reset()
+                              .a("e")
+                              .toString();
+        assertMatching(expected, nested);
+    }
+
+    @Test
+    void testNestedTwoLevels() {
+        // a = plain
+        // b = red
+        // c =   blue
+        // d =     magenta
+        // e =   blue
+        // f = red
+        // g = plain
+        String nested = "a$(red b$(blue c$(magenta d)e)f)g";
+        String expected = Ansi.ansi()
+                              .a("a")
+                              .fg(Ansi.Color.RED)
+                              .a("b")
+                              .fg(Ansi.Color.BLUE)
+                              .a("c")
+                              .fg(Ansi.Color.MAGENTA)
+                              .a("d")
+                              .reset()
+                              .fg(Ansi.Color.BLUE)
+                              .a("e")
+                              .reset()
+                              .fg(Ansi.Color.RED)
+                              .a("f")
+                              .reset()
+                              .a("g")
+                              .toString();
+        assertMatching(expected, nested);
     }
 
     private static void assertMatching(String render, String format) {

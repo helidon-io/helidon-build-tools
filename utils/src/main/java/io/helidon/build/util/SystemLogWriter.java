@@ -25,11 +25,11 @@ import io.helidon.build.util.Log.Level;
 
 import static io.helidon.build.util.Constants.EOL;
 import static io.helidon.build.util.Log.Level.DEBUG;
-import static io.helidon.build.util.Style.BoldYellow;
-import static io.helidon.build.util.Style.Italic;
-import static io.helidon.build.util.Style.ItalicRed;
-import static io.helidon.build.util.Style.Plain;
-import static io.helidon.build.util.Style.Red;
+import static io.helidon.build.util.Styles.BoldYellow;
+import static io.helidon.build.util.Styles.Italic;
+import static io.helidon.build.util.Styles.ItalicRed;
+import static io.helidon.build.util.Styles.Plain;
+import static io.helidon.build.util.Styles.Red;
 
 /**
  * {@link Log.Writer} that writes to {@link System#out} and {@link System#err}. Supports use of
@@ -41,12 +41,12 @@ public final class SystemLogWriter implements Log.Writer {
     private static final String ERROR_PREFIX = STYLES_ENABLED ? Red.apply("error: ") : "ERROR: ";
     private static final String DEFAULT_LEVEL = "info";
     private static final String LEVEL_PROPERTY = "log.level";
-    private static final Map<Level, Style> DEFAULT_STYLES = defaultStyles();
-    private final Map<Level, Style> styles;
+    private static final Map<Level, Styles> DEFAULT_STYLES = defaultStyles();
+    private final Map<Level, Styles> styles;
     private int ordinal;
 
-    private static Map<Level, Style> defaultStyles() {
-        final Map<Level, Style> styles = new EnumMap<>(Level.class);
+    private static Map<Level, Styles> defaultStyles() {
+        final Map<Level, Styles> styles = new EnumMap<>(Level.class);
         styles.put(DEBUG, Italic);
         styles.put(Level.VERBOSE, Plain);
         styles.put(Level.INFO, Plain);
@@ -94,11 +94,11 @@ public final class SystemLogWriter implements Log.Writer {
      * @param styles The style to apply to messages at a given level.
      * @return The instance.
      */
-    public static SystemLogWriter create(Level level, Map<Level, Style> styles) {
+    public static SystemLogWriter create(Level level, Map<Level, Styles> styles) {
         return new SystemLogWriter(level, styles);
     }
 
-    private SystemLogWriter(Level level, Map<Level, Style> styles) {
+    private SystemLogWriter(Level level, Map<Level, Styles> styles) {
         this.styles = styles;
         level(level);
     }
@@ -153,7 +153,7 @@ public final class SystemLogWriter implements Log.Writer {
     }
 
     private String toStyled(Level level, Throwable thrown, String message, Object... args) {
-        final String rendered = Style.render(message, args);
+        final String rendered = StyleRenderer.render(message, args);
         final String styled = toStyled(level, rendered);
         final String trace = toStackTrace(thrown);
         if (trace == null) {
@@ -186,7 +186,7 @@ public final class SystemLogWriter implements Log.Writer {
     }
 
     private String style(Level level, String message) {
-        final Style style = styles.get(level);
+        final Styles style = styles.get(level);
         return style == Plain ? message : style.apply(message);
     }
 }

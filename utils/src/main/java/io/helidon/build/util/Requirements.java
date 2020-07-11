@@ -19,11 +19,11 @@ package io.helidon.build.util;
 import java.util.Optional;
 
 /**
- * Assertions with message strings formatted via {@link Style#render(String, Object...)}.
+ * Assertions with message strings formatted via {@link StyleRenderer#render(String, Object...)}.
  */
 public class Requirements {
     /**
-     * Throws a {@code RequirementFailure} with a message formatted via {@link Style#render(String, Object...)} if the
+     * Throws a {@code RequirementFailure} with a message formatted via {@link StyleRenderer#render(String, Object...)} if the
      * given instance is {@code null}.
      *
      * @param instance The instance.
@@ -39,7 +39,7 @@ public class Requirements {
     }
 
     /**
-     * Conditionally throws a {@code RequirementFailure} with a message formatted via {@link Style#render(String, Object...)}.
+     * Conditionally throws a {@code RequirementFailure} with a message formatted via {@link StyleRenderer#render(String, Object...)}.
      *
      * @param condition The condition.
      * @param message The message.
@@ -53,7 +53,7 @@ public class Requirements {
     }
 
     /**
-     * Throws a {@code RequirementFailure} with a message formatted via {@link Style#render(String, Object...)}.
+     * Throws a {@code RequirementFailure} with a message formatted via {@link StyleRenderer#render(String, Object...)}.
      *
      * @param message The message.
      * @param args The message args.

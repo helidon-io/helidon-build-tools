@@ -31,10 +31,10 @@ import io.helidon.build.util.ProcessMonitor;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_SERVER_STARTING;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_SERVER_STOPPED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_SERVER_STOPPING;
-import static io.helidon.build.util.Style.BoldBrightCyan;
-import static io.helidon.build.util.Style.BoldBrightGreen;
-import static io.helidon.build.util.Style.BoldBrightRed;
-import static io.helidon.build.util.Style.BoldYellow;
+import static io.helidon.build.util.Styles.BoldBrightCyan;
+import static io.helidon.build.util.Styles.BoldBrightGreen;
+import static io.helidon.build.util.Styles.BoldBrightRed;
+import static io.helidon.build.util.Styles.BoldYellow;
 
 /**
  * Project executor.

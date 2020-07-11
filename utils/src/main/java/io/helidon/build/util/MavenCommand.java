@@ -39,7 +39,7 @@ import static io.helidon.build.util.Constants.EOL;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertJavaExecutable;
 import static io.helidon.build.util.FileUtils.listFiles;
-import static io.helidon.build.util.Style.Bold;
+import static io.helidon.build.util.Styles.Bold;
 import static java.io.File.pathSeparatorChar;
 import static java.util.Objects.requireNonNull;
 
@@ -512,7 +512,7 @@ public class MavenCommand {
         }
 
         private static void printRedLineErr(String line) {
-            System.out.println(Style.Red.apply(line));
+            System.out.println(Styles.Red.apply(line));
         }
     }
 }
