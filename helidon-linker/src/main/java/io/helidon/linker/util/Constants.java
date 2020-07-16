@@ -24,8 +24,8 @@ import java.util.function.Function;
 import io.helidon.build.util.OSType;
 
 import static io.helidon.build.util.OSType.currentOS;
-import static io.helidon.build.util.Styles.Bold;
-import static io.helidon.build.util.Styles.BoldBrightYellow;
+import static io.helidon.build.util.StyleFunction.Bold;
+import static io.helidon.build.util.StyleFunction.BoldBrightYellow;
 
 /**
  * Shared constants.

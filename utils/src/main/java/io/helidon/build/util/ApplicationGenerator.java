@@ -24,8 +24,8 @@ import java.util.concurrent.TimeUnit;
 
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.ProjectConfig.ensureProjectConfig;
-import static io.helidon.build.util.Styles.Blue;
-import static io.helidon.build.util.Styles.BoldBrightCyan;
+import static io.helidon.build.util.StyleFunction.Blue;
+import static io.helidon.build.util.StyleFunction.BoldBrightCyan;
 
 /**
  * Simple generator for a application project. This class does not import any Maven classes

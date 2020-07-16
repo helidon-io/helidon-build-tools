@@ -30,7 +30,7 @@ import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenCommand;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
-import io.helidon.build.util.Styles;
+import io.helidon.build.util.StyleFunction;
 
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
@@ -45,8 +45,8 @@ import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_SERVER_STARTING;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_START;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_STYLED_MESSAGE_PREFIX;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
-import static io.helidon.build.util.Styles.Bold;
-import static io.helidon.build.util.Styles.BoldBrightGreen;
+import static io.helidon.build.util.StyleFunction.Bold;
+import static io.helidon.build.util.StyleFunction.BoldBrightGreen;
 
 /**
  * The {@code dev} command.
@@ -175,7 +175,7 @@ public final class DevCommand extends BaseCommand {
     }
 
     private static void printStdErrLine(String line) {
-        System.out.println(Styles.Red.apply(line));
+        System.out.println(StyleFunction.Red.apply(line));
     }
 
     /**

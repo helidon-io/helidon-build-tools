@@ -43,7 +43,7 @@ import static org.fusesource.jansi.Ansi.ansi;
  * <pre>
  *   <tt>$(</tt><em>style</em>[<tt>,</tt><em>style</em>]* <em>text</em><tt>)</tt>
  * </pre>
- * where {@code style} is a case-sensitive {@link Style#byName name} for a color, background color, emphasis or an alias.
+ * where {@code style} is a case-sensitive {@link Style#named name} for a color, background color, emphasis or an alias.
  * Nesting is supported.
  * <p></p>
  * <h3>Examples</h3>

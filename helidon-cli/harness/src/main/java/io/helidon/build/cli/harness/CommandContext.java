@@ -38,7 +38,7 @@ import static io.helidon.build.util.Log.Level.ERROR;
 import static io.helidon.build.util.Log.Level.INFO;
 import static io.helidon.build.util.Log.Level.VERBOSE;
 import static io.helidon.build.util.Log.Level.WARN;
-import static io.helidon.build.util.Styles.Red;
+import static io.helidon.build.util.StyleFunction.Red;
 
 /**
  * The command context.

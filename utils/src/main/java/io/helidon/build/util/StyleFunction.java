@@ -19,9 +19,9 @@ package io.helidon.build.util;
 import java.util.function.Function;
 
 /**
- * Text styles.
+ * Text style functions.
  */
-public enum Styles implements Function<Object, String> {
+public enum StyleFunction implements Function<Object, String> {
 
     /**
      * Plain.
@@ -220,8 +220,8 @@ public enum Styles implements Function<Object, String> {
 
     private final Style style;
 
-    Styles(String name) {
-        this.style = Style.byRequiredName(name);
+    StyleFunction(String name) {
+        this.style = Style.named(name, true);
     }
 
     /**
