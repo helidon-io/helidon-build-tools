@@ -20,8 +20,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static io.helidon.build.util.Styles.BoldBlue;
-import static io.helidon.build.util.Styles.Italic;
+import static io.helidon.build.util.StyleFunction.BoldBlue;
+import static io.helidon.build.util.StyleFunction.Italic;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -214,7 +214,7 @@ public class Log {
     }
 
     /**
-     * Log the entries using {@link Styles#Italic} for all keys and {@link Styles#BoldBlue} for all keys.
+     * Log the entries using {@link StyleFunction#Italic} for all keys and {@link StyleFunction#BoldBlue} for all keys.
      *
      * @param map The entries.
      */
@@ -223,7 +223,7 @@ public class Log {
     }
 
     /**
-     * Log the entries using {@link Styles#Italic} for all keys and {@link Styles#BoldBlue} for all keys.
+     * Log the entries using {@link StyleFunction#Italic} for all keys and {@link StyleFunction#BoldBlue} for all keys.
      *
      * @param map The entries.
      * @param maxKeyWidth The maximum key width.
@@ -239,7 +239,7 @@ public class Log {
      * @param keyStyle The style to apply to all keys.
      * @param valueStyle The style to apply to all values.
      */
-    public static void info(Map<Object, Object> map, Styles keyStyle, Styles valueStyle) {
+    public static void info(Map<Object, Object> map, StyleFunction keyStyle, StyleFunction valueStyle) {
         info(map, maxKeyWidth(map), keyStyle, valueStyle);
     }
 
@@ -251,7 +251,7 @@ public class Log {
      * @param keyStyle The style to apply to all keys.
      * @param valueStyle The style to apply to all values.
      */
-    public static void info(Map<Object, Object> map, int maxKeyWidth, Styles keyStyle, Styles valueStyle) {
+    public static void info(Map<Object, Object> map, int maxKeyWidth, StyleFunction keyStyle, StyleFunction valueStyle) {
         if (!map.isEmpty()) {
             map.forEach((key, value) -> {
                 final String padding = padding(maxKeyWidth, key);

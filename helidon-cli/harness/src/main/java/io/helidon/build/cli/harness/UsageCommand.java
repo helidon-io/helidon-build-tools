@@ -20,7 +20,7 @@ import java.util.Map;
 
 import io.helidon.build.util.Log;
 
-import static io.helidon.build.util.Styles.Bold;
+import static io.helidon.build.util.StyleFunction.Bold;
 
 /**
  * Built-in usage command.

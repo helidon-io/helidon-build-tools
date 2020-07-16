@@ -19,9 +19,9 @@ package io.helidon.build.util;
 import java.util.function.Function;
 
 /**
- * Text styles.
+ * Text style functions.
  */
-public enum Styles implements Function<Object, String> {
+public enum StyleFunction implements Function<Object, String> {
 
     /**
      * Plain.
@@ -32,11 +32,6 @@ public enum Styles implements Function<Object, String> {
      * Bold.
      */
     Bold("bold"),
-
-    /**
-     * Bright.
-     */
-    Bright("bright"),
 
     /**
      * Italic.
@@ -59,9 +54,15 @@ public enum Styles implements Function<Object, String> {
     ItalicBlue("_blue_"),
 
     /**
+     * Bright blue.
+     */
+    BrightBlue("blue!"),
+
+    /**
      * Bold blue.
      */
     BoldBlue("BLUE"),
+
     /**
      * Bold, italic blue.
      */
@@ -86,6 +87,11 @@ public enum Styles implements Function<Object, String> {
      * Italic cyan.
      */
     ItalicCyan("_cyan_"),
+
+    /**
+     * Bright cyan.
+     */
+    BrightCyan("cyan!"),
 
     /**
      * Bold cyan.
@@ -118,6 +124,11 @@ public enum Styles implements Function<Object, String> {
     ItalicGreen("_green_"),
 
     /**
+     * Bright green.
+     */
+    BrightGreen("green!"),
+
+    /**
      * Bold green.
      */
     BoldGreen("GREEN"),
@@ -146,6 +157,11 @@ public enum Styles implements Function<Object, String> {
      * Italic yellow.
      */
     ItalicYellow("_yellow_"),
+
+    /**
+     * Bright yellow.
+     */
+    BrightYellow("yellow!"),
 
     /**
      * Bold yellow.
@@ -178,6 +194,11 @@ public enum Styles implements Function<Object, String> {
     ItalicRed("_red_"),
 
     /**
+     * Bright red.
+     */
+    BrightRed("red!"),
+
+    /**
      * Bold red.
      */
     BoldRed("RED"),
@@ -199,8 +220,8 @@ public enum Styles implements Function<Object, String> {
 
     private final Style style;
 
-    Styles(String name) {
-        this.style = Style.byRequiredName(name);
+    StyleFunction(String name) {
+        this.style = Style.named(name, true);
     }
 
     /**

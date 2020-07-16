@@ -16,6 +16,8 @@
 
 package io.helidon.build.util;
 
+import io.helidon.build.util.Style.StyleList;
+
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.AnsiRenderer;
 
@@ -41,72 +43,8 @@ import static org.fusesource.jansi.Ansi.ansi;
  * <pre>
  *   <tt>$(</tt><em>style</em>[<tt>,</tt><em>style</em>]* <em>text</em><tt>)</tt>
  * </pre>
- * where {@code style} is a case-sensitive name for a color, background color, emphasis or an alias. Nesting is supported.
- * <p></p>
- * NOTE: Terminals often provide mappings between the standard color names used here and what they actually render. So, for
- * example, you may declare {@code red} but a terminal could be configured to render it as an entirely different color. Further,
- * not all styles are supported or enabled in every terminal so e.g. the (really annoying) styles like {@code blink} may do
- * nothing.
- * <p></p>
- * <h3>Colors</h3>
- * <ul>
- *     <li>{@code red}</li>
- *     <li>{@code green}</li>
- *     <li>{@code yellow}</li>
- *     <li>{@code blue}</li>
- *     <li>{@code magenta}</li>
- *     <li>{@code cyan}</li>
- *     <li>{@code white}</li>
- *     <li>{@code black}</li>
- *     <li>{@code default}</li>
- * </ul>
- * <p></p>
- * <h3>Background Colors</h3>
- * <ul>
- *     <li>{@code bg_red}</li>
- *     <li>{@code bg_green}</li>
- *     <li>{@code bg_yellow}</li>
- *     <li>{@code bg_blue}</li>
- *     <li>{@code bg_magenta}</li>
- *     <li>{@code bg_cyan}</li>
- *     <li>{@code bg_white}</li>
- *     <li>{@code bg_black}</li>
- *     <li>{@code bg_default}</li>
- * </ul>
- * <p></p>
- * <h3>Emphases</h3>
- * <ul>
- *     <li>{@code bold}</li>
- *     <li>{@code bright}</li>
- *     <li>{@code faint}</li>
- *     <li>{@code plain}</li>
- *     <li>{@code italic}</li>
- *     <li>{@code underline}</li>
- *     <li>{@code strikethrough}</li>
- *     <li>{@code negative}</li>
- *     <li>{@code conceal}</li>
- *     <li>{@code blink}</li>
- * </ul>
- * <p></p>
- * <h3>Aliases</h3>
- * <p></p>
- * Every color has the following aliases:
- * <ul>
- *      <li>Bold variant with an uppercase name (e.g. {@code RED})</li>
- *      <li>Bold variant with {@code '*'} prefix and suffix (e.g. {@code *red*})</li>
- *      <li>Italic variant with {@code '_'} prefix and suffix (e.g. {@code _red_})</li>
- *      <li>Bold italic variant with {@code '_*'} prefix and {@code '*_'} suffix (e.g. {@code _*red*_} or {@code *_red_*})</li>
- *      <li>Bright variants of the color and all the above with a {@code '!'} suffix
- *      (e.g. {@code red!}, {@code RED!}, {@code *red*!}, {@code _red_!}</li>
- * </ul>
- * <p></p>
- * Every background color has the following aliases:
- * <ul>
- *     <li> Bright variants with a {@code '!'} suffix (e.g. {@code bg_yellow!})</li>
- * </ul>
- * <p></p>
- * Use of {@code bold} is often preferable bold black or white as it is independent of the background color. Similarly,
- * {@code negative} may be preferable to background black or white.
+ * where {@code style} is a case-sensitive {@link Style#named name} for a color, background color, emphasis or an alias.
+ * Nesting is supported.
  * <p></p>
  * <h3>Examples</h3>
  * <p></p>
@@ -140,6 +78,7 @@ public class StyleRenderer {
     private static final char END_TOKEN_CHAR = ')';
     private static final String ESCAPED_END_TOKEN = "\\)";
     private static final String END_TOKEN = ")";
+    private static final Style NONE = Style.none();
 
     private final String text;
     private final int textLength;
@@ -147,12 +86,15 @@ public class StyleRenderer {
     private int textStart;
     private int tokenStart;
     private int tokenEnd;
+    private Style nestedStyle;
+
 
     private StyleRenderer(String text, int tokenStart) {
         this.text = text;
         this.textLength = text.length();
         this.ansi = ansi();
         this.tokenStart = tokenStart;
+        this.nestedStyle = NONE;
     }
 
     /**
@@ -214,17 +156,19 @@ public class StyleRenderer {
         final boolean nested = nextTokenStart >= 0 && nextTokenStart < tokenEnd;
         final int styledTextStart = stylesEnd + 1;
         final int styledTextEnd = nested ? nextTokenStart : tokenEnd;
-        final String styles = text.substring(stylesStart, stylesEnd);
+        final String styleNames = text.substring(stylesStart, stylesEnd);
         final String styledText = text.substring(styledTextStart, styledTextEnd);
         final String unescapedText = styledText.replace(ESCAPED_END_TOKEN, END_TOKEN);
-        final Style style = Style.of(styles.split(STYLE_SEP));
+        final Style style = Style.of(styleNames.split(STYLE_SEP));
         style.apply(ansi).a(unescapedText);
 
         if (nested) {
+            push(style);
             if (replaceNext(nextTokenStart)) {
-                style.apply(ansi);
+                pop();
                 tokenEnd = tokenEnd(textStart);
                 if (tokenEnd < 0) {
+                    style.reset(ansi);
                     return false;
                 }
                 ansi.a(text, textStart, tokenEnd);
@@ -233,10 +177,27 @@ public class StyleRenderer {
                 return false;
             }
         }
-        this.tokenStart = nextTokenStart;
+        tokenStart = nextTokenStart;
         textStart = tokenEnd + 1;
         style.reset(ansi);
         return true;
+    }
+
+    private void push(Style style) {
+        if (nestedStyle == NONE) {
+            nestedStyle = style;
+        } else if (!(nestedStyle instanceof StyleList)) {
+            nestedStyle = new StyleList(nestedStyle).add(style);
+        } else {
+            ((StyleList) nestedStyle).add(style);
+        }
+    }
+
+    private void pop() {
+        nestedStyle.apply(ansi);
+        if (nestedStyle instanceof StyleList) {
+            ((StyleList) nestedStyle).pop();
+        }
     }
 
     private int tokenStart(int stylesEnd) {

@@ -160,13 +160,13 @@ class StyleRendererTest {
     }
 
     @Test
-    void testNestedOneLevel() {
+    void testNestedColorsOneLevel() {
+        String nested = "a$(red b$(blue c)d)e";
         // a = plain
         // b = red
         // c =   blue
         // d = red
         // e = plain
-        String nested = "a$(red b$(blue c)d)e";
         String expected = Ansi.ansi()
                               .a("a")
                               .fg(Ansi.Color.RED)
@@ -183,38 +183,48 @@ class StyleRendererTest {
     }
 
     @Test
-    void testNestedTwoLevels() {
-        // a = plain
-        // b = red
-        // c =   blue
-        // d =     magenta
-        // e =   blue
-        // f = red
-        // g = plain
-        String nested = "a$(red b$(blue c$(magenta d)e)f)g";
+    void testNestedMixedTwoLevels() {
+        String nested = "|1|$(red 2|$(italic 3|$(CYAN! 4)|5)|6)|7|";
+        // 1 = plain
+        // 2 = red
+        // 3 =   italic,red
+        // 4 =     bold,bright,italic,cyan
+        // 5 =   italic,red
+        // 6 = red
+        // 7 = plain
         String expected = Ansi.ansi()
-                              .a("a")
+                              .a("|")
+                              .a("1")
+                              .a("|")
                               .fg(Ansi.Color.RED)
-                              .a("b")
-                              .fg(Ansi.Color.BLUE)
-                              .a("c")
-                              .fg(Ansi.Color.MAGENTA)
-                              .a("d")
-                              .reset()
-                              .fg(Ansi.Color.BLUE)
-                              .a("e")
+                              .a("2")
+                              .a("|")
+                              .a(Ansi.Attribute.ITALIC)
+                              .a("3")
+                              .a("|")
+                              .a(Ansi.Attribute.INTENSITY_BOLD)
+                              .fgBright(Ansi.Color.CYAN)
+                              .a("4")
                               .reset()
                               .fg(Ansi.Color.RED)
-                              .a("f")
+                              .a(Ansi.Attribute.ITALIC)
+                              .a("|")
+                              .a("5")
                               .reset()
-                              .a("g")
+                              .fg(Ansi.Color.RED)
+                              .a("|")
+                              .a("6")
+                              .reset()
+                              .a("|")
+                              .a("7")
+                              .a("|")
                               .toString();
         assertMatching(expected, nested);
     }
 
-    private static void assertMatching(String render, String format) {
-        String expected = AnsiRenderer.render(render);
-        String rendered = StyleRenderer.render(format);
+    private static void assertMatching(String renderAnsi, String renderStyle) {
+        String expected = AnsiRenderer.render(renderAnsi);
+        String rendered = StyleRenderer.render(renderStyle);
         System.out.println("expected: " + expected);
         System.out.println("rendered: " + rendered);
         assertThat(rendered, is(expected));

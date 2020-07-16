@@ -15,20 +15,27 @@
  */
 package io.helidon.build.util;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.Ansi.Attribute;
+import org.fusesource.jansi.AnsiOutputStream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.fusesource.jansi.Ansi.ansi;
 
 /**
- * Text style.
+ * Rich text styles.
  */
 @SuppressWarnings("StaticInitializerReferencesSubClass")
 public class Style {
@@ -37,59 +44,13 @@ public class Style {
     private static final Style BOLD = new Emphasis(Attribute.INTENSITY_BOLD);
     private static final Style ITALIC = new Emphasis(Attribute.ITALIC);
     private static final Style FAINT = new Emphasis(Attribute.INTENSITY_FAINT);
-    private static final Style DEFAULT_BRIGHT = new Hue(Ansi.Color.DEFAULT, false, true);
     private static final Style BOLD_ITALIC = new StyleList(BOLD).add(ITALIC);
-    private static final Style DEFAULT_BRIGHT_ITALIC = new StyleList(DEFAULT_BRIGHT).add(ITALIC);
-    private static final Style DEFAULT_BOLD_BRIGHT = new StyleList(BOLD).add(DEFAULT_BRIGHT);
-    private static final Style DEFAULT_BOLD_BRIGHT_ITALIC = new StyleList(BOLD).add(DEFAULT_BRIGHT).add(ITALIC);
     private static final boolean ENABLED = AnsiConsoleInstaller.install();
     private static final String ANSI_ESCAPE_BEGIN = "\033[";
     private static final Map<String, Style> STYLES = stylesByName();
-
-    /**
-     * Tests whether or not the given text contains an Ansi escape sequence.
-     *
-     * @param text The text.
-     * @return {@code true} if an Ansi escape sequence found.
-     */
-    public static boolean isStyled(String text) {
-        return text != null && text.contains(ANSI_ESCAPE_BEGIN);
-    }
-
-    /**
-     * Returns this style applied to the given text.
-     *
-     * @param text The text.
-     * @return The new text.
-     */
-    public String apply(Object text) {
-        return apply(ansi()).a(text).reset().toString();
-    }
-
-    /**
-     * Applies this style to the given ansi instance.
-     *
-     * @param ansi The instance.
-     * @return The instance, for chaining.
-     */
-    public Ansi apply(Ansi ansi) {
-        return ansi;
-    }
-
-    /**
-     * Reset an ansi instance.
-     *
-     * @param ansi The instance.
-     * @return The instance, for chaining.
-     */
-    public Ansi reset(Ansi ansi) {
-        return ansi;
-    }
-
-    @Override
-    public String toString() {
-        return "none";
-    }
+    private static final Lock STRIP_LOCK = new ReentrantReadWriteLock().writeLock();
+    private static final ByteArrayOutputStream STRIP_BYTES = new ByteArrayOutputStream();
+    private static final AnsiOutputStream STRIP = new AnsiOutputStream(STRIP_BYTES);
 
     /**
      * Return all styles, by name.
@@ -110,33 +71,121 @@ public class Style {
     }
 
     /**
-     * Returns the style for the given name.  If styles are disabled, always returns {@link #none}.
+     * Returns the style for the given name.
+     * <p></p>
+     * <h3>Text Color Names</h3>
+     * <ul>
+     *     <li>{@code red}</li>
+     *     <li>{@code green}</li>
+     *     <li>{@code yellow}</li>
+     *     <li>{@code blue}</li>
+     *     <li>{@code magenta}</li>
+     *     <li>{@code cyan}</li>
+     *     <li>{@code white}</li>
+     *     <li>{@code black}</li>
+     *     <li>{@code default}</li>
+     * </ul>
+     * <p></p>
+     * <h3>Background Color Names</h3>
+     * <ul>
+     *     <li>{@code bg_red}</li>
+     *     <li>{@code bg_green}</li>
+     *     <li>{@code bg_yellow}</li>
+     *     <li>{@code bg_blue}</li>
+     *     <li>{@code bg_magenta}</li>
+     *     <li>{@code bg_cyan}</li>
+     *     <li>{@code bg_white}</li>
+     *     <li>{@code bg_black}</li>
+     *     <li>{@code bg_default}</li>
+     *     <li>{@code bg_negative}</li>
+     * </ul>
+     * <p></p>
+     * <h3>Emphasis Names</h3>
+     * <ul>
+     *     <li>{@code bold}</li>
+     *     <li>{@code faint}</li>
+     *     <li>{@code plain}</li>
+     *     <li>{@code italic}</li>
+     *     <li>{@code underline}</li>
+     *     <li>{@code strikethrough}</li>
+     *     <li>{@code negative}</li>
+     *     <li>{@code conceal}</li>
+     *     <li>{@code blink}</li>
+     * </ul>
+     * <p></p>
+     * <h3>Aliases</h3>
+     * <p></p>
+     * Every text color has the following aliases:
+     * <ul>
+     *      <li>Bold variant with an uppercase name (e.g. {@code RED})</li>
+     *      <li>Bold variant with {@code '*'} prefix and suffix (e.g. {@code *red*})</li>
+     *      <li>Italic variant with {@code '_'} prefix and suffix (e.g. {@code _red_})</li>
+     *      <li>Bold italic variant with {@code '_*'} prefix and {@code '*_'} suffix (e.g. {@code _*red*_} or {@code *_red_*})</li>
+     *      <li>Bright variants of the color and all the above with a {@code '!'} suffix
+     *      (e.g. {@code red!}, {@code RED!}, {@code *red*!}, {@code _red_!}</li>
+     * </ul>
+     * <p></p>
+     * Every background color has the following aliases:
+     * <ul>
+     *     <li> Bright variants with a {@code '!'} suffix (e.g. {@code bg_yellow!})</li>
+     * </ul>
+     * <p></p>
+     * The {@code bold,italic} combination has the following aliases:
+     * <ul>
+     *     <li>{@code _bold_}</li>
+     *     <li>{@code *italic*}</li>
+     *     <li>{@code ITALIC}</li>
+     * </ul>
+     * <p></p>
+     * <h3>Portability</h3>
+     * <p></p>
+     * Most terminals provide mappings between the standard color names used here and what they actually render. So, for example,
+     * you may declare {@code red} but a terminal <em>could</em> be configured to render it as blue; generally, though, themes
+     * will use a reasonably close variant of the pure color.
+     * <p></p>
+     * Where things get interesting is when a color matches (or closely matches) the terminal background color: any use of that
+     * color will fade or disappear entirely. The common cases are with {@code white} or {@code bg_white} on a light theme and
+     * {@code black} or {@code bg_black} on a dark theme. While explicit use of {@code white} may work well in <em>your</em>
+     * terminal, it won't work for everyone; if this matters in your use case...
+     * <p></p>
+     * The portability problem can be addressed by using these special styles in place of any white or black style:
+     *  <ul>
+     *      <li>{@code default} selects the default text color in the current theme</li>
+     *      <li>{@code bold} selects the bold variant of the default text color</li>
+     *      <li>{@code negative} inverts the default text <em>and</em> background colors</li>
+     *      <li>{@code bg_negative} an alias for {@code negative}</li>
+     *      <li>{@code bg_default} selects the default background color in the current theme</li>
+     *  </ul>
+     * <p></p>
+     * Finally, {@code strikethrough}, (the really annoying) {@code blink} and {@code conceal} may not be enabled or supported in
+     * every terminal and may do nothing. For {@code conceal}, presumably you can just leave out whatever you don't want shown; for
+     * the other two best to assume they don't work and use them only as <em>additional</em> emphasis.
      *
      * @param name The name.
-     * @return The style.
+     * @return The style or {@link #none} if styles are disabled.
      */
-    public static Style byName(String name) {
-        if (ENABLED) {
-            final Style style = STYLES.get(name);
-            return style == null ? NONE : style;
-        } else {
-            return NONE;
-        }
+    public static Style named(String name) {
+        return named(name, false);
     }
 
     /**
-     * Returns the style for the given name, or fails if not present.
+     * Returns the style for the given name, or optionally fails if not present.
      *
      * @param name The name.
-     * @return The style.
-     * @throws IllegalArgumentException If name is not found.
+     * @param required {@code true} if required.
+     * @return The style, or {@link #none()} if styles are disabled of if name not found and not required.
+     * @throws IllegalArgumentException If required and name is not found.
      */
-    public static Style byRequiredName(String name) {
+    public static Style named(String name, boolean required) {
         final Style style = STYLES.get(name);
         if (style == null) {
-            throw new IllegalArgumentException("Unknown style: " + name);
+            if (required) {
+                throw new IllegalArgumentException("Unknown style: " + name);
+            } else {
+                return NONE;
+            }
         }
-        return style;
+        return ENABLED ? style : NONE;
     }
 
     /**
@@ -149,7 +198,7 @@ public class Style {
         if (names.length == 0) {
             return NONE;
         } else if (names.length == 1) {
-            return Style.byName(names[0]);
+            return Style.named(names[0]);
         } else {
             return new StyleList(names);
         }
@@ -199,6 +248,80 @@ public class Style {
         }
     }
 
+    /**
+     * Tests whether or not the given text contains an Ansi escape sequence.
+     *
+     * @param text The text.
+     * @return {@code true} if an Ansi escape sequence found.
+     */
+    public static boolean isStyled(String text) {
+        return text != null && text.contains(ANSI_ESCAPE_BEGIN);
+    }
+
+    /**
+     * Strips any styles from the given string.
+     *
+     * @param input The string.
+     * @return The stripped string.
+     */
+    public static String strip(String input) {
+        STRIP_LOCK.lock();
+        try {
+            STRIP_BYTES.reset();
+            STRIP.write(input.getBytes(UTF_8));
+            return new String(STRIP_BYTES.toByteArray(), UTF_8);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        } finally {
+            STRIP_LOCK.unlock();
+        }
+    }
+
+
+    /**
+     * Log all styles, by name.
+     *
+     * @param args The arguments (ignored).
+     */
+    public static void main(String[] args) {
+        styles().forEach((name, style) -> Log.info("%14s [ %s ]", name, style.apply("example")));
+    }
+
+    /**
+     * Returns this style applied to the given text.
+     *
+     * @param text The text.
+     * @return The new text.
+     */
+    public String apply(Object text) {
+        return apply(ansi()).a(text).reset().toString();
+    }
+
+    /**
+     * Applies this style to the given ansi instance.
+     *
+     * @param ansi The instance.
+     * @return The instance, for chaining.
+     */
+    public Ansi apply(Ansi ansi) {
+        return ansi;
+    }
+
+    /**
+     * Reset an ansi instance.
+     *
+     * @param ansi The instance.
+     * @return The instance, for chaining.
+     */
+    public Ansi reset(Ansi ansi) {
+        return ansi;
+    }
+
+    @Override
+    public String toString() {
+        return "none";
+    }
+
     static class StyleList extends Style {
         private final List<Style> styles = new ArrayList<>();
 
@@ -221,7 +344,7 @@ public class Style {
         }
 
         StyleList add(String name) {
-            add(Style.byName(name));
+            add(Style.named(name));
             return this;
         }
 
@@ -341,13 +464,38 @@ public class Style {
 
         for (Ansi.Color color : Ansi.Color.values()) {
 
-            // Text colors
+            // Text colors and aliases
 
             final Style basic = Style.of(color, false, false);
             final Style bright = Style.of(color, false, true);
+            final Style bold = Style.of(BOLD, basic);
+            final Style italic = Style.of(ITALIC, basic);
+            final Style boldItalic = Style.of(BOLD_ITALIC, basic);
+            final Style boldBright = Style.of(BOLD, bright);
+            final Style brightItalic = Style.of(bright, ITALIC);
+            final Style boldBrightItalic = Style.of(BOLD, ITALIC, bright);
             final String lowerName = color.name().toLowerCase(Locale.ENGLISH);
             final String upperName = lowerName.toUpperCase(Locale.ENGLISH);
-            addWithAliases(lowerName, upperName, basic, bright, styles);
+
+            styles.put(lowerName, basic);
+            styles.put(lowerName + "!", bright);
+
+            styles.put("*" + lowerName + "*", bold);
+            styles.put(upperName, bold);
+
+            styles.put("*" + lowerName + "*!", boldBright);
+            styles.put(upperName + "!", boldBright);
+
+            styles.put("_" + lowerName + "_", italic);
+            styles.put("_" + lowerName + "_!", brightItalic);
+
+            styles.put("_*" + lowerName + "*_", boldItalic);
+            styles.put("*_" + lowerName + "_*", boldItalic);
+            styles.put("_" + upperName + "_", boldItalic);
+
+            styles.put("_*" + lowerName + "*_!", boldBrightItalic);
+            styles.put("*_" + lowerName + "_*!", boldBrightItalic);
+            styles.put("_" + upperName + "_!", boldBrightItalic);
 
             // Background colors
 
@@ -357,48 +505,27 @@ public class Style {
 
         // Emphasis and aliases
 
-        addWithAliases("plain", "PLAIN", PLAIN, DEFAULT_BRIGHT, styles);
-        addWithAliases("bold", "BOLD", BOLD, DEFAULT_BRIGHT, styles);
-        addWithAliases("bright", "BRIGHT", DEFAULT_BRIGHT, DEFAULT_BRIGHT, styles);
-        addWithAliases("faint", "FAINT", FAINT, DEFAULT_BRIGHT, styles);
-        addWithAliases("italic", "ITALIC", ITALIC, DEFAULT_BRIGHT, styles);
+        styles.put("bold", BOLD);
+        styles.put("BOLD", BOLD);
+        styles.put("italic", ITALIC);
 
+        styles.put("_bold_", BOLD_ITALIC);
+        styles.put("*italic*", BOLD_ITALIC);
+        styles.put("ITALIC", BOLD_ITALIC);
+
+        styles.put("plain", PLAIN);
+        styles.put("faint", FAINT);
         styles.put("underline", Style.of(Attribute.UNDERLINE));
         styles.put("strikethrough", Style.of(Attribute.STRIKETHROUGH_ON));
         styles.put("blink", Style.of(Attribute.BLINK_SLOW));
-        styles.put("negative", Style.of(Attribute.NEGATIVE_ON));
         styles.put("conceal", Style.of(Attribute.CONCEAL_ON));
 
+        // Negative text/background
+
+        final Style negative = Style.of(Attribute.NEGATIVE_ON);
+        styles.put("negative", negative);
+        styles.put("bg_negative", negative);
+
         return styles;
-    }
-
-    private static void addWithAliases(String lowerName, String upperName, Style style, Style bright, Map<String, Style> styles) {
-        final Style bold = style == BOLD ? BOLD : Style.of(BOLD, style);
-        final Style italic = style == ITALIC ? ITALIC : Style.of(ITALIC, style);
-        final Style boldItalic = style == BOLD || style == ITALIC ? BOLD_ITALIC : Style.of(BOLD_ITALIC, style);
-        final Style boldBright = style == BOLD ? DEFAULT_BOLD_BRIGHT : Style.of(BOLD, bright);
-        final Style brightItalic = style == ITALIC ? DEFAULT_BRIGHT_ITALIC : Style.of(bright, ITALIC);
-        final Style boldBrightItalic = style == BOLD || style == ITALIC ? DEFAULT_BOLD_BRIGHT_ITALIC
-                : Style.of(BOLD, ITALIC, bright);
-
-        styles.put(lowerName, style);
-        styles.put(lowerName + "!", bright);
-
-        styles.put("*" + lowerName + "*", bold);
-        styles.put(upperName, bold);
-
-        styles.put("*" + lowerName + "*!", boldBright);
-        styles.put(upperName + "!", boldBright);
-
-        styles.put("_" + lowerName + "_", italic);
-        styles.put("_" + lowerName + "_!", brightItalic);
-
-        styles.put("_*" + lowerName + "*_", boldItalic);
-        styles.put("*_" + lowerName + "_*", boldItalic);
-        styles.put("_" + upperName + "_", boldItalic);
-
-        styles.put("_*" + lowerName + "*_!", boldBrightItalic);
-        styles.put("*_" + lowerName + "_*!", boldBrightItalic);
-        styles.put("_" + upperName + "_!", boldBrightItalic);
     }
 }

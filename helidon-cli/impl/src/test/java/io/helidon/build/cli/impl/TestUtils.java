@@ -30,7 +30,7 @@ import io.helidon.build.util.Log;
 import io.helidon.build.util.ProcessMonitor;
 
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
-import static io.helidon.build.test.StripAnsi.stripAnsi;
+import static io.helidon.build.util.Style.strip;
 import static io.helidon.build.util.Constants.EOL;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -94,7 +94,7 @@ class TestUtils {
                                                .start()
                                                .waitForCompletion(120, TimeUnit.SECONDS);
         String output = String.join(EOL, monitor.output());
-        return stripAnsi(output);
+        return strip(output);
     }
 
     static void assertPackageExist(Path projectPath, String packageName) {

@@ -44,7 +44,7 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
 import static io.helidon.build.util.Requirements.failed;
 import static io.helidon.build.util.Requirements.require;
-import static io.helidon.build.util.Styles.BoldBrightCyan;
+import static io.helidon.build.util.StyleFunction.BoldBrightCyan;
 
 /**
  * The {@code init} command.
