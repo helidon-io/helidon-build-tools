@@ -325,21 +325,24 @@ where `style` is a case-sensitive name for a color, background color, emphasis o
 
 Every text color has the following aliases:
  
- 1. Bold variant with an uppercase name (e.g. `RED`)
- 2. Bold variant with `'*'` prefix and suffix (e.g. `*red*`)
- 3. Italic variant with `'_'` prefix and suffix (e.g. `_red_`)
- 4. Bold italic variant with `'_*'` prefix and `'*_'` suffix (e.g. `_*red*_` or `*_red_*`)
- 5. Bright variants of the color and all the above with a  `!` suffix (e.g. `red!`, `RED!`, `*red*!`, `_red_!`)
+ 1. Italic variant with `*` or `_` prefix and suffix (e.g. `_red_` or `*blue*`)
+ 2. Bold variant with `**` or `__` prefix and suffix (e.g. `**red**` or `__blue__`)
+ 4. Bold  variant with an uppercase name (e.g. `RED` or `BLUE`)
+ 5. Bold italic variant with `**_` prefix and `_**` suffix (e.g. `**_red_**` or `**_blue_**`)
+ 6. Bold italic variant with `__*` prefix and `__*` suffix (e.g. `__*red*__` or `__*blue*__`)
+ 7. Bright variants of the color and all the above with a  `!` suffix (e.g. `red!`, `RED!`, `*red*!`, `__red__!`)
 
 Every background color has the following alias:
 
  1. Bright variants with a `!` suffix (e.g. `bg_yellow!`)
 
-The `bold,italic` combination has the following aliases:
+The `italic,bold` combination has the following aliases:
  
- 1. `_bold_`
- 2. `*italic*`
- 3. `ITALIC` 
+ 1. `*bold*` or `_bold_`
+ 2. `*BOLD*` or `_BOLD_`
+ 3. `**italic**` or `__italic__`
+ 4. `ITALIC` 
+ 7. Bright variants of the above with a  `!` suffix (e.g. `*bold*!`, `ITALIC!`)
  
 The `negative` emphasis and `bg_negative` background color are identical: they invert *both* the default text color and 
 the background color.
@@ -382,6 +385,6 @@ they don't work and use them only as _additional_ emphasis.
 #### Not so portable examples
 
 ```                                                             
-    <message>This is $(blink important)</message>
+    <message>This is $(blink important!)</message>
     <message>This is $(CYAN!,strikethrough a mistake!)</message>
 ```

@@ -470,32 +470,40 @@ public class Style {
             final Style bright = Style.of(color, false, true);
             final Style bold = Style.of(BOLD, basic);
             final Style italic = Style.of(ITALIC, basic);
-            final Style boldItalic = Style.of(BOLD_ITALIC, basic);
+            final Style italicBold = Style.of(BOLD_ITALIC, basic);
             final Style boldBright = Style.of(BOLD, bright);
-            final Style brightItalic = Style.of(bright, ITALIC);
-            final Style boldBrightItalic = Style.of(BOLD, ITALIC, bright);
+            final Style italicBright = Style.of(bright, ITALIC);
+            final Style italicBoldBright = Style.of(BOLD, ITALIC, bright);
             final String lowerName = color.name().toLowerCase(Locale.ENGLISH);
             final String upperName = lowerName.toUpperCase(Locale.ENGLISH);
 
             styles.put(lowerName, basic);
-            styles.put(lowerName + "!", bright);
 
-            styles.put("*" + lowerName + "*", bold);
+            styles.put("*" + lowerName + "*", italic);
+            styles.put("_" + lowerName + "_", italic);
+
+            styles.put("**" + lowerName + "**", bold);
+            styles.put("__" + lowerName + "__", bold);
             styles.put(upperName, bold);
 
-            styles.put("*" + lowerName + "*!", boldBright);
+            styles.put("**_" + lowerName + "_**", italicBold);
+            styles.put("__*" + lowerName + "*__", italicBold);
+            styles.put("_" + upperName + "_", italicBold);
+            styles.put("*" + upperName + "*", italicBold);
+
+            styles.put(lowerName + "!", bright);
+
+            styles.put("*" + lowerName + "*!", italicBright);
+            styles.put("_" + lowerName + "_!", italicBright);
+
+            styles.put("**" + lowerName + "**!", boldBright);
+            styles.put("__" + lowerName + "__!", boldBright);
             styles.put(upperName + "!", boldBright);
 
-            styles.put("_" + lowerName + "_", italic);
-            styles.put("_" + lowerName + "_!", brightItalic);
-
-            styles.put("_*" + lowerName + "*_", boldItalic);
-            styles.put("*_" + lowerName + "_*", boldItalic);
-            styles.put("_" + upperName + "_", boldItalic);
-
-            styles.put("_*" + lowerName + "*_!", boldBrightItalic);
-            styles.put("*_" + lowerName + "_*!", boldBrightItalic);
-            styles.put("_" + upperName + "_!", boldBrightItalic);
+            styles.put("**_" + lowerName + "_**!", italicBoldBright);
+            styles.put("__*" + lowerName + "*__!", italicBoldBright);
+            styles.put("_" + upperName + "_!", italicBoldBright);
+            styles.put("*" + upperName + "*!", italicBoldBright);
 
             // Background colors
 
@@ -507,10 +515,15 @@ public class Style {
 
         styles.put("bold", BOLD);
         styles.put("BOLD", BOLD);
+
         styles.put("italic", ITALIC);
 
+        styles.put("*bold*", BOLD_ITALIC);
         styles.put("_bold_", BOLD_ITALIC);
-        styles.put("*italic*", BOLD_ITALIC);
+        styles.put("*BOLD*", BOLD_ITALIC);
+        styles.put("_BOLD_", BOLD_ITALIC);
+        styles.put("**italic**", BOLD_ITALIC);
+        styles.put("__italic__", BOLD_ITALIC);
         styles.put("ITALIC", BOLD_ITALIC);
 
         styles.put("plain", PLAIN);

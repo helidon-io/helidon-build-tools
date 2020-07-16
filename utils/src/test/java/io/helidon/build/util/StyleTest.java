@@ -228,17 +228,24 @@ class StyleTest {
                 parsedStyleName = parsedStyleName.substring(3);
                 end -= 3;
             }
-            boolean bold = parsedStyleName.contains("*");
-            boolean italic = parsedStyleName.contains("_");
+            boolean bold = false;
+            boolean italic = false;
+
+            if (parsedStyleName.contains("**_") || parsedStyleName.contains("__*")) {
+                bold = true;
+                italic = true;
+                start += 3;
+                end -= 3;
+            } else if (parsedStyleName.contains("**") || parsedStyleName.contains("__")) {
+                bold = true;
+                start += 2;
+                end -= 2;
+            } else if (parsedStyleName.contains("*") || parsedStyleName.contains("_")) {
+                italic = true;
+                start++;
+                end--;
+            }
             boolean bright = parsedStyleName.endsWith("!");
-            if (bold) {
-                start++;
-                end--;
-            }
-            if (italic) {
-                start++;
-                end--;
-            }
             if (bright) {
                 end--;
             }
