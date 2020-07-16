@@ -220,13 +220,13 @@ Execution of this plugin can be defined in a build of the parent project, if req
 
 ## Goal: `echo`
 
-Maven goal to echo messages during a build. Supports 
+Maven goal to echo messages to the log during a build. Supports 
 [rich text](https://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html) via a simple DSL.
 
 ### General usage
 
 Execution of this plugin must be explicitly bound to the desired phase, there is no default. The following example
-uses the `validate` phase to emit a message as early as possible:  
+uses the `validate` phase to log a message as early as possible:  
 
 ```xml
  <build>
@@ -253,7 +253,7 @@ uses the `validate` phase to emit a message as early as possible:
     </plugins>
 </build>
 ```                 
-Leading whitespace in messages is removed by default; to preserve it, add the `xml:space="preserve"` attribute:
+Leading whitespace in messages is removed by default during XML parsing; to preserve it, add the `xml:space="preserve"` attribute:
 ```
     <message xml:space="preserve">    this is indented</message>
 ```
@@ -261,19 +261,20 @@ This attribute is especially helpful with a multi-line message to preserve inden
 
 ### Rich text 
 
-Rich text is enabled when the Maven command is executed in a terminal that supports it and output is not redirected.
-If the Maven output is in color, your messages can be as well: the same [Jansi](https://github.com/fusesource/jansi) library 
-is used for both.
+Messages can be logged using colors and styles such as italic or bold. While not all terminals support this, most do; generally,
+if your Maven output is in color, your messages can be as well: the same [Jansi](https://github.com/fusesource/jansi) library 
+is used for both. Rich text is disabled when output is redirected or explicitly by setting `-Djansi.strip=true`; when disabled, 
+only plain text is logged.  
 
-> **_NOTE:_**  Terminals often provide mappings between the standard color names used here and what they actually render. So, for
-example, you may declare `red` but a terminal could be configured to render it as an entirely different color. Further, not 
-all styles are supported or enabled in every terminal so e.g. the (really annoying) styles like `blink` may do nothing.
-
+> *_NOTE:_* Rendering is performed by the terminal and its configuration, which introduces variability across environments: see 
+> [Portablility](#portability) for more.
+ 
 Colors and styles are applied to text enclosed by `$(` and `)`, e.g.:
 ```
    <message>Here is $(red styled) text</message>
 ```                                              
-In this example, the word `styled` will (normally) appear in red. If the styled text itself contains parentheses, the closing paren should be escaped with a backslash:
+In this example, the word `styled` will (normally) appear in red. If the styled text itself contains parentheses, the closing 
+paren should be escaped with a backslash:
 ```
    <message>Here is $(red (and example of\) styled) text</message>
 ```                                              
@@ -283,7 +284,7 @@ The DSL syntax is:
 ```
 where `style` is a case-sensitive name for a color, background color, emphasis or an alias. Nesting is supported.
 
-#### Colors
+#### Text Colors
 
  * `red`
  * `green`
@@ -306,13 +307,13 @@ where `style` is a case-sensitive name for a color, background color, emphasis o
  * `bg_white`
  * `bg_black`
  * `bg_default`
+ * `bg_negative`
 
-#### Emphases
+#### Text Emphasis
 
  * `bold`
- * `bright`
- * `faint`
  * `plain`
+ * `faint`
  * `italic`
  * `underline`
  * `strikethrough`
@@ -322,7 +323,7 @@ where `style` is a case-sensitive name for a color, background color, emphasis o
 
 #### Aliases  
 
-Every color has the following aliases:
+Every text color has the following aliases:
  
  1. Bold variant with an uppercase name (e.g. `RED`)
  2. Bold variant with `'*'` prefix and suffix (e.g. `*red*`)
@@ -330,18 +331,57 @@ Every color has the following aliases:
  4. Bold italic variant with `'_*'` prefix and `'*_'` suffix (e.g. `_*red*_` or `*_red_*`)
  5. Bright variants of the color and all the above with a  `!` suffix (e.g. `red!`, `RED!`, `*red*!`, `_red_!`)
 
-Every background color has the following aliases:
+Every background color has the following alias:
 
  1. Bright variants with a `!` suffix (e.g. `bg_yellow!`)
 
-Use of `bold` is often preferable to bold black or white as it is independent of the background color. Similarly,
-`negative` may be preferable to background black or white.
+The `bold,italic` combination has the following aliases:
  
-Examples:
+ 1. `_bold_`
+ 2. `*italic*`
+ 3. `ITALIC` 
+ 
+The `negative` emphasis and `bg_negative` background color are identical: they invert *both* the default text color and 
+the background color.
+
+#### Portability
+
+Most terminals provide mappings between the standard color names used here and what they actually render. So, for example, you 
+may declare `red` but a terminal _could_ be configured to render it as blue; generally, though, themes will use a reasonably 
+close variant of the pure color. 
+
+Where things get interesting is when a color matches (or closely matches) the terminal background color: any use of that color 
+will fade or disappear entirely. The common cases are with `white` or `bg_white` on a light theme and `black` or `bg_black` on 
+a dark theme. While explicit use of `white` may work well in _your_ terminal, it won't work for everyone; if this matters in
+your use case...
+
+The portability problem can be addressed by using these special styles in place of any white or black style: 
+
+ * `default`: selects the default text color in the current theme
+ * `bold`: selects the bold variant of the default text color
+ * `negative`: inverts the default text **_and_** background colors
+ * `bg_negative`: an alias for `negative`
+ * `bg_default`: selects the default background color in the current theme
+ 
+Finally, `strikethrough`, (the really annoying) `blink` and `conceal` may not be enabled or supported in every terminal and may 
+do nothing. For `conceal`, presumably you can just leave out whatever you don't want shown; for the other two best to assume 
+they don't work and use them only as _additional_ emphasis.
+
+ 
+#### Portable examples
 
 ```
     <message>$(RED!,italic This is a test of the emergency broadcast system.) $(bold,negative It is only a test!)</message>
-    <message>$(bold,italic This is a test of the $(RED emergency) broadcast system.)</message>
-    <message>$(blink,negative,YELLOW!  HELP! ) I've fallen, and I can't get up!</message>
-    <message>Whoops, $(CYAN,strikethrough this is a mistake)</message>
+    <message>$(bold,italic This is a test of the $(RED! emergency) broadcast system.)</message>
+    <message>$(_bold_ This is a test of the $(RED! emergency) broadcast system.)</message>
+    <message>$(negative,YELLOW!,blink  HELP! ) I've fallen, and I can't get up!</message>
+    <message>This is $(CYAN!,underline REALLY IMPORTANT!)</message>
+    <message>Nested: plain $(red red $(italic italic,red $(CYAN! bold,bright,italic,cyan) italic,red) red) plain</message>
+```
+
+#### Not so portable examples
+
+```                                                             
+    <message>This is $(blink important)</message>
+    <message>This is $(CYAN!,strikethrough a mistake!)</message>
 ```

@@ -28,7 +28,7 @@ import static java.util.Objects.requireNonNull;
 import static org.fusesource.jansi.Ansi.ansi;
 
 /**
- * Text style.
+ * Rich text styles.
  */
 @SuppressWarnings("StaticInitializerReferencesSubClass")
 public class Style {
@@ -45,6 +45,14 @@ public class Style {
     private static final boolean ENABLED = AnsiConsoleInstaller.install();
     private static final String ANSI_ESCAPE_BEGIN = "\033[";
     private static final Map<String, Style> STYLES = stylesByName();
+
+    /**
+     * Log all styles, by name.
+     * @param args Arguments. None supported.
+     */
+    public static void main(String[] args) {
+        styles().forEach((name, style) -> Log.info("%14s [ %s ]", name, style.apply("example")));
+    }
 
     /**
      * Tests whether or not the given text contains an Ansi escape sequence.
@@ -110,10 +118,98 @@ public class Style {
     }
 
     /**
-     * Returns the style for the given name.  If styles are disabled, always returns {@link #none}.
+     * Returns the style for the given name.
+     * <p></p>
+     * <h3>Text Color Names</h3>
+     * <ul>
+     *     <li>{@code red}</li>
+     *     <li>{@code green}</li>
+     *     <li>{@code yellow}</li>
+     *     <li>{@code blue}</li>
+     *     <li>{@code magenta}</li>
+     *     <li>{@code cyan}</li>
+     *     <li>{@code white}</li>
+     *     <li>{@code black}</li>
+     *     <li>{@code default}</li>
+     * </ul>
+     * <p></p>
+     * <h3>Background Color Names</h3>
+     * <ul>
+     *     <li>{@code bg_red}</li>
+     *     <li>{@code bg_green}</li>
+     *     <li>{@code bg_yellow}</li>
+     *     <li>{@code bg_blue}</li>
+     *     <li>{@code bg_magenta}</li>
+     *     <li>{@code bg_cyan}</li>
+     *     <li>{@code bg_white}</li>
+     *     <li>{@code bg_black}</li>
+     *     <li>{@code bg_default}</li>
+     *     <li>{@code bg_negative}</li>
+     * </ul>
+     * <p></p>
+     * <h3>Emphasis Names</h3>
+     * <ul>
+     *     <li>{@code bold}</li>
+     *     <li>{@code faint}</li>
+     *     <li>{@code plain}</li>
+     *     <li>{@code italic}</li>
+     *     <li>{@code underline}</li>
+     *     <li>{@code strikethrough}</li>
+     *     <li>{@code negative}</li>
+     *     <li>{@code conceal}</li>
+     *     <li>{@code blink}</li>
+     * </ul>
+     * <p></p>
+     * <h3>Aliases</h3>
+     * <p></p>
+     * Every text color has the following aliases:
+     * <ul>
+     *      <li>Bold variant with an uppercase name (e.g. {@code RED})</li>
+     *      <li>Bold variant with {@code '*'} prefix and suffix (e.g. {@code *red*})</li>
+     *      <li>Italic variant with {@code '_'} prefix and suffix (e.g. {@code _red_})</li>
+     *      <li>Bold italic variant with {@code '_*'} prefix and {@code '*_'} suffix (e.g. {@code _*red*_} or {@code *_red_*})</li>
+     *      <li>Bright variants of the color and all the above with a {@code '!'} suffix
+     *      (e.g. {@code red!}, {@code RED!}, {@code *red*!}, {@code _red_!}</li>
+     * </ul>
+     * <p></p>
+     * Every background color has the following aliases:
+     * <ul>
+     *     <li> Bright variants with a {@code '!'} suffix (e.g. {@code bg_yellow!})</li>
+     * </ul>
+     * <p></p>
+     * The {@code bold,italic} combination has the following aliases:
+     * <ul>
+     *     <li>{@code _bold_}</li>
+     *     <li>{@code *italic*}</li>
+     *     <li>{@code ITALIC}</li>
+     * </ul>
+     * <p></p>
+     * <h3>Portability</h3>
+     * <p></p>
+     * Most terminals provide mappings between the standard color names used here and what they actually render. So, for example,
+     * you may declare {@code red} but a terminal <em>could</em> be configured to render it as blue; generally, though, themes
+     * will use a reasonably close variant of the pure color.
+     * <p></p>
+     * Where things get interesting is when a color matches (or closely matches) the terminal background color: any use of that
+     * color will fade or disappear entirely. The common cases are with {@code white} or {@code bg_white} on a light theme and
+     * {@code black} or {@code bg_black} on a dark theme. While explicit use of {@code white} may work well in <em>your</em>
+     * terminal, it won't work for everyone; if this matters in your use case...
+     * <p></p>
+     * The portability problem can be addressed by using these special styles in place of any white or black style:
+     *  <ul>
+     *      <li>{@code default} selects the default text color in the current theme</li>
+     *      <li>{@code bold} selects the bold variant of the default text color</li>
+     *      <li>{@code negative} inverts the default text <em>and</em> background colors</li>
+     *      <li>{@code bg_negative} an alias for {@code negative}</li>
+     *      <li>{@code bg_default} selects the default background color in the current theme</li>
+     *  </ul>
+     * <p></p>
+     * Finally, {@code strikethrough}, (the really annoying) {@code blink} and {@code conceal} may not be enabled or supported in
+     * every terminal and may do nothing. For {@code conceal}, presumably you can just leave out whatever you don't want shown; for
+     * the other two best to assume they don't work and use them only as <em>additional</em> emphasis.
      *
      * @param name The name.
-     * @return The style.
+     * @return The style or {@link #none} if styles are disabled.
      */
     public static Style byName(String name) {
         if (ENABLED) {
@@ -357,17 +453,26 @@ public class Style {
 
         // Emphasis and aliases
 
-        addWithAliases("plain", "PLAIN", PLAIN, DEFAULT_BRIGHT, styles);
-        addWithAliases("bold", "BOLD", BOLD, DEFAULT_BRIGHT, styles);
-        addWithAliases("bright", "BRIGHT", DEFAULT_BRIGHT, DEFAULT_BRIGHT, styles);
-        addWithAliases("faint", "FAINT", FAINT, DEFAULT_BRIGHT, styles);
-        addWithAliases("italic", "ITALIC", ITALIC, DEFAULT_BRIGHT, styles);
+        styles.put("bold", BOLD);
+        styles.put("BOLD", BOLD);
+        styles.put("italic", ITALIC);
 
+        styles.put("_bold_", BOLD_ITALIC);
+        styles.put("*italic*", BOLD_ITALIC);
+        styles.put("ITALIC", BOLD_ITALIC);
+
+        styles.put("plain", PLAIN);
+        styles.put("faint", FAINT);
         styles.put("underline", Style.of(Attribute.UNDERLINE));
         styles.put("strikethrough", Style.of(Attribute.STRIKETHROUGH_ON));
         styles.put("blink", Style.of(Attribute.BLINK_SLOW));
-        styles.put("negative", Style.of(Attribute.NEGATIVE_ON));
         styles.put("conceal", Style.of(Attribute.CONCEAL_ON));
+
+        // Negative text/background
+
+        final Style negative = Style.of(Attribute.NEGATIVE_ON);
+        styles.put("negative", negative);
+        styles.put("bg_negative", negative);
 
         return styles;
     }

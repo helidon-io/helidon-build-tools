@@ -34,11 +34,6 @@ public enum Styles implements Function<Object, String> {
     Bold("bold"),
 
     /**
-     * Bright.
-     */
-    Bright("bright"),
-
-    /**
      * Italic.
      */
     Italic("italic"),
@@ -59,9 +54,15 @@ public enum Styles implements Function<Object, String> {
     ItalicBlue("_blue_"),
 
     /**
+     * Bright blue.
+     */
+    BrightBlue("blue!"),
+
+    /**
      * Bold blue.
      */
     BoldBlue("BLUE"),
+
     /**
      * Bold, italic blue.
      */
@@ -86,6 +87,11 @@ public enum Styles implements Function<Object, String> {
      * Italic cyan.
      */
     ItalicCyan("_cyan_"),
+
+    /**
+     * Bright cyan.
+     */
+    BrightCyan("cyan!"),
 
     /**
      * Bold cyan.
@@ -118,6 +124,11 @@ public enum Styles implements Function<Object, String> {
     ItalicGreen("_green_"),
 
     /**
+     * Bright green.
+     */
+    BrightGreen("green!"),
+
+    /**
      * Bold green.
      */
     BoldGreen("GREEN"),
@@ -148,6 +159,11 @@ public enum Styles implements Function<Object, String> {
     ItalicYellow("_yellow_"),
 
     /**
+     * Bright yellow.
+     */
+    BrightYellow("yellow!"),
+
+    /**
      * Bold yellow.
      */
     BoldYellow("YELLOW"),
@@ -176,6 +192,11 @@ public enum Styles implements Function<Object, String> {
      * Italic red.
      */
     ItalicRed("_red_"),
+
+    /**
+     * Bright red.
+     */
+    BrightRed("red!"),
 
     /**
      * Bold red.
