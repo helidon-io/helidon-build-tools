@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.maven.dev.echo;
+package io.helidon.build.maven.dev.log;
 
 import java.util.List;
 
@@ -27,15 +27,15 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 /**
- * Maven plugin that prints configured messages.
+ * Maven plugin that logs configured messages.
  */
-@Mojo(name = "echo", defaultPhase = LifecyclePhase.NONE)
-public class EchoMojo extends AbstractMojo {
+@Mojo(name = "log", defaultPhase = LifecyclePhase.NONE)
+public class LogMojo extends AbstractMojo {
 
     /**
      * Skip execution for this plugin.
      */
-    @Parameter(defaultValue = "false", property = "echo.skip")
+    @Parameter(defaultValue = "false", property = "log.skip")
     private boolean skip;
 
     /**

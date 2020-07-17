@@ -10,7 +10,7 @@ This plugin provides Maven goals specific to Helidon applications as well as goa
 #### Goals for All Applications
 
 * [root-dir](#goal-root-dir)
-* [echo](#goal-echo)
+* [log](#goal-log)
 
 ## Goal: `native-image`
 
@@ -218,9 +218,9 @@ Execution of this plugin can be defined in a build of the parent project, if req
 </build>
 ```
 
-## Goal: `echo`
+## Goal: `log`
 
-Maven goal to echo messages to the log during a build. Supports 
+Maven goal to log messages during a build. Supports 
 [rich text](https://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html) via a simple DSL.
 
 ### General usage
@@ -238,7 +238,7 @@ uses the `validate` phase to log a message as early as possible:
                 <execution>
                     <phase>validate</phase>
                     <goals>
-                        <goal>echo</goal>
+                        <goal>log</goal>
                     </goals>
                 </execution>
             </executions>
