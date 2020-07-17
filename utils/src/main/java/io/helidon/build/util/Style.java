@@ -28,6 +28,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.Ansi.Attribute;
+import org.fusesource.jansi.Ansi.Color;
 import org.fusesource.jansi.AnsiOutputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -45,6 +46,7 @@ public class Style {
     private static final Style ITALIC = new Emphasis(Attribute.ITALIC);
     private static final Style FAINT = new Emphasis(Attribute.INTENSITY_FAINT);
     private static final Style BOLD_ITALIC = new StyleList(BOLD).add(ITALIC);
+    private static final Style NEGATIVE = new Emphasis(Attribute.NEGATIVE_ON);
     private static final boolean ENABLED = AnsiConsoleInstaller.install();
     private static final String ANSI_ESCAPE_BEGIN = "\033[";
     private static final Map<String, Style> STYLES = stylesByName();
@@ -76,11 +78,11 @@ public class Style {
      * <h3>Text Color Names</h3>
      * <ul>
      *     <li>{@code red}</li>
-     *     <li>{@code green}</li>
      *     <li>{@code yellow}</li>
+     *     <li>{@code green}</li>
+     *     <li>{@code cyan}</li>
      *     <li>{@code blue}</li>
      *     <li>{@code magenta}</li>
-     *     <li>{@code cyan}</li>
      *     <li>{@code white}</li>
      *     <li>{@code black}</li>
      *     <li>{@code default}</li>
@@ -89,11 +91,11 @@ public class Style {
      * <h3>Background Color Names</h3>
      * <ul>
      *     <li>{@code bg_red}</li>
-     *     <li>{@code bg_green}</li>
      *     <li>{@code bg_yellow}</li>
+     *     <li>{@code bg_green}</li>
+     *     <li>{@code bg_cyan}</li>
      *     <li>{@code bg_blue}</li>
      *     <li>{@code bg_magenta}</li>
-     *     <li>{@code bg_cyan}</li>
      *     <li>{@code bg_white}</li>
      *     <li>{@code bg_black}</li>
      *     <li>{@code bg_default}</li>
@@ -102,10 +104,10 @@ public class Style {
      * <p></p>
      * <h3>Emphasis Names</h3>
      * <ul>
+     *     <li>{@code italic}</li>
      *     <li>{@code bold}</li>
      *     <li>{@code faint}</li>
      *     <li>{@code plain}</li>
-     *     <li>{@code italic}</li>
      *     <li>{@code underline}</li>
      *     <li>{@code strikethrough}</li>
      *     <li>{@code negative}</li>
@@ -189,6 +191,34 @@ public class Style {
     }
 
     /**
+     * Returns a list of all color names.
+     *
+     * @return The names.
+     */
+    public static List<String> colorNames() {
+        return List.of("red", "yellow", "green", "cyan", "blue", "magenta", "white", "black", "default", "negative");
+    }
+
+    /**
+     * Returns a list of all background color names.
+     *
+     * @return The names.
+     */
+    public static List<String> backgroundColorNames() {
+        return List.of("bg_red", "bg_yellow", "bg_green", "bg_cyan", "bg_blue", "bg_magenta", "bg_white", "bg_black",
+                       "bg_default", "bg_negative");
+    }
+
+    /**
+     * Returns a list of all emphasis names.
+     *
+     * @return The names.
+     */
+    public static List<String> emphasisNames() {
+        return List.of("italic", "bold", "faint", "plain", "underline", "strikethrough", "negative", "conceal", "blink");
+    }
+
+    /**
      * Returns a style composed from the given names, or {@link #none} if empty.
      *
      * @param names The names.
@@ -212,7 +242,7 @@ public class Style {
      * @param bright {@code true} if bright color.
      * @return The style.
      */
-    public static Style of(Ansi.Color color, boolean background, boolean bright) {
+    public static Style of(Color color, boolean background, boolean bright) {
         return new Hue(color, background, bright);
     }
 
@@ -279,12 +309,84 @@ public class Style {
 
 
     /**
-     * Log all styles, by name.
+     * Log styles either as a complete list (including aliases) or a summary table.
      *
-     * @param args The arguments (ignored).
+     * @param args The arguments: {@code --list | --table}. Defaults to table.
      */
-    public static void main(String[] args) {
-        styles().forEach((name, style) -> Log.info("%14s [ %s ]", name, style.apply("example")));
+    public static void main(String... args) {
+        boolean list = false;
+        if (args.length == 1) {
+            if (args[0].equals("--list")) {
+                list = true;
+            } else if (!args[0].equals("--table")) {
+                throw new IllegalArgumentException("Unknown argument: " + args[0]);
+            }
+        }
+
+        if (list) {
+            styles().forEach((name, style) -> Log.info("%14s [ %s ]", name, style.apply("example")));
+        } else {
+            logSummaryTables();
+        }
+    }
+
+    /**
+     * Log a summary tables of text and background colors and styles.
+     */
+    public static void logSummaryTables() {
+        Log.info();
+        logTextSummaryTable();
+        Log.info();
+        logBackgroundSummaryTable();
+        Log.info();
+    }
+
+    /**
+     * Log a summary table of text colors and styles.
+     */
+    public static void logTextSummaryTable() {
+        logTable(colorNames(), false);
+    }
+
+    /**
+     * Log a summary table of background colors and styles.
+     */
+    public static void logBackgroundSummaryTable() {
+        logTable(backgroundColorNames(), true);
+    }
+
+    private static void logTable(List<String> names, boolean background) {
+        String header = background ? "Background Color" : "Text Color";
+        String example = " Example 1234 !@#$% ";
+        String rowFormat = "│ %-19s│ %22s │ %22s │ %22s │ %22s │";
+        Log.info("┌────────────────────┬──────────────────────┬──────────────────────┬──────────────────────┬───────────"
+                 + "───────────┐");
+        Log.info("│ %-19s│        Plain         │        Italic        │         Bold         │    Italic & Bold     │",
+                 header);
+        Log.info("├────────────────────┼──────────────────────┼──────────────────────┼──────────────────────┼───────────"
+                 + "───────────┤");
+        names.forEach(name -> {
+            String textColor = background ? "default" : name;
+            String backgroundColor = background ? name : "bg_default";
+
+            String textColorBright = background ? textColor : textColor + "!";
+            String backgroundColorBright = background ? backgroundColor + "!" : backgroundColor;
+
+            String plain = Style.of(backgroundColor, textColor).apply(example);
+            String italic = Style.of(backgroundColor, textColor, "italic").apply(example);
+            String bold = Style.of(backgroundColor, textColor, "bold").apply(example);
+            String italicBold = Style.of(backgroundColor, textColor, "ITALIC").apply(example);
+
+            String plainBright = Style.of(backgroundColorBright, textColorBright).apply(example);
+            String italicBright = Style.of(backgroundColorBright, textColorBright, "italic").apply(example);
+            String boldBright = Style.of(backgroundColorBright, textColorBright, "bold").apply(example);
+            String italicBoldBright = Style.of(backgroundColorBright, textColorBright, "ITALIC").apply(example);
+
+            Log.info(rowFormat, name, plain, italic, bold, italicBold);
+            Log.info(rowFormat, name + "!", plainBright, italicBright, boldBright, italicBoldBright);
+        });
+        Log.info("└────────────────────┴──────────────────────┴──────────────────────┴──────────────────────┴────────────"
+                 + "──────────┘");
     }
 
     /**
@@ -390,11 +492,11 @@ public class Style {
     }
 
     static class Hue extends Style {
-        private final Ansi.Color color;
+        private final Color color;
         private final boolean background;
         private final boolean bright;
 
-        Hue(Ansi.Color color, boolean background, boolean bright) {
+        Hue(Color color, boolean background, boolean bright) {
             this.color = requireNonNull(color);
             this.background = background;
             this.bright = bright;
@@ -460,22 +562,28 @@ public class Style {
     private static Map<String, Style> stylesByName() {
         final Map<String, Style> styles = new LinkedHashMap<>();
 
+        // None
+
+        styles.put("none", Style.none());
+        styles.put("bg_none", Style.none());
+
         // Hues and aliases
 
-        for (Ansi.Color color : Ansi.Color.values()) {
+        for (String lowerName : colorNames()) {
 
             // Text colors and aliases
 
-            final Style basic = Style.of(color, false, false);
-            final Style bright = Style.of(color, false, true);
+            final boolean negative = lowerName.equals("negative");
+            final String upperName = lowerName.toUpperCase(Locale.ENGLISH);
+            final Color color = negative ? null : Color.valueOf(upperName);
+            final Style basic = negative ? NEGATIVE : Style.of(color, false, false);
+            final Style bright = negative ? NEGATIVE : Style.of(color, false, true);
             final Style bold = Style.of(BOLD, basic);
             final Style italic = Style.of(ITALIC, basic);
             final Style italicBold = Style.of(BOLD_ITALIC, basic);
             final Style boldBright = Style.of(BOLD, bright);
             final Style italicBright = Style.of(bright, ITALIC);
             final Style italicBoldBright = Style.of(BOLD, ITALIC, bright);
-            final String lowerName = color.name().toLowerCase(Locale.ENGLISH);
-            final String upperName = lowerName.toUpperCase(Locale.ENGLISH);
 
             styles.put(lowerName, basic);
 
@@ -507,8 +615,8 @@ public class Style {
 
             // Background colors
 
-            styles.put("bg_" + lowerName, Style.of(color, true, false));
-            styles.put("bg_" + lowerName + "!", Style.of(color, true, true));
+            styles.put("bg_" + lowerName, negative ? NEGATIVE : Style.of(color, true, false));
+            styles.put("bg_" + lowerName + "!", negative ? NEGATIVE : Style.of(color, true, true));
         }
 
         // Emphasis and aliases
@@ -532,12 +640,6 @@ public class Style {
         styles.put("strikethrough", Style.of(Attribute.STRIKETHROUGH_ON));
         styles.put("blink", Style.of(Attribute.BLINK_SLOW));
         styles.put("conceal", Style.of(Attribute.CONCEAL_ON));
-
-        // Negative text/background
-
-        final Style negative = Style.of(Attribute.NEGATIVE_ON);
-        styles.put("negative", negative);
-        styles.put("bg_negative", negative);
 
         return styles;
     }

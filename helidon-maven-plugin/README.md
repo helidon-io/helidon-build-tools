@@ -276,7 +276,7 @@ Colors and styles are applied to text enclosed by `$(` and `)`, e.g.:
 In this example, the word `styled` will (normally) appear in red. If the styled text itself contains parentheses, the closing 
 paren should be escaped with a backslash:
 ```
-   <message>Here is $(red (and example of\) styled) text</message>
+   <message>Here is $(red (an example of\) styled) text</message>
 ```                                              
 The DSL syntax is:
 ```
@@ -287,23 +287,24 @@ where `style` is a case-sensitive name for a color, background color, emphasis o
 #### Text Colors
 
  * `red`
- * `green`
  * `yellow`
+ * `green`
+ * `cyan`
  * `blue`
  * `magenta`
- * `cyan`
  * `white`
  * `black`
  * `default`
+ * `negative`
 
 #### Background Colors
 
  * `bg_red`
- * `bg_green`
  * `bg_yellow`
+ * `bg_green`
+ * `bg_cyan`
  * `bg_blue`
  * `bg_magenta`
- * `bg_cyan`
  * `bg_white`
  * `bg_black`
  * `bg_default`
@@ -317,7 +318,6 @@ where `style` is a case-sensitive name for a color, background color, emphasis o
  * `italic`
  * `underline`
  * `strikethrough`
- * `negative`
  * `conceal`
  * `blink`
 
@@ -325,26 +325,26 @@ where `style` is a case-sensitive name for a color, background color, emphasis o
 
 Every text color has the following aliases:
  
- 1. Italic variant with `*` or `_` prefix and suffix (e.g. `_red_` or `*blue*`)
- 2. Bold variant with `**` or `__` prefix and suffix (e.g. `**red**` or `__blue__`)
- 4. Bold  variant with an uppercase name (e.g. `RED` or `BLUE`)
- 5. Bold italic variant with `**_` prefix and `_**` suffix (e.g. `**_red_**` or `**_blue_**`)
- 6. Bold italic variant with `__*` prefix and `__*` suffix (e.g. `__*red*__` or `__*blue*__`)
- 7. Bright variants of the color and all the above with a  `!` suffix (e.g. `red!`, `RED!`, `*red*!`, `__red__!`)
+ * Italic variant with `*` or `_` prefix and suffix (e.g. `_red_` or `*blue*`)
+ * Bold variant with `**` or `__` prefix and suffix (e.g. `**red**` or `__blue__`)
+ * Bold  variant with an uppercase name (e.g. `RED` or `BLUE`)
+ * Bold italic variant with `**_` prefix and `_**` suffix (e.g. `**_red_**` or `**_blue_**`)
+ * Bold italic variant with `__*` prefix and `__*` suffix (e.g. `__*red*__` or `__*blue*__`)
+ * Bright variants of the color and all the above with a  `!` suffix (e.g. `red!`, `RED!`, `*red*!`, `__red__!`)
 
 Every background color has the following alias:
 
- 1. Bright variants with a `!` suffix (e.g. `bg_yellow!`)
+ * Bright variants with a `!` suffix (e.g. `bg_yellow!`)
 
 The `italic,bold` combination has the following aliases:
  
- 1. `*bold*` or `_bold_`
- 2. `*BOLD*` or `_BOLD_`
- 3. `**italic**` or `__italic__`
- 4. `ITALIC` 
- 7. Bright variants of the above with a  `!` suffix (e.g. `*bold*!`, `ITALIC!`)
+ * `*bold*` or `_bold_`
+ * `*BOLD*` or `_BOLD_`
+ * `**italic**` or `__italic__`
+ * `ITALIC` 
+ * Bright variants of the above with a  `!` suffix (e.g. `*bold*!`, `ITALIC!`)
  
-The `negative` emphasis and `bg_negative` background color are identical: they invert *both* the default text color and 
+The `negative` text color and the `bg_negative` background color are identical: they invert *both* the default text color and 
 the background color.
 
 #### Portability
@@ -355,10 +355,10 @@ close variant of the pure color.
 
 Where things get interesting is when a color matches (or closely matches) the terminal background color: any use of that color 
 will fade or disappear entirely. The common cases are with `white` or `bg_white` on a light theme and `black` or `bg_black` on 
-a dark theme. While explicit use of `white` may work well in _your_ terminal, it won't work for everyone; if this matters in
-your use case...
+a dark theme: see [color examples](#color-examples). While explicit use of `white` may work well in _your_ terminal, it won't 
+work for everyone; if this matters in your use case...
 
-The portability problem can be addressed by using these special styles in place of any white or black style: 
+Portability can be addressed by using these special styles in place of any white or black style: 
 
  * `default`: selects the default text color in the current theme
  * `bold`: selects the bold variant of the default text color
@@ -388,3 +388,26 @@ they don't work and use them only as _additional_ emphasis.
     <message>This is $(blink important!)</message>
     <message>This is $(CYAN!,strikethrough a mistake!)</message>
 ```
+
+#### Color Examples
+
+The following tables provide examples on dark and light backgrounds within iTerm2 on MacOS.
+See [here](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit) for examples on other terminals.
+
+##### Text Colors: Dark Theme 
+
+![dark theme text colors](etc/images/dark-theme-text-colors.png)
+
+##### Background Colors: Dark Theme
+
+![dark theme background colors](etc/images/dark-theme-background-colors.png)
+
+##### Text Colors: Light Theme
+
+![light theme text colors](etc/images/light-theme-text-colors.png)
+
+##### Background Colors: Light Theme
+
+![light theme background colors](etc/images/light-theme-background-colors.png)
+
+
