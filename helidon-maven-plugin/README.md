@@ -292,7 +292,10 @@ where `style` is a case-sensitive name for a color, background color, emphasis o
  * `white`
  * `black`
  * `default`
+ * `bold`
  * `negative`
+
+See [portability](#portability) for more on `default`, `bold` and `negative`.
 
 #### Background Colors
 
@@ -341,6 +344,8 @@ The `italic,bold` combination has the following aliases:
  * `ITALIC` 
  * Bright variants of the above with a  `!` suffix (e.g. `*bold*!`, `ITALIC!`)
  
+When `bold` is used without any other color, it is an alias for `default,bold`. 
+ 
 The `negative` text color and the `bg_negative` background color are identical: they invert *both* the default text color and 
 the background color.
 
@@ -352,16 +357,16 @@ close variant of the pure color.
 
 Where things get interesting is when a color matches (or closely matches) the terminal background color: any use of that color 
 will fade or disappear entirely. The common cases are with `white` or `bg_white` on a light theme and `black` or `bg_black` on 
-a dark theme: see [color examples](#color-examples). While explicit use of `white` may work well in _your_ terminal, it won't 
-work for everyone; if this matters in your use case...
+a dark theme (see [color examples](#color-examples)). While explicit use of `white` may work well in _your_ terminal setup, it 
+won't work for everyone.
 
-Portability can be addressed by using these special styles in place of any white or black style: 
+Portability can be addressed by using these special colors in place of any white or black style: 
 
  * `default`: selects the default text color in the current theme
  * `bold`: selects the bold variant of the default text color
  * `negative`: inverts the default text **_and_** background colors
- * `bg_negative`: an alias for `negative`
  * `bg_default`: selects the default background color in the current theme
+ * `bg_negative`: an alias for `negative`
  
 Finally, `strikethrough`, (the really annoying) `blink` and `conceal` may not be enabled or supported in every terminal and may 
 do nothing. For `conceal`, presumably you can just leave out whatever you don't want shown; for the other two best to assume 

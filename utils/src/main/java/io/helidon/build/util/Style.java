@@ -86,7 +86,11 @@ public class Style {
      *     <li>{@code white}</li>
      *     <li>{@code black}</li>
      *     <li>{@code default}</li>
+     *     <li>{@code bold}</li>
+     *     <li>{@code negative}</li>
      * </ul>
+     * <p></p>
+     * See Portability below for more on {@code default}, {@code bold} and {@code negative}.
      * <p></p>
      * <h3>Background Color Names</h3>
      * <ul>
@@ -139,6 +143,11 @@ public class Style {
      *     <li>{@code ITALIC}</li>
      * </ul>
      * <p></p>
+     * When {@code bold} is used without any other color, it is an alias for {@code default,bold}.
+     * <p></p>
+     * The {@code negative} text color and the {@code bg_negative} background color are identical: they invert *both* the default
+     * text color and the background color.
+     * <p></p>
      * <h3>Portability</h3>
      * <p></p>
      * Most terminals provide mappings between the standard color names used here and what they actually render. So, for example,
@@ -150,7 +159,7 @@ public class Style {
      * {@code black} or {@code bg_black} on a dark theme. While explicit use of {@code white} may work well in <em>your</em>
      * terminal, it won't work for everyone; if this matters in your use case...
      * <p></p>
-     * The portability problem can be addressed by using these special styles in place of any white or black style:
+     * The portability problem can be addressed by using these special colors in place of any white or black style:
      *  <ul>
      *      <li>{@code default} selects the default text color in the current theme</li>
      *      <li>{@code bold} selects the bold variant of the default text color</li>
@@ -196,7 +205,7 @@ public class Style {
      * @return The names.
      */
     public static List<String> colorNames() {
-        return List.of("red", "yellow", "green", "cyan", "blue", "magenta", "white", "black", "default", "negative");
+        return List.of("red", "yellow", "green", "cyan", "blue", "magenta", "white", "black", "default", "bold", "negative");
     }
 
     /**
@@ -569,7 +578,7 @@ public class Style {
 
         // Hues and aliases
 
-        for (String lowerName : colorNames()) {
+        colorNames().stream().filter(name -> !name.equals("bold")).forEach(lowerName -> {
 
             // Text colors and aliases
 
@@ -617,7 +626,7 @@ public class Style {
 
             styles.put("bg_" + lowerName, negative ? NEGATIVE : Style.of(color, true, false));
             styles.put("bg_" + lowerName + "!", negative ? NEGATIVE : Style.of(color, true, true));
-        }
+        });
 
         // Emphasis and aliases
 

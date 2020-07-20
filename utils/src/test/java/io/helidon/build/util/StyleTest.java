@@ -276,6 +276,17 @@ class StyleTest {
     }
 
     @Test
+    void testStrip() {
+        String sample = "sample";
+        Style style = Style.of("RED!");
+        String styled = style.apply(sample);
+        String stripped = Style.strip(styled);
+        assertThat(Style.isStyled(styled), is(true));
+        assertThat(Style.isStyled(stripped), is(false));
+        assertThat(stripped, is(sample));
+    }
+
+    @Test
     void logTables() {
         Style.logSummaryTables();
     }
