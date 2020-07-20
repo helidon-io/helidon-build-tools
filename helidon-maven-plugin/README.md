@@ -344,7 +344,7 @@ The `italic,bold` combination has the following aliases:
  * `ITALIC` 
  * Bright variants of the above with a  `!` suffix (e.g. `*bold*!`, `ITALIC!`)
  
-When `bold` is used without any other color, it is an alias for `default,bold`. 
+When `bold` is used without any other color it is an alias for `default,bold`. 
  
 The `negative` text color and the `bg_negative` background color are identical: they invert *both* the default text color and 
 the background color.

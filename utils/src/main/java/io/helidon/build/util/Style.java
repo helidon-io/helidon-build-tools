@@ -143,7 +143,7 @@ public class Style {
      *     <li>{@code ITALIC}</li>
      * </ul>
      * <p></p>
-     * When {@code bold} is used without any other color, it is an alias for {@code default,bold}.
+     * When {@code bold} is used without any other color it is an alias for {@code default,bold}.
      * <p></p>
      * The {@code negative} text color and the {@code bg_negative} background color are identical: they invert *both* the default
      * text color and the background color.
