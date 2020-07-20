@@ -24,7 +24,7 @@ public class Style {
     private static final String STYLE_PREFIX = "$(";
     private static final String STYLE_SUFFIX = ")";
     private static final String ESCAPED_STYLE_SUFFIX = "\\)";
-    private static final AtomicBoolean ENABLED = new AtomicBoolean();
+    private static final AtomicBoolean ENABLED = new AtomicBoolean(true);
 
     /**
      * Disable styles.

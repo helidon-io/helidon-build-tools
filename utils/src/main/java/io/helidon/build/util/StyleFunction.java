@@ -22,6 +22,10 @@ import java.util.function.Function;
  * Text style functions.
  */
 public enum StyleFunction implements Function<Object, String> {
+    /**
+     * Default.
+     */
+    Default("default"),
 
     /**
      * Plain.
@@ -44,109 +48,39 @@ public enum StyleFunction implements Function<Object, String> {
     BoldItalic("_bold_"),
 
     /**
-     * Blue.
+     * Red.
      */
-    Blue("blue"),
+    Red("red"),
 
     /**
-     * Italic blue.
+     * Italic red.
      */
-    ItalicBlue("_blue_"),
+    ItalicRed("_red_"),
 
     /**
-     * Bright blue.
+     * Bright red.
      */
-    BrightBlue("blue!"),
+    BrightRed("red!"),
 
     /**
-     * Bold blue.
+     * Bold red.
      */
-    BoldBlue("BLUE"),
+    BoldRed("RED"),
 
     /**
-     * Bold, italic blue.
+     * Bold, italic red.
      */
-    BoldItalicBlue("_BLUE_"),
+    BoldItalicRed("_RED_"),
 
     /**
-     * Bold, bright blue.
+     * Bold, bright red.
      */
-    BoldBrightBlue("BLUE!"),
+    BoldBrightRed("RED!"),
 
     /**
-     * Bold, bright, italic blue.
+     * Bold, bright, italic red.
      */
-    BoldBrightItalicBlue("_BLUE_!"),
-
-    /**
-     * Cyan.
-     */
-    Cyan("cyan"),
-
-    /**
-     * Italic cyan.
-     */
-    ItalicCyan("_cyan_"),
-
-    /**
-     * Bright cyan.
-     */
-    BrightCyan("cyan!"),
-
-    /**
-     * Bold cyan.
-     */
-    BoldCyan("CYAN"),
-
-    /**
-     * Bold, italic cyan.
-     */
-    BoldItalicCyan("_CYAN_"),
-
-    /**
-     * Bold, bright cyan.
-     */
-    BoldBrightCyan("CYAN!"),
-
-    /**
-     * Bold, bright, italic cyan.
-     */
-    BoldBrightItalicCyan("_CYAN_!"),
-
-    /**
-     * Green.
-     */
-    Green("green"),
-
-    /**
-     * Italic green.
-     */
-    ItalicGreen("_green_"),
-
-    /**
-     * Bright green.
-     */
-    BrightGreen("green!"),
-
-    /**
-     * Bold green.
-     */
-    BoldGreen("GREEN"),
-
-    /**
-     * Bold, italic green.
-     */
-    BoldItalicGreen("_GREEN_"),
-
-    /**
-     * Bold, bright green.
-     */
-    BoldBrightGreen("GREEN!"),
-
-    /**
-     * Bold, bright, italic green.
-     */
-    BoldBrightItalicGreen("_GREEN_!"),
+    BoldBrightItalicRed("_RED_!"),
 
     /**
      * Yellow.
@@ -184,39 +118,144 @@ public enum StyleFunction implements Function<Object, String> {
     BoldBrightItalicYellow("_YELLOW_!"),
 
     /**
-     * Red.
+     * Green.
      */
-    Red("red"),
+    Green("green"),
 
     /**
-     * Italic red.
+     * Italic green.
      */
-    ItalicRed("_red_"),
+    ItalicGreen("_green_"),
 
     /**
-     * Bright red.
+     * Bright green.
      */
-    BrightRed("red!"),
+    BrightGreen("green!"),
 
     /**
-     * Bold red.
+     * Bold green.
      */
-    BoldRed("RED"),
+    BoldGreen("GREEN"),
 
     /**
-     * Bold, italic red.
+     * Bold, italic green.
      */
-    BoldItalicRed("_RED_"),
+    BoldItalicGreen("_GREEN_"),
 
     /**
-     * Bold, bright red.
+     * Bold, bright green.
      */
-    BoldBrightRed("RED!"),
+    BoldBrightGreen("GREEN!"),
 
     /**
-     * Bold, bright, italic red.
+     * Bold, bright, italic green.
      */
-    BoldBrightItalicRed("_RED_!");
+    BoldBrightItalicGreen("_GREEN_!"),
+
+    /**
+     * Cyan.
+     */
+    Cyan("cyan"),
+
+    /**
+     * Italic cyan.
+     */
+    ItalicCyan("_cyan_"),
+
+    /**
+     * Bright cyan.
+     */
+    BrightCyan("cyan!"),
+
+    /**
+     * Bold cyan.
+     */
+    BoldCyan("CYAN"),
+
+    /**
+     * Bold, italic cyan.
+     */
+    BoldItalicCyan("_CYAN_"),
+
+    /**
+     * Bold, bright cyan.
+     */
+    BoldBrightCyan("CYAN!"),
+
+    /**
+     * Bold, bright, italic cyan.
+     */
+    BoldBrightItalicCyan("_CYAN_!"),
+
+    /**
+     * Blue.
+     */
+    Blue("blue"),
+
+    /**
+     * Italic blue.
+     */
+    ItalicBlue("_blue_"),
+
+    /**
+     * Bright blue.
+     */
+    BrightBlue("blue!"),
+
+    /**
+     * Bold blue.
+     */
+    BoldBlue("BLUE"),
+
+    /**
+     * Bold, italic blue.
+     */
+    BoldItalicBlue("_BLUE_"),
+
+    /**
+     * Bold, bright blue.
+     */
+    BoldBrightBlue("BLUE!"),
+
+    /**
+     * Bold, bright, italic blue.
+     */
+    BoldBrightItalicBlue("_BLUE_!"),
+
+    /**
+     * Magenta.
+     */
+    Magenta("magenta"),
+
+    /**
+     * Italic magenta.
+     */
+    ItalicMagenta("_magenta_"),
+
+    /**
+     * Bright magenta.
+     */
+    BrightMagenta("magenta!"),
+
+    /**
+     * Bold magenta.
+     */
+    BoldMagenta("MAGENTA"),
+
+    /**
+     * Bold, italic magenta.
+     */
+    BoldItalicMagenta("_MAGENTA_"),
+
+    /**
+     * Bold, bright magenta.
+     */
+    BoldBrightMagenta("MAGENTA!"),
+
+    /**
+     * Bold, bright, italic magenta.
+     */
+    BoldBrightItalicMagenta("_MAGENTA_!");
 
     private final Style style;
 

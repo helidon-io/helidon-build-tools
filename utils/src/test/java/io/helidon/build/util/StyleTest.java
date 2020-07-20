@@ -94,6 +94,7 @@ class StyleTest {
     static final String BLINK_EMPHASIS_CODE = attribute(Attribute.BLINK_SLOW);
 
     static final String RESET_CODE = attribute(Attribute.RESET);
+    static final String NONE_CODE = "";
 
     static final Map<String, String> CODES_BY_NAME = buildCodesByName();
 
@@ -101,6 +102,9 @@ class StyleTest {
 
     static Map<String, String> buildCodesByName() {
         Map<String, String> codes = new HashMap<>();
+
+        codes.put("none", NONE_CODE);
+        codes.put("bg_none", NONE_CODE);
 
         codes.put("red", RED_TEXT_CODE);
         codes.put("green", GREEN_TEXT_CODE);
@@ -111,6 +115,7 @@ class StyleTest {
         codes.put("white", WHITE_TEXT_CODE);
         codes.put("black", BLACK_TEXT_CODE);
         codes.put("default", DEFAULT_TEXT_CODE);
+        codes.put("negative", NEGATIVE_EMPHASIS_CODE);
 
         codes.put("bg_red", RED_BACKGROUND_CODE);
         codes.put("bg_green", GREEN_BACKGROUND_CODE);
@@ -121,6 +126,7 @@ class StyleTest {
         codes.put("bg_white", WHITE_BACKGROUND_CODE);
         codes.put("bg_black", BLACK_BACKGROUND_CODE);
         codes.put("bg_default", DEFAULT_BACKGROUND_CODE);
+        codes.put("bg_negative", NEGATIVE_EMPHASIS_CODE);
 
         codes.put("red!", BRIGHT_RED_TEXT_CODE);
         codes.put("green!", BRIGHT_GREEN_TEXT_CODE);
@@ -131,6 +137,7 @@ class StyleTest {
         codes.put("white!", BRIGHT_WHITE_TEXT_CODE);
         codes.put("black!", BRIGHT_BLACK_TEXT_CODE);
         codes.put("default!", BRIGHT_DEFAULT_TEXT_CODE);
+        codes.put("negative!", NEGATIVE_EMPHASIS_CODE);
 
         codes.put("bg_red!", BRIGHT_RED_BACKGROUND_CODE);
         codes.put("bg_green!", BRIGHT_GREEN_BACKGROUND_CODE);
@@ -141,6 +148,7 @@ class StyleTest {
         codes.put("bg_white!", BRIGHT_WHITE_BACKGROUND_CODE);
         codes.put("bg_black!", BRIGHT_BLACK_BACKGROUND_CODE);
         codes.put("bg_default!", BRIGHT_DEFAULT_BACKGROUND_CODE);
+        codes.put("bg_negative!", NEGATIVE_EMPHASIS_CODE);
 
         codes.put("bold", BOLD_EMPHASIS_CODE);
         codes.put("plain", PLAIN_EMPHASIS_CODE);
@@ -148,11 +156,8 @@ class StyleTest {
         codes.put("italic", ITALIC_EMPHASIS_CODE);
         codes.put("underline", UNDERLINE_EMPHASIS_CODE);
         codes.put("strikethrough", STRIKETHROUGH_EMPHASIS_CODE);
-        codes.put("negative", NEGATIVE_EMPHASIS_CODE);
         codes.put("conceal", CONCEAL_EMPHASIS_CODE);
         codes.put("blink", BLINK_EMPHASIS_CODE);
-
-        codes.put("bg_negative", NEGATIVE_EMPHASIS_CODE);
 
         return codes;
     }
@@ -219,7 +224,7 @@ class StyleTest {
         Map<String, Style> styles = Style.styles();
         Log.info("Checking all %d style names and aliases", styles.size());
         styles.forEach((styleName, style) -> {
-            Log.info("    checking %s", styleName);
+            Log.debug("    checking %s", styleName);
             int start = 0;
             int end = styleName.length();
             String parsedStyleName = styleName;
@@ -228,17 +233,24 @@ class StyleTest {
                 parsedStyleName = parsedStyleName.substring(3);
                 end -= 3;
             }
-            boolean bold = parsedStyleName.contains("*");
-            boolean italic = parsedStyleName.contains("_");
+            boolean bold = false;
+            boolean italic = false;
+
+            if (parsedStyleName.contains("**_") || parsedStyleName.contains("__*")) {
+                bold = true;
+                italic = true;
+                start += 3;
+                end -= 3;
+            } else if (parsedStyleName.contains("**") || parsedStyleName.contains("__")) {
+                bold = true;
+                start += 2;
+                end -= 2;
+            } else if (parsedStyleName.contains("*") || parsedStyleName.contains("_")) {
+                italic = true;
+                start++;
+                end--;
+            }
             boolean bright = parsedStyleName.endsWith("!");
-            if (bold) {
-                start++;
-                end--;
-            }
-            if (italic) {
-                start++;
-                end--;
-            }
             if (bright) {
                 end--;
             }
@@ -261,5 +273,21 @@ class StyleTest {
                 assertExpectedStyle("italic", ITALIC_EMPHASIS_CODE);
             }
         });
+    }
+
+    @Test
+    void testStrip() {
+        String sample = "sample";
+        Style style = Style.of("RED!");
+        String styled = style.apply(sample);
+        String stripped = Style.strip(styled);
+        assertThat(Style.isStyled(styled), is(true));
+        assertThat(Style.isStyled(stripped), is(false));
+        assertThat(stripped, is(sample));
+    }
+
+    @Test
+    void logTables() {
+        Style.logSummaryTables();
     }
 }

@@ -10,7 +10,7 @@ This plugin provides Maven goals specific to Helidon applications as well as goa
 #### Goals for All Applications
 
 * [root-dir](#goal-root-dir)
-* [echo](#goal-echo)
+* [log](#goal-log)
 
 ## Goal: `native-image`
 
@@ -218,9 +218,9 @@ Execution of this plugin can be defined in a build of the parent project, if req
 </build>
 ```
 
-## Goal: `echo`
+## Goal: `log`
 
-Maven goal to echo messages to the log during a build. Supports 
+Maven goal to log messages during a build. Supports 
 [rich text](https://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html) via a simple DSL.
 
 ### General usage
@@ -238,7 +238,7 @@ uses the `validate` phase to log a message as early as possible:
                 <execution>
                     <phase>validate</phase>
                     <goals>
-                        <goal>echo</goal>
+                        <goal>log</goal>
                     </goals>
                 </execution>
             </executions>
@@ -265,9 +265,6 @@ Messages can be logged using colors and styles such as italic or bold. While not
 if your Maven output is in color, your messages can be as well: the same [Jansi](https://github.com/fusesource/jansi) library 
 is used for both. Rich text is disabled when output is redirected or explicitly by setting `-Djansi.strip=true`; when disabled, 
 only plain text is logged.  
-
-> *_NOTE:_* Rendering is performed by the terminal and its configuration so may vary across environments; see 
-> [Portablility](#portability) for details.
  
 Colors and styles are applied to text enclosed by `$(` and `)`, e.g.:
 ```
@@ -276,7 +273,7 @@ Colors and styles are applied to text enclosed by `$(` and `)`, e.g.:
 In this example, the word `styled` will (normally) appear in red. If the styled text itself contains parentheses, the closing 
 paren should be escaped with a backslash:
 ```
-   <message>Here is $(red (and example of\) styled) text</message>
+   <message>Here is $(red (an example of\) styled) text</message>
 ```                                              
 The DSL syntax is:
 ```
@@ -287,23 +284,27 @@ where `style` is a case-sensitive name for a color, background color, emphasis o
 #### Text Colors
 
  * `red`
- * `green`
  * `yellow`
+ * `green`
+ * `cyan`
  * `blue`
  * `magenta`
- * `cyan`
  * `white`
  * `black`
  * `default`
+ * `bold`
+ * `negative`
+
+See [portability](#portability) for more on `default`, `bold` and `negative`.
 
 #### Background Colors
 
  * `bg_red`
- * `bg_green`
  * `bg_yellow`
+ * `bg_green`
+ * `bg_cyan`
  * `bg_blue`
  * `bg_magenta`
- * `bg_cyan`
  * `bg_white`
  * `bg_black`
  * `bg_default`
@@ -317,7 +318,6 @@ where `style` is a case-sensitive name for a color, background color, emphasis o
  * `italic`
  * `underline`
  * `strikethrough`
- * `negative`
  * `conceal`
  * `blink`
 
@@ -325,23 +325,28 @@ where `style` is a case-sensitive name for a color, background color, emphasis o
 
 Every text color has the following aliases:
  
- 1. Bold variant with an uppercase name (e.g. `RED`)
- 2. Bold variant with `'*'` prefix and suffix (e.g. `*red*`)
- 3. Italic variant with `'_'` prefix and suffix (e.g. `_red_`)
- 4. Bold italic variant with `'_*'` prefix and `'*_'` suffix (e.g. `_*red*_` or `*_red_*`)
- 5. Bright variants of the color and all the above with a  `!` suffix (e.g. `red!`, `RED!`, `*red*!`, `_red_!`)
+ * Italic variant with `*` or `_` prefix and suffix (e.g. `_red_` or `*blue*`)
+ * Bold variant with `**` or `__` prefix and suffix (e.g. `**red**` or `__blue__`)
+ * Bold  variant with an uppercase name (e.g. `RED` or `BLUE`)
+ * Bold italic variant with `**_` prefix and `_**` suffix (e.g. `**_red_**` or `**_blue_**`)
+ * Bold italic variant with `__*` prefix and `__*` suffix (e.g. `__*red*__` or `__*blue*__`)
+ * Bright variants of the color and all the above with a  `!` suffix (e.g. `red!`, `RED!`, `*red*!`, `__red__!`)
 
 Every background color has the following alias:
 
- 1. Bright variants with a `!` suffix (e.g. `bg_yellow!`)
+ * Bright variants with a `!` suffix (e.g. `bg_yellow!`)
 
-The `bold,italic` combination has the following aliases:
+The `italic,bold` combination has the following aliases:
  
- 1. `_bold_`
- 2. `*italic*`
- 3. `ITALIC` 
+ * `*bold*` or `_bold_`
+ * `*BOLD*` or `_BOLD_`
+ * `**italic**` or `__italic__`
+ * `ITALIC` 
+ * Bright variants of the above with a  `!` suffix (e.g. `*bold*!`, `ITALIC!`)
  
-The `negative` emphasis and `bg_negative` background color are identical: they invert *both* the default text color and 
+When `bold` is used without any other color it is an alias for `default,bold`. 
+ 
+The `negative` text color and the `bg_negative` background color are identical: they invert *both* the default text color and 
 the background color.
 
 #### Portability
@@ -352,16 +357,16 @@ close variant of the pure color.
 
 Where things get interesting is when a color matches (or closely matches) the terminal background color: any use of that color 
 will fade or disappear entirely. The common cases are with `white` or `bg_white` on a light theme and `black` or `bg_black` on 
-a dark theme. While explicit use of `white` may work well in _your_ terminal, it won't work for everyone; if this matters in
-your use case...
+a dark theme (see [color examples](#color-examples)). While explicit use of `white` may work well in _your_ terminal setup, it 
+won't work for everyone.
 
-The portability problem can be addressed by using these special styles in place of any white or black style: 
+Portability can be addressed by using these special colors in place of any white or black style: 
 
  * `default`: selects the default text color in the current theme
  * `bold`: selects the bold variant of the default text color
  * `negative`: inverts the default text **_and_** background colors
- * `bg_negative`: an alias for `negative`
  * `bg_default`: selects the default background color in the current theme
+ * `bg_negative`: an alias for `negative`
  
 Finally, `strikethrough`, (the really annoying) `blink` and `conceal` may not be enabled or supported in every terminal and may 
 do nothing. For `conceal`, presumably you can just leave out whatever you don't want shown; for the other two best to assume 
@@ -382,6 +387,29 @@ they don't work and use them only as _additional_ emphasis.
 #### Not so portable examples
 
 ```                                                             
-    <message>This is $(blink important)</message>
+    <message>This is $(blink important!)</message>
     <message>This is $(CYAN!,strikethrough a mistake!)</message>
 ```
+
+#### Color Examples
+
+The following tables provide examples on dark and light backgrounds within iTerm2 on MacOS.
+See [here](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit) for examples on other terminals.
+
+##### Text Colors: Dark Theme 
+
+![dark theme text colors](etc/images/dark-theme-text-colors.png)
+
+##### Background Colors: Dark Theme
+
+![dark theme background colors](etc/images/dark-theme-background-colors.png)
+
+##### Text Colors: Light Theme
+
+![light theme text colors](etc/images/light-theme-text-colors.png)
+
+##### Background Colors: Light Theme
+
+![light theme background colors](etc/images/light-theme-background-colors.png)
+
+

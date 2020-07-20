@@ -15,6 +15,6 @@
  */
 
 /**
- * Echo Plugin.
+ * Log Plugin.
  */
-package io.helidon.build.maven.dev.echo;
+package io.helidon.build.maven.dev.log;
