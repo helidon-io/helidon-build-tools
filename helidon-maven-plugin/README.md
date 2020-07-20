@@ -265,9 +265,6 @@ Messages can be logged using colors and styles such as italic or bold. While not
 if your Maven output is in color, your messages can be as well: the same [Jansi](https://github.com/fusesource/jansi) library 
 is used for both. Rich text is disabled when output is redirected or explicitly by setting `-Djansi.strip=true`; when disabled, 
 only plain text is logged.  
-
-> *_NOTE:_* Rendering is performed by the terminal and its configuration so may vary across environments; see 
-> [Portablility](#portability) for details.
  
 Colors and styles are applied to text enclosed by `$(` and `)`, e.g.:
 ```
