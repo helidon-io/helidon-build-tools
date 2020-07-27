@@ -29,7 +29,6 @@ import io.helidon.build.cli.harness.Option.KeyValue;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.StyleFunction;
-import io.helidon.build.util.UserConfig;
 
 import static io.helidon.build.cli.harness.GlobalOptions.DEBUG_FLAG_DESCRIPTION;
 import static io.helidon.build.cli.harness.GlobalOptions.DEBUG_FLAG_NAME;
@@ -37,6 +36,7 @@ import static io.helidon.build.cli.harness.GlobalOptions.PLAIN_FLAG_DESCRIPTION;
 import static io.helidon.build.cli.harness.GlobalOptions.PLAIN_FLAG_NAME;
 import static io.helidon.build.cli.harness.GlobalOptions.VERBOSE_FLAG_DESCRIPTION;
 import static io.helidon.build.cli.harness.GlobalOptions.VERBOSE_FLAG_NAME;
+import static io.helidon.build.cli.impl.Config.userConfig;
 import static io.helidon.build.util.FileUtils.WORKING_DIR;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
 
@@ -61,8 +61,7 @@ final class CommonOptions {
                   @Option.Flag(name = DEBUG_FLAG_NAME, description = DEBUG_FLAG_DESCRIPTION, visible = false) boolean debug,
                   @Option.Flag(name = PLAIN_FLAG_NAME, description = PLAIN_FLAG_DESCRIPTION, visible = false) boolean plain,
                   @KeyValue(name = "project", description = "The project directory") File projectDir,
-                  @KeyValue(name = "url", description = "Metadata base URL",
-                          defaultValue = Metadata.DEFAULT_URL, visible = false) String metadataUrl,
+                  @KeyValue(name = "url", description = "Metadata base URL", visible = false) String metadataUrl,
                   @Option.Flag(name = "reset", description = "Reset metadata cache", visible = false) boolean resetCache,
                   @KeyValue(name = "since", description = "Check for updates since this version",
                           visible = false) String since) {
@@ -70,7 +69,7 @@ final class CommonOptions {
         this.debug = debug;
         this.plain = plain;
         this.projectDir = projectDir != null ? projectDir.toPath().toAbsolutePath() : WORKING_DIR;
-        this.metadataUrl = metadataUrl;
+        this.metadataUrl = (metadataUrl == null || metadataUrl.isBlank()) ? userConfig().metadataUrl() : metadataUrl;
         this.resetCache = resetCache || since != null;
         this.sinceCliVersion = toMavenVersion(since == null ? Config.buildVersion() : since);
     }
@@ -104,9 +103,9 @@ final class CommonOptions {
 
     Metadata metadata() {
         if (metadata == null) {
+            UserConfig config = userConfig();
             if (resetCache) {
                 try {
-                    UserConfig config = Config.userConfig();
                     Log.debug("clearing plugins and metadata cache");
                     config.clearCache();
                     config.clearPlugins();
@@ -117,7 +116,7 @@ final class CommonOptions {
             if (!metadataUrl.equals(Metadata.DEFAULT_URL)) {
                 Log.debug("using metadata url %s", metadataUrl);
             }
-            metadata = Metadata.newInstance(metadataUrl);
+            metadata = Metadata.newInstance(metadataUrl, config.checkForUpdatesIntervalHours());
         }
         return metadata;
     }

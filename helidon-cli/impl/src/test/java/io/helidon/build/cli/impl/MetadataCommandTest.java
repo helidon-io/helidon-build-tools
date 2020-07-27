@@ -20,7 +20,6 @@ import java.io.UncheckedIOException;
 
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 import io.helidon.build.test.TestFiles;
-import io.helidon.build.util.UserConfig;
 
 /**
  * Base class for command tests that require the {@link Metadata}.

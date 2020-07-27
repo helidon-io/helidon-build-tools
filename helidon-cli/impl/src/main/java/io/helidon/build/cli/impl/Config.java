@@ -19,7 +19,6 @@ import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.build.util.BuildToolsProperties;
-import io.helidon.build.util.UserConfig;
 
 import static java.util.Objects.requireNonNull;
 
