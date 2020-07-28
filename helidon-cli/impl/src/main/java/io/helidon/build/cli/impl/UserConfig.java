@@ -41,25 +41,17 @@ public class UserConfig {
     private static final String UPDATE_URL_KEY = "update.url";
     private static final String UPDATE_URL_DEFAULT_VALUE = Metadata.DEFAULT_URL;
     private static final String DEFAULT_CONFIG =
-            ""
-            + "# -------------------------------------------------------------------------------------------\n"
-            + "# CLI Updates\n"
-            + "#\n"
-            + "# The CLI may check for new Helidon and CLI releases during use; the settings in this section"
-            + "# control when and how that occurs.\n"
-            + "# -------------------------------------------------------------------------------------------\n"
-            + "\n"
-            + "# The minimum number of hours between checks for new releases.\n"
+            "\n"
+            + "# The CLI regularly updates information about new Helidon and/or CLI releases;\n"
+            + "# this value controls the minimum number of hours between rechecks.\n"
             + "\n"
             + UPDATE_INTERVAL_HOURS_KEY + "=" + UPDATE_INTERVAL_HOURS_DEFAULT_VALUE + "\n"
             + "\n"
-            + "# Whether or not new CLI releases should be automatically downloaded. Does not install.\n"
+            + "# The CLI can download new releases to help reduce the number of installation\n"
+            + "# steps; this value controls whether or not to do so.\n"
             + "\n"
             + DOWNLOAD_UPDATES_KEY + "=" + DOWNLOAD_UPDATES_DEFAULT_VALUE + "\n"
-            + "\n"
-            + "# The location from which new release data should be fetched.\n"
-            + "\n"
-            + UPDATE_URL_KEY + "=" + UPDATE_URL_DEFAULT_VALUE + "\n";
+            + "\n";
 
     private final Path homeDir;
     private final Path configDir;
