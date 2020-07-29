@@ -32,6 +32,7 @@ import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.TimeUtils;
 
+import static io.helidon.build.cli.impl.Config.userConfig;
 import static io.helidon.build.cli.impl.VersionCommand.addProjectProperty;
 import static io.helidon.build.util.ProjectConfig.HELIDON_VERSION;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
@@ -65,6 +66,12 @@ public final class InfoCommand extends BaseCommand {
 
     @Override
     protected void invoke(CommandContext context) throws Exception {
+
+        // User config
+
+        Map<Object, Object> userConfigProps = new LinkedHashMap<>();
+        Map<String, String> properties = userConfig().properties();
+        properties.keySet().stream().sorted().forEach(key -> userConfigProps.put(key, properties.get(key)));
 
         // Build properties
 
@@ -101,7 +108,6 @@ public final class InfoCommand extends BaseCommand {
         if (verbose) {
             try {
                 Metadata meta = metadata();
-                metaProps.put("base.url", meta.url());
                 metaProps.put("cache.dir", meta.rootDir());
 
                 FileTime lastUpdateTime = meta.lastUpdateTime();
@@ -147,7 +153,8 @@ public final class InfoCommand extends BaseCommand {
 
         // Log them all
 
-        int maxWidth = Math.max(Log.maxKeyWidth(buildProps, systemProps, envVars, projectProps), MIN_WIDTH);
+        int maxWidth = Math.max(Log.maxKeyWidth(userConfigProps, buildProps, systemProps, envVars, projectProps), MIN_WIDTH);
+        log("User Config", userConfigProps, maxWidth);
         log("Project Config", projectProps, maxWidth);
         log("General", buildProps, maxWidth);
         Plugins.execute("GetInfo", pluginArgs(maxWidth), 5, Log::info);

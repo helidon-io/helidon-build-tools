@@ -25,7 +25,6 @@ import io.helidon.build.test.CapturingLogWriter;
 import io.helidon.build.test.TestFiles;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
-import io.helidon.build.util.UserConfig;
 
 import org.junit.jupiter.api.TestInfo;
 

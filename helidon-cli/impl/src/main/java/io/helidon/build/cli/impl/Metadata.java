@@ -410,7 +410,10 @@ public class Metadata {
         if (sinceLast > STALE_RETRY_THRESHOLD) {
             lastChecked.put(file, currentTimeMillis);
             if (Files.exists(file)) {
-                if (updateFrequencyMillis > 0) {
+                if (updateFrequencyMillis < 0) {
+                    Log.debug("stale check is false (disabled) for %s", file);
+                    return false;
+                } else if (updateFrequencyMillis > 0) {
                     final long lastModifiedMillis = lastModifiedTime(file).to(MILLISECONDS);
                     final long elapsedMillis = currentTimeMillis - lastModifiedMillis;
                     final long remainingMillis = updateFrequencyMillis - elapsedMillis;
@@ -422,19 +425,19 @@ public class Metadata {
                         final String elapsedDays = elapsed.toDaysPart() == 1 ? "day" : "days";
                         if (stale) {
                             Log.debug("stale check is true for %s (last: %s, now: %s, elapsed: %d %s %02d:%02d:%02d)",
-                                    file, lastModifiedTime, currentTime,
-                                    elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
-                                    elapsed.toSecondsPart());
+                                      file, lastModifiedTime, currentTime,
+                                      elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
+                                      elapsed.toSecondsPart());
                         } else {
                             final Duration remain = Duration.ofMillis(remainingMillis);
                             final String remainDays = remain.toDaysPart() == 1 ? "day" : "days";
                             Log.debug("stale check is false for %s (last: %s, now: %s, elapsed: %d %s %02d:%02d:%02d, "
                                       + "remain: %d %s %02d:%02d:%02d)",
-                                    file, lastModifiedTime, currentTime,
-                                    elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
-                                    elapsed.toSecondsPart(),
-                                    remain.toDaysPart(), remainDays, remain.toHoursPart(), remain.toMinutesPart(),
-                                    remain.toSecondsPart());
+                                      file, lastModifiedTime, currentTime,
+                                      elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
+                                      elapsed.toSecondsPart(),
+                                      remain.toDaysPart(), remainDays, remain.toHoursPart(), remain.toMinutesPart(),
+                                      remain.toSecondsPart());
                         }
                     }
                     return stale;
