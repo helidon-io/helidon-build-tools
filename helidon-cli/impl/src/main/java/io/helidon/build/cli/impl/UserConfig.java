@@ -68,9 +68,8 @@ public class UserConfig {
             + "# " + "system_https.proxyPort=80" + "\n"
             + "# " + "system_https.nonProxyHosts=*.local|localhost|127.0.0.1|*.acme.com" + "\n"
             + "\n"
-            + "# The CLI fetches update information from this location. Setting this is not\n"
-            + "# normally required, but may be necessary in environments with restricted\n"
-            + "# internet access.\n"
+            + "# The CLI fetches update information from this location; setting this may be\n"
+            + "# necessary in environments with restricted internet access.\n"
             + "\n"
             + "# " + UPDATE_URL_KEY + "=" + UPDATE_URL_DEFAULT_VALUE + "\n"
             + "\n";
