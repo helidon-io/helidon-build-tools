@@ -50,7 +50,7 @@ public class UserConfig {
             "\n"
             + "# The CLI regularly updates information about new Helidon and/or CLI releases;\n"
             + "# this value controls the minimum number of hours between rechecks. Updates can\n"
-            + "# forced on every invocation with a 0 value or disabled with a negative value.\n"
+            + "# be forced on every invocation with a 0 value or disabled with a negative value.\n"
             + "\n"
             + UPDATE_INTERVAL_HOURS_KEY + "=" + UPDATE_INTERVAL_HOURS_DEFAULT_VALUE + "\n"
             + "\n"
