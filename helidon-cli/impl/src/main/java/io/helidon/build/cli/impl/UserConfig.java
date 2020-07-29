@@ -17,14 +17,19 @@ package io.helidon.build.cli.impl;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import io.helidon.build.util.FileUtils;
 
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Utility to manage user config.
@@ -40,10 +45,12 @@ public class UserConfig {
     private static final String DOWNLOAD_UPDATES_DEFAULT_VALUE = "true";
     private static final String UPDATE_URL_KEY = "update.url";
     private static final String UPDATE_URL_DEFAULT_VALUE = Metadata.DEFAULT_URL;
+    private static final String SYSTEM_PROPERTY_PREFIX = "system_";
     private static final String DEFAULT_CONFIG =
             "\n"
             + "# The CLI regularly updates information about new Helidon and/or CLI releases;\n"
-            + "# this value controls the minimum number of hours between rechecks.\n"
+            + "# this value controls the minimum number of hours between rechecks. Updates can\n"
+            + "# forced on every invocation with a 0 value or disabled with a negative value.\n"
             + "\n"
             + UPDATE_INTERVAL_HOURS_KEY + "=" + UPDATE_INTERVAL_HOURS_DEFAULT_VALUE + "\n"
             + "\n"
@@ -51,6 +58,21 @@ public class UserConfig {
             + "# steps; this value controls whether or not to do so.\n"
             + "\n"
             + DOWNLOAD_UPDATES_KEY + "=" + DOWNLOAD_UPDATES_DEFAULT_VALUE + "\n"
+            + "\n"
+            + "# System properties can be set by using the \"system_\" key prefix, e.g.:\n"
+            + "\n"
+            + "# " + "system_http.proxyHost=http://proxy.acme.com" + "\n"
+            + "# " + "system_http.proxyPort=80" + "\n"
+            + "# " + "system_http.nonProxyHosts=*.local|localhost|127.0.0.1|*.acme.com" + "\n"
+            + "# " + "system_https.proxyHost=http://proxy.acme.com" + "\n"
+            + "# " + "system_https.proxyPort=80" + "\n"
+            + "# " + "system_https.nonProxyHosts=*.local|localhost|127.0.0.1|*.acme.com" + "\n"
+            + "\n"
+            + "# The CLI fetches update information from this location. Setting this is not\n"
+            + "# normally required, but may be necessary in environments with restricted\n"
+            + "# internet access.\n"
+            + "\n"
+            + "# " + UPDATE_URL_KEY + "=" + UPDATE_URL_DEFAULT_VALUE + "\n"
             + "\n";
 
     private final Path homeDir;
@@ -58,7 +80,8 @@ public class UserConfig {
     private final Path cacheDir;
     private final Path pluginsDir;
     private final Path configFile;
-    private final Properties config;
+    private final Map<String, String> allProperties;
+    private final Map<String, String> systemProperties;
 
     /**
      * Returns a new instance using {@link #homeDir()} as the root.
@@ -85,16 +108,17 @@ public class UserConfig {
         this.cacheDir = FileUtils.ensureDirectory(configDir.resolve(CACHE_DIR_NAME));
         this.pluginsDir = FileUtils.ensureDirectory(configDir.resolve(PLUGINS_DIR_NAME));
         this.configFile = configDir.resolve(CONFIG_FILE_NAME);
-        this.config = loadConfig();
+        this.allProperties = loadConfig();
+        this.systemProperties = setSystemProperties();
     }
 
     /**
-     * Returns the URL from which to get metadata.
+     * Returns the URL from which to get updates.
      *
      * @return The url.
      */
-    public String metadataUrl() {
-        return config.getProperty(UPDATE_URL_KEY, UPDATE_URL_DEFAULT_VALUE);
+    public String updateUrl() {
+        return allProperties.getOrDefault(UPDATE_URL_KEY, UPDATE_URL_DEFAULT_VALUE);
     }
 
     /**
@@ -103,17 +127,12 @@ public class UserConfig {
      * @return The interval.
      */
     public int checkForUpdatesIntervalHours() {
-        int result = 0;
-        String value = config.getProperty(UPDATE_INTERVAL_HOURS_KEY, UPDATE_INTERVAL_HOURS_DEFAULT_VALUE);
+        String value = allProperties.getOrDefault(UPDATE_INTERVAL_HOURS_KEY, UPDATE_INTERVAL_HOURS_DEFAULT_VALUE);
         try {
-            result = Integer.parseInt(value);
-            if (result < 0) {
-                invalidConfiguration(UPDATE_INTERVAL_HOURS_KEY, "must not be negative", value);
-            }
+            return Integer.parseInt(value);
         } catch (NumberFormatException e) {
-            invalidConfiguration(UPDATE_INTERVAL_HOURS_KEY, "must be a positive integer", value);
+            throw new IllegalStateException(UPDATE_INTERVAL_HOURS_KEY + " in " + configFile + ": " + e.getMessage());
         }
-        return result;
     }
 
     /**
@@ -122,16 +141,25 @@ public class UserConfig {
      * @return {@code true} if updates should be downloaded.
      */
     public boolean downloadUpdates() {
-        return Boolean.parseBoolean(config.getProperty(DOWNLOAD_UPDATES_KEY, DOWNLOAD_UPDATES_DEFAULT_VALUE));
+        return Boolean.parseBoolean(allProperties.getOrDefault(DOWNLOAD_UPDATES_KEY, DOWNLOAD_UPDATES_DEFAULT_VALUE));
     }
 
     /**
-     * Returns all config properties.
+     * Returns all user config properties.
      *
-     * @return The config.
+     * @return The config properties.
      */
-    public Properties properties() {
-        return config;
+    public Map<String, String> properties() {
+        return allProperties;
+    }
+
+    /**
+     * Returns all system properties set via user config.
+     *
+     * @return The system properties.
+     */
+    public Map<String, String> systemProperties() {
+        return systemProperties;
     }
 
     /**
@@ -197,23 +225,32 @@ public class UserConfig {
         FileUtils.deleteDirectoryContent(pluginsDir());
     }
 
-    private Properties loadConfig() {
-        final Properties properties = new Properties();
+    private Map<String, String> loadConfig() {
+        Map<String, String> result = new HashMap<>();
+        Properties properties = new Properties();
         try {
+            Reader in = null;
             if (!Files.exists(configFile)) {
                 Files.writeString(configFile, DEFAULT_CONFIG);
+                in = new StringReader(DEFAULT_CONFIG);
             }
-            try (InputStreamReader reader = new InputStreamReader(Files.newInputStream(configFile))) {
+            try (Reader reader = in == null ? new InputStreamReader(Files.newInputStream(configFile)) : in) {
                 properties.load(reader);
             }
-            properties.put(CONFIG_FILE_KEY, configFile.toRealPath());
-            return properties;
+            properties.forEach((key, value) -> result.put(key.toString(), value.toString()));
+            result.put(CONFIG_FILE_KEY, configFile.toRealPath().toString());
+            return result;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    private void invalidConfiguration(String key, String reason, String value) {
-        throw new IllegalStateException(key + " in " + configFile + " " + reason + ": " + value);
+    private Map<String, String> setSystemProperties() {
+        return properties().entrySet()
+                           .stream()
+                           .filter(e -> e.getKey().startsWith(SYSTEM_PROPERTY_PREFIX))
+                           .map(e -> Map.entry(e.getKey().substring(SYSTEM_PROPERTY_PREFIX.length()), e.getValue()))
+                           .peek(e -> System.setProperty(e.getKey(), e.getValue()))
+                           .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 }

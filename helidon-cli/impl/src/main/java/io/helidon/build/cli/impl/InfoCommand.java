@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
@@ -71,7 +70,7 @@ public final class InfoCommand extends BaseCommand {
         // User config
 
         Map<Object, Object> userConfigProps = new LinkedHashMap<>();
-        Properties properties = userConfig().properties();
+        Map<String, String> properties = userConfig().properties();
         properties.keySet().stream().sorted().forEach(key -> userConfigProps.put(key, properties.get(key)));
 
         // Build properties

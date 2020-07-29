@@ -69,7 +69,7 @@ final class CommonOptions {
         this.debug = debug;
         this.plain = plain;
         this.projectDir = projectDir != null ? projectDir.toPath().toAbsolutePath() : WORKING_DIR;
-        this.metadataUrl = (metadataUrl == null || metadataUrl.isBlank()) ? userConfig().metadataUrl() : metadataUrl;
+        this.metadataUrl = (metadataUrl == null || metadataUrl.isBlank()) ? userConfig().updateUrl() : metadataUrl;
         this.resetCache = resetCache || since != null;
         this.sinceCliVersion = toMavenVersion(since == null ? Config.buildVersion() : since);
     }
