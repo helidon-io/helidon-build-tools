@@ -15,59 +15,30 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.nio.file.Path;
-
 import io.helidon.build.cli.impl.InitCommand.Flavor;
-import io.helidon.build.test.TestFiles;
 
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARTIFACT_ID;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_GROUP_ID;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_NAME;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_PACKAGE;
 import static io.helidon.build.cli.impl.TestUtils.assertPackageExist;
 import static io.helidon.build.cli.impl.TestUtils.exec;
 import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Class InitCommandTest.
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class InitBatchTest extends MetadataCommandTest {
+
+public class InitBatchTest extends InitBaseTest {
 
     private final Flavor flavor = Flavor.MP;
-    private final Path targetDir = TestFiles.targetDir();
 
     @Test
-    @Order(1)
     public void testInit() throws Exception {
-        startMetadataAccess(false, false);
-        try {
-            exec("init",
-                    "--url", metadataUrl(),
-                    "--batch",
-                    "--flavor", flavor.toString(),
-                    "--project ", targetDir.toString(),
-                    "--version ", helidonTestVersion(),
-                    "--groupid", DEFAULT_GROUP_ID,
-                    "--artifactid", DEFAULT_ARTIFACT_ID,
-                    "--package", DEFAULT_PACKAGE);
-            assertPackageExist(targetDir.resolve(DEFAULT_NAME), DEFAULT_PACKAGE);
-        } finally {
-            stopMetadataAccess();
-        }
-    }
-
-    @Test
-    @Order(2)
-    public void testClean() {
-        Path projectDir = targetDir.resolve(DEFAULT_NAME);
-        assertTrue(TestFiles.deleteDirectory(projectDir.toFile()));
-        System.out.println("Directory " + projectDir + " deleted");
+        exec("init",
+             "--url", metadataUrl(),
+             "--batch",
+             "--flavor", flavor.toString(),
+             "--project ", targetDir().toString(),
+             "--version ", helidonTestVersion());
+        assertPackageExist(projectDir(), packageName());
     }
 }

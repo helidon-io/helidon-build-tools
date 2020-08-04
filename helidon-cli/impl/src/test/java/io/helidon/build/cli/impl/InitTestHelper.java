@@ -24,12 +24,8 @@ import io.helidon.build.test.TestFiles;
 
 import org.apache.maven.model.Model;
 
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARCHETYPE_ID;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARTIFACT_ID;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARCHETYPE_NAME;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_FLAVOR;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_GROUP_ID;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_NAME;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_PACKAGE;
 import static io.helidon.build.cli.impl.TestUtils.assertPackageExist;
 import static io.helidon.build.cli.impl.TestUtils.exec;
 import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
@@ -44,19 +40,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class InitTestHelper {
 
-    private String flavor = DEFAULT_FLAVOR;
-    private String apptype = DEFAULT_ARCHETYPE_ID;
-    private String groupId = DEFAULT_GROUP_ID;
-    private String artifactId = DEFAULT_ARTIFACT_ID;
-    private String packageName = DEFAULT_PACKAGE;
-    private String name = DEFAULT_NAME;
-
     private final String metadataUrl;
     private final Path targetDir;
+    private String flavor = DEFAULT_FLAVOR;
+    private String apptype = DEFAULT_ARCHETYPE_NAME;
+    private String groupId;
+    private String artifactId;
+    private String packageName;
+    private String projectName;
+    private String projectDir;
+
 
     InitTestHelper(String metadataUrl) {
         this.metadataUrl = metadataUrl;
         this.targetDir =  TestFiles.targetDir();
+    }
+
+    private void init() {
+
     }
 
     public void flavor(String flavor) {
@@ -80,11 +81,12 @@ class InitTestHelper {
     }
 
     public void name(String name) {
-        this.name = name;
+        this.projectName = name;
     }
 
     public void execute() throws Exception {
         try {
+            init();
             generate();
             build();
         } finally {
@@ -106,25 +108,25 @@ class InitTestHelper {
             args.add("--flavor");
             args.add(flavor);
         }
-        if (!apptype.equals(DEFAULT_ARCHETYPE_ID)) {
+        if (!apptype.equals(DEFAULT_ARCHETYPE_NAME)) {
             args.add("--apptype");
             args.add(apptype);
         }
-        if (!groupId.equals(DEFAULT_GROUP_ID)) {
+        if (groupId != null) {
             args.add("--groupId");
             args.add(groupId);
         }
-        if (!artifactId.equals(DEFAULT_ARTIFACT_ID)) {
+        if (artifactId != null) {
             args.add("--artifactId");
             args.add(artifactId);
         }
-        if (!packageName.equals(DEFAULT_PACKAGE)) {
+        if (packageName != null) {
             args.add("--package");
             args.add(packageName);
         }
-        if (!name.equals(DEFAULT_NAME)) {
+        if (projectName != null) {
             args.add("--name");
-            args.add(name);
+            args.add(projectName);
         }
         String[] argsArray = args.toArray(new String[]{});
         System.out.print("Executing with args ");
@@ -138,7 +140,7 @@ class InitTestHelper {
 
     private void verify() {
         // Project directory
-        Path projectDir = targetDir.resolve(Path.of(name));
+        Path projectDir = targetDir.resolve(Path.of(projectName));
         assertTrue(Files.exists(projectDir));
 
         // Check pom and read model
@@ -160,17 +162,17 @@ class InitTestHelper {
         assertPackageExist(projectDir, packageName);
 
         // Name
-        assertThat(model.getName(), is(name));
+        assertThat(model.getName(), is(projectName));
     }
 
     private void build() throws Exception {
-        Path projectDir = targetDir.resolve(Path.of(name));
+        Path projectDir = targetDir.resolve(Path.of(projectName));
         exec("build", "--project ", projectDir.toString());
         assertTrue(Files.exists(projectDir.resolve("target/" + artifactId + ".jar")));
     }
 
     private void clean() {
-        Path projectDir = targetDir.resolve(Path.of(name));
+        Path projectDir = targetDir.resolve(Path.of(projectName));
         assertTrue(TestFiles.deleteDirectory(projectDir.toFile()));
         System.out.println("Directory " + projectDir + " deleted");
     }

@@ -28,11 +28,12 @@ public class MetadataCommandTest extends BaseCommandTest {
 
     private MetadataTestServer server;
     private Metadata metadata;
+    private UserConfig userConfig;
 
     public void startMetadataAccess(boolean verbose, boolean clearCache) {
         Config.setUserHome(TestFiles.targetDir().resolve("alice"));
+        this.userConfig = Config.userConfig();
         if (clearCache) {
-            final UserConfig userConfig = Config.userConfig();
             try {
                 userConfig.clearCache();
             } catch (IOException e) {
@@ -49,6 +50,10 @@ public class MetadataCommandTest extends BaseCommandTest {
 
     public Metadata metadata() {
         return metadata;
+    }
+
+    public UserConfig userConfig() {
+        return userConfig;
     }
 
     public void stopMetadataAccess() {

@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import io.helidon.build.util.FileUtils;
+import io.helidon.build.util.SubstitutionVariables;
 
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 import static java.util.stream.Collectors.toMap;
@@ -39,6 +40,16 @@ public class UserConfig {
     private static final String PLUGINS_DIR_NAME = "plugins";
     private static final String CONFIG_FILE_NAME = "config";
     private static final String CONFIG_FILE_KEY = "config.file";
+    private static final String DEFAULT_PROJECT_NAME_KEY = "default.project.name";
+    private static final String DEFAULT_PROJECT_NAME_DEFAULT_VALUE = "${init_archetype}-${init_flavor}";
+    private static final String DEFAULT_GROUP_ID_KEY = "default.group.id";
+    private static final String DEFAULT_GROUP_ID_DEFAULT_VALUE = "me.${user.name}-helidon";
+    private static final String DEFAULT_ARTIFACT_ID_KEY = "default.artifact.id";
+    private static final String DEFAULT_ARTIFACT_DEFAULT_VALUE = "${init_archetype}-${init_flavor}";
+    private static final String DEFAULT_PACKAGE_NAME_KEY = "default.package.name";
+    private static final String DEFAULT_PACKAGE_NAME_DEFAULT_VALUE = "me.${user.name}.${init_flavor}.${init_archetype}";
+    private static final String FAIL_ON_PROJECT_NAME_COLLISION_KEY = "fail.on.project.name.collision";
+    private static final String FAIL_ON_PROJECT_NAME_COLLISION_DEFAULT_VALUE = "false";
     private static final String UPDATE_INTERVAL_HOURS_KEY = "update.check.retry.hours";
     private static final String UPDATE_INTERVAL_HOURS_DEFAULT_VALUE = "12";
     private static final String DOWNLOAD_UPDATES_KEY = "download.new.releases";
@@ -48,6 +59,27 @@ public class UserConfig {
     private static final String SYSTEM_PROPERTY_PREFIX = "system_";
     private static final String DEFAULT_CONFIG =
             "\n"
+            + "# When using the init command to create a new project, default values for the\n"
+            + "# project name, group id and artifact id are defined here. Property substitution\n"
+            + "# is performed with values looked up first from system properties then environment\n"
+            + "# variables. A few special properties are defined and resolved during init command\n"
+            + "# execution and are distinguished with an \"init_\" prefix:\n"
+            + "#\n"
+            + "#  init_flavor     the selected Helidon flavor, e.g \"SE\", converted to lowercase\n"
+            + "#  init_archetype  the name of the selected archetype, e.g \"quickstart\"\n"
+            + "#  init_build      the selected build type, e.g \"maven\", converted to lowercase\n"
+            + "\n"
+            + DEFAULT_PROJECT_NAME_KEY + "=" + DEFAULT_PROJECT_NAME_DEFAULT_VALUE + "\n"
+            + DEFAULT_GROUP_ID_KEY + "=" + DEFAULT_GROUP_ID_DEFAULT_VALUE + "\n"
+            + DEFAULT_ARTIFACT_ID_KEY + "=" + DEFAULT_ARTIFACT_DEFAULT_VALUE + "\n"
+            + DEFAULT_PACKAGE_NAME_KEY + "=" + DEFAULT_PACKAGE_NAME_DEFAULT_VALUE + "\n"
+            + "\n"
+            + "# When using the init command and a project with the same name already exists,\n"
+            + "# this value controls whether it should fail or if the name should be made unique \n"
+            + "# by appending a unique digit, e.g \"quickstart-se-1\".\n"
+            + "\n"
+            + FAIL_ON_PROJECT_NAME_COLLISION_KEY + "=" + FAIL_ON_PROJECT_NAME_COLLISION_DEFAULT_VALUE + "\n"
+            + "\n"
             + "# The CLI regularly updates information about new Helidon and/or CLI releases, and\n"
             + "# this value controls the minimum number of hours between rechecks. Update checks\n"
             + "# can be forced on every invocation with a zero value or disabled with a negative\n"
@@ -112,13 +144,17 @@ public class UserConfig {
         this.systemProperties = setSystemProperties();
     }
 
+    private String property(String key, String defaultValue) {
+        return allProperties.getOrDefault(key, defaultValue);
+    }
+
     /**
      * Returns the URL from which to get updates.
      *
      * @return The url.
      */
     public String updateUrl() {
-        return allProperties.getOrDefault(UPDATE_URL_KEY, UPDATE_URL_DEFAULT_VALUE);
+        return property(UPDATE_URL_KEY, UPDATE_URL_DEFAULT_VALUE);
     }
 
     /**
@@ -127,7 +163,7 @@ public class UserConfig {
      * @return The interval.
      */
     public int checkForUpdatesIntervalHours() {
-        String value = allProperties.getOrDefault(UPDATE_INTERVAL_HOURS_KEY, UPDATE_INTERVAL_HOURS_DEFAULT_VALUE);
+        String value = property(UPDATE_INTERVAL_HOURS_KEY, UPDATE_INTERVAL_HOURS_DEFAULT_VALUE);
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
@@ -136,12 +172,78 @@ public class UserConfig {
     }
 
     /**
+     * Returns the default project name using the given substitution variables.
+     *
+     * @param substitutions The substitution variables.
+     * @return The default project name.
+     */
+    public String defaultProjectName(SubstitutionVariables substitutions) {
+        return substitutions.resolve(property(DEFAULT_PROJECT_NAME_KEY, DEFAULT_PROJECT_NAME_DEFAULT_VALUE));
+    }
+
+    /**
+     * Returns the default group id using the given substitution variables.
+     *
+     * @param substitutions The substitution variables.
+     * @return The default group id.
+     */
+    public String defaultGroupId(SubstitutionVariables substitutions) {
+        return substitutions.resolve(property(DEFAULT_GROUP_ID_KEY, DEFAULT_GROUP_ID_DEFAULT_VALUE));
+    }
+
+    /**
+     * Returns the default artifact id using the given substitution variables.
+     *
+     * @param substitutions The substitution variables.
+     * @return The default artifact id.
+     */
+    public String defaultArtifactId(SubstitutionVariables substitutions) {
+        return substitutions.resolve(property(DEFAULT_ARTIFACT_ID_KEY, DEFAULT_ARTIFACT_DEFAULT_VALUE));
+    }
+
+    /**
+     * Returns the default package name using the given substitution variables.
+     *
+     * @param substitutions The substitution variables.
+     * @return The default package name.
+     */
+    public String defaultPackageName(SubstitutionVariables substitutions) {
+        String result = substitutions.resolve(property(DEFAULT_PACKAGE_NAME_KEY, DEFAULT_PACKAGE_NAME_DEFAULT_VALUE));
+        int length = result.length();
+        if (length > 0 && Character.isJavaIdentifierStart(result.charAt(0))) {
+            for (int i = 1; i < length; i++) {
+                if (!Character.isJavaIdentifierPart(result.charAt(i))) {
+                    illegalPackageName(result);
+                }
+            }
+        } else {
+            illegalPackageName(result);
+        }
+        return result;
+    }
+
+    private void illegalPackageName(String name) {
+        throw new IllegalStateException(DEFAULT_PACKAGE_NAME_KEY + " in " + configFile + " does not resolve to a valid "
+                                        + "package name: " + name);
+    }
+
+    /**
+     * Returns whether the init command should fail if the project name already exists or if
+     * a unique name should be created.
+     *
+     * @return {@code true} if the init command should fail.
+     */
+    public boolean failOnProjectNameCollision() {
+        return Boolean.parseBoolean(property(FAIL_ON_PROJECT_NAME_COLLISION_KEY, DOWNLOAD_UPDATES_DEFAULT_VALUE));
+    }
+
+    /**
      * Returns whether or not updates should be downloaded.
      *
      * @return {@code true} if updates should be downloaded.
      */
     public boolean downloadUpdates() {
-        return Boolean.parseBoolean(allProperties.getOrDefault(DOWNLOAD_UPDATES_KEY, DOWNLOAD_UPDATES_DEFAULT_VALUE));
+        return Boolean.parseBoolean(property(DOWNLOAD_UPDATES_KEY, DOWNLOAD_UPDATES_DEFAULT_VALUE));
     }
 
     /**
