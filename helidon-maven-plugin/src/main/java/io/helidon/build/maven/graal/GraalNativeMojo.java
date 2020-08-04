@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.model.Resource;
@@ -53,9 +54,19 @@ public class GraalNativeMojo extends AbstractMojo {
     private static final String EXEC_MODE_JAR_WITH_CP = "jar-cp";
 
     /**
+     * {@code true} if running on WINDOWS.
+     */
+    private static final boolean IS_WINDOWS = File.pathSeparator != ":";
+
+    /**
      * Constant for the {@code native-image} command file name.
      */
     private static final String NATIVE_IMAGE_CMD = "native-image";
+
+    /**
+     * Constant for the file extensions that are executable on windows.
+     */
+    private static final List<String> WINDOWS_EXECUTABLE_EXTENSIONS = List.of("exe", "bin", "bat", "cmd", "ps1");
 
     /**
      * Plexus build context used to get the scanner for scanning resources.
@@ -234,7 +245,7 @@ public class GraalNativeMojo extends AbstractMojo {
     private void addResources(List<String> command) {
         String resources = getResources();
         if (!resources.isEmpty()) {
-            command.add("-H:IncludeResources=" + resources);
+            command.add("-H:IncludeResources=\"" + resources + "\"");
         }
     }
 
@@ -243,10 +254,10 @@ public class GraalNativeMojo extends AbstractMojo {
         getLog().info("Building native image :" + outputPath.toAbsolutePath());
 
         // Path is the directory
-        command.add("-H:Path=" + buildDirectory.getAbsolutePath());
+        command.add("-H:Path=\"" + buildDirectory.getAbsolutePath() + "\"");
 
         // Name is the filename
-        command.add("-H:Name=" + finalName);
+        command.add("-H:Name=\"" + finalName + "\"");
     }
 
     private void addStaticOrShared(List<String> command) throws MojoExecutionException {
@@ -401,6 +412,37 @@ public class GraalNativeMojo extends AbstractMojo {
     }
 
     /**
+     * Find the first command file for the specified name with a known windows executable extension.
+     *
+     * @param dir directory
+     * @param cmd command name
+     * @return File or {@code null} if no valid command file is found
+     */
+    private static File findWindowsCmd(File dir, String cmd) {
+        return WINDOWS_EXECUTABLE_EXTENSIONS.stream()
+                .map((ext) -> new File(dir, cmd + "." + ext))
+                .filter(File::isFile)
+                .map(File::getAbsoluteFile)
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * File a command file.
+     *
+     * @param dir directory
+     * @param cmd command name
+     * @return File or {@code null} if no valid command file is found
+     */
+    private static File findCmd(File dir, String cmd) {
+        File cmdFile = new File(dir, cmd);
+        if (cmdFile.isFile()) {
+            return cmdFile;
+        }
+        return IS_WINDOWS ? findWindowsCmd(dir, cmd) : null;
+    }
+
+    /**
      * Find the {@code native-image} command file.
      *
      * @return File
@@ -421,9 +463,10 @@ public class GraalNativeMojo extends AbstractMojo {
                         "PATH environment variable is unset or empty");
             }
             for (final String p : sysPath.split(File.pathSeparator)) {
-                final File e = new File(p, NATIVE_IMAGE_CMD);
-                if (e.isFile()) {
-                    return e.getAbsoluteFile();
+                File cmd = findCmd(new File(p), NATIVE_IMAGE_CMD);
+                if (cmd != null) {
+                    getLog().debug("Found " + NATIVE_IMAGE_CMD + ": " + cmd);
+                    return cmd;
                 }
             }
             throw new MojoExecutionException(NATIVE_IMAGE_CMD
@@ -434,22 +477,17 @@ public class GraalNativeMojo extends AbstractMojo {
                 "graalvm.home set, looking for bin/" + NATIVE_IMAGE_CMD);
 
         File binDir = new File(graalVMHome, "bin");
-        if (!binDir.exists() || !binDir.isDirectory()) {
-            throw new MojoExecutionException("Unable to find "
-                    + NATIVE_IMAGE_CMD + " command path, "
-                    + binDir.getAbsolutePath()
-                    + " is not a valid directory");
+        if (!binDir.isDirectory()) {
+            throw new MojoExecutionException("Unable to find " + NATIVE_IMAGE_CMD + " command, "
+                    + binDir.getAbsolutePath() + " is not a valid directory");
         }
-
-        File cmd = new File(binDir, "native-image");
-        if (!cmd.exists() || !cmd.isFile()) {
-            throw new MojoExecutionException("Unable to find "
-                    + NATIVE_IMAGE_CMD + " command path, "
-                    + cmd.getAbsolutePath()
-                    + " is not a valid file");
+        File cmd = findCmd(binDir, NATIVE_IMAGE_CMD);
+        if (cmd != null) {
+            getLog().debug("Found " + NATIVE_IMAGE_CMD + ": " + cmd);
+            return cmd;
         }
-        getLog().debug("Found " + NATIVE_IMAGE_CMD + ": " + cmd);
-        return cmd;
+        throw new MojoExecutionException(NATIVE_IMAGE_CMD
+                + " not found in directory: " + binDir.getAbsolutePath());
     }
 
     private static final class NativeContext {
