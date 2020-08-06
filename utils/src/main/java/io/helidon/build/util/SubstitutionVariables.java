@@ -178,8 +178,8 @@ public class SubstitutionVariables {
                                 case AsIs:
                                     return resolve(end, value, originalValue, depth + 1);
                                 default:
-                                    throw new IllegalArgumentException("Substitution not found for \"" + key + "\" in \"" +
-                                                                       value + "\"");
+                                    throw new IllegalArgumentException("Substitution not found for \"" + key + "\" in \""
+                                                                       + value + "\"");
                             }
                         }
                         final String prefix = value.substring(0, start);
@@ -191,8 +191,8 @@ public class SubstitutionVariables {
                 }
             }
         } else {
-            throw new IllegalArgumentException("Max recursion (" + MAX_RECURSION_DEPTH + ") depth reached " +
-                                               "for \"" + originalValue + "\"");
+            throw new IllegalArgumentException("Max recursion (" + MAX_RECURSION_DEPTH + ") depth reached "
+                                               + "for \"" + originalValue + "\"");
         }
         return value;
     }
