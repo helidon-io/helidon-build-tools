@@ -50,24 +50,22 @@ import static org.hamcrest.Matchers.greaterThan;
 /**
  * Base class for init command tests and other tests that require init
  */
-class InitBaseTest extends MetadataCommandTest {
+class InitCommandBaseTest extends MetadataCommandTest {
 
     private final Path targetDir = TestFiles.targetDir();
-    private Path projectDir;
-    private String defaultProjectName;
-    private String defaultGroupId;
-    private String defaultArtifactId;
-    private String defaultPackageName;
-    private Path sourceRoot;
-
     private File input;
+
     private String flavor;
     private String archetypeName;
     private String groupId;
     private String artifactId;
     private String packageName;
     private String projectName;
-    private boolean build;
+    private boolean buildProject;
+
+    private Path projectDir;
+    private Path sourceRoot;
+
 
     @BeforeEach
     public void beforeEach() {
@@ -96,8 +94,8 @@ class InitBaseTest extends MetadataCommandTest {
         this.input = new File(url.getFile());
     }
 
-    protected void build(boolean build) {
-        this.build = build;
+    protected void buildProject(boolean buildProject) {
+        this.buildProject = buildProject;
     }
 
     protected void groupId(String groupId) {
@@ -120,7 +118,7 @@ class InitBaseTest extends MetadataCommandTest {
         return targetDir;
     }
 
-    protected void initDefaults() {
+    protected void initArguments() {
         SubstitutionVariables substitutions = SubstitutionVariables.of(systemPropertyOrEnvVarSource(), key -> {
             switch (key.toLowerCase()) {
                 case "init_flavor":
@@ -131,35 +129,20 @@ class InitBaseTest extends MetadataCommandTest {
                     return null;
             }
         });
-        defaultProjectName = userConfig().defaultProjectName(substitutions);
-        defaultGroupId = userConfig().defaultGroupId(substitutions);
-        defaultArtifactId = userConfig().defaultArtifactId(substitutions);
-        defaultPackageName = userConfig().defaultPackageName(substitutions);
-        projectDir = targetDir.resolve(projectName == null ? defaultProjectName : projectName);
+        String projectNameArg = projectName;
+        projectName = userConfig().projectName(projectName, artifactId, substitutions);
+        groupId = groupId == null ? userConfig().defaultGroupId(substitutions) : groupId;
+        artifactId = userConfig().artifactId(artifactId, projectNameArg, substitutions);
+        packageName = packageName == null ? userConfig().defaultPackageName(substitutions) : packageName;
+        projectDir = targetDir.resolve(projectName);
     }
 
     protected Path projectDir() {
         return projectDir;
     }
 
-    protected String defaultProjectName() {
-        return defaultProjectName;
-    }
-
-    protected String defaultGroupId() {
-        return defaultGroupId;
-    }
-
-    protected String defaultArtifactId() {
-        return defaultArtifactId;
-    }
-
-    protected String defaultPackageName() {
-        return defaultPackageName;
-    }
-
     protected void generate() throws Exception {
-        initDefaults();
+        initArguments();
         List<String> args = new ArrayList<>();
         args.add("init");
         args.add("--url");
@@ -207,7 +190,7 @@ class InitBaseTest extends MetadataCommandTest {
         assertExpectedPom();
         assertPackageExists();
         assertSourceFilesExist();
-        if (build) {
+        if (buildProject) {
             exec("build", "--project ", projectDir.toString());
             assertJarExists();
             assertProjectConfig();
@@ -215,10 +198,7 @@ class InitBaseTest extends MetadataCommandTest {
     }
 
     protected void assertJarExists() {
-        assertFile(projectDir.resolve("target").resolve((artifactId == null ? defaultArtifactId : artifactId) + ".jar"));
-// TODO assertFile(projectDir.resolve("target").resolve((projectName == null ? defaultProjectName : projectName) + ".jar"));
-// if user specifies --name and NOT --artifactid, use name as artifactid?
-// if yes, them we must do the reverse as well/
+        assertFile(projectDir.resolve("target").resolve(artifactId + ".jar"));
     }
 
     private void assertProjectExists() {
@@ -235,27 +215,26 @@ class InitBaseTest extends MetadataCommandTest {
         assertThat(parentArtifact, containsString(flavor.toLowerCase()));
 
         // GroupId
-        assertThat(model.getGroupId(), is(groupId == null ? defaultGroupId : groupId));
+        assertThat(model.getGroupId(), is(groupId));
 
         // ArtifactId
-        assertThat(model.getArtifactId(), is(artifactId == null ? defaultArtifactId : artifactId));
+        assertThat(model.getArtifactId(), is(artifactId));
 
         // Name
-        assertThat(model.getName(), is(projectName == null ? defaultProjectName : projectName));
+        assertThat(model.getName(), is(projectName));
     }
 
     private void assertPackageExists() {
         sourceRoot = assertDir(projectDir.resolve("src/main/java"));
-        String pkgName = packageName == null ? defaultPackageName : packageName;
-        for (String pkg : pkgName.split("\\.")) {
+        for (String pkg : packageName.split("\\.")) {
             sourceRoot = assertDir(sourceRoot.resolve(pkg));
         }
     }
 
     private void assertSourceFilesExist() throws IOException {
         long sourceFiles = Files.list(sourceRoot)
-                               .filter(file -> file.getFileName().toString().endsWith(".java"))
-                               .count();
+                                .filter(file -> file.getFileName().toString().endsWith(".java"))
+                                .count();
         assertThat(sourceFiles, is(greaterThan(0L)));
     }
 
@@ -263,7 +242,7 @@ class InitBaseTest extends MetadataCommandTest {
         Path dotHelidon = projectDir.resolve(DOT_HELIDON);
         ProjectConfig config = new ProjectConfig(dotHelidon);
         assertThat(config.exists(), is(true));
-        if (build) {
+        if (buildProject) {
             assertThat(config.lastSuccessfulBuildTime(), is(greaterThan(0L)));
         }
     }

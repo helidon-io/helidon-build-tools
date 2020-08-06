@@ -24,12 +24,12 @@ import org.junit.jupiter.api.Test;
 /**
  * Class InitDefaultTest.
  */
-public class InitDefaultTest extends InitBaseTest {
+public class InitDefaultsTest extends InitCommandBaseTest {
 
     @BeforeEach
     public void beforeEach() {
         super.beforeEach();
-        build(true);
+        buildProject(true);
     }
 
     @AfterEach
@@ -55,7 +55,6 @@ public class InitDefaultTest extends InitBaseTest {
         groupId("io.helidon.basicapp");
         generate();
         assertValid();
-
     }
 
     @Test
@@ -63,7 +62,6 @@ public class InitDefaultTest extends InitBaseTest {
         artifactId("basicapp");
         generate();
         assertValid();
-
     }
 
     @Test

@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Class InitInteractiveTest.
  */
-class InitInteractiveTest extends InitBaseTest {
+class InitInteractiveTest extends InitCommandBaseTest {
 
     @BeforeEach
     public void beforeEach() {

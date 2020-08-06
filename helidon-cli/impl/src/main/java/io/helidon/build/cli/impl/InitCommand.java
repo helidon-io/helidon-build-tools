@@ -62,10 +62,10 @@ public final class InitCommand extends BaseCommand {
     private final Build build;
     private String helidonVersion;
     private final String archetypeName;
-    private final String groupId;
-    private final String artifactId;
-    private final String packageName;
-    private final String projectName;
+    private String groupId;
+    private String artifactId;
+    private String packageName;
+    private String projectName;
     private ArchetypeCatalog.ArchetypeEntry archetype;
     private final Metadata metadata;
     private final UserConfig config;
@@ -190,6 +190,9 @@ public final class InitCommand extends BaseCommand {
             }
         }
 
+        // Initialize arguments with defaults if needed
+        initArguments();
+
         // Find jar and set up loader
         ArchetypeLoader loader;
         File jarFile = browser.archetypeJar(archetype).toFile();
@@ -211,7 +214,7 @@ public final class InitCommand extends BaseCommand {
         }
 
         // Generate project using archetype engine
-        Path projectDir = initProjectDir(properties.get("name"));
+        Path projectDir = initProjectDir();
         engine.generate(projectDir.toFile());
 
         // Create config file that includes feature information
@@ -236,8 +239,27 @@ public final class InitCommand extends BaseCommand {
         }
     }
 
-    private Path initProjectDir(String projectName) {
-        // TODO: This command should not support --project !
+    private void initArguments() {
+        SubstitutionVariables substitutions = SubstitutionVariables.of(systemPropertyOrEnvVarSource(), key -> {
+            switch (key.toLowerCase()) {
+                case "init_flavor":
+                    return flavor.toString();
+                case "init_archetype":
+                    return archetype.name();
+                case "init_build":
+                    return build.name().toLowerCase();
+                default:
+                    return null;
+            }
+        });
+        String projectNameArg = projectName;
+        projectName = config.projectName(projectName, artifactId, substitutions);
+        groupId = groupId == null ? config.defaultGroupId(substitutions) : groupId;
+        artifactId = config.artifactId(artifactId, projectNameArg, substitutions);
+        packageName = packageName == null ? config.defaultPackageName(substitutions) : packageName;
+    }
+
+    private Path initProjectDir() {
         Path parentDirectory = commonOptions.project();
         Path projectDir = parentDirectory.resolve(projectName);
         if (Files.exists(projectDir)) {
@@ -258,27 +280,13 @@ public final class InitCommand extends BaseCommand {
 
     private Map<String, String> initProperties() {
         Map<String, String> result = Maps.fromProperties(System.getProperties());
-        SubstitutionVariables substitutions = SubstitutionVariables.of(systemPropertyOrEnvVarSource(), this::initPropertySource);
-        result.put("name", projectName == null ? config.defaultProjectName(substitutions) : projectName);
-        result.put("groupId", groupId == null ? config.defaultGroupId(substitutions) : groupId);
-        result.put("artifactId", artifactId == null ? config.defaultArtifactId(substitutions) : artifactId);
-        result.put("package", packageName == null ? config.defaultPackageName(substitutions) : packageName);
+        result.put("name", projectName);
+        result.put("groupId", groupId);
+        result.put("artifactId", artifactId);
+        result.put("package", packageName);
         result.put("helidonVersion", helidonVersion);
         result.putIfAbsent("maven", "true");        // No gradle support yet
         return result;
-    }
-
-    private String initPropertySource(String name) {
-        switch (name) {
-            case "init_flavor":
-                return flavor.toString();
-            case "init_archetype":
-                return archetype.name();
-            case "init_build":
-                return build.name().toLowerCase();
-            default:
-                return null;
-        }
     }
 
     private String defaultHelidonVersion() {

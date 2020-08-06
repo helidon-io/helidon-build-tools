@@ -172,6 +172,44 @@ public class UserConfig {
     }
 
     /**
+     * Returns the project name to use given the command line arguments, preferring {@code --name}, then {@code --artifactid}
+     * and {@link #defaultProjectName(SubstitutionVariables)} if neither are provided.
+     *
+     * @param nameArg The {@code --name} argument or {@code null} if not provided.
+     * @param artifactIdArg The {@code --artifactid} argument or {@code null} if not provided.
+     * @param substitutions The substitution variables.
+     * @return The project name.
+     */
+    public String projectName(String nameArg, String artifactIdArg, SubstitutionVariables substitutions) {
+        if (nameArg != null) {
+            return nameArg;
+        } else if (artifactIdArg != null) {
+            return artifactIdArg;
+        } else {
+            return defaultProjectName(substitutions);
+        }
+    }
+
+    /**
+     * Returns the artifact id to use given the command line arguments, preferring {@code --artifactid}, then {@code --name}
+     * and {@link #defaultArtifactId(SubstitutionVariables)} if neither are provided.
+     *
+     * @param artifactIdArg The {@code --artifactid} argument or {@code null} if not provided.
+     * @param nameArg The {@code --name} argument or {@code null} if not provided.
+     * @param substitutions The substitution variables.
+     * @return The artifactId.
+     */
+    public String artifactId(String artifactIdArg, String nameArg, SubstitutionVariables substitutions) {
+        if (nameArg != null) {
+            return nameArg;
+        } else if (artifactIdArg != null) {
+            return artifactIdArg;
+        } else {
+            return defaultProjectName(substitutions);
+        }
+    }
+
+    /**
      * Returns the default project name using the given substitution variables.
      *
      * @param substitutions The substitution variables.

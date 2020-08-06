@@ -35,7 +35,7 @@ import static org.hamcrest.Matchers.containsString;
  * Class CommandTest.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class CommandTest extends InitBaseTest {
+public class CommandTest extends InitCommandBaseTest {
 
     @BeforeEach
     public void beforeEach() {
@@ -74,7 +74,7 @@ public class CommandTest extends InitBaseTest {
     @Order(3)
     public void testInfo() throws Exception {
         Config.userConfig().clearPlugins();
-        initDefaults();
+        initArguments();
         Path projectDir = projectDir();
         String result = exec("info", "--project ", projectDir.toString());
         assertThat(result, containsString("plugin"));
@@ -83,7 +83,7 @@ public class CommandTest extends InitBaseTest {
     @Test
     @Order(4)
     public void testVersion() throws Exception {
-        initDefaults();
+        initArguments();
         Path projectDir = projectDir();
         String result = exec("version", "--project ", projectDir.toString());
         assertThat(result, containsString("version"));
