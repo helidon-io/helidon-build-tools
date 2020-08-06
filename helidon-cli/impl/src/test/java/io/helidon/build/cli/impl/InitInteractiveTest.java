@@ -15,75 +15,39 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.io.File;
-import java.nio.file.Path;
+import java.io.IOException;
 
-import io.helidon.build.test.TestFiles;
-
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
-
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_NAME;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_PACKAGE;
-import static io.helidon.build.cli.impl.TestUtils.assertPackageExist;
-import static io.helidon.build.cli.impl.TestUtils.execWithDirAndInput;
-import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Class InitInteractiveTest.
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class InitInteractiveTest extends MetadataCommandTest {
+class InitInteractiveTest extends InitCommandBaseTest {
 
-    private final Path targetDir = TestFiles.targetDir();
+    @BeforeEach
+    public void beforeEach() {
+        super.beforeEach();
+        input("input.txt");
+    }
+
+    @AfterEach
+    public void afterEach() throws IOException {
+        super.afterEach();
+    }
 
     @Test
-    @Order(1)
     public void testInitSe() throws Exception {
-        startMetadataAccess(false, false);
-        try {
-            File input = new File(InitCommand.class.getResource("input.txt").getFile());
-            execWithDirAndInput(targetDir.toFile(), input,
-                    "init", "--url", metadataUrl(), "--version", helidonTestVersion());
-            assertPackageExist(targetDir.resolve(DEFAULT_NAME), DEFAULT_PACKAGE);
-        } finally {
-            stopMetadataAccess();
-        }
+        flavor("SE");
+        generate();
+        assertValid();
     }
 
     @Test
-    @Order(2)
-    public void testCleanSe() {
-        Path projectDir = targetDir.resolve(DEFAULT_NAME);
-        assertTrue(TestFiles.deleteDirectory(projectDir.toFile()));
-        System.out.println("Directory " + projectDir + " deleted");
-    }
-
-    @Test
-    @Order(3)
     public void testInitMp() throws Exception {
-        startMetadataAccess(false, false);
-        try {
-            File input = new File(InitCommand.class.getResource("input.txt").getFile());
-            execWithDirAndInput(targetDir.toFile(), input,
-                    "init", "--url", metadataUrl(), "--version", helidonTestVersion(), "--flavor", "MP");
-            assertPackageExist(targetDir.resolve(DEFAULT_NAME), DEFAULT_PACKAGE);
-            Path config = targetDir.resolve(DEFAULT_NAME)
-                                   .resolve("src/main/resources/META-INF/microprofile-config.properties");
-            assertTrue(config.toFile().exists());
-        } finally {
-            stopMetadataAccess();
-        }
-    }
-
-    @Test
-    @Order(4)
-    public void testCleanMp() {
-        Path projectDir = targetDir.resolve(DEFAULT_NAME);
-        assertTrue(TestFiles.deleteDirectory(projectDir.toFile()));
-        System.out.println("Directory " + projectDir + " deleted");
+        flavor("MP");
+        generate();
+        assertValid();
     }
 }

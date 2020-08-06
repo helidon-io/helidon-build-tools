@@ -15,60 +15,70 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.IOException;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
 /**
  * Class InitDefaultTest.
  */
-public class InitDefaultTest extends MetadataCommandTest {
-
-    private InitTestHelper helper;
+public class InitDefaultsTest extends InitCommandBaseTest {
 
     @BeforeEach
     public void beforeEach() {
-        startMetadataAccess(false, false);
-        helper = new InitTestHelper(metadataUrl());
+        super.beforeEach();
+        buildProject(true);
     }
 
     @AfterEach
-    public void afterEach() {
-        stopMetadataAccess();
+    public void afterEach() throws IOException {
+        super.afterEach();
     }
 
     @Test
     public void testDefaults() throws Exception {
-        helper.execute();
+        generate();
+        assertValid();
     }
 
     @Test
     public void testFlavor() throws Exception {
-        helper.flavor("MP");
-        helper.execute();
+        flavor("MP");
+        generate();
+        assertValid();
     }
 
     @Test
     public void testGroupId() throws Exception {
-        helper.groupId("io.helidon.basicapp");
-        helper.execute();
+        groupId("io.helidon.basicapp");
+        generate();
+        assertValid();
     }
 
     @Test
     public void testArtifactId() throws Exception {
-        helper.artifactId("basicapp");
-        helper.execute();
+        artifactId("foo-artifact");
+        generate();
+        assertValid();
+        assertThat(projectDir().getFileName().toString(), is("foo-artifact"));
     }
 
     @Test
     public void testPackage() throws Exception {
-        helper.packageName("io.helidon.mypackage");
-        helper.execute();
+        packageName("io.helidon.mypackage");
+        generate();
+        assertValid();
     }
 
     @Test
     public void testName() throws Exception {
-        helper.name("mybasicproject");
-        helper.execute();
+        projectName("mybasicproject");
+        generate();
+        assertValid();
     }
 }

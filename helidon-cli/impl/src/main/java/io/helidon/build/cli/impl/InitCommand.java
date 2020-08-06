@@ -17,6 +17,7 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,8 @@ import io.helidon.build.cli.impl.FlowNodeControllers.FlowNodeController;
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.ProjectConfig;
+import io.helidon.build.util.Requirements;
+import io.helidon.build.util.SubstitutionVariables;
 
 import static io.helidon.build.cli.impl.ArchetypeBrowser.ARCHETYPE_NOT_FOUND;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
@@ -45,6 +48,7 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
 import static io.helidon.build.util.Requirements.failed;
 import static io.helidon.build.util.Requirements.require;
 import static io.helidon.build.util.StyleFunction.BoldBrightCyan;
+import static io.helidon.build.util.SubstitutionVariables.systemPropertyOrEnvVarSource;
 
 /**
  * The {@code init} command.
@@ -56,13 +60,15 @@ public final class InitCommand extends BaseCommand {
     private final boolean batch;
     private Flavor flavor;
     private final Build build;
-    private final String archetypeName;
     private String helidonVersion;
-    private final String groupId;
-    private final String artifactId;
-    private final String packageName;
-    private final String name;
+    private final String archetypeName;
+    private String groupId;
+    private String artifactId;
+    private String packageName;
+    private String projectName;
+    private ArchetypeCatalog.ArchetypeEntry archetype;
     private final Metadata metadata;
+    private final UserConfig config;
 
     /**
      * Helidon flavors.
@@ -92,11 +98,7 @@ public final class InitCommand extends BaseCommand {
     }
 
     static final String DEFAULT_FLAVOR = "SE";
-    static final String DEFAULT_ARCHETYPE_ID = "bare";
-    static final String DEFAULT_GROUP_ID = "mygroupid";
-    static final String DEFAULT_ARTIFACT_ID = "myartifactid";
-    static final String DEFAULT_PACKAGE = "mypackage";
-    static final String DEFAULT_NAME = "myproject";
+    static final String DEFAULT_ARCHETYPE_NAME = "bare";
 
     @Creator
     InitCommand(CommonOptions commonOptions,
@@ -107,15 +109,11 @@ public final class InitCommand extends BaseCommand {
                         defaultValue = "MAVEN") Build build,
                 @KeyValue(name = "version", description = "Helidon version") String version,
                 @KeyValue(name = "archetype", description = "Archetype name",
-                        defaultValue = DEFAULT_ARCHETYPE_ID) String archetypeName,
-                @KeyValue(name = "groupid", description = "Project's group ID",
-                        defaultValue = DEFAULT_GROUP_ID) String groupId,
-                @KeyValue(name = "artifactid", description = "Project's artifact ID",
-                        defaultValue = DEFAULT_ARTIFACT_ID) String artifactId,
-                @KeyValue(name = "package", description = "Project's package name",
-                        defaultValue = DEFAULT_PACKAGE) String packageName,
-                @KeyValue(name = "name", description = "Project's name",
-                        defaultValue = DEFAULT_NAME) String projectName) {
+                        defaultValue = DEFAULT_ARCHETYPE_NAME) String archetypeName,
+                @KeyValue(name = "groupid", description = "Project's group ID") String groupId,
+                @KeyValue(name = "artifactid", description = "Project's artifact ID") String artifactId,
+                @KeyValue(name = "package", description = "Project's package name") String packageName,
+                @KeyValue(name = "name", description = "Project's name") String projectName) {
         super(commonOptions, version != null);
         this.commonOptions = commonOptions;
         this.batch = batch;
@@ -126,8 +124,9 @@ public final class InitCommand extends BaseCommand {
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.packageName = packageName;
-        this.name = projectName;
+        this.projectName = projectName;
         this.metadata = metadata();
+        this.config = Config.userConfig();
     }
 
     @Override
@@ -172,7 +171,6 @@ public final class InitCommand extends BaseCommand {
         List<ArchetypeCatalog.ArchetypeEntry> archetypes = browser.archetypes();
         require(!archetypes.isEmpty(), "Unable to find archetypes for %s and %s.", flavor, helidonVersion);
 
-        ArchetypeCatalog.ArchetypeEntry archetype;
         if (!batch) {
             // Select archetype interactively
             List<String> descriptions = archetypes.stream()
@@ -191,6 +189,9 @@ public final class InitCommand extends BaseCommand {
                 failed(ARCHETYPE_NOT_FOUND, archetypeName, helidonVersion);
             }
         }
+
+        // Initialize arguments with defaults if needed
+        initArguments();
 
         // Find jar and set up loader
         ArchetypeLoader loader;
@@ -213,9 +214,7 @@ public final class InitCommand extends BaseCommand {
         }
 
         // Generate project using archetype engine
-        Path parentDirectory = commonOptions.project();
-        Path projectDir = parentDirectory.resolve(properties.get("name"));
-        require(!projectDir.toFile().exists(), "Directory %s already exists", projectDir);
+        Path projectDir = initProjectDir();
         engine.generate(projectDir.toFile());
 
         // Create config file that includes feature information
@@ -225,7 +224,7 @@ public final class InitCommand extends BaseCommand {
         configFile.property(HELIDON_VERSION_PROPERTY, helidonVersion);
         configFile.store();
 
-        String dir = BoldBrightCyan.apply(parentDirectory + Constants.DIR_SEP + projectDir.getFileName());
+        String dir = BoldBrightCyan.apply(commonOptions.project() + Constants.DIR_SEP + projectDir.getFileName());
         Prompter.displayLine("Switch directory to " + dir + " to use CLI");
 
         if (!batch) {
@@ -234,21 +233,60 @@ public final class InitCommand extends BaseCommand {
             if (startDev) {
                 CommonOptions commonOptions = new CommonOptions(projectDir, this.commonOptions);
                 DevCommand devCommand = new DevCommand(commonOptions,
-                        true, false, null, false);
+                                                       true, false, null, false);
                 devCommand.execute(context);
             }
         }
     }
 
+    private void initArguments() {
+        SubstitutionVariables substitutions = SubstitutionVariables.of(systemPropertyOrEnvVarSource(), key -> {
+            switch (key.toLowerCase()) {
+                case "init_flavor":
+                    return flavor.toString();
+                case "init_archetype":
+                    return archetype.name();
+                case "init_build":
+                    return build.name().toLowerCase();
+                default:
+                    return null;
+            }
+        });
+        String projectNameArg = projectName;
+        projectName = config.projectName(projectName, artifactId, substitutions);
+        groupId = groupId == null ? config.defaultGroupId(substitutions) : groupId;
+        artifactId = config.artifactId(artifactId, projectNameArg, substitutions);
+        packageName = packageName == null ? config.defaultPackageName(substitutions) : packageName;
+    }
+
+    private Path initProjectDir() {
+        Path parentDirectory = commonOptions.project();
+        Path projectDir = parentDirectory.resolve(projectName);
+        if (Files.exists(projectDir)) {
+            if (config.failOnProjectNameCollision()) {
+                Requirements.failed("Directory %s already exists", projectDir);
+            }
+            Log.debug("project \"%s\" already exists, generating unique name");
+            for (int i = 2; i < 128; i++) {
+                Path newProjectDir = parentDirectory.resolve(projectName + "-" + i);
+                if (!Files.exists(newProjectDir)) {
+                    return newProjectDir;
+                }
+            }
+            Requirements.failed("Too many existing directories named %s-NN", projectName);
+        }
+        return projectDir;
+    }
+
     private Map<String, String> initProperties() {
-        Map<String, String> properties = Maps.fromProperties(System.getProperties());
-        properties.put("groupId", groupId);
-        properties.put("artifactId", artifactId);
-        properties.put("package", packageName);
-        properties.put("name", name);
-        properties.put("helidonVersion", helidonVersion);
-        properties.putIfAbsent("maven", "true");        // No gradle support yet
-        return properties;
+        Map<String, String> result = Maps.fromProperties(System.getProperties());
+        result.put("name", projectName);
+        result.put("groupId", groupId);
+        result.put("artifactId", artifactId);
+        result.put("package", packageName);
+        result.put("helidonVersion", helidonVersion);
+        result.putIfAbsent("maven", "true");        // No gradle support yet
+        return result;
     }
 
     private String defaultHelidonVersion() {

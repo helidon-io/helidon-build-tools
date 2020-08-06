@@ -97,7 +97,7 @@ class TestUtils {
         return strip(output);
     }
 
-    static void assertPackageExist(Path projectPath, String packageName) {
+    static void assertPackageExists(Path projectPath, String packageName) {
         assertTrue(Files.exists(projectPath));
         Path path = projectPath.resolve("src/main/java");
         assertTrue(Files.exists(path));
