@@ -21,6 +21,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
 /**
  * Class InitDefaultTest.
  */
@@ -59,9 +62,10 @@ public class InitDefaultsTest extends InitCommandBaseTest {
 
     @Test
     public void testArtifactId() throws Exception {
-        artifactId("basicapp");
+        artifactId("foo-artifact");
         generate();
         assertValid();
+        assertThat(projectDir().getFileName().toString(), is("foo-artifact"));
     }
 
     @Test
