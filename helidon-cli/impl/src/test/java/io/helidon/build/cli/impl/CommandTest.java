@@ -15,86 +15,78 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.nio.file.Files;
+import java.io.IOException;
 import java.nio.file.Path;
 
-import io.helidon.build.test.TestFiles;
-
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARTIFACT_ID;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_GROUP_ID;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_NAME;
 import static io.helidon.build.cli.impl.InitCommand.Flavor;
 import static io.helidon.build.cli.impl.TestUtils.exec;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Class CommandTest.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class CommandTest extends MetadataCommandTest {
+public class CommandTest extends InitBaseTest {
 
-    private final Flavor flavor = Flavor.SE;
-    private final Path targetDir = TestFiles.targetDir();
+    @BeforeEach
+    public void beforeEach() {
+        super.beforeEach();
+        flavor(Flavor.SE.toString());
+    }
+
+    @AfterEach
+    public void afterEach() throws IOException {
+        super.afterEach();
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        MetadataCommandTest.stopMetadataAccess();
+    }
 
     @Test
     @Order(1)
     public void testInit() throws Exception {
-        startMetadataAccess(false, false);
-        try {
-            exec("init",
-                    "--url", metadataUrl(),
-                    "--flavor", flavor.toString(),
-                    "--project ", targetDir.toString(),
-                    "--artifactid", DEFAULT_ARTIFACT_ID,
-                    "--groupid", DEFAULT_GROUP_ID,
-                    "--name", DEFAULT_NAME,
-                    "--batch");
-            Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
-            assertTrue(Files.exists(projectDir));
-        } finally {
-            stopMetadataAccess();
-        }
+        generate();
+        assertValid();
     }
 
     @Test
     @Order(2)
     public void testBuild() throws Exception {
-        Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
-        exec("build",
-                "--project ", projectDir.toString());
-        assertTrue(Files.exists(projectDir.resolve("target/" + DEFAULT_ARTIFACT_ID + ".jar")));
+        generate();
+        assertValid();
+        Path projectDir = projectDir();
+        exec("build", "--project ", projectDir.toString());
+        assertJarExists();
     }
 
     @Test
     @Order(3)
     public void testInfo() throws Exception {
         Config.userConfig().clearPlugins();
-        Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
-        String result = exec("info",
-                "--project ", projectDir.toString());
+        initDefaults();
+        Path projectDir = projectDir();
+        String result = exec("info", "--project ", projectDir.toString());
         assertThat(result, containsString("plugin"));
     }
 
     @Test
     @Order(4)
     public void testVersion() throws Exception {
-        Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
-        exec("version",
-                "--project ", projectDir.toString());
-    }
-
-    @Test
-    @Order(5)
-    public void testClean() {
-        Path projectDir = targetDir.resolve(Path.of(DEFAULT_NAME));
-        assertTrue(TestFiles.deleteDirectory(projectDir.toFile()));
-        System.out.println("Directory " + projectDir + " deleted");
+        initDefaults();
+        Path projectDir = projectDir();
+        String result = exec("version", "--project ", projectDir.toString());
+        assertThat(result, containsString("version"));
+        assertThat(result, containsString("helidon.version"));
     }
 }

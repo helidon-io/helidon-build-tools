@@ -15,42 +15,39 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.IOException;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static io.helidon.build.cli.impl.TestUtils.assertPackageExist;
-import static io.helidon.build.cli.impl.TestUtils.execWithDirAndInput;
-import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Class InitInteractiveTest.
  */
 class InitInteractiveTest extends InitBaseTest {
 
-    protected void init(String flavor, String archetypeName) throws Exception {
-        super.init(flavor, archetypeName);
-        File input = new File(InitCommand.class.getResource("input.txt").getFile());
-        execWithDirAndInput(targetDir().toFile(), input,"init",
-                            "--url", metadataUrl(),
-                            "--version", helidonTestVersion(),
-                            "--flavor", flavor);
+    @BeforeEach
+    public void beforeEach() {
+        super.beforeEach();
+        input("input.txt");
+    }
+
+    @AfterEach
+    public void afterEach() throws IOException {
+        super.afterEach();
     }
 
     @Test
     public void testInitSe() throws Exception {
-        init(InitCommand.DEFAULT_FLAVOR, InitCommand.DEFAULT_ARCHETYPE_NAME);
-        assertPackageExist(projectDir(), packageName());
+        flavor("SE");
+        generate();
+        assertValid();
     }
 
     @Test
     public void testInitMp() throws Exception {
-        init("MP", InitCommand.DEFAULT_ARCHETYPE_NAME);
-        assertPackageExist(projectDir(), packageName());
-        Path config = projectDir().resolve("src/main/resources/META-INF/microprofile-config.properties");
-        assertTrue(Files.exists(config));
+        flavor("MP");
+        generate();
+        assertValid();
     }
 }

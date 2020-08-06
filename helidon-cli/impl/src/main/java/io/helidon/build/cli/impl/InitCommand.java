@@ -237,6 +237,7 @@ public final class InitCommand extends BaseCommand {
     }
 
     private Path initProjectDir(String projectName) {
+        // TODO: This command should not support --project !
         Path parentDirectory = commonOptions.project();
         Path projectDir = parentDirectory.resolve(projectName);
         if (Files.exists(projectDir)) {

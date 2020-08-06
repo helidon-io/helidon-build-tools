@@ -21,44 +21,50 @@ import java.io.UncheckedIOException;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 import io.helidon.build.test.TestFiles;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+
 /**
  * Base class for command tests that require the {@link Metadata}.
  */
 public class MetadataCommandTest extends BaseCommandTest {
 
-    private MetadataTestServer server;
-    private Metadata metadata;
-    private UserConfig userConfig;
+    private static MetadataTestServer SERVER;
+    private static Metadata METADATA;
+    private static UserConfig USER_CONFIG;
 
-    public void startMetadataAccess(boolean verbose, boolean clearCache) {
+    @BeforeAll
+    public static void startMetadataAccess() {
         Config.setUserHome(TestFiles.targetDir().resolve("alice"));
-        this.userConfig = Config.userConfig();
-        if (clearCache) {
-            try {
-                userConfig.clearCache();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-        server = new MetadataTestServer(TestVersion.RC1, verbose).start();
-        metadata = Metadata.newInstance(server.url());
+        USER_CONFIG = Config.userConfig();
+        SERVER = new MetadataTestServer(TestVersion.RC1, false).start();
+        METADATA = Metadata.newInstance(SERVER.url());
     }
 
     public String metadataUrl() {
-        return server.url();
+        return SERVER.url();
     }
 
     public Metadata metadata() {
-        return metadata;
+        return METADATA;
     }
 
     public UserConfig userConfig() {
-        return userConfig;
+        return USER_CONFIG;
     }
 
-    public void stopMetadataAccess() {
-        if (server != null) {
-            server.stop();
+    public void clearCache() {
+        try {
+            USER_CONFIG.clearCache();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @AfterAll
+    public static void stopMetadataAccess() {
+        if (SERVER != null) {
+            SERVER.stop();
         }
     }
 }

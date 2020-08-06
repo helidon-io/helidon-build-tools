@@ -21,8 +21,6 @@ import java.util.List;
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.cli.impl.InitCommand.Flavor;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
@@ -33,16 +31,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Class AppTypeBrowserTest.
  */
 public class ArchetypeBrowserTest extends MetadataCommandTest {
-
-    @BeforeEach
-    public void beforeEach() {
-        startMetadataAccess(false, false);
-    }
-
-    @AfterEach
-    public void afterEach() {
-        stopMetadataAccess();
-    }
 
     private ArchetypeBrowser newBrowser(Flavor flavor) throws Exception {
         return new ArchetypeBrowser(metadata(), flavor, helidonTestVersion());

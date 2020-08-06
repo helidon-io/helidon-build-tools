@@ -209,11 +209,12 @@ public class UserConfig {
      */
     public String defaultPackageName(SubstitutionVariables substitutions) {
         String result = substitutions.resolve(property(DEFAULT_PACKAGE_NAME_KEY, DEFAULT_PACKAGE_NAME_DEFAULT_VALUE));
-        int length = result.length();
-        if (length > 0 && Character.isJavaIdentifierStart(result.charAt(0))) {
-            for (int i = 1; i < length; i++) {
-                if (!Character.isJavaIdentifierPart(result.charAt(i))) {
-                    illegalPackageName(result);
+        if (result.length() > 0 && Character.isJavaIdentifierStart(result.charAt(0))) {
+            for (String name : result.split("\\.")) {
+                for (int i = 1; i < name.length(); i++) {
+                    if (!Character.isJavaIdentifierPart(name.charAt(i))) {
+                        illegalPackageName(result);
+                    }
                 }
             }
         } else {

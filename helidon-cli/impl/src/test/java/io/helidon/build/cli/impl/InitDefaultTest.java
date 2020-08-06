@@ -15,6 +15,8 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.IOException;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,53 +24,59 @@ import org.junit.jupiter.api.Test;
 /**
  * Class InitDefaultTest.
  */
-public class InitDefaultTest extends MetadataCommandTest {
-
-    private InitTestHelper helper;
+public class InitDefaultTest extends InitBaseTest {
 
     @BeforeEach
     public void beforeEach() {
-        startMetadataAccess(false, false);
-        helper = new InitTestHelper(metadataUrl());
+        super.beforeEach();
+        build(true);
     }
 
     @AfterEach
-    public void afterEach() {
-        stopMetadataAccess();
+    public void afterEach() throws IOException {
+        super.afterEach();
     }
 
     @Test
     public void testDefaults() throws Exception {
-        helper.execute();
+        generate();
+        assertValid();
     }
 
     @Test
     public void testFlavor() throws Exception {
-        helper.flavor("MP");
-        helper.execute();
+        flavor("MP");
+        generate();
+        assertValid();
     }
 
     @Test
     public void testGroupId() throws Exception {
-        helper.groupId("io.helidon.basicapp");
-        helper.execute();
+        groupId("io.helidon.basicapp");
+        generate();
+        assertValid();
+
     }
 
     @Test
     public void testArtifactId() throws Exception {
-        helper.artifactId("basicapp");
-        helper.execute();
+        artifactId("basicapp");
+        generate();
+        assertValid();
+
     }
 
     @Test
     public void testPackage() throws Exception {
-        helper.packageName("io.helidon.mypackage");
-        helper.execute();
+        packageName("io.helidon.mypackage");
+        generate();
+        assertValid();
     }
 
     @Test
     public void testName() throws Exception {
-        helper.name("mybasicproject");
-        helper.execute();
+        projectName("mybasicproject");
+        generate();
+        assertValid();
     }
 }
