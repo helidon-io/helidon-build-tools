@@ -96,6 +96,7 @@ public class AnsiConsoleInstaller {
         } else {
             INSTALLED.set(true);
             ENABLED.set(false);
+            CONSOLE_TYPE.set(ConsoleType.DEFAULT);
             System.setProperty(JANSI_STRIP_PROPERTY, "true");
             Ansi.setEnabled(false);
         }

@@ -451,6 +451,9 @@ public class MavenCommand {
             if (DEFAULT_CHILD_DEBUG_PORT > 0) {
                 command.add("-D" + CHILD_DEBUG_PORT_PROPERTY + "=" + DEFAULT_CHILD_DEBUG_PORT);
             }
+            if (!AnsiConsoleInstaller.areAnsiEscapesEnabled()) {
+                command.add("--batch-mode");
+            }
 
             // Create the process builder
 

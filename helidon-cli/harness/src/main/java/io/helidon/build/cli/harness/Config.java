@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.cli.impl;
+package io.helidon.build.cli.harness;
 
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicReference;
@@ -75,11 +75,9 @@ public class Config {
      * Set the user home dir.
      *
      * @param dir The directory.
-     * @return The directory.
      */
-    static Path setUserHome(Path dir) {
+    public static void setUserHome(Path dir) {
         USER_HOME_DIR.set(requireNonNull(dir));
-        return dir;
     }
 
     /**

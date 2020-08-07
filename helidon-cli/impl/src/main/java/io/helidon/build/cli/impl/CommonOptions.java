@@ -23,20 +23,22 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.build.cli.harness.CommandFragment;
+import io.helidon.build.cli.harness.Config;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option;
 import io.helidon.build.cli.harness.Option.KeyValue;
+import io.helidon.build.cli.harness.UserConfig;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.StyleFunction;
 
+import static io.helidon.build.cli.harness.Config.userConfig;
 import static io.helidon.build.cli.harness.GlobalOptions.DEBUG_FLAG_DESCRIPTION;
 import static io.helidon.build.cli.harness.GlobalOptions.DEBUG_FLAG_NAME;
 import static io.helidon.build.cli.harness.GlobalOptions.PLAIN_FLAG_DESCRIPTION;
 import static io.helidon.build.cli.harness.GlobalOptions.PLAIN_FLAG_NAME;
 import static io.helidon.build.cli.harness.GlobalOptions.VERBOSE_FLAG_DESCRIPTION;
 import static io.helidon.build.cli.harness.GlobalOptions.VERBOSE_FLAG_NAME;
-import static io.helidon.build.cli.impl.Config.userConfig;
 import static io.helidon.build.util.FileUtils.WORKING_DIR;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
 
@@ -67,7 +69,7 @@ final class CommonOptions {
                           visible = false) String since) {
         this.verbose = verbose || debug;
         this.debug = debug;
-        this.plain = plain;
+        this.plain = plain || userConfig().richTextDisabled();
         this.projectDir = projectDir != null ? projectDir.toPath().toAbsolutePath() : WORKING_DIR;
         this.metadataUrl = (metadataUrl == null || metadataUrl.isBlank()) ? userConfig().updateUrl() : metadataUrl;
         this.resetCache = resetCache || since != null;

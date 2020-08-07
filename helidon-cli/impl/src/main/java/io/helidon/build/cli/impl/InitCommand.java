@@ -30,9 +30,11 @@ import io.helidon.build.archetype.engine.ArchetypeLoader;
 import io.helidon.build.archetype.engine.Maps;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
+import io.helidon.build.cli.harness.Config;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
+import io.helidon.build.cli.harness.UserConfig;
 import io.helidon.build.cli.impl.FlowNodeControllers.FlowNodeController;
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.Log;
@@ -240,7 +242,7 @@ public final class InitCommand extends BaseCommand {
     }
 
     private void initArguments() {
-        SubstitutionVariables substitutions = SubstitutionVariables.of(systemPropertyOrEnvVarSource(), key -> {
+        SubstitutionVariables substitutions = SubstitutionVariables.of(key -> {
             switch (key.toLowerCase()) {
                 case "init_flavor":
                     return flavor.toString();
@@ -251,7 +253,7 @@ public final class InitCommand extends BaseCommand {
                 default:
                     return null;
             }
-        });
+        }, systemPropertyOrEnvVarSource());
         String projectNameArg = projectName;
         projectName = config.projectName(projectName, artifactId, substitutions);
         groupId = groupId == null ? config.defaultGroupId(substitutions) : groupId;
