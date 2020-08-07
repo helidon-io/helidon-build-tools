@@ -41,7 +41,7 @@ init() {
             --attachMvnChild) appendVar args "${attachMvnChild}" ;;
             --attachPlugin) appendVar args "${attachPlugin}" ;;
             --dryRun) action=echo ;;
-            *) appendVar args "${1}" ;;
+            *) echo "adding arg: ${1}"; appendVar args "${1}" ;;
         esac
         shift
     done
@@ -52,6 +52,5 @@ init() {
 appendVar() {
     export ${1}="${!1:+${!1} }${2}"
 }
-
 main "$@"
 

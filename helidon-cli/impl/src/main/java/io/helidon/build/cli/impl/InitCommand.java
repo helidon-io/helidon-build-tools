@@ -235,7 +235,7 @@ public final class InitCommand extends BaseCommand {
             if (startDev) {
                 CommonOptions commonOptions = new CommonOptions(projectDir, this.commonOptions);
                 DevCommand devCommand = new DevCommand(commonOptions,
-                                                       true, false, null, false);
+                                                       true, false, null, false, null, null);
                 devCommand.execute(context);
             }
         }
@@ -268,7 +268,7 @@ public final class InitCommand extends BaseCommand {
             if (config.failOnProjectNameCollision()) {
                 Requirements.failed("Directory %s already exists", projectDir);
             }
-            Log.debug("project \"%s\" already exists, generating unique name");
+            Log.info("Project \"%s\" already exists, generating unique name", projectName);
             for (int i = 2; i < 128; i++) {
                 Path newProjectDir = parentDirectory.resolve(projectName + "-" + i);
                 if (!Files.exists(newProjectDir)) {

@@ -58,8 +58,10 @@ public final class DevCommand extends BaseCommand {
     private static final String CLEAN_PROP_PREFIX = "-Ddev.clean=";
     private static final String FORK_PROP_PREFIX = "-Ddev.fork=";
     private static final String TERMINAL_MODE_PROP_PREFIX = "-Ddev.terminalMode=";
+    private static final String APP_JVM_ARGS_PROP_PREFIX = "-Ddev.appJvmArgs=";
+    private static final String APP_ARGS_PROP_PREFIX = "-Ddev.appArgs=";
     private static final String HELIDON_PLUGIN_VERSION_PROP_PREFIX = "-Dversion.plugin.helidon=";
-    private static final String DEV_GOAL = "helidon:dev";
+    private static final String DEV_GOAL = "helidon-cli:dev";
     private static final String MAVEN_LOG_LEVEL_START = "[";
     private static final String MAVEN_LOG_LEVEL_END = "]";
     private static final String MAVEN_ERROR_LEVEL = "ERROR";
@@ -70,7 +72,10 @@ public final class DevCommand extends BaseCommand {
     private final boolean clean;
     private final boolean fork;
     private final String pluginVersion;
+    private final String appJvmArgs;
+    private final String appArgs;
     private TerminalModeOutput terminalModeOutput;
+
 
     @Creator
     DevCommand(CommonOptions commonOptions,
@@ -78,13 +83,20 @@ public final class DevCommand extends BaseCommand {
                @Flag(name = "fork", description = "Fork mvn execution") boolean fork,
                @KeyValue(name = "version", description = "helidon-maven-plugin version", visible = false)
                        String pluginVersion,
-               @Flag(name = "current", description = "Use the build version as the helidon-maven-plugin version", visible = false)
-                       boolean currentPluginVersion) {
+               @Flag(name = "current", description = "Use the build version as the helidon-maven-cli-plugin version",
+                       visible = false)
+                       boolean currentPluginVersion,
+               @KeyValue(name = "appJvmArgs", description = "JVM args used when starting the application")
+                       String appJvmArgs,
+               @KeyValue(name = "appArgs", description = "Application args used when starting the application")
+                       String appArgs) {
         super(commonOptions, true);
         this.commonOptions = commonOptions;
         this.clean = clean;
         this.fork = fork;
         this.pluginVersion = pluginVersion == null ? (currentPluginVersion ? Config.buildVersion() : null) : pluginVersion;
+        this.appJvmArgs = appJvmArgs;
+        this.appArgs = appArgs;
     }
 
     @Override
@@ -103,6 +115,11 @@ public final class DevCommand extends BaseCommand {
         if (overridePluginVersion != null) {
             Log.verbose("Using plugin version %s", overrideVersion);
         }
+
+        // Application args
+
+        String jvmArgs = appJvmArgs == null ? null : APP_JVM_ARGS_PROP_PREFIX + appJvmArgs;
+        String args = appArgs == null ? null : APP_ARGS_PROP_PREFIX + appArgs;
 
         // Clear terminal and print header if in terminal mode
 
@@ -138,6 +155,8 @@ public final class DevCommand extends BaseCommand {
                     .addArgument(FORK_PROP_PREFIX + fork)
                     .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
                     .addOptionalArgument(overridePluginVersion)
+                    .addOptionalArgument(jvmArgs)
+                    .addOptionalArgument(args)
                     .directory(commonOptions.project())
                     .build()
                     .execute();

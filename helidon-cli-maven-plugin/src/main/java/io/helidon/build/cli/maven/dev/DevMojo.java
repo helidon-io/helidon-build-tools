@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package io.helidon.build.maven.dev;
+package io.helidon.build.cli.maven.dev;
 
 import java.io.File;
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.List;
 
 import io.helidon.build.dev.ProjectSupplier;
 import io.helidon.build.dev.maven.MavenProjectSupplier;
@@ -37,12 +38,14 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
+import static java.util.Collections.emptyList;
+
 /**
  * Maven plugin that runs a {@link DevLoop}.
  */
 @Mojo(name = "dev",
-    defaultPhase = LifecyclePhase.NONE,
-    requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
+        defaultPhase = LifecyclePhase.NONE,
+        requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
 public class DevMojo extends AbstractMojo {
 
     /**
@@ -76,6 +79,18 @@ public class DevMojo extends AbstractMojo {
     private boolean terminalMode;
 
     /**
+     * Application JVM arguments.
+     */
+    @Parameter(property = "dev.appJvmArgs")
+    private String appJvmArgs;
+
+    /**
+     * Application arguments.
+     */
+    @Parameter(property = "dev.appArgs")
+    private String appArgs;
+
+    /**
      * Skip execution for this plugin.
      */
     @Parameter(defaultValue = "false", property = "dev.skip")
@@ -106,10 +121,16 @@ public class DevMojo extends AbstractMojo {
                 MavenLogWriter.install(getLog());
             }
             final ProjectSupplier projectSupplier = new MavenProjectSupplier(project, session, plugins);
-            final DevLoop loop = new DevLoop(devProjectDir.toPath(), projectSupplier, clean, fork, terminalMode, Collections.emptyList(), Collections.emptyList());
+            final List<String> jvmArgs = toList(appJvmArgs);
+            final List<String> args = toList(appArgs);
+            final DevLoop loop = new DevLoop(devProjectDir.toPath(), projectSupplier, clean, fork, terminalMode, jvmArgs, args);
             loop.start(Integer.MAX_VALUE);
         } catch (Exception e) {
             throw new MojoExecutionException("Error", e);
         }
+    }
+
+    private static List<String> toList(String args) {
+        return args == null ? emptyList() : Arrays.asList(args.split(" "));
     }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.maven.link;
+package io.helidon.build.maven.utils;
 
 
 import io.helidon.build.util.Log.Level;
@@ -42,7 +42,7 @@ public class MavenLogWriter implements io.helidon.build.util.Log.Writer {
      *
      * @param log The maven log.
      */
-    MavenLogWriter(Log log) {
+    public MavenLogWriter(Log log) {
         this.log = log;
     }
 

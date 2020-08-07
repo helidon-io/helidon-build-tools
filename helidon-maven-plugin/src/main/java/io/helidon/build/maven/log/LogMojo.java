@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package io.helidon.build.maven.dev.log;
+package io.helidon.build.maven.log;
 
 import java.util.List;
 
-import io.helidon.build.maven.link.MavenLogWriter;
+import io.helidon.build.maven.utils.MavenLogWriter;
 import io.helidon.build.util.Log;
 
 import org.apache.maven.plugin.AbstractMojo;
