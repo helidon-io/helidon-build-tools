@@ -86,9 +86,9 @@ public final class DevCommand extends BaseCommand {
                @Flag(name = "current", description = "Use the build version as the helidon-maven-cli-plugin version",
                        visible = false)
                        boolean currentPluginVersion,
-               @KeyValue(name = "appJvmArgs", description = "JVM args used when starting the application")
+               @KeyValue(name = "app-jvm-args", description = "JVM args used when starting the application")
                        String appJvmArgs,
-               @KeyValue(name = "appArgs", description = "Application args used when starting the application")
+               @KeyValue(name = "app-args", description = "Application args used when starting the application")
                        String appArgs) {
         super(commonOptions, true);
         this.commonOptions = commonOptions;
