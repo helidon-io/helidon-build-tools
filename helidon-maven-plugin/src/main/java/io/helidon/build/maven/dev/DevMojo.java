@@ -17,7 +17,6 @@
 package io.helidon.build.maven.dev;
 
 import java.io.File;
-import java.util.Collections;
 
 import io.helidon.build.dev.ProjectSupplier;
 import io.helidon.build.dev.maven.MavenProjectSupplier;
@@ -36,6 +35,8 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+
+import static java.util.Collections.emptyList;
 
 /**
  * Maven plugin that runs a {@link DevLoop}.
@@ -106,7 +107,8 @@ public class DevMojo extends AbstractMojo {
                 MavenLogWriter.install(getLog());
             }
             final ProjectSupplier projectSupplier = new MavenProjectSupplier(project, session, plugins);
-            final DevLoop loop = new DevLoop(devProjectDir.toPath(), projectSupplier, clean, fork, terminalMode, Collections.emptyList(), Collections.emptyList());
+            final DevLoop loop = new DevLoop(devProjectDir.toPath(), projectSupplier, clean, fork, terminalMode,
+                                             emptyList(), emptyList());
             loop.start(Integer.MAX_VALUE);
         } catch (Exception e) {
             throw new MojoExecutionException("Error", e);
