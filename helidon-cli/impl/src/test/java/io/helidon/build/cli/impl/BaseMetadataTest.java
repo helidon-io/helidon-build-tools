@@ -20,6 +20,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.build.cli.harness.Config;
+import io.helidon.build.cli.harness.UserConfig;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 import io.helidon.build.test.CapturingLogWriter;
 import io.helidon.build.test.TestFiles;

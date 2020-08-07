@@ -18,6 +18,8 @@ package io.helidon.build.cli.impl;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
+import io.helidon.build.cli.harness.Config;
+import io.helidon.build.cli.harness.UserConfig;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 import io.helidon.build.test.TestFiles;
 

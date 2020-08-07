@@ -119,7 +119,7 @@ class InitCommandBaseTest extends MetadataCommandTest {
     }
 
     protected void initArguments() {
-        SubstitutionVariables substitutions = SubstitutionVariables.of(systemPropertyOrEnvVarSource(), key -> {
+        SubstitutionVariables substitutions = SubstitutionVariables.of(key -> {
             switch (key.toLowerCase()) {
                 case "init_flavor":
                     return flavor.toLowerCase();
@@ -128,7 +128,7 @@ class InitCommandBaseTest extends MetadataCommandTest {
                 default:
                     return null;
             }
-        });
+        }, systemPropertyOrEnvVarSource());
         String projectNameArg = projectName;
         projectName = userConfig().projectName(projectName, artifactId, substitutions);
         groupId = groupId == null ? userConfig().defaultGroupId(substitutions) : groupId;

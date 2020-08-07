@@ -20,6 +20,7 @@ import java.util.Map;
 
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
+import io.helidon.build.cli.harness.Config;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;

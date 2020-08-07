@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.cli.impl;
+package io.helidon.build.cli.harness;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -49,13 +49,15 @@ public class UserConfig {
     private static final String DEFAULT_PACKAGE_NAME_KEY = "default.package.name";
     private static final String DEFAULT_PACKAGE_NAME_DEFAULT_VALUE = "me.${user.name}.${init_flavor}.${init_archetype}";
     private static final String FAIL_ON_PROJECT_NAME_COLLISION_KEY = "fail.on.project.name.collision";
+    private static final String RICH_TEXT_KEY = "use.rich.text";
+    private static final String RICH_TEXT_DEFAULT_VALUE = "true";
     private static final String FAIL_ON_PROJECT_NAME_COLLISION_DEFAULT_VALUE = "false";
     private static final String UPDATE_INTERVAL_HOURS_KEY = "update.check.retry.hours";
     private static final String UPDATE_INTERVAL_HOURS_DEFAULT_VALUE = "12";
     private static final String DOWNLOAD_UPDATES_KEY = "download.new.releases";
     private static final String DOWNLOAD_UPDATES_DEFAULT_VALUE = "true";
     private static final String UPDATE_URL_KEY = "update.url";
-    private static final String UPDATE_URL_DEFAULT_VALUE = Metadata.DEFAULT_URL;
+    private static final String UPDATE_URL_DEFAULT_VALUE = "https://helidon.io/cli-data";
     private static final String SYSTEM_PROPERTY_PREFIX = "system_";
     private static final String DEFAULT_CONFIG =
             "\n"
@@ -65,9 +67,9 @@ public class UserConfig {
             + "# variables. A few special properties are defined and resolved during init command\n"
             + "# execution and are distinguished with an \"init_\" prefix:\n"
             + "#\n"
-            + "#  init_flavor     the selected Helidon flavor, e.g \"SE\", converted to lowercase\n"
-            + "#  init_archetype  the name of the selected archetype, e.g \"quickstart\"\n"
-            + "#  init_build      the selected build type, e.g \"maven\", converted to lowercase\n"
+            + "#  init_flavor     the selected Helidon flavor, e.g. \"SE\", converted to lowercase\n"
+            + "#  init_archetype  the name of the selected archetype, e.g. \"quickstart\"\n"
+            + "#  init_build      the selected build type, e.g. \"maven\", converted to lowercase\n"
             + "\n"
             + DEFAULT_PROJECT_NAME_KEY + "=" + DEFAULT_PROJECT_NAME_DEFAULT_VALUE + "\n"
             + DEFAULT_GROUP_ID_KEY + "=" + DEFAULT_GROUP_ID_DEFAULT_VALUE + "\n"
@@ -76,9 +78,15 @@ public class UserConfig {
             + "\n"
             + "# When using the init command and a project with the same name already exists,\n"
             + "# this value controls whether it should fail or if the name should be made unique \n"
-            + "# by appending a unique digit, e.g \"quickstart-se-1\".\n"
+            + "# by appending a unique digit, e.g. \"quickstart-se-1\".\n"
             + "\n"
             + FAIL_ON_PROJECT_NAME_COLLISION_KEY + "=" + FAIL_ON_PROJECT_NAME_COLLISION_DEFAULT_VALUE + "\n"
+            + "\n"
+            + "# The CLI can use rich text (color, italic, etc.) where supported; setting this\n"
+            + "# value to \"false\" will disable this feature and is equivalent to using the\n"
+            + "# \"--plain\" option on all commands.\n"
+            + "\n"
+            + RICH_TEXT_KEY + "=" + RICH_TEXT_DEFAULT_VALUE + "\n"
             + "\n"
             + "# The CLI regularly updates information about new Helidon and/or CLI releases, and\n"
             + "# this value controls the minimum number of hours between rechecks. Update checks\n"
@@ -146,6 +154,15 @@ public class UserConfig {
 
     private String property(String key, String defaultValue) {
         return allProperties.getOrDefault(key, defaultValue);
+    }
+
+    /**
+     * Returns whether or not rich text should be disabled.
+     *
+     * @return {@code true} if rich text should not be used (equivalent to {@code --plain} option).
+     */
+    public boolean richTextDisabled() {
+        return !Boolean.parseBoolean(property(RICH_TEXT_KEY, RICH_TEXT_DEFAULT_VALUE));
     }
 
     /**

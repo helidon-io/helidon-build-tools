@@ -22,6 +22,7 @@ import java.util.function.Predicate;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandContext.Verbosity;
+import io.helidon.build.cli.harness.Config;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;

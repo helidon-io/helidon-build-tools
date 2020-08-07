@@ -32,7 +32,7 @@ import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.TimeUtils;
 
-import static io.helidon.build.cli.impl.Config.userConfig;
+import static io.helidon.build.cli.harness.Config.userConfig;
 import static io.helidon.build.cli.impl.VersionCommand.addProjectProperty;
 import static io.helidon.build.util.ProjectConfig.HELIDON_VERSION;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;

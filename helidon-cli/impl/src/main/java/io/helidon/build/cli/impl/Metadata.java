@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
+import io.helidon.build.cli.harness.Config;
 import io.helidon.build.util.ConfigProperties;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
