@@ -17,4 +17,4 @@
 /**
  * Log Plugin.
  */
-package io.helidon.build.maven.dev.log;
+package io.helidon.build.maven.log;

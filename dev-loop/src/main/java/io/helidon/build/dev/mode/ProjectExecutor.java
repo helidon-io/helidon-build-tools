@@ -45,8 +45,6 @@ public class ProjectExecutor {
     private static final int STOP_WAIT_RETRY_LOG_STEP = 1;
     private static final int STOP_WAIT_RETRY_FORCE_STEP = 3;
 
-    private static final String MAVEN_EXEC = Constants.OS.mavenExec();
-    private static final List<String> EXEC_COMMAND = List.of(MAVEN_EXEC, "exec:java");
     private static final String JAVA_EXEC = Constants.OS.javaExecutable();
     private static final String JIT_LEVEL_ONE = "-XX:TieredStopAtLevel=1";
     private static final String JIT_TWO_COMPILER_THREADS = "-XX:CICompilerCount=2";
@@ -54,22 +52,6 @@ public class ProjectExecutor {
     private static final String STOPPING = BoldYellow.apply(DEV_LOOP_SERVER_STOPPING);
     private static final String STOPPED = BoldBrightRed.apply(DEV_LOOP_SERVER_STOPPED);
 
-    /**
-     * Execution mode.
-     */
-    public enum ExecutionMode {
-        /**
-         * Execute project via java.
-         */
-        JAVA,
-
-        /**
-         * Execute project via maven.
-         */
-        MAVEN
-    }
-
-    private final ExecutionMode mode;
     private final Project project;
     private final String logPrefix;
     private final String name;
@@ -77,29 +59,26 @@ public class ProjectExecutor {
     private long pid;
     private boolean hasStdOutMessage;
     private boolean hasStdErrMessage;
+    private final List<String> appJvmArgs;
+    private final List<String> appArgs;
 
     /**
      * Create an executor from a project.
      *
      * @param project The project.
      * @param logPrefix The log prefix.
+     * @param appJvmArgs The application JVM arguments.
+     * @param appArgs The application arguments.
      */
-    public ProjectExecutor(Project project, String logPrefix) {
-        this(project, ExecutionMode.JAVA, logPrefix);
-    }
-
-    /**
-     * Create an executor from a project specifying an execution mode.
-     *
-     * @param project The project.
-     * @param logPrefix The log prefix.
-     * @param mode The execution mode.
-     */
-    public ProjectExecutor(Project project, ExecutionMode mode, String logPrefix) {
+    public ProjectExecutor(Project project,
+                           String logPrefix,
+                           List<String> appJvmArgs,
+                           List<String> appArgs) {
         this.project = project;
-        this.mode = mode;
         this.logPrefix = logPrefix;
         this.name = BoldBrightCyan.apply(project.name());
+        this.appJvmArgs = appJvmArgs;
+        this.appArgs = appArgs;
     }
 
     /**
@@ -115,16 +94,16 @@ public class ProjectExecutor {
      * Start execution.
      */
     public void start() {
-        switch (mode) {
-            case JAVA:
-                startJava();
-                break;
-            case MAVEN:
-                startMaven();
-                break;
-            default:
-                throw new InternalError("Unrecognized mode " + mode);
-        }
+        List<String> command = new ArrayList<>();
+        command.add(JAVA_EXEC);
+        command.add(JIT_LEVEL_ONE);             // Faster startup but longer warmup to peak perf
+        command.add(JIT_TWO_COMPILER_THREADS);  // Faster startup but longer warmup to peak perf
+        command.add("-cp");
+        command.add(classPathString());
+        command.addAll(appJvmArgs);
+        command.add(project.mainClassName());
+        command.addAll(appArgs);
+        start(command);
     }
 
     /**
@@ -223,27 +202,11 @@ public class ProjectExecutor {
         }
     }
 
-    private void startMaven() {
-        start(EXEC_COMMAND);
-    }
-
-    private void startJava() {
-        List<String> command = new ArrayList<>();
-        command.add(JAVA_EXEC);
-        command.add(JIT_LEVEL_ONE);             // Faster startup but longer warmup to peak perf
-        command.add(JIT_TWO_COMPILER_THREADS);  // Faster startup but longer warmup to peak perf
-        command.add("-cp");
-        command.add(classPathString());
-        command.add(project.mainClassName());
-        start(command);
-    }
-
     private void start(List<String> command) {
         hasStdErrMessage = false;
         ProcessBuilder processBuilder = JavaProcessBuilder.newInstance()
                                                           .directory(project.root().path().toFile())
                                                           .command(command);
-
         try {
             stateChanged(STARTING);
             Log.info();

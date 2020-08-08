@@ -24,8 +24,8 @@
         <artifactId>helidon-build-tools-project</artifactId>
         <version>2.0.3-SNAPSHOT</version>
     </parent>
-    <artifactId>helidon-maven-plugin</artifactId>
-    <name>Helidon Maven Plugin</name>
+    <artifactId>helidon-cli-maven-plugin</artifactId>
+    <name>Helidon CLI Maven Plugin</name>
     <packaging>maven-plugin</packaging>
 
     <properties>
@@ -33,6 +33,11 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>io.helidon.build-tools</groupId>
+            <artifactId>helidon-dev-loop</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>io.helidon.build-tools</groupId>
             <artifactId>helidon-utils</artifactId>
@@ -61,16 +66,6 @@
             <groupId>org.sonatype.plexus</groupId>
             <artifactId>plexus-build-api</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.build-tools</groupId>
-            <artifactId>helidon-linker</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.build-tools</groupId>
-            <artifactId>helidon-dev-loop</artifactId>
-            <version>${project.version}</version>
-        </dependency>
     </dependencies>
 
     <build>
@@ -79,7 +74,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-plugin-plugin</artifactId>
                 <configuration>
-                    <goalPrefix>helidon</goalPrefix>
+                    <goalPrefix>helidon-cli</goalPrefix>
                     <skipErrorNoDescriptorsFound>false</skipErrorNoDescriptorsFound>
                 </configuration>
                 <executions>

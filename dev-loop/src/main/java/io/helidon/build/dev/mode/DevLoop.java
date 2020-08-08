@@ -17,6 +17,7 @@
 package io.helidon.build.dev.mode;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -64,14 +65,18 @@ public class DevLoop {
      * @param initialClean Clean flag.
      * @param forkBuilds {@code true} if builds should be forked.
      * @param terminalMode {@code true} for terminal output.
+     * @param appJvmArgs The application JVM arguments.
+     * @param appArgs The application arguments.
      */
     public DevLoop(Path rootDir,
                    ProjectSupplier projectSupplier,
                    boolean initialClean,
                    boolean forkBuilds,
-                   boolean terminalMode) {
+                   boolean terminalMode,
+                   List<String> appJvmArgs,
+                   List<String> appArgs) {
         this.terminalMode = terminalMode;
-        this.monitor = new DevModeMonitor(terminalMode, projectSupplier.buildFileName());
+        this.monitor = new DevModeMonitor(terminalMode, projectSupplier.buildFileName(), appJvmArgs, appArgs);
         this.buildExecutor = forkBuilds ? new ForkedMavenExecutor(rootDir, monitor, MAX_BUILD_WAIT_SECONDS)
                 : new EmbeddedMavenExecutor(rootDir, monitor);
         this.initialClean = initialClean;
@@ -101,10 +106,15 @@ public class DevLoop {
         private ProjectExecutor projectExecutor;
         private ChangeType lastChangeType;
         private long buildStartTime;
+        private final List<String> appJvmArgs;
+        private final List<String> appArgs;
 
-        private DevModeMonitor(boolean terminalMode, String buildFileName) {
+
+        private DevModeMonitor(boolean terminalMode, String buildFileName, List<String> appJvmArgs, List<String> appArgs) {
             this.terminalMode = terminalMode;
             this.buildFileName = buildFileName;
+            this.appJvmArgs = appJvmArgs;
+            this.appArgs = appArgs;
         }
 
         private void header() {
@@ -185,7 +195,7 @@ public class DevLoop {
         @Override
         public long onReady(int cycleNumber, Project project) {
             if (projectExecutor == null) {
-                projectExecutor = new ProjectExecutor(project, terminalMode ? LOG_PREFIX : null);
+                projectExecutor = new ProjectExecutor(project, terminalMode ? LOG_PREFIX : null, appJvmArgs, appArgs);
                 projectExecutor.start();
             }
             return ON_READY_DELAY;
@@ -233,11 +243,11 @@ public class DevLoop {
 
     private BuildLoop newLoop(BuildExecutor executor, boolean initialClean, boolean watchBinariesOnly) {
         return BuildLoop.builder()
-                .buildExecutor(executor)
-                .clean(initialClean)
-                .watchBinariesOnly(watchBinariesOnly)
-                .projectSupplier(projectSupplier)
-                .build();
+                        .buildExecutor(executor)
+                        .clean(initialClean)
+                        .watchBinariesOnly(watchBinariesOnly)
+                        .projectSupplier(projectSupplier)
+                        .build();
     }
 
     private void run(BuildLoop loop, int maxWaitSeconds) throws InterruptedException, TimeoutException {
