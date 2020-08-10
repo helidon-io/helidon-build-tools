@@ -22,5 +22,6 @@ module helidon.build.utils {
     requires maven.model;
     requires java.logging;
     requires maven.artifact;
+    requires maven.plugin.api;
     requires com.github.mustachejava;
 }
