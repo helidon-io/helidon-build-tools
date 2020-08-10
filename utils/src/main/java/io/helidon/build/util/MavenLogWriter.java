@@ -14,26 +14,24 @@
  * limitations under the License.
  */
 
-package io.helidon.build.maven.utils;
+package io.helidon.build.util;
 
 
 import io.helidon.build.util.Log.Level;
-import io.helidon.build.util.StyleRenderer;
-
-import org.apache.maven.plugin.logging.Log;
 
 /**
- * {@link io.helidon.build.util.Log.Writer} that writes to a maven log.
+ * {@link Log.Writer} that writes to a maven log.
  */
-public class MavenLogWriter implements io.helidon.build.util.Log.Writer {
-    private final Log log;
+public class MavenLogWriter implements Log.Writer {
+    private final org.apache.maven.plugin.logging.Log log;
 
     /**
      * Installs the given Maven log as the writer in {@code io.helidon.build.util.Log} so that
      * calls to the latter will be written to it.
+     *
      * @param mavenLog The Maven log.
      */
-    public static void install(Log mavenLog) {
+    public static void install(org.apache.maven.plugin.logging.Log mavenLog) {
         io.helidon.build.util.Log.writer(new MavenLogWriter(mavenLog));
     }
 
@@ -42,7 +40,7 @@ public class MavenLogWriter implements io.helidon.build.util.Log.Writer {
      *
      * @param log The maven log.
      */
-    public MavenLogWriter(Log log) {
+    public MavenLogWriter(org.apache.maven.plugin.logging.Log log) {
         this.log = log;
     }
 

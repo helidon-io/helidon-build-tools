@@ -23,7 +23,7 @@ import java.util.List;
 import io.helidon.build.dev.ProjectSupplier;
 import io.helidon.build.dev.maven.MavenProjectSupplier;
 import io.helidon.build.dev.mode.DevLoop;
-import io.helidon.build.maven.utils.MavenLogWriter;
+import io.helidon.build.util.MavenLogWriter;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.SystemLogWriter;
 

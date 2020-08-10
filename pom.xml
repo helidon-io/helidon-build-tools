@@ -181,7 +181,6 @@
     </properties>
 
     <modules>
-        <module>helidon-maven-utils</module>
         <module>sitegen-maven-plugin</module>
         <module>helidon-maven-plugin</module>
         <module>helidon-cli-maven-plugin</module>

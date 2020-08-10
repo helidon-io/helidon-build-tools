@@ -21,7 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import io.helidon.build.maven.utils.MavenLogWriter;
+import io.helidon.build.util.MavenLogWriter;
 import io.helidon.build.util.Log;
 import io.helidon.linker.Configuration;
 import io.helidon.linker.Linker;

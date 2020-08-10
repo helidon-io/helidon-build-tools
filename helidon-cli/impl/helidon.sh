@@ -41,7 +41,7 @@ init() {
             --attachMvnChild) appendVar args "${attachMvnChild}" ;;
             --attachPlugin) appendVar args "${attachPlugin}" ;;
             --dryRun) action=echo ;;
-            *) echo "adding arg: ${1}"; appendVar args "${1}" ;;
+            *) appendVar args "${1}" ;;
         esac
         shift
     done
