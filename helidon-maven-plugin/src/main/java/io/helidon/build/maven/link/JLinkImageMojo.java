@@ -21,8 +21,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import io.helidon.build.util.MavenLogWriter;
 import io.helidon.build.util.Log;
+import io.helidon.build.util.MavenLogWriter;
 import io.helidon.linker.Configuration;
 import io.helidon.linker.Linker;
 
@@ -39,8 +39,8 @@ import org.apache.maven.project.MavenProject;
  * Maven goal to create a custom Java Runtime Image.
  */
 @Mojo(name = "jlink-image",
-    defaultPhase = LifecyclePhase.PACKAGE,
-    requiresDependencyResolution = ResolutionScope.RUNTIME)
+        defaultPhase = LifecyclePhase.PACKAGE,
+        requiresDependencyResolution = ResolutionScope.RUNTIME)
 public class JLinkImageMojo extends AbstractMojo {
 
     /**
