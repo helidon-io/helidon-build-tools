@@ -39,9 +39,12 @@ import org.apache.maven.project.DependencyResolutionException;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectDependenciesResolver;
 import org.codehaus.plexus.component.annotations.Component;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyFilter;
 
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
+import static io.helidon.build.util.ProjectConfig.HELIDON_VERSION;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DEPENDENCIES;
 import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
@@ -63,6 +66,7 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
     private static final String DEBUG_PROPERTY = "project.config.collector.debug";
     private static final boolean DEBUG = "true".equals(System.getProperty(DEBUG_PROPERTY));
     private static final String MAIN_CLASS_PROPERTY = "mainClass";
+    private static final String HELIDON_GROUP_ID_PREFIX = "io.helidon.";
     private static final String MULTI_MODULE_PROJECT = "Multi-module projects are not supported.";
     private static final String MISSING_MAIN_CLASS = "The required '" + MAIN_CLASS_PROPERTY + "' property is missing.";
     private static final String MISSING_DOT_HELIDON = "The required " + DOT_HELIDON + " file is missing.";
@@ -100,7 +104,6 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
             try {
                 // Ensure that we support this project
                 supportedProjectDir = assertSupportedProject(session);
-
                 // Install our listener so we can know if compilation occurred and succeeded
                 final MavenExecutionRequest request = session.getRequest();
                 request.setExecutionListener(new EventListener(request.getExecutionListener()));
@@ -135,33 +138,50 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
     private void collectConfig(MavenProject project, MavenSession session) {
         final Path projectDir = project.getBasedir().toPath();
         final ProjectConfig config = ProjectConfig.projectConfig(projectDir);
-        final List<String> dependencies = dependencies(project, session);
+        final List<Artifact> dependencies = dependencies(project, session);
         final Path outputDir = projectDir.resolve(project.getBuild().getOutputDirectory());
         final List<String> classesDirs = List.of(outputDir.toString());
         final List<String> resourceDirs = project.getResources()
-                .stream()
-                .map(Resource::getDirectory)
-                .collect(Collectors.toList());
-        config.property(PROJECT_DEPENDENCIES, dependencies);
+                                                 .stream()
+                                                 .map(Resource::getDirectory)
+                                                 .collect(Collectors.toList());
+        config.property(PROJECT_DEPENDENCIES, dependencyFiles(dependencies));
         config.property(PROJECT_MAINCLASS, project.getProperties().getProperty(MAIN_CLASS_PROPERTY));
         config.property(PROJECT_VERSION, project.getVersion());
         config.property(PROJECT_CLASSDIRS, classesDirs);
         config.property(PROJECT_SOURCEDIRS, project.getCompileSourceRoots());
         config.property(PROJECT_RESOURCEDIRS, resourceDirs);
+        if (config.property(HELIDON_VERSION) == null) {
+            String helidonVersion = helidonVersion(dependencies);
+            if (helidonVersion != null) {
+                config.property(HELIDON_VERSION, helidonVersion);
+            }
+        }
         this.projectConfig = config;
     }
 
-    private List<String> dependencies(MavenProject project, MavenSession session) {
+    private List<Artifact> dependencies(MavenProject project, MavenSession session) {
         try {
             return dependenciesResolver.resolve(new DefaultDependencyResolutionRequest(project, session.getRepositorySession())
-                    .setResolutionFilter(DEPENDENCY_FILTER))
-                    .getDependencies()
-                    .stream()
-                    .map(d -> d.getArtifact().getFile().toString())
-                    .collect(Collectors.toList());
+                                                        .setResolutionFilter(DEPENDENCY_FILTER))
+                                       .getDependencies()
+                                       .stream()
+                                       .map(Dependency::getArtifact)
+                                       .collect(Collectors.toList());
         } catch (DependencyResolutionException e) {
             throw new RuntimeException("Dependency resolution failed: " + e.getMessage());
         }
+    }
+
+    private List<String> dependencyFiles(List<Artifact> dependencies) {
+        return dependencies.stream().map(d -> d.getFile().toString()).collect(Collectors.toList());
+    }
+
+    private String helidonVersion(List<Artifact> dependencies) {
+        return dependencies.stream()
+                           .filter(a -> a.getGroupId().startsWith(HELIDON_GROUP_ID_PREFIX))
+                           .map(Artifact::getVersion)
+                           .findFirst().orElse(null);
     }
 
     private void storeConfig() {
@@ -185,7 +205,7 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
 
     private static void debug(String message, Object... args) {
         if (DEBUG) {
-            System.out.println(String.format(message, args));
+            System.out.printf(message + "%n", args);
         }
     }
 

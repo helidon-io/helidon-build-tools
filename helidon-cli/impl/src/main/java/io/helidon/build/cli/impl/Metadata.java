@@ -34,6 +34,7 @@ import io.helidon.build.cli.harness.Config;
 import io.helidon.build.util.ConfigProperties;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
+import io.helidon.build.util.Requirements;
 import io.helidon.build.util.TimeUtils;
 
 import static io.helidon.build.cli.impl.CommandRequirements.requireHelidonVersionDir;
@@ -75,15 +76,11 @@ public class Metadata {
     private static final String CLI_MESSAGE_SUFFIX = ".message";
     private static final long STALE_RETRY_THRESHOLD = 1000;
 
-    /**
-     * The build tools version property name.
-     */
-    public static final String BUILD_TOOLS_VERSION_PROPERTY = "build-tools.version";
-
-    /**
-     * The CLI version property name.
-     */
-    public static final String CLI_VERSION_PROPERTY = "cli.version";
+    private static final MavenVersion PRE_CLI_PLUGIN_HELIDON_VERSION = toMavenVersion("2.0.1");
+    private static final String LATEST_CLI_PLUGIN_VERSION_PROPERTY = "cli.latest.plugin.version";
+    private static final String CLI_PLUGIN_VERSION_PROPERTY_PREFIX = "cli.";
+    private static final String CLI_PLUGIN_VERSION_PROPERTY_SUFFIX = ".plugin.version";
+    private static final String CLI_VERSION_PROPERTY = "cli.version";
 
     private final Path rootDir;
     private final String url;
@@ -228,15 +225,54 @@ public class Metadata {
     }
 
     /**
-     * Returns the build tools version for the given Helidon version.
+     * Returns the {@code helidon-cli-maven-plugin} version for the given Helidon version.
      *
      * @param helidonVersion The version.
      * @param quiet If info messages should be suppressed.
-     * @return The properties.
+     * @return The version.
      * @throws Exception If an error occurs.
      */
-    public MavenVersion buildToolsVersionOf(MavenVersion helidonVersion, boolean quiet) throws Exception {
-        return toMavenVersion(requiredProperty(helidonVersion, BUILD_TOOLS_VERSION_PROPERTY, quiet));
+    public MavenVersion cliPluginVersion(MavenVersion helidonVersion, boolean quiet) throws Exception {
+        MavenVersion thisCliVersion = toMavenVersion(Config.buildVersion());
+
+        // Short circuit if Helidon version is prior to the existence of the CLI plugin
+
+        if (helidonVersion.isLessThanOrEqualTo(PRE_CLI_PLUGIN_HELIDON_VERSION)) {
+            Log.debug("Helidon version %s is pre CLI plugin, using current CLI version %s", helidonVersion, thisCliVersion);
+            return thisCliVersion;
+        }
+
+
+        /*
+            cli.latest.plugin.version=2.2.0
+            cli.2.1.0.plugin.version=2.0.9
+            cli.2.0.3.plugin.version=2.0.3
+
+            -> {2.1.0, 2.0.3}
+
+            # cli v2.0.3 -> helidon-cli-maven-plugin v2.0.3
+            # cli v2.0.4 -> helidon-cli-maven-plugin v2.0.3
+            # cli v2.0.5 -> helidon-cli-maven-plugin v2.0.3
+            # cli v2.1.0 -> helidon-cli-maven-plugin v2.0.9
+            # cli v2.1.1 -> helidon-cli-maven-plugin v2.0.9
+            # cli v2.1.2 -> helidon-cli-maven-plugin v2.0.9
+            # cli v2.2.0 -> helidon-cli-maven-plugin v2.2.0
+          */
+
+        final ConfigProperties props = propertiesOf(helidonVersion, quiet);
+        final List<MavenVersion> cliPluginVersions = props.keySet()
+                                                         .stream()
+                                                         .filter(Metadata::isCliPluginVersionKey)
+                                                         .map(Metadata::toCliPluginVersion)
+                                                         .filter(v -> v.isLessThanOrEqualTo(thisCliVersion))
+                                                         .sorted()
+                                                         .collect(Collectors.toList());
+        if (cliPluginVersions.isEmpty()) {
+            final String property = LATEST_CLI_PLUGIN_VERSION_PROPERTY;
+            return toMavenVersion(Requirements.requireNonNull(props.property(property), "missing " + property));
+        } else {
+            return cliPluginVersions.get(0);
+        }
     }
 
     /**
@@ -365,7 +401,18 @@ public class Metadata {
     }
 
     private String requiredProperty(MavenVersion helidonVersion, String propertyName, boolean quiet) throws Exception {
-        return requireNonNull(propertiesOf(helidonVersion, quiet).property(propertyName), "missing " + propertyName);
+        ConfigProperties properties = propertiesOf(helidonVersion, quiet);
+        return Requirements.requireNonNull(properties.property(propertyName), "missing " + propertyName);
+    }
+
+    private static boolean isCliPluginVersionKey(String key) {
+        return key.startsWith(CLI_PLUGIN_VERSION_PROPERTY_PREFIX) && key.endsWith(CLI_PLUGIN_VERSION_PROPERTY_SUFFIX);
+    }
+
+    private static MavenVersion toCliPluginVersion(String key) {
+        final int start = CLI_PLUGIN_VERSION_PROPERTY_PREFIX.length();
+        final int end = key.length() - CLI_PLUGIN_VERSION_PROPERTY_SUFFIX.length();
+        return toMavenVersion(key.substring(start, end));
     }
 
     private static boolean isCliMessageKey(String key) {

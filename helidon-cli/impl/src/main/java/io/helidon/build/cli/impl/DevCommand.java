@@ -31,6 +31,7 @@ import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenCommand;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
+import io.helidon.build.util.RequirementFailure;
 import io.helidon.build.util.StyleFunction;
 
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
@@ -60,8 +61,8 @@ public final class DevCommand extends BaseCommand {
     private static final String TERMINAL_MODE_PROP_PREFIX = "-Ddev.terminalMode=";
     private static final String APP_JVM_ARGS_PROP_PREFIX = "-Ddev.appJvmArgs=";
     private static final String APP_ARGS_PROP_PREFIX = "-Ddev.appArgs=";
-    private static final String HELIDON_PLUGIN_VERSION_PROP_PREFIX = "-Dversion.plugin.helidon=";
-    private static final String DEV_GOAL = "helidon-cli:dev";
+    private static final String CLI_MAVEN_PLUGIN = "io.helidon.build-tools:helidon-cli-maven-plugin";
+    private static final String DEV_GOAL_SUFFIX = ":dev";
     private static final String MAVEN_LOG_LEVEL_START = "[";
     private static final String MAVEN_LOG_LEVEL_END = "]";
     private static final String MAVEN_ERROR_LEVEL = "ERROR";
@@ -108,13 +109,15 @@ public final class DevCommand extends BaseCommand {
     @Override
     protected void invoke(CommandContext context) throws Exception {
 
-        // Override plugin version
+        // Dev goal
 
-        String overrideVersion = pluginOverrideVersion();
-        String overridePluginVersion = overrideVersion == null ? null : HELIDON_PLUGIN_VERSION_PROP_PREFIX + overrideVersion;
-        if (overridePluginVersion != null) {
-            Log.verbose("Using plugin version %s", overrideVersion);
+        String cliPluginVersion = cliPluginVersion();
+        String devGoal = CLI_MAVEN_PLUGIN;
+        if (cliPluginVersion != null) {
+            Log.verbose("Using CLI plugin version %s", cliPluginVersion);
+            devGoal += ":" + cliPluginVersion;
         }
+        devGoal += DEV_GOAL_SUFFIX;
 
         // Application args
 
@@ -150,11 +153,10 @@ public final class DevCommand extends BaseCommand {
                     .stdOut(stdOut)
                     .stdErr(stdErr)
                     .filter(filter)
-                    .addArgument(DEV_GOAL)
+                    .addArgument(devGoal)
                     .addArgument(CLEAN_PROP_PREFIX + clean)
                     .addArgument(FORK_PROP_PREFIX + fork)
                     .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
-                    .addOptionalArgument(overridePluginVersion)
                     .addOptionalArgument(jvmArgs)
                     .addOptionalArgument(args)
                     .directory(commonOptions.project())
@@ -162,25 +164,62 @@ public final class DevCommand extends BaseCommand {
                     .execute();
     }
 
-    private String pluginOverrideVersion() {
+    private String cliPluginVersion() {
         if (pluginVersion == null) {
+
+            // No plugin version was specified via command line options, so we need to select it
+            // from metadata based on the Helidon version for the project.
+
+            // First, try to find the Helidon version from the project config (.helidon file). Note
+            // that if this file was deleted and no build has occurred, a minimal project config is
+            // generated in our preconditions, which will attempt to find and store the Helidon
+            // version by reading the pom and checking for a Helidon parent pom. Though a Helidon
+            // parent pom will normally be present, it is not required so we may not find it in the
+            // config; in that case, fallback to the latest version. If we fail to get that, use our
+            // build version.
+
+            Metadata meta = metadata();
             ProjectConfig projectConfig = projectConfig();
-            String helidonVersion = projectConfig.property(ProjectConfig.HELIDON_VERSION);
-            if (helidonVersion == null) {
-                helidonVersion = Config.buildVersion();
-                Log.debug("helidon.version missing in %s, using %s", projectConfig.file(), helidonVersion);
+            String helidonVersionProperty = projectConfig.property(ProjectConfig.HELIDON_VERSION);
+            String buildVersion = Config.buildVersion();
+            MavenVersion helidonVersion;
+            if (helidonVersionProperty == null) {
+                try {
+                    helidonVersion = meta.latestVersion();
+                    Log.debug("helidon.version missing in %s, using latest: %s", projectConfig.file(), helidonVersion);
+                } catch (Exception e) {
+                    helidonVersion = toMavenVersion(buildVersion);
+                    Log.debug("unable to lookup latest Helidon version, using build version %s: %s",
+                              buildVersion, e.getMessage());
+                }
+            } else {
+                helidonVersion = toMavenVersion(helidonVersionProperty);
             }
+
+            // Short circuit if Helidon version is qualified since metadata only exists for releases
+
+            if (helidonVersion.isQualified()) {
+                Log.debug("Helidon version %s not a release, using current CLI version %s", helidonVersion, buildVersion);
+                return buildVersion;
+            }
+
+            // Now lookup and return the CLI plugin version (which will short circuit if Helidon version is
+            // prior to the existence of the CLI plugin).
+
             try {
-                Metadata meta = metadata();
-                MavenVersion version = meta.buildToolsVersionOf(toMavenVersion(helidonVersion), true);
-                return version.toString();
+                Log.debug("using Helidon version %s to find CLI plugin version", helidonVersion);
+                return meta.cliPluginVersion(helidonVersion, true).toString();
             } catch (Plugins.PluginFailed e) {
-                Log.debug("unable to lookup build tools version for Helidon version %s: %s", helidonVersion, e.getMessage());
-                return null;
+                Log.debug("unable to lookup CLI plugin version for Helidon version %s: %s", helidonVersion, e.getMessage());
+            } catch (RequirementFailure e) {
+                Log.debug("CLI plugin version not specified for Helidon version %s: %s", helidonVersion);
             } catch (Exception e) {
-                Log.debug("unable to lookup build tools version for Helidon version %s: %s", helidonVersion, e.toString());
-                return null;
+                Log.debug("unable to lookup CLI plugin version for Helidon version %s: %s", helidonVersion, e.toString());
             }
+
+            // We failed so return null to let the project pom dictate the version (which will fail if not configured)
+
+            return null;
         } else {
             return pluginVersion;
         }

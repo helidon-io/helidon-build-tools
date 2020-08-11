@@ -136,11 +136,11 @@ public class MetadataTest extends BaseMetadataTest {
         logged.assertLinesContainingAll(1, "stale check", "is false", LATEST_FILE_NAME);
         logged.assertLinesContainingAll(2, "stale check", "is false", RC1_LAST_UPDATE);
 
-        // Check the build tools and CLI versions
+        // Check the CLI plugin and CLI versions
 
         logged.clear();
         MavenVersion expected = MAVEN_VERSION_RC1;
-        assertThat(meta.buildToolsVersionOf(latestVersion, false), is(expected));
+        assertThat(meta.cliPluginVersion(latestVersion, false), is(expected));
         assertThat(meta.cliVersionOf(latestVersion, false), is(expected));
     }
 
