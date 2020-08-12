@@ -236,6 +236,6 @@ public class ProjectExecutor {
     private String classPathString() {
         List<String> paths = project.classpath().stream()
                                     .map(File::getAbsolutePath).collect(Collectors.toList());
-        return paths.stream().reduce("", (s1, s2) -> s1 + ":" + s2);
+        return paths.stream().reduce("", (s1, s2) -> s1 + File.pathSeparator + s2);
     }
 }
