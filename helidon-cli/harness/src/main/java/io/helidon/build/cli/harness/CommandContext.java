@@ -47,6 +47,7 @@ public final class CommandContext {
     private final AtomicReference<SystemLogWriter> logWriter = new AtomicReference<>();
     private final CLIDefinition cli;
     private final CommandRegistry registry;
+    private final Properties properties;
     private Verbosity verbosity;
     private ExitAction exitAction;
     private CommandParser parser;
@@ -60,6 +61,7 @@ public final class CommandContext {
         this.cli = Objects.requireNonNull(cli, "cli is null");
         this.registry = Objects.requireNonNull(registry, "registry is null");
         this.exitAction = new ExitAction();
+        this.properties = new Properties();
     }
 
     /**
@@ -286,14 +288,23 @@ public final class CommandContext {
     /**
      * Get the command parser.
      *
-     * @return command parser
-     * @throws IllegalStateException if parser is not set
+     * @return parser
+     * @throws IllegalStateException if the parser is not set
+     */
+    CommandParser parser() {
+        if (parser == null) {
+            throw new IllegalStateException("parser is not set");
+        }
+        return parser;
+    }
+
+    /**
+     * Get the parsed properties.
+     *
+     * @return properties, never {@code null}
      */
     public Properties properties() {
-        if (parser == null) {
-            return new Properties();
-        }
-        return parser.properties();
+        return properties;
     }
 
     /**
@@ -334,6 +345,7 @@ public final class CommandContext {
 
     /**
      * Lazily initialize and return the {@link SystemLogWriter}.
+     *
      * @return The writer.
      */
     private SystemLogWriter logWriter() {

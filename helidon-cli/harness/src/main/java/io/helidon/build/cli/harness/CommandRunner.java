@@ -35,13 +35,13 @@ public final class CommandRunner {
         this.context = Objects.requireNonNull(context, "context is null");
         this.parser = CommandParser.create(args == null ? new String[0] : args);
         this.context.parser(parser);
+        this.context.properties().putAll(parser.globalResolver().properties());
     }
 
     /**
      * Execute the command.
      */
     public void execute() {
-        parser.properties().forEach((key, value) -> System.setProperty((String) key, (String) value));
         parser.error().ifPresentOrElse(context::error, this::doExecute);
     }
 
@@ -68,20 +68,24 @@ public final class CommandRunner {
      * @param command command to execute
      */
     private void doExecuteCommand(CommandModel command) {
-        if (parser.resolve(GlobalOptions.PLAIN_FLAG_INFO) || userConfig().richTextDisabled()) {
+        CommandParser.Resolver globalResolver = parser.globalResolver();
+        if (globalResolver.resolve(GlobalOptions.PLAIN_FLAG_INFO) || userConfig().richTextDisabled()) {
             AnsiConsoleInstaller.disable();
         } else {
             AnsiConsoleInstaller.install();
         }
-        if (parser.resolve(GlobalOptions.VERBOSE_FLAG_INFO)) {
+        if (globalResolver.resolve(GlobalOptions.VERBOSE_FLAG_INFO)) {
             context.verbosity(CommandContext.Verbosity.VERBOSE);
-        } else if (parser.resolve(GlobalOptions.DEBUG_FLAG_INFO)) {
+        } else if (globalResolver.resolve(GlobalOptions.DEBUG_FLAG_INFO)) {
             context.verbosity(CommandContext.Verbosity.DEBUG);
         } else {
             context.verbosity(CommandContext.Verbosity.NORMAL);
         }
         try {
-            command.createExecution(parser).execute(context);
+            CommandParser.Resolver resolver = parser.parseCommand(command);
+            context.properties().putAll(resolver.properties());
+            context.properties().forEach((key, value) -> System.setProperty((String) key, (String) value));
+            command.createExecution(resolver).execute(context);
         } catch (CommandParserException ex) {
             context.error("%s%nSee '%s %s --help'", ex.getMessage(), context.cli().name(), command.command().name());
         } catch (Throwable t) {
@@ -96,7 +100,7 @@ public final class CommandRunner {
      * @return {@code help} command if the {@code --help} option is provided, otherwise the supplied fallback command
      */
     private CommandModel mapHelp(CommandModel command) {
-        return parser.resolve(GlobalOptions.HELP_FLAG_INFO) ? new HelpCommand() : command;
+        return parser.globalResolver().resolve(GlobalOptions.HELP_FLAG_INFO) ? new HelpCommand() : command;
     }
 
     /**

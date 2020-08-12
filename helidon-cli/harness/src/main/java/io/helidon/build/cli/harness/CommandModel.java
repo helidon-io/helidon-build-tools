@@ -28,15 +28,13 @@ public abstract class CommandModel extends CommandParameters {
 
     /**
      * Create a new command model.
+     *
      * @param commandInfo command info, must be non {@code null}
+     * @param params command parameters
      */
-    protected CommandModel(CommandInfo commandInfo) {
+    protected CommandModel(CommandInfo commandInfo, ParameterInfo<?>... params) {
+        super(GlobalOptions.GLOBAL_FLAGS, params);
         this.commandInfo = Objects.requireNonNull(commandInfo, "commandInfo is null");
-        // global options
-        addParameter(GlobalOptions.HELP_FLAG_INFO);
-        addParameter(GlobalOptions.VERBOSE_FLAG_INFO);
-        addParameter(GlobalOptions.DEBUG_FLAG_INFO);
-        addParameter(GlobalOptions.PLAIN_FLAG_INFO);
     }
 
     /**
@@ -60,10 +58,24 @@ public abstract class CommandModel extends CommandParameters {
     /**
      * Create a {@link CommandExecution} for this model.
      *
-     * @param parser command parser
+     * @param resolver command parser resolver
      * @return new {@link CommandExecution} instance
      */
-    public abstract CommandExecution createExecution(CommandParser parser);
+    public abstract CommandExecution createExecution(CommandParser.Resolver resolver);
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CommandModel that = (CommandModel) o;
+        return commandInfo.equals(that.commandInfo);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), commandInfo);
+    }
 
     /**
      * Meta model for the {@link Command} annotation.
@@ -100,6 +112,28 @@ public abstract class CommandModel extends CommandParameters {
          */
         public String description() {
             return description;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            CommandInfo that = (CommandInfo) o;
+            return name.equals(that.name)
+                    && description.equals(that.description);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, description);
+        }
+
+        @Override
+        public String toString() {
+            return "CommandInfo{"
+                    + "name='" + name + '\''
+                    + ", description='" + description + '\''
+                    + '}';
         }
     }
 
@@ -167,6 +201,20 @@ public abstract class CommandModel extends CommandParameters {
          * @return usage, never {@code null}
          */
         abstract String usage();
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            OptionInfo<?> that = (OptionInfo<?>) o;
+            return Objects.equals(type, that.type)
+                    && description.equals(that.description);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(type, description);
+        }
     }
 
     /**
@@ -174,7 +222,7 @@ public abstract class CommandModel extends CommandParameters {
      *
      * @param <T> mapped type
      */
-    public static final class ArgumentInfo<T> extends OptionInfo<T> {
+    public static final class ArgumentInfo<T> extends OptionInfo<T> implements RequiredOption {
 
         private final boolean required;
 
@@ -190,11 +238,7 @@ public abstract class CommandModel extends CommandParameters {
             this.required = required;
         }
 
-        /**
-         * The attribute required flag.
-         *
-         * @return required flag
-         */
+        @Override
         public boolean required() {
             return required;
         }
@@ -204,6 +248,29 @@ public abstract class CommandModel extends CommandParameters {
             return (required ? "" : "[")
                     + description().toUpperCase()
                     + (required ? "" : "]");
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+            ArgumentInfo<?> that = (ArgumentInfo<?>) o;
+            return required == that.required;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), required);
+        }
+
+        @Override
+        public String toString() {
+            return "ArgumentInfo{"
+                    + "type=" + type()
+                    + ", description='" + description() + '\''
+                    + ", required=" + required
+                    + '}';
         }
     }
 
@@ -255,6 +322,19 @@ public abstract class CommandModel extends CommandParameters {
         public boolean visible() {
             return visible;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            NamedOptionInfo<?> that = (NamedOptionInfo<?>) o;
+            return name.equals(that.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(this.getClass(), name);
+        }
     }
 
     /**
@@ -287,6 +367,29 @@ public abstract class CommandModel extends CommandParameters {
         String usage() {
             return "[--" + name() + "]";
         }
+
+        @Override
+        public String toString() {
+            return "FlagInfo{"
+                    + "type=" + type()
+                    + ", description='" + description() + '\''
+                    + ", name='" + name() + '\''
+                    + ", visible=" + visible()
+                    + '}';
+        }
+    }
+
+    /**
+     * Meta model for options with a required attribute.
+     */
+    public interface RequiredOption {
+
+        /**
+         * The attribute required flag.
+         *
+         * @return required flag
+         */
+        boolean required();
     }
 
     /**
@@ -294,7 +397,7 @@ public abstract class CommandModel extends CommandParameters {
      *
      * @param <T> item type
      */
-    public static final class KeyValueInfo<T> extends NamedOptionInfo<T> {
+    public static final class KeyValueInfo<T> extends NamedOptionInfo<T> implements RequiredOption {
 
         private final T defaultValue;
         private final boolean required;
@@ -337,11 +440,7 @@ public abstract class CommandModel extends CommandParameters {
             return defaultValue;
         }
 
-        /**
-         * The attribute required flag.
-         *
-         * @return required flag
-         */
+        @Override
         public boolean required() {
             return required;
         }
@@ -352,6 +451,18 @@ public abstract class CommandModel extends CommandParameters {
                     + "--" + name() + " " + valueUsage(type())
                     + (required ? "" : "]");
         }
+
+        @Override
+        public String toString() {
+            return "KeyValueInfo{"
+                    + "type=" + type()
+                    + ", description='" + description() + '\''
+                    + ", name='" + name() + '\''
+                    + ", visible=" + visible()
+                    + ", defaultValue=" + defaultValue
+                    + ", required=" + required
+                    + '}';
+        }
     }
 
     /**
@@ -359,7 +470,7 @@ public abstract class CommandModel extends CommandParameters {
      *
      * @param <T> item type
      */
-    public static final class KeyValuesInfo<T> extends NamedOptionInfo<Collection<T>> {
+    public static final class KeyValuesInfo<T> extends NamedOptionInfo<Collection<T>> implements RequiredOption {
 
         private final Class<T> paramType;
         private final boolean required;
@@ -387,11 +498,7 @@ public abstract class CommandModel extends CommandParameters {
             return paramType;
         }
 
-        /**
-         * The attribute required flag.
-         *
-         * @return required flag
-         */
+        @Override
         public boolean required() {
             return required;
         }
@@ -402,6 +509,17 @@ public abstract class CommandModel extends CommandParameters {
                     + "--" + name() + " " + valueUsage(paramType)
                     + "[," + valueUsage(paramType) + "]"
                     + (required ? "" : "]");
+        }
+
+        @Override
+        public String toString() {
+            return "KeyValuesInfo{"
+                    + "type=" + paramType
+                    + ", description='" + description() + '\''
+                    + ", name='" + name() + '\''
+                    + ", visible=" + visible()
+                    + ", required=" + required
+                    + '}';
         }
     }
 }

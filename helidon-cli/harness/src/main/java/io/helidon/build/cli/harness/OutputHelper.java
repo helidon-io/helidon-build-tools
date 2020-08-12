@@ -15,8 +15,8 @@
  */
 package io.helidon.build.cli.harness;
 
-import java.util.Iterator;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Utility class to help with output.
@@ -36,28 +36,18 @@ public final class OutputHelper {
      * @return rendered table
      */
     public static String table(Map<String, String> map) {
-        int maxOptNameLength = 0;
-        for (String opt : map.keySet()) {
-            int optNameLength = opt.length();
-            if (optNameLength > maxOptNameLength) {
-                maxOptNameLength = optNameLength;
-            }
+        int maxKeyWidth = map.keySet().stream().mapToInt(String::length).max().orElse(0);
+        return map.entrySet().stream()
+                .map(e -> BEGIN_SPACING + e.getKey() + padding(maxKeyWidth, e.getKey()) + COL_SPACING + e.getValue())
+                .collect(Collectors.joining("\n"));
+    }
+
+    private static String padding(int maxKeyWidth, Object key) {
+        final int keyLen = key.toString().length();
+        if (maxKeyWidth > keyLen) {
+            return " ".repeat(maxKeyWidth - keyLen);
+        } else {
+            return "";
         }
-        String out = "";
-        Iterator<Map.Entry<String, String>> it = map.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, String> optEntry = it.next();
-            String optName = optEntry.getKey();
-            int curColPos = maxOptNameLength - optName.length();
-            String colSpacing = "";
-            for (int i = 0; i < curColPos; i++) {
-                colSpacing += " ";
-            }
-            out += BEGIN_SPACING + optName + colSpacing + COL_SPACING + optEntry.getValue();
-            if (it.hasNext()) {
-                out += "\n";
-            }
-        }
-        return out;
     }
 }

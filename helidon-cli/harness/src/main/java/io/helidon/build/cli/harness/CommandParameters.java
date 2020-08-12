@@ -17,29 +17,51 @@ package io.helidon.build.cli.harness;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Model common to {@link Command} and {@link CommandFragment}.
  */
 public class CommandParameters {
 
-    private final List<ParameterInfo> params;
+    private final List<ParameterInfo<?>> params;
 
     /**
      * Create a new command parameters.
+     *
+     * @param params parameters info
      */
-    protected CommandParameters() {
+    protected CommandParameters(ParameterInfo<?>... params) {
         this.params = new LinkedList<>();
+        if (params != null) {
+            for (ParameterInfo<?> param : params) {
+                this.params.add(param);
+            }
+        }
     }
 
     /**
-     * Add an attribute to the command model.
+     * Create a new command parameters.
      *
-     * @param param parameter info to add
+     * @param globalFlags global flags info
+     * @param params      parameters info
      */
-    protected final void addParameter(ParameterInfo param) {
-        params.add(Objects.requireNonNull(param, "param is null"));
+    protected CommandParameters(CommandModel.FlagInfo[] globalFlags, ParameterInfo<?>... params) {
+        this.params = new LinkedList<>();
+        if (globalFlags != null) {
+            for (ParameterInfo<?> param : globalFlags) {
+                this.params.add(param);
+            }
+        }
+        if (params != null) {
+            for (ParameterInfo<?> param : params) {
+                this.params.add(param);
+            }
+        }
     }
 
     /**
@@ -47,8 +69,33 @@ public class CommandParameters {
      *
      * @return list of {@link ParameterInfo}, never {@code null}
      */
-    public final List<ParameterInfo> parameters() {
+    public final List<ParameterInfo<?>> parameters() {
         return params;
+    }
+
+    /**
+     * Get the parameters as a map.
+     *
+     * @return map of {@link ParameterInfo} keyed by their name.
+     */
+    public final Map<String, ParameterInfo<?>> parametersMap() {
+        return params.stream()
+                .flatMap(CommandParameters::paramStream)
+                .distinct()
+                .collect(Collectors.toMap(CommandParameters::paramName, Function.identity()));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CommandParameters that = (CommandParameters) o;
+        return params.equals(that.params);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(params);
     }
 
     /**
@@ -60,6 +107,7 @@ public class CommandParameters {
 
         /**
          * The parameter type.
+         *
          * @return type
          */
         Class<T> type();
@@ -86,10 +134,11 @@ public class CommandParameters {
         /**
          * Create a new fragment info.
          *
-         * @param type fragment type
+         * @param type   fragment type
+         * @param params fragment parameters
          */
-        protected CommandFragmentInfo(Class<T> type) {
-            super();
+        protected CommandFragmentInfo(Class<T> type, ParameterInfo<?>... params) {
+            super(params);
             this.type = Objects.requireNonNull(type, "type is null");
         }
 
@@ -101,9 +150,45 @@ public class CommandParameters {
         /**
          * Resolve a fragment instance.
          *
-         * @param parser command parser
+         * @param resolver command parser resolver
          * @return created fragment
          */
-        public abstract T resolve(CommandParser parser);
+        public abstract T resolve(CommandParser.Resolver resolver);
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+            CommandFragmentInfo<?> that = (CommandFragmentInfo<?>) o;
+            return type.equals(that.type);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), type);
+        }
+
+        @Override
+        public String toString() {
+            return "CommandFragmentInfo{"
+                    + "params=" + parameters()
+                    + ", type=" + type
+                    + '}';
+        }
+    }
+
+    private static String paramName(ParameterInfo<?> param) {
+        if (param instanceof CommandModel.NamedOptionInfo) {
+            return ((CommandModel.NamedOptionInfo) param).name();
+        }
+        return "";
+    }
+
+    private static Stream<ParameterInfo<?>> paramStream(ParameterInfo<?> param) {
+        if (param instanceof CommandFragmentInfo) {
+            return ((CommandFragmentInfo) param).parameters().stream();
+        }
+        return Stream.of(param);
     }
 }

@@ -58,6 +58,7 @@ public class CommandAnnotationProcessor extends AbstractProcessor {
     private final Map<String, CommandFragmentMetaModel> fragmentsByQualifiedName = new HashMap<>();
     private boolean done;
 
+    // TODO detect bad duplicates (options with same name but of different type)
     // TODO enforce options only for command fragments (i.e no argument)
     // TODO support inheritance
     // TODO add unit tests
@@ -136,7 +137,7 @@ public class CommandAnnotationProcessor extends AbstractProcessor {
             String registryQualifiedName = pkg + "." + CodeGenerator.REGISTRY_NAME;
             JavaFileObject fileObject = filer.createSourceFile(registryQualifiedName);
             try (BufferedWriter bw = new BufferedWriter(fileObject.openWriter())) {
-                bw.append(CodeGenerator.generateCommandRegistry(pkg, CodeGenerator.REGISTRY_NAME, models));
+                bw.append(CodeGenerator.generateCommandRegistry(pkg, models));
             }
             FileObject serviceFileObject = filer.createResource(StandardLocation.CLASS_OUTPUT, "", REGISTRY_SERVICE_FILE);
             try (BufferedWriter bw = new BufferedWriter(serviceFileObject.openWriter())) {
