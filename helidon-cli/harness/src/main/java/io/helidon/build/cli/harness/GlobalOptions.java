@@ -16,6 +16,7 @@
 package io.helidon.build.cli.harness;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.helidon.build.cli.harness.CommandModel.FlagInfo;
 
@@ -114,11 +115,19 @@ public class GlobalOptions {
         return GLOBAL_FLAG_ARGUMENTS.contains(argument);
     }
 
-    private static final Set<String> GLOBAL_FLAG_ARGUMENTS = Set.of(
-            HELP_FLAG_ARGUMENT,
-            VERBOSE_FLAG_ARGUMENT,
-            DEBUG_FLAG_ARGUMENT,
-            PLAIN_FLAG_ARGUMENT);
+    /**
+     * Global flags.
+     */
+    static final FlagInfo[] GLOBAL_FLAGS = new FlagInfo[]{
+            HELP_FLAG_INFO,
+            VERBOSE_FLAG_INFO,
+            DEBUG_FLAG_INFO,
+            PLAIN_FLAG_INFO
+    };
+
+    private static final Set<String> GLOBAL_FLAG_ARGUMENTS = Set.of(GLOBAL_FLAGS).stream()
+            .map(f -> "--" + f.name())
+            .collect(Collectors.toSet());
 
     private GlobalOptions() {
     }

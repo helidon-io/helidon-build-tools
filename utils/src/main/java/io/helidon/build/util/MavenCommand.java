@@ -457,14 +457,18 @@ public class MavenCommand {
 
             // Create the process builder
 
-            processBuilder = new ProcessBuilder().directory(directory.toFile()).command(command);
+            processBuilder = new ProcessBuilder()
+                    .redirectInput(ProcessBuilder.Redirect.INHERIT)
+                    .directory(directory.toFile())
+                    .command(command);
 
             // Ensure we use the current Maven version
 
             Map<String, String> env = processBuilder.environment();
             String mavenPath = mavenExecutable().getParent().toString();
-            String path = mavenPath + pathSeparatorChar + env.get(PATH_VAR);
-            env.put(PATH_VAR, path);
+            env.entrySet().stream()
+                    .filter(e -> e.getKey().equalsIgnoreCase(PATH_VAR))
+                    .forEach(e -> env.put(e.getKey(), mavenPath + pathSeparatorChar + e.getValue()));
 
             // Setup MAVEN_OPTS with debugger, if needed
 

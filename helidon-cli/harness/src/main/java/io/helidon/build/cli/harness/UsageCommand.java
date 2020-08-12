@@ -40,7 +40,7 @@ final class UsageCommand extends CommandModel {
     }
 
     @Override
-    public CommandExecution createExecution(CommandParser parser) {
+    public CommandExecution createExecution(CommandParser.Resolver resolver) {
         return this::execute;
     }
 

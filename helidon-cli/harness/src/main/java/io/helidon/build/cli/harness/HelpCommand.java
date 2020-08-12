@@ -26,12 +26,11 @@ import io.helidon.build.util.Log;
  */
 class HelpCommand extends CommandModel {
 
-    private final ArgumentInfo<String> commandArg;
+    private static final CommandInfo CMD_INFO = new CommandInfo("help", "Help about the command");
+    private static final ArgumentInfo<String> ARG_INFO = new ArgumentInfo<>(String.class, "command", false);
 
     HelpCommand() {
-        super(new CommandInfo("help", "Help about the command"));
-        commandArg = new ArgumentInfo<>(String.class, "command", false);
-        addParameter(commandArg);
+        super(CMD_INFO, ARG_INFO);
     }
 
     @Override
@@ -40,29 +39,29 @@ class HelpCommand extends CommandModel {
     }
 
     @Override
-    public final CommandExecution createExecution(CommandParser parser) {
-        return new HelpCommandExecution(parser);
+    public final CommandExecution createExecution(CommandParser.Resolver resolver) {
+        return new HelpCommandExecution(resolver);
     }
 
     private final class HelpCommandExecution implements CommandExecution {
 
-        private final CommandParser parser;
+        private final CommandParser.Resolver resolver;
 
-        HelpCommandExecution(CommandParser parser) {
-            this.parser = parser;
+        HelpCommandExecution(CommandParser.Resolver resolver) {
+            this.resolver = resolver;
         }
 
-        private Optional<String> commandName() {
-            return Optional.ofNullable(parser.resolve(commandArg))
+        private Optional<String> commandName(CommandContext context) {
+            return Optional.ofNullable(resolver.resolve(ARG_INFO))
                 // if the help command is forced because of --help, the actual command arg is the original command name
-                .or(() -> parser.commandName().map((command) -> "help".equals(command) ? null : command))
+                .or(() -> context.parser().commandName().map((command) -> "help".equals(command) ? null : command))
                 // if --help is found at this point, this is help about the help command
-                .or(() -> Optional.ofNullable(parser.resolve(GlobalOptions.HELP_FLAG_INFO) ? "help" : null));
+                .or(() -> Optional.ofNullable(resolver.resolve(GlobalOptions.HELP_FLAG_INFO) ? "help" : null));
         }
 
         @Override
         public void execute(CommandContext context) {
-            commandName().ifPresentOrElse(
+            commandName(context).ifPresentOrElse(
                     // execute
                     (commandName) -> this.doExecute(context, commandName),
                     // just help, print usage
