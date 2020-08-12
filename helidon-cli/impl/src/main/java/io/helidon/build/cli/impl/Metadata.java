@@ -233,7 +233,21 @@ public class Metadata {
      * @throws Exception If an error occurs.
      */
     public MavenVersion cliPluginVersion(MavenVersion helidonVersion, boolean quiet) throws Exception {
-        MavenVersion thisCliVersion = toMavenVersion(Config.buildVersion());
+        return cliPluginVersion(helidonVersion, toMavenVersion(Config.buildVersion()), quiet);
+    }
+
+    /**
+     * Returns the {@code helidon-cli-maven-plugin} version for the given Helidon version.
+     *
+     * @param helidonVersion The version.
+     * @param thisCliVersion This CLI version.
+     * @param quiet If info messages should be suppressed.
+     * @return The version.
+     * @throws Exception If an error occurs.
+     */
+    public MavenVersion cliPluginVersion(MavenVersion helidonVersion,
+                                         MavenVersion thisCliVersion,
+                                         boolean quiet) throws Exception {
 
         // Short circuit if Helidon version is prior to the existence of the CLI plugin
 
@@ -243,7 +257,8 @@ public class Metadata {
         }
 
 
-        /*
+        /* TODO: REMOVE
+
             cli.latest.plugin.version=2.2.0
             cli.2.1.0.plugin.version=2.0.9
             cli.2.0.3.plugin.version=2.0.3
@@ -261,12 +276,12 @@ public class Metadata {
 
         final ConfigProperties props = propertiesOf(helidonVersion, quiet);
         final List<MavenVersion> cliPluginVersions = props.keySet()
-                                                         .stream()
-                                                         .filter(Metadata::isCliPluginVersionKey)
-                                                         .map(Metadata::toCliPluginVersion)
-                                                         .filter(v -> v.isLessThanOrEqualTo(thisCliVersion))
-                                                         .sorted()
-                                                         .collect(Collectors.toList());
+                                                          .stream()
+                                                          .filter(Metadata::isCliPluginVersionKey)
+                                                          .map(Metadata::toCliPluginVersion)
+                                                          .filter(v -> v.isLessThanOrEqualTo(thisCliVersion))
+                                                          .sorted()
+                                                          .collect(Collectors.toList());
         if (cliPluginVersions.isEmpty()) {
             final String property = LATEST_CLI_PLUGIN_VERSION_PROPERTY;
             return toMavenVersion(Requirements.requireNonNull(props.property(property), "missing " + property));
@@ -406,7 +421,9 @@ public class Metadata {
     }
 
     private static boolean isCliPluginVersionKey(String key) {
-        return key.startsWith(CLI_PLUGIN_VERSION_PROPERTY_PREFIX) && key.endsWith(CLI_PLUGIN_VERSION_PROPERTY_SUFFIX);
+        return key.startsWith(CLI_PLUGIN_VERSION_PROPERTY_PREFIX)
+               && key.endsWith(CLI_PLUGIN_VERSION_PROPERTY_SUFFIX)
+               && !key.equals(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
     }
 
     private static MavenVersion toCliPluginVersion(String key) {
