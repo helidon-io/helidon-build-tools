@@ -16,6 +16,7 @@
 package io.helidon.build.cli.harness;
 
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
+import io.helidon.build.cli.harness.CommandModel.FlagInfo;
 import io.helidon.build.cli.harness.CommandParser.CommandParserException;
 
 import org.junit.jupiter.api.Test;
@@ -34,174 +35,235 @@ public class CommandParserTest {
 
     @Test
     public void testTrim() {
-        CommandParser parser = CommandParser.create("  cli  ", " --foo ", "   bar ");
+        CommandParser parser;
+        CommandParser.Resolver resolver;
+        CommandParameters cmd = new CommandParameters(
+                new CommandModel.KeyValueInfo<>(String.class, "foo", "Foo", null, true));
+
+        parser = CommandParser.create("  command  ", " --foo ", "   bar ");
+        resolver = parser.parseCommand(cmd);
+
         assertThat(parser.commandName().isPresent(), is(true));
-        assertThat(parser.commandName().get(), is("cli"));
+        assertThat(parser.commandName().get(), is("command"));
         assertThat(parser.error().isEmpty(), is(true));
-        assertThat(parser.params().size(), is(1));
-        assertThat(parser.params(), hasKey("foo"));
-        assertThat(parser.params().get("foo"), is(instanceOf(CommandParser.KeyValueParam.class)));
-        assertThat(((CommandParser.KeyValueParam) parser.params().get("foo")).value(), is("bar"));
+        assertThat(resolver.params().size(), is(1));
+        assertThat(resolver.params(), hasKey("foo"));
+        assertThat(resolver.params().get("foo"), is(instanceOf(CommandParser.KeyValueParam.class)));
+        assertThat(((CommandParser.KeyValueParam) resolver.params().get("foo")).value(), is("bar"));
     }
 
     @Test
-    public void testUpperCase() {
-        CommandParser parser = CommandParser.create("CLI", "--HELP");
-        assertThat(parser.commandName().isPresent(), is(true));
-        assertThat(parser.error().isEmpty(), is(true));
-        assertThat(parser.commandName().get(), is("cli"));
-        assertThat(parser.params().size(), is(1));
-        assertThat(parser.params(), hasKey("help"));
-        assertThat(parser.params().get("help"), is(instanceOf(CommandParser.FlagParam.class)));
+    public void testCase() {
+        CommandParser parser;
+        CommandParser.Resolver resolver;
 
-        parser = CommandParser.create("cLi", "--HeLp");
-        assertThat(parser.commandName().isPresent(), is(true));
-        assertThat(parser.error().isEmpty(), is(true));
-        assertThat(parser.commandName().get(), is("cli"));
-        assertThat(parser.params().size(), is(1));
-        assertThat(parser.params(), hasKey("help"));
-        assertThat(parser.params().get("help"), is(instanceOf(CommandParser.FlagParam.class)));
+        parser = CommandParser.create("COMMAND", "--HELP");
 
-        parser = CommandParser.create("cLi", "--fOo", "bAR");
         assertThat(parser.commandName().isPresent(), is(true));
         assertThat(parser.error().isEmpty(), is(true));
-        assertThat(parser.commandName().get(), is("cli"));
-        assertThat(parser.params().size(), is(1));
-        assertThat(parser.params(), hasKey("foo"));
-        assertThat(parser.params().get("foo"), is(instanceOf(CommandParser.KeyValueParam.class)));
-        assertThat(((CommandParser.KeyValueParam) parser.params().get("foo")).value(), is("bAR"));
+        assertThat(parser.commandName().get(), is("command"));
+        assertThat(parser.globalResolver().params().size(), is(1));
+        assertThat(parser.globalResolver().params(), hasKey("help"));
+        assertThat(parser.globalResolver().params().get("help"), is(instanceOf(CommandParser.FlagParam.class)));
+
+        parser = CommandParser.create("CoMmAnD", "--HeLp");
+
+        assertThat(parser.commandName().isPresent(), is(true));
+        assertThat(parser.error().isEmpty(), is(true));
+        assertThat(parser.commandName().get(), is("command"));
+        assertThat(parser.globalResolver().params().size(), is(1));
+        assertThat(parser.globalResolver().params(), hasKey("help"));
+        assertThat(parser.globalResolver().params().get("help"), is(instanceOf(CommandParser.FlagParam.class)));
+
+        CommandParameters cmd = new CommandParameters(
+                new CommandModel.KeyValueInfo<>(String.class, "foo", "Foo", null, true));
+        parser = CommandParser.create("cOmMaNd", "--fOo", "bAR");
+        resolver = parser.parseCommand(cmd);
+
+        assertThat(parser.commandName().isPresent(), is(true));
+        assertThat(parser.error().isEmpty(), is(true));
+        assertThat(parser.commandName().get(), is("command"));
+        assertThat(resolver.params().size(), is(1));
+        assertThat(resolver.params(), hasKey("foo"));
+        assertThat(resolver.params().get("foo"), is(instanceOf(CommandParser.KeyValueParam.class)));
+        assertThat(((CommandParser.KeyValueParam) resolver.params().get("foo")).value(), is("bAR"));
     }
 
     @Test
-    public void testInvalidCommandNames() {
-        CommandParser parser = CommandParser.create("-cli", "--help");
-        assertThat(parser.commandName().isEmpty(), is(true));
-        assertThat(parser.error().isPresent(), is(true));
-        assertThat(parser.error().get(), is(CommandParser.INVALID_COMMAND_NAME + ": -cli"));
+    public void testCommandNames() {
+        CommandParser parser;
 
-        parser = CommandParser.create("cli-", "--help");
-        assertThat(parser.commandName().isEmpty(), is(true));
-        assertThat(parser.error().isPresent(), is(true));
-        assertThat(parser.error().get(), is(CommandParser.INVALID_COMMAND_NAME + ": cli-"));
+        parser = CommandParser.create("-command", "--help");
 
-        parser = CommandParser.create("great-cli", "--help");
         assertThat(parser.commandName().isEmpty(), is(true));
         assertThat(parser.error().isPresent(), is(true));
-        assertThat(parser.error().get(), is(CommandParser.INVALID_COMMAND_NAME + ": great-cli"));
+        assertThat(parser.error().get(), is(CommandParser.INVALID_COMMAND_NAME + ": -command"));
 
-        parser = CommandParser.create("great_cli", "--help");
+        parser = CommandParser.create("command-", "--help");
+
         assertThat(parser.commandName().isEmpty(), is(true));
         assertThat(parser.error().isPresent(), is(true));
-        assertThat(parser.error().get(), is(CommandParser.INVALID_COMMAND_NAME + ": great_cli"));
+        assertThat(parser.error().get(), is(CommandParser.INVALID_COMMAND_NAME + ": command-"));
+
+        parser = CommandParser.create("great-command", "--help");
+
+        assertThat(parser.commandName().isEmpty(), is(true));
+        assertThat(parser.error().isPresent(), is(true));
+        assertThat(parser.error().get(), is(CommandParser.INVALID_COMMAND_NAME + ": great-command"));
+
+        parser = CommandParser.create("great_command", "--help");
+
+        assertThat(parser.commandName().isEmpty(), is(true));
+        assertThat(parser.error().isPresent(), is(true));
+        assertThat(parser.error().get(), is(CommandParser.INVALID_COMMAND_NAME + ": great_command"));
     }
 
     @Test
-    public void testInvalidOptionName() {
-        CommandParser parser = CommandParser.create("cli", "---help");
-        assertThat(parser.commandName().isPresent(), is(true));
-        assertThat(parser.commandName().get(), is("cli"));
-        assertThat(parser.error().isPresent(), is(true));
-        assertThat(parser.error().get(), is(CommandParser.INVALID_OPTION_NAME + ": -help"));
+    public void testOptionNames() {
+        CommandParser parser;
+        CommandParser.Resolver resolver;
 
-        parser = CommandParser.create("cli", "--help-");
-        assertThat(parser.commandName().isPresent(), is(true));
-        assertThat(parser.commandName().get(), is("cli"));
-        assertThat(parser.error().isPresent(), is(true));
-        assertThat(parser.error().get(), is(CommandParser.INVALID_OPTION_NAME + ": help-"));
+        assertThrows(CommandParserException.class,
+                () -> CommandParser.create("command", "---help").parseCommand(),
+                CommandParser.INVALID_OPTION_NAME + ": -help");
 
-        parser = CommandParser.create("cli", "--please_help");
-        assertThat(parser.commandName().isPresent(), is(true));
-        assertThat(parser.commandName().get(), is("cli"));
-        assertThat(parser.error().isPresent(), is(true));
-        assertThat(parser.error().get(), is(CommandParser.INVALID_OPTION_NAME + ": please_help"));
+        assertThrows(CommandParserException.class,
+                () -> CommandParser.create("command", "--help-").parseCommand(),
+                CommandParser.INVALID_OPTION_NAME + ": help-");
 
-        parser = CommandParser.create("cli", "--please-help");
+        assertThrows(CommandParserException.class,
+                () -> CommandParser.create("command", "--please_help").parseCommand(),
+                CommandParser.INVALID_OPTION_NAME + ": please_help");
+
+        CommandParameters cmd = new CommandParameters(
+                new CommandModel.FlagInfo("please-help", "Please Help", true));
+        parser = CommandParser.create("command", "--please-help");
+        resolver = parser.parseCommand(cmd);
+
         assertThat(parser.commandName().isPresent(), is(true));
-        assertThat(parser.commandName().get(), is("cli"));
-        assertThat(parser.params().size(), is(1));
-        assertThat(parser.params(), hasKey("please-help"));
-        assertThat(parser.params().get("please-help"), is(instanceOf(CommandParser.FlagParam.class)));
+        assertThat(parser.commandName().get(), is("command"));
+        assertThat(resolver.params().size(), is(1));
+        assertThat(resolver.params(), hasKey("please-help"));
+        assertThat(resolver.params().get("please-help"), is(instanceOf(CommandParser.FlagParam.class)));
     }
 
     @Test
     public void testKeyValues() {
-        CommandParser parser = CommandParser.create("cli", "--foo", "--foo", "bar");
-        assertThat(parser.commandName().isPresent(), is(true));
-        assertThat(parser.commandName().get(), is("cli"));
-        assertThat(parser.error().isPresent(), is(true));
-        assertThat(parser.error().get(), is(CommandParser.INVALID_REPEATING_OPTION + ": foo"));
+        CommandParameters cmd = new CommandParameters(
+                new CommandModel.KeyValuesInfo<>(String.class, "foo", "Foo", true));
 
-        parser = CommandParser.create("cli", "--foo", "1", "--foo");
-        assertThat(parser.commandName().isPresent(), is(true));
-        assertThat(parser.commandName().get(), is("cli"));
-        assertThat(parser.error().isPresent(), is(true));
-        assertThat(parser.error().get(), is(CommandParser.INVALID_REPEATING_OPTION + ": foo"));
+        assertThrows(CommandParserException.class,
+                () -> CommandParser.create("command", "--foo", "--foo", "bar").parseCommand(cmd),
+                CommandParser.INVALID_REPEATING_OPTION + ": foo");
 
-        parser = CommandParser.create("cli", "--foo", "bar1", "--foo", "bar2");
-        assertThat(parser.commandName().isPresent(), is(true));
-        assertThat(parser.commandName().get(), is("cli"));
-        assertThat(parser.error().isEmpty(), is(true));
-        assertThat(parser.params().size(), is(1));
-        assertThat(parser.params(), hasKey("foo"));
-        assertThat(parser.params().get("foo"), is(instanceOf(CommandParser.KeyValuesParam.class)));
-        assertThat(((CommandParser.KeyValuesParam) parser.params().get("foo")).values(), contains("bar1", "bar2"));
+        assertThrows(CommandParserException.class,
+                () -> CommandParser.create("command", "--foo", "1", "--foo").parseCommand(cmd),
+                CommandParser.INVALID_REPEATING_OPTION + ": foo");
 
-        parser = CommandParser.create("cli", "--foo", "bar1,bar2", "--foo", "bar3");
-        assertThat(parser.commandName().isPresent(), is(true));
-        assertThat(parser.commandName().get(), is("cli"));
-        assertThat(parser.error().isEmpty(), is(true));
-        assertThat(parser.params().size(), is(1));
-        assertThat(parser.params(), hasKey("foo"));
-        assertThat(parser.params().get("foo"), is(instanceOf(CommandParser.KeyValuesParam.class)));
-        assertThat(((CommandParser.KeyValuesParam) parser.params().get("foo")).values(), contains("bar1", "bar2", "bar3"));
+        CommandParser parser;
+        CommandParser.Resolver resolver;
+
+        parser = CommandParser.create("command", "--foo", "bar1", "--foo", "bar2");
+        resolver = parser.parseCommand(cmd);
+
+        assertThat(resolver.params().size(), is(1));
+        assertThat(resolver.params(), hasKey("foo"));
+        assertThat(resolver.params().get("foo"), is(instanceOf(CommandParser.KeyValuesParam.class)));
+        assertThat(((CommandParser.KeyValuesParam) resolver.params().get("foo")).values(), contains("bar1", "bar2"));
+
+        parser = CommandParser.create("command", "--foo", "bar1,bar2", "--foo", "bar3");
+        resolver = parser.parseCommand(cmd);
+
+        assertThat(resolver.params().size(), is(1));
+        assertThat(resolver.params(), hasKey("foo"));
+        assertThat(resolver.params().get("foo"), is(instanceOf(CommandParser.KeyValuesParam.class)));
+        assertThat(((CommandParser.KeyValuesParam) resolver.params().get("foo")).values(), contains("bar1", "bar2", "bar3"));
     }
 
     @Test
     public void testProperties() {
-        CommandParser parser = CommandParser.create("command", "-Dfoo=bar", "-Dbar=foo");
-        assertThat(parser.commandName().isPresent(), is(true));
-        assertThat(parser.commandName().get(), is("command"));
-        assertThat(parser.error().isPresent(), is(false));
-        assertThat(parser.properties().get("foo"), is("bar"));
-        assertThat(parser.properties().get("bar"), is("foo"));
+        CommandParser parser;
+        CommandParser.Resolver resolver;
 
-        parser = CommandParser.create("command", "-Dfoo");
-        assertThat(parser.commandName().isPresent(), is(true));
-        assertThat(parser.commandName().get(), is("command"));
-        assertThat(parser.error().isPresent(), is(true));
-        assertThat(parser.error().get(), is(CommandParser.INVALID_PROPERTY + ": foo"));
+        parser = CommandParser.create("command", "-Dfoo=bar", "-Dbar=foo");
+        resolver = parser.parseCommand(new CommandParameters());
+
+        assertThat(parser.globalResolver().properties().isEmpty(), is(true));
+        assertThat(resolver.properties().get("foo"), is("bar"));
+        assertThat(resolver.properties().get("bar"), is("foo"));
+
+        CommandParser badPropParser = CommandParser.create("command", "-Dfoo");
+
+        assertThat(badPropParser.commandName().isPresent(), is(true));
+        assertThat(badPropParser.commandName().get(), is("command"));
+        assertThat(parser.globalResolver().properties().isEmpty(), is(true));
+        assertThrows(CommandParserException.class,
+                () -> badPropParser.parseCommand(new CommandParameters()),
+                CommandParser.INVALID_PROPERTY + ": foo");
 
         parser = CommandParser.create("command", "-DfOo=Bar", " -DBAR=FOO ");
-        assertThat(parser.commandName().isPresent(), is(true));
-        assertThat(parser.commandName().get(), is("command"));
-        assertThat(parser.error().isPresent(), is(false));
-        assertThat(parser.properties().get("fOo"), is("Bar"));
-        assertThat(parser.properties().get("BAR"), is("FOO"));
+        resolver = parser.parseCommand(new CommandParameters());
+
+        assertThat(parser.globalResolver().properties().isEmpty(), is(true));
+        assertThat(resolver.properties().get("fOo"), is("Bar"));
+        assertThat(resolver.properties().get("BAR"), is("FOO"));
 
         parser = CommandParser.create("-Dfoo=bar", "command");
-        assertThat(parser.commandName().isPresent(), is(true));
-        assertThat(parser.commandName().get(), is("command"));
-        assertThat(parser.properties().get("foo"), is("bar"));
+        assertThat(parser.globalResolver().properties().get("foo"), is("bar"));
+
+        KeyValueInfo<String> param = new KeyValueInfo<>(String.class, "key1", "Key1", null, true);
+        parser = CommandParser.create("-Dfoo=bar", "command", "--key1", "-Dbob=alice");
+        resolver = parser.parseCommand(new CommandParameters(param));
+
+        assertThat(parser.globalResolver().properties().get("foo"), is("bar"));
+        assertThat(resolver.resolve(param), is("-Dbob=alice"));
     }
 
     enum DAY {
         MONDAY,
-        TUESDAY,
-        WEDNESDAY,
-        THURSDAY,
-        FRIDAY,
-        SATURDAY,
-        SUNDAY
     }
 
     @Test
     public void testResolve() {
-        KeyValueInfo<DAY> keyValueInfo = new KeyValueInfo<>(DAY.class, "day", "day of the week", null, false);
-        assertThat(CommandParser.create("cli", "--day", "MONDAY").resolve(keyValueInfo), is(DAY.MONDAY));
-        assertThat(CommandParser.create("cli", "--day", "monday").resolve(keyValueInfo), is(DAY.MONDAY));
-        assertThat(CommandParser.create("cli", "--day", "mOnDaY").resolve(keyValueInfo), is(DAY.MONDAY));
-        CommandParserException ex = assertThrows(CommandParserException.class,
-                () -> CommandParser.create("cli", "--day" ,"xxx").resolve(keyValueInfo));
-        assertThat(ex.getMessage(), is(CommandParser.INVALID_CHOICE + ": " + "xxx"));
+        KeyValueInfo<DAY> param = new KeyValueInfo<>(DAY.class, "day", "day of the week", null, false);
+        CommandParameters cmd = new CommandParameters(param);
+
+        assertThat(CommandParser.create("command", "--day", "MONDAY").parseCommand(cmd).resolve(param), is(DAY.MONDAY));
+        assertThat(CommandParser.create("command", "--day", "monday").parseCommand(cmd).resolve(param), is(DAY.MONDAY));
+        assertThat(CommandParser.create("command", "--day", "mOnDaY").parseCommand(cmd).resolve(param), is(DAY.MONDAY));
+        assertThrows(CommandParserException.class,
+                () -> CommandParser.create("command", "--day", "xxx").parseCommand(cmd).resolve(param),
+                CommandParser.INVALID_CHOICE + ": " + "xxx");
+    }
+
+    @Test
+    public void testGlobalOptions() {
+        CommandParser parser;
+        CommandParser.Resolver resolver;
+
+        parser = CommandParser.create("command", "-Dfoo=bar", "--help");
+        resolver = parser.parseCommand();
+
+        assertThat(parser.globalResolver().params().containsKey("help"), is(true));
+        assertThat(resolver.params().containsKey("help"), is(true));
+        assertThat(parser.globalResolver().properties().isEmpty(), is(true));
+        assertThat(resolver.properties().getProperty("foo"), is("bar"));
+    }
+
+    @Test
+    public void testDuplicateOptions() {
+        FlagInfo verboseFlag1 = new FlagInfo("verbose", "Verbose log level", false);
+        FlagInfo verboseFlag2 = new FlagInfo("verbose", "Verbose log level", false);
+        CommandParameters cmd = new CommandParameters(verboseFlag1, verboseFlag2);
+
+        CommandParser parser;
+        CommandParser.Resolver resolver;
+
+        parser = CommandParser.create("command", "--verbose");
+        resolver = parser.parseCommand(cmd);
+        assertThat(resolver.params().containsKey("verbose"), is(true));
+        assertThat(resolver.params().get("verbose"), is(instanceOf(CommandParser.FlagParam.class)));
+        assertThat(resolver.resolve(verboseFlag1), is(true));
+        assertThat(resolver.resolve(verboseFlag2), is(true));
     }
 }

@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
@@ -73,12 +75,11 @@ final class CodeGenerator {
                 + INDENT + "static final " + infoName + " INSTANCE = new " + infoName + "();\n"
                 + "\n"
                 + INDENT + "private " + infoName + "() {\n"
-                + INDENT + INDENT + "super(" + clazz + ".class);\n"
-                + addParameter(params.size(), INDENT + INDENT) + "\n"
+                + INDENT + INDENT + "super(" + clazz + ".class, " + paramArgs(params.size()) + ");\n"
                 + INDENT + "}\n"
                 + "\n"
                 + INDENT + "@Override\n"
-                + INDENT + "public " + clazz + " resolve(CommandParser parser) {\n"
+                + INDENT + "public " + clazz + " resolve(CommandParser.Resolver resolver) {\n"
                 + INDENT + INDENT + "return new " + clazz + "(\n"
                 + resolveParams(params, INDENT + INDENT + INDENT) + ");\n"
                 + INDENT + "}\n"
@@ -89,19 +90,17 @@ final class CodeGenerator {
      * Generate a command registry class.
      *
      * @param pkg java package
-     * @param infoName simple name of the class
-     * @param clazz described class
-     * @param params parameters models
+     * @param models parameters models
      * @return source code for the generated class
      */
-    static String generateCommandRegistry(String pkg, String name, List<CommandMetaModel> models) {
+    static String generateCommandRegistry(String pkg, List<CommandMetaModel> models) {
         return "package " + pkg + ";\n"
                 + "\n"
                 + "import " + CommandRegistry.class.getName() + ";\n"
                 + "\n"
-                + "public final class CommandRegistryImpl extends CommandRegistry {\n"
+                + "public final class " + REGISTRY_NAME + " extends CommandRegistry {\n"
                 + "\n"
-                + INDENT + "public " + name + "() {\n"
+                + INDENT + "public " + REGISTRY_NAME + "() {\n"
                 + INDENT + INDENT + "super(\"" + pkg + "\");\n"
                 + registerModels(models, INDENT + INDENT) + "\n"
                 + INDENT + "}\n"
@@ -132,12 +131,11 @@ final class CodeGenerator {
                 + "\n"
                 + INDENT + modelName + "() {\n"
                 + INDENT + INDENT + "super(" + "new CommandInfo(\"" + command.name()
-                + "\", \"" + command.description() + "\"));\n"
-                + addParameter(params.size(), INDENT + INDENT) + "\n"
+                + "\", \"" + command.description() + "\"), " + paramArgs(params.size()) + ");\n"
                 + INDENT + "}\n"
                 + "\n"
                 + INDENT + "@Override\n"
-                + INDENT + "public CommandExecution createExecution(CommandParser parser) {\n"
+                + INDENT + "public CommandExecution createExecution(CommandParser.Resolver resolver) {\n"
                 + INDENT + INDENT + "return new " + clazz + "(\n"
                 + resolveParams(params, INDENT + INDENT + INDENT) + ");\n"
                 + INDENT + "}\n"
@@ -150,9 +148,9 @@ final class CodeGenerator {
         for (int i = 1; it.hasNext(); i++) {
             MetaModel param = it.next();
             if (param instanceof ParametersMetaModel) {
-                s += indent + "OPTION" + i + ".resolve(parser)";
+                s += indent + "OPTION" + i + ".resolve(resolver)";
             } else {
-                s += indent + "parser.resolve(OPTION" + i + ")";
+                s += indent + "resolver.resolve(OPTION" + i + ")";
             }
             if (it.hasNext()) {
                 s += ",\n";
@@ -190,25 +188,25 @@ final class CodeGenerator {
                 Option.KeyValues option = ((KeyValuesMetaModel) param).annotation();
                 s += "CommandModel.KeyValuesInfo<" + paramType + "> OPTION" + i + " = new CommandModel.KeyValuesInfo<>("
                         + paramType + ".class, \"" + option.name() + "\", \"" + option.description() + "\", "
-                        + String.valueOf(option.required()) + ");";
+                        + option.required() + ");";
             } else if (param instanceof FlagMetaModel) {
                 Option.Flag option = ((FlagMetaModel) param).annotation();
                 s += "CommandModel.FlagInfo OPTION" + i + " = new CommandModel.FlagInfo(\""
                         + option.name() + "\", \"" + option.description() + "\", " + option.visible() + ");";
             } else if (param.type() != null) {
-                String typeQualifedName = param.type().getQualifiedName().toString();
+                String typeQualifiedName = param.type().getQualifiedName().toString();
                 if (param instanceof KeyValueMetaModel) {
                     Option.KeyValue option = ((KeyValueMetaModel) param).annotation();
-                    s += "CommandModel.KeyValueInfo<" + typeQualifedName + "> OPTION" + i + " = new CommandModel.KeyValueInfo<>("
-                            + typeQualifedName + ".class, \"" + option.name() + "\", \"" + option.description()
+                    s += "CommandModel.KeyValueInfo<" + typeQualifiedName + "> OPTION" + i + " = new CommandModel.KeyValueInfo<>("
+                            + typeQualifiedName + ".class, \"" + option.name() + "\", \"" + option.description()
                             + "\", " + defaultValue(param.type(), option.defaultValue())
-                            + ", " + String.valueOf(option.required())
-                            + ", " + String.valueOf(option.visible()) + ");";
+                            + ", " + option.required()
+                            + ", " + option.visible() + ");";
                 } else if (param instanceof ArgumentMetaModel) {
                     Option.Argument option = ((ArgumentMetaModel) param).annotation();
-                    s += "CommandModel.ArgumentInfo<" + typeQualifedName + "> OPTION" + i + " = new CommandModel.ArgumentInfo<>("
-                            + typeQualifedName + ".class, \"" + option.description() + "\", "
-                            + String.valueOf(option.required()) + ");";
+                    s += "CommandModel.ArgumentInfo<" + typeQualifiedName + "> OPTION" + i + " = new CommandModel.ArgumentInfo<>("
+                            + typeQualifiedName + ".class, \"" + option.description() + "\", "
+                            + option.required() + ");";
                 } else {
                     String typeSimpleName = param.type().getSimpleName().toString();
                     s += "CommandParameters.CommandFragmentInfo<" + typeSimpleName + "> OPTION" + i + " = "
@@ -220,33 +218,28 @@ final class CodeGenerator {
         return s;
     }
 
-    private static String addParameter(int numParams, String indent) {
-        String s = "";
-        for (int i = 1; i <= numParams; i++) {
-            s += indent + "addParameter(OPTION" + i + ");";
-            if (i < numParams) {
-                s += "\n";
-            }
-        }
-        return s;
+    private static String paramArgs(int numParams) {
+        return IntStream.rangeClosed(1, numParams)
+                .mapToObj(i -> "OPTION" + i)
+                .collect(Collectors.joining(", "));
     }
 
     private static String defaultValue(TypeElement type, String value) {
-        String typeQualifedName = type.getQualifiedName().toString();
+        String typeQualifiedName = type.getQualifiedName().toString();
         if (value == null || value.isEmpty()) {
             return "null";
         }
-        if (String.class.getName().equals(typeQualifedName)) {
+        if (String.class.getName().equals(typeQualifiedName)) {
             return "\"" + value + "\"";
         }
-        if (Integer.class.getName().equals(typeQualifedName)) {
+        if (Integer.class.getName().equals(typeQualifiedName)) {
             return "Integer.parseInt(\"" + value + "\")";
         }
-        if (File.class.getName().equals(typeQualifedName)) {
+        if (File.class.getName().equals(typeQualifiedName)) {
             return "new java.io.File(\"" + value + "\")";
         }
         if (type.getKind().equals(ElementKind.ENUM)) {
-            return typeQualifedName + ".valueOf(\"" + value + "\"" + ")";
+            return typeQualifiedName + ".valueOf(\"" + value + "\"" + ")";
         }
         throw new IllegalArgumentException("Unsupported type: " + type);
     }

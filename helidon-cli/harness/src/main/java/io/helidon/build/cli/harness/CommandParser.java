@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ import io.helidon.build.cli.harness.CommandModel.ArgumentInfo;
 import io.helidon.build.cli.harness.CommandModel.FlagInfo;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 import io.helidon.build.cli.harness.CommandModel.KeyValuesInfo;
+import io.helidon.build.cli.harness.CommandParameters.ParameterInfo;
 
 /**
  * Command parser.
@@ -45,116 +47,77 @@ public final class CommandParser {
     static final String MISSING_REQUIRED_ARGUMENT = "Missing required argument";
     static final String INVALID_ARGUMENT_VALUE = "Invalid argument value";
     static final String INVALID_OPTION_VALUE = "Invalid option value";
+    static final String UNKNOWN_OPTION = "Unknown command option";
     static final String INVALID_CHOICE = "Invalid choice";
     static final String UNREPEATABLE_OPTION = "Option cannot be repeated";
     static final String MISSING_REQUIRED_OPTION = "Missing required option";
 
-    private final String[] rawArgs;
-    private final Map<String, Parameter> params;
-    private final String error;
+    private final List<String> argsList;
     private final String commandName;
-    private final Properties properties;
+    private final String error;
+    private final Resolver globalResolver;
 
-    private CommandParser(String[] rawArgs, String commandName, Map<String, Parameter> params, Properties properties,
-            String error) {
-
-        this.rawArgs = rawArgs;
+    private CommandParser(List<String> argsList, String commandName, Resolver globalResolver, String error) {
+        this.argsList = argsList;
         this.commandName = commandName;
-        this.params = params;
+        this.globalResolver = globalResolver;
         this.error = error;
-        this.properties = properties;
     }
 
     /**
-     * Parse the command line arguments.
+     * Create a command parser.
      *
-     * @param rawArgs arguments to parse
+     * @param args arguments
      * @return parser
      */
-    static CommandParser create(String... rawArgs) {
-        Objects.requireNonNull(rawArgs, "rawArgs is null");
-        String error = null;
+    static CommandParser create(String... args) {
+        Objects.requireNonNull(args, "args is null");
         String commandName = null;
-        Map<String, Parameter> params = new HashMap<>();
         Properties properties = new Properties();
-        for (int i = 0; i < rawArgs.length; i++) {
-            String rawArg = rawArgs[i];
-            if (rawArg == null || rawArg.isEmpty()) {
+        Map<String, Parameter> params = new HashMap<>();
+        String error = null;
+        LinkedList<String> argsList = new LinkedList<>(Arrays.asList(args));
+        Iterator<String> it = argsList.iterator();
+        while (it.hasNext()) {
+            String rawArg = it.next();
+            if (rawArg.isEmpty()) {
+                it.remove();
                 continue;
             }
             rawArg = rawArg.trim();
             String arg = rawArg.trim().toLowerCase();
-            if (rawArg.length() > 2 && rawArg.charAt(0) == '-' && rawArg.charAt(1) == 'D') {
+            if (isProperty(rawArg)) {
+                if (commandName != null) {
+                    continue;
+                }
                 String prop = rawArg.substring(2);
-                if (prop.length() >= 3) {
-                    int index = prop.indexOf('=');
-                    if (index >= 0) {
-                        String propName = prop.substring(0, index);
-                        String propValue = prop.substring(index + 1, prop.length());
-                        properties.put(propName, propValue);
-                        continue;
-                    }
+                Map.Entry<String, String> propEntry = parseProperty(prop);
+                if (propEntry != null) {
+                    properties.put(propEntry.getKey(), propEntry.getValue());
+                    it.remove();
+                    continue;
                 }
                 error = INVALID_PROPERTY + ": " + prop;
                 break;
-            } else if (!GlobalOptions.isGlobalFlag(arg) && commandName == null) {
-                if (!Command.NAME_PREDICATE.test(arg)) {
-                    error = INVALID_COMMAND_NAME + ": " + rawArg;
-                    break;
-                }
-                commandName = arg;
-            } else if (arg.length() > 2 && arg.charAt(0) == '-' && arg.charAt(1) == '-') {
-                String optionName = arg.substring(2);
-                if (!Option.NAME_PREDICATE.test(optionName)) {
-                    error = INVALID_OPTION_NAME + ": " + optionName;
-                    break;
-                }
-                Parameter param = params.get(optionName);
-                if (i + 1 < rawArgs.length) {
-                    // key-value(s)
-                    String value = rawArgs[i + 1].trim();
-                    if (value.charAt(0) != '-') {
-                        String[] splitValues = value.split(",");
-                        if (param == null && splitValues.length == 1) {
-                            params.put(optionName, new KeyValueParam(optionName, value));
-                        } else if (param == null) {
-                            LinkedList<String> values = new LinkedList<>();
-                            for (String splitValue : splitValues) {
-                                values.add(splitValue);
-                            }
-                            params.put(optionName, new KeyValuesParam(optionName, values));
-                        } else if (param instanceof KeyValueParam) {
-                            LinkedList<String> values = new LinkedList<>();
-                            values.add(((KeyValueParam) param).value);
-                            values.add(value);
-                            params.put(optionName, new KeyValuesParam(optionName, values));
-                        } else if (param instanceof KeyValuesParam) {
-                            for (String splitValue : splitValues) {
-                                ((KeyValuesParam) param).values.add(splitValue);
-                            }
-                        } else {
-                            error = INVALID_REPEATING_OPTION + ": " + optionName;
-                            break;
-                        }
-                        i++;
-                        continue;
+            } else if (!GlobalOptions.isGlobalFlag(arg)) {
+                if (commandName == null) {
+                    if (!Command.NAME_PREDICATE.test(arg)) {
+                        error = INVALID_COMMAND_NAME + ": " + arg;
+                        break;
+                    } else {
+                        commandName = arg;
+                        it.remove();
                     }
-                }
-                // flag
-                if (param == null) {
-                    params.put(optionName, new FlagParam(optionName));
                 } else {
-                    error = INVALID_REPEATING_OPTION + ": " + optionName;
                     break;
                 }
-            } else if (params.containsKey("")) {
-                error = TOO_MANY_ARGUMENTS;
-                break;
             } else {
-                params.put("", new ArgumentParam(arg));
+                arg = arg.substring(2);
+                params.put(arg, new FlagParam(arg));
+                it.remove();
             }
         }
-        return new CommandParser(rawArgs, commandName, params, properties, error);
+        return new CommandParser(argsList, commandName, new Resolver(params, properties), error);
     }
 
     /**
@@ -176,173 +139,120 @@ public final class CommandParser {
     }
 
     /**
-     * Get the parsed parameters.
+     * Get the global scope resolver.
      *
-     * @return map of parameter
+     * @return resolver, never {@code null}
      */
-    Map<String, Parameter> params() {
-        return params;
+    Resolver globalResolver() {
+        return globalResolver;
     }
 
-    /**
-     * Get the parsed properties.
-     *
-     * @return properties, never {@code null}
-     */
-    Properties properties() {
-        return properties;
-    }
-
-    private static <T> T resolveValue(Class<T> type, String rawValue) {
-        Objects.requireNonNull(rawValue, "rawValue is null");
-        if (String.class.equals(type)) {
-            return type.cast(rawValue);
-        }
-        if (Integer.class.equals(type)) {
-            return type.cast(Integer.parseInt(rawValue));
-        }
-        if (File.class.equals(type)) {
-            return type.cast(new File(rawValue));
-        }
-        if (Enum.class.isAssignableFrom(type)) {
-            @SuppressWarnings("unchecked")
-            Class<? extends Enum> enumClass = (Class<? extends Enum>) type;
-            for (Enum e : enumClass.getEnumConstants()) {
-                if (rawValue.equalsIgnoreCase(e.name())) {
-                    return type.cast(e);
-                }
-            }
-            throw new CommandParserException(INVALID_CHOICE + ": " + rawValue);
-        }
-        throw new IllegalArgumentException("Invalid value type: " + type);
-    }
-
-    private static boolean isSupported(Class<?> type, List<Class<?>> supportedTypes) {
-        for (Class<?> supportedType : supportedTypes) {
-            if (supportedType.isAssignableFrom(type)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Resolve the given flag option.
-     *
-     * @param option the option to resolve
-     * @return {@code true} if the option is present, {@code false} otherwise
-     * @throws CommandParserException if an error occurs while resolving the option
-     */
-    public boolean resolve(FlagInfo option) throws CommandParserException {
-        Parameter resolved = params.get(option.name());
-        if (resolved == null) {
-            return false;
-        } else if (resolved instanceof FlagParam) {
-            return true;
-        }
-        throw new CommandParserException(INVALID_OPTION_VALUE + ": " + option.name());
-    }
-
-    /**
-     * Resolve the given key-value option.
-     *
-     * @param <T>    option type
-     * @param option the option to resolve
-     * @return resolved value for the option
-     * @throws CommandParserException if an error occurs while resolving the option
-     */
-    public <T> T resolve(KeyValueInfo<T> option) throws CommandParserException {
-        Class<T> type = option.type();
-        Parameter resolved = params.get(option.name());
-        T defaultValue = option.defaultValue();
-        if (resolved == null && option.required()) {
-            throw new CommandParserException(MISSING_REQUIRED_OPTION + ": " + option.name());
-        }
-        if (isSupported(type, Option.KeyValue.SUPPORTED_TYPES)) {
-            if (resolved == null) {
-                return defaultValue;
-            } else if (resolved instanceof KeyValueParam) {
-                return resolveValue(type, ((KeyValueParam) resolved).value);
-            } else if (resolved instanceof KeyValuesParam) {
-                throw new CommandParserException(UNREPEATABLE_OPTION + ": " + option.name());
-            }
-        }
-        throw new CommandParserException(INVALID_OPTION_VALUE + ": " + option.name());
-    }
-
-    /**
-     * Resolve the given key-values option.
-     *
-     * @param <T>    item type
-     * @param option the option to resolve
-     * @return collection of resolved values for the option
-     * @throws CommandParserException if an error occurs while resolving the option
-     */
-    public <T> Collection<T> resolve(KeyValuesInfo<T> option) throws CommandParserException {
-        Class<T> type = option.paramType();
-        Parameter resolved = params.get(option.name());
-        if (resolved == null) {
-            return Collections.emptyList();
-        }
-        if (isSupported(type, Option.KeyValues.SUPPORTED_TYPES)) {
-            if (resolved instanceof KeyValueParam) {
-                return List.of(resolveValue(type, ((KeyValueParam) resolved).value));
-            } else if (resolved instanceof KeyValuesParam) {
-                LinkedList<T> resolvedValues = new LinkedList<>();
-                for (String value : ((KeyValuesParam) resolved).values) {
-                    resolvedValues.add(resolveValue(type, value));
-                }
-                return resolvedValues;
-            }
-        }
-        throw new CommandParserException(INVALID_OPTION_VALUE + ": " + option.name());
-    }
-
-    /**
-     * Resolve the given argument option.
-     *
-     * @param <T>    argument type
-     * @param option the argument to resolve
-     * @return resolved value for the argument
-     * @throws CommandParserException if an error occurs while resolving the option
-     */
-    @SuppressWarnings("unchecked")
-    public <T> T resolve(ArgumentInfo<T> option) throws CommandParserException {
-        Class<T> type = option.type();
-        Parameter resolved = params.get("");
-        if (resolved == null && option.required()) {
-            throw new CommandParserException(MISSING_REQUIRED_ARGUMENT);
-        }
-        if (isSupported(type, Option.Argument.SUPPORTED_TYPES)) {
-            if (resolved == null) {
-                return (T) null;
-            } else if (resolved instanceof ArgumentParam) {
-                return type.cast(((ArgumentParam) resolved).value);
-            }
-        }
-        throw new CommandParserException(INVALID_ARGUMENT_VALUE);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CommandParser that = (CommandParser) o;
+        return Objects.equals(argsList, that.argsList);
     }
 
     @Override
     public int hashCode() {
-        int hash = 5;
-        hash = 73 * hash + Arrays.deepHashCode(this.rawArgs);
-        return hash;
+        return Objects.hash(argsList);
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
+    /**
+     * Parse the specified command.
+     *
+     * @param command command parameters for the command to parse
+     * @return resolver that can be used to resolve the values for the parsed parameters
+     */
+    Resolver parseCommand(CommandParameters command) {
+        return parseCommand(command.parametersMap());
+    }
+
+    /**
+     * Finish parsing with no specified command.
+     *
+     * @return resolver that can be used to resolve the values for the parsed parameters
+     */
+    Resolver parseCommand() {
+        return parseCommand(new CommandParameters(GlobalOptions.GLOBAL_FLAGS));
+    }
+
+    private Resolver parseCommand(Map<String, ParameterInfo<?>> parametersMap) {
+        Map<String, Parameter> parsedParams = new HashMap<>(globalResolver.params);
+        Properties properties = new Properties();
+        Iterator<String> it = argsList.iterator();
+        while (it.hasNext()) {
+            String rawArg = it.next();
+            if (rawArg.isEmpty()) {
+                continue;
+            }
+            rawArg = rawArg.trim();
+            String arg = rawArg.trim().toLowerCase();
+            if (GlobalOptions.isGlobalFlag(arg)) {
+                parsedParams.put(arg, new FlagParam(arg));
+            } else if (isParam(arg)) {
+                String optionName = arg.substring(2);
+                if (!Option.NAME_PREDICATE.test(optionName)) {
+                    throw new CommandParserException(INVALID_OPTION_NAME + ": " + optionName);
+                }
+                ParameterInfo paramInfo = parametersMap.get(optionName);
+                if (paramInfo instanceof FlagInfo) {
+                    parsedParams.put(optionName, new FlagParam(optionName));
+                } else if (paramInfo instanceof KeyValueInfo) {
+                    boolean required = ((KeyValueInfo) paramInfo).required();
+                    if (!it.hasNext()) {
+                        if (required) {
+                            throw new CommandParserException(MISSING_REQUIRED_OPTION + ": " + optionName);
+                        } else {
+                            continue;
+                        }
+                    }
+                    parsedParams.put(optionName, new KeyValueParam(optionName, it.next().trim()));
+                } else if (paramInfo instanceof KeyValuesInfo) {
+                    boolean required = ((KeyValuesInfo) paramInfo).required();
+                    if (!it.hasNext()) {
+                        if (required) {
+                            throw new CommandParserException(MISSING_REQUIRED_OPTION + ": " + optionName);
+                        } else {
+                            continue;
+                        }
+                    }
+                    String value = it.next().trim();
+                    if (isParam(value) && parametersMap.containsKey(value.substring(2))) {
+                        throw new CommandParserException(INVALID_REPEATING_OPTION + ": " + optionName);
+                    }
+                    String[] splitValues = value.split(",");
+                    LinkedList<String> values = new LinkedList<>();
+                    for (String splitValue : splitValues) {
+                        values.add(splitValue);
+                    }
+                    Parameter param = parsedParams.get(optionName);
+                    if (param == null) {
+                        parsedParams.put(optionName, new KeyValuesParam(optionName, values));
+                    } else if (param instanceof KeyValuesParam) {
+                        ((KeyValuesParam) param).values().addAll(values);
+                    }
+                } else {
+                    throw new CommandParserException(UNKNOWN_OPTION + ": " + optionName);
+                }
+            } else if (isProperty(rawArg)) {
+                String prop = rawArg.substring(2);
+                Map.Entry<String, String> propEntry = parseProperty(prop);
+                if (propEntry != null) {
+                    properties.put(propEntry.getKey(), propEntry.getValue());
+                    it.remove();
+                    continue;
+                }
+                throw new CommandParserException(INVALID_PROPERTY + ": " + prop);
+            } else if (parsedParams.containsKey("")) {
+                throw new CommandParserException(TOO_MANY_ARGUMENTS);
+            } else {
+                parsedParams.put("", new ArgumentParam(arg));
+            }
         }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final CommandParser other = (CommandParser) obj;
-        return Arrays.deepEquals(this.rawArgs, other.rawArgs);
+        return new Resolver(parsedParams, properties);
     }
 
     /**
@@ -352,6 +262,166 @@ public final class CommandParser {
 
         private CommandParserException(String message) {
             super(message);
+        }
+    }
+
+    /**
+     * Command parser resolver.
+     */
+    public static class Resolver {
+
+        private final Map<String, Parameter> params;
+        private final Properties properties;
+
+        Resolver(Map<String, Parameter> params, Properties properties) {
+            this.params = params;
+            this.properties = properties;
+        }
+
+        /**
+         * Get the parsed parameters.
+         *
+         * @return map of parameter
+         */
+        Map<String, Parameter> params() {
+            return params;
+        }
+
+        /**
+         * Get the parsed properties.
+         *
+         * @return properties
+         */
+        public Properties properties() {
+            return properties;
+        }
+
+        /**
+         * Resolve the given flag option.
+         *
+         * @param option the option to resolve
+         * @return {@code true} if the option is present, {@code false} otherwise
+         * @throws CommandParserException if an error occurs while resolving the option
+         */
+        public boolean resolve(FlagInfo option) throws CommandParserException {
+            Parameter resolved = params.get(option.name());
+            if (resolved == null) {
+                return false;
+            } else if (resolved instanceof FlagParam) {
+                return true;
+            }
+            throw new CommandParserException(INVALID_OPTION_VALUE + ": " + option.name());
+        }
+
+        /**
+         * Resolve the given key-value option.
+         *
+         * @param <T>    option type
+         * @param option the option to resolve
+         * @return resolved value for the option
+         * @throws CommandParserException if an error occurs while resolving the option
+         */
+        public <T> T resolve(KeyValueInfo<T> option) throws CommandParserException {
+            Class<T> type = option.type();
+            Parameter resolved = params.get(option.name());
+            T defaultValue = option.defaultValue();
+            if (resolved == null && option.required()) {
+                throw new CommandParserException(MISSING_REQUIRED_OPTION + ": " + option.name());
+            }
+            if (isSupported(type, Option.KeyValue.SUPPORTED_TYPES)) {
+                if (resolved == null) {
+                    return defaultValue;
+                } else if (resolved instanceof KeyValueParam) {
+                    return resolveValue(type, ((KeyValueParam) resolved).value);
+                } else if (resolved instanceof KeyValuesParam) {
+                    throw new CommandParserException(UNREPEATABLE_OPTION + ": " + option.name());
+                }
+            }
+            throw new CommandParserException(INVALID_OPTION_VALUE + ": " + option.name());
+        }
+
+        /**
+         * Resolve the given key-values option.
+         *
+         * @param <T>    item type
+         * @param option the option to resolve
+         * @return collection of resolved values for the option
+         * @throws CommandParserException if an error occurs while resolving the option
+         */
+        public <T> Collection<T> resolve(KeyValuesInfo<T> option) throws CommandParserException {
+            Class<T> type = option.paramType();
+            Parameter resolved = params.get(option.name());
+            if (resolved == null) {
+                return Collections.emptyList();
+            }
+            if (isSupported(type, Option.KeyValues.SUPPORTED_TYPES)) {
+                if (resolved instanceof KeyValuesParam) {
+                    LinkedList<T> resolvedValues = new LinkedList<>();
+                    for (String value : ((KeyValuesParam) resolved).values) {
+                        resolvedValues.add(resolveValue(type, value));
+                    }
+                    return resolvedValues;
+                }
+            }
+            throw new CommandParserException(INVALID_OPTION_VALUE + ": " + option.name());
+        }
+
+        /**
+         * Resolve the given argument option.
+         *
+         * @param <T>    argument type
+         * @param option the argument to resolve
+         * @return resolved value for the argument
+         * @throws CommandParserException if an error occurs while resolving the option
+         */
+        @SuppressWarnings("unchecked")
+        public <T> T resolve(ArgumentInfo<T> option) throws CommandParserException {
+            Class<T> type = option.type();
+            Parameter resolved = params.get("");
+            if (resolved == null && option.required()) {
+                throw new CommandParserException(MISSING_REQUIRED_ARGUMENT);
+            }
+            if (isSupported(type, Option.Argument.SUPPORTED_TYPES)) {
+                if (resolved == null) {
+                    return (T) null;
+                } else if (resolved instanceof ArgumentParam) {
+                    return type.cast(((ArgumentParam) resolved).value);
+                }
+            }
+            throw new CommandParserException(INVALID_ARGUMENT_VALUE);
+        }
+
+        private static <T> T resolveValue(Class<T> type, String rawValue) {
+            Objects.requireNonNull(rawValue, "rawValue is null");
+            if (String.class.equals(type)) {
+                return type.cast(rawValue);
+            }
+            if (Integer.class.equals(type)) {
+                return type.cast(Integer.parseInt(rawValue));
+            }
+            if (File.class.equals(type)) {
+                return type.cast(new File(rawValue));
+            }
+            if (Enum.class.isAssignableFrom(type)) {
+                @SuppressWarnings("unchecked")
+                Class<? extends Enum> enumClass = (Class<? extends Enum>) type;
+                for (Enum e : enumClass.getEnumConstants()) {
+                    if (rawValue.equalsIgnoreCase(e.name())) {
+                        return type.cast(e);
+                    }
+                }
+                throw new CommandParserException(INVALID_CHOICE + ": " + rawValue);
+            }
+            throw new IllegalArgumentException("Invalid value type: " + type);
+        }
+
+        private static boolean isSupported(Class<?> type, List<Class<?>> supportedTypes) {
+            for (Class<?> supportedType : supportedTypes) {
+                if (supportedType.isAssignableFrom(type)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -368,6 +438,7 @@ public final class CommandParser {
 
         /**
          * Get the parameter name.
+         *
          * @return name, never {@code null}
          */
         public String name() {
@@ -399,6 +470,7 @@ public final class CommandParser {
 
         /**
          * Get the value.
+         *
          * @return value, never {@code null}
          */
         public String value() {
@@ -448,5 +520,23 @@ public final class CommandParser {
         public String value() {
             return value;
         }
+    }
+
+    private static boolean isProperty(String arg) {
+        return arg.length() > 2 && arg.charAt(0) == '-' && arg.charAt(1) == 'D';
+    }
+
+    private static Map.Entry<String, String> parseProperty(String prop) {
+        if (prop.length() >= 3) {
+            int index = prop.indexOf('=');
+            if (index >= 0) {
+                return Map.entry(prop.substring(0, index), prop.substring(index + 1));
+            }
+        }
+        return null;
+    }
+
+    private static boolean isParam(String arg) {
+        return arg.length() > 2 && arg.charAt(0) == '-' && arg.charAt(1) == '-';
     }
 }

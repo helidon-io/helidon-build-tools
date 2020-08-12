@@ -117,19 +117,18 @@ public class ExecTest {
 
         private static final FlagInfo FOO = new FlagInfo("foo", "Foo option");
         private static final FlagInfo BAR = new FlagInfo("bar", "Bar option");
+        private static final CommandInfo CMD = new CommandInfo("simple", "A simple test command");
 
         SimpleCommand() {
-            super(new CommandInfo("simple", "A simple test command"));
-            addParameter(FOO);
-            addParameter(BAR);
+            super(CMD, FOO, BAR);
         }
 
         @Override
-        public CommandExecution createExecution(CommandParser parser) {
+        public CommandExecution createExecution(CommandParser.Resolver resolver) {
             return (context) -> {
-                if (parser.resolve(FOO)) {
+                if (resolver.resolve(FOO)) {
                     Log.info("foo");
-                } else if (parser.resolve(BAR)) {
+                } else if (resolver.resolve(BAR)) {
                     Log.info("bar");
                 } else {
                     Log.info("noop");
@@ -142,18 +141,17 @@ public class ExecTest {
 
         private static final CommonOptionsInfo COMMON_OPTIONS = new CommonOptionsInfo();
         private static final FlagInfo FOO = new FlagInfo("foo", "Turn on foo mode");
+        private static final CommandInfo CMD = new CommandInfo("common", "A test command with common options");
 
         CommandWithCommonOptions() {
-            super(new CommandInfo("common", "A test command with common options"));
-            addParameter(COMMON_OPTIONS);
-            addParameter(FOO);
+            super(CMD, COMMON_OPTIONS, FOO);
         }
 
         @Override
-        public CommandExecution createExecution(CommandParser parser) {
+        public CommandExecution createExecution(CommandParser.Resolver resolver) {
             return (context) -> {
-                String key = COMMON_OPTIONS.resolve(parser).key;
-                if (parser.resolve(FOO)) {
+                String key = COMMON_OPTIONS.resolve(resolver).key;
+                if (resolver.resolve(FOO)) {
                     Log.info("foo: " + key);
                 } else {
                     Log.info(key);
@@ -176,13 +174,12 @@ public class ExecTest {
         private static final KeyValueInfo<String> KEY_OPTION = new KeyValueInfo<>(String.class, "key", "key option", null, true);
 
         private CommonOptionsInfo() {
-            super(CommonOptions.class);
-            addParameter(KEY_OPTION);
+            super(CommonOptions.class, KEY_OPTION);
         }
 
         @Override
-        public CommonOptions resolve(CommandParser parser) {
-            return new CommonOptions(parser.resolve(KEY_OPTION));
+        public CommonOptions resolve(CommandParser.Resolver resolver) {
+            return new CommonOptions(resolver.resolve(KEY_OPTION));
         }
     }
 }
