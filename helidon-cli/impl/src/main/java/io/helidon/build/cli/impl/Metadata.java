@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -256,38 +257,33 @@ public class Metadata {
             return thisCliVersion;
         }
 
+        // Create a map from CLI version to CLI plugin versions, including latest
 
-        /* TODO: REMOVE
+        final Map<MavenVersion, MavenVersion> cliToPluginVersions = new HashMap<>();
+        final ConfigProperties properties = propertiesOf(helidonVersion, quiet);
+        final MavenVersion latestPluginVersion = latestPluginVersion(properties);
+        cliToPluginVersions.put(latestPluginVersion, latestPluginVersion);
+        properties.entrySet()
+                  .stream()
+                  .filter(e -> isCliPluginVersionKey(e.getKey()))
+                  .forEach(e -> cliToPluginVersions.put(toCliPluginVersion(e.getKey()), toMavenVersion(e.getValue())));
 
-            cli.latest.plugin.version=2.2.0
-            cli.2.1.0.plugin.version=2.0.9
-            cli.2.0.3.plugin.version=2.0.3
+        // Short circuit if there is only one
 
-            -> {2.1.0, 2.0.3}
-
-            # cli v2.0.3 -> helidon-cli-maven-plugin v2.0.3
-            # cli v2.0.4 -> helidon-cli-maven-plugin v2.0.3
-            # cli v2.0.5 -> helidon-cli-maven-plugin v2.0.3
-            # cli v2.1.0 -> helidon-cli-maven-plugin v2.0.9
-            # cli v2.1.1 -> helidon-cli-maven-plugin v2.0.9
-            # cli v2.1.2 -> helidon-cli-maven-plugin v2.0.9
-            # cli v2.2.0 -> helidon-cli-maven-plugin v2.2.0
-          */
-
-        final ConfigProperties props = propertiesOf(helidonVersion, quiet);
-        final List<MavenVersion> cliPluginVersions = props.keySet()
-                                                          .stream()
-                                                          .filter(Metadata::isCliPluginVersionKey)
-                                                          .map(Metadata::toCliPluginVersion)
-                                                          .filter(v -> v.isLessThanOrEqualTo(thisCliVersion))
-                                                          .sorted()
-                                                          .collect(Collectors.toList());
-        if (cliPluginVersions.isEmpty()) {
-            final String property = LATEST_CLI_PLUGIN_VERSION_PROPERTY;
-            return toMavenVersion(Requirements.requireNonNull(props.property(property), "missing " + property));
-        } else {
-            return cliPluginVersions.get(0);
+        if (cliToPluginVersions.size() == 1) {
+            return latestPluginVersion;
         }
+
+        // Find the maximum CLI version that is <= thisCliVersion
+
+        final Optional<MavenVersion> maxCliVersion = cliToPluginVersions.keySet()
+                                                                        .stream()
+                                                                        .filter(v -> v.isLessThanOrEqualTo(thisCliVersion))
+                                                                        .max(Comparator.naturalOrder());
+
+        // Return the corresponding plugin version
+
+        return cliToPluginVersions.get(maxCliVersion.orElseThrow());
     }
 
     /**
@@ -418,6 +414,11 @@ public class Metadata {
     private String requiredProperty(MavenVersion helidonVersion, String propertyName, boolean quiet) throws Exception {
         ConfigProperties properties = propertiesOf(helidonVersion, quiet);
         return Requirements.requireNonNull(properties.property(propertyName), "missing " + propertyName);
+    }
+
+    private static MavenVersion latestPluginVersion(ConfigProperties properties) {
+        final String property = LATEST_CLI_PLUGIN_VERSION_PROPERTY;
+        return toMavenVersion(Requirements.requireNonNull(properties.property(property), "missing " + property));
     }
 
     private static boolean isCliPluginVersionKey(String key) {
