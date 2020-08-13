@@ -97,7 +97,7 @@ public class CommandRequirements {
     static void requireValidMavenProjectConfig(CommonOptions commonOptions) {
         try {
             Path projectDir = commonOptions.project();
-            Path pomFile = PomUtils.toPomFile(projectDir);
+            Path pomFile = PomUtils.toPomFile(projectDir); // asserts present
             Path projectConfigFile = ProjectConfig.toDotHelidon(projectDir);
             if (!Files.exists(projectConfigFile)) {
                 // Find the helidon version if we can and create the config file

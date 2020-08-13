@@ -39,6 +39,7 @@ public final class Constants {
      * File system directory separator.
      */
     public static final String DIR_SEP = File.separator;
+
     /**
      * Property that must be set to "true" for cli extensions to be enabled.
      */

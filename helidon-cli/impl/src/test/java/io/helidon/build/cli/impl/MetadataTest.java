@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.archetype.engine.ArchetypeCatalog.ArchetypeEntry;
+import io.helidon.build.cli.harness.Config;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 import io.helidon.build.util.ConfigProperties;
 import io.helidon.build.util.Log;
@@ -136,12 +137,13 @@ public class MetadataTest extends BaseMetadataTest {
         logged.assertLinesContainingAll(1, "stale check", "is false", LATEST_FILE_NAME);
         logged.assertLinesContainingAll(2, "stale check", "is false", RC1_LAST_UPDATE);
 
-        // Check the build tools and CLI versions
+        // Check the CLI plugin and CLI versions; the plugin should be the current build
+        // version because the helidon version is pre CLI plugin
 
         logged.clear();
-        MavenVersion expected = MAVEN_VERSION_RC1;
-        assertThat(meta.buildToolsVersionOf(latestVersion, false), is(expected));
-        assertThat(meta.cliVersionOf(latestVersion, false), is(expected));
+        MavenVersion expectedCliPluginVersion = toMavenVersion(Config.buildVersion());
+        assertThat(meta.cliVersionOf(latestVersion, false), is(MAVEN_VERSION_RC1));
+        assertThat(meta.cliPluginVersion(latestVersion, false), is(expectedCliPluginVersion));
     }
 
     @Test
@@ -179,6 +181,72 @@ public class MetadataTest extends BaseMetadataTest {
         assertThat(meta.checkForCliUpdate(cliVersionRc2, false).isPresent(), is(true));
         assertThat(meta.checkForCliUpdate(cliVersionRc1, false).orElseThrow(), is(cliVersionRc2Updated));
     }
+
+    @Test
+    void testCliPluginVersion() throws Exception {
+
+        // Setup with RC2 as latest
+
+        startMetadataTestServer(RC2, false);
+        meta = newDefaultInstance();
+
+        // Helidon Version   metadata.properties
+        // ---------------   -------------------
+        // 2.0.1             cli.latest.plugin.version NOT PRESENT
+        // 2.0.2             cli.latest.plugin.version=2.0.3
+        // 2.0.3             cli.latest.plugin.version=2.2.0, cli.2.1.0.plugin.version=2.0.9, cli.2.0.3.plugin.version=2.0.3
+
+        MavenVersion helidon201 = toMavenVersion("2.0.1");
+        MavenVersion helidon202 = toMavenVersion("2.0.2");
+        MavenVersion helidon203 = toMavenVersion("2.0.3");
+
+        MavenVersion cli203 = toMavenVersion("2.0.3");
+        MavenVersion cli204 = toMavenVersion("2.0.4");
+        MavenVersion cli205 = toMavenVersion("2.0.5");
+        MavenVersion cli210 = toMavenVersion("2.1.0");
+        MavenVersion cli211 = toMavenVersion("2.1.1");
+        MavenVersion cli212 = toMavenVersion("2.1.2");
+        MavenVersion cli220 = toMavenVersion("2.2.0");
+        MavenVersion cli221 = toMavenVersion("2.2.1");
+
+        MavenVersion plugin203 = toMavenVersion("2.0.3");
+        MavenVersion plugin209 = toMavenVersion("2.0.9");
+        MavenVersion plugin220 = toMavenVersion("2.2.0");
+
+        // Ensure that CLI plugin version for Helidon 2.0.1 is cliVersion with all CLI versions
+
+        assertThat(meta.cliPluginVersion(helidon201, cli203, false), is(cli203));
+        assertThat(meta.cliPluginVersion(helidon201, cli204, false), is(cli204));
+        assertThat(meta.cliPluginVersion(helidon201, cli205, false), is(cli205));
+        assertThat(meta.cliPluginVersion(helidon201, cli210, false), is(cli210));
+        assertThat(meta.cliPluginVersion(helidon201, cli211, false), is(cli211));
+        assertThat(meta.cliPluginVersion(helidon201, cli212, false), is(cli212));
+        assertThat(meta.cliPluginVersion(helidon201, cli220, false), is(cli220));
+        assertThat(meta.cliPluginVersion(helidon201, cli221, false), is(cli221));
+
+        // Ensure that CLI plugin version for Helidon 2.0.2 is 2.0.3 with all CLI versions
+
+        assertThat(meta.cliPluginVersion(helidon202, cli203, false), is(plugin203));
+        assertThat(meta.cliPluginVersion(helidon202, cli204, false), is(plugin203));
+        assertThat(meta.cliPluginVersion(helidon202, cli205, false), is(plugin203));
+        assertThat(meta.cliPluginVersion(helidon202, cli210, false), is(plugin203));
+        assertThat(meta.cliPluginVersion(helidon202, cli211, false), is(plugin203));
+        assertThat(meta.cliPluginVersion(helidon202, cli212, false), is(plugin203));
+        assertThat(meta.cliPluginVersion(helidon202, cli220, false), is(plugin203));
+        assertThat(meta.cliPluginVersion(helidon202, cli221, false), is(plugin203));
+
+        // Ensure that CLI plugin version for Helidon 2.0.3 is as expected with all CLI versions
+
+        assertThat(meta.cliPluginVersion(helidon203, cli203, false), is(plugin203));
+        assertThat(meta.cliPluginVersion(helidon203, cli204, false), is(plugin203));
+        assertThat(meta.cliPluginVersion(helidon203, cli205, false), is(plugin203));
+        assertThat(meta.cliPluginVersion(helidon203, cli210, false), is(plugin209));
+        assertThat(meta.cliPluginVersion(helidon203, cli211, false), is(plugin209));
+        assertThat(meta.cliPluginVersion(helidon203, cli212, false), is(plugin209));
+        assertThat(meta.cliPluginVersion(helidon203, cli220, false), is(plugin220));
+        assertThat(meta.cliPluginVersion(helidon203, cli221, false), is(plugin220));
+    }
+
 
     @Test
     void testReleaseNotes() throws Exception {

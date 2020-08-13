@@ -51,7 +51,28 @@ public class TestMetadata {
         /**
          * 2.0.0-RC2
          */
-        RC2("2.0.0-RC2");
+        RC2("2.0.0-RC2") ,
+
+        /**
+         * 2.0.1
+         * Contains ONLY metadata.properties!
+         * CLI plugin version: none
+         */
+        R1("2.0.1"),
+
+        /**
+         * 2.0.2
+         * Contains ONLY metadata.properties!
+         * CLI plugin versions: cli.latest.plugin.version=2.0.3
+         */
+        R2("2.0.2"),
+
+        /**
+         * 2.0.3
+         * Contains ONLY metadata.properties!
+         * CLI plugin versions: cli.latest.plugin.version=2.2.0, cli.2.1.0.plugin.version=2.0.9, cli.2.0.3.plugin.version=2.0.3
+         */
+        R3("2.0.3");
 
         private final String version;
 

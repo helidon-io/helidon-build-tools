@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,6 +35,7 @@ import io.helidon.build.cli.harness.Config;
 import io.helidon.build.util.ConfigProperties;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
+import io.helidon.build.util.Requirements;
 import io.helidon.build.util.TimeUtils;
 
 import static io.helidon.build.cli.impl.CommandRequirements.requireHelidonVersionDir;
@@ -75,15 +77,10 @@ public class Metadata {
     private static final String CLI_MESSAGE_SUFFIX = ".message";
     private static final long STALE_RETRY_THRESHOLD = 1000;
 
-    /**
-     * The build tools version property name.
-     */
-    public static final String BUILD_TOOLS_VERSION_PROPERTY = "build-tools.version";
-
-    /**
-     * The CLI version property name.
-     */
-    public static final String CLI_VERSION_PROPERTY = "cli.version";
+    private static final String LATEST_CLI_PLUGIN_VERSION_PROPERTY = "cli.latest.plugin.version";
+    private static final String CLI_PLUGIN_VERSION_PROPERTY_PREFIX = "cli.";
+    private static final String CLI_PLUGIN_VERSION_PROPERTY_SUFFIX = ".plugin.version";
+    private static final String CLI_VERSION_PROPERTY = "cli.version";
 
     private final Path rootDir;
     private final String url;
@@ -228,15 +225,57 @@ public class Metadata {
     }
 
     /**
-     * Returns the build tools version for the given Helidon version.
+     * Returns the {@code helidon-cli-maven-plugin} version for the given Helidon version.
      *
      * @param helidonVersion The version.
      * @param quiet If info messages should be suppressed.
-     * @return The properties.
+     * @return The version.
      * @throws Exception If an error occurs.
      */
-    public MavenVersion buildToolsVersionOf(MavenVersion helidonVersion, boolean quiet) throws Exception {
-        return toMavenVersion(requiredProperty(helidonVersion, BUILD_TOOLS_VERSION_PROPERTY, quiet));
+    public MavenVersion cliPluginVersion(MavenVersion helidonVersion, boolean quiet) throws Exception {
+        return cliPluginVersion(helidonVersion, toMavenVersion(Config.buildVersion()), quiet);
+    }
+
+    /**
+     * Returns the {@code helidon-cli-maven-plugin} version for the given Helidon version.
+     *
+     * @param helidonVersion The version.
+     * @param thisCliVersion This CLI version.
+     * @param quiet If info messages should be suppressed.
+     * @return The version.
+     * @throws Exception If an error occurs.
+     */
+    public MavenVersion cliPluginVersion(MavenVersion helidonVersion,
+                                         MavenVersion thisCliVersion,
+                                         boolean quiet) throws Exception {
+
+        // Create a map from CLI version to CLI plugin versions, including latest
+
+        final Map<MavenVersion, MavenVersion> cliToPluginVersions = new HashMap<>();
+        final ConfigProperties properties = propertiesOf(helidonVersion, quiet);
+        final MavenVersion latestPluginVersion = latestPluginVersion(helidonVersion, thisCliVersion, properties);
+        cliToPluginVersions.put(latestPluginVersion, latestPluginVersion);
+        properties.entrySet()
+                  .stream()
+                  .filter(e -> isCliPluginVersionKey(e.getKey()))
+                  .forEach(e -> cliToPluginVersions.put(toCliPluginVersion(e.getKey()), toMavenVersion(e.getValue())));
+
+        // Short circuit if there is only one
+
+        if (cliToPluginVersions.size() == 1) {
+            return latestPluginVersion;
+        }
+
+        // Find the maximum CLI version that is <= thisCliVersion
+
+        final Optional<MavenVersion> maxCliVersion = cliToPluginVersions.keySet()
+                                                                        .stream()
+                                                                        .filter(v -> v.isLessThanOrEqualTo(thisCliVersion))
+                                                                        .max(Comparator.naturalOrder());
+
+        // Return the corresponding plugin version
+
+        return cliToPluginVersions.get(maxCliVersion.orElseThrow());
     }
 
     /**
@@ -365,7 +404,33 @@ public class Metadata {
     }
 
     private String requiredProperty(MavenVersion helidonVersion, String propertyName, boolean quiet) throws Exception {
-        return requireNonNull(propertiesOf(helidonVersion, quiet).property(propertyName), "missing " + propertyName);
+        ConfigProperties properties = propertiesOf(helidonVersion, quiet);
+        return Requirements.requireNonNull(properties.property(propertyName), "missing " + propertyName);
+    }
+
+    private static MavenVersion latestPluginVersion(MavenVersion helidonVersion,
+                                                    MavenVersion thisCliVersion,
+                                                    ConfigProperties properties) {
+        final String latest = properties.property(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
+        if (latest == null) {
+            Log.debug("Helidon version %s does not contain %s, using current CLI version %s", helidonVersion,
+                      LATEST_CLI_PLUGIN_VERSION_PROPERTY, thisCliVersion);
+            return thisCliVersion;
+        } else {
+            return toMavenVersion(latest);
+        }
+    }
+
+    private static boolean isCliPluginVersionKey(String key) {
+        return key.startsWith(CLI_PLUGIN_VERSION_PROPERTY_PREFIX)
+               && key.endsWith(CLI_PLUGIN_VERSION_PROPERTY_SUFFIX)
+               && !key.equals(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
+    }
+
+    private static MavenVersion toCliPluginVersion(String key) {
+        final int start = CLI_PLUGIN_VERSION_PROPERTY_PREFIX.length();
+        final int end = key.length() - CLI_PLUGIN_VERSION_PROPERTY_SUFFIX.length();
+        return toMavenVersion(key.substring(start, end));
     }
 
     private static boolean isCliMessageKey(String key) {
