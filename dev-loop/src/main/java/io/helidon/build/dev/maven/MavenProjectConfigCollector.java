@@ -139,24 +139,22 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
         final Path projectDir = project.getBasedir().toPath();
         final ProjectConfig config = ProjectConfig.projectConfig(projectDir);
         final List<Artifact> dependencies = dependencies(project, session);
+        final String helidonVersion = helidonVersion(dependencies);
         final Path outputDir = projectDir.resolve(project.getBuild().getOutputDirectory());
         final List<String> classesDirs = List.of(outputDir.toString());
         final List<String> resourceDirs = project.getResources()
                                                  .stream()
                                                  .map(Resource::getDirectory)
                                                  .collect(Collectors.toList());
+        if (helidonVersion != null) {
+            config.property(HELIDON_VERSION, helidonVersion);
+        }
         config.property(PROJECT_DEPENDENCIES, dependencyFiles(dependencies));
         config.property(PROJECT_MAINCLASS, project.getProperties().getProperty(MAIN_CLASS_PROPERTY));
         config.property(PROJECT_VERSION, project.getVersion());
         config.property(PROJECT_CLASSDIRS, classesDirs);
         config.property(PROJECT_SOURCEDIRS, project.getCompileSourceRoots());
         config.property(PROJECT_RESOURCEDIRS, resourceDirs);
-        if (config.property(HELIDON_VERSION) == null) {
-            String helidonVersion = helidonVersion(dependencies);
-            if (helidonVersion != null) {
-                config.property(HELIDON_VERSION, helidonVersion);
-            }
-        }
         this.projectConfig = config;
     }
 
