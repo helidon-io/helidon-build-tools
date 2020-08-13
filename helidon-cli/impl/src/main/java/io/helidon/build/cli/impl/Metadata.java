@@ -413,7 +413,8 @@ public class Metadata {
                                                     ConfigProperties properties) {
         final String latest = properties.property(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
         if (latest == null) {
-            Log.debug("Helidon version %s does not have %s, using current CLI version %s", helidonVersion, thisCliVersion);
+            Log.debug("Helidon version %s does not contain %s, using current CLI version %s", helidonVersion,
+                      LATEST_CLI_PLUGIN_VERSION_PROPERTY, thisCliVersion);
             return thisCliVersion;
         } else {
             return toMavenVersion(latest);
