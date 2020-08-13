@@ -68,6 +68,7 @@ public final class BuildCommand extends BaseCommand {
 
         MavenCommand.Builder builder = MavenCommand.builder()
                                                    .addArgument(ENABLE_HELIDON_CLI)
+                                                   .addArguments(context.propertyArgs(true))
                                                    .verbose(context.verbosity() != NORMAL)
                                                    .directory(commonOptions.project());
         switch (buildMode) {

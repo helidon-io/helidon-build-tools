@@ -43,7 +43,6 @@ public final class CommandParser {
     static final String INVALID_REPEATING_OPTION = "Invalid repeating option";
     static final String INVALID_COMMAND_NAME = "Invalid command name";
     static final String INVALID_OPTION_NAME = "Invalid option name";
-    static final String INVALID_PROPERTY = "Invalid property";
     static final String MISSING_REQUIRED_ARGUMENT = "Missing required argument";
     static final String INVALID_ARGUMENT_VALUE = "Invalid argument value";
     static final String INVALID_OPTION_VALUE = "Invalid option value";
@@ -92,13 +91,8 @@ public final class CommandParser {
                 }
                 String prop = rawArg.substring(2);
                 Map.Entry<String, String> propEntry = parseProperty(prop);
-                if (propEntry != null) {
-                    properties.put(propEntry.getKey(), propEntry.getValue());
-                    it.remove();
-                    continue;
-                }
-                error = INVALID_PROPERTY + ": " + prop;
-                break;
+                properties.put(propEntry.getKey(), propEntry.getValue());
+                it.remove();
             } else if (!GlobalOptions.isGlobalFlag(arg)) {
                 if (commandName == null) {
                     if (!Command.NAME_PREDICATE.test(arg)) {
@@ -240,12 +234,8 @@ public final class CommandParser {
             } else if (isProperty(rawArg)) {
                 String prop = rawArg.substring(2);
                 Map.Entry<String, String> propEntry = parseProperty(prop);
-                if (propEntry != null) {
-                    properties.put(propEntry.getKey(), propEntry.getValue());
-                    it.remove();
-                    continue;
-                }
-                throw new CommandParserException(INVALID_PROPERTY + ": " + prop);
+                properties.put(propEntry.getKey(), propEntry.getValue());
+                it.remove();
             } else if (parsedParams.containsKey("")) {
                 throw new CommandParserException(TOO_MANY_ARGUMENTS);
             } else {
@@ -316,7 +306,7 @@ public final class CommandParser {
         /**
          * Resolve the given key-value option.
          *
-         * @param <T>    option type
+         * @param <T> option type
          * @param option the option to resolve
          * @return resolved value for the option
          * @throws CommandParserException if an error occurs while resolving the option
@@ -343,7 +333,7 @@ public final class CommandParser {
         /**
          * Resolve the given key-values option.
          *
-         * @param <T>    item type
+         * @param <T> item type
          * @param option the option to resolve
          * @return collection of resolved values for the option
          * @throws CommandParserException if an error occurs while resolving the option
@@ -369,7 +359,7 @@ public final class CommandParser {
         /**
          * Resolve the given argument option.
          *
-         * @param <T>    argument type
+         * @param <T> argument type
          * @param option the argument to resolve
          * @return resolved value for the argument
          * @throws CommandParserException if an error occurs while resolving the option
@@ -533,7 +523,7 @@ public final class CommandParser {
                 return Map.entry(prop.substring(0, index), prop.substring(index + 1));
             }
         }
-        return null;
+        return Map.entry(prop, "");
     }
 
     private static boolean isParam(String arg) {
