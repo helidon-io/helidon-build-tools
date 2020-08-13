@@ -77,7 +77,6 @@ public class Metadata {
     private static final String CLI_MESSAGE_SUFFIX = ".message";
     private static final long STALE_RETRY_THRESHOLD = 1000;
 
-    private static final MavenVersion PRE_CLI_PLUGIN_HELIDON_VERSION = toMavenVersion("2.0.1");
     private static final String LATEST_CLI_PLUGIN_VERSION_PROPERTY = "cli.latest.plugin.version";
     private static final String CLI_PLUGIN_VERSION_PROPERTY_PREFIX = "cli.";
     private static final String CLI_PLUGIN_VERSION_PROPERTY_SUFFIX = ".plugin.version";
@@ -250,18 +249,11 @@ public class Metadata {
                                          MavenVersion thisCliVersion,
                                          boolean quiet) throws Exception {
 
-        // Short circuit if Helidon version is prior to the existence of the CLI plugin
-
-        if (helidonVersion.isLessThanOrEqualTo(PRE_CLI_PLUGIN_HELIDON_VERSION)) {
-            Log.debug("Helidon version %s is pre CLI plugin, using current CLI version %s", helidonVersion, thisCliVersion);
-            return thisCliVersion;
-        }
-
         // Create a map from CLI version to CLI plugin versions, including latest
 
         final Map<MavenVersion, MavenVersion> cliToPluginVersions = new HashMap<>();
         final ConfigProperties properties = propertiesOf(helidonVersion, quiet);
-        final MavenVersion latestPluginVersion = latestPluginVersion(properties);
+        final MavenVersion latestPluginVersion = latestPluginVersion(helidonVersion, thisCliVersion, properties);
         cliToPluginVersions.put(latestPluginVersion, latestPluginVersion);
         properties.entrySet()
                   .stream()
@@ -416,9 +408,16 @@ public class Metadata {
         return Requirements.requireNonNull(properties.property(propertyName), "missing " + propertyName);
     }
 
-    private static MavenVersion latestPluginVersion(ConfigProperties properties) {
-        final String property = LATEST_CLI_PLUGIN_VERSION_PROPERTY;
-        return toMavenVersion(Requirements.requireNonNull(properties.property(property), "missing " + property));
+    private static MavenVersion latestPluginVersion(MavenVersion helidonVersion,
+                                                    MavenVersion thisCliVersion,
+                                                    ConfigProperties properties) {
+        final String latest = properties.property(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
+        if (latest == null) {
+            Log.debug("Helidon version %s does not have %s, using current CLI version %s", helidonVersion, thisCliVersion);
+            return thisCliVersion;
+        } else {
+            return toMavenVersion(latest);
+        }
     }
 
     private static boolean isCliPluginVersionKey(String key) {
