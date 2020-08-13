@@ -27,8 +27,6 @@ import java.util.Map;
 
 import io.helidon.build.util.MavenVersion;
 
-import static io.helidon.build.cli.impl.TestMetadata.TestVersion.R2;
-import static io.helidon.build.cli.impl.TestMetadata.TestVersion.R3;
 import static io.helidon.build.cli.impl.TestMetadata.TestVersion.RC1;
 import static io.helidon.build.cli.impl.TestMetadata.TestVersion.RC2;
 import static io.helidon.build.util.FileUtils.assertDir;
@@ -54,6 +52,13 @@ public class TestMetadata {
          * 2.0.0-RC2
          */
         RC2("2.0.0-RC2") ,
+
+        /**
+         * 2.0.1
+         * Contains ONLY metadata.properties!
+         * CLI plugin version: none
+         */
+        R1("2.0.1"),
 
         /**
          * 2.0.2
@@ -94,12 +99,8 @@ public class TestMetadata {
     static final String HELIDON_BARE_MP = "helidon-bare-mp";
     static final String VERSION_RC1 = RC1.toString();
     static final String VERSION_RC2 = RC2.toString();
-    static final String VERSION_R2 = R2.toString();
-    static final String VERSION_R3 = R3.toString();
     static final MavenVersion MAVEN_VERSION_RC1 = toMavenVersion(VERSION_RC1);
     static final MavenVersion MAVEN_VERSION_RC2 = toMavenVersion(VERSION_RC2);
-    static final MavenVersion MAVEN_VERSION_R2 = toMavenVersion(VERSION_R2);
-    static final MavenVersion MAVEN_VERSION_R3 = toMavenVersion(VERSION_R3);
     static final String RC1_LAST_UPDATE = VERSION_RC1 + LAST_UPDATE_PATH;
     static final String RC2_LAST_UPDATE = VERSION_RC2 + LAST_UPDATE_PATH;
     static final String RC1_CLI_DATA_ZIP_FILE_NAME = zipFileName(RC1);

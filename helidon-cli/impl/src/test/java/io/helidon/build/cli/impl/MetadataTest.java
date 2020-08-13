@@ -192,9 +192,11 @@ public class MetadataTest extends BaseMetadataTest {
 
         // Helidon Version   metadata.properties
         // ---------------   -------------------
+        // 2.0.1             cli.latest.plugin.version NOT PRESENT
         // 2.0.2             cli.latest.plugin.version=2.0.3
         // 2.0.3             cli.latest.plugin.version=2.2.0, cli.2.1.0.plugin.version=2.0.9, cli.2.0.3.plugin.version=2.0.3
 
+        MavenVersion helidon201 = toMavenVersion("2.0.1");
         MavenVersion helidon202 = toMavenVersion("2.0.2");
         MavenVersion helidon203 = toMavenVersion("2.0.3");
 
@@ -210,6 +212,17 @@ public class MetadataTest extends BaseMetadataTest {
         MavenVersion plugin203 = toMavenVersion("2.0.3");
         MavenVersion plugin209 = toMavenVersion("2.0.9");
         MavenVersion plugin220 = toMavenVersion("2.2.0");
+
+        // Ensure that CLI plugin version for Helidon 2.0.1 is cliVersion with all CLI versions
+
+        assertThat(meta.cliPluginVersion(helidon201, cli203, false), is(cli203));
+        assertThat(meta.cliPluginVersion(helidon201, cli204, false), is(cli204));
+        assertThat(meta.cliPluginVersion(helidon201, cli205, false), is(cli205));
+        assertThat(meta.cliPluginVersion(helidon201, cli210, false), is(cli210));
+        assertThat(meta.cliPluginVersion(helidon201, cli211, false), is(cli211));
+        assertThat(meta.cliPluginVersion(helidon201, cli212, false), is(cli212));
+        assertThat(meta.cliPluginVersion(helidon201, cli220, false), is(cli220));
+        assertThat(meta.cliPluginVersion(helidon201, cli221, false), is(cli221));
 
         // Ensure that CLI plugin version for Helidon 2.0.2 is 2.0.3 with all CLI versions
 
