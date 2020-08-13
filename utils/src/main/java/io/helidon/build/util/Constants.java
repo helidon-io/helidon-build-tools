@@ -31,7 +31,7 @@ public final class Constants {
     public static final OSType OS = currentOS();
 
     /**
-     * End of line string.                                                                                                                                                                        `
+     * End of line string.
      */
     public static final String EOL = System.getProperty("line.separator");
 
