@@ -55,8 +55,8 @@ public final class ProcessMonitor {
     private final Function<String, String> transform;
     private final AtomicBoolean running;
     private volatile Process process;
-    private volatile Future<?> out;
-    private volatile Future<?> err;
+    private volatile MonitorTask out;
+    private volatile MonitorTask err;
 
     /**
      * Returns a new builder.
@@ -464,24 +464,17 @@ public final class ProcessMonitor {
     private void stopTasks() {
         if (out != null) {
             running.set(false);
-            join(out);
-            join(err);
+            out.join();
+            err.join();
             out = null;
             err = null;
         }
     }
 
-    private void join(Future<?> task) {
-        try {
-            task.get();
-        } catch (Exception ignore) {
-        }
-    }
-
     private void cancelTasks() {
         if (out != null) {
-            out.cancel(true);
-            err.cancel(true);
+            out.cancel();
+            err.cancel();
             out = null;
             err = null;
         }
@@ -540,20 +533,86 @@ public final class ProcessMonitor {
         }
     }
 
-    private static Future<?> monitor(InputStream input,
-                                     Predicate<String> filter,
-                                     Function<String, String> transform,
-                                     Consumer<String> output,
-                                     AtomicBoolean running) {
-        final BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
-        return EXECUTOR.submit(() -> {
+    private static final class MonitorTask {
+
+        private final MonitorReader reader;
+        private final Future<?> task;
+
+        MonitorTask(MonitorReader reader, Future<?> task) {
+            this.reader = reader;
+            this.task = task;
+        }
+
+        void join() {
+            try {
+                task.get();
+            } catch (Exception ignore) {
+            } finally {
+                close();
+            }
+        }
+
+        void cancel() {
+            try {
+                task.cancel(true);
+            } catch (Exception ignore) {
+            } finally {
+                close();
+            }
+        }
+
+        private void close() {
+            try {
+                reader.close();
+            } catch (IOException e) {
+            }
+        }
+    }
+
+    private static final class MonitorReader extends BufferedReader {
+
+        private final Predicate<String> filter;
+        private final Function<String, String> transform;
+        private final Consumer<String> output;
+
+        MonitorReader(InputStream input,
+                      Predicate<String> filter,
+                      Function<String, String> transform,
+                      Consumer<String> output) {
+
+            super(new InputStreamReader(input, StandardCharsets.UTF_8));
+            this.filter = filter;
+            this.transform = transform;
+            this.output = output;
+        }
+
+        void consumeLines() {
+            lines().forEach(line -> {
+                if (filter.test(line)) {
+                    output.accept(transform.apply(line));
+                }
+            });
+        }
+
+        @Override
+        public void close() throws IOException {
+            consumeLines();
+            super.close();
+        }
+    }
+
+    private static MonitorTask monitor(InputStream input,
+                                       Predicate<String> filter,
+                                       Function<String, String> transform,
+                                       Consumer<String> output,
+                                       AtomicBoolean running) {
+
+        final MonitorReader reader = new MonitorReader(input, filter, transform, output);
+        Future<?> task = EXECUTOR.submit(() -> {
             while (running.get()) {
-                reader.lines().forEach(line -> {
-                    if (filter.test(line)) {
-                        output.accept(transform.apply(line));
-                    }
-                });
+                reader.consumeLines();
             }
         });
+        return new MonitorTask(reader, task);
     }
 }
