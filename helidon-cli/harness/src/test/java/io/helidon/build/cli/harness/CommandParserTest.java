@@ -192,14 +192,13 @@ public class CommandParserTest {
         assertThat(resolver.properties().get("foo"), is("bar"));
         assertThat(resolver.properties().get("bar"), is("foo"));
 
-        CommandParser badPropParser = CommandParser.create("command", "-Dfoo");
+        CommandParser noValuePropParser = CommandParser.create("command", "-Dfoo");
 
-        assertThat(badPropParser.commandName().isPresent(), is(true));
-        assertThat(badPropParser.commandName().get(), is("command"));
+        assertThat(noValuePropParser.commandName().isPresent(), is(true));
+        assertThat(noValuePropParser.commandName().get(), is("command"));
         assertThat(parser.globalResolver().properties().isEmpty(), is(true));
-        assertThrows(CommandParserException.class,
-                () -> badPropParser.parseCommand(new CommandParameters()),
-                CommandParser.INVALID_PROPERTY + ": foo");
+        resolver = noValuePropParser.parseCommand(new CommandParameters());
+        assertThat(resolver.properties().get("foo"), is(""));
 
         parser = CommandParser.create("command", "-DfOo=Bar", " -DBAR=FOO ");
         resolver = parser.parseCommand(new CommandParameters());

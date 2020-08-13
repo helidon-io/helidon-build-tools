@@ -245,7 +245,7 @@ public final class CommandContext {
     /**
      * Set the error message if not already set.
      *
-     * @param status  exit status
+     * @param status exit status
      * @param message error message
      * @return exit action.
      */
@@ -308,6 +308,25 @@ public final class CommandContext {
     }
 
     /**
+     * Returns the parsed properties as a list of {@code -Dkey=value} arguments.
+     *
+     * @param mapEmptyValuesToTrue If {@code true}, any empty value will be mapped to {@code "true"}.
+     * @return The arguments.
+     */
+    public List<String> propertyArgs(boolean mapEmptyValuesToTrue) {
+        return properties.entrySet()
+                         .stream()
+                         .map(e -> {
+                             String value = e.getValue().toString();
+                             if (mapEmptyValuesToTrue && value.isEmpty()) {
+                                 value = "true";
+                             }
+                             return "-D" + e.getKey() + "=" + value;
+                         })
+                         .collect(Collectors.toList());
+    }
+
+    /**
      * Returns the verbosity level.
      *
      * @return The level.
@@ -364,16 +383,16 @@ public final class CommandContext {
      */
     void commandNotFoundError(String command) {
         List<String> allCommandNames = registry.commandsByName()
-                .values()
-                .stream()
-                .map(CommandModel::command)
-                .map(CommandInfo::name)
-                .collect(Collectors.toList());
+                                               .values()
+                                               .stream()
+                                               .map(CommandModel::command)
+                                               .map(CommandInfo::name)
+                                               .collect(Collectors.toList());
         String match = CommandMatcher.match(command, allCommandNames);
         String cliName = cli.name();
         if (match != null) {
             error(String.format("'%s' is not a valid command.%nDid you mean '%s'?%nSee '%s --help' for more information",
-                    command, match, cliName));
+                                command, match, cliName));
         } else {
             error(String.format("'%s' is not a valid command.%nSee '%s --help' for more information", command, cliName));
         }
@@ -383,7 +402,7 @@ public final class CommandContext {
      * Set the exit action to {@link ExitStatus#FAILURE} with the given error message.
      *
      * @param message error message
-     * @param args    message args.
+     * @param args message args.
      * @return exit action.
      */
     ExitAction error(String message, Object... args) {
@@ -404,7 +423,7 @@ public final class CommandContext {
      * Create a new command context.
      *
      * @param registry command registry
-     * @param cliDef   CLI definition
+     * @param cliDef CLI definition
      * @return command context, never {@code null}
      */
     public static CommandContext create(CommandRegistry registry, CLIDefinition cliDef) {

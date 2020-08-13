@@ -77,7 +77,6 @@ public final class DevCommand extends BaseCommand {
     private final String appArgs;
     private TerminalModeOutput terminalModeOutput;
 
-
     @Creator
     DevCommand(CommonOptions commonOptions,
                @Flag(name = "clean", description = "Perform a clean before the first build") boolean clean,
@@ -157,6 +156,7 @@ public final class DevCommand extends BaseCommand {
                     .addArgument(CLEAN_PROP_PREFIX + clean)
                     .addArgument(FORK_PROP_PREFIX + fork)
                     .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
+                    .addArguments(context.propertyArgs(true))
                     .addOptionalArgument(jvmArgs)
                     .addOptionalArgument(args)
                     .directory(commonOptions.project())
