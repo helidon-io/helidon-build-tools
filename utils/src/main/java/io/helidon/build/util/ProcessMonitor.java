@@ -55,8 +55,8 @@ public final class ProcessMonitor {
     private final Function<String, String> transform;
     private final AtomicBoolean running;
     private volatile Process process;
-    private volatile Future<?> out;
-    private volatile Future<?> err;
+    private volatile MonitorTask out;
+    private volatile MonitorTask err;
 
     /**
      * Returns a new builder.
@@ -464,24 +464,17 @@ public final class ProcessMonitor {
     private void stopTasks() {
         if (out != null) {
             running.set(false);
-            join(out);
-            join(err);
+            out.join();
+            err.join();
             out = null;
             err = null;
         }
     }
 
-    private void join(Future<?> task) {
-        try {
-            task.get();
-        } catch (Exception ignore) {
-        }
-    }
-
     private void cancelTasks() {
         if (out != null) {
-            out.cancel(true);
-            err.cancel(true);
+            out.cancel();
+            err.cancel();
             out = null;
             err = null;
         }
@@ -540,13 +533,49 @@ public final class ProcessMonitor {
         }
     }
 
-    private static Future<?> monitor(InputStream input,
+    private static final class MonitorTask {
+
+        final BufferedReader reader;
+        final Future<?> task;
+
+        MonitorTask(BufferedReader reader, Future<?> task) {
+            this.reader = reader;
+            this.task = task;
+        }
+
+        void join() {
+            try {
+                task.get();
+            } catch (Exception ignore) {
+            } finally {
+                closeReader();
+            }
+        }
+
+        void cancel() {
+            try {
+                task.cancel(true);
+            } catch (Exception ignore) {
+            } finally {
+                closeReader();
+            }
+        }
+
+        private void closeReader() {
+            try {
+                reader.close();
+            } catch (IOException e) {
+            }
+        }
+    }
+
+    private static MonitorTask monitor(InputStream input,
                                      Predicate<String> filter,
                                      Function<String, String> transform,
                                      Consumer<String> output,
                                      AtomicBoolean running) {
         final BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
-        return EXECUTOR.submit(() -> {
+        Future<?> task = EXECUTOR.submit(() -> {
             while (running.get()) {
                 reader.lines().forEach(line -> {
                     if (filter.test(line)) {
@@ -555,5 +584,6 @@ public final class ProcessMonitor {
                 });
             }
         });
+        return new MonitorTask(reader, task);
     }
 }
