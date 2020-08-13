@@ -535,8 +535,8 @@ public final class ProcessMonitor {
 
     private static final class MonitorTask {
 
-        final BufferedReader reader;
-        final Future<?> task;
+        private final BufferedReader reader;
+        private final Future<?> task;
 
         MonitorTask(BufferedReader reader, Future<?> task) {
             this.reader = reader;
