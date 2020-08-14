@@ -16,8 +16,6 @@
 package io.helidon.build.util;
 
 import org.fusesource.jansi.Ansi;
-import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
