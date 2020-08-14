@@ -596,8 +596,12 @@ public final class ProcessMonitor {
 
         @Override
         public void close() throws IOException {
-            consumeLines();
-            super.close();
+            try {
+                consumeLines();
+            } catch (Exception ignore) {
+            } finally {
+                super.close();
+            }
         }
     }
 
