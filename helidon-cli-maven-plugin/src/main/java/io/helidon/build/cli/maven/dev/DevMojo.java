@@ -22,6 +22,7 @@ import java.util.List;
 
 import io.helidon.build.dev.ProjectSupplier;
 import io.helidon.build.dev.maven.MavenProjectSupplier;
+import io.helidon.build.dev.mode.DevBuildLifecycle;
 import io.helidon.build.dev.mode.DevLoop;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenLogWriter;
@@ -97,6 +98,12 @@ public class DevMojo extends AbstractMojo {
     private boolean skip;
 
     /**
+     * DevLoop build lifecycle customization.
+     */
+    @Parameter
+    private DevBuildLifecycle devLoop;
+
+    /**
      * The current Maven session.
      */
     @Parameter(defaultValue = "${session}", readonly = true)
@@ -120,6 +127,7 @@ public class DevMojo extends AbstractMojo {
             } else {
                 MavenLogWriter.install(getLog());
             }
+            final DevBuildLifecycle lifecycle = devLoop == null ? new DevBuildLifecycle() : devLoop;
             final ProjectSupplier projectSupplier = new MavenProjectSupplier(project, session, plugins);
             final List<String> jvmArgs = toList(appJvmArgs);
             final List<String> args = toList(appArgs);
