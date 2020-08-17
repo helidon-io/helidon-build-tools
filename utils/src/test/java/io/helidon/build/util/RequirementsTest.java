@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.Optional;
 
 import org.fusesource.jansi.Ansi;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.util.Requirements.failed;
@@ -78,6 +79,7 @@ class RequirementsTest {
 
     @Test
     void testAnsiColors() {
+        Assumptions.assumeTrue(AnsiConsoleInstaller.install());
         Ansi.setEnabled(true);
         String expected = "This is " + BoldRed.apply("bold red") + " text, and this is " + Cyan.apply("cyan") + " text.";
         try {
