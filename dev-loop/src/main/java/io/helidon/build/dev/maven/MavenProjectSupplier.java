@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -59,7 +60,10 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_DEPENDENCIES;
 import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_RESOURCEDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCEDIRS;
+import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCE_EXCLUDES;
+import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCE_INCLUDES;
 import static io.helidon.build.util.ProjectConfig.projectConfig;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -207,21 +211,31 @@ public class MavenProjectSupplier implements ProjectSupplier {
 
         // Build components
         final List<String> sourceDirs = config.propertyAsList(PROJECT_SOURCEDIRS);
+        final List<String> sourceIncludes = config.propertyAsList(PROJECT_SOURCE_INCLUDES);
+        final List<String> sourceExcludes = config.propertyAsList(PROJECT_SOURCE_EXCLUDES);
         final List<String> classesDirs = config.propertyAsList(PROJECT_CLASSDIRS);
         final List<String> resourcesDirs = config.propertyAsList(PROJECT_RESOURCEDIRS);
+
+        // Note that classesDir here is the output
 
         for (String sourceDir : sourceDirs) {
             for (String classesDir : classesDirs) {
                 Path sourceDirPath = assertDir(projectDir.resolve(sourceDir));
                 Path classesDirPath = ensureDirectory(projectDir.resolve(classesDir));
+                // TODO sourceIncludes / sourceExcludes
                 BuildRoot sources = createBuildRoot(BuildRootType.JavaSources, sourceDirPath);
                 BuildRoot classes = createBuildRoot(BuildRootType.JavaClasses, classesDirPath);
                 builder.component(createBuildComponent(sources, classes, compileStep()));
             }
         }
 
-        for (String resourcesDir : resourcesDirs) {
+        for (String resourcesDirEntry : resourcesDirs) {
             for (String classesDir : classesDirs) {
+                String[] dir = resourcesDirEntry.split(ProjectConfig.RESOURCE_INCLUDE_EXCLUDE_SEPARATOR);
+                String resourcesDir = dir[0];
+                List<String> includes = includeExcludeList(dir, 1);
+                List<String> excludes = includeExcludeList(dir, 2);
+                // TODO includes / excludes!
                 Path resourcesDirPath = projectDir.resolve(resourcesDir);
                 if (Files.exists(resourcesDirPath)) {
                     Path classesDirPath = ensureDirectory(projectDir.resolve(classesDir));
@@ -238,6 +252,15 @@ public class MavenProjectSupplier implements ProjectSupplier {
         return builder.build();
     }
 
+    private static List<String> includeExcludeList(String[] resourceDir, int index) {
+        if (resourceDir.length > index) {
+            final String list = resourceDir[index];
+            if (!list.isEmpty()) {
+                return Arrays.asList(list.split(ProjectConfig.RESOURCE_INCLUDE_EXCLUDE_LIST_SEPARATOR));
+            }
+        }
+        return emptyList();
+    }
 
     private BuildStep compileStep() {
         return MavenGoalBuildStep.builder()

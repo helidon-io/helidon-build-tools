@@ -22,8 +22,8 @@ import java.util.List;
 
 import io.helidon.build.dev.ProjectSupplier;
 import io.helidon.build.dev.maven.MavenProjectSupplier;
-import io.helidon.build.dev.mode.DevBuildLifecycle;
 import io.helidon.build.dev.mode.DevLoop;
+import io.helidon.build.dev.mode.DevLoopBuild;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenLogWriter;
 import io.helidon.build.util.SystemLogWriter;
@@ -101,7 +101,7 @@ public class DevMojo extends AbstractMojo {
      * DevLoop build lifecycle customization.
      */
     @Parameter
-    private DevBuildLifecycle devLoop;
+    private DevLoopBuild devLoop;
 
     /**
      * The current Maven session.
@@ -127,7 +127,10 @@ public class DevMojo extends AbstractMojo {
             } else {
                 MavenLogWriter.install(getLog());
             }
-            final DevBuildLifecycle lifecycle = devLoop == null ? new DevBuildLifecycle() : devLoop;
+
+            Log.info("build: %s", devLoop);
+
+            final DevLoopBuild build = devLoop == null ? new DevLoopBuild() : devLoop;
             final ProjectSupplier projectSupplier = new MavenProjectSupplier(project, session, plugins);
             final List<String> jvmArgs = toList(appJvmArgs);
             final List<String> args = toList(appArgs);
