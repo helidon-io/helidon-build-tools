@@ -370,10 +370,8 @@ public final class ProcessMonitor {
      * Returns the combined captured output.
      *
      * @return The output. Empty if capture not enabled.
-     * @throws IllegalStateException If the process was not started.
      */
     public List<String> output() {
-        assertStarted();
         return capturedOutput;
     }
 
@@ -381,10 +379,8 @@ public final class ProcessMonitor {
      * Returns any captured stderr output.
      *
      * @return The output. Empty if capture not enabled.
-     * @throws IllegalStateException If the process was not started.
      */
     public List<String> stdOut() {
-        assertRunning();
         return capturedStdOut;
     }
 
@@ -392,10 +388,8 @@ public final class ProcessMonitor {
      * Returns any captured stderr output.
      *
      * @return The output. Empty if capture not enabled.
-     * @throws IllegalStateException If the process was not started.
      */
     public List<String> stdErr() {
-        assertRunning();
         return capturedStdErr;
     }
 
