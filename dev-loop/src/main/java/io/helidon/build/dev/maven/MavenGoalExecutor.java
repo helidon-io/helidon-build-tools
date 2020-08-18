@@ -66,8 +66,8 @@ public class MavenGoalExecutor {
     private MavenGoalExecutor(Builder builder) {
         this.executionEnvironment = builder.executionEnvironment;
         this.goal = builder.goal;
-        this.plugin = executionEnvironment.getMavenProject().getPlugin(goal.pluginId());
-        requireNonNull(plugin, "plugin " + goal.pluginId() + " not found");
+        this.plugin = executionEnvironment.getMavenProject().getPlugin(goal.pluginKey());
+        requireNonNull(plugin, "plugin " + goal.pluginKey() + " not found");
         this.config = configuration();
     }
 
@@ -177,7 +177,7 @@ public class MavenGoalExecutor {
      */
     public static class Goal {
         private final String name;
-        private final String pluginId;
+        private final String pluginKey;
 
         /**
          * Constructor.
@@ -190,7 +190,7 @@ public class MavenGoalExecutor {
                      String pluginGroupId,
                      String pluginArtifactId) {
             this.name = goalName;
-            this.pluginId = requireNonNull(pluginGroupId) + ":" + requireNonNull(pluginArtifactId);
+            this.pluginKey = requireNonNull(pluginGroupId) + ":" + requireNonNull(pluginArtifactId);
         }
 
         /**
@@ -203,12 +203,12 @@ public class MavenGoalExecutor {
         }
 
         /**
-         * Returns the plugin id.
+         * Returns the plugin key.
          *
-         * @return The id.
+         * @return The key.
          */
-        public String pluginId() {
-            return pluginId;
+        public String pluginKey() {
+            return pluginKey;
         }
 
         @Override
@@ -218,7 +218,7 @@ public class MavenGoalExecutor {
                    + name
                    + '\''
                    + ", plugin='"
-                   + pluginId
+                   + pluginKey
                    + '\''
                    + '}';
         }

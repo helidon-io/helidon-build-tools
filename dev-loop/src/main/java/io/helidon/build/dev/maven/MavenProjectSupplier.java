@@ -72,8 +72,8 @@ import static java.util.Objects.requireNonNull;
 public class MavenProjectSupplier implements ProjectSupplier {
     private static final String HELIDON_PLUGIN_VERSION_PROP = "version.plugin.helidon";
     private static final String HELIDON_PLUGIN_VERSION = System.getProperty(HELIDON_PLUGIN_VERSION_PROP);
-    private static final List<String> CLEAN_BUILD_CMD = List.of("clean", "process-classes", "-DskipTests", ENABLE_HELIDON_CLI);
-    private static final List<String> BUILD_CMD = List.of("process-classes", "-DskipTests", ENABLE_HELIDON_CLI);
+    private static final String CLEAN_ARG = "clean";
+    private static final String SKIP_TESTS_ARG = "-DskipTests";
     private static final String TARGET_DIR_NAME = "target";
     private static final String POM_FILE = "pom.xml";
     private static final String DOT = ".";
@@ -91,25 +91,32 @@ public class MavenProjectSupplier implements ProjectSupplier {
     private final MavenProject project;
     private final MavenSession session;
     private final BuildPluginManager plugins;
+    private final DevLoopBuildConfig buildConfig;
+    private final List<String> cleanBuildCmd;
+    private final List<String> buildCmd;
     private final AtomicBoolean firstBuild;
     private BuildType buildType;
     private ProjectConfig config;
 
     /**
      * Constructor.
-     *
-     * @param project The maven project.
+     *  @param project The maven project.
      * @param session The maven session.
      * @param plugins The maven plugin manager.
+     * @param buildConfig The build configuration.
      */
     public MavenProjectSupplier(MavenProject project,
                                 MavenSession session,
-                                BuildPluginManager plugins) {
+                                BuildPluginManager plugins,
+                                DevLoopBuildConfig buildConfig) {
         MavenProjectConfigCollector.assertSupportedProject(session);
         this.project = project;
         this.session = requireNonNull(session);
         this.plugins = requireNonNull(plugins);
+        this.buildConfig = requireNonNull(buildConfig);
         this.firstBuild = new AtomicBoolean(true);
+        this.cleanBuildCmd =  List.of(CLEAN_ARG, buildConfig.fullBuildGoal(), SKIP_TESTS_ARG, ENABLE_HELIDON_CLI);
+        this.buildCmd = List.of(buildConfig.fullBuildGoal(), SKIP_TESTS_ARG, ENABLE_HELIDON_CLI);
     }
 
     @Override
@@ -166,7 +173,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
     }
 
     private void build(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception {
-        List<String> command = clean ? CLEAN_BUILD_CMD : BUILD_CMD;
+        List<String> command = clean ? cleanBuildCmd : buildCmd;
         if (HELIDON_PLUGIN_VERSION != null) {
             command = new ArrayList<>(command);
             command.add("-D" + HELIDON_PLUGIN_VERSION_PROP + "=" + HELIDON_PLUGIN_VERSION);

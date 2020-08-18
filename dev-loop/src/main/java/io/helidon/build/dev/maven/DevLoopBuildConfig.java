@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.dev.mode;
+package io.helidon.build.dev.maven;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+import io.helidon.build.dev.mode.DevLoop;
+
 import static java.util.Collections.emptyList;
 
 /**
- * Configuration beans for the build lifecycle.
+ * Configuration beans for the {@link DevLoop} build lifecycle.
  * <p></p>
  * Example pom declaration:
  * <pre>
@@ -49,7 +51,8 @@ import static java.util.Collections.emptyList;
  *                                 </goals>
  *                                 <configuration>
  *
- *                                    <!-- NOTE changes to this configuration will NOT be noticed by the helidon dev command! -->
+ *                                    <!-- NOTE: changes to this configuration will NOT be noticed during execution of
+ *                                    the helidon dev command -->
  *
  *                                    <devLoop>
  *                                         <fullBuildGoal>process-lots-of-stuff</fullBuildGoal>
@@ -98,18 +101,29 @@ import static java.util.Collections.emptyList;
  *     </profiles>
  * </pre>
  */
-public class DevLoopBuild {
+public class DevLoopBuildConfig {
     private static final String DEFAULT_FULL_BUILD_GOAL = "process-classes";
 
     private String fullBuildGoal;
     private IncrementalBuild incrementalBuild;
 
-    public DevLoopBuild() {
+    public DevLoopBuildConfig() {
         this.fullBuildGoal = DEFAULT_FULL_BUILD_GOAL;
         this.incrementalBuild = new IncrementalBuild();
     }
 
-    public String getFullBuildGoal() {
+    public void resolve(MavenGoalReferenceResolver resolver) throws Exception {
+        // TODO
+
+        resolver.resolve("exec:exec@compile-sass");
+        resolver.resolve("helidon-cli:dev");
+        resolver.resolve("compiler:compile");
+        resolver.resolve("compile");
+
+        // TODO
+    }
+
+    public String fullBuildGoal() {
         return fullBuildGoal;
     }
 
@@ -128,20 +142,20 @@ public class DevLoopBuild {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof DevLoopBuild)) return false;
-        final DevLoopBuild that = (DevLoopBuild) o;
-        return Objects.equals(getFullBuildGoal(), that.getFullBuildGoal()) &&
+        if (!(o instanceof DevLoopBuildConfig)) return false;
+        final DevLoopBuildConfig that = (DevLoopBuildConfig) o;
+        return Objects.equals(fullBuildGoal(), that.fullBuildGoal()) &&
                Objects.equals(getIncrementalBuild(), that.getIncrementalBuild());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getFullBuildGoal(), getIncrementalBuild());
+        return Objects.hash(fullBuildGoal(), getIncrementalBuild());
     }
 
     @Override
     public String toString() {
-        return "DevBuildLifecycle{" +
+        return "DevLoopBuildConfig{" +
                "fullBuildGoal='" + fullBuildGoal + '\'' +
                ", incrementalBuild=" + incrementalBuild +
                '}';

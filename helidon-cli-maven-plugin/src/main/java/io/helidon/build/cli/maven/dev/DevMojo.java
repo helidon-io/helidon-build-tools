@@ -19,16 +19,22 @@ package io.helidon.build.cli.maven.dev;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import io.helidon.build.dev.ProjectSupplier;
+import io.helidon.build.dev.maven.MavenGoalReferenceResolver;
 import io.helidon.build.dev.maven.MavenProjectSupplier;
 import io.helidon.build.dev.mode.DevLoop;
-import io.helidon.build.dev.mode.DevLoopBuild;
+import io.helidon.build.dev.maven.DevLoopBuildConfig;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenLogWriter;
 import io.helidon.build.util.SystemLogWriter;
 
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.lifecycle.DefaultLifecycles;
+import org.apache.maven.lifecycle.LifecycleMappingDelegate;
+import org.apache.maven.lifecycle.internal.DefaultLifecycleMappingDelegate;
+import org.apache.maven.lifecycle.internal.MojoDescriptorCreator;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -101,7 +107,7 @@ public class DevMojo extends AbstractMojo {
      * DevLoop build lifecycle customization.
      */
     @Parameter
-    private DevLoopBuild devLoop;
+    private DevLoopBuildConfig devLoop;
 
     /**
      * The current Maven session.
@@ -114,6 +120,34 @@ public class DevMojo extends AbstractMojo {
      */
     @Component
     private BuildPluginManager plugins;
+
+    /**
+     * The Maven MojoDescriptorCreated component, used to resolve
+     * plugin prefixes.
+     */
+    @Component
+    private MojoDescriptorCreator mojoDescriptorCreator;
+
+    /**
+     * The Maven DefaultLifecycles component, used to map
+     * a phase to a list of goals.
+     */
+    @Component
+    private DefaultLifecycles defaultLifeCycles;
+
+    /**
+     * The Maven DefaultLifecycleMappingDelegate component, used to map
+     * a phase to a list of goals.
+     */
+    @Component(hint = DefaultLifecycleMappingDelegate.HINT)
+    private LifecycleMappingDelegate standardDelegate;
+
+    /**
+     * A map of Maven lifecycle ids to LifecycleMappingDelegate instances, used to map
+     * a phase to a list of goals.
+     */
+    @Component
+    private Map<String, LifecycleMappingDelegate> delegates;
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -130,8 +164,10 @@ public class DevMojo extends AbstractMojo {
 
             Log.info("build: %s", devLoop);
 
-            final DevLoopBuild build = devLoop == null ? new DevLoopBuild() : devLoop;
-            final ProjectSupplier projectSupplier = new MavenProjectSupplier(project, session, plugins);
+            final DevLoopBuildConfig buildConfig = devLoop == null ? new DevLoopBuildConfig() : devLoop;
+            buildConfig.resolve(new MavenGoalReferenceResolver(project, session, mojoDescriptorCreator, defaultLifeCycles,
+                                                               standardDelegate, delegates));
+            final ProjectSupplier projectSupplier = new MavenProjectSupplier(project, session, plugins, buildConfig);
             final List<String> jvmArgs = toList(appJvmArgs);
             final List<String> args = toList(appArgs);
             final DevLoop loop = new DevLoop(devProjectDir.toPath(), projectSupplier, clean, fork, terminalMode, jvmArgs, args);

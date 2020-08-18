@@ -96,7 +96,7 @@ public class MavenGoalBuildStep implements BuildStep {
      * A builder.
      */
     public static class Builder {
-        private MavenGoalExecutor.Builder executorBuilder;
+        private final  MavenGoalExecutor.Builder executorBuilder;
         private MavenGoalExecutor executor;
         private BuildGoal buildGoal;
 
