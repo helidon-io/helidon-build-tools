@@ -103,6 +103,7 @@ class LinkerTest {
         Configuration config = Configuration.builder()
                                             .jriDirectory(targetDir.resolve("mp-jri"))
                                             .mainJar(mainJar)
+                                            .maxAppStartSeconds(240)
                                             .replace(true)
                                             .cds(true)
                                             .build();
