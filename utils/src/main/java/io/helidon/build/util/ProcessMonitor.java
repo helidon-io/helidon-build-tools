@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNullElseGet;
@@ -267,7 +268,9 @@ public final class ProcessMonitor {
         if (stdIn != null) {
             builder.redirectInput(stdIn);
         }
+        Log.debug("Executing command: %s", builder.command().stream().collect(Collectors.joining(" ")));
         process = builder.start();
+        Log.debug("Process ID: %d", process.pid());
         running.set(true);
         out = monitor(process.getInputStream(), filter, transform, capturing ? this::captureStdOut : stdOut, running);
         err = monitor(process.getErrorStream(), filter, transform, capturing ? this::captureStdErr : stdErr, running);
@@ -339,6 +342,7 @@ public final class ProcessMonitor {
             ProcessFailedException,
             InterruptedException {
         assertRunning();
+        Log.debug("Waiting for completion, pid=%d, timeout=%d, unit=%s", process.pid(), timeout, unit);
         final boolean completed = process.waitFor(timeout, unit);
         if (completed) {
             stopTasks();
