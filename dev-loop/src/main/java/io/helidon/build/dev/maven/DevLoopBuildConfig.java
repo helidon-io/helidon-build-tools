@@ -115,6 +115,8 @@ public class DevLoopBuildConfig {
     public void resolve(MavenGoalReferenceResolver resolver) throws Exception {
         // TODO
 
+        resolver.resolve("org.apache.maven.plugins:maven-exec-plugin:3.0.0:exec@compile-sass");
+        resolver.resolve("org.apache.maven.plugins:maven-exec-plugin:exec@compile-sass");
         resolver.resolve("exec:exec@compile-sass");
         resolver.resolve("helidon-cli:dev");
         resolver.resolve("compiler:compile");

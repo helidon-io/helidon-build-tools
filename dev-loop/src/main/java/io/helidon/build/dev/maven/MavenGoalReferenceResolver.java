@@ -27,10 +27,13 @@ import org.apache.maven.lifecycle.DefaultLifecycles;
 import org.apache.maven.lifecycle.Lifecycle;
 import org.apache.maven.lifecycle.LifecycleMappingDelegate;
 import org.apache.maven.lifecycle.LifecyclePhaseNotFoundException;
+import org.apache.maven.lifecycle.NoGoalSpecifiedException;
 import org.apache.maven.lifecycle.internal.MojoDescriptorCreator;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.project.MavenProject;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Utility to map a maven goal reference to a {@link MavenGoalExecutor.Goal}.
@@ -69,9 +72,11 @@ public class MavenGoalReferenceResolver {
 
     public List<MavenGoal> resolve(String reference) throws Exception {
         final List<MavenGoal> goals = new ArrayList<>();
-        int index = reference.indexOf('@');
+        int index = requireNonNull(reference).indexOf('@');
         String executionId = null;
-        if (index > 0) {
+        if (index == 0) {
+            throw new NoGoalSpecifiedException(reference);
+        } else if (index > 0) {
             executionId = reference.substring(index + 1);
             reference = reference.substring(0, index);
         }
@@ -89,22 +94,20 @@ public class MavenGoalReferenceResolver {
             case 3:
                 goals.add(MavenGoal.create(components[0], components[1], components[2], executionId));
                 break;
-            case 4:
+            default: // >= 4
                 Log.warn("Ignoring version in %s", reference);
                 goals.add(MavenGoal.create(components[0], components[1], components[3], executionId));
                 break;
         }
 
-        if (Log.isDebug()) {
-            Log.debug("%s mapped to %s", reference, goals);
-        }
+        Log.info("%s resolved to %s", reference, goals); // TODO: change to debug
 
         return goals;
     }
 
-    private void addPrefixGoal(String prefix, String goal, String exeuctionId, List<MavenGoal> goals) throws Exception {
+    private void addPrefixGoal(String prefix, String goal, String executionId, List<MavenGoal> goals) throws Exception {
         final Plugin plugin = mojoDescriptorCreator.findPluginForPrefix(prefix, session);
-        goals.add(MavenGoal.create(plugin.getGroupId(), plugin.getArtifactId(), goal, exeuctionId));
+        goals.add(MavenGoal.create(plugin.getGroupId(), plugin.getArtifactId(), goal, executionId));
     }
 
     private void addPhaseGoals(String phase, List<MavenGoal> goals) throws Exception {
@@ -112,8 +115,10 @@ public class MavenGoalReferenceResolver {
         Lifecycle lifecycle = defaultLifeCycles.get(phase);
         if (lifecycle == null) {
             throw new LifecyclePhaseNotFoundException("Unknown lifecycle phase \"" + phase
-                                                      + "\". You must specify a valid lifecycle phase" + " or a goal in the format <plugin-prefix>:<goal> or"
-                                                      + " <plugin-group-id>:<plugin-artifact-id>[:<plugin-version>]:<goal>. Available lifecycle phases are: "
+                                                      + "\". You must specify a valid lifecycle phase" + " or a goal in the "
+                                                      + "format <plugin-prefix>:<goal> or "
+                                                      + "<plugin-group-id>:<plugin-artifact-id>[:<plugin-version>]:<goal>. "
+                                                      + "Available lifecycle phases are: "
                                                       + defaultLifeCycles.getLifecyclePhaseList() + ".", phase);
         }
         LifecycleMappingDelegate delegate = standardDelegate;
