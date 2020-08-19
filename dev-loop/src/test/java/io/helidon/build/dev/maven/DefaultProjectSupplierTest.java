@@ -74,7 +74,7 @@ class DefaultProjectSupplierTest {
     void testCleanBuild() throws Exception {
         final Path projectDir = TestFiles.helidonSeProjectCopy();
         final TestMonitor monitor = new TestMonitor(1);
-        final BuildExecutor executor = new ForkedMavenExecutor(projectDir, monitor, 30);
+        final BuildExecutor executor = new ForkedMavenExecutor(projectDir, monitor, 120);
         final ProjectSupplier supplier = new DefaultProjectSupplier();
         final Project project = supplier.newProject(executor, true, true,0);
         assertThat(project, is(not(nullValue())));
