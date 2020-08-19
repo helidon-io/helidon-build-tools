@@ -60,10 +60,10 @@ class DefaultProjectSupplierTest {
         final List<BuildComponent> components = project.components();
         assertThat(components, is(not(nullValue())));
         assertThat(components.size(), is(2));
-        assertThat(components.get(0).sourceRoot().path().toString(), endsWith("src/main/java"));
-        assertThat(components.get(0).outputRoot().path().toString(), endsWith("target/classes"));
-        assertThat(components.get(1).sourceRoot().path().toString(), endsWith("src/main/resources"));
-        assertThat(components.get(1).outputRoot().path().toString(), endsWith("target/classes"));
+        assertThat(pathOf(components.get(0).sourceRoot().path()), endsWith("src/main/java"));
+        assertThat(pathOf(components.get(0).outputRoot().path()), endsWith("target/classes"));
+        assertThat(pathOf(components.get(1).sourceRoot().path()), endsWith("src/main/resources"));
+        assertThat(pathOf(components.get(1).outputRoot().path()), endsWith("target/classes"));
         assertThat(components.get(1).outputRoot(), is(not(components.get(0).outputRoot())));
 
         assertThat(project.classpath().size(), is(greaterThan(2)));
@@ -87,13 +87,17 @@ class DefaultProjectSupplierTest {
         final List<BuildComponent> components = project.components();
         assertThat(components, is(not(nullValue())));
         assertThat(components.size(), is(2));
-        assertThat(components.get(0).sourceRoot().path().toString(), endsWith("src/main/java"));
-        assertThat(components.get(0).outputRoot().path().toString(), endsWith("target/classes"));
-        assertThat(components.get(1).sourceRoot().path().toString(), endsWith("src/main/resources"));
-        assertThat(components.get(1).outputRoot().path().toString(), endsWith("target/classes"));
+        assertThat(pathOf(components.get(0).sourceRoot().path()), endsWith("src/main/java"));
+        assertThat(pathOf(components.get(0).outputRoot().path()), endsWith("target/classes"));
+        assertThat(pathOf(components.get(1).sourceRoot().path()), endsWith("src/main/resources"));
+        assertThat(pathOf(components.get(1).outputRoot().path()), endsWith("target/classes"));
         assertThat(components.get(1).outputRoot(), is(not(components.get(0).outputRoot())));
 
         assertThat(project.classpath().size(), is(greaterThan(2)));
         assertThat(project.mainClassName(), is("io.helidon.examples.se.Main"));
+    }
+
+    private static String pathOf(Path p) {
+        return p.toString().replace("\\", "/");
     }
 }
