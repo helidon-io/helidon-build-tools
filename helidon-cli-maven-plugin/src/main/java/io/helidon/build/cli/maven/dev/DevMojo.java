@@ -22,10 +22,10 @@ import java.util.List;
 import java.util.Map;
 
 import io.helidon.build.dev.ProjectSupplier;
+import io.helidon.build.dev.maven.DevLoopBuildConfig;
 import io.helidon.build.dev.maven.MavenGoalReferenceResolver;
 import io.helidon.build.dev.maven.MavenProjectSupplier;
 import io.helidon.build.dev.mode.DevLoop;
-import io.helidon.build.dev.maven.DevLoopBuildConfig;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenLogWriter;
 import io.helidon.build.util.SystemLogWriter;

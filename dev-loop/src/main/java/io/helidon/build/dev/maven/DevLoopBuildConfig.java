@@ -15,9 +15,10 @@
  */
 package io.helidon.build.dev.maven;
 
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 import io.helidon.build.dev.mode.DevLoop;
 
@@ -28,362 +29,344 @@ import static java.util.Collections.emptyList;
  * <p></p>
  * Example pom declaration:
  * <pre>
- *     <profiles>
- *         <profile>
- *             <id>helidon-cli</id>
- *             <activation>
- *                 <property>
- *                     <name>helidon.cli</name>
- *                     <value>true</value>
- *                 </property>
- *             </activation>
- *             <build>
- *                 <plugins>
- *                     <plugin>
- *                         <groupId>io.helidon.build-tools</groupId>
- *                         <artifactId>helidon-cli-maven-plugin</artifactId>
- *                         <extensions>true</extensions>
- *                         <executions>
- *                             <execution>
- *                                 <id>default-cli</id> <!-- must use this id! -->
- *                                 <goals>
- *                                     <goal>dev</goal>
- *                                 </goals>
- *                                 <configuration>
+ *     &lt;profiles>
+ *         &lt;profile>
+ *             &lt;id>helidon-cli&lt;/id>
+ *             &lt;activation>
+ *                 &lt;property>
+ *                     &lt;name>helidon.cli&lt;/name>
+ *                     &lt;value>true&lt;/value>
+ *                 &lt;/property>
+ *             &lt;/activation>
+ *             &lt;build>
+ *                 &lt;plugins>
+ *                     &lt;plugin>
+ *                         &lt;groupId>io.helidon.build-tools&lt;/groupId>
+ *                         &lt;artifactId>helidon-cli-maven-plugin&lt;/artifactId>
+ *                         &lt;extensions>true&lt;/extensions>
+ *                         &lt;executions>
+ *                             &lt;execution>
+ *                                 &lt;id>default-cli&lt;/id> &lt;!-- must use this id! -->
+ *                                 &lt;goals>
+ *                                     &lt;goal>dev&lt;/goal>
+ *                                 &lt;/goals>
+ *                                 &lt;configuration>
  *
- *                                    <!-- NOTE: changes to this configuration will NOT be noticed during execution of
+ *                                    &lt;!-- NOTE: changes to this configuration will NOT be noticed during execution of
  *                                    the helidon dev command -->
  *
- *                                    <devLoop>
- *                                         <fullBuildGoal>process-lots-of-stuff</fullBuildGoal>
- *                                         <incrementalBuild>
+ *                                    &lt;devLoop>
+ *                                        &lt;!-- Phase used when a full build is required; defaults to process-classes -->
+ *                                         &lt;fullBuildPhase>process-test-classes&lt;/fullBuildPhase>
+ *                                         &lt;incrementalBuild>
  *
- *                                             <!-- directories/includes/excludes from maven-resources-plugin config -->
- *                                             <resourceGoals>
- *                                                 <goal>process-my-resources</goal>
- *                                             </resourceGoals>
+ *                                             &lt;!-- directories/includes/excludes from maven-resources-plugin config -->
+ *                                             &lt;resourceGoals>
+ *                                                 &lt;goal>resources:copy&lt;/goal>
+ *                                             &lt;/resourceGoals>
  *
- *                                             <!-- directories/includes/excludes from maven-compiler-plugin config -->
- *                                             <javaSourceGoals>
- *                                                 <goal>process-my-sources</goal>
- *                                             </javaSourceGoals>
+ *                                             &lt;!-- directories/includes/excludes from maven-compiler-plugin config -->
+ *                                             &lt;javaSourceGoals>
+ *                                                 &lt;goal>process-my-sources&lt;/goal>
+ *                                             &lt;/javaSourceGoals>
  *
- *                                             <customDirectories>
- *                                                 <directory>
- *                                                     <path>src/etc1</path>
- *                                                     <watch>
- *                                                         <includes>**&#47;*.foo,**&#47;*.bar</includes>
- *                                                     </watch>
- *                                                     <goals>
- *                                                         <goal>my-custom-goal-1</goal>
- *                                                         <goal>my-custom-goal-2</goal>
- *                                                     </goals>
- *                                                 </directory>
- *                                                 <directory>
- *                                                     <path>src/etc2</path>
- *                                                     <watch>
- *                                                         <includes>**&#47;*.baz</includes>
- *                                                     </watch>
- *                                                     <goals>
- *                                                         <goal>my-custom-goal-X</goal>
- *                                                     </goals>
- *                                                 </directory>
- *                                             </customDirectories>
- *                                         </incrementalBuild>
- *                                     </devLoop>
- *                                 </configuration>
- *                             </execution>
- *                         </executions>
- *                     </plugin>
- *                 </plugins>
- *             </build>
- *         </profile>
- *     </profiles>
+ *                                             &lt;customDirectories>
+ *                                                 &lt;directory>
+ *                                                     &lt;path>src/etc1&lt;/path>
+ *                                                     &lt;includes>**&#47;*.foo,**&#47;*.bar&lt;/includes>
+ *                                                     &lt;excludes />
+ *                                                     &lt;goals>
+ *                                                         &lt;goal>my-custom-goal-1&lt;/goal>
+ *                                                         &lt;goal>my-custom-goal-2&lt;/goal>
+ *                                                     &lt;/goals>
+ *                                                 &lt;/directory>
+ *                                                 &lt;directory>
+ *                                                     &lt;path>src/etc2&lt;/path>
+ *                                                     &lt;includes>**&#47;*.bar&lt;/includes>
+ *                                                     &lt;excludes>**&#47;*.foo&lt;/includes>
+ *                                                     &lt;goals>
+ *                                                         &lt;goal>my-custom-goal-X&lt;/goal>
+ *                                                     &lt;/goals>
+ *                                                 &lt;/directory>
+ *                                             &lt;/customDirectories>
+ *                                         &lt;/incrementalBuild>
+ *                                     &lt;/devLoop>
+ *                                 &lt;/configuration>
+ *                             &lt;/execution>
+ *                         &lt;/executions>
+ *                     &lt;/plugin>
+ *                 &lt;/plugins>
+ *             &lt;/build>
+ *         &lt;/profile>
+ *     &lt;/profiles>
  * </pre>
  */
 public class DevLoopBuildConfig {
-    private static final String DEFAULT_FULL_BUILD_GOAL = "process-classes";
+    private static final String DEFAULT_FULL_BUILD_PHASE = "process-classes";
 
-    private String fullBuildGoal;
+    private String fullBuildPhase;
     private IncrementalBuild incrementalBuild;
 
+    /**
+     * Constructor.
+     */
     public DevLoopBuildConfig() {
-        this.fullBuildGoal = DEFAULT_FULL_BUILD_GOAL;
+        this.fullBuildPhase = DEFAULT_FULL_BUILD_PHASE;
         this.incrementalBuild = new IncrementalBuild();
     }
 
+    /**
+     * Resolves the Maven goals.
+     *
+     * @param resolver The resolver.
+     * @throws Exception If an error occurs.
+     */
     public void resolve(MavenGoalReferenceResolver resolver) throws Exception {
-        // TODO
-
-        resolver.resolve("org.apache.maven.plugins:maven-exec-plugin:3.0.0:exec@compile-sass");
-        resolver.resolve("org.apache.maven.plugins:maven-exec-plugin:exec@compile-sass");
-        resolver.resolve("exec:exec@compile-sass");
-        resolver.resolve("helidon-cli:dev");
-        resolver.resolve("compiler:compile");
-        resolver.resolve("compile");
-
-        // TODO
+        resolver.assertValidPhase(fullBuildPhase);
+        incrementalBuild.resolve(resolver);
     }
 
-    public String fullBuildGoal() {
-        return fullBuildGoal;
+    /**
+     * Returns the validated full build phase.
+     *
+     * @return The phase.
+     */
+    public String fullBuildPhase() {
+        return fullBuildPhase;
     }
 
-    public void setFullBuildGoal(String fullBuildGoal) {
-        this.fullBuildGoal = fullBuildGoal;
-    }
-
-    public IncrementalBuild getIncrementalBuild() {
+    /**
+     * Returns the incremental build config.
+     *
+     * @return The config.
+     */
+    public IncrementalBuild incrementalBuild() {
         return incrementalBuild;
     }
 
+    /**
+     * Sets the full build phase.
+     *
+     * @param fullBuildPhase The phase.
+     */
+    public void setFullBuildPhase(String fullBuildPhase) {
+        this.fullBuildPhase = fullBuildPhase;
+    }
+
+    /**
+     * Sets the incremental build config.
+     *
+     * @param incrementalBuild The config.
+     */
     public void setIncrementalBuild(IncrementalBuild incrementalBuild) {
         this.incrementalBuild = incrementalBuild;
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof DevLoopBuildConfig)) return false;
-        final DevLoopBuildConfig that = (DevLoopBuildConfig) o;
-        return Objects.equals(fullBuildGoal(), that.fullBuildGoal()) &&
-               Objects.equals(getIncrementalBuild(), that.getIncrementalBuild());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(fullBuildGoal(), getIncrementalBuild());
-    }
-
-    @Override
     public String toString() {
-        return "DevLoopBuildConfig{" +
-               "fullBuildGoal='" + fullBuildGoal + '\'' +
-               ", incrementalBuild=" + incrementalBuild +
-               '}';
+        return "DevLoopBuildConfig{"
+               + "fullBuildPhase=" + fullBuildPhase
+               + ", incrementalBuild=" + incrementalBuild
+               + '}';
     }
 
     /**
-     * TODO: Describe
+     * Incremental build configuration.
      */
     public static class IncrementalBuild {
         private List<String> resourceGoals;
         private List<String> javaSourceGoals;
+        private List<MavenGoal> resolvedResourceGoals;
+        private List<MavenGoal> resolvedJavaSourceGoals;
         private List<CustomDirectory> customDirectories;
 
+        /**
+         * Constructor.
+         */
         public IncrementalBuild() {
         }
 
-        public List<String> getResourceGoals() {
-            return resourceGoals;
+        /**
+         * Resolves the Maven goals.
+         *
+         * @param resolver The resolver.
+         * @throws Exception If an error occurs.
+         */
+        public void resolve(MavenGoalReferenceResolver resolver) throws Exception {
+            this.resolvedResourceGoals = resolver.resolve(resourceGoals, new ArrayList<>());
+            this.resolvedJavaSourceGoals = resolver.resolve(javaSourceGoals, new ArrayList<>());
+            for (CustomDirectory directory : customDirectories()) {
+                directory.resolve(resolver);
+            }
         }
 
+        /**
+         * Returns the resolved resource goals.
+         *
+         * @return The goals.
+         */
+        public List<MavenGoal> resourceGoals() {
+            return resolvedResourceGoals;
+        }
+
+        /**
+         * Returns the resolved Java source goals.
+         *
+         * @return The goals.
+         */
+        public List<MavenGoal> javaSourceGoals() {
+            return resolvedJavaSourceGoals;
+        }
+
+        /**
+         * Returns the custom directory configurations.
+         *
+         * @return The configurations.
+         */
+        public List<CustomDirectory> customDirectories() {
+            return customDirectories == null ? emptyList() : customDirectories;
+        }
+
+        /**
+         * Sets the resource goals.
+         *
+         * @param resourceGoals The goals.
+         */
         public void setResourceGoals(List<String> resourceGoals) {
             this.resourceGoals = resourceGoals;
         }
 
-        public List<String> getJavaSourceGoals() {
-            return javaSourceGoals;
-        }
-
+        /**
+         * Sets the Java source goals.
+         *
+         * @param javaSourceGoals The goals.
+         */
         public void setJavaSourceGoals(List<String> javaSourceGoals) {
             this.javaSourceGoals = javaSourceGoals;
         }
 
-        public List<CustomDirectory> getCustomDirectories() {
-            return customDirectories;
-        }
-
+        /**
+         * Sets the custom directory configurations.
+         *
+         * @param customDirectories The configurations.
+         */
         public void setCustomDirectories(List<CustomDirectory> customDirectories) {
             this.customDirectories = customDirectories;
         }
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof IncrementalBuild)) return false;
-            final IncrementalBuild that = (IncrementalBuild) o;
-            return Objects.equals(getResourceGoals(), that.getResourceGoals()) &&
-                   Objects.equals(getJavaSourceGoals(), that.getJavaSourceGoals()) &&
-                   Objects.equals(getCustomDirectories(), that.getCustomDirectories());
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(getResourceGoals(), getJavaSourceGoals(), getCustomDirectories());
-        }
-
-        @Override
         public String toString() {
-            return "IncrementalBuild{" +
-                   "resourceGoals=" + resourceGoals +
-                   ", javaSourceGoals=" + javaSourceGoals +
-                   ", customDirectories=" + customDirectories +
-                   '}';
+            return "IncrementalBuild{"
+                   + "resourceGoals=" + resourceGoals
+                   + ", javaSourceGoals=" + javaSourceGoals
+                   + ", customDirectories=" + customDirectories
+                   + '}';
         }
 
-        public static class Watch {
+        /**
+         * Custom directory configuration.
+         */
+        public static class CustomDirectory {
+            private Path path;
             private String includes;
             private String excludes;
+            private List<String> goals;
+            private List<MavenGoal> resolvedGoals;
 
-            public Watch() {
+            /**
+             * Resolves the Maven goals.
+             *
+             * @param resolver The resolver.
+             * @throws Exception If an error occurs.
+             */
+            public void resolve(MavenGoalReferenceResolver resolver) throws Exception {
+                this.resolvedGoals = resolver.resolve(goals, new ArrayList<>());
+                if (path.isAbsolute()) {
+                    throw new IllegalArgumentException(path + " must be relative");
+                }
             }
 
-            public List<String> getIncludes() {
+            /**
+             * Returns the path.
+             *
+             * @return The path.
+             */
+            public Path path() {
+                return path;
+            }
+
+            /**
+             * Returns the includes.
+             *
+             * @return The includes.
+             */
+            public List<String> includes() {
                 return includes == null ? emptyList() : Arrays.asList(includes.split(","));
             }
 
+            /**
+             * Returns the excludes.
+             *
+             * @return The excludes.
+             */
+            public List<String> excludes() {
+                return excludes == null ? emptyList() : Arrays.asList(excludes.split(","));
+            }
+
+            /**
+             * Returns the resolved goals.
+             *
+             * @return The goals.
+             */
+            public List<MavenGoal> goals() {
+                return resolvedGoals;
+            }
+
+            /**
+             * Sets the path.
+             *
+             * @param path The path.
+             */
+            public void setPath(String path) {
+                this.path = Path.of(path);
+            }
+
+            /**
+             * Sets the includes.
+             *
+             * @param includes The includes.
+             */
             public void setIncludes(String includes) {
                 this.includes = includes;
             }
 
-            public List<String> getExcludes() {
-                return excludes == null ? emptyList() : Arrays.asList(excludes.split(","));
-            }
-
+            /**
+             * Sets the excludes.
+             *
+             * @param excludes The excludes.
+             */
             public void setExcludes(String excludes) {
                 this.excludes = excludes;
             }
 
-            @Override
-            public boolean equals(Object o) {
-                if (this == o) return true;
-                if (!(o instanceof Watch)) return false;
-                final Watch watch = (Watch) o;
-                return Objects.equals(getIncludes(), watch.getIncludes()) &&
-                       Objects.equals(getExcludes(), watch.getExcludes());
-            }
-
-            @Override
-            public int hashCode() {
-                return Objects.hash(getIncludes(), getExcludes());
-            }
-
-            @Override
-            public String toString() {
-                return "Watch{" +
-                       "includes='" + includes + '\'' +
-                       ", excludes='" + excludes + '\'' +
-                       '}';
-            }
-        }
-
-        public static class CustomDirectory {
-            private String path;
-            private Watch watch;
-            private List<String> goals;
-
-
-            public String getPath() {
-                return path;
-            }
-
-            public void setPath(String path) {
-                this.path = path;
-            }
-
-            public Watch getWatch() {
-                return watch;
-            }
-
-            public void setWatch(Watch watch) {
-                this.watch = watch;
-            }
-
-            public List<String> getGoals() {
-                return goals;
-            }
-
+            /**
+             * Sets the goals.
+             *
+             * @param goals The goals.
+             */
             public void setGoals(List<String> goals) {
                 this.goals = goals;
             }
 
             @Override
-            public boolean equals(Object o) {
-                if (this == o) return true;
-                if (!(o instanceof CustomDirectory)) return false;
-                final CustomDirectory customDirectory = (CustomDirectory) o;
-                return Objects.equals(getPath(), customDirectory.getPath()) &&
-                       Objects.equals(getWatch(), customDirectory.getWatch()) &&
-                       Objects.equals(getGoals(), customDirectory.getGoals());
-            }
-
-            @Override
-            public int hashCode() {
-                return Objects.hash(getPath(), getWatch(), getGoals());
-            }
-
-            @Override
             public String toString() {
-                return "CustomDirectory{" +
-                       "path='" + path + '\'' +
-                       ", watch=" + watch +
-                       ", goals=" + goals +
-                       '}';
+                return "CustomDirectory{"
+                       + "path='" + path + '\''
+                       + ", includes='" + includes + '\''
+                       + ", excludes='" + excludes + '\''
+                       + ", goals=" + goals
+                       + '}';
             }
         }
     }
-
-
-    /* TODO REMOVE
-
-     <configuration>
-      <!-- See https://github.com/eclipse-ee4j/glassfish-spec-version-maven-plugin -->
-      <!-- For an example of a Java bean used for this style of configuration -->
-      <!-- devLoop is a list of ordered "component" -->
-      <!-- The resulting build steps are ordered by their order in this map -->
-      <devLoop>
-        <!-- this particular entry is not order dependent -->
-        <projectfile>
-          <steps>
-            <step>process-classes</step>
-          </steps>
-        </projectfile>
-        <resources>
-          <includes />
-          <excludes />
-          <steps>
-            <step>resources:process-resources</step>
-            <!-- see example execution on the next snippet below -->
-            <step>exec:exec@compile-sass</step>
-            <!-- can also be a phase -->
-            <!-- <step>process-resources</step> -->
-          </steps>
-        </resources>
-        <!-- monitor a non conventional directory that is not registered as project compile source or as project resource -->
-        <custom>
-          <paths>
-            <path>
-              <value>src/main/foo</value>
-              <!-- Comma separated list of file patterns to exclude -->
-              <!-- See io.helidon.build.util.SourcePath -->
-              <includes />
-              <!-- Same syntax -->
-              <excludes />
-            </path>
-            <path>
-              <value>src/main/foo</value>
-              <includes />
-              <excludes />
-            </path>
-          </paths>
-          <steps>
-            <step>foo:bar</step>
-          </steps>
-        <custom>
-        <compileSources>
-          <includes />
-          <excludes />
-          <steps>
-            <step>compiler:compile</step>
-            <!-- can also be a phase -->
-            <!-- <step>compile</step> -->
-          </steps>
-        </compileSources>
-      </devLoop>
-    </configuration>
-
-
-     */
-
 }

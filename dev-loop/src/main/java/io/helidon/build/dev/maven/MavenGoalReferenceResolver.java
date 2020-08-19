@@ -15,7 +15,6 @@
  */
 package io.helidon.build.dev.maven;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +35,35 @@ import org.apache.maven.project.MavenProject;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Utility to map a maven goal reference to a {@link MavenGoalExecutor.Goal}.
+ * Utility to map a Maven goal reference to a {@link MavenGoal}. References are resolved in the context of the specified project.
+ * <p></p>
+ * References may be fully qualified:
+ * <p></p>
+ * <pre>
+ *    ${groupId}:${artifactId}:${version}:${goal}@${executionId}
+ * </pre>
+ * The version will be ignored since it can only be resolved to the plugin configured in the current project. If not provided,
+ * a <a href="http://maven.apache.org/guides/mini/guide-default-execution-ids.html">default executionId</a> will be used. For
+ * example, with the {@code compile} goal the default execution id is {@code default-compile}.
+ * <p></p>
+ * A <a href="https://maven.apache.org/guides/introduction/introduction-to-plugin-prefix-mapping.html">plugin prefix</a> may
+ * be used as an alias for the {@code groupId} and {@code artifactId}, for example {@code compiler} in the following reference:
+ * <p></p>
+ * <pre>
+ *     compiler:compile
+ * </pre>
+ * Finally, any lifecycle phase (e.g. {@code process-resources}) may be used as a reference, and will expand to the corresponding
+ * list of goals.
+ * <p></p>
+ * <h3>Example References</h3>
+ * <ol>
+ *     <li>{@code org.apache.maven.plugins:maven-exec-plugin:3.0.0:exec@compile-sass}</li>
+ *     <li>{@code org.apache.maven.plugins:maven-exec-plugin:exec@compile-sass}</li>
+ *     <li>{@code exec:exec@compile-sass}</li>
+ *     <li>{@code compiler:compile}</li>
+ *     <li>{@code compile}</li>
+ * </ol>
+ * References #1-3 are equivalent, #4 executes only the compile goal and #5 executes all goals in the compile lifecycle.
  */
 public class MavenGoalReferenceResolver {
     private final MavenProject project;
@@ -70,8 +97,30 @@ public class MavenGoalReferenceResolver {
         this.delegates = delegates;
     }
 
-    public List<MavenGoal> resolve(String reference) throws Exception {
-        final List<MavenGoal> goals = new ArrayList<>();
+    /**
+     * Resolve a list of references.
+     *
+     * @param references The references.
+     * @param goals The goals list to append to.
+     * @return The goals list.
+     * @throws Exception If an error occurs.
+     */
+    public List<MavenGoal> resolve(List<String> references, List<MavenGoal> goals) throws Exception {
+        for (String reference : references) {
+            resolve(reference, goals);
+        }
+        return goals;
+    }
+
+    /**
+     * Resolve a reference.
+     *
+     * @param reference The reference.
+     * @param goals The goals list to append to.
+     * @return The goals list.
+     * @throws Exception If an error occurs.
+     */
+    public List<MavenGoal> resolve(String reference, List<MavenGoal> goals) throws Exception {
         int index = requireNonNull(reference).indexOf('@');
         String executionId = null;
         if (index == 0) {
@@ -100,9 +149,18 @@ public class MavenGoalReferenceResolver {
                 break;
         }
 
-        Log.info("%s resolved to %s", reference, goals); // TODO: change to debug
-
+        Log.debug("%s resolved to %s", reference, goals);
         return goals;
+    }
+
+    /**
+     * Asserts that the given phase is valid.
+     *
+     * @param phase The phase.
+     * @throws Exception If not a valid phase.
+     */
+    public void assertValidPhase(String phase) throws Exception {
+        phaseToLifecycle(phase);
     }
 
     private void addPrefixGoal(String prefix, String goal, String executionId, List<MavenGoal> goals) throws Exception {
@@ -111,17 +169,8 @@ public class MavenGoalReferenceResolver {
     }
 
     private void addPhaseGoals(String phase, List<MavenGoal> goals) throws Exception {
-        // NOTE: This method was mostly copied from DefaultLifecycleExecutionPlanCalculator.calculateLifecycleMappings
-        Lifecycle lifecycle = defaultLifeCycles.get(phase);
-        if (lifecycle == null) {
-            throw new LifecyclePhaseNotFoundException("Unknown lifecycle phase \"" + phase
-                                                      + "\". You must specify a valid lifecycle phase" + " or a goal in the "
-                                                      + "format <plugin-prefix>:<goal> or "
-                                                      + "<plugin-group-id>:<plugin-artifact-id>[:<plugin-version>]:<goal>. "
-                                                      + "Available lifecycle phases are: "
-                                                      + defaultLifeCycles.getLifecyclePhaseList() + ".", phase);
-        }
         LifecycleMappingDelegate delegate = standardDelegate;
+        Lifecycle lifecycle = phaseToLifecycle(phase);
         if (Arrays.binarySearch(DefaultLifecycles.STANDARD_LIFECYCLES, lifecycle.getId()) < 0) {
             delegate = delegates.get(lifecycle.getId());
             if (delegate == null) {
@@ -134,6 +183,19 @@ public class MavenGoalReferenceResolver {
                 .stream()
                 .filter(e -> !e.getValue().isEmpty())
                 .forEach(e -> e.getValue().forEach(execution -> goals.add(toGoal(execution))));
+    }
+
+    private Lifecycle phaseToLifecycle(String phase) throws Exception {
+        Lifecycle lifecycle = defaultLifeCycles.get(phase);
+        if (lifecycle == null) {
+            throw new LifecyclePhaseNotFoundException("Unknown lifecycle phase \"" + phase
+                                                      + "\". You must specify a valid lifecycle phase" + " or a goal in the "
+                                                      + "format <plugin-prefix>:<goal> or "
+                                                      + "<plugin-group-id>:<plugin-artifact-id>[:<plugin-version>]:<goal>. "
+                                                      + "Available lifecycle phases are: "
+                                                      + defaultLifeCycles.getLifecyclePhaseList() + ".", phase);
+        }
+        return lifecycle;
     }
 
     private static MavenGoal toGoal(MojoExecution execution) {

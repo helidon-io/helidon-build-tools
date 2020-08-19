@@ -115,8 +115,8 @@ public class MavenProjectSupplier implements ProjectSupplier {
         this.plugins = requireNonNull(plugins);
         this.buildConfig = requireNonNull(buildConfig);
         this.firstBuild = new AtomicBoolean(true);
-        this.cleanBuildCmd =  List.of(CLEAN_ARG, buildConfig.fullBuildGoal(), SKIP_TESTS_ARG, ENABLE_HELIDON_CLI);
-        this.buildCmd = List.of(buildConfig.fullBuildGoal(), SKIP_TESTS_ARG, ENABLE_HELIDON_CLI);
+        this.cleanBuildCmd =  List.of(CLEAN_ARG, buildConfig.fullBuildPhase(), SKIP_TESTS_ARG, ENABLE_HELIDON_CLI);
+        this.buildCmd = List.of(buildConfig.fullBuildPhase(), SKIP_TESTS_ARG, ENABLE_HELIDON_CLI);
     }
 
     @Override
