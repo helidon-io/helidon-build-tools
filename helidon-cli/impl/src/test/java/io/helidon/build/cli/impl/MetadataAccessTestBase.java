@@ -29,12 +29,15 @@ import org.junit.jupiter.api.BeforeAll;
 /**
  * Base class for command tests that require the {@link Metadata}.
  */
-public class MetadataCommandTest extends BaseCommandTest {
+public class MetadataAccessTestBase extends CommandTestBase {
 
     private static MetadataTestServer SERVER;
     private static Metadata METADATA;
     private static UserConfig USER_CONFIG;
 
+    /**
+     * Start the metadata server.
+     */
     @BeforeAll
     public static void startMetadataAccess() {
         Config.setUserHome(TestFiles.targetDir().resolve("alice"));
@@ -43,30 +46,48 @@ public class MetadataCommandTest extends BaseCommandTest {
         METADATA = Metadata.newInstance(SERVER.url());
     }
 
+    /**
+     * Stop the metadata server.
+     */
+    @AfterAll
+    public static void stopMetadataAccess() {
+        if (SERVER != null) {
+            SERVER.stop();
+        }
+    }
+
+    /**
+     * Get the metadata URL.
+     * @return metadata URL, never {@code null}
+     */
     public String metadataUrl() {
         return SERVER.url();
     }
 
+    /**
+     * Get the metadata.
+     * @return metadata, never {@code null}
+     */
     public Metadata metadata() {
         return METADATA;
     }
 
+    /**
+     * Get the user config.
+     * @return config, never {@code null}
+     */
     public UserConfig userConfig() {
         return USER_CONFIG;
     }
 
+    /**
+     * Clear the user config cache.
+     */
     public void clearCache() {
         try {
             USER_CONFIG.clearCache();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        }
-    }
-
-    @AfterAll
-    public static void stopMetadataAccess() {
-        if (SERVER != null) {
-            SERVER.stop();
         }
     }
 }

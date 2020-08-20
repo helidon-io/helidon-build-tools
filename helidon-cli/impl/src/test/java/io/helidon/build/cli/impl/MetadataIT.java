@@ -45,7 +45,7 @@ import static org.hamcrest.Matchers.nullValue;
 /**
  * Integration test for class {@link Metadata} using {@code helidon.io} default url.
  */
-public class MetadataIT extends BaseMetadataTest {
+public class MetadataIT extends MetadataTestBase {
 
     @BeforeEach
     public void beforeEach(TestInfo info) throws IOException {

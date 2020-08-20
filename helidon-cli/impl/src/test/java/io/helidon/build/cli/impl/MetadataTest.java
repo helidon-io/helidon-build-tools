@@ -68,7 +68,7 @@ import static org.hamcrest.Matchers.nullValue;
 /**
  * Unit test for class {@link Metadata}.
  */
-public class MetadataTest extends BaseMetadataTest {
+public class MetadataTest extends MetadataTestBase {
 
     @BeforeEach
     public void beforeEach(TestInfo info) throws IOException {

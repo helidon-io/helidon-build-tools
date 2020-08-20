@@ -232,6 +232,14 @@ public class MetadataTestServer {
         mockServer.stop();
     }
 
+    /**
+     * Get the next argument or return the usage.
+     *
+     * @param currentIndex current index
+     * @param allArgs      the arguments array
+     * @return next arguments at {@code currentIndex + 1}, or the usage if the next argument is not found in
+     * {@code allArgs}
+     */
     static String nextArg(int currentIndex, String[] allArgs) {
         final int nextIndex = currentIndex + 1;
         if (nextIndex < allArgs.length) {

@@ -22,9 +22,9 @@ import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
 import static io.helidon.build.util.PomUtils.HELIDON_PLUGIN_VERSION_PROPERTY;
 
 /**
- * Class BaseCommandTest.
+ * Base class for command tests.
  */
-public class BaseCommandTest {
+public class CommandTestBase {
 
     /**
      * Overrides version under test. This property must be propagated to all

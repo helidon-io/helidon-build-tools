@@ -18,6 +18,7 @@ package io.helidon.build.cli.impl;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.build.cli.harness.Config;
@@ -35,7 +36,6 @@ import static io.helidon.build.cli.impl.TestMetadata.LATEST_FILE_NAME;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
-import static java.util.Objects.requireNonNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -44,7 +44,7 @@ import static org.hamcrest.Matchers.nullValue;
 /**
  * Base class for {@link Metadata} tests.
  */
-public class BaseMetadataTest {
+public class MetadataTestBase {
 
     protected String baseUrl;
     protected Path cacheDir;
@@ -57,7 +57,7 @@ public class BaseMetadataTest {
     /**
      * Prepare for each test.
      *
-     * @param info The test info.
+     * @param info    The test info.
      * @param baseUrl The base url to use.
      * @throws IOException If an error occurs.
      */
@@ -92,7 +92,7 @@ public class BaseMetadataTest {
      * @param baseUrl The base url.
      */
     protected void useBaseUrl(String baseUrl) {
-        this.baseUrl = requireNonNull(baseUrl);
+        this.baseUrl = Objects.requireNonNull(baseUrl);
     }
 
     /**
@@ -107,7 +107,7 @@ public class BaseMetadataTest {
     /**
      * Starts the metadata test server and client and sets the base url pointing to it.
      *
-     * @param verbose {@code true} if the server should be verbose.
+     * @param verbose       {@code true} if the server should be verbose.
      * @param latestVersion The version to return from "/latest"
      */
     protected void startMetadataTestServer(TestVersion latestVersion, boolean verbose) {
@@ -118,7 +118,7 @@ public class BaseMetadataTest {
     /**
      * Returns a new {@link Metadata} instance with the given frequency.
      *
-     * @param updateFrequency The update frequency.
+     * @param updateFrequency      The update frequency.
      * @param updateFrequencyUnits The update frequency units.
      * @return The instance.
      */
@@ -126,10 +126,24 @@ public class BaseMetadataTest {
         return Metadata.newInstance(cacheDir, baseUrl, updateFrequency, updateFrequencyUnits, true);
     }
 
+    /**
+     * Returns a new {@link Metadata} instance with the default frequency.
+     *
+     * @return The instance.
+     */
     protected Metadata newDefaultInstance() {
         return newInstance(24, TimeUnit.HOURS);
     }
 
+    /**
+     * Asserts that the very first latest metadata request does a metadata update and make assertions on the logs.
+     *
+     * @param updateFrequency      update frequency of the metadata created
+     * @param updateFrequencyUnits update frequency unit of the metadata created
+     * @param expectedVersion      expected Helidon version
+     * @param expectedEtag         expected ETAG
+     * @param latestFileExists     {@code true} if the latest file is expected to exist, {@code false} otherwise
+     */
     protected void assertInitialLatestVersionRequestPerformsUpdate(long updateFrequency,
                                                                    TimeUnit updateFrequencyUnits,
                                                                    String expectedVersion,
@@ -140,6 +154,16 @@ public class BaseMetadataTest {
                 expectedVersion, expectedEtag, latestFileExists);
     }
 
+    /**
+     * Assert that the very first metadata request does a metadata update and make assertions on the logs.
+     *
+     * @param request              runnable to runs the request
+     * @param updateFrequency      update frequency of the metadata created
+     * @param updateFrequencyUnits update frequency unit of the metadata created
+     * @param expectedVersion      expected Helidon version
+     * @param expectedEtag         expected ETAG
+     * @param latestFileExists     {@code true} if the latest file is expected to exist, {@code false} otherwise
+     */
     protected void assertInitialRequestPerformsUpdate(Runnable request,
                                                       long updateFrequency,
                                                       TimeUnit updateFrequencyUnits,
@@ -186,6 +210,12 @@ public class BaseMetadataTest {
         logged.assertLinesContainingAll(1, "updated", lastUpdatePath, "etag " + expectedEtag);
     }
 
+    /**
+     * Request the latest metadata version and perform assertions on the logs.
+     *
+     * @param expectedVersion expected Helidon version
+     * @param expectUpdate    {@code true} if a metadata update is expected, {@code false otherwise}
+     */
     protected void firstLatestVersionRequest(String expectedVersion, boolean expectUpdate) {
         try {
             String staleType = expectUpdate ? "(not found)" : "(zero delay)";
@@ -202,6 +232,12 @@ public class BaseMetadataTest {
         }
     }
 
+    /**
+     * Perform a catalog request and perform assertions on the logs.
+     *
+     * @param version      Helidon version
+     * @param expectUpdate {@code true} if a metadata update is expected, {@code false otherwise}
+     */
     protected void catalogRequest(String version, boolean expectUpdate) {
         try {
             String staleType = expectUpdate ? "(not found)" : "is false";
