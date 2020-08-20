@@ -25,6 +25,10 @@ import org.mockserver.mock.Expectation;
 import org.mockserver.model.NottableString;
 import org.mockserver.netty.MockServer;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.ServerSocket;
+
 import static io.helidon.build.cli.impl.TestMetadata.etag;
 import static io.helidon.build.cli.impl.TestMetadata.zipPath;
 import static org.mockserver.model.HttpRequest.request;
@@ -37,7 +41,6 @@ import static org.mockserver.model.NottableString.not;
 public class MetadataTestServer {
     private static final String USAGE = "Usage: [--port <port>] [--rc1 | --rc2] [--quiet] [--help]";
     private static final int DEFAULT_MAIN_PORT = 8080;
-    private static final int DEFAULT_TEST_PORT = 8088;
     private static final String VERBOSE_LEVEL = "INFO";
     private static final String NORMAL_LEVEL = "WARN";
     private static final String URL_PREFIX = "http://localhost:";
@@ -115,7 +118,7 @@ public class MetadataTestServer {
      * @param verbose Whether or not to do verbose logging.
      */
     public MetadataTestServer(TestVersion latest, boolean verbose) {
-        this(DEFAULT_TEST_PORT, latest, verbose);
+        this(freePort(), latest, verbose);
     }
 
     /**
@@ -247,4 +250,15 @@ public class MetadataTestServer {
         System.exit(exitCode);
     }
 
+    private static int freePort() {
+        ServerSocket s = null;
+        try {
+            s = new ServerSocket(0);
+            return s.getLocalPort();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        } finally {
+            s.close();
+        }
+    }
 }
