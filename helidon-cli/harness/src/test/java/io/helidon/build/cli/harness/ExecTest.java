@@ -104,7 +104,8 @@ public class ExecTest {
         CommandContext context = context();
         exec(context, "common");
         assertThat(context.exitAction().status(), is(ExitStatus.FAILURE));
-        assertThat(context.exitAction().message(), is("Missing required option: key\nSee 'test-cli common --help'"));
+        assertThat(context.exitAction().message().replaceAll("\r\n", "\n"),
+                is("Missing required option: key\nSee 'test-cli common --help'"));
     }
 
     private static final class TestCommandRegistry extends CommandRegistry {
