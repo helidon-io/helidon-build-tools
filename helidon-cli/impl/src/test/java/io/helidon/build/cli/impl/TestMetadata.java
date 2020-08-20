@@ -17,6 +17,8 @@ package io.helidon.build.cli.impl;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -87,7 +89,7 @@ public class TestMetadata {
     }
 
     static final URL TEST_CLI_DATA_URL = requireNonNull(MetadataTest.class.getClassLoader().getResource("cli-data"));
-    static final Path TEST_CLI_DATA_PATH = assertDir(Path.of(TEST_CLI_DATA_URL.getFile()));
+    static final Path TEST_CLI_DATA_PATH = assertDir(pathOf(TEST_CLI_DATA_URL));
     static final String LATEST_FILE_NAME = "latest";
     static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     static final String LAST_UPDATE_PATH = "/" + LAST_UPDATE_FILE_NAME;
@@ -109,6 +111,14 @@ public class TestMetadata {
     static final String RC1_ETAG = etag(RC1, ZIP_DATA.get(RC1));
     static final String RC2_ETAG = etag(RC2, ZIP_DATA.get(RC2));
     static final String NO_ETAG = "<no-etag>";
+
+    private static Path pathOf(URL u) {
+        try {
+            return Path.of(u.toURI());
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 
     private static Map<TestVersion, byte[]> zipData() {
         Map<TestVersion, byte[]> result = new HashMap<>();
