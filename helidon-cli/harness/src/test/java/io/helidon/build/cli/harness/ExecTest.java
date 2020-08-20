@@ -54,7 +54,7 @@ public class ExecTest {
         try {
             String str = new String(is.readAllBytes(), StandardCharsets.UTF_8);
             if (OSType.currentOS() == OSType.Windows) {
-                str = str.replaceAll("\\n", "\\r\\n");
+                str = str.replaceAll("\n", "\r\n");
             }
             return str;
         } catch (IOException ex) {
