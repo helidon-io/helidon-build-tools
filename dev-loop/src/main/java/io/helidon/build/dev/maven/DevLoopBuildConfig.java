@@ -19,8 +19,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Predicate;
 
 import io.helidon.build.dev.mode.DevLoop;
+import io.helidon.build.util.PathPatterns;
 
 import static java.util.Collections.emptyList;
 
@@ -272,6 +274,7 @@ public class DevLoopBuildConfig {
             private String excludes;
             private List<String> goals;
             private List<MavenGoal> resolvedGoals;
+            private Predicate<Path> resolvedIncludes;
 
             /**
              * Resolves the Maven goals.
@@ -280,10 +283,15 @@ public class DevLoopBuildConfig {
              * @throws Exception If an error occurs.
              */
             public void resolve(MavenGoalReferenceResolver resolver) throws Exception {
-                this.resolvedGoals = resolver.resolve(goals, new ArrayList<>());
                 if (path.isAbsolute()) {
                     throw new IllegalArgumentException(path + " must be relative");
                 }
+                this.resolvedGoals = resolver.resolve(goals, new ArrayList<>());
+                this.resolvedIncludes = PathPatterns.matches(toList(includes), toList(excludes));
+            }
+
+            private static List<String> toList(String list) {
+                return list == null ? emptyList() : Arrays.asList(list.split(","));
             }
 
             /**
@@ -296,21 +304,12 @@ public class DevLoopBuildConfig {
             }
 
             /**
-             * Returns the includes.
+             * Returns the includes and excludes as a single predicate.
              *
-             * @return The includes.
+             * @return The predicate.
              */
-            public List<String> includes() {
-                return includes == null ? emptyList() : Arrays.asList(includes.split(","));
-            }
-
-            /**
-             * Returns the excludes.
-             *
-             * @return The excludes.
-             */
-            public List<String> excludes() {
-                return excludes == null ? emptyList() : Arrays.asList(excludes.split(","));
+            public Predicate<Path> includes() {
+                return resolvedIncludes;
             }
 
             /**
