@@ -19,10 +19,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Predicate;
+import java.util.function.BiPredicate;
 
 import io.helidon.build.dev.mode.DevLoop;
-import io.helidon.build.util.PathPatterns;
+import io.helidon.build.util.PathPredicates;
 
 import static java.util.Collections.emptyList;
 
@@ -274,7 +274,7 @@ public class DevLoopBuildConfig {
             private String excludes;
             private List<String> goals;
             private List<MavenGoal> resolvedGoals;
-            private Predicate<Path> resolvedIncludes;
+            private BiPredicate<Path, Path> resolvedIncludes;
 
             /**
              * Resolves the Maven goals.
@@ -287,7 +287,7 @@ public class DevLoopBuildConfig {
                     throw new IllegalArgumentException(path + " must be relative");
                 }
                 this.resolvedGoals = resolver.resolve(goals, new ArrayList<>());
-                this.resolvedIncludes = PathPatterns.matches(toList(includes), toList(excludes));
+                this.resolvedIncludes = PathPredicates.matches(toList(includes), toList(excludes));
             }
 
             private static List<String> toList(String list) {
@@ -308,7 +308,7 @@ public class DevLoopBuildConfig {
              *
              * @return The predicate.
              */
-            public Predicate<Path> includes() {
+            public BiPredicate<Path, Path> includes() {
                 return resolvedIncludes;
             }
 

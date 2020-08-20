@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  * All patterns are matched against a <em>relative</em> path. The relative path to match against is computed by the predicate if
  * needed using the second path parameter as the root directory.
  */
-public class PathPatterns {
+public class PathPredicates {
 
     private static final String SINGLE_CHAR_WILDCARD = "?";
     private static final String MULTI_CHAR_WILDCARD = "*";
@@ -80,8 +80,8 @@ public class PathPatterns {
                 return (path, root) -> normalizePath(path, root).contains(containedPath);
             }
         } else if (pattern.endsWith(ANY_CHILD_WILDCARD_PATTERN)) {
-            final String patternPrefix = stripConstantSuffix(pattern, ANY_PARENT_WILDCARD_PATTERN);
-            if (patternPrefix.startsWith(PATH_SEPARATOR) && !containsWildcardChar(patternPrefix)) {
+            final String patternPrefix = stripConstantSuffix(pattern, DIRECTORY_WILDCARD);
+            if (!containsWildcardChar(patternPrefix)) {
 
                 // Match any path starting with a constant prefix
 
@@ -106,7 +106,7 @@ public class PathPatterns {
      */
     public static BiPredicate<Path, Path> matchesAny(List<String> patterns) {
         final List<BiPredicate<Path, Path>> predicates = patterns.stream()
-                                                                 .map(PathPatterns::toFileNamePredicate)
+                                                                 .map(PathPredicates::matches)
                                                                  .collect(Collectors.toList());
         return (path, root) -> {
             final Path relativePath = relativizePath(path, root);
@@ -227,6 +227,6 @@ public class PathPatterns {
         return pattern;
     }
 
-    private PathPatterns() {
+    private PathPredicates() {
     }
 }
