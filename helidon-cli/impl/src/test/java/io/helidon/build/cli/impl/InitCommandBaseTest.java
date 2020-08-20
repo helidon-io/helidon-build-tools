@@ -123,18 +123,20 @@ class InitCommandBaseTest extends MetadataCommandTest {
             }
         }, systemPropertyOrEnvVarSource());
         String projectNameArg = projectName;
-        projectName = userConfig().projectName(projectName, artifactId, substitutions);
+        String pName = userConfig().projectName(projectName, artifactId, substitutions);
+        projectDir = uniqueDir(targetDir, pName);
+        projectName = projectDir.getFileName().toString();
         groupId = groupId == null ? userConfig().defaultGroupId(substitutions) : groupId;
         artifactId = userConfig().artifactId(artifactId, projectNameArg, substitutions);
         packageName = packageName == null ? userConfig().defaultPackageName(substitutions) : packageName;
-        projectDir = uniqueDir(targetDir, projectName);
     }
 
     private static Path uniqueDir(Path parent, String name) {
         Path dir = parent.resolve(name);
         int i = 1;
         while (Files.exists(dir)) {
-            dir = parent.resolve(name + 1);
+            dir = parent.resolve(name + i);
+            i++;
         }
         return dir;
     }
