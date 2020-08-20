@@ -17,61 +17,83 @@ package io.helidon.build.util;
 
 import java.nio.file.Path;
 import java.util.List;
-import java.util.function.Predicate;
+import java.util.function.BiPredicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Utility methods to create {@link Predicate<Path>} instances using
- * <a href="https://confluence.atlassian.com/fisheye/pattern-matching-guide-960155410.html">Ant style path patterns></a>.
+ * Utility methods to create {@link BiPredicate <Path>} instances from
+ * <a href="http://ant.apache.org/manual/dirtasks.html#patterns>Ant path patterns></a>.
+ * All patterns are matched against a <em>relative</em> path. The relative path to match against is computed by the predicate if
+ * needed using the second path parameter as the root directory.
  */
 public class PathPatterns {
 
-    private static final String DEFAULT_PATTERN_PREFIX = "/**/";
-    private static final String DEFAULT_PATTERN_SUFFIX = "**";
-    private static final String ANY_FILE_PATTERN = "/**/*";
-    private static final String WILDCARD = "\\*";
-    private static final String SINGLE_WILDCARD = "?";
-    private static final String WILDCARD_REGEX = ".*";
-    private static final char PATH_SEP_CHAR = '/';
-    private static final char WINDOWS_SEP_CHAR = '\\';
-    private static final String PATH_SEP = "/";
+    private static final String SINGLE_CHAR_WILDCARD = "?";
+    private static final String MULTI_CHAR_WILDCARD = "*";
+    private static final char SINGLE_CHAR_WILDCARD_CHAR = '?';
+    private static final char MULTI_CHAR_WILDCARD_CHAR = '*';
+    private static final String DIRECTORY_WILDCARD = "**";
+    private static final String PATH_SEPARATOR = "/";
+    private static final char PATH_SEPARATOR_CHAR = '/';
+    private static final char WINDOWS_SEPARATOR_CHAR = '\\';
+
+    private static final String ANY_PARENT_WILDCARD_PATTERN = "**/";
+    private static final String ANY_CHILD_WILDCARD_PATTERN = "/**";
+    private static final String ANY_FILE_PATTERN = "**/*";
+    private static final String ESCAPED_MULTI_CHAR_WILDCARD = "\\*";
+    private static final char SINGLE_CHAR_WILDCARD_REGEX_CHAR = '.';
+    private static final String MULTI_CHAR_WILDCARD_REGEX = ".*";
+    private static final String SINGLE_CHAR_REGEX_WILDCARD = ".";
+    private static final String ESCAPED_DOT_LITERAL = "\\.";
 
     /**
      * Returns a predicate that matches the given pattern.
      *
      * @param pattern The pattern.
-     * @return The predicate.
+     * @return The predicate, where the first path parameter is made relative if required using second parameter as the root.
      */
-    public static Predicate<Path> matches(String pattern) {
-        if (pattern == null || pattern.isEmpty()) {
-            throw new IllegalArgumentException("pattern cannot be null or empty");
-        }
-        pattern = pattern.replace(WINDOWS_SEP_CHAR, PATH_SEP_CHAR);
-        if (pattern.startsWith(PATH_SEP)) {
-            pattern = DEFAULT_PATTERN_PREFIX + pattern;
-        }
-        if (pattern.endsWith(PATH_SEP)) {
-            pattern += DEFAULT_PATTERN_SUFFIX;
-        }
-        if (pattern.equals(ANY_FILE_PATTERN)) {
-            return path -> true;
-        } else if (pattern.startsWith(DEFAULT_PATTERN_PREFIX)) {
-            final String patternSuffix = pattern.substring(DEFAULT_PATTERN_PREFIX.length());
-            if (patternSuffix.indexOf(PATH_SEP_CHAR) < 0) {
+    public static BiPredicate<Path, Path> matches(String pattern) {
+        pattern = normalizePattern(pattern);
 
-                // OK, we have a file name pattern
+        // Handle some common cases directly
+
+        if (pattern.equals(ANY_FILE_PATTERN)) {
+
+            // Match any path
+
+            return (path, root) -> true;
+
+        } else if (pattern.startsWith(ANY_PARENT_WILDCARD_PATTERN)) {
+            final String patternSuffix = stripConstantPrefix(pattern, ANY_PARENT_WILDCARD_PATTERN);
+            if (patternSuffix.indexOf(PATH_SEPARATOR_CHAR) < 0) {
+
+                // Match a filename within any directory
 
                 return toFileNamePredicate(patternSuffix);
+
+            } else if (patternSuffix.endsWith(ANY_CHILD_WILDCARD_PATTERN)) {
+
+                // Match any path containing a constant path
+
+                final String containedPath = stripConstantSuffix(patternSuffix, ANY_CHILD_WILDCARD_PATTERN);
+                return (path, root) -> normalizePath(path, root).contains(containedPath);
+            }
+        } else if (pattern.endsWith(ANY_CHILD_WILDCARD_PATTERN)) {
+            final String patternPrefix = stripConstantSuffix(pattern, ANY_PARENT_WILDCARD_PATTERN);
+            if (patternPrefix.startsWith(PATH_SEPARATOR) && !containsWildcardChar(patternPrefix)) {
+
+                // Match any path starting with a constant prefix
+
+                return (path, root) -> normalizePath(path, root).startsWith(patternPrefix);
             }
         }
 
-        // Not a simple pattern, so use SourcePath
+        // Not a common case we handle, so use SourcePath
 
         final String[] patternSegments = SourcePath.parseSegments(pattern);
-        return path -> {
-            final String linuxPath = path.toString().replace(WINDOWS_SEP_CHAR, PATH_SEP_CHAR);
-            final String[] pathSegments = SourcePath.parseSegments(linuxPath);
+        return (path, root) -> {
+            final String[] pathSegments = SourcePath.parseSegments(normalizePath(path, root));
             return SourcePath.matches(pathSegments, patternSegments);
         };
     }
@@ -80,15 +102,16 @@ public class PathPatterns {
      * Returns a predicate that returns {@code true} if any of the given patterns match.
      *
      * @param patterns The patterns.
-     * @return The predicate.
+     * @return The predicate, where the first path parameter is made relative if required using second parameter as the root.
      */
-    public static Predicate<Path> matchesAny(List<String> patterns) {
-        final List<Predicate<Path>> predicates = patterns.stream()
-                                                         .map(PathPatterns::toFileNamePredicate)
-                                                         .collect(Collectors.toList());
-        return path -> {
-            for (Predicate<Path> predicate : predicates) {
-                if (predicate.test(path)) {
+    public static BiPredicate<Path, Path> matchesAny(List<String> patterns) {
+        final List<BiPredicate<Path, Path>> predicates = patterns.stream()
+                                                                 .map(PathPatterns::toFileNamePredicate)
+                                                                 .collect(Collectors.toList());
+        return (path, root) -> {
+            final Path relativePath = relativizePath(path, root);
+            for (BiPredicate<Path, Path> predicate : predicates) {
+                if (predicate.test(relativePath, root)) {
                     return true;
                 }
             }
@@ -102,65 +125,106 @@ public class PathPatterns {
      * @param patterns The patterns.
      * @return The predicate.
      */
-    public static Predicate<Path> matchesNone(List<String> patterns) {
-        return Predicate.not(matchesAny(patterns));
+    public static BiPredicate<Path, Path> matchesNone(List<String> patterns) {
+        if (patterns.isEmpty()) {
+            return (path, root) -> true;
+        } else {
+            final BiPredicate<Path, Path> predicate = matchesAny(patterns);
+            return (path, root) -> !predicate.test(path, root);
+        }
     }
 
     /**
      * Returns a predicate that returns {@code true} if any of the given include patterns match and
      * none of the given exclude patterns match.
      *
-     * @param includes The included patterns.
+     * @param includes The included patterns. If empty, acts as if all files are included.
      * @param excludes The excluded patterns.
-     * @return The predicate.
+     * @return The predicate, where the first path parameter is made relative if required using second parameter as the root.
      */
-    public static Predicate<Path> matches(List<String> includes, List<String> excludes) {
+    public static BiPredicate<Path, Path> matches(List<String> includes, List<String> excludes) {
+        if (includes.isEmpty()) {
+            return matchesNone(excludes);
+        }
         return matchesAny(includes).and(matchesNone(excludes));
     }
 
-    private static List<String> assertNotEmpty(List<String> patterns) {
-        if (patterns.isEmpty()) {
-            throw new IllegalArgumentException("empty patterns list");
-        }
-        return patterns;
-    }
-
-    private static Predicate<Path> toFileNamePredicate(String fileNamePattern) {
-        if (fileNamePattern.contains(SINGLE_WILDCARD)) {
-            return toFileNamePatternPredicate(fileNamePattern);
+    private static BiPredicate<Path, Path> toFileNamePredicate(String fileNamePattern) {
+        if (fileNamePattern.contains(SINGLE_CHAR_WILDCARD)) {
+            return toFileNameRegexPredicate(fileNamePattern);
         } else {
-            final String[] segments = fileNamePattern.split(WILDCARD);
+            final String[] segments = fileNamePattern.split(ESCAPED_MULTI_CHAR_WILDCARD);
             final int segmentCount = segments.length;
             if (segmentCount == 1) {
                 // **/foo.txt
                 final String fileName = segments[0];
-                return path -> path.getFileName().toString().equals(fileName);
+                return (path, root) -> path.getFileName().toString().equals(fileName);
             } else if (segmentCount == 2) {
                 final String prefix = segments[0];
                 final String suffix = segments[1];
                 if (prefix.isEmpty()) {
                     // **/*.txt
-                    return path -> path.getFileName().toString().endsWith(suffix);
+                    return (path, root) -> path.getFileName().toString().endsWith(suffix);
                 } else {
                     // **/Foo*.txt
-                    return path -> {
+                    return (path, root) -> {
                         final String name = path.getFileName().toString();
                         return name.startsWith(prefix) && name.endsWith(suffix);
                     };
                 }
             } else {
                 // more than 1 wildcard, e.g. Foo*Bar*.java, use a regex
-                return toFileNamePatternPredicate(fileNamePattern);
+                return toFileNameRegexPredicate(fileNamePattern);
             }
         }
     }
 
-    private static Predicate<Path> toFileNamePatternPredicate(String fileNamePattern) {
-        final String regex = fileNamePattern.replace(".", "\\.")
-                                            .replace(SINGLE_WILDCARD, ".")
-                                            .replace(WILDCARD, WILDCARD_REGEX);
+    private static BiPredicate<Path, Path> toFileNameRegexPredicate(String fileNamePattern) {
+        final String regex = fileNamePattern.replace(SINGLE_CHAR_REGEX_WILDCARD, ESCAPED_DOT_LITERAL)
+                                            .replace(SINGLE_CHAR_WILDCARD_CHAR, SINGLE_CHAR_WILDCARD_REGEX_CHAR)
+                                            .replace(MULTI_CHAR_WILDCARD, MULTI_CHAR_WILDCARD_REGEX);
         final Pattern pattern = Pattern.compile(regex);
-        return path -> pattern.matcher(path.getFileName().toString()).matches();
+        return (path, root) -> pattern.matcher(path.getFileName().toString()).matches();
+    }
+
+    private static boolean containsWildcardChar(String value) {
+        return value.indexOf(SINGLE_CHAR_WILDCARD_CHAR) >= 0
+               || value.indexOf(MULTI_CHAR_WILDCARD_CHAR) >= 0;
+    }
+
+    private static String stripConstantPrefix(String value, String constant) {
+        return value.substring(constant.length());
+    }
+
+    private static String stripConstantSuffix(String value, String constant) {
+        return value.substring(0, value.length() - constant.length());
+    }
+
+    private static Path relativizePath(Path path, Path root) {
+        return path.isAbsolute() ? root.relativize(path) : path;
+    }
+
+    private static String normalizePath(Path path, Path root) {
+        return normalizePathSeparators(relativizePath(path, root).toString());
+    }
+
+    private static String normalizePathSeparators(String path) {
+        return path.replace(WINDOWS_SEPARATOR_CHAR, PATH_SEPARATOR_CHAR);
+    }
+
+    private static String normalizePattern(String pattern) {
+        if (pattern == null || pattern.isEmpty()) {
+            throw new IllegalArgumentException("pattern cannot be null or empty");
+        }
+
+        // Normalize separators
+        pattern = normalizePathSeparators(pattern);
+
+        // Convert trailing slash to "/**"
+        if (pattern.endsWith(PATH_SEPARATOR)) {
+            pattern += DIRECTORY_WILDCARD;
+        }
+        return pattern;
     }
 
     private PathPatterns() {

@@ -27,11 +27,41 @@ import static org.hamcrest.Matchers.is;
  */
 class PathPatternsTest {
 
+    private static final Path ROOT = Path.of("/root");
+
     void assertMatch(String pattern, String path, boolean expected) {
-        assertThat(PathPatterns.matches(pattern).test(Path.of(path)), is(true));
+        assertThat(PathPatterns.matches(pattern).test(Path.of(path), ROOT), is(expected));
     }
 
     @Test
+    void testRelativeFileNameMatch() {
+        assertMatch("**/*", "foo.txt", true);
+        assertMatch("**/*", "bar/foo.txt", true);
+        assertMatch("*.txt", "foo.txt", true);
+        assertMatch("*.txt", "bar/foo.txt", false);
+        assertMatch("**/*.txt", "foo.txt", true);
+        assertMatch("**/*.txt", "bar/foo.txt", true);
+        assertMatch("**/f*.txt", "bar/foo.txt", true);
+        assertMatch("**/foo.txt", "bar/foo.txt", true);
+        assertMatch("**/?o*.txt", "bar/foo.txt", true);
+        assertMatch("**/?o*.txt", "bar/zoo.txt", true);
+        assertMatch("**/?o*.txt", "bar/zooms.txt", true);
+        assertMatch("**/?o*.txt", "bar/sod.txt", true);
+    }
+
+    @Test
+    void testAbsoluteRelativeFileNameMatch() {
+        assertMatch("**/*", "/root/foo.txt", true);
+        assertMatch("**/*", "/root/bar/foo.txt", true);
+        assertMatch("*.txt", "/root/foo.txt", true);
+        assertMatch("*.txt", "/root/bar/foo.txt", false);
+        assertMatch("**/*.txt", "/root/foo.txt", true);
+        assertMatch("**/*.txt", "/root/bar/foo.txt", true);
+        assertMatch("**/f*.txt", "/root/bar/foo.txt", true);
+        assertMatch("**/foo.txt", "/root/bar/foo.txt", true);
+    }
+
+    //@Test
     void smokeTest() {
 
         // See https://confluence.atlassian.com/fisheye/pattern-matching-guide-960155410.html
