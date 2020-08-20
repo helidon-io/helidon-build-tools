@@ -258,7 +258,10 @@ public class MetadataTestServer {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         } finally {
-            s.close();
+            try {
+                s.close();
+            } catch (IOException ignore) {
+            }
         }
     }
 }
