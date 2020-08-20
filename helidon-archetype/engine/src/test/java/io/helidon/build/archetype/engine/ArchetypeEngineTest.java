@@ -131,7 +131,7 @@ public class ArchetypeEngineTest extends ArchetypeBaseTest {
         assertThat(Files.exists(outputDirPath), is(true));
         assertThat(Files.walk(outputDirPath)
                 .filter(p -> !Files.isDirectory(p))
-                .map((p) -> outputDirPath.relativize(p).toString())
+                .map((p) -> outputDirPath.relativize(p).toString().replace("\\","/"))
                 .sorted()
                 .collect(Collectors.toList()),
                 is(List.of("pom.xml", "src/main/java/com/example/myproject/Main.java")));
