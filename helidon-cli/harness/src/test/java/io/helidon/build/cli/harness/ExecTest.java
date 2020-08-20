@@ -25,6 +25,7 @@ import io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 import io.helidon.build.util.Log;
 
+import io.helidon.build.util.OSType;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.util.Style.strip;
@@ -37,6 +38,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class ExecTest {
 
+    static final String EOL = OSType.currentOS() == OSType.Windows ? "\r\n" : "\n";
     static final CommandRegistry REGISTRY = new TestCommandRegistry();
     static final String CLI_USAGE = resourceAsString("cli-usage.txt");
     static final String HELP_CMD_HELP = resourceAsString("help-cmd-help.txt");
@@ -89,19 +91,19 @@ public class ExecTest {
 
     @Test
     public void testCmd() {
-        assertThat(exec("simple"), is("noop\n"));
-        assertThat(exec("simple", "--foo"), is("foo\n"));
-        assertThat(exec("simple", "--bar"), is("bar\n"));
+        assertThat(exec("simple"), is("noop" + EOL));
+        assertThat(exec("simple", "--foo"), is("foo" + EOL));
+        assertThat(exec("simple", "--bar"), is("bar" + EOL));
     }
 
     @Test
     public void testCommonOptions() {
-        assertThat(exec("common", "--key", "value"), is("value\n"));
-        assertThat(exec("common", "--foo", "--key", "value"), is(equalTo("foo: value\n")));
+        assertThat(exec("common", "--key", "value"), is("value" + EOL));
+        assertThat(exec("common", "--foo", "--key", "value"), is(equalTo("foo: value" + EOL)));
         CommandContext context = context();
         exec(context, "common");
         assertThat(context.exitAction().status(), is(ExitStatus.FAILURE));
-        assertThat(context.exitAction().message(), is("Missing required option: key\nSee 'test-cli common --help'"));
+        assertThat(context.exitAction().message(), is("Missing required option: key" + EOL + "See 'test-cli common --help'"));
     }
 
     private static final class TestCommandRegistry extends CommandRegistry {
