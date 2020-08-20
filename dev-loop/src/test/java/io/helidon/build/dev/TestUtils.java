@@ -64,7 +64,7 @@ class TestUtils {
     }
 
     static <T extends BuildMonitor> T run(BuildLoop loop) throws InterruptedException {
-        return run(loop, 30);
+        return run(loop, 120);
     }
 
     @SuppressWarnings("unchecked")
