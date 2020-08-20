@@ -45,11 +45,6 @@ public class CommandTest extends InitCommandBaseTest {
         flavor(Flavor.SE.toString());
     }
 
-    @AfterEach
-    public void afterEach() throws IOException {
-        super.afterEach();
-    }
-
     @AfterAll
     public static void afterAll() {
         MetadataCommandTest.stopMetadataAccess();
