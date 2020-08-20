@@ -59,8 +59,7 @@ class TestUtils {
             return new EmbeddedMavenExecutor(projectRoot, monitor);
         } else {
             Log.info("Using forked maven executor");
-            return new ForkedMavenExecutor(projectRoot, monitor, 60);
-
+            return new ForkedMavenExecutor(projectRoot, monitor, 5 * 60);
         }
     }
 
