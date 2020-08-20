@@ -17,6 +17,7 @@ package io.helidon.build.cli.impl;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -73,14 +74,6 @@ class InitCommandBaseTest extends MetadataCommandTest {
         archetypeName = DEFAULT_ARCHETYPE_NAME;
     }
 
-    @AfterEach
-    public void afterEach() throws IOException {
-        if (projectDir != null) {
-            FileUtils.deleteDirectory(projectDir);
-            System.out.println("Directory " + projectDir + " deleted");
-        }
-    }
-
     protected void flavor(String flavor) {
         this.flavor = flavor.toUpperCase();
     }
@@ -134,7 +127,16 @@ class InitCommandBaseTest extends MetadataCommandTest {
         groupId = groupId == null ? userConfig().defaultGroupId(substitutions) : groupId;
         artifactId = userConfig().artifactId(artifactId, projectNameArg, substitutions);
         packageName = packageName == null ? userConfig().defaultPackageName(substitutions) : packageName;
-        projectDir = targetDir.resolve(projectName);
+        projectDir = uniqueDir(targetDir, projectName);
+    }
+
+    private static Path uniqueDir(Path parent, String name) {
+        Path dir = parent.resolve(name);
+        int i = 1;
+        while (Files.exists(dir)) {
+            dir = parent.resolve(name + 1);
+        }
+        return dir;
     }
 
     protected Path projectDir() {

@@ -32,11 +32,6 @@ class InitInteractiveTest extends InitCommandBaseTest {
         input("input.txt");
     }
 
-    @AfterEach
-    public void afterEach() throws IOException {
-        super.afterEach();
-    }
-
     @Test
     public void testInitSe() throws Exception {
         flavor("SE");

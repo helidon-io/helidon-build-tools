@@ -35,11 +35,6 @@ public class InitDefaultsTest extends InitCommandBaseTest {
         buildProject(true);
     }
 
-    @AfterEach
-    public void afterEach() throws IOException {
-        super.afterEach();
-    }
-
     @Test
     public void testDefaults() throws Exception {
         generate();
