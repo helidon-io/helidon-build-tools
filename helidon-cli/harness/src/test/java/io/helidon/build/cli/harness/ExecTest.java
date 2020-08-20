@@ -52,7 +52,11 @@ public class ExecTest {
     static String resourceAsString(String name) {
         InputStream is = ExecTest.class.getResourceAsStream(name);
         try {
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            String str = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            if (OSType.currentOS() == OSType.Windows) {
+                str = str.replaceAll("\\n", "\\r\\n");
+            }
+            return str;
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
