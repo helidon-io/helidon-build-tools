@@ -67,7 +67,7 @@ public class ExecTest {
             System.setOut(stdout);
         }
         String out = new String(baos.toByteArray(), StandardCharsets.UTF_8);
-        out.replaceAll("\r\n", "\n");
+        out = out.replaceAll("\r\n", "\n");
         return strip(out);
     }
 
