@@ -15,6 +15,7 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -53,7 +54,7 @@ public class TestMetadata {
         /**
          * 2.0.0-RC2
          */
-        RC2("2.0.0-RC2") ,
+        RC2("2.0.0-RC2"),
 
         /**
          * 2.0.1
@@ -92,9 +93,9 @@ public class TestMetadata {
     static final Path TEST_CLI_DATA_PATH = assertDir(pathOf(TEST_CLI_DATA_URL));
     static final String LATEST_FILE_NAME = "latest";
     static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
-    static final String LAST_UPDATE_PATH = "/" + LAST_UPDATE_FILE_NAME;
+    static final String LAST_UPDATE_PATH = File.separator + LAST_UPDATE_FILE_NAME;
     static final String CLI_DATA_FILE_NAME = "cli-data.zip";
-    static final String CLI_DATA_PATH = "/" + CLI_DATA_FILE_NAME;
+    static final String CLI_DATA_PATH = File.separator + CLI_DATA_FILE_NAME;
     static final String PROPERTIES_FILE_NAME = "metadata.properties";
     static final String CATALOG_FILE_NAME = "archetype-catalog.xml";
     static final String HELIDON_BARE_SE = "helidon-bare-se";
@@ -133,7 +134,7 @@ public class TestMetadata {
     }
 
     static String zipPath(TestVersion version) {
-        return "/" + zipFileName(version);
+        return File.separator + zipFileName(version);
     }
 
     static byte[] zipData(TestVersion version) {
