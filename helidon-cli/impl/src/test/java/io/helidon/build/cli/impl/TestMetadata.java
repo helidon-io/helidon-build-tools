@@ -18,7 +18,6 @@ package io.helidon.build.cli.impl;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -93,9 +92,9 @@ public class TestMetadata {
     static final Path TEST_CLI_DATA_PATH = assertDir(pathOf(TEST_CLI_DATA_URL));
     static final String LATEST_FILE_NAME = "latest";
     static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
-    static final String LAST_UPDATE_PATH = File.separator + LAST_UPDATE_FILE_NAME;
+    static final String LAST_UPDATE_FILE_PATH = File.separator + LAST_UPDATE_FILE_NAME;
     static final String CLI_DATA_FILE_NAME = "cli-data.zip";
-    static final String CLI_DATA_PATH = File.separator + CLI_DATA_FILE_NAME;
+    static final String CLI_DATA_FILE_PATH = File.separator + CLI_DATA_FILE_NAME;
     static final String PROPERTIES_FILE_NAME = "metadata.properties";
     static final String CATALOG_FILE_NAME = "archetype-catalog.xml";
     static final String HELIDON_BARE_SE = "helidon-bare-se";
@@ -104,10 +103,10 @@ public class TestMetadata {
     static final String VERSION_RC2 = RC2.toString();
     static final MavenVersion MAVEN_VERSION_RC1 = toMavenVersion(VERSION_RC1);
     static final MavenVersion MAVEN_VERSION_RC2 = toMavenVersion(VERSION_RC2);
-    static final String RC1_LAST_UPDATE = VERSION_RC1 + LAST_UPDATE_PATH;
-    static final String RC2_LAST_UPDATE = VERSION_RC2 + LAST_UPDATE_PATH;
-    static final String RC1_CLI_DATA_ZIP_FILE_NAME = zipFileName(RC1);
-    static final String RC2_CLI_DATA_ZIP_FILE_NAME = zipFileName(RC2);
+    static final String RC1_LAST_UPDATE = VERSION_RC1 + LAST_UPDATE_FILE_PATH;
+    static final String RC2_LAST_UPDATE = VERSION_RC2 + LAST_UPDATE_FILE_PATH;
+    static final String RC1_CLI_DATA_ZIP_FILE_NAME = RC1 + File.separator + CLI_DATA_FILE_PATH;
+    static final String RC2_CLI_DATA_ZIP_FILE_NAME = RC2 + File.separator + CLI_DATA_FILE_PATH;
     static final Map<TestVersion, byte[]> ZIP_DATA = zipData();
     static final String RC1_ETAG = etag(RC1, ZIP_DATA.get(RC1));
     static final String RC2_ETAG = etag(RC2, ZIP_DATA.get(RC2));
@@ -124,13 +123,9 @@ public class TestMetadata {
     private static Map<TestVersion, byte[]> zipData() {
         Map<TestVersion, byte[]> result = new HashMap<>();
         for (TestVersion version : TestVersion.values()) {
-            result.put(version, readCliDataFile(zipFileName(version)));
+            result.put(version, readCliDataFile(version + "/" + CLI_DATA_FILE_NAME));
         }
         return result;
-    }
-
-    static String zipFileName(TestVersion version) {
-        return version.toString() + CLI_DATA_PATH;
     }
 
     static byte[] zipData(TestVersion version) {

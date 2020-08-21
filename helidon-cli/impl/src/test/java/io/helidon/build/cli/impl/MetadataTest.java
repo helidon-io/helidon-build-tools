@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
 import static io.helidon.build.cli.impl.Metadata.DEFAULT_UPDATE_FREQUENCY;
-import static io.helidon.build.cli.impl.TestMetadata.CLI_DATA_PATH;
+import static io.helidon.build.cli.impl.TestMetadata.CLI_DATA_FILE_PATH;
 import static io.helidon.build.cli.impl.TestMetadata.HELIDON_BARE_MP;
 import static io.helidon.build.cli.impl.TestMetadata.HELIDON_BARE_SE;
 import static io.helidon.build.cli.impl.TestMetadata.LATEST_FILE_NAME;
@@ -167,7 +167,7 @@ public class MetadataTest extends MetadataTestBase {
 
         // Now change the metadata for RC2 such that the cli version returned is newer
 
-        String updatedRc2FileName = VERSION_RC2 + "-updated" + CLI_DATA_PATH;
+        String updatedRc2FileName = VERSION_RC2 + "-updated" + CLI_DATA_FILE_PATH;
         byte[] updatedRc2 = TestMetadata.readCliDataFile(updatedRc2FileName);
         testServer.zipData(RC2, updatedRc2);
 

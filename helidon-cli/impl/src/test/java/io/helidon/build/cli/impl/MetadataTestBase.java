@@ -22,7 +22,6 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.build.cli.harness.Config;
 import io.helidon.build.cli.harness.UserConfig;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 import io.helidon.build.test.CapturingLogWriter;
@@ -176,9 +175,9 @@ public class MetadataTestBase {
         Path catalogFile = versionDir.resolve(TestMetadata.CATALOG_FILE_NAME);
         Path seJarFile = versionDir.resolve(TestMetadata.HELIDON_BARE_SE + "-" + expectedVersion + ".jar");
         Path mpJarFile = versionDir.resolve(TestMetadata.HELIDON_BARE_MP + "-" + expectedVersion + ".jar");
-        String zipPath = expectedVersion + TestMetadata.CLI_DATA_PATH;
+        String zipPath = expectedVersion + TestMetadata.CLI_DATA_FILE_PATH;
         String zipUriPath = uriPath(zipPath);
-        String lastUpdatePath = expectedVersion + TestMetadata.LAST_UPDATE_PATH;
+        String lastUpdatePath = expectedVersion + TestMetadata.LAST_UPDATE_FILE_PATH;
 
         // Check expected latest file and version directory existence
 
