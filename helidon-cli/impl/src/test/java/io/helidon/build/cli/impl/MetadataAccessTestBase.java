@@ -15,9 +15,6 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-
 import io.helidon.build.cli.harness.Config;
 import io.helidon.build.cli.harness.UserConfig;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
@@ -78,16 +75,5 @@ public class MetadataAccessTestBase extends CommandTestBase {
      */
     public UserConfig userConfig() {
         return USER_CONFIG;
-    }
-
-    /**
-     * Clear the user config cache.
-     */
-    public void clearCache() {
-        try {
-            USER_CONFIG.clearCache();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 }

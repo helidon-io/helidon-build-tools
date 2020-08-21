@@ -286,7 +286,7 @@ public interface InitCommandInvoker {
             packageName = builder.packageName == null ? config.defaultPackageName(substitutions) : builder.packageName;
             try {
                 workDir = builder.workDir == null ? Files.createTempDirectory("helidon-init") : builder.workDir;
-                projectDir = uniqueDir(workDir, projectName);
+                projectDir = TestUtils.uniqueDir(workDir, projectName);
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }
@@ -782,15 +782,5 @@ public interface InitCommandInvoker {
         public InitCommandInvoker invoke() throws Exception {
             return new InvokerImpl(this).invoke();
         }
-    }
-
-    private static Path uniqueDir(Path parent, String name) {
-        Path dir = parent.resolve(name);
-        int i = 1;
-        while (Files.exists(dir)) {
-            dir = parent.resolve(name + "-" + i);
-            i++;
-        }
-        return dir;
     }
 }

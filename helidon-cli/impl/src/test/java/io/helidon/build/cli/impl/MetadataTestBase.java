@@ -68,10 +68,8 @@ public class MetadataTestBase {
         final String testClassName = info.getTestClass().orElseThrow().getSimpleName();
         final String testName = info.getTestMethod().orElseThrow().getName();
         Log.info("%n--- %s $(bold %s) -------------------------------------------%n", testClassName, testName);
-        Config.setUserHome(TestFiles.targetDir().resolve("alice"));
-        final UserConfig userConfig = Config.userConfig();
-        userConfig.clearCache();
-        userConfig.clearPlugins();
+        Path userHome = TestUtils.uniqueDir(TestFiles.targetDir(), "alice");
+        final UserConfig userConfig = UserConfig.create(userHome);
         Plugins.reset(false);
         useBaseUrl(baseUrl);
         cacheDir = userConfig.cacheDir();
