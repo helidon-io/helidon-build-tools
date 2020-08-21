@@ -47,7 +47,7 @@ public class DescriptorConverterTest {
         ArchetypeDescriptor desc = ArchetypeDescriptor.read(getClass().getResourceAsStream("helidon-archetype.xml"));
         StringWriter sw = new StringWriter();
         DescriptorConverter.convert(desc, sw);
-        String convertedDescriptor = sw.toString();
+        String convertedDescriptor = sw.toString().replaceAll("\r\n", "\n");
         assertThat(convertedDescriptor, is (new String(Base64.getDecoder().decode(mavenArchetypeMetadata), StandardCharsets.UTF_8)));
     }
 }
