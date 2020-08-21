@@ -39,7 +39,16 @@ public class TestUtils {
      * @return String
      */
     public static String pathOf(Path path) {
-        return path.toString().replace("\\", "/");
+        return pathOf(path.toString());
+    }
+
+    /**
+     * Get the UNIX path representation (forward slashes as separator) of a given string.
+     * @param path path
+     * @return String
+     */
+    public static String pathOf(String path) {
+        return path.replace("\\", "/");
     }
 
     /**

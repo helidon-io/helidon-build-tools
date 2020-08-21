@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,8 @@ import io.helidon.build.archetype.engine.ArchetypeDescriptor;
 import io.helidon.build.archetype.engine.ArchetypeEngine;
 import io.helidon.build.util.MustacheHelper;
 
+import io.helidon.build.util.SourcePath;
+import io.helidon.build.util.TestUtils;
 import org.apache.maven.archiver.MavenArchiveConfiguration;
 import org.apache.maven.archiver.MavenArchiver;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
@@ -405,25 +408,18 @@ public class JarMojo extends AbstractMojo {
             allResources.put(resource.getDirectory(), resources);
             File resourcesDir = new File(resource.getDirectory());
             Scanner scanner = buildContext.newScanner(resourcesDir);
-            String[] includes = null;
-            if (resource.getIncludes() != null
-                    && !resource.getIncludes().isEmpty()) {
-                includes = (String[]) resource.getIncludes()
-                        .toArray(new String[resource.getIncludes().size()]);
-            }
-            scanner.setIncludes(includes);
-            String[] excludes = null;
-            if (resource.getExcludes() != null
-                    && !resource.getExcludes().isEmpty()) {
-                excludes = (String[]) resource.getExcludes()
-                        .toArray(new String[resource.getExcludes().size()]);
-            }
-            scanner.setExcludes(excludes);
             scanner.scan();
-            for (String included : scanner.getIncludedFiles()) {
-                getLog().debug("Found resource: " + included);
-                resources.add(included);
+            List<SourcePath> scannedResources = Arrays.asList(scanner.getIncludedFiles())
+                    .stream()
+                    .map(TestUtils::pathOf)
+                    .map(SourcePath::new)
+                    .collect(Collectors.toList());
+            scannedResources = SourcePath.filter(scannedResources, resource.getIncludes(), resource.getExcludes());
+            List<String> included = scannedResources.stream().map(SourcePath::asString).collect(Collectors.toList());
+            if (getLog().isDebugEnabled()) {
+                included.forEach(s -> getLog().debug("Found resource: " + s));
             }
+            resources.addAll(included);
         }
         return allResources;
     }
