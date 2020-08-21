@@ -16,6 +16,7 @@
 package io.helidon.build.cli.impl;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
@@ -45,6 +46,8 @@ import static org.hamcrest.Matchers.nullValue;
  * Base class for {@link Metadata} tests.
  */
 public class MetadataTestBase {
+
+    private static final URI CWD_URI = Path.of("").toUri();
 
     protected String baseUrl;
     protected Path cacheDir;
@@ -176,6 +179,7 @@ public class MetadataTestBase {
         Path seJarFile = versionDir.resolve(TestMetadata.HELIDON_BARE_SE + "-" + expectedVersion + ".jar");
         Path mpJarFile = versionDir.resolve(TestMetadata.HELIDON_BARE_MP + "-" + expectedVersion + ".jar");
         String zipPath = expectedVersion + TestMetadata.CLI_DATA_PATH;
+        String zipUriPath = uriPath(zipPath);
         String lastUpdatePath = expectedVersion + TestMetadata.LAST_UPDATE_PATH;
 
         // Check expected latest file and version directory existence
@@ -196,14 +200,15 @@ public class MetadataTestBase {
         assertFile(seJarFile);
         assertFile(mpJarFile);
 
+
         logged.assertLinesContainingAll(1, "unpacked", "cli-plugins-", ".jar");
         logged.assertLinesContainingAll(1, "executing", "cli-plugins-", "UpdateMetadata");
         logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
         logged.assertLinesContainingAll(1, "connecting", LATEST_FILE_NAME);
         logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "downloading", zipPath);
-        logged.assertLinesContainingAll(1, "connecting", zipPath);
-        logged.assertLinesContainingAll(1, "connected", zipPath);
+        logged.assertLinesContainingAll(1, "downloading", zipUriPath);
+        logged.assertLinesContainingAll(1, "connecting", zipUriPath);
+        logged.assertLinesContainingAll(1, "connected", zipUriPath);
 
         logged.assertLinesContainingAll(1, "unzipping", zipPath);
         logged.assertLinesContainingAll(1, "deleting", zipPath);
@@ -253,5 +258,9 @@ public class MetadataTestBase {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static String uriPath(String path) {
+        return CWD_URI.relativize(Path.of(path).toUri()).getPath();
     }
 }
