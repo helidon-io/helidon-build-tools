@@ -246,7 +246,7 @@ public class MetadataTestBase {
     protected void catalogRequest(String version, boolean expectUpdate) {
         try {
             String staleType = expectUpdate ? "(not found)" : "is false";
-            String staleFilePath = version + "/" + LAST_UPDATE_FILE_NAME;
+            String staleFilePath = version + File.separator + LAST_UPDATE_FILE_NAME;
             meta.catalogOf(version);
             logged.assertLinesContainingAll(1, "stale check", staleType, staleFilePath);
             logged.assertNoLinesContainingAll("Looking up latest Helidon version");
