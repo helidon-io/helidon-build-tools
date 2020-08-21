@@ -92,9 +92,7 @@ public class TestMetadata {
     static final Path TEST_CLI_DATA_PATH = assertDir(pathOf(TEST_CLI_DATA_URL));
     static final String LATEST_FILE_NAME = "latest";
     static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
-    static final String LAST_UPDATE_FILE_PATH = File.separator + LAST_UPDATE_FILE_NAME;
     static final String CLI_DATA_FILE_NAME = "cli-data.zip";
-    static final String CLI_DATA_FILE_PATH = File.separator + CLI_DATA_FILE_NAME;
     static final String PROPERTIES_FILE_NAME = "metadata.properties";
     static final String CATALOG_FILE_NAME = "archetype-catalog.xml";
     static final String HELIDON_BARE_SE = "helidon-bare-se";
@@ -103,10 +101,6 @@ public class TestMetadata {
     static final String VERSION_RC2 = RC2.toString();
     static final MavenVersion MAVEN_VERSION_RC1 = toMavenVersion(VERSION_RC1);
     static final MavenVersion MAVEN_VERSION_RC2 = toMavenVersion(VERSION_RC2);
-    static final String RC1_LAST_UPDATE = VERSION_RC1 + LAST_UPDATE_FILE_PATH;
-    static final String RC2_LAST_UPDATE = VERSION_RC2 + LAST_UPDATE_FILE_PATH;
-    static final String RC1_CLI_DATA_ZIP_FILE_NAME = RC1 + CLI_DATA_FILE_PATH;
-    static final String RC2_CLI_DATA_ZIP_FILE_NAME = RC2 + CLI_DATA_FILE_PATH;
     static final Map<TestVersion, byte[]> ZIP_DATA = zipData();
     static final String RC1_ETAG = etag(RC1, ZIP_DATA.get(RC1));
     static final String RC2_ETAG = etag(RC2, ZIP_DATA.get(RC2));
@@ -128,14 +122,33 @@ public class TestMetadata {
         return result;
     }
 
+    /**
+     * Get the content of {@code cli-data.zip} for a given test version.
+     *
+     * @param version test version
+     * @return content of {@code cli-data.zip}
+     */
     static byte[] zipData(TestVersion version) {
         return ZIP_DATA.get(version);
     }
 
+    /**
+     * Compute the ETAG value for a given test version and {@code cli-data.zip}.
+     *
+     * @param version test version
+     * @param data    content of {@code cli-data.zip}
+     * @return ETAG
+     */
     static String etag(TestVersion version, byte[] data) {
         return version.toString() + "-" + hash(data);
     }
 
+    /**
+     * Compute the MD5 hash for a given byte array.
+     *
+     * @param data data to compute hash of
+     * @return MD5 hash
+     */
     static String hash(byte[] data) {
         try {
             final MessageDigest md = MessageDigest.getInstance("MD5");
@@ -146,6 +159,12 @@ public class TestMetadata {
         }
     }
 
+    /**
+     * Compute the hexadecimal string for a given byte array.
+     *
+     * @param data data to represent as hexadecimal
+     * @return hexadecimal representation
+     */
     static String toHexString(byte[] data) {
         final int length = data.length;
         final StringBuilder builder = new StringBuilder(length * 2);
@@ -160,6 +179,12 @@ public class TestMetadata {
         return builder.toString();
     }
 
+    /**
+     * Read the content of the given file under {@link #TEST_CLI_DATA_PATH}.
+     *
+     * @param file local file path of the file to read
+     * @return byte array
+     */
     static byte[] readCliDataFile(String file) {
         try {
             return Files.readAllBytes(TEST_CLI_DATA_PATH.resolve(file));

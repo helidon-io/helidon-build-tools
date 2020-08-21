@@ -15,6 +15,7 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -177,9 +178,9 @@ public class MetadataTestBase {
         Path catalogFile = versionDir.resolve(TestMetadata.CATALOG_FILE_NAME);
         Path seJarFile = versionDir.resolve(TestMetadata.HELIDON_BARE_SE + "-" + expectedVersion + ".jar");
         Path mpJarFile = versionDir.resolve(TestMetadata.HELIDON_BARE_MP + "-" + expectedVersion + ".jar");
-        String zipPath = expectedVersion + TestMetadata.CLI_DATA_FILE_PATH;
+        String zipPath = expectedVersion + File.separator + TestMetadata.CLI_DATA_FILE_NAME;
         String zipUriPath = uriPath(zipPath);
-        String lastUpdatePath = expectedVersion + TestMetadata.LAST_UPDATE_FILE_PATH;
+        String lastUpdatePath = expectedVersion + File.separator + LAST_UPDATE_FILE_NAME;
 
         // Check expected latest file and version directory existence
 
