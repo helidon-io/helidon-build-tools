@@ -15,6 +15,10 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.ServerSocket;
+
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 import io.helidon.build.util.Log;
 
@@ -24,10 +28,6 @@ import org.mockserver.integration.ClientAndServer;
 import org.mockserver.mock.Expectation;
 import org.mockserver.model.NottableString;
 import org.mockserver.netty.MockServer;
-
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.net.ServerSocket;
 
 import static io.helidon.build.cli.impl.TestMetadata.CLI_DATA_FILE_NAME;
 import static io.helidon.build.cli.impl.TestMetadata.etag;

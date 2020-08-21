@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.build.cli.harness.Config;
 import io.helidon.build.cli.harness.UserConfig;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 import io.helidon.build.test.CapturingLogWriter;
@@ -69,6 +70,7 @@ public class MetadataTestBase {
         Log.info("%n--- %s $(bold %s) -------------------------------------------%n", testClassName, testName);
         Path userHome = TestUtils.uniqueDir(TestFiles.targetDir(), "alice");
         final UserConfig userConfig = UserConfig.create(userHome);
+        Config.userConfig(userConfig);
         Plugins.reset(false);
         useBaseUrl(baseUrl);
         cacheDir = userConfig.cacheDir();
