@@ -105,8 +105,8 @@ public class TestMetadata {
     static final MavenVersion MAVEN_VERSION_RC2 = toMavenVersion(VERSION_RC2);
     static final String RC1_LAST_UPDATE = VERSION_RC1 + LAST_UPDATE_FILE_PATH;
     static final String RC2_LAST_UPDATE = VERSION_RC2 + LAST_UPDATE_FILE_PATH;
-    static final String RC1_CLI_DATA_ZIP_FILE_NAME = RC1 + File.separator + CLI_DATA_FILE_PATH;
-    static final String RC2_CLI_DATA_ZIP_FILE_NAME = RC2 + File.separator + CLI_DATA_FILE_PATH;
+    static final String RC1_CLI_DATA_ZIP_FILE_NAME = RC1 + CLI_DATA_FILE_PATH;
+    static final String RC2_CLI_DATA_ZIP_FILE_NAME = RC2 + CLI_DATA_FILE_PATH;
     static final Map<TestVersion, byte[]> ZIP_DATA = zipData();
     static final String RC1_ETAG = etag(RC1, ZIP_DATA.get(RC1));
     static final String RC2_ETAG = etag(RC2, ZIP_DATA.get(RC2));
