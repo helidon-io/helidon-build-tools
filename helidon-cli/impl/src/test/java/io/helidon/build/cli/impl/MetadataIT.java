@@ -16,7 +16,6 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -51,7 +50,7 @@ public class MetadataIT extends MetadataTestBase {
     static final String RC2_LAST_UPDATE = VERSION_RC2 + File.separator + LAST_UPDATE_FILE_NAME;
 
     @BeforeEach
-    public void beforeEach(TestInfo info) throws IOException {
+    public void beforeEach(TestInfo info) {
         prepareEach(info, Metadata.DEFAULT_URL);
     }
 

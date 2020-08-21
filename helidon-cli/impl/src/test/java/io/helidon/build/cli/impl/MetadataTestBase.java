@@ -38,6 +38,7 @@ import static io.helidon.build.cli.impl.TestMetadata.LATEST_FILE_NAME;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
+import static io.helidon.build.util.TestUtils.uniqueDir;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -63,15 +64,15 @@ public class MetadataTestBase {
      *
      * @param info    The test info.
      * @param baseUrl The base url to use.
-     * @throws IOException If an error occurs.
      */
-    protected void prepareEach(TestInfo info, String baseUrl) throws IOException {
-        final String testClassName = info.getTestClass().orElseThrow().getSimpleName();
-        final String testName = info.getTestMethod().orElseThrow().getName();
+    protected void prepareEach(TestInfo info, String baseUrl) {
+        String testClassName = info.getTestClass().orElseThrow().getSimpleName();
+        String testName = info.getTestMethod().orElseThrow().getName();
         Log.info("%n--- %s $(bold %s) -------------------------------------------%n", testClassName, testName);
-        Path userHome = TestUtils.uniqueDir(TestFiles.targetDir(), "alice");
-        final UserConfig userConfig = UserConfig.create(userHome);
-        Config.userConfig(userConfig);
+        Path userHome = uniqueDir(TestFiles.targetDir(), "alice");
+        Config.setUserHome(userHome);
+        UserConfig userConfig = UserConfig.create(userHome);
+        Config.setUserConfig(userConfig);
         Plugins.reset(false);
         useBaseUrl(baseUrl);
         cacheDir = userConfig.cacheDir();
@@ -179,7 +180,7 @@ public class MetadataTestBase {
         Path seJarFile = versionDir.resolve(TestMetadata.HELIDON_BARE_SE + "-" + expectedVersion + ".jar");
         Path mpJarFile = versionDir.resolve(TestMetadata.HELIDON_BARE_MP + "-" + expectedVersion + ".jar");
         String zipPath = expectedVersion + File.separator + TestMetadata.CLI_DATA_FILE_NAME;
-        String zipUriPath = uriPath(zipPath);
+        String zipUriPath = expectedVersion + "/" + TestMetadata.CLI_DATA_FILE_NAME;
         String lastUpdatePath = expectedVersion + File.separator + LAST_UPDATE_FILE_NAME;
 
         // Check expected latest file and version directory existence
@@ -258,9 +259,5 @@ public class MetadataTestBase {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static String uriPath(String path) {
-        return CWD_URI.relativize(Path.of(path).toUri()).getPath();
     }
 }

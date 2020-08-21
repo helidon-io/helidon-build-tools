@@ -29,7 +29,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARCHETYPE_NAME;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_FLAVOR;
@@ -39,6 +38,7 @@ import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.PomUtils.readPomModel;
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 import static io.helidon.build.util.SubstitutionVariables.systemPropertyOrEnvVarSource;
+import static io.helidon.build.util.TestUtils.uniqueDir;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -286,7 +286,7 @@ public interface InitCommandInvoker {
             packageName = builder.packageName == null ? config.defaultPackageName(substitutions) : builder.packageName;
             try {
                 workDir = builder.workDir == null ? Files.createTempDirectory("helidon-init") : builder.workDir;
-                projectDir = TestUtils.uniqueDir(workDir, projectName);
+                projectDir = uniqueDir(workDir, projectName);
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }

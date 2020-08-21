@@ -141,22 +141,4 @@ class TestUtils {
             assertTrue(Files.exists(path));
         }
     }
-
-    /**
-     * Create a {@link Path} for a new directory under the given parent directory that does not already exist.
-     * Appends {@code -$i} to the given name until a non existing entry is found.
-     *
-     * @param parentDirectory parent directory where to create the new directory
-     * @param name   the name of the entry to create
-     * @return Path
-     */
-    static Path uniqueDir(Path parentDirectory, String name) {
-        Path dir = parentDirectory.resolve(name);
-        int i = 1;
-        while (Files.exists(dir)) {
-            dir = parentDirectory.resolve(name + "-" + i);
-            i++;
-        }
-        return dir;
-    }
 }

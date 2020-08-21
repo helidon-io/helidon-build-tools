@@ -56,7 +56,7 @@ public class InitCommandSimpleTest extends InitCommandTestBase {
     @Test
     @Order(3)
     public void testInfo() throws Exception {
-        Config.userConfig().clearPlugins();
+        Config.setUserConfig().clearPlugins();
         assertThat(INVOKER_REF.get().invokeInfoCommand().output(), containsString("plugin"));
     }
 

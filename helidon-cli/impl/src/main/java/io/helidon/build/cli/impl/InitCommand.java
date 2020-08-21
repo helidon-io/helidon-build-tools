@@ -36,7 +36,6 @@ import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
 import io.helidon.build.cli.harness.UserConfig;
 import io.helidon.build.cli.impl.FlowNodeControllers.FlowNodeController;
-import io.helidon.build.util.Constants;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.Requirements;
@@ -128,7 +127,7 @@ public final class InitCommand extends BaseCommand {
         this.packageName = packageName;
         this.projectName = projectName;
         this.metadata = metadata();
-        this.config = Config.userConfig();
+        this.config = Config.setUserConfig();
     }
 
     @Override

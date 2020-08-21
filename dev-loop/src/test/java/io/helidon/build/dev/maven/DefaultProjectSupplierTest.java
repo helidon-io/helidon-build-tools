@@ -32,6 +32,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.util.TestUtils.pathOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.greaterThan;
@@ -95,9 +96,5 @@ class DefaultProjectSupplierTest {
 
         assertThat(project.classpath().size(), is(greaterThan(2)));
         assertThat(project.mainClassName(), is("io.helidon.examples.se.Main"));
-    }
-
-    private static String pathOf(Path p) {
-        return p.toString().replace("\\", "/");
     }
 }

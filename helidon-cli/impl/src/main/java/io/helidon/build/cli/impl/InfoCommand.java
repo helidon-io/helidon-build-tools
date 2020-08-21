@@ -32,7 +32,7 @@ import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.TimeUtils;
 
-import static io.helidon.build.cli.harness.Config.userConfig;
+import static io.helidon.build.cli.harness.Config.setUserConfig;
 import static io.helidon.build.cli.impl.VersionCommand.addProjectProperty;
 import static io.helidon.build.util.ProjectConfig.HELIDON_VERSION;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
@@ -70,7 +70,7 @@ public final class InfoCommand extends BaseCommand {
         // User config
 
         Map<Object, Object> userConfigProps = new LinkedHashMap<>();
-        Map<String, String> properties = userConfig().properties();
+        Map<String, String> properties = setUserConfig().properties();
         properties.keySet().stream().sorted().forEach(key -> userConfigProps.put(key, properties.get(key)));
 
         // Build properties

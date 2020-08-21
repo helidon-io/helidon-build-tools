@@ -57,7 +57,7 @@ public class Plugins {
         if (pluginJar == null) {
             final String cliVersion = Config.buildProperties().buildRevision();
             final String jarName = JAR_NAME_PREFIX + cliVersion + JAR_NAME_SUFFIX;
-            pluginJar = Config.userConfig().pluginsDir().resolve(jarName);
+            pluginJar = Config.setUserConfig().pluginsDir().resolve(jarName);
             if (!Files.exists(pluginJar)) {
                 final String resourcePath = JAR_RESOURCE_DIR + "/" + jarName;
                 final ClassLoader loader = Plugins.class.getClassLoader();

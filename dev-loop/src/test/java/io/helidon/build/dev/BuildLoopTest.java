@@ -38,6 +38,7 @@ import static io.helidon.build.test.TestFiles.helidonSeProjectCopy;
 import static io.helidon.build.util.FileUtils.touch;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.lastModifiedTime;
+import static io.helidon.build.util.TestUtils.pathOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
@@ -478,9 +479,5 @@ class BuildLoopTest {
         Log.info("sourceChangesSince: %d ms", sourceChangesSinceTotal);
 
         assertThat(sourceChangesSinceTotal, is(lessThan(changedSinceTotal)));
-    }
-
-    private static String pathOf(Path p) {
-        return p.toString().replace("\\", "/");
     }
 }
