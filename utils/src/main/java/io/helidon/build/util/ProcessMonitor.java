@@ -376,6 +376,7 @@ public final class ProcessMonitor {
      * @return The output. Empty if capture not enabled.
      */
     public List<String> output() {
+        assertStarted();
         return capturedOutput;
     }
 
@@ -385,6 +386,7 @@ public final class ProcessMonitor {
      * @return The output. Empty if capture not enabled.
      */
     public List<String> stdOut() {
+        assertStarted();
         return capturedStdOut;
     }
 
@@ -394,6 +396,7 @@ public final class ProcessMonitor {
      * @return The output. Empty if capture not enabled.
      */
     public List<String> stdErr() {
+        assertStarted();
         return capturedStdErr;
     }
 
