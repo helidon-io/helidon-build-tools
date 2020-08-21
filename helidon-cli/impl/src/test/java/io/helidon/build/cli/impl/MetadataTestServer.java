@@ -30,7 +30,7 @@ import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 
 import static io.helidon.build.cli.impl.TestMetadata.etag;
-import static io.helidon.build.cli.impl.TestMetadata.zipPath;
+import static io.helidon.build.cli.impl.TestMetadata.zipFileName;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import static org.mockserver.model.NottableString.not;
@@ -55,19 +55,22 @@ public class MetadataTestServer {
     private static Expectation zipRequestWithoutEtag(TestVersion version) {
         return new Expectation(request().withMethod("GET")
                                         .withHeader(not(IF_NONE_MATCH_HEADER))
-                                        .withPath(zipPath(version))).withId(version + "-zip-without-etag");
+                                        .withPath("/" + zipFileName(version)))
+                                        .withId(version + "-zip-without-etag");
     }
 
     private static Expectation zipRequestWithoutMatchingEtag(TestVersion version, byte[] data) {
         return new Expectation(request().withMethod("GET")
                                         .withHeader(NottableString.string(IF_NONE_MATCH_HEADER), not(etag(version, data)))
-                                        .withPath(zipPath(version))).withId(version + "-zip-without-matching-etag");
+                                        .withPath("/" + zipFileName(version)))
+                                        .withId(version + "-zip-without-matching-etag");
     }
 
     private static Expectation zipRequestWithMatchingEtag(TestVersion version, byte[] data) {
         return new Expectation(request().withMethod("GET")
                                         .withHeader(IF_NONE_MATCH_HEADER, etag(version, data))
-                                        .withPath(zipPath(version))).withId(version + "-zip-with-matching-etag");
+                                        .withPath("/" + zipFileName(version)))
+                                        .withId(version + "-zip-with-matching-etag");
     }
 
     private final int port;

@@ -133,10 +133,6 @@ public class TestMetadata {
         return version.toString() + CLI_DATA_PATH;
     }
 
-    static String zipPath(TestVersion version) {
-        return File.separator + zipFileName(version);
-    }
-
     static byte[] zipData(TestVersion version) {
         return ZIP_DATA.get(version);
     }
