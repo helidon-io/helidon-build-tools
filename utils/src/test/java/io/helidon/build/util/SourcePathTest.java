@@ -54,7 +54,7 @@ public class SourcePathTest {
     }
 
     @Test
-    public void testSingleRouteMatching(){
+    public void testSinglePathMatching(){
         SourcePath path = new SourcePath("abc/def/ghi/index.html");
         assertEquals(false, path.matches(""), "empty pattern");
         assertEquals(true, path.matches("abc/def/ghi/index.html"), "identical pattern");
@@ -95,7 +95,7 @@ public class SourcePathTest {
     }
 
     @Test
-    public void testRoutesFiltering(){
+    public void testFiltering(){
         List<SourcePath> paths = new ArrayList<>();
         paths.add(new SourcePath("abc/def/ghi/index.html"));
         paths.add(new SourcePath("abc/def/ghi/foo.html"));
@@ -114,48 +114,48 @@ public class SourcePathTest {
 
         filtered = SourcePath.filter(paths, null, null);
         assertNotNull(filtered);
-        assertEquals(0, filtered.size(), "filetered list should be empty");
+        assertEquals(paths.size(), filtered.size(), "filtered list should be equal to original");
 
         filtered = SourcePath.filter(paths, List.of("**/*"), null);
         assertNotNull(filtered);
         assertEquals(paths.size(), filtered.size(),
-                "filetered list is:\n\n" + printPaths(filtered)
+                "filtered list is:\n\n" + printPaths(filtered)
                 + "\n\ninstead of: \n" + printPaths(paths));
 
         filtered = SourcePath.filter(paths, List.of("**/*.html"), null);
         assertNotNull(filtered);
         assertEquals(paths.size(), filtered.size(),
-                "filetered list is:\n\n" + printPaths(filtered)
+                "filtered list is:\n\n" + printPaths(filtered)
                 + "\n\ninstead of: \n" + printPaths(paths));
 
         filtered = SourcePath.filter(paths, List.of("*.html"), null);
         assertNotNull(filtered);
         assertEquals(3, filtered.size(),
-                "filetered list is:\n\n" + printPaths(filtered)
+                "filtered list is:\n\n" + printPaths(filtered)
                 + "\n\ninstead of: \n" + printPaths(paths));
 
         filtered = SourcePath.filter(paths, List.of("abc/def/ghi/*.html"), null);
         assertNotNull(filtered);
         assertEquals(3, filtered.size(),
-                "filetered list is:\n\n" + printPaths(filtered)
+                "filtered list is:\n\n" + printPaths(filtered)
                 + "\n\ninstead of: \n" + printPaths(paths));
 
         filtered = SourcePath.filter(paths, List.of("abc/**"), null);
         assertNotNull(filtered);
         assertEquals(9, filtered.size(),
-                "filetered list is:\n\n" + printPaths(filtered)
+                "filtered list is:\n\n" + printPaths(filtered)
                 + "\n\ninstead of: \n" + printPaths(paths));
 
         filtered = SourcePath.filter(paths, List.of("abc/**"), List.of("*/def/ghi/*"));
         assertNotNull(filtered);
         assertEquals(6, filtered.size(),
-                "filetered list is:\n\n" + printPaths(filtered)
+                "filtered list is:\n\n" + printPaths(filtered)
                 + "\n\ninstead of: \n\n" + printPaths(paths));
 
         filtered = SourcePath.filter(paths, List.of("**"), List.of("*/def/**"));
         assertNotNull(filtered);
         assertEquals(6, filtered.size(),
-                "filetered list is:\n\n" + printPaths(filtered)
+                "filtered list is:\n\n" + printPaths(filtered)
                 + "\n\ninstead of: \n" + printPaths(paths));
     }
 

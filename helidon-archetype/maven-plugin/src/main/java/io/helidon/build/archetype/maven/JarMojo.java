@@ -24,8 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -33,13 +31,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-
 import io.helidon.build.archetype.engine.ArchetypeDescriptor;
 import io.helidon.build.archetype.engine.ArchetypeEngine;
 import io.helidon.build.util.MustacheHelper;
 
 import io.helidon.build.util.SourcePath;
-import io.helidon.build.util.TestUtils;
 import org.apache.maven.archiver.MavenArchiveConfiguration;
 import org.apache.maven.archiver.MavenArchiver;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
@@ -59,8 +55,6 @@ import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.ArchiverException;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
 import org.codehaus.plexus.archiver.jar.ManifestException;
-import org.codehaus.plexus.util.Scanner;
-import org.sonatype.plexus.build.incremental.BuildContext;
 
 import static io.helidon.build.archetype.maven.MojoHelper.PLUGIN_GROUP_ID;
 import static io.helidon.build.archetype.maven.MojoHelper.PLUGIN_VERSION;
@@ -101,12 +95,6 @@ public class JarMojo extends AbstractMojo {
     private static final Map<String, String> POST_SCRIPT_INCLUDES = Map.of(
             "aetherScript", "groovy/Aether.groovy",
             "engineScript", "groovy/HelidonEngine.groovy");
-
-    /**
-     * Plexus build context used to get the scanner for scanning resources.
-     */
-    @Component
-    private BuildContext buildContext;
 
     /**
      * The Maven project this mojo executes on.
@@ -396,7 +384,7 @@ public class JarMojo extends AbstractMojo {
     }
 
     /**
-     * Scan for project resources and produce a comma separated list of include resources.
+     * Scan for project resources and produce a comma separated list of included resources.
      *
      * @return list of resources
      */
@@ -404,22 +392,14 @@ public class JarMojo extends AbstractMojo {
         getLog().debug("Scanning project resources");
         Map<String, List<String>> allResources = new HashMap<>();
         for (Resource resource : project.getResources()) {
-            List<String> resources = new ArrayList<>();
-            allResources.put(resource.getDirectory(), resources);
-            File resourcesDir = new File(resource.getDirectory());
-            Scanner scanner = buildContext.newScanner(resourcesDir);
-            scanner.scan();
-            List<SourcePath> scannedResources = Arrays.asList(scanner.getIncludedFiles())
-                    .stream()
-                    .map(TestUtils::pathOf)
-                    .map(SourcePath::new)
+            List<String> resources = SourcePath.scan(new File(resource.getDirectory())).stream()
+                    .filter(p -> p.matches(resource.getIncludes(), resource.getExcludes()))
+                    .map(p -> p.asString(false))
                     .collect(Collectors.toList());
-            scannedResources = SourcePath.filter(scannedResources, resource.getIncludes(), resource.getExcludes());
-            List<String> included = scannedResources.stream().map(SourcePath::asString).collect(Collectors.toList());
             if (getLog().isDebugEnabled()) {
-                included.forEach(s -> getLog().debug("Found resource: " + s));
+                resources.forEach(r -> getLog().debug("Found resource: " + r));
             }
-            resources.addAll(included);
+            allResources.put(resource.getDirectory(), resources);
         }
         return allResources;
     }
