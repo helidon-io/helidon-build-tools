@@ -38,7 +38,7 @@ public class MetadataAccessTestBase extends CommandTestBase {
     @BeforeAll
     public static void startMetadataAccess() {
         Config.setUserHome(TestFiles.targetDir().resolve("alice"));
-        USER_CONFIG = Config.setUserConfig();
+        USER_CONFIG = Config.userConfig();
         SERVER = new MetadataTestServer(TestVersion.RC1, false).start();
         METADATA = Metadata.newInstance(SERVER.url());
     }

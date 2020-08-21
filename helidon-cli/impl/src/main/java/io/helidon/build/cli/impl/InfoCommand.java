@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
+import io.helidon.build.cli.harness.Config;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.util.ConfigProperties;
 import io.helidon.build.util.Log;
@@ -32,7 +33,6 @@ import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.TimeUtils;
 
-import static io.helidon.build.cli.harness.Config.setUserConfig;
 import static io.helidon.build.cli.impl.VersionCommand.addProjectProperty;
 import static io.helidon.build.util.ProjectConfig.HELIDON_VERSION;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
@@ -70,7 +70,7 @@ public final class InfoCommand extends BaseCommand {
         // User config
 
         Map<Object, Object> userConfigProps = new LinkedHashMap<>();
-        Map<String, String> properties = setUserConfig().properties();
+        Map<String, String> properties = Config.userConfig().properties();
         properties.keySet().stream().sorted().forEach(key -> userConfigProps.put(key, properties.get(key)));
 
         // Build properties

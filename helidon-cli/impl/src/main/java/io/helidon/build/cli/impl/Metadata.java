@@ -118,7 +118,7 @@ public class Metadata {
      * @return The instance.
      */
     public static Metadata newInstance(String url, long updateFrequencyHours) {
-        final Path cacheDir = Config.setUserConfig().cacheDir();
+        final Path cacheDir = Config.userConfig().cacheDir();
         final boolean debug = Log.isDebug();
         return newInstance(cacheDir, url, updateFrequencyHours, DEFAULT_UPDATE_FREQUENCY_UNITS, debug);
     }

@@ -58,7 +58,7 @@ public class Config {
      *
      * @return The instance.
      */
-    public static UserConfig setUserConfig() {
+    public static UserConfig userConfig() {
         UserConfig config = USER_CONFIG.get();
         if (config == null) {
             if (USER_HOME_DIR.get() == null) {

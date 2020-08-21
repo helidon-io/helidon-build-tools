@@ -127,7 +127,7 @@ public final class InitCommand extends BaseCommand {
         this.packageName = packageName;
         this.projectName = projectName;
         this.metadata = metadata();
-        this.config = Config.setUserConfig();
+        this.config = Config.userConfig();
     }
 
     @Override
