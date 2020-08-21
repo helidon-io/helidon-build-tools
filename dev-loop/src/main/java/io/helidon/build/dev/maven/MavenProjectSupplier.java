@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 import io.helidon.build.dev.BuildExecutor;
@@ -32,18 +33,14 @@ import io.helidon.build.dev.BuildRootType;
 import io.helidon.build.dev.BuildStep;
 import io.helidon.build.dev.BuildType;
 import io.helidon.build.dev.DirectoryType;
-import io.helidon.build.dev.FileType;
 import io.helidon.build.dev.Project;
 import io.helidon.build.dev.Project.Builder;
 import io.helidon.build.dev.ProjectDirectory;
 import io.helidon.build.dev.ProjectSupplier;
 import io.helidon.build.util.FileUtils;
+import io.helidon.build.util.PathPredicates;
 import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.Requirements;
-
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.BuildPluginManager;
-import org.apache.maven.project.MavenProject;
 
 import static io.helidon.build.dev.BuildComponent.createBuildComponent;
 import static io.helidon.build.dev.BuildFile.createBuildFile;
@@ -55,6 +52,7 @@ import static io.helidon.build.util.FileUtils.ChangeDetectionType.LATEST;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
+import static io.helidon.build.util.PathPredicates.matchesJavaClass;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DEPENDENCIES;
 import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
@@ -64,7 +62,6 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCE_EXCLUDES;
 import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCE_INCLUDES;
 import static io.helidon.build.util.ProjectConfig.projectConfig;
 import static java.util.Collections.emptyList;
-import static java.util.Objects.requireNonNull;
 
 /**
  * A {@code ProjectSupplier} for Maven projects.
@@ -88,10 +85,6 @@ public class MavenProjectSupplier implements ProjectSupplier {
         return !name.equals(TARGET_DIR_NAME);
     };
 
-    private final MavenProject project;
-    private final MavenSession session;
-    private final BuildPluginManager plugins;
-    private final DevLoopBuildConfig buildConfig;
     private final List<String> cleanBuildCmd;
     private final List<String> buildCmd;
     private final AtomicBoolean firstBuild;
@@ -100,22 +93,12 @@ public class MavenProjectSupplier implements ProjectSupplier {
 
     /**
      * Constructor.
-     *  @param project The maven project.
-     * @param session The maven session.
-     * @param plugins The maven plugin manager.
+     *
      * @param buildConfig The build configuration.
      */
-    public MavenProjectSupplier(MavenProject project,
-                                MavenSession session,
-                                BuildPluginManager plugins,
-                                DevLoopBuildConfig buildConfig) {
-        MavenProjectConfigCollector.assertSupportedProject(session);
-        this.project = project;
-        this.session = requireNonNull(session);
-        this.plugins = requireNonNull(plugins);
-        this.buildConfig = requireNonNull(buildConfig);
+    public MavenProjectSupplier(DevLoopBuildConfig buildConfig) {
         this.firstBuild = new AtomicBoolean(true);
-        this.cleanBuildCmd =  List.of(CLEAN_ARG, buildConfig.fullBuildPhase(), SKIP_TESTS_ARG, ENABLE_HELIDON_CLI);
+        this.cleanBuildCmd = List.of(CLEAN_ARG, buildConfig.fullBuildPhase(), SKIP_TESTS_ARG, ENABLE_HELIDON_CLI);
         this.buildCmd = List.of(buildConfig.fullBuildPhase(), SKIP_TESTS_ARG, ENABLE_HELIDON_CLI);
     }
 
@@ -182,7 +165,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
         executor.execute(command);
         config = projectConfig(executor.projectDirectory());
         Requirements.require(config.lastSuccessfulBuildTime() > 0,
-                "$(cyan helidon-maven-plugin) must be configured as an extension");
+                             "$(cyan helidon-maven-plugin) must be configured as an extension");
     }
 
     private boolean canSkipBuild(Path projectDir) {
@@ -208,7 +191,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
 
         // POM file
         final Path pomFile = assertFile(projectDir.resolve(POM_FILE));
-        builder.buildFile(createBuildFile(root, FileType.MavenPom, pomFile));
+        builder.buildFile(createBuildFile(root, PathPredicates.matchesMavenPom(), pomFile));
 
         // Dependencies
         final List<String> dependencies = config.propertyAsList(PROJECT_DEPENDENCIES);
@@ -229,9 +212,11 @@ public class MavenProjectSupplier implements ProjectSupplier {
             for (String classesDir : classesDirs) {
                 Path sourceDirPath = assertDir(projectDir.resolve(sourceDir));
                 Path classesDirPath = ensureDirectory(projectDir.resolve(classesDir));
-                // TODO sourceIncludes / sourceExcludes
-                BuildRoot sources = createBuildRoot(BuildRootType.JavaSources, sourceDirPath);
-                BuildRoot classes = createBuildRoot(BuildRootType.JavaClasses, classesDirPath);
+                BiPredicate<Path, Path> includes = PathPredicates.matches(sourceIncludes, sourceExcludes);
+                BuildRootType sourceRootType = BuildRootType.create(DirectoryType.JavaSources, includes);
+                BuildRootType classesRootType = BuildRootType.create(DirectoryType.JavaClasses, matchesJavaClass());
+                BuildRoot sources = createBuildRoot(sourceRootType, sourceDirPath);
+                BuildRoot classes = createBuildRoot(classesRootType, classesDirPath);
                 builder.component(createBuildComponent(sources, classes, compileStep()));
             }
         }
@@ -240,14 +225,15 @@ public class MavenProjectSupplier implements ProjectSupplier {
             for (String classesDir : classesDirs) {
                 String[] dir = resourcesDirEntry.split(ProjectConfig.RESOURCE_INCLUDE_EXCLUDE_SEPARATOR);
                 String resourcesDir = dir[0];
-                List<String> includes = includeExcludeList(dir, 1);
-                List<String> excludes = includeExcludeList(dir, 2);
-                // TODO includes / excludes!
+                List<String> includePatterns = includeExcludeList(dir, 1);
+                List<String> excludePatterns = includeExcludeList(dir, 2);
+                BiPredicate<Path, Path> includes = PathPredicates.matches(includePatterns, excludePatterns);
                 Path resourcesDirPath = projectDir.resolve(resourcesDir);
                 if (Files.exists(resourcesDirPath)) {
                     Path classesDirPath = ensureDirectory(projectDir.resolve(classesDir));
-                    BuildRoot sources = createBuildRoot(BuildRootType.Resources, resourcesDirPath);
-                    BuildRoot classes = createBuildRoot(BuildRootType.Resources, classesDirPath);
+                    BuildRootType buildRootType = BuildRootType.create(DirectoryType.Resources, includes);
+                    BuildRoot sources = createBuildRoot(buildRootType, resourcesDirPath);
+                    BuildRoot classes = createBuildRoot(buildRootType, classesDirPath);
                     builder.component(createBuildComponent(sources, classes, resourcesStep()));
                 }
             }

@@ -15,10 +15,18 @@
  */
 package io.helidon.build.dev.maven;
 
+import io.helidon.build.util.Log;
+
+import org.apache.maven.model.Plugin;
+import org.apache.maven.model.PluginExecution;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
+import org.twdata.maven.mojoexecutor.MojoExecutor;
+import org.twdata.maven.mojoexecutor.MojoExecutor.ExecutionEnvironment;
+
 import static java.util.Objects.requireNonNull;
 
 /**
- * An executable maven goal.
+ * An executable maven goal. Executions occur in process, in the context of the current project environment.
  */
 public class MavenGoal {
     private static final String DEFAULT_EXECUTION_ID_PREFIX = "default-";
@@ -26,18 +34,9 @@ public class MavenGoal {
     private final String name;
     private final String pluginKey;
     private final String executionId;
-
-    /**
-     * Returns a new instance with a default execution id.
-     *
-     * @param pluginGroupId The plugin group id.
-     * @param pluginArtifactId The plugin artifact id.
-     * @param goalName The plugin goal to execute.
-     * @return The goal.
-     */
-    public static MavenGoal create(String pluginGroupId, String pluginArtifactId, String goalName) {
-        return create(pluginGroupId, pluginArtifactId, goalName, null);
-    }
+    private final ExecutionEnvironment environment;
+    private final Plugin plugin;
+    private final Xpp3Dom config;
 
     /**
      * Returns a new instance.
@@ -46,13 +45,15 @@ public class MavenGoal {
      * @param pluginArtifactId The plugin artifact id.
      * @param goalName The plugin goal to execute.
      * @param executionId The execution id.
+     * @param environment The plugin execution environment.
      * @return The goal.
      */
     public static MavenGoal create(String pluginGroupId,
                                    String pluginArtifactId,
                                    String goalName,
-                                   String executionId) {
-        return new MavenGoal(pluginGroupId, pluginArtifactId, goalName, executionId);
+                                   String executionId,
+                                   ExecutionEnvironment environment) {
+        return new MavenGoal(pluginGroupId, pluginArtifactId, goalName, executionId, environment);
     }
 
     /**
@@ -61,14 +62,41 @@ public class MavenGoal {
      * @param pluginGroupId The plugin group id.
      * @param pluginArtifactId The plugin artifact id.
      * @param goalName The plugin goal to execute.
+     * @param executionId The execution id.
+     * @param environment The plugin execution environment.
      */
     private MavenGoal(String pluginGroupId,
                       String pluginArtifactId,
                       String goalName,
-                      String executionId) {
+                      String executionId,
+                      ExecutionEnvironment environment) {
         this.name = requireNonNull(goalName);
         this.pluginKey = requireNonNull(pluginGroupId) + ":" + requireNonNull(pluginArtifactId);
         this.executionId = executionId == null ? DEFAULT_EXECUTION_ID_PREFIX + goalName : executionId;
+        this.environment = environment;
+        this.plugin = environment.getMavenProject().getPlugin(pluginKey);
+        requireNonNull(plugin, "plugin " + pluginKey + " not found");
+
+        // Lookup configuration or create default
+
+        final PluginExecution execution = plugin.getExecutionsAsMap().get(executionId);
+        if (execution != null && execution.getConfiguration() != null) {
+            this.config = (Xpp3Dom) execution.getConfiguration();
+        } else if (plugin.getConfiguration() != null) {
+            this.config = (Xpp3Dom) plugin.getConfiguration();
+        } else {
+            this.config = MojoExecutor.configuration();
+        }
+    }
+
+    /**
+     * Executes the goal.
+     *
+     * @throws Exception if an error occurs.
+     */
+    public void execute() throws Exception {
+        Log.debug("Executing %s", this);
+        MojoExecutor.executeMojo(plugin, name(), config, environment);
     }
 
     /**

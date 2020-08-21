@@ -16,33 +16,51 @@
 
 package io.helidon.build.dev;
 
+import java.nio.file.Path;
+import java.util.function.BiPredicate;
+
+import io.helidon.build.util.PathPredicates;
+
+import static io.helidon.build.util.PathPredicates.matchesResource;
+
 /**
  * A build root type.
  */
-public enum BuildRootType {
+public class BuildRootType {
+    /**
+     * Java sources.
+     */
+    public static final BuildRootType JAVA_SOURCES = create(DirectoryType.JavaSources, PathPredicates.matchesJavaSource());
 
     /**
-     * Java source files.
+     * Classes.
      */
-    JavaSources(DirectoryType.JavaSources, FileType.JavaSource),
+    public static final BuildRootType JAVA_CLASSES = create(DirectoryType.JavaClasses, PathPredicates.matchesJavaClass());
 
     /**
-     * Java classes.
+     * Resources.
      */
-    JavaClasses(DirectoryType.Classes, FileType.JavaClass),
-
-    /**
-     * Resource source files.
-     */
-    Resources(DirectoryType.Resources, FileType.NotJavaClass);
+    public static final BuildRootType RESOURCES = BuildRootType.create(DirectoryType.Resources, matchesResource());
 
     private final DirectoryType directoryType;
-    private final FileType fileType;
+    private final BiPredicate<Path, Path> fileType;
 
-    BuildRootType(DirectoryType directoryType, FileType fileType) {
+    /**
+     * Creates a new type.
+     *
+     * @param directoryType The directory type.
+     * @param fileType The file type predicate.
+     * @return The type.
+     */
+    public static BuildRootType create(DirectoryType directoryType, BiPredicate<Path, Path> fileType) {
+        return new BuildRootType(directoryType, fileType);
+    }
+
+    private BuildRootType(DirectoryType directoryType, BiPredicate<Path, Path> fileType) {
         this.directoryType = directoryType;
         this.fileType = fileType;
     }
+
 
     /**
      * Returns the associated directory type.
@@ -54,11 +72,11 @@ public enum BuildRootType {
     }
 
     /**
-     * Returns the associated file type.
+     * Returns the associated file type predicate.
      *
      * @return The file type.
      */
-    public FileType fileType() {
+    public BiPredicate<Path, Path> fileType() {
         return fileType;
     }
 }

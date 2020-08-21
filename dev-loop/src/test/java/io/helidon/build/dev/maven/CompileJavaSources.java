@@ -40,6 +40,9 @@ import io.helidon.build.dev.BuildRootType;
 import io.helidon.build.dev.BuildStep;
 import io.helidon.build.dev.Project;
 
+import static io.helidon.build.dev.BuildRootType.JAVA_CLASSES;
+import static io.helidon.build.dev.BuildRootType.JAVA_SOURCES;
+
 /**
  * A build step that compiles java sources using the ToolProvider API.
  * See configuration https://github.com/apache/maven-compiler-plugin/blob/master/src/main/java/org/apache/maven/plugin/compiler/AbstractCompilerMojo.java#L612
@@ -69,12 +72,12 @@ public class CompileJavaSources implements BuildStep {
 
     @Override
     public BuildRootType inputType() {
-        return BuildRootType.JavaSources;
+        return JAVA_SOURCES;
     }
 
     @Override
     public BuildRootType outputType() {
-        return BuildRootType.JavaClasses;
+        return JAVA_CLASSES;
     }
 
     @Override

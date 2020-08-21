@@ -31,6 +31,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -45,7 +46,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
     private final BuildRootType type;
-    private final FileType fileType;
+    private final BiPredicate<Path, Path> fileType;
     private final AtomicReference<Map<Path, BuildFile>> files;
     private final AtomicReference<BuildComponent> component;
 
@@ -271,9 +272,10 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
     public Changes changes() {
         final Changes changes = new Changes(this, files.get().keySet());
         final Map<Path, BuildFile> files = this.files.get();
+        final Path root = path();
         try (Stream<Path> stream = Files.walk(path())) {
             stream.forEach(file -> {
-                if (fileType.test(file)) {
+                if (fileType.test(file, root)) {
                     changes.update(file, files.get(file));
                 }
             });
@@ -321,9 +323,10 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
 
     private Map<Path, BuildFile> collectFiles() {
         final Map<Path, BuildFile> files = new HashMap<>();
+        final Path root = path();
         try (Stream<Path> stream = Files.walk(path())) {
             stream.forEach(file -> {
-                if (fileType.test(file)) {
+                if (fileType.test(file, root)) {
                     files.put(file, createBuildFile(this, fileType, file));
                 }
             });

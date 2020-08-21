@@ -24,6 +24,7 @@ import java.util.Map;
 import io.helidon.build.dev.ProjectSupplier;
 import io.helidon.build.dev.maven.DevLoopBuildConfig;
 import io.helidon.build.dev.maven.MavenGoalReferenceResolver;
+import io.helidon.build.dev.maven.MavenProjectConfigCollector;
 import io.helidon.build.dev.maven.MavenProjectSupplier;
 import io.helidon.build.dev.mode.DevLoop;
 import io.helidon.build.util.Log;
@@ -156,6 +157,7 @@ public class DevMojo extends AbstractMojo {
             return;
         }
         try {
+            MavenProjectConfigCollector.assertSupportedProject(session);
             if (terminalMode) {
                 SystemLogWriter.install(getLog().isDebugEnabled() ? Log.Level.DEBUG : Log.Level.INFO);
             } else {
@@ -165,9 +167,9 @@ public class DevMojo extends AbstractMojo {
             Log.info("build: %s", devLoop);
 
             final DevLoopBuildConfig buildConfig = devLoop == null ? new DevLoopBuildConfig() : devLoop;
-            buildConfig.resolve(new MavenGoalReferenceResolver(project, session, mojoDescriptorCreator, defaultLifeCycles,
-                                                               standardDelegate, delegates));
-            final ProjectSupplier projectSupplier = new MavenProjectSupplier(project, session, plugins, buildConfig);
+            buildConfig.resolve(MavenGoalReferenceResolver.create(project, session, mojoDescriptorCreator, defaultLifeCycles,
+                                                                  standardDelegate, delegates, plugins));
+            final ProjectSupplier projectSupplier = new MavenProjectSupplier(buildConfig);
             final List<String> jvmArgs = toList(appJvmArgs);
             final List<String> args = toList(appArgs);
             final DevLoop loop = new DevLoop(devProjectDir.toPath(), projectSupplier, clean, fork, terminalMode, jvmArgs, args);

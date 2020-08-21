@@ -27,10 +27,6 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.project.MavenProject;
 
-import static io.helidon.build.dev.BuildRootType.JavaClasses;
-import static io.helidon.build.dev.BuildRootType.JavaSources;
-import static io.helidon.build.dev.BuildRootType.Resources;
-
 /**
  * A {@link BuildStep} that executes a single maven goal (in process).
  */

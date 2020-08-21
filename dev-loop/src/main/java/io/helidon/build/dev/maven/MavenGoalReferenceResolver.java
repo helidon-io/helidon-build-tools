@@ -29,8 +29,11 @@ import org.apache.maven.lifecycle.LifecyclePhaseNotFoundException;
 import org.apache.maven.lifecycle.NoGoalSpecifiedException;
 import org.apache.maven.lifecycle.internal.MojoDescriptorCreator;
 import org.apache.maven.model.Plugin;
+import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.project.MavenProject;
+import org.twdata.maven.mojoexecutor.MojoExecutor;
+import org.twdata.maven.mojoexecutor.MojoExecutor.ExecutionEnvironment;
 
 import static java.util.Objects.requireNonNull;
 
@@ -72,6 +75,30 @@ public class MavenGoalReferenceResolver {
     private final DefaultLifecycles defaultLifeCycles;
     private final LifecycleMappingDelegate standardDelegate;
     private final Map<String, LifecycleMappingDelegate> delegates;
+    private final ExecutionEnvironment environment;
+
+    /**
+     * Returns a new resolver.
+     *
+     * @param project The project.
+     * @param session The session.
+     * @param mojoDescriptorCreator Used to resolve plugin prefixes.
+     * @param defaultLifeCycles Used to map a phase to a list of goals.
+     * @param standardDelegate Used to map a phase to a list of goals.
+     * @param delegates Used to map a phase to a list of goals.
+     * @param pluginManager Used to lookup plugins.
+     * @return The resolver.
+     */
+    public static MavenGoalReferenceResolver create(MavenProject project,
+                                                    MavenSession session,
+                                                    MojoDescriptorCreator mojoDescriptorCreator,
+                                                    DefaultLifecycles defaultLifeCycles,
+                                                    LifecycleMappingDelegate standardDelegate,
+                                                    Map<String, LifecycleMappingDelegate> delegates,
+                                                    BuildPluginManager pluginManager) {
+        return new MavenGoalReferenceResolver(project, session, mojoDescriptorCreator, defaultLifeCycles,
+                                              standardDelegate, delegates, pluginManager);
+    }
 
     /**
      * Constructor.
@@ -82,19 +109,22 @@ public class MavenGoalReferenceResolver {
      * @param defaultLifeCycles Used to map a phase to a list of goals.
      * @param standardDelegate Used to map a phase to a list of goals.
      * @param delegates Used to map a phase to a list of goals.
+     * @param pluginManager Used to lookup plugins.
      */
-    public MavenGoalReferenceResolver(MavenProject project,
-                                      MavenSession session,
-                                      MojoDescriptorCreator mojoDescriptorCreator,
-                                      DefaultLifecycles defaultLifeCycles,
-                                      LifecycleMappingDelegate standardDelegate,
-                                      Map<String, LifecycleMappingDelegate> delegates) {
+    private MavenGoalReferenceResolver(MavenProject project,
+                                       MavenSession session,
+                                       MojoDescriptorCreator mojoDescriptorCreator,
+                                       DefaultLifecycles defaultLifeCycles,
+                                       LifecycleMappingDelegate standardDelegate,
+                                       Map<String, LifecycleMappingDelegate> delegates,
+                                       BuildPluginManager pluginManager) {
         this.project = project;
         this.session = session;
         this.mojoDescriptorCreator = mojoDescriptorCreator;
         this.defaultLifeCycles = defaultLifeCycles;
         this.standardDelegate = standardDelegate;
         this.delegates = delegates;
+        this.environment = MojoExecutor.executionEnvironment(project, session, pluginManager);
     }
 
     /**
@@ -141,11 +171,11 @@ public class MavenGoalReferenceResolver {
                 addPrefixGoal(components[0], components[1], executionId, goals);
                 break;
             case 3:
-                goals.add(MavenGoal.create(components[0], components[1], components[2], executionId));
+                goals.add(MavenGoal.create(components[0], components[1], components[2], executionId, environment));
                 break;
             default: // >= 4
                 Log.warn("Ignoring version in %s", reference);
-                goals.add(MavenGoal.create(components[0], components[1], components[3], executionId));
+                goals.add(MavenGoal.create(components[0], components[1], components[3], executionId, environment));
                 break;
         }
 
@@ -165,7 +195,7 @@ public class MavenGoalReferenceResolver {
 
     private void addPrefixGoal(String prefix, String goal, String executionId, List<MavenGoal> goals) throws Exception {
         final Plugin plugin = mojoDescriptorCreator.findPluginForPrefix(prefix, session);
-        goals.add(MavenGoal.create(plugin.getGroupId(), plugin.getArtifactId(), goal, executionId));
+        goals.add(MavenGoal.create(plugin.getGroupId(), plugin.getArtifactId(), goal, executionId, environment));
     }
 
     private void addPhaseGoals(String phase, List<MavenGoal> goals) throws Exception {
@@ -198,8 +228,8 @@ public class MavenGoalReferenceResolver {
         return lifecycle;
     }
 
-    private static MavenGoal toGoal(MojoExecution execution) {
+    private MavenGoal toGoal(MojoExecution execution) {
         return MavenGoal.create(execution.getGroupId(), execution.getArtifactId(),
-                                execution.getGoal(), execution.getExecutionId());
+                                execution.getGoal(), execution.getExecutionId(), environment);
     }
 }

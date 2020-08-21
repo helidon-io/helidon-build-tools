@@ -22,12 +22,25 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Utility methods to create {@link BiPredicate <Path>} instances from
+ * Provides both common and custom path predicates. Custom predicates are created using
  * <a href="http://ant.apache.org/manual/dirtasks.html#patterns>Ant path patterns></a>.
- * All patterns are matched against a <em>relative</em> path. The relative path to match against is computed by the predicate if
- * needed using the second path parameter as the root directory.
+ * <p></p>
+ * All patterns are matched against a <em>relative</em> path. Since either an absolute or relative path may be passed to the
+ * predicate, {@code BiPredicate<Path,Path>} is required so that an absolute path may be converted to a relative one prior to
+ * matching. The first path parameter to the predicate is always the path to match against, and the second is the root directory
+ * if needed to convert the first parameter to a relative one.
  */
 public class PathPredicates {
+
+    private static final BiPredicate<Path, Path> ANY = (path, root) -> true;
+    private static final BiPredicate<Path, Path> MAVEN_POM = (path, root) -> matchesName(path, "pom.xml");
+    private static final BiPredicate<Path, Path> JAVA_SOURCE = (path, root) -> matchesExtension(path, ".java");
+    private static final BiPredicate<Path, Path> JAVA_CLASS = (path, root) -> matchesExtension(path, ".class");
+    private static final BiPredicate<Path, Path> JAR_FILE = (path, root) -> matchesExtension(path, ".jar");
+    private static final BiPredicate<Path, Path> RESOURCE_FILE = (path, root) -> {
+        final String fileName = path.getFileName().toString();
+        return !fileName.startsWith(".") && !fileName.endsWith(".class") && !fileName.endsWith(".swp") && !fileName.endsWith("~");
+    };
 
     private static final String SINGLE_CHAR_WILDCARD = "?";
     private static final String MULTI_CHAR_WILDCARD = "*";
@@ -48,10 +61,65 @@ public class PathPredicates {
     private static final String ESCAPED_DOT_LITERAL = "\\.";
 
     /**
+     * Returns a predicate that returns {@code true} for any path.
+     *
+     * @return The predicate. The second path parameter is always ignored.
+     */
+    public static BiPredicate<Path, Path> matchesAny() {
+        return ANY;
+    }
+
+    /**
+     * Returns a predicate that returns {@code true} for any filename that equals {@code "pom.xml"}.
+     *
+     * @return The predicate. The second path parameter is always ignored.
+     */
+    public static BiPredicate<Path, Path> matchesMavenPom() {
+        return MAVEN_POM;
+    }
+
+    /**
+     * Returns a predicate that returns {@code true} for any filename ending with {@code ".java"}.
+     *
+     * @return The predicate. The second path parameter is always ignored.
+     */
+    public static BiPredicate<Path, Path> matchesJavaSource() {
+        return JAVA_SOURCE;
+    }
+
+    /**
+     * Returns a predicate that returns {@code true} for any filename ending with {@code ".class"}.
+     *
+     * @return The predicate. The second path parameter is always ignored.
+     */
+    public static BiPredicate<Path, Path> matchesJavaClass() {
+        return JAVA_CLASS;
+    }
+
+    /**
+     * Returns a predicate that returns {@code true} for any filename ending with {@code ".jar"}.
+     *
+     * @return The predicate. The second path parameter is always ignored.
+     */
+    public static BiPredicate<Path, Path> matchesJar() {
+        return JAR_FILE;
+    }
+
+    /**
+     * Returns a predicate that returns {@code true} for any filename that does not start with {@code "."} and does not end with
+     * {@code ".class"}, {@code ".swp"} or {@code "~"}.
+     *
+     * @return The predicate. The second path parameter is always ignored.
+     */
+    public static BiPredicate<Path, Path> matchesResource() {
+        return RESOURCE_FILE;
+    }
+
+    /**
      * Returns a predicate that matches the given pattern.
      *
      * @param pattern The pattern.
-     * @return The predicate, where the first path parameter is made relative if required using second parameter as the root.
+     * @return The predicate, where the first path parameter is made relative if required using the second parameter as the root.
      */
     public static BiPredicate<Path, Path> matches(String pattern) {
         pattern = normalizePattern(pattern);
@@ -62,7 +130,7 @@ public class PathPredicates {
 
             // Match any path
 
-            return (path, root) -> true;
+            return matchesAny();
 
         } else if (pattern.startsWith(ANY_PARENT_WILDCARD_PATTERN)) {
             final String patternSuffix = stripConstantPrefix(pattern, ANY_PARENT_WILDCARD_PATTERN);
@@ -102,7 +170,7 @@ public class PathPredicates {
      * Returns a predicate that returns {@code true} if any of the given patterns match.
      *
      * @param patterns The patterns.
-     * @return The predicate, where the first path parameter is made relative if required using second parameter as the root.
+     * @return The predicate, where the first path parameter is made relative if required using the second parameter as the root.
      */
     public static BiPredicate<Path, Path> matchesAny(List<String> patterns) {
         final List<BiPredicate<Path, Path>> predicates = patterns.stream()
@@ -127,7 +195,7 @@ public class PathPredicates {
      */
     public static BiPredicate<Path, Path> matchesNone(List<String> patterns) {
         if (patterns.isEmpty()) {
-            return (path, root) -> true;
+            return matchesAny();
         } else {
             final BiPredicate<Path, Path> predicate = matchesAny(patterns);
             return (path, root) -> !predicate.test(path, root);
@@ -140,13 +208,21 @@ public class PathPredicates {
      *
      * @param includes The included patterns. If empty, acts as if all files are included.
      * @param excludes The excluded patterns.
-     * @return The predicate, where the first path parameter is made relative if required using second parameter as the root.
+     * @return The predicate, where the first path parameter is made relative if required using the second parameter as the root.
      */
     public static BiPredicate<Path, Path> matches(List<String> includes, List<String> excludes) {
         if (includes.isEmpty()) {
             return matchesNone(excludes);
         }
         return matchesAny(includes).and(matchesNone(excludes));
+    }
+
+    private static boolean matchesName(Path file, String name) {
+        return file.getFileName().toString().endsWith(name);
+    }
+
+    private static boolean matchesExtension(Path file, String extension) {
+        return file.getFileName().toString().endsWith(extension);
     }
 
     private static BiPredicate<Path, Path> toFileNamePredicate(String fileNamePattern) {
@@ -158,13 +234,13 @@ public class PathPredicates {
             if (segmentCount == 1) {
                 // **/foo.txt
                 final String fileName = segments[0];
-                return (path, root) -> path.getFileName().toString().equals(fileName);
+                return (path, root) -> matchesName(path, fileName);
             } else if (segmentCount == 2) {
                 final String prefix = segments[0];
                 final String suffix = segments[1];
                 if (prefix.isEmpty()) {
                     // **/*.txt
-                    return (path, root) -> path.getFileName().toString().endsWith(suffix);
+                    return (path, root) -> matchesExtension(path, suffix);
                 } else {
                     // **/Foo*.txt
                     return (path, root) -> {

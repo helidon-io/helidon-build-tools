@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiPredicate;
 
 import io.helidon.build.util.FileUtils;
 
@@ -31,7 +32,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class BuildFile implements FileChangeAware {
     private final ProjectDirectory parent;
-    private final FileType type;
+    private final BiPredicate<Path, Path> type;
     private final Path path;
     private volatile FileTime lastModified;
 
@@ -39,15 +40,15 @@ public class BuildFile implements FileChangeAware {
      * Returns a new build file.
      *
      * @param parent The parent.
-     * @param type The type.
+     * @param type The file type predicate.
      * @param path The file path.
      * @return The file.
      */
-    public static BuildFile createBuildFile(ProjectDirectory parent, FileType type, Path path) {
+    public static BuildFile createBuildFile(ProjectDirectory parent, BiPredicate<Path, Path> type, Path path) {
         return new BuildFile(parent, type, path);
     }
 
-    private BuildFile(ProjectDirectory parent, FileType type, Path path) {
+    private BuildFile(ProjectDirectory parent, BiPredicate<Path, Path> type, Path path) {
         this.parent = requireNonNull(parent);
         this.type = requireNonNull(type);
         this.path = assertFile(path);
@@ -64,11 +65,11 @@ public class BuildFile implements FileChangeAware {
     }
 
     /**
-     * Returns the file type.
+     * Returns the file type predicate.
      *
      * @return The type.
      */
-    public FileType type() {
+    public BiPredicate<Path, Path> type() {
         return type;
     }
 
@@ -138,8 +139,7 @@ public class BuildFile implements FileChangeAware {
     @Override
     public String toString() {
         return "BuildFile{"
-               + "type=" + type
-               + ", path=" + path
+               + "path=" + path
                + '}';
     }
 }

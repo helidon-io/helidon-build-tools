@@ -30,10 +30,10 @@ import io.helidon.build.dev.BuildRoot;
 import io.helidon.build.dev.BuildRootType;
 import io.helidon.build.dev.BuildType;
 import io.helidon.build.dev.DirectoryType;
-import io.helidon.build.dev.FileType;
 import io.helidon.build.dev.Project;
 import io.helidon.build.dev.ProjectDirectory;
 import io.helidon.build.dev.ProjectSupplier;
+import io.helidon.build.util.PathPredicates;
 
 import static io.helidon.build.dev.BuildComponent.createBuildComponent;
 import static io.helidon.build.dev.BuildFile.createBuildFile;
@@ -96,20 +96,20 @@ public class DefaultProjectSupplier implements ProjectSupplier {
         final Path pomFile = assertFile(projectDir.resolve(POM_FILE));
         final ProjectDirectory root = createProjectDirectory(DirectoryType.Project, projectDir);
         builder.rootDirectory(root);
-        builder.buildFile(createBuildFile(root, FileType.MavenPom, pomFile));
+        builder.buildFile(createBuildFile(root, PathPredicates.matchesMavenPom(), pomFile));
         builder.dependency(projectDir.resolve(LIB_DIR));
 
         final Path sourceDir = assertDir(projectDir.resolve(JAVA_DIR));
         final Path classesDir = ensureDirectory(projectDir.resolve(CLASSES_DIR));
-        final BuildRoot sources = createBuildRoot(BuildRootType.JavaSources, sourceDir);
-        final BuildRoot classes = createBuildRoot(BuildRootType.JavaClasses, classesDir);
+        final BuildRoot sources = createBuildRoot(BuildRootType.JAVA_SOURCES, sourceDir);
+        final BuildRoot classes = createBuildRoot(BuildRootType.JAVA_CLASSES, classesDir);
         final Charset sourceEncoding = StandardCharsets.UTF_8;
         builder.component(createBuildComponent(sources, classes, new CompileJavaSources(sourceEncoding, false)));
 
         final Path resourcesDir = projectDir.resolve(RESOURCES_DIR);
         if (Files.exists(resourcesDir)) {
-            final BuildRoot resources = createBuildRoot(BuildRootType.Resources, resourcesDir);
-            final BuildRoot binaries = createBuildRoot(BuildRootType.Resources, classesDir);
+            final BuildRoot resources = createBuildRoot(BuildRootType.RESOURCES, resourcesDir);
+            final BuildRoot binaries = createBuildRoot(BuildRootType.RESOURCES, classesDir);
             builder.component(createBuildComponent(resources, binaries, new CopyResources()));
         }
 

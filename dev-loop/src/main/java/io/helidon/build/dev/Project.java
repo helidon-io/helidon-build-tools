@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -42,6 +43,8 @@ import static io.helidon.build.dev.ProjectDirectory.createProjectDirectory;
 import static io.helidon.build.util.FileUtils.ChangeDetectionType.LATEST;
 import static io.helidon.build.util.FileUtils.listFiles;
 import static io.helidon.build.util.FileUtils.newerThan;
+import static io.helidon.build.util.PathPredicates.matchesJar;
+import static io.helidon.build.util.PathPredicates.matchesJavaClass;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
@@ -51,6 +54,9 @@ import static java.util.Objects.requireNonNull;
 public class Project {
     private static final String JAR_FILE_SUFFIX = ".jar";
     private static final Predicate<Path> ANY = path -> true;
+    private static final BuildRootType JAVA_CLASSES = BuildRootType.create(DirectoryType.JavaClasses, matchesJavaClass());
+    private static final BiPredicate<Path, Path> JAR_TYPE = matchesJar();
+
     private final String name;
     private final BuildType buildType;
     private final ProjectDirectory root;
@@ -505,7 +511,7 @@ public class Project {
 
         final Set<Path> paths = new LinkedHashSet<>();
         components.forEach(component -> {
-            if (component.outputRoot().buildType() == BuildRootType.JavaClasses) {
+            if (component.outputRoot().buildType() == JAVA_CLASSES) {
                 paths.add(component.outputRoot().path());
             }
         });
@@ -521,7 +527,7 @@ public class Project {
     }
 
     private void addDependency(Path path) {
-        if (FileType.Jar.test(path)) {
+        if (JAR_TYPE.test(path, null)) {
             dependencies.add(toJar(path));
         } else if (Files.isDirectory(path)) {
             for (Path file : listFiles(path, name -> name.endsWith(JAR_FILE_SUFFIX))) {
@@ -533,6 +539,6 @@ public class Project {
     private BuildFile toJar(Path path) {
         final Path parent = path.getParent();
         final ProjectDirectory parentDir = parents.computeIfAbsent(parent, p -> createProjectDirectory(Depencencies, parent));
-        return BuildFile.createBuildFile(parentDir, FileType.Jar, path);
+        return BuildFile.createBuildFile(parentDir, JAR_TYPE, path);
     }
 }

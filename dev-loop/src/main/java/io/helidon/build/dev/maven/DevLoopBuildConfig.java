@@ -176,6 +176,9 @@ public class DevLoopBuildConfig {
      * Incremental build configuration.
      */
     public static class IncrementalBuild {
+        private static final String DEFAULT_RESOURCES_GOAL = "resources:resources";
+        private static final String DEFAULT_JAVA_SOURCES_GOAL = "compiler:compile";
+
         private List<String> resourceGoals;
         private List<String> javaSourceGoals;
         private List<MavenGoal> resolvedResourceGoals;
@@ -186,6 +189,8 @@ public class DevLoopBuildConfig {
          * Constructor.
          */
         public IncrementalBuild() {
+            this.resourceGoals = List.of(DEFAULT_RESOURCES_GOAL);
+            this.javaSourceGoals = List.of(DEFAULT_JAVA_SOURCES_GOAL);
         }
 
         /**

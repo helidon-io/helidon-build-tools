@@ -41,7 +41,7 @@ class BuildRootTest {
     private static BuildRoot sourceDirectory(boolean willModify) {
         final Path project = willModify ? TestFiles.helidonSeProjectCopy() : TestFiles.helidonSeProject();
         final Path sources = assertDir(project.resolve("src/main/java"));
-        final BuildRoot result = BuildRoot.createBuildRoot(BuildRootType.JavaSources, sources);
+        final BuildRoot result = BuildRoot.createBuildRoot(BuildRootType.JAVA_SOURCES, sources);
         assertThat(result, is(not(nullValue())));
         assertThat(result.list().isEmpty(), is(false));
         assertThat(result.changes().isEmpty(), is(true));
