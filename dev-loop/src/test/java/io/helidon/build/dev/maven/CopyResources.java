@@ -24,10 +24,9 @@ import java.util.function.Consumer;
 
 import io.helidon.build.dev.BuildComponent;
 import io.helidon.build.dev.BuildRoot;
-import io.helidon.build.dev.BuildRootType;
 import io.helidon.build.dev.BuildStep;
+import io.helidon.build.dev.DirectoryType;
 
-import static io.helidon.build.dev.BuildRootType.RESOURCES;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
@@ -36,21 +35,11 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 public class CopyResources implements BuildStep {
 
     @Override
-    public BuildRootType inputType() {
-        return RESOURCES;
-    }
-
-    @Override
-    public BuildRootType outputType() {
-        return RESOURCES;
-    }
-
-    @Override
     public void incrementalBuild(BuildRoot.Changes changes, Consumer<String> stdOut, Consumer<String> stdErr) throws Exception {
         if (!changes.isEmpty()) {
             final BuildRoot sources = changes.root();
-            final BuildComponent component = sources.component();
-            if (test(component)) {
+            if (sources.buildType().directoryType() == DirectoryType.Resources) {
+                final BuildComponent component = sources.component();
                 final Path srcDir = sources.path();
                 final Path outDir = component.outputRoot().path();
 

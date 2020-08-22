@@ -15,6 +15,10 @@
  */
 package io.helidon.build.dev.maven;
 
+import java.util.function.Consumer;
+
+import io.helidon.build.dev.BuildRoot;
+import io.helidon.build.dev.BuildStep;
 import io.helidon.build.util.Log;
 
 import org.apache.maven.model.Plugin;
@@ -28,7 +32,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * An executable maven goal. Executions occur in process, in the context of the current project environment.
  */
-public class MavenGoal {
+public class MavenGoal implements BuildStep {
     private static final String DEFAULT_EXECUTION_ID_PREFIX = "default-";
 
     private final String name;
@@ -89,6 +93,15 @@ public class MavenGoal {
         }
     }
 
+    @Override
+    public void incrementalBuild(BuildRoot.Changes changes,
+                                 Consumer<String> stdOut,
+                                 Consumer<String> stdErr) throws Exception {
+        if (!changes.isEmpty()) {
+            execute();
+        }
+    }
+
     /**
      * Executes the goal.
      *
@@ -116,7 +129,6 @@ public class MavenGoal {
     public String pluginKey() {
         return pluginKey;
     }
-
 
     /**
      * Returns the plugin key.

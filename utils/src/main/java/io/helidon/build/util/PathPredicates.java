@@ -173,18 +173,24 @@ public class PathPredicates {
      * @return The predicate, where the first path parameter is made relative if required using the second parameter as the root.
      */
     public static BiPredicate<Path, Path> matchesAny(List<String> patterns) {
-        final List<BiPredicate<Path, Path>> predicates = patterns.stream()
-                                                                 .map(PathPredicates::matches)
-                                                                 .collect(Collectors.toList());
-        return (path, root) -> {
-            final Path relativePath = relativizePath(path, root);
-            for (BiPredicate<Path, Path> predicate : predicates) {
-                if (predicate.test(relativePath, root)) {
-                    return true;
+        if (patterns.isEmpty()) {
+            return matchesAny();
+        } else if (patterns.size() == 1) {
+            return matches(patterns.get(0));
+        } else {
+            final List<BiPredicate<Path, Path>> predicates = patterns.stream()
+                                                                     .map(PathPredicates::matches)
+                                                                     .collect(Collectors.toList());
+            return (path, root) -> {
+                final Path relativePath = relativizePath(path, root);
+                for (BiPredicate<Path, Path> predicate : predicates) {
+                    if (predicate.test(relativePath, root)) {
+                        return true;
+                    }
                 }
-            }
-            return false;
-        };
+                return false;
+            };
+        }
     }
 
     /**

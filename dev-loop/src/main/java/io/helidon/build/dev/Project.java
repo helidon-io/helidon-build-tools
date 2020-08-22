@@ -511,7 +511,7 @@ public class Project {
 
         final Set<Path> paths = new LinkedHashSet<>();
         components.forEach(component -> {
-            if (component.outputRoot().buildType() == JAVA_CLASSES) {
+            if (component.outputRoot().buildType().directoryType() == DirectoryType.JavaClasses) {
                 paths.add(component.outputRoot().path());
             }
         });

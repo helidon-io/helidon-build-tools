@@ -36,12 +36,8 @@ import javax.tools.ToolProvider;
 import io.helidon.build.dev.BuildComponent;
 import io.helidon.build.dev.BuildFile;
 import io.helidon.build.dev.BuildRoot;
-import io.helidon.build.dev.BuildRootType;
 import io.helidon.build.dev.BuildStep;
 import io.helidon.build.dev.Project;
-
-import static io.helidon.build.dev.BuildRootType.JAVA_CLASSES;
-import static io.helidon.build.dev.BuildRootType.JAVA_SOURCES;
 
 /**
  * A build step that compiles java sources using the ToolProvider API.
@@ -68,16 +64,6 @@ public class CompileJavaSources implements BuildStep {
         }
         this.sourceEncoding = sourceEncoding;
         this.verbose = verbose;
-    }
-
-    @Override
-    public BuildRootType inputType() {
-        return JAVA_SOURCES;
-    }
-
-    @Override
-    public BuildRootType outputType() {
-        return JAVA_CLASSES;
     }
 
     @Override

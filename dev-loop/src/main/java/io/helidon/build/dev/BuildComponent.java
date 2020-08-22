@@ -43,7 +43,21 @@ public class BuildComponent {
     public static BuildComponent createBuildComponent(BuildRoot sourceRoot,
                                                       BuildRoot outputRoot,
                                                       BuildStep... buildSteps) {
-        return new BuildComponent(sourceRoot, outputRoot, Arrays.asList(buildSteps));
+        return createBuildComponent(sourceRoot, outputRoot, Arrays.asList(buildSteps));
+    }
+
+    /**
+     * Returns a new build component.
+     *
+     * @param sourceRoot The source root.
+     * @param outputRoot The output root.
+     * @param buildSteps The build steps.
+     * @return The build component.
+     */
+    public static BuildComponent createBuildComponent(BuildRoot sourceRoot,
+                                                      BuildRoot outputRoot,
+                                                      List<BuildStep> buildSteps) {
+        return new BuildComponent(sourceRoot, outputRoot, buildSteps);
     }
 
     private BuildComponent(BuildRoot sourceRoot, BuildRoot outputRoot, List<BuildStep> buildSteps) {

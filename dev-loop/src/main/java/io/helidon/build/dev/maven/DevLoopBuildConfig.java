@@ -107,14 +107,14 @@ public class DevLoopBuildConfig {
     private static final String DEFAULT_FULL_BUILD_PHASE = "process-classes";
 
     private String fullBuildPhase;
-    private IncrementalBuild incrementalBuild;
+    private IncrementalBuildConfig incrementalBuild;
 
     /**
      * Constructor.
      */
     public DevLoopBuildConfig() {
         this.fullBuildPhase = DEFAULT_FULL_BUILD_PHASE;
-        this.incrementalBuild = new IncrementalBuild();
+        this.incrementalBuild = new IncrementalBuildConfig();
     }
 
     /**
@@ -142,7 +142,7 @@ public class DevLoopBuildConfig {
      *
      * @return The config.
      */
-    public IncrementalBuild incrementalBuild() {
+    public IncrementalBuildConfig incrementalBuild() {
         return incrementalBuild;
     }
 
@@ -160,7 +160,7 @@ public class DevLoopBuildConfig {
      *
      * @param incrementalBuild The config.
      */
-    public void setIncrementalBuild(IncrementalBuild incrementalBuild) {
+    public void setIncrementalBuild(IncrementalBuildConfig incrementalBuild) {
         this.incrementalBuild = incrementalBuild;
     }
 
@@ -175,7 +175,7 @@ public class DevLoopBuildConfig {
     /**
      * Incremental build configuration.
      */
-    public static class IncrementalBuild {
+    public static class IncrementalBuildConfig {
         private static final String DEFAULT_RESOURCES_GOAL = "resources:resources";
         private static final String DEFAULT_JAVA_SOURCES_GOAL = "compiler:compile";
 
@@ -183,12 +183,12 @@ public class DevLoopBuildConfig {
         private List<String> javaSourceGoals;
         private List<MavenGoal> resolvedResourceGoals;
         private List<MavenGoal> resolvedJavaSourceGoals;
-        private List<CustomDirectory> customDirectories;
+        private List<CustomDirectoryConfig> customDirectories;
 
         /**
          * Constructor.
          */
-        public IncrementalBuild() {
+        public IncrementalBuildConfig() {
             this.resourceGoals = List.of(DEFAULT_RESOURCES_GOAL);
             this.javaSourceGoals = List.of(DEFAULT_JAVA_SOURCES_GOAL);
         }
@@ -200,9 +200,9 @@ public class DevLoopBuildConfig {
          * @throws Exception If an error occurs.
          */
         public void resolve(MavenGoalReferenceResolver resolver) throws Exception {
-            this.resolvedResourceGoals = resolver.resolve(resourceGoals, new ArrayList<>());
-            this.resolvedJavaSourceGoals = resolver.resolve(javaSourceGoals, new ArrayList<>());
-            for (CustomDirectory directory : customDirectories()) {
+            resolvedResourceGoals = resolver.resolve(resourceGoals, new ArrayList<>());
+            resolvedJavaSourceGoals = resolver.resolve(javaSourceGoals, new ArrayList<>());
+            for (CustomDirectoryConfig directory : customDirectories()) {
                 directory.resolve(resolver);
             }
         }
@@ -230,7 +230,7 @@ public class DevLoopBuildConfig {
          *
          * @return The configurations.
          */
-        public List<CustomDirectory> customDirectories() {
+        public List<CustomDirectoryConfig> customDirectories() {
             return customDirectories == null ? emptyList() : customDirectories;
         }
 
@@ -257,7 +257,7 @@ public class DevLoopBuildConfig {
          *
          * @param customDirectories The configurations.
          */
-        public void setCustomDirectories(List<CustomDirectory> customDirectories) {
+        public void setCustomDirectories(List<CustomDirectoryConfig> customDirectories) {
             this.customDirectories = customDirectories;
         }
 
@@ -273,7 +273,7 @@ public class DevLoopBuildConfig {
         /**
          * Custom directory configuration.
          */
-        public static class CustomDirectory {
+        public static class CustomDirectoryConfig {
             private Path path;
             private String includes;
             private String excludes;

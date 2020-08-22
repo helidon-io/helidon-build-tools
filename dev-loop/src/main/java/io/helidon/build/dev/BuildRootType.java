@@ -17,6 +17,7 @@
 package io.helidon.build.dev;
 
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.function.BiPredicate;
 
 import io.helidon.build.util.PathPredicates;
@@ -61,7 +62,6 @@ public class BuildRootType {
         this.fileType = fileType;
     }
 
-
     /**
      * Returns the associated directory type.
      *
@@ -78,5 +78,19 @@ public class BuildRootType {
      */
     public BiPredicate<Path, Path> fileType() {
         return fileType;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final BuildRootType that = (BuildRootType) o;
+        return directoryType == that.directoryType &&
+               Objects.equals(fileType, that.fileType);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(directoryType, fileType);
     }
 }
