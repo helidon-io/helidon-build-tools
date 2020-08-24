@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.function.BiPredicate;
 
 import io.helidon.build.dev.mode.DevLoop;
-import io.helidon.build.util.PathPredicates;
+import io.helidon.build.util.PathFilters;
 
 import static java.util.Collections.emptyList;
 
@@ -292,7 +292,7 @@ public class DevLoopBuildConfig {
                     throw new IllegalArgumentException(path + " must be relative");
                 }
                 this.resolvedGoals = resolver.resolve(goals, new ArrayList<>());
-                this.resolvedIncludes = PathPredicates.matches(toList(includes), toList(excludes));
+                this.resolvedIncludes = PathFilters.matches(toList(includes), toList(excludes));
             }
 
             private static List<String> toList(String list) {

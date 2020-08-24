@@ -36,6 +36,7 @@ public class MavenGoal implements BuildStep {
     private static final String DEFAULT_EXECUTION_ID_PREFIX = "default-";
 
     private final String name;
+    private final String goal;
     private final String pluginKey;
     private final String executionId;
     private final ExecutionEnvironment environment;
@@ -75,6 +76,7 @@ public class MavenGoal implements BuildStep {
                       String executionId,
                       ExecutionEnvironment environment) {
         this.name = requireNonNull(goalName);
+        this.goal = goalName + (executionId == null ? "" : ("#" + executionId));
         this.pluginKey = requireNonNull(pluginGroupId) + ":" + requireNonNull(pluginArtifactId);
         this.executionId = executionId == null ? DEFAULT_EXECUTION_ID_PREFIX + goalName : executionId;
         this.environment = environment;
@@ -109,7 +111,7 @@ public class MavenGoal implements BuildStep {
      */
     public void execute() throws Exception {
         Log.debug("Executing %s", this);
-        MojoExecutor.executeMojo(plugin, name(), config, environment);
+        MojoExecutor.executeMojo(plugin, goal, config, environment);
     }
 
     /**

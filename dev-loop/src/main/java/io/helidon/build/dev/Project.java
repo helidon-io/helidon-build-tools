@@ -43,8 +43,7 @@ import static io.helidon.build.dev.ProjectDirectory.createProjectDirectory;
 import static io.helidon.build.util.FileUtils.ChangeDetectionType.LATEST;
 import static io.helidon.build.util.FileUtils.listFiles;
 import static io.helidon.build.util.FileUtils.newerThan;
-import static io.helidon.build.util.PathPredicates.matchesJar;
-import static io.helidon.build.util.PathPredicates.matchesJavaClass;
+import static io.helidon.build.util.PathFilters.matchesFileNameSuffix;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
@@ -54,8 +53,7 @@ import static java.util.Objects.requireNonNull;
 public class Project {
     private static final String JAR_FILE_SUFFIX = ".jar";
     private static final Predicate<Path> ANY = path -> true;
-    private static final BuildRootType JAVA_CLASSES = BuildRootType.create(DirectoryType.JavaClasses, matchesJavaClass());
-    private static final BiPredicate<Path, Path> JAR_TYPE = matchesJar();
+    private static final BiPredicate<Path, Path> JAR_FILTER = matchesFileNameSuffix(JAR_FILE_SUFFIX);
 
     private final String name;
     private final BuildType buildType;
@@ -100,14 +98,14 @@ public class Project {
      * A {@code Project} builder.
      */
     public static class Builder {
+        private final List<BuildFile> buildFiles;
+        private final List<String> compilerFlags;
+        private final List<Path> dependencyPaths;
+        private final List<BuildFile> dependencies;
+        private final List<BuildComponent> components;
         private String name;
         private BuildType buildType;
         private ProjectDirectory root;
-        private List<BuildFile> buildFiles;
-        private List<String> compilerFlags;
-        private List<Path> dependencyPaths;
-        private List<BuildFile> dependencies;
-        private List<BuildComponent> components;
         private String mainClassName;
         private ProjectConfig config;
 
@@ -527,7 +525,7 @@ public class Project {
     }
 
     private void addDependency(Path path) {
-        if (JAR_TYPE.test(path, null)) {
+        if (Files.isRegularFile(path) && JAR_FILTER.test(path, null)) {
             dependencies.add(toJar(path));
         } else if (Files.isDirectory(path)) {
             for (Path file : listFiles(path, name -> name.endsWith(JAR_FILE_SUFFIX))) {
@@ -539,6 +537,6 @@ public class Project {
     private BuildFile toJar(Path path) {
         final Path parent = path.getParent();
         final ProjectDirectory parentDir = parents.computeIfAbsent(parent, p -> createProjectDirectory(Depencencies, parent));
-        return BuildFile.createBuildFile(parentDir, JAR_TYPE, path);
+        return BuildFile.createBuildFile(parentDir, path);
     }
 }

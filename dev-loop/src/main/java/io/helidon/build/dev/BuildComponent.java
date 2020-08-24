@@ -95,15 +95,6 @@ public class BuildComponent {
     }
 
     /**
-     * Returns the list of build steps.
-     *
-     * @return The steps.
-     */
-    public List<BuildStep> buildSteps() {
-        return buildSteps;
-    }
-
-    /**
      * Execute the build step for the given changed files only.
      *
      * @param changes The changes.
@@ -129,6 +120,11 @@ public class BuildComponent {
     public void update() {
         sourceRoot().update();
         outputRoot().update();
+    }
+
+    @Override
+    public String toString() {
+        return "BuildComponent{sourceRoot=" + sourceRoot() + "}";
     }
 
     void project(Project project) {

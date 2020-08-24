@@ -41,13 +41,14 @@ import io.helidon.build.dev.ProjectSupplier;
 import io.helidon.build.dev.maven.DevLoopBuildConfig.IncrementalBuildConfig.CustomDirectoryConfig;
 import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.Log;
-import io.helidon.build.util.PathPredicates;
+import io.helidon.build.util.PathFilters;
 import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.Requirements;
 
 import static io.helidon.build.dev.BuildComponent.createBuildComponent;
 import static io.helidon.build.dev.BuildFile.createBuildFile;
 import static io.helidon.build.dev.BuildRoot.createBuildRoot;
+import static io.helidon.build.dev.BuildRootType.matchesJavaClass;
 import static io.helidon.build.dev.ProjectDirectory.createProjectDirectory;
 import static io.helidon.build.util.Constants.ENABLE_HELIDON_CLI;
 import static io.helidon.build.util.FileUtils.ChangeDetectionType.FIRST;
@@ -55,7 +56,7 @@ import static io.helidon.build.util.FileUtils.ChangeDetectionType.LATEST;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
-import static io.helidon.build.util.PathPredicates.matchesJavaClass;
+import static io.helidon.build.util.PathFilters.matchesFileName;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DEPENDENCIES;
 import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
@@ -87,6 +88,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
         final String name = file.getFileName().toString();
         return !name.equals(TARGET_DIR_NAME);
     };
+    private static final BiPredicate<Path, Path> MAVEN_POM = matchesFileName("pom.xml");
 
     private final DevLoopBuildConfig buildConfig;
     private final AtomicBoolean firstBuild;
@@ -94,6 +96,16 @@ public class MavenProjectSupplier implements ProjectSupplier {
     private final List<String> buildCmd;
     private ProjectConfig projectConfig;
     private BuildType buildType;
+
+    /**
+     * Returns a filter that returns {@code true} for any filename that equals {@code "pom.xml"}.
+     *
+     * @return The filter. The second path parameter is always ignored; a {@code BiPredicate<Path,Path>} is used for symmetry
+     * with other uses of {@link PathFilters}.
+     */
+    public static BiPredicate<Path, Path> matchesMavenPom() {
+        return MAVEN_POM;
+    }
 
     /**
      * Constructor.
@@ -196,7 +208,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
 
         // POM file
         final Path pomFile = assertFile(projectDir.resolve(POM_FILE));
-        builder.buildFile(createBuildFile(root, PathPredicates.matchesMavenPom(), pomFile));
+        builder.buildFile(createBuildFile(root, pomFile));
 
         // Dependencies
         final List<String> dependencies = projectConfig.propertyAsList(PROJECT_DEPENDENCIES);
@@ -230,7 +242,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
 
         for (String sourceDir : sourceDirs) {
             Path sourceDirPath = assertDir(projectDir.resolve(sourceDir));
-            BiPredicate<Path, Path> includes = PathPredicates.matches(sourceIncludes, sourceExcludes);
+            BiPredicate<Path, Path> includes = PathFilters.matches(sourceIncludes, sourceExcludes);
             BuildRootType sourceRootType = BuildRootType.create(DirectoryType.JavaSources, includes);
             BuildRoot sources = createBuildRoot(sourceRootType, sourceDirPath);
             for (BuildRoot classes : classesRoots) {
@@ -245,13 +257,13 @@ public class MavenProjectSupplier implements ProjectSupplier {
             String resourcesDir = dir[0];
             List<String> includePatterns = includeExcludeList(dir, 1);
             List<String> excludePatterns = includeExcludeList(dir, 2);
-            BiPredicate<Path, Path> includes = PathPredicates.matches(includePatterns, excludePatterns);
+            BiPredicate<Path, Path> includes = PathFilters.matches(includePatterns, excludePatterns);
             Path resourcesDirPath = projectDir.resolve(resourcesDir);
-            if (Files.exists(resourcesDirPath)) {
+            if (Files.isDirectory(resourcesDirPath)) {
                 BuildRootType buildRootType = BuildRootType.create(DirectoryType.Resources, includes);
-                BuildRoot sources = createBuildRoot(buildRootType, resourcesDirPath);
+                BuildRoot resources = createBuildRoot(buildRootType, resourcesDirPath);
                 for (BuildRoot classes : classesRoots) {
-                    builder.component(createBuildComponent(sources, classes, compileSteps()));
+                    builder.component(createBuildComponent(resources, classes, resourcesSteps()));
                 }
             }
         }
@@ -260,7 +272,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
 
         for (CustomDirectoryConfig customDir : buildConfig.incrementalBuild().customDirectories()) {
             Path directory = customDir.path();
-            if (Files.exists(directory)) {
+            if (Files.isDirectory(directory)) {
                 BiPredicate<Path, Path> includes = customDir.includes();
                 BuildRootType buildRootType = BuildRootType.create(DirectoryType.Custom, includes);
                 BuildRoot sources = createBuildRoot(buildRootType, directory);

@@ -46,7 +46,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
     private final BuildRootType type;
-    private final BiPredicate<Path, Path> fileType;
+    private final BiPredicate<Path, Path> filter;
     private final AtomicReference<Map<Path, BuildFile>> files;
     private final AtomicReference<BuildComponent> component;
 
@@ -59,7 +59,7 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
     BuildRoot(BuildRootType type, Path directory) {
         super(requireNonNull(type).directoryType(), requireNonNull(directory));
         this.type = type;
-        this.fileType = type.fileType();
+        this.filter = type.filter();
         this.files = new AtomicReference<>(collectFiles());
         this.component = new AtomicReference<>();
     }
@@ -275,7 +275,7 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
         final Path root = path();
         try (Stream<Path> stream = Files.walk(path())) {
             stream.forEach(file -> {
-                if (fileType.test(file, root)) {
+                if (Files.isRegularFile(file) && filter.test(file, root)) {
                     changes.update(file, files.get(file));
                 }
             });
@@ -296,7 +296,6 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
     public String toString() {
         return "BuildRoot{"
                + "directoryType=" + directoryType()
-               + ", fileType=" + fileType
                + ", path=" + path()
                + '}';
     }
@@ -307,13 +306,13 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
         if (!(o instanceof BuildRoot)) return false;
         if (!super.equals(o)) return false;
         final BuildRoot that = (BuildRoot) o;
-        return Objects.equals(fileType, that.fileType)
+        return Objects.equals(filter, that.filter)
                && Objects.equals(files, that.files);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), fileType, files);
+        return Objects.hash(super.hashCode(), filter, files);
     }
 
     BuildRoot component(BuildComponent component) {
@@ -326,8 +325,8 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
         final Path root = path();
         try (Stream<Path> stream = Files.walk(path())) {
             stream.forEach(file -> {
-                if (fileType.test(file, root)) {
-                    files.put(file, createBuildFile(this, fileType, file));
+                if (Files.isRegularFile(file) && filter.test(file, root)) {
+                    files.put(file, createBuildFile(this, file));
                 }
             });
         } catch (IOException e) {

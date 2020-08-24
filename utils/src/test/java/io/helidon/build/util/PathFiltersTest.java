@@ -21,14 +21,15 @@ import java.util.function.BiPredicate;
 
 import org.junit.jupiter.api.Test;
 
+import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Unit test for class {@link PathPredicates}.
+ * Unit test for class {@link PathFilters}.
  */
-class PathPredicatesTest {
+class PathFiltersTest {
 
     private static final String ROOT = "/root";
 
@@ -37,13 +38,13 @@ class PathPredicatesTest {
     }
 
     void assertMatch(String pattern, String path, String root, boolean expected) {
-        assertThat(PathPredicates.matches(pattern).test(Path.of(path), Path.of(root)), is(expected));
+        assertThat(PathFilters.matches(pattern).test(Path.of(path), Path.of(root)), is(expected));
     }
 
     @Test
     void testInvalidPatterns() {
-        assertThrows(IllegalArgumentException.class, () -> PathPredicates.matches(null));
-        assertThrows(IllegalArgumentException.class, () -> PathPredicates.matches(""));
+        assertThrows(IllegalArgumentException.class, () -> PathFilters.matches(null));
+        assertThrows(IllegalArgumentException.class, () -> PathFilters.matches(""));
     }
 
     @Test
@@ -171,7 +172,7 @@ class PathPredicatesTest {
     @Test
     void testMatchesAny() {
         Path root = Path.of("/r");
-        BiPredicate<Path, Path> any = PathPredicates.matchesAny(List.of("**/a.txt", "**/b.txt", "**/c.txt"));
+        BiPredicate<Path, Path> any = PathFilters.matchesAny(List.of("**/a.txt", "**/b.txt", "**/c.txt"));
         assertThat(any.test(Path.of("a.txt"), root), is(true));
         assertThat(any.test(Path.of("b.txt"), root), is(true));
         assertThat(any.test(Path.of("c.txt"), root), is(true));
@@ -181,12 +182,25 @@ class PathPredicatesTest {
         assertThat(any.test(Path.of("/r/b.txt"), root), is(true));
         assertThat(any.test(Path.of("/r/c.txt"), root), is(true));
         assertThat(any.test(Path.of("/r/d.txt"), root), is(false));
+
+        any = PathFilters.matchesAny(emptyList());
+
+        assertThat(any.test(Path.of("a"), root), is(true));
+        assertThat(any.test(Path.of("b.txt"), root), is(true));
+        assertThat(any.test(Path.of("c.txt"), root), is(true));
+        assertThat(any.test(Path.of("d.txt"), root), is(true));
+
+        assertThat(any.test(Path.of("/r/a.txt"), root), is(true));
+        assertThat(any.test(Path.of("/r/b.txt"), root), is(true));
+        assertThat(any.test(Path.of("/r/c.txt"), root), is(true));
+        assertThat(any.test(Path.of("/r/d.txt"), root), is(true));
+
     }
 
     @Test
     void testMatchesNone() {
         Path root = Path.of("/r");
-        BiPredicate<Path, Path> none = PathPredicates.matchesNone(List.of("**/x.txt", "**/y.txt", "**/z.txt"));
+        BiPredicate<Path, Path> none = PathFilters.matchesNone(List.of("**/x.txt", "**/y.txt", "**/z.txt"));
         assertThat(none.test(Path.of("a.txt"), root), is(true));
         assertThat(none.test(Path.of("b.txt"), root), is(true));
         assertThat(none.test(Path.of("c.txt"), root), is(true));
@@ -201,7 +215,7 @@ class PathPredicatesTest {
     @Test
     void testEmptyMatchesNone() {
         Path root = Path.of("/r");
-        BiPredicate<Path, Path> filter = PathPredicates.matchesNone(List.of());
+        BiPredicate<Path, Path> filter = PathFilters.matchesNone(List.of());
         assertThat(filter.test(Path.of("a.txt"), root), is(true));
         assertThat(filter.test(Path.of("b.txt"), root), is(true));
         assertThat(filter.test(Path.of("c.txt"), root), is(true));
@@ -211,7 +225,7 @@ class PathPredicatesTest {
     @Test
     void testIncludesExcludes() {
         Path root = Path.of("/r");
-        BiPredicate<Path, Path> filter = PathPredicates.matches(List.of("**/a.txt", "**/b.txt", "**/c.txt"), List.of("**/c.txt"));
+        BiPredicate<Path, Path> filter = PathFilters.matches(List.of("**/a.txt", "**/b.txt", "**/c.txt"), List.of("**/c.txt"));
         assertThat(filter.test(Path.of("a.txt"), root), is(true));
         assertThat(filter.test(Path.of("b.txt"), root), is(true));
         assertThat(filter.test(Path.of("c.txt"), root), is(false));
@@ -221,7 +235,7 @@ class PathPredicatesTest {
     @Test
     void testEmptyIncludesNonEmptyExcludes() {
         Path root = Path.of("/r");
-        BiPredicate<Path, Path> filter = PathPredicates.matches(List.of(), List.of("**/c.txt"));
+        BiPredicate<Path, Path> filter = PathFilters.matches(List.of(), List.of("**/c.txt"));
         assertThat(filter.test(Path.of("a.txt"), root), is(true));
         assertThat(filter.test(Path.of("b.txt"), root), is(true));
         assertThat(filter.test(Path.of("c.txt"), root), is(false));

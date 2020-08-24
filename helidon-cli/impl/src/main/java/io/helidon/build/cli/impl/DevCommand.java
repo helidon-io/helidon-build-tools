@@ -39,6 +39,7 @@ import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.cli.impl.CommandRequirements.requireValidMavenProjectConfig;
 import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
+import static io.helidon.build.util.Constants.ENABLE_HELIDON_CLI;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_STARTING;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_HEADER;
@@ -153,6 +154,7 @@ public final class DevCommand extends BaseCommand {
                     .stdErr(stdErr)
                     .filter(filter)
                     .addArgument(devGoal)
+                    .addArgument(ENABLE_HELIDON_CLI)
                     .addArgument(CLEAN_PROP_PREFIX + clean)
                     .addArgument(FORK_PROP_PREFIX + fork)
                     .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
