@@ -9,6 +9,31 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Versions
 
+### [unreleased]
+
+### Changes
+
+- Split cli maven goal out of helidon-maven-plugin [247](https://github.com/oracle/helidon-build-tools/issues/247) [260](https://github.com/oracle/helidon-build-tools/pull/260) [271](https://github.com/oracle/helidon-build-tools/pull/271)
+- Backward compatibility with new helidon-cli-maven-plugin [267](https://github.com/oracle/helidon-build-tools/pull/267) [259](https://github.com/oracle/helidon-build-tools/issues/259)
+- Various fixes to prepare upcoming support of windows.
+
+### Fixes
+
+- Close process output readers [268](https://github.com/oracle/helidon-build-tools/pull/268) [273](https://github.com/oracle/helidon-build-tools/pull/273)
+- Fix `STDOUT` processing [270](https://github.com/oracle/helidon-build-tools/pull/270)
+- Redirect `STDIN` for all Maven processes [266](https://github.com/oracle/helidon-build-tools/pull/266)
+- Fix CLI option parsing for non global properties [261](https://github.com/oracle/helidon-build-tools/issues/261) [263](https://github.com/oracle/helidon-build-tools/pull/263)
+- Use `File.pathSeparator` to create class-path [264](https://github.com/oracle/helidon-build-tools/pull/264)
+- Fix `PATH` environment processing [250](https://github.com/oracle/helidon-build-tools/issues/250)
+- Fix CLI update message [234](https://github.com/oracle/helidon-build-tools/issues/234) [235](https://github.com/oracle/helidon-build-tools/pull/235)
+
+### Notable New Features
+
+- Property pass-through [248](https://github.com/oracle/helidon-build-tools/issues/248) [272](https://github.com/oracle/helidon-build-tools/pull/272)
+- Dev-loop pass-through [239](https://github.com/oracle/helidon-build-tools/issues/239) [239](https://github.com/oracle/helidon-build-tools/issues/239)
+- Add option and user preference to disable ANSI colors [256](https://github.com/oracle/helidon-build-tools/issues/256) [236](https://github.com/oracle/helidon-build-tools/pull/236) [192](https://github.com/oracle/helidon-build-tools/issues/192)
+- Support user configurable defaults of init options [252](https://github.com/oracle/helidon-build-tools/pull/252)
+
 ### [2.0.2]
 
 ### Changes
@@ -28,6 +53,7 @@ This release of helidon-build-tools does not contain changes related to the Heli
 
 Initial release of the Helidon CLI.
 
+[unreleased]: https://github.com/oracle/helidon-build-tools/compare/2.0.2...master
 [2.0.2]: https://github.com/oracle/helidon-build-tools/compare/2.0.1...2.0.2
 [2.0.0]: https://github.com/oracle/helidon-build-tools/tree/2.0.0/helidon-cli
 
