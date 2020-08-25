@@ -23,7 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.codehaus.plexus.configuration.PlexusConfiguration;
@@ -51,7 +50,6 @@ interface StagingAction extends StagingElement {
     default void execute(StagingContext context, Path dir) throws IOException {
         execute(context, dir, new HashMap<>());
     }
-
 
     /**
      * Describe the task.
@@ -82,20 +80,22 @@ interface StagingAction extends StagingElement {
     static List<StagingAction> fromConfiguration(PlexusConfiguration configuration, StagingElementFactory factory) {
         PlexusConfigNode parent = new PlexusConfigNode(configuration, null);
         Map<PlexusConfigNode, Map<String, List<StagingElement>>> mappings = new LinkedHashMap<>();
-        Consumer<PlexusConfigNode> visitor = node -> {
+        parent.visit(node -> {
+            PlexusConfigNode nodeParent = node.parent();
+            String nodeName = node.name();
             mappings.computeIfAbsent(node, n -> new LinkedHashMap<>());
-            mappings.computeIfAbsent(node.parent(), n -> new LinkedHashMap<>());
-            if (factory.isWrapperElement(node.name())) {
-                String wrappedName = factory.wrappedElementName(node.name());
-                mappings.get(node.parent()).put(wrappedName, mappings.get(node).get(wrappedName));
+            mappings.computeIfAbsent(nodeParent, n -> new LinkedHashMap<>());
+            if (factory.isWrapperElement(nodeName)) {
+                String wrappedName = factory.wrappedElementName(nodeName);
+                mappings.get(nodeParent).put(wrappedName, mappings.get(node).get(wrappedName));
             } else {
-                mappings.get(node.parent())
-                        .computeIfAbsent(node.name(), n -> new LinkedList<>())
-                        .add(factory.create(node.name(), node.attributes(), mappings.get(node), node.value()));
+                mappings.get(nodeParent)
+                        .computeIfAbsent(nodeName, n -> new LinkedList<>())
+                        .add(factory.create(nodeName, node.attributes(), mappings.get(node), node.value()));
             }
-        };
-        parent.visit(visitor);
-        return mappings.get(parent).values()
+        });
+        return mappings.get(parent)
+                .values()
                 .stream()
                 .flatMap(List::stream)
                 .filter(StagingAction.class::isInstance)
