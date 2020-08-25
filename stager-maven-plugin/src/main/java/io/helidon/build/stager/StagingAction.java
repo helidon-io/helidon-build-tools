@@ -16,16 +16,17 @@
 
 package io.helidon.build.stager;
 
-import org.codehaus.plexus.configuration.PlexusConfiguration;
-
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import org.codehaus.plexus.configuration.PlexusConfiguration;
 
 /**
  * Staging action.
@@ -48,7 +49,7 @@ interface StagingAction extends StagingElement {
      * @param dir     directory
      */
     default void execute(StagingContext context, Path dir) throws IOException {
-        execute(context, dir, Map.of());
+        execute(context, dir, new HashMap<>());
     }
 
 
