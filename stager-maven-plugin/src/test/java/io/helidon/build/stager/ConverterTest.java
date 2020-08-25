@@ -32,21 +32,22 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Tests {@link StagedDirectoryConverter}.
+ * Tests {@link StagingAction#fromConfiguration(PlexusConfiguration, StagingElementFactory)}.
  */
-class StagedDirectoryConverterTest {
+class ConverterTest {
 
     @Test
     public void testConverter() throws Exception {
-        Reader reader = new InputStreamReader(StagedDirectoryConverterTest.class.getResourceAsStream("/testconfig.xml"));
+        Reader reader = new InputStreamReader(ConverterTest.class.getResourceAsStream("/testconfig.xml"));
         PlexusConfiguration plexusConfiguration = new XmlPlexusConfiguration(Xpp3DomBuilder.build(reader));
-        List<StagedDirectory> stagedDirectories = StagedDirectoryConverter.fromConfiguration(plexusConfiguration);
-        assertThat(stagedDirectories, is(not(nullValue())));
-        assertThat(stagedDirectories.size(), is(1));
-        StagedDirectory stagedDirectory = stagedDirectories.get(0);
-        assertThat(stagedDirectory.target(), is("${project.build.directory}/site"));
-        assertThat(stagedDirectory.tasks().size(), is(14));
-        List<StagingTask> tasks = stagedDirectory.tasks();
+        List<StagingAction> actions = StagingAction.fromConfiguration(plexusConfiguration);
+        assertThat(actions, is(not(nullValue())));
+        assertThat(actions.size(), is(1));
+        assertThat(actions.get(0), is(instanceOf(StagingDirectory.class)));
+        StagingDirectory directory = (StagingDirectory) actions.get(0);
+        assertThat(directory.target(), is("${project.build.directory}/site"));
+        assertThat(directory.actions().size(), is(14));
+        List<StagingAction> tasks = directory.actions();
 
         assertThat(tasks.get(0), is(instanceOf(UnpackArtifactTask.class)));
         UnpackArtifactTask unpack1 = (UnpackArtifactTask) tasks.get(0);

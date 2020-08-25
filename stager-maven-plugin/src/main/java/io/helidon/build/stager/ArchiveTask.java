@@ -23,17 +23,24 @@ import java.util.Map;
 /**
  * Generate an archive with a set of tasks.
  */
-final class ArchiveTask extends StagingTask {
+class ArchiveTask extends StagingTask {
 
-    private final List<StagingTask> tasks;
+    static final String ELEMENT_NAME = "archive";
+
+    private final List<StagingAction> actions;
     private final String includes;
     private final String excludes;
 
-    ArchiveTask(TaskIterators iterators, List<StagingTask> tasks, String target, String includes, String excludes) {
+    ArchiveTask(ActionIterators iterators, List<StagingAction> actions, String target, String includes, String excludes) {
         super(iterators, target);
-        this.tasks = tasks == null ? List.of() : tasks;
+        this.actions = actions == null ? List.of() : actions;
         this.includes = includes;
         this.excludes = excludes;
+    }
+
+    @Override
+    public String elementName() {
+        return ELEMENT_NAME;
     }
 
     /**
@@ -41,8 +48,8 @@ final class ArchiveTask extends StagingTask {
      *
      * @return tasks, never {@code null}
      */
-    List<StagingTask> tasks() {
-        return tasks;
+    List<StagingAction> tasks() {
+        return actions;
     }
 
     /**
@@ -66,13 +73,22 @@ final class ArchiveTask extends StagingTask {
     @Override
     protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
         Path stageDir = context.createTempDirectory("archive-task");
-        for (StagingTask task : tasks) {
-            task.execute(context, stageDir, variables);
+        for (StagingAction actions : actions) {
+            actions.execute(context, stageDir, variables);
         }
         String resolvedTarget = resolveVar(target(), variables);
         String resolvedIncludes = resolveVar(includes, variables);
         String resolvedExcludes = resolveVar(excludes, variables);
         context.logInfo("Archiving %s to %s", stageDir, resolvedTarget);
         context.archive(stageDir, dir.resolve(resolvedTarget), resolvedIncludes, resolvedExcludes);
+    }
+
+    @Override
+    public String describe(Path dir, Map<String, String> variables) {
+        return ELEMENT_NAME + "{"
+                + "target=" + resolveVar(target(), variables)
+                + ", includes='" + resolveVar(includes, variables) + '\''
+                + ", excludes='" + resolveVar(excludes, variables) + '\''
+                + '}';
     }
 }

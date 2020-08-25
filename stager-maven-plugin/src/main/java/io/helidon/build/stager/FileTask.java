@@ -25,10 +25,12 @@ import java.util.Map;
  */
 final class FileTask extends StagingTask {
 
+    static final String ELEMENT_NAME = "file";
+
     private final String content;
     private final String source;
 
-    FileTask(TaskIterators iterators, String target, String content, String source) {
+    FileTask(ActionIterators iterators, String target, String content, String source) {
         super(iterators, target);
         this.content = content;
         this.source = source;
@@ -53,6 +55,11 @@ final class FileTask extends StagingTask {
     }
 
     @Override
+    public String elementName() {
+        return ELEMENT_NAME;
+    }
+
+    @Override
     protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
         String resolvedTarget = resolveVar(target(), variables);
         String resolvedSource = resolveVar(source, variables);
@@ -71,5 +78,14 @@ final class FileTask extends StagingTask {
                 Files.writeString(targetFile, resolvedContent);
             }
         }
+    }
+
+    @Override
+    public String describe(Path dir, Map<String, String> variables) {
+        return ELEMENT_NAME + "{"
+                + "source=" + resolveVar(source, variables)
+                + ", target=" + resolveVar(target(), variables)
+                + ", content='" +  resolveVar(content, variables) + '\''
+                + '}';
     }
 }

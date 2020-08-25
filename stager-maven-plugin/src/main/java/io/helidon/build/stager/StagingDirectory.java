@@ -18,23 +18,30 @@ package io.helidon.build.stager;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Generate a directory using a set of tasks.
+ * Generate a directory using a set of actions.
  */
-final class StagedDirectory {
+class StagingDirectory implements StagingAction {
 
-    private final List<StagingTask> tasks;
+    static final String ELEMENT_NAME = "directory";
+
+    private final List<StagingAction> actions;
     private final String target;
 
-    StagedDirectory(String target, List<StagingTask> tasks) {
+    StagingDirectory(String target, List<StagingAction> actions) {
         if (target == null || target.isEmpty()) {
             throw new IllegalArgumentException("target is required");
         }
         this.target = target;
-        this.tasks = tasks == null ? List.of() : tasks;
+        this.actions = actions == null ? List.of() : actions;
+    }
+
+    @Override
+    public String elementName() {
+        return ELEMENT_NAME;
     }
 
     /**
@@ -47,25 +54,27 @@ final class StagedDirectory {
     }
 
     /**
-     * Nested tasks.
+     * Nested actions.
      *
-     * @return tasks, never {@code null}
+     * @return actions, never {@code null}
      */
-    List<StagingTask> tasks() {
-        return tasks;
+    List<StagingAction> actions() {
+        return actions;
     }
 
-    /**
-     * Execute the nested tasks to render the staged directory.
-     *
-     * @param context staging context
-     * @throws IOException if an IO error occurs
-     */
-    void execute(StagingContext context, Path dir) throws IOException {
-        Path targetDir = dir.resolve(target);
+    @Override
+    public void execute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
+        Path targetDir = dir.resolve(target());
         Files.createDirectories(targetDir);
-        for (StagingTask task : tasks) {
-            task.execute(context, targetDir, new HashMap<>());
+        for (StagingAction action : actions()) {
+            action.execute(context, targetDir, variables);
         }
+    }
+
+    @Override
+    public String describe(Path dir, Map<String, String> variables) {
+        return ELEMENT_NAME + "{"
+                + "target='" + dir.resolve(target()) + '\''
+                + '}';
     }
 }

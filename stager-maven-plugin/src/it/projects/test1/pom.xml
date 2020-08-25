@@ -47,6 +47,7 @@
                             <goal>stage</goal>
                         </goals>
                         <configuration>
+                            <dryRun>true</dryRun>
                             <directories>
                                 <directory target="${project.build.directory}/site">
                                     <unpack-artifacts>

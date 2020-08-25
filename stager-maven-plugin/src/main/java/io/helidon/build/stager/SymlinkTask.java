@@ -25,9 +25,11 @@ import java.util.Map;
  */
 final class SymlinkTask extends StagingTask {
 
+    static final String ELEMENT_NAME = "symlink";
+
     private final String source;
 
-    SymlinkTask(TaskIterators iterators, String source, String target) {
+    SymlinkTask(ActionIterators iterators, String source, String target) {
         super(iterators, target);
         if (source == null || source.isEmpty()) {
             throw new IllegalArgumentException("source is required");
@@ -44,10 +46,25 @@ final class SymlinkTask extends StagingTask {
     }
 
     @Override
+    public String elementName() {
+        return ELEMENT_NAME;
+    }
+
+    @Override
     protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
         Path link = dir.resolve(resolveVar(target(), variables));
         Path linkTarget = link.getParent().relativize(dir.resolve(resolveVar(source, variables)));
         context.logInfo("Creating symlink source: %s, target: %s", link, linkTarget);
         Files.createSymbolicLink(link, linkTarget);
+    }
+
+    @Override
+    public String describe(Path dir, Map<String, String> variables) {
+        String link = resolveVar(target(), variables);
+        Path linkTarget = dir.resolve(link).getParent().relativize(dir.resolve(resolveVar(source, variables)));
+        return ELEMENT_NAME + "{"
+                + "target=" + linkTarget
+                + ", source=" + link
+                + '}';
     }
 }
