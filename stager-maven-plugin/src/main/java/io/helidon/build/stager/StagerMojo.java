@@ -150,7 +150,7 @@ public class StagerMojo extends AbstractMojo {
      */
     private final class DryRunAction implements StagingAction {
 
-        final StagingAction delegate;
+        private final StagingAction delegate;
 
         DryRunAction(StagingAction delegate) {
             this.delegate = delegate;
@@ -178,7 +178,7 @@ public class StagerMojo extends AbstractMojo {
      */
     private final class DryRunTask extends StagingTask {
 
-        final StagingTask delegate;
+        private final StagingTask delegate;
 
         DryRunTask(StagingTask delegate) {
             super(delegate.iterators(), delegate.target());
