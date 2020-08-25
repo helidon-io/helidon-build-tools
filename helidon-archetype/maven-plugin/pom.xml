@@ -97,9 +97,9 @@
                     <streamLogs>true</streamLogs>
                     <showErrors>true</showErrors>
                     <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
-                    <skipInvocation>${maven.test.skip}</skipInvocation>
+                    <skipInvocation>${skipTests}</skipInvocation>
                     <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
-                    <skipInstallation>${maven.test.skip}</skipInstallation>
+                    <skipInstallation>${skipTests}</skipInstallation>
                 </configuration>
                 <executions>
                     <execution>
