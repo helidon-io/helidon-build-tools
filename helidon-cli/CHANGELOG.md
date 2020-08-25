@@ -9,7 +9,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Versions
 
-### [unreleased]
+### [2.1.0]
 
 ### Changes
 
@@ -53,7 +53,7 @@ This release of helidon-build-tools does not contain changes related to the Heli
 
 Initial release of the Helidon CLI.
 
-[unreleased]: https://github.com/oracle/helidon-build-tools/compare/2.0.2...master
+[2.1.0]: https://github.com/oracle/helidon-build-tools/compare/2.0.2...2.1.0
 [2.0.2]: https://github.com/oracle/helidon-build-tools/compare/2.0.1...2.0.2
 [2.0.0]: https://github.com/oracle/helidon-build-tools/tree/2.0.0/helidon-cli
 
