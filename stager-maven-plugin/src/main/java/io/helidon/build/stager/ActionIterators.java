@@ -19,17 +19,15 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Internal model for a list of variables.
+ * Internal model for action iterators.
  */
-final class Variables extends LinkedList<Variable> implements StagingElement {
+final class ActionIterators extends LinkedList<ActionIterator> implements StagingElement {
 
-    static final String ELEMENT_NAME = "variables";
+    static final String ELEMENT_NAME = "iterators";
 
-    Variables(){
-    }
-
-    Variables(List<Variable> variables) {
-        addAll(variables);
+    ActionIterators(List<ActionIterator> iterators) {
+        super();
+        addAll(iterators);
     }
 
     @Override

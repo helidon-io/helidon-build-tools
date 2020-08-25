@@ -26,9 +26,11 @@ import java.util.Objects;
  */
 final class CopyArtifactTask extends StagingTask {
 
+    static final String ELEMENT_NAME = "copy-artifact";
+
     private final ArtifactGAV gav;
 
-    CopyArtifactTask(TaskIterators iterators, ArtifactGAV gav, String target) {
+    CopyArtifactTask(ActionIterators iterators, ArtifactGAV gav, String target) {
         super(iterators, target == null ? "{artifactId}-{version}.{type}" : target);
         this.gav = Objects.requireNonNull(gav);
     }
@@ -43,7 +45,22 @@ final class CopyArtifactTask extends StagingTask {
     }
 
     @Override
+    public String elementName() {
+        return ELEMENT_NAME;
+    }
+
+    @Override
     protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
+        ArtifactGAV resolvedGav = resolveGAV(variables);
+        String resolveTarget = resolveVar(target(), variables);
+        context.logInfo("Resolving %s", resolvedGav);
+        Path artifact = context.resolve(resolvedGav);
+        Path targetFile = dir.resolve(resolveTarget);
+        context.logInfo("Copying %s to %s", artifact, targetFile);
+        Files.copy(artifact, targetFile);
+    }
+
+    private ArtifactGAV resolveGAV(Map<String, String> variables) {
         ArtifactGAV resolvedGav = new ArtifactGAV(
                 resolveVar(gav.groupId(), variables),
                 resolveVar(gav.artifactId(), variables),
@@ -58,11 +75,14 @@ final class CopyArtifactTask extends StagingTask {
         if (resolvedClassifier != null && !resolvedClassifier.isEmpty()) {
             variables.put("classifier", resolvedClassifier);
         }
-        String resolveTarget = resolveVar(target(), variables);
-        context.logInfo("Resolving %s", resolvedGav);
-        Path artifact = context.resolve(resolvedGav);
-        Path targetFile = dir.resolve(resolveTarget);
-        context.logInfo("Copying %s to %s", artifact, targetFile);
-        Files.copy(artifact, targetFile);
+        return resolvedGav;
+    }
+
+    @Override
+    public String describe(Path dir, Map<String, String> variables) {
+        return ELEMENT_NAME + "{"
+                + "gav=" + resolveGAV(variables)
+                + ", target=" + resolveVar(target(), variables)
+                + '}';
     }
 }

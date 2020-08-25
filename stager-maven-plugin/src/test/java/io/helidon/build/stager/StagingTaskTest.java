@@ -35,7 +35,7 @@ class StagingTaskTest {
     public void testIterator() throws IOException {
         Variables variables = new Variables();
         variables.add(new Variable("foo", new VariableValue.ListValue("foo1", "foo2")));
-        TaskIterators taskIterators = new TaskIterators(List.of(new TaskIterator(variables)));
+        ActionIterators taskIterators = new ActionIterators(List.of(new ActionIterator(variables)));
         TestTask task = new TestTask(taskIterators, "{foo}");
         task.execute(null, null, Map.of());
         assertThat(task.renderedTargets, hasItems("foo1", "foo2"));
@@ -47,7 +47,7 @@ class StagingTaskTest {
         variables.add(new Variable("foo", new VariableValue.ListValue("foo1", "foo2", "foo3")));
         variables.add(new Variable("bar", new VariableValue.ListValue("bar1", "bar2")));
         variables.add(new Variable("bob", new VariableValue.ListValue("bob1", "bob2", "bob3", "bob4")));
-        TaskIterators taskIterators = new TaskIterators(List.of(new TaskIterator(variables)));
+        ActionIterators taskIterators = new ActionIterators(List.of(new ActionIterator(variables)));
         TestTask task = new TestTask(taskIterators, "{foo}-{bar}-{bob}");
         task.execute(null, null, Map.of());
         assertThat(task.renderedTargets, hasItems(
@@ -63,7 +63,7 @@ class StagingTaskTest {
 
         private final List<String> renderedTargets;
 
-        TestTask(TaskIterators iterators, String target) {
+        TestTask(ActionIterators iterators, String target) {
             super(iterators, target);
             this.renderedTargets = new LinkedList<>();
         }
@@ -71,6 +71,16 @@ class StagingTaskTest {
         @Override
         protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) {
             renderedTargets.add(resolveVar(target(), variables));
+        }
+
+        @Override
+        public String elementName() {
+            return "test";
+        }
+
+        @Override
+        public String describe(Path dir, Map<String, String> variables) {
+            return "test";
         }
     }
 }

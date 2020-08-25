@@ -28,19 +28,26 @@ import java.util.stream.Collectors;
  * @see io.helidon.build.stager.VariableValue.ListValue
  * @param <T> value type
  */
-abstract class VariableValue<T> {
+interface VariableValue<T> extends StagingElement {
+
+    String ELEMENT_NAME = "value";
 
     /**
      * Convert this value to a plain object.
      *
      * @return T
      */
-    abstract T unwrap();
+    T unwrap();
+
+    @Override
+    default String elementName() {
+        return ELEMENT_NAME;
+    }
 
     /**
      * Simple text value.
      */
-    static final class SimpleValue extends VariableValue<String> {
+    class SimpleValue implements VariableValue<String> {
 
         private final String text;
 
@@ -52,7 +59,7 @@ abstract class VariableValue<T> {
         }
 
         @Override
-        String unwrap() {
+        public String unwrap() {
             return text;
         }
     }
@@ -60,7 +67,7 @@ abstract class VariableValue<T> {
     /**
      * A value that holds a list of values.
      */
-    static final class ListValue extends VariableValue<List<Object>> {
+    class ListValue implements VariableValue<List<Object>> {
 
         private final List<VariableValue> value;
 
@@ -76,7 +83,7 @@ abstract class VariableValue<T> {
         }
 
         @Override
-        List<Object> unwrap() {
+        public List<Object> unwrap() {
             return value.stream().map(VariableValue::unwrap).collect(Collectors.toList());
         }
     }
@@ -84,7 +91,7 @@ abstract class VariableValue<T> {
     /**
      * A value that holds a list of values.
      */
-    static final class MapValue extends VariableValue<Map<String, Object>> {
+    class MapValue implements VariableValue<Map<String, Object>> {
 
         private final Map<String, VariableValue> value;
 
@@ -100,7 +107,7 @@ abstract class VariableValue<T> {
         }
 
         @Override
-        Map<String, Object> unwrap() {
+        public Map<String, Object> unwrap() {
             return value.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().unwrap()));
         }
     }

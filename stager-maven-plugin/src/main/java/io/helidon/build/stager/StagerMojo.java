@@ -20,11 +20,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -94,8 +94,14 @@ public class StagerMojo extends AbstractMojo {
     @Parameter(required = true)
     private PlexusConfiguration directories;
 
+    /**
+     * Dry-run, if {@code true} the tasks are no-ops.
+     */
+    @Parameter(defaultValue = "false", property = "stager.dryRun")
+    private boolean dryRun;
+
     @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void execute() throws MojoExecutionException {
         if (directories == null) {
             return;
         }
@@ -103,12 +109,95 @@ public class StagerMojo extends AbstractMojo {
                 repoSession, remoteRepos, archiverManager);
         Path dir = outputDirectory.toPath();
 
+        StagingElementFactory factory;
+        if (dryRun) {
+            getLog().info("Dry run mode");
+            factory = new DryRunStagingElementFactory();
+        } else {
+            factory = new StagingElementFactory();
+        }
+
         try {
-            for (StagedDirectory stagedDir : StagedDirectoryConverter.fromConfiguration(directories)) {
-                stagedDir.execute(context, dir);
+            for (StagingAction action : StagingAction.fromConfiguration(directories, factory)) {
+                action.execute(context, dir);
             }
         } catch (IOException ex) {
             throw new MojoExecutionException(ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * Custom staging element factory that wraps the staging tasks to overrides the execution to do a no-op.
+     */
+    private final class DryRunStagingElementFactory extends StagingElementFactory {
+
+        @Override
+        StagingAction createAction(String name,
+                                   Map<String, String> attrs,
+                                   Map<String, List<StagingElement>> children,
+                                   String text) {
+
+            StagingAction action = super.createAction(name, attrs, children, text);
+            if (action instanceof StagingTask) {
+                return new DryRunTask((StagingTask) action);
+            }
+            return new DryRunAction(action);
+        }
+    }
+
+    /**
+     * Staging action that prints information about the action being executed.
+     */
+    private final class DryRunAction implements StagingAction {
+
+        final StagingAction delegate;
+
+        DryRunAction(StagingAction delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void execute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
+            getLog().info(describe(dir, variables));
+            delegate.execute(context, dir, variables);
+        }
+
+        @Override
+        public String elementName() {
+            return delegate.elementName();
+        }
+
+        @Override
+        public String describe(Path dir, Map<String, String> variables) {
+            return delegate.describe(dir, variables);
+        }
+    }
+
+    /**
+     * Staging task that prints information about the task being executed and makes the actual task execution a no-op.
+     */
+    private final class DryRunTask extends StagingTask {
+
+        final StagingTask delegate;
+
+        DryRunTask(StagingTask delegate) {
+            super(delegate.iterators(), delegate.target());
+            this.delegate = delegate;
+        }
+
+        @Override
+        public String elementName() {
+            return delegate.elementName();
+        }
+
+        @Override
+        protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) {
+            getLog().info(describe(dir, variables));
+        }
+
+        @Override
+        public String describe(Path dir, Map<String, String> variables) {
+            return delegate.describe(dir, variables);
         }
     }
 
@@ -171,7 +260,7 @@ public class StagerMojo extends AbstractMojo {
         @Override
         public void archive(Path directory, Path target, String excludes, String includes) {
             File archiveFile = target.toFile();
-            Archiver archiver = null;
+            Archiver archiver;
             try {
                 archiver = archiverManager.getArchiver(archiveFile);
             } catch (NoSuchArchiverException ex) {

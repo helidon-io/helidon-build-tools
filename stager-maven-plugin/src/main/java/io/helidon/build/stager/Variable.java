@@ -18,7 +18,9 @@ package io.helidon.build.stager;
 /**
  * Variable model.
  */
-final class Variable {
+class Variable implements StagingElement {
+
+    static final String ELEMENT_NAME = "variable";
 
     private final String name;
     private final VariableValue value;
@@ -50,5 +52,10 @@ final class Variable {
      */
     VariableValue value() {
         return value;
+    }
+
+    @Override
+    public String elementName() {
+        return ELEMENT_NAME;
     }
 }

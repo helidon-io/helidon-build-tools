@@ -28,11 +28,13 @@ import java.util.Objects;
  */
 final class UnpackArtifactTask extends StagingTask {
 
+    static final String ELEMENT_NAME = "unpack-artifact";
+
     private final ArtifactGAV gav;
     private final String includes;
     private final String excludes;
 
-    UnpackArtifactTask(TaskIterators iterators, ArtifactGAV gav, String target, String includes, String excludes) {
+    UnpackArtifactTask(ActionIterators iterators, ArtifactGAV gav, String target, String includes, String excludes) {
         super(iterators, target);
         this.gav = Objects.requireNonNull(gav);
         this.includes = includes;
@@ -41,6 +43,7 @@ final class UnpackArtifactTask extends StagingTask {
 
     /**
      * Get the GAV.
+     *
      * @return GAV, never {@code null}
      */
     ArtifactGAV gav() {
@@ -49,6 +52,7 @@ final class UnpackArtifactTask extends StagingTask {
 
     /**
      * Get the excludes.
+     *
      * @return excludes, may be {@code null}
      */
     String excludes() {
@@ -57,6 +61,7 @@ final class UnpackArtifactTask extends StagingTask {
 
     /**
      * Get the includes.
+     *
      * @return includes, may be {@code null}
      */
     String includes() {
@@ -64,8 +69,29 @@ final class UnpackArtifactTask extends StagingTask {
     }
 
     @Override
+    public String elementName() {
+        return ELEMENT_NAME;
+    }
+
+    @Override
     protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
         String resolvedTarget = resolveVar(target(), variables);
+        ArtifactGAV resolvedGav = resolveGAV(variables);
+        context.logInfo("Resolving %s", resolvedGav);
+        Path artifact = context.resolve(resolvedGav);
+        Path targetDir = dir.resolve(resolvedTarget);
+        context.logInfo("Unpacking %s to %s", artifact, targetDir);
+        if (Files.exists(targetDir)) {
+            Files.walk(targetDir)
+                    .sorted(Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(File::delete);
+        }
+        Files.createDirectories(targetDir);
+        context.unpack(artifact, targetDir, excludes, includes);
+    }
+
+    private ArtifactGAV resolveGAV(Map<String, String> variables) {
         ArtifactGAV resolvedGav = new ArtifactGAV(
                 resolveVar(gav.groupId(), variables),
                 resolveVar(gav.artifactId(), variables),
@@ -80,17 +106,16 @@ final class UnpackArtifactTask extends StagingTask {
         if (resolvedClassifier != null && !resolvedClassifier.isEmpty()) {
             variables.put("classifier", resolvedClassifier);
         }
-        context.logInfo("Resolving %s", resolvedGav);
-        Path artifact = context.resolve(resolvedGav);
-        Path targetDir = dir.resolve(resolvedTarget);
-        context.logInfo("Unpacking %s to %s", artifact, targetDir);
-        if (Files.exists(targetDir)) {
-            Files.walk(targetDir)
-                    .sorted(Comparator.reverseOrder())
-                    .map(Path::toFile)
-                    .forEach(File::delete);
-        }
-        Files.createDirectories(targetDir);
-        context.unpack(artifact, targetDir, excludes, includes);
+        return resolvedGav;
+    }
+
+    @Override
+    public String describe(Path dir, Map<String, String> variables) {
+        return ELEMENT_NAME + "{"
+                + "gav=" + resolveGAV(variables)
+                + ", target=" + resolveVar(target(), variables)
+                + ", includes=" + includes
+                + ", excludes='" + excludes
+                + '}';
     }
 }

@@ -19,7 +19,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.helidon.build.util.MustacheHelper.renderMustacheTemplate;
 
@@ -28,16 +30,19 @@ import static io.helidon.build.util.MustacheHelper.renderMustacheTemplate;
  */
 final class TemplateTask extends StagingTask {
 
+    static final String ELEMENT_NAME = "template";
+
     private final String source;
     private final Map<String, Object> templateVariables;
 
-    TemplateTask(TaskIterators iterators, String source, String target, Map<String, Object> templateVariables) {
+    TemplateTask(ActionIterators iterators, String source, String target, List<Variable> variables) {
         super(iterators, target);
         if (source == null || source.isEmpty()) {
             throw new IllegalArgumentException("source is required");
         }
         this.source = source;
-        this.templateVariables = templateVariables == null ? Map.of() : templateVariables;
+        this.templateVariables = variables.stream()
+                .collect(Collectors.toMap(Variable::name, v -> v.value().unwrap()));
     }
 
     /**
@@ -47,6 +52,11 @@ final class TemplateTask extends StagingTask {
      */
     String source() {
         return source;
+    }
+
+    @Override
+    public String elementName() {
+        return ELEMENT_NAME;
     }
 
     /**
@@ -67,7 +77,15 @@ final class TemplateTask extends StagingTask {
             throw new IllegalStateException(sourceFile + " does not exist");
         }
         Path targetFile = dir.resolve(resolvedTarget);
-        Map<String, Object> scope = new HashMap<>();
         renderMustacheTemplate(sourceFile.toFile(), resolvedSource, targetFile, templateVariables);
+    }
+
+    @Override
+    public String describe(Path dir, Map<String, String> variables) {
+        return ELEMENT_NAME + "{"
+                + "source=" + resolveVar(source, variables)
+                + ", target=" + resolveVar(target(), variables)
+                + ", vars" + templateVariables
+                + '}';
     }
 }

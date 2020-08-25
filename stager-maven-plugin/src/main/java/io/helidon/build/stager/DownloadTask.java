@@ -36,9 +36,11 @@ final class DownloadTask extends StagingTask {
      */
     private static final byte[] BUFFER = new byte[8 * 1024];
 
+    static final String ELEMENT_NAME = "download";
+
     private final String url;
 
-    DownloadTask(TaskIterators iterators, String url, String target) {
+    DownloadTask(ActionIterators iterators, String url, String target) {
         super(iterators, target);
         if (url == null || url.isEmpty()) {
             throw new IllegalArgumentException("url is required");
@@ -56,6 +58,11 @@ final class DownloadTask extends StagingTask {
     }
 
     @Override
+    public String elementName() {
+        return ELEMENT_NAME;
+    }
+
+    @Override
     protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
         String resolvedTarget = resolveVar(target(), variables);
         URL resolvedUrl = new URL(resolveVar(url, variables));
@@ -70,6 +77,14 @@ final class DownloadTask extends StagingTask {
                 }
             }
         }
+    }
+
+    @Override
+    public String describe(Path dir, Map<String, String> variables) {
+        return ELEMENT_NAME + "{"
+                + "url=" + resolveVar(url, variables)
+                + ", target=" + resolveVar(target(), variables)
+                + '}';
     }
 
     private InputStream open(URL url) throws IOException {
