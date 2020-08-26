@@ -15,6 +15,7 @@
  */
 package io.helidon.build.util;
 
+import org.fusesource.jansi.Ansi;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -28,6 +29,7 @@ class StyleFunctionTest {
     @Test
     void testAll() {
         boolean enabled = AnsiConsoleInstaller.areAnsiEscapesEnabled();
+        Ansi.setEnabled(enabled);
         for (StyleFunction function : StyleFunction.values()) {
             String example = function.apply("example");
             assertThat(Style.isStyled(example), is(enabled));

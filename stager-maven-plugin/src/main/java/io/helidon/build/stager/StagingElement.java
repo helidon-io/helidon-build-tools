@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.build.stager;
 
-import java.util.LinkedList;
-import java.util.List;
-
 /**
- * Internal model for task iterators.
+ * Staging element.
  */
-final class TaskIterators extends LinkedList<TaskIterator> {
+public interface StagingElement {
 
-    TaskIterators() {
-    }
-
-    TaskIterators(List<TaskIterator> iterators) {
-        addAll(iterators);
-    }
+    /**
+     * Element name.
+     *
+     * @return element name, never {@code null}
+     */
+    String elementName();
 }

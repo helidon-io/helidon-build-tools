@@ -18,6 +18,8 @@ package io.helidon.build.util;
 
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.AnsiRenderer;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -27,10 +29,16 @@ import static org.hamcrest.Matchers.is;
  * Unit test for class {@link StyleRenderer}.
  */
 class StyleRendererTest {
+
     static {
         System.setProperty("jansi.force", "true");
         Ansi.setEnabled(true);
         AnsiConsoleInstaller.install();
+    }
+
+    @BeforeEach
+    static void checkAnsi() {
+        Assumptions.assumeTrue(AnsiConsoleInstaller.install());
     }
 
     @Test

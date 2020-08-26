@@ -21,6 +21,7 @@ import java.util.Map;
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.Ansi.Attribute;
 import org.fusesource.jansi.Ansi.Color;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import static org.fusesource.jansi.Ansi.Color.BLACK;
@@ -277,6 +278,7 @@ class StyleTest {
 
     @Test
     void testStrip() {
+        Assumptions.assumeTrue(AnsiConsoleInstaller.install());
         String sample = "sample";
         Style style = Style.of("RED!");
         String styled = style.apply(sample);

@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.build-tools.archetype</groupId>
         <artifactId>helidon-archetype-project</artifactId>
-        <version>2.0.3-SNAPSHOT</version>
+        <version>2.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-archetype-maven-plugin</artifactId>
     <name>Helidon Archetype Maven Plugin</name>
@@ -97,9 +97,9 @@
                     <streamLogs>true</streamLogs>
                     <showErrors>true</showErrors>
                     <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
-                    <skipInvocation>${maven.test.skip}</skipInvocation>
+                    <skipInvocation>${skipTests}</skipInvocation>
                     <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
-                    <skipInstallation>${maven.test.skip}</skipInstallation>
+                    <skipInstallation>${skipTests}</skipInstallation>
                 </configuration>
                 <executions>
                     <execution>

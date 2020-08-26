@@ -23,9 +23,9 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
- * Task iterators.
+ * Action iterator.
  */
-final class TaskIterator implements Iterator<Map<String, String>> {
+final class ActionIterator implements Iterator<Map<String, String>> {
 
     private final Map.Entry<String, List<String>>[] entries;
     private final int[] indexes;
@@ -34,7 +34,7 @@ final class TaskIterator implements Iterator<Map<String, String>> {
     private final HashMap<String, String> baseVariables;
 
     @SuppressWarnings("unchecked")
-    TaskIterator(Variables variables) {
+    ActionIterator(Variables variables) {
         baseVariables = new HashMap<>();
         Map<String, List<String>> iteratorVariables = new HashMap<>();
         for (Variable variable : variables) {
@@ -66,7 +66,7 @@ final class TaskIterator implements Iterator<Map<String, String>> {
      *
      * @param variables base variables
      */
-    TaskIterator baseVariable(Map<String, String> variables) {
+    ActionIterator baseVariable(Map<String, String> variables) {
         baseVariables.putAll(variables);
         return this;
     }

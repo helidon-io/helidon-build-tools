@@ -22,12 +22,12 @@ import java.util.Map;
 /**
  * Base class for all tasks.
  */
-abstract class StagingTask {
+abstract class StagingTask implements StagingAction {
 
     private final String target;
-    private final TaskIterators iterators;
+    private final ActionIterators iterators;
 
-    StagingTask(TaskIterators iterators, String target) {
+    StagingTask(ActionIterators iterators, String target) {
         if (target == null || target.isEmpty()) {
             throw new IllegalArgumentException("target is required");
         }
@@ -49,7 +49,7 @@ abstract class StagingTask {
      *
      * @return task iterators, may be {@code null}
      */
-    TaskIterators iterators() {
+    ActionIterators iterators() {
         return iterators;
     }
 
@@ -62,12 +62,13 @@ abstract class StagingTask {
      * @throws IOException if an IO error occurs
      * @throws IOException if an IO error occurs
      */
-    void execute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
+    @Override
+    public void execute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
         if (iterators == null || iterators.isEmpty()) {
             doExecute(context, dir, variables);
             return;
         }
-        for (TaskIterator iterator : iterators) {
+        for (ActionIterator iterator : iterators) {
             iterator.baseVariable(variables);
             while (iterator.hasNext()) {
                 doExecute(context, dir, iterator.next());
