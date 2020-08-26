@@ -23,6 +23,7 @@ import java.util.Map;
 
 import io.helidon.build.dev.ProjectSupplier;
 import io.helidon.build.dev.maven.DevLoopBuildConfig;
+import io.helidon.build.dev.maven.MavenEnvironment;
 import io.helidon.build.dev.maven.MavenGoalReferenceResolver;
 import io.helidon.build.dev.maven.MavenProjectConfigCollector;
 import io.helidon.build.dev.maven.MavenProjectSupplier;
@@ -167,8 +168,9 @@ public class DevMojo extends AbstractMojo {
             Log.info("build: %s", devLoop);
 
             final DevLoopBuildConfig buildConfig = devLoop == null ? new DevLoopBuildConfig() : devLoop;
-            buildConfig.resolve(MavenGoalReferenceResolver.create(project, session, mojoDescriptorCreator, defaultLifeCycles,
-                                                                  standardDelegate, delegates, plugins));
+            final MavenEnvironment env = new MavenEnvironment(project, session, mojoDescriptorCreator, defaultLifeCycles,
+                                                              standardDelegate, delegates, plugins);
+            buildConfig.resolve(new MavenGoalReferenceResolver(env));
             final ProjectSupplier projectSupplier = new MavenProjectSupplier(buildConfig);
             final List<String> jvmArgs = toList(appJvmArgs);
             final List<String> args = toList(appArgs);

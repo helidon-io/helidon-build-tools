@@ -17,7 +17,7 @@ package io.helidon.build.dev.maven;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 import io.helidon.build.util.Log;
 
@@ -27,13 +27,9 @@ import org.apache.maven.lifecycle.Lifecycle;
 import org.apache.maven.lifecycle.LifecycleMappingDelegate;
 import org.apache.maven.lifecycle.LifecyclePhaseNotFoundException;
 import org.apache.maven.lifecycle.NoGoalSpecifiedException;
-import org.apache.maven.lifecycle.internal.MojoDescriptorCreator;
 import org.apache.maven.model.Plugin;
-import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.project.MavenProject;
-import org.twdata.maven.mojoexecutor.MojoExecutor;
-import org.twdata.maven.mojoexecutor.MojoExecutor.ExecutionEnvironment;
 
 import static java.util.Objects.requireNonNull;
 
@@ -69,62 +65,15 @@ import static java.util.Objects.requireNonNull;
  * References #1-3 are equivalent, #4 executes only the compile goal and #5 executes all goals in the compile lifecycle.
  */
 public class MavenGoalReferenceResolver {
-    private final MavenProject project;
-    private final MavenSession session;
-    private final MojoDescriptorCreator mojoDescriptorCreator;
-    private final DefaultLifecycles defaultLifeCycles;
-    private final LifecycleMappingDelegate standardDelegate;
-    private final Map<String, LifecycleMappingDelegate> delegates;
-    private final ExecutionEnvironment environment;
-
-    /**
-     * Returns a new resolver.
-     *
-     * @param project The project.
-     * @param session The session.
-     * @param mojoDescriptorCreator Used to resolve plugin prefixes.
-     * @param defaultLifeCycles Used to map a phase to a list of goals.
-     * @param standardDelegate Used to map a phase to a list of goals.
-     * @param delegates Used to map a phase to a list of goals.
-     * @param pluginManager Used to lookup plugins.
-     * @return The resolver.
-     */
-    public static MavenGoalReferenceResolver create(MavenProject project,
-                                                    MavenSession session,
-                                                    MojoDescriptorCreator mojoDescriptorCreator,
-                                                    DefaultLifecycles defaultLifeCycles,
-                                                    LifecycleMappingDelegate standardDelegate,
-                                                    Map<String, LifecycleMappingDelegate> delegates,
-                                                    BuildPluginManager pluginManager) {
-        return new MavenGoalReferenceResolver(project, session, mojoDescriptorCreator, defaultLifeCycles,
-                                              standardDelegate, delegates, pluginManager);
-    }
+    private final MavenEnvironment environment;
 
     /**
      * Constructor.
      *
-     * @param project The project.
-     * @param session The session.
-     * @param mojoDescriptorCreator Used to resolve plugin prefixes.
-     * @param defaultLifeCycles Used to map a phase to a list of goals.
-     * @param standardDelegate Used to map a phase to a list of goals.
-     * @param delegates Used to map a phase to a list of goals.
-     * @param pluginManager Used to lookup plugins.
+     * @param environment The Maven environment.
      */
-    private MavenGoalReferenceResolver(MavenProject project,
-                                       MavenSession session,
-                                       MojoDescriptorCreator mojoDescriptorCreator,
-                                       DefaultLifecycles defaultLifeCycles,
-                                       LifecycleMappingDelegate standardDelegate,
-                                       Map<String, LifecycleMappingDelegate> delegates,
-                                       BuildPluginManager pluginManager) {
-        this.project = project;
-        this.session = session;
-        this.mojoDescriptorCreator = mojoDescriptorCreator;
-        this.defaultLifeCycles = defaultLifeCycles;
-        this.standardDelegate = standardDelegate;
-        this.delegates = delegates;
-        this.environment = MojoExecutor.executionEnvironment(project, session, pluginManager);
+    public MavenGoalReferenceResolver(MavenEnvironment environment) {
+        this.environment = environment;
     }
 
     /**
@@ -194,41 +143,47 @@ public class MavenGoalReferenceResolver {
     }
 
     private void addPrefixGoal(String prefix, String goal, String executionId, List<MavenGoal> goals) throws Exception {
-        final Plugin plugin = mojoDescriptorCreator.findPluginForPrefix(prefix, session);
+        final Plugin plugin = environment.mojoDescriptorCreator().findPluginForPrefix(prefix, environment.session());
         goals.add(MavenGoal.create(plugin.getGroupId(), plugin.getArtifactId(), goal, executionId, environment));
     }
 
     private void addPhaseGoals(String phase, List<MavenGoal> goals) throws Exception {
-        LifecycleMappingDelegate delegate = standardDelegate;
+        MavenProject project = environment.project();
+        MavenSession session = environment.session();
+        LifecycleMappingDelegate delegate = environment.standardLifecycleDelegate();
         Lifecycle lifecycle = phaseToLifecycle(phase);
         if (Arrays.binarySearch(DefaultLifecycles.STANDARD_LIFECYCLES, lifecycle.getId()) < 0) {
-            delegate = delegates.get(lifecycle.getId());
+            delegate = environment.lifecycleDelegates().get(lifecycle.getId());
             if (delegate == null) {
-                delegate = standardDelegate;
+                delegate = environment.standardLifecycleDelegate();
             }
         }
-
-        delegate.calculateLifecycleMappings(session, project, lifecycle, phase)
-                .entrySet()
-                .stream()
-                .filter(e -> !e.getValue().isEmpty())
-                .forEach(e -> e.getValue().forEach(execution -> goals.add(toGoal(execution))));
+        List<MojoExecution> executions = delegate.calculateLifecycleMappings(session, project, lifecycle, phase)
+                                                 .entrySet()
+                                                 .stream()
+                                                 .filter(e -> !e.getValue().isEmpty())
+                                                 .flatMap(e -> e.getValue().stream())
+                                                 .collect(Collectors.toList());
+        for (MojoExecution execution : executions) {
+            goals.add(toGoal(execution));
+        }
     }
 
     private Lifecycle phaseToLifecycle(String phase) throws Exception {
-        Lifecycle lifecycle = defaultLifeCycles.get(phase);
+        DefaultLifecycles defaultLifecycles = environment.defaultLifeCycles();
+        Lifecycle lifecycle = defaultLifecycles.get(phase);
         if (lifecycle == null) {
             throw new LifecyclePhaseNotFoundException("Unknown lifecycle phase \"" + phase
                                                       + "\". You must specify a valid lifecycle phase" + " or a goal in the "
                                                       + "format <plugin-prefix>:<goal> or "
                                                       + "<plugin-group-id>:<plugin-artifact-id>[:<plugin-version>]:<goal>. "
                                                       + "Available lifecycle phases are: "
-                                                      + defaultLifeCycles.getLifecyclePhaseList() + ".", phase);
+                                                      + defaultLifecycles.getLifecyclePhaseList() + ".", phase);
         }
         return lifecycle;
     }
 
-    private MavenGoal toGoal(MojoExecution execution) {
+    private MavenGoal toGoal(MojoExecution execution) throws Exception {
         return MavenGoal.create(execution.getGroupId(), execution.getArtifactId(),
                                 execution.getGoal(), execution.getExecutionId(), environment);
     }

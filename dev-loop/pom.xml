@@ -79,10 +79,6 @@
             <artifactId>maven-plugin-annotations</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.twdata.maven</groupId>
-            <artifactId>mojo-executor</artifactId>
-        </dependency>
     </dependencies>
     <build>
         <plugins>
