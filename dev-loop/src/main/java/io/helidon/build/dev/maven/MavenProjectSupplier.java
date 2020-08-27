@@ -56,7 +56,6 @@ import static io.helidon.build.util.FileUtils.ChangeDetectionType.LATEST;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
-import static io.helidon.build.util.PathFilters.matchesFileName;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DEPENDENCIES;
 import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
@@ -88,7 +87,6 @@ public class MavenProjectSupplier implements ProjectSupplier {
         final String name = file.getFileName().toString();
         return !name.equals(TARGET_DIR_NAME);
     };
-    private static final BiPredicate<Path, Path> MAVEN_POM = matchesFileName("pom.xml");
 
     private final DevLoopBuildConfig buildConfig;
     private final AtomicBoolean firstBuild;
@@ -96,16 +94,6 @@ public class MavenProjectSupplier implements ProjectSupplier {
     private final List<String> buildCmd;
     private ProjectConfig projectConfig;
     private BuildType buildType;
-
-    /**
-     * Returns a filter that returns {@code true} for any filename that equals {@code "pom.xml"}.
-     *
-     * @return The filter. The second path parameter is always ignored; a {@code BiPredicate<Path,Path>} is used for symmetry
-     * with other uses of {@link PathFilters}.
-     */
-    public static BiPredicate<Path, Path> matchesMavenPom() {
-        return MAVEN_POM;
-    }
 
     /**
      * Constructor.
