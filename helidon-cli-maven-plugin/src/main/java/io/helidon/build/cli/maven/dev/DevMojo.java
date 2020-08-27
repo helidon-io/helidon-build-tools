@@ -17,6 +17,7 @@
 package io.helidon.build.cli.maven.dev;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -165,16 +166,16 @@ public class DevMojo extends AbstractMojo {
                 MavenLogWriter.install(getLog());
             }
 
-            Log.debug("build: %s", devLoop);
-
             final DevLoopBuildConfig buildConfig = devLoop == null ? new DevLoopBuildConfig() : devLoop;
             final MavenEnvironment env = new MavenEnvironment(project, session, mojoDescriptorCreator, defaultLifeCycles,
                                                               standardDelegate, delegates, plugins);
             buildConfig.resolve(new MavenGoalReferenceResolver(env));
+
             final ProjectSupplier projectSupplier = new MavenProjectSupplier(buildConfig);
             final List<String> jvmArgs = toList(appJvmArgs);
             final List<String> args = toList(appArgs);
-            final DevLoop loop = new DevLoop(devProjectDir.toPath(), projectSupplier, clean, fork, terminalMode, jvmArgs, args);
+            final Path dir = devProjectDir.toPath();
+            final DevLoop loop = new DevLoop(dir, projectSupplier, clean, fork, terminalMode, jvmArgs, args, buildConfig);
             loop.start(Integer.MAX_VALUE);
         } catch (Exception e) {
             throw new MojoExecutionException("Error", e);

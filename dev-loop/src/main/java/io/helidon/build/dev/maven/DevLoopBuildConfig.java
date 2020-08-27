@@ -28,85 +28,12 @@ import static java.util.Collections.emptyList;
 
 /**
  * Configuration beans for the {@link DevLoop} build lifecycle.
- * <p></p>
- * Example pom declaration:
- * <pre>
- *     &lt;profiles>
- *         &lt;profile>
- *             &lt;id>helidon-cli&lt;/id>
- *             &lt;activation>
- *                 &lt;property>
- *                     &lt;name>helidon.cli&lt;/name>
- *                     &lt;value>true&lt;/value>
- *                 &lt;/property>
- *             &lt;/activation>
- *             &lt;build>
- *                 &lt;plugins>
- *                     &lt;plugin>
- *                         &lt;groupId>io.helidon.build-tools&lt;/groupId>
- *                         &lt;artifactId>helidon-cli-maven-plugin&lt;/artifactId>
- *                         &lt;extensions>true&lt;/extensions>
- *                         &lt;executions>
- *                             &lt;execution>
- *                                 &lt;id>default-cli&lt;/id> &lt;!-- must use this id! -->
- *                                 &lt;goals>
- *                                     &lt;goal>dev&lt;/goal>
- *                                 &lt;/goals>
- *                                 &lt;configuration>
- *
- *                                    &lt;!-- NOTE: changes to this configuration will NOT be noticed during execution of
- *                                    the helidon dev command -->
- *
- *                                    &lt;devLoop>
- *                                        &lt;!-- Phase used when a full build is required; defaults to process-classes -->
- *                                         &lt;fullBuildPhase>process-test-classes&lt;/fullBuildPhase>
- *                                         &lt;incrementalBuild>
- *
- *                                             &lt;!-- directories/includes/excludes from maven-resources-plugin config -->
- *                                             &lt;resourceGoals>
- *                                                 &lt;goal>resources:copy&lt;/goal>
- *                                             &lt;/resourceGoals>
- *
- *                                             &lt;!-- directories/includes/excludes from maven-compiler-plugin config -->
- *                                             &lt;javaSourceGoals>
- *                                                 &lt;goal>process-my-sources&lt;/goal>
- *                                             &lt;/javaSourceGoals>
- *
- *                                             &lt;customDirectories>
- *                                                 &lt;directory>
- *                                                     &lt;path>src/etc1&lt;/path>
- *                                                     &lt;includes>**&#47;*.foo,**&#47;*.bar&lt;/includes>
- *                                                     &lt;excludes />
- *                                                     &lt;goals>
- *                                                         &lt;goal>my-custom-goal-1&lt;/goal>
- *                                                         &lt;goal>my-custom-goal-2&lt;/goal>
- *                                                     &lt;/goals>
- *                                                 &lt;/directory>
- *                                                 &lt;directory>
- *                                                     &lt;path>src/etc2&lt;/path>
- *                                                     &lt;includes>**&#47;*.bar&lt;/includes>
- *                                                     &lt;excludes>**&#47;*.foo&lt;/includes>
- *                                                     &lt;goals>
- *                                                         &lt;goal>my-custom-goal-X&lt;/goal>
- *                                                     &lt;/goals>
- *                                                 &lt;/directory>
- *                                             &lt;/customDirectories>
- *                                         &lt;/incrementalBuild>
- *                                     &lt;/devLoop>
- *                                 &lt;/configuration>
- *                             &lt;/execution>
- *                         &lt;/executions>
- *                     &lt;/plugin>
- *                 &lt;/plugins>
- *             &lt;/build>
- *         &lt;/profile>
- *     &lt;/profiles>
- * </pre>
  */
 public class DevLoopBuildConfig {
     private static final String DEFAULT_FULL_BUILD_PHASE = "process-classes";
 
     private String fullBuildPhase;
+    private int maxBuildFailures;
     private IncrementalBuildConfig incrementalBuild;
 
     /**
@@ -114,6 +41,7 @@ public class DevLoopBuildConfig {
      */
     public DevLoopBuildConfig() {
         this.fullBuildPhase = DEFAULT_FULL_BUILD_PHASE;
+        this.maxBuildFailures = Integer.MAX_VALUE;
         this.incrementalBuild = new IncrementalBuildConfig();
     }
 
@@ -135,6 +63,15 @@ public class DevLoopBuildConfig {
      */
     public String fullBuildPhase() {
         return fullBuildPhase;
+    }
+
+    /**
+     * Returns the maximum number of build failures allowed before the dev loop should exit.
+     *
+     * @return The maximum.
+     */
+    public int maxBuildFailures() {
+        return maxBuildFailures;
     }
 
     /**
@@ -164,10 +101,20 @@ public class DevLoopBuildConfig {
         this.incrementalBuild = incrementalBuild;
     }
 
+    /**
+     * Sets the maximum number of build failures allowed before the dev loop should exit.
+     *
+     * @param maxBuildFailures The count.
+     */
+    public void setMaxBuildFailures(int maxBuildFailures) {
+        this.maxBuildFailures = maxBuildFailures;
+    }
+
     @Override
     public String toString() {
         return "DevLoopBuildConfig{"
                + "fullBuildPhase=" + fullBuildPhase
+               + ", maxBuildFailures=" + maxBuildFailures
                + ", incrementalBuild=" + incrementalBuild
                + '}';
     }
