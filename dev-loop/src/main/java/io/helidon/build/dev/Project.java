@@ -95,162 +95,6 @@ public class Project {
     }
 
     /**
-     * A {@code Project} builder.
-     */
-    public static class Builder {
-        private final List<BuildFile> buildFiles;
-        private final List<String> compilerFlags;
-        private final List<Path> dependencyPaths;
-        private final List<BuildFile> dependencies;
-        private final List<BuildComponent> components;
-        private String name;
-        private BuildType buildType;
-        private ProjectDirectory root;
-        private String mainClassName;
-        private ProjectConfig config;
-
-        private Builder() {
-            this.buildFiles = new ArrayList<>();
-            this.compilerFlags = new ArrayList<>();
-            this.dependencyPaths = new ArrayList<>();
-            this.dependencies = new ArrayList<>();
-            this.components = new ArrayList<>();
-        }
-
-        /**
-         * Sets the project name.
-         *
-         * @param name The name.
-         * @return This instance, for chaining.
-         */
-        public Builder name(String name) {
-            this.name = requireNonNull(name);
-            return this;
-        }
-
-        /**
-         * Sets the build type.
-         *
-         * @param buildType The type.
-         * @return This instance, for chaining.
-         */
-        public Builder buildType(BuildType buildType) {
-            this.buildType = requireNonNull(buildType);
-            return this;
-        }
-
-        /**
-         * Sets the project root directory.
-         *
-         * @param rootDirectory The directory.
-         * @return This instance, for chaining.
-         */
-        public Builder rootDirectory(ProjectDirectory rootDirectory) {
-            this.root = requireNonNull(rootDirectory);
-            return this;
-        }
-
-        /**
-         * Add a build system file.
-         *
-         * @param buildFile The file.
-         * @return This instance, for chaining.
-         */
-        public Builder buildFile(BuildFile buildFile) {
-            buildFiles.add(requireNonNull(buildFile));
-            return this;
-        }
-
-        /**
-         * Add a compiler flag.
-         *
-         * @param compilerFlag The flag.
-         * @return This instance, for chaining.
-         */
-        public Builder compilerFlags(String compilerFlag) {
-            compilerFlags.add(requireNonNull(compilerFlag));
-            return this;
-        }
-
-        /**
-         * Add a component.
-         *
-         * @param component The component.
-         * @return This instance, for chaining.
-         */
-        public Builder component(BuildComponent component) {
-            components.add(requireNonNull(component));
-            return this;
-        }
-
-        /**
-         * Add a dependency.
-         *
-         * @param dependency The dependency.
-         * @return This instance, for chaining.
-         */
-        public Builder dependency(Path dependency) {
-            dependencyPaths.add(requireNonNull(dependency));
-            return this;
-        }
-
-        /**
-         * Sets the main class name.
-         *
-         * @param mainClassName The name.
-         * @return This instance, for chaining.
-         */
-        public Builder mainClassName(String mainClassName) {
-            this.mainClassName = requireNonNull(mainClassName);
-            return this;
-        }
-
-        /**
-         * Sets the project config.
-         *
-         * @param config The config.
-         * @return This instance, for chaining.
-         */
-        public Builder config(ProjectConfig config) {
-            this.mainClassName = requireNonNull(mainClassName);
-            return this;
-        }
-
-        /**
-         * Returns a new project.
-         *
-         * @return The project.
-         */
-        public Project build() {
-            if (root == null) {
-                throw new IllegalStateException("rootDirectory required");
-            }
-            if (mainClassName == null) {
-                throw new IllegalStateException("mainClassName required");
-            }
-            if (buildType == null) {
-                throw new IllegalStateException("buildType required");
-            }
-            assertNotEmpty(buildFiles, "buildSystemFile");
-            assertNotEmpty(dependencyPaths, "dependency");
-            assertNotEmpty(components, "component");
-            if (name == null) {
-                name = root.path().getFileName().toString();
-            }
-            if (config == null) {
-                config = ProjectConfig.projectConfig(root.path());
-            }
-            return new Project(this);
-        }
-
-        private void assertNotEmpty(Collection<?> collection, String description) {
-            if (collection.isEmpty()) {
-                throw new IllegalStateException("At least 1 " + description + " is required");
-            }
-        }
-    }
-
-    /**
      * Returns the project name.
      *
      * @return The name.
@@ -493,6 +337,162 @@ public class Project {
             } finally {
                 System.setOut(origOut);
                 System.setErr(origErr);
+            }
+        }
+    }
+
+    /**
+     * A {@code Project} builder.
+     */
+    public static class Builder {
+        private final List<BuildFile> buildFiles;
+        private final List<String> compilerFlags;
+        private final List<Path> dependencyPaths;
+        private final List<BuildFile> dependencies;
+        private final List<BuildComponent> components;
+        private String name;
+        private BuildType buildType;
+        private ProjectDirectory root;
+        private String mainClassName;
+        private ProjectConfig config;
+
+        private Builder() {
+            this.buildFiles = new ArrayList<>();
+            this.compilerFlags = new ArrayList<>();
+            this.dependencyPaths = new ArrayList<>();
+            this.dependencies = new ArrayList<>();
+            this.components = new ArrayList<>();
+        }
+
+        /**
+         * Sets the project name.
+         *
+         * @param name The name.
+         * @return This instance, for chaining.
+         */
+        public Builder name(String name) {
+            this.name = requireNonNull(name);
+            return this;
+        }
+
+        /**
+         * Sets the build type.
+         *
+         * @param buildType The type.
+         * @return This instance, for chaining.
+         */
+        public Builder buildType(BuildType buildType) {
+            this.buildType = requireNonNull(buildType);
+            return this;
+        }
+
+        /**
+         * Sets the project root directory.
+         *
+         * @param rootDirectory The directory.
+         * @return This instance, for chaining.
+         */
+        public Builder rootDirectory(ProjectDirectory rootDirectory) {
+            this.root = requireNonNull(rootDirectory);
+            return this;
+        }
+
+        /**
+         * Add a build system file.
+         *
+         * @param buildFile The file.
+         * @return This instance, for chaining.
+         */
+        public Builder buildFile(BuildFile buildFile) {
+            buildFiles.add(requireNonNull(buildFile));
+            return this;
+        }
+
+        /**
+         * Add a compiler flag.
+         *
+         * @param compilerFlag The flag.
+         * @return This instance, for chaining.
+         */
+        public Builder compilerFlags(String compilerFlag) {
+            compilerFlags.add(requireNonNull(compilerFlag));
+            return this;
+        }
+
+        /**
+         * Add a component.
+         *
+         * @param component The component.
+         * @return This instance, for chaining.
+         */
+        public Builder component(BuildComponent component) {
+            components.add(requireNonNull(component));
+            return this;
+        }
+
+        /**
+         * Add a dependency.
+         *
+         * @param dependency The dependency.
+         * @return This instance, for chaining.
+         */
+        public Builder dependency(Path dependency) {
+            dependencyPaths.add(requireNonNull(dependency));
+            return this;
+        }
+
+        /**
+         * Sets the main class name.
+         *
+         * @param mainClassName The name.
+         * @return This instance, for chaining.
+         */
+        public Builder mainClassName(String mainClassName) {
+            this.mainClassName = requireNonNull(mainClassName);
+            return this;
+        }
+
+        /**
+         * Sets the project config.
+         *
+         * @param config The config.
+         * @return This instance, for chaining.
+         */
+        public Builder config(ProjectConfig config) {
+            this.mainClassName = requireNonNull(mainClassName);
+            return this;
+        }
+
+        /**
+         * Returns a new project.
+         *
+         * @return The project.
+         */
+        public Project build() {
+            if (root == null) {
+                throw new IllegalStateException("rootDirectory required");
+            }
+            if (mainClassName == null) {
+                throw new IllegalStateException("mainClassName required");
+            }
+            if (buildType == null) {
+                throw new IllegalStateException("buildType required");
+            }
+            assertNotEmpty(buildFiles, "buildSystemFile");
+            assertNotEmpty(dependencyPaths, "dependency");
+            assertNotEmpty(components, "component");
+            if (name == null) {
+                name = root.path().getFileName().toString();
+            }
+            if (config == null) {
+                config = ProjectConfig.projectConfig(root.path());
+            }
+            return new Project(this);
+        }
+
+        private void assertNotEmpty(Collection<?> collection, String description) {
+            if (collection.isEmpty()) {
+                throw new IllegalStateException("At least 1 " + description + " is required");
             }
         }
     }

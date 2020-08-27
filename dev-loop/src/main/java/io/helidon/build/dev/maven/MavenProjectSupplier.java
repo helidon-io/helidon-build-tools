@@ -216,19 +216,19 @@ public class MavenProjectSupplier implements ProjectSupplier {
             builder.dependency(Path.of(dependency));
         }
 
-        // Build components
+        // Main class
+        builder.mainClassName(projectConfig.property(PROJECT_MAINCLASS));
+
+        // Finally, add build components
+
         final List<String> sourceDirs = projectConfig.propertyAsList(PROJECT_SOURCEDIRS);
         final List<String> sourceIncludes = projectConfig.propertyAsList(PROJECT_SOURCE_INCLUDES);
         final List<String> sourceExcludes = projectConfig.propertyAsList(PROJECT_SOURCE_EXCLUDES);
         final List<String> classesDirs = projectConfig.propertyAsList(PROJECT_CLASSDIRS);
         final List<String> resourcesDirs = projectConfig.propertyAsList(PROJECT_RESOURCEDIRS);
 
-        // Map classesDirs to a list of BuildRoots so can re-use as the outputRoot for all components.
-        //
-        // TODO: outputRoot should be customizable for CustomDir iff we keep it. Consider removing it since
-        //       it's only use with Maven is so we can watch for changes here in "watchBinariesOnly" mode
-        //       which we have not exposed. It is also used for the testing build steps, but that could be
-        //       hard wired.
+        // Map classesDirs to a list of BuildRoots so can re-use as the outputRoot for all components
+        // See issue https://github.com/oracle/helidon-build-tools/issues/280 regarding output roots
 
         final BuildRootType classesRootType = BuildRootType.create(DirectoryType.JavaClasses, matchesJavaClass());
         final List<BuildRoot> classesRoots = classesDirs.stream()
@@ -269,6 +269,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
         }
 
         // Add custom components
+        // See issue https://github.com/oracle/helidon-build-tools/issues/280 regarding custom output roots
 
         for (CustomDirectoryConfig customDir : buildConfig.incrementalBuild().customDirectories()) {
             Path directory = customDir.path();
@@ -283,9 +284,6 @@ public class MavenProjectSupplier implements ProjectSupplier {
                 Log.warn("%s not found", directory);
             }
         }
-
-        // Main class
-        builder.mainClassName(projectConfig.property(PROJECT_MAINCLASS));
 
         return builder.build();
     }

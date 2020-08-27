@@ -231,6 +231,6 @@ public class MavenGoal implements BuildStep {
                 }
             }
         }
-       return finalConfiguration;
+        return finalConfiguration;
     }
 }
