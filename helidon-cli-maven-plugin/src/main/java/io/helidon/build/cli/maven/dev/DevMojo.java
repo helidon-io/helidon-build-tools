@@ -165,7 +165,7 @@ public class DevMojo extends AbstractMojo {
                 MavenLogWriter.install(getLog());
             }
 
-            Log.info("build: %s", devLoop);
+            Log.debug("build: %s", devLoop);
 
             final DevLoopBuildConfig buildConfig = devLoop == null ? new DevLoopBuildConfig() : devLoop;
             final MavenEnvironment env = new MavenEnvironment(project, session, mojoDescriptorCreator, defaultLifeCycles,
