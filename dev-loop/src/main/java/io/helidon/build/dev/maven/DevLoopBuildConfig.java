@@ -30,49 +30,37 @@ import static java.util.Collections.emptyList;
  * Configuration beans for the {@link DevLoop} build lifecycle.
  */
 public class DevLoopBuildConfig {
-    private static final String DEFAULT_FULL_BUILD_PHASE = "process-classes";
-
-    private String fullBuildPhase;
-    private int maxBuildFailures;
+    private FullBuildConfig fullBuild;
     private IncrementalBuildConfig incrementalBuild;
 
     /**
      * Constructor.
      */
     public DevLoopBuildConfig() {
-        this.fullBuildPhase = DEFAULT_FULL_BUILD_PHASE;
-        this.maxBuildFailures = Integer.MAX_VALUE;
+        this.fullBuild = new FullBuildConfig();
         this.incrementalBuild = new IncrementalBuildConfig();
     }
 
     /**
-     * Resolves the Maven goals.
+     * Finalize the configuration.
      *
      * @param resolver The resolver.
      * @throws Exception If an error occurs.
      */
-    public void resolve(MavenGoalReferenceResolver resolver) throws Exception {
-        resolver.assertValidPhase(fullBuildPhase);
-        incrementalBuild.resolve(resolver);
+    public void finish(MavenGoalReferenceResolver resolver) throws Exception {
+        fullBuild.finish(resolver);
+        incrementalBuild.finish(resolver);
     }
 
     /**
-     * Returns the validated full build phase.
+     * Returns the full build config.
      *
-     * @return The phase.
+     * @return The config.
      */
-    public String fullBuildPhase() {
-        return fullBuildPhase;
+    public FullBuildConfig fullBuild() {
+        return fullBuild;
     }
 
-    /**
-     * Returns the maximum number of build failures allowed before the dev loop should exit.
-     *
-     * @return The maximum.
-     */
-    public int maxBuildFailures() {
-        return maxBuildFailures;
-    }
 
     /**
      * Returns the incremental build config.
@@ -84,12 +72,12 @@ public class DevLoopBuildConfig {
     }
 
     /**
-     * Sets the full build phase.
+     * Sets the full build config.
      *
-     * @param fullBuildPhase The phase.
+     * @param fullBuild The config.
      */
-    public void setFullBuildPhase(String fullBuildPhase) {
-        this.fullBuildPhase = fullBuildPhase;
+    public void setFullBuild(FullBuildConfig fullBuild) {
+        this.fullBuild = fullBuild;
     }
 
     /**
@@ -101,56 +89,122 @@ public class DevLoopBuildConfig {
         this.incrementalBuild = incrementalBuild;
     }
 
-    /**
-     * Sets the maximum number of build failures allowed before the dev loop should exit.
-     *
-     * @param maxBuildFailures The count.
-     */
-    public void setMaxBuildFailures(int maxBuildFailures) {
-        this.maxBuildFailures = maxBuildFailures;
-    }
-
     @Override
     public String toString() {
         return "DevLoopBuildConfig{"
-               + "fullBuildPhase=" + fullBuildPhase
-               + ", maxBuildFailures=" + maxBuildFailures
+               + "fullBuild=" + fullBuild
                + ", incrementalBuild=" + incrementalBuild
                + '}';
+    }
+
+    /**
+     * Full build configuration.
+     */
+    public static class FullBuildConfig {
+        private static final String DEFAULT_FULL_BUILD_PHASE = "process-classes";
+
+        private String phase;
+        private int maxBuildFailures;
+
+        public FullBuildConfig() {
+            this.phase = DEFAULT_FULL_BUILD_PHASE;
+            this.maxBuildFailures = Integer.MAX_VALUE;
+        }
+
+        /**
+         * Finalize the configuration.
+         *
+         * @param resolver The resolver.
+         * @throws Exception If an error occurs.
+         */
+        public void finish(MavenGoalReferenceResolver resolver) throws Exception {
+            resolver.assertValidPhase(phase);
+        }
+
+        /**
+         * Returns the validated full build phase.
+         *
+         * @return The phase.
+         */
+        public String phase() {
+            return phase;
+        }
+
+        /**
+         * Returns the maximum number of build failures allowed before the dev loop should exit.
+         *
+         * @return The maximum.
+         */
+        public int maxBuildFailures() {
+            return maxBuildFailures;
+        }
+
+        /**
+         * Sets the full build phase.
+         *
+         * @param phase The phase.
+         */
+        public void setPhase(String phase) {
+            this.phase = phase;
+        }
+
+        /**
+         * Sets the maximum number of full build failures allowed before the dev loop should exit.
+         *
+         * @param maxBuildFailures The count.
+         */
+        public void setMaxBuildFailures(int maxBuildFailures) {
+            this.maxBuildFailures = maxBuildFailures;
+        }
+
+        @Override
+        public String toString() {
+            return "FullBuildConfig{"
+                   + "phase='" + phase + '\''
+                   + ", maxBuildFailures=" + maxBuildFailures
+                   + '}';
+        }
     }
 
     /**
      * Incremental build configuration.
      */
     public static class IncrementalBuildConfig {
-        private static final String DEFAULT_RESOURCES_GOAL = "resources:resources";
-        private static final String DEFAULT_JAVA_SOURCES_GOAL = "compiler:compile";
+        private static final List<String> DEFAULT_RESOURCES_GOAL = List.of("resources:resources");
+        private static final List<String> DEFAULT_JAVA_SOURCES_GOAL = List.of("compiler:compile");
 
         private List<String> resourceGoals;
         private List<String> javaSourceGoals;
         private List<MavenGoal> resolvedResourceGoals;
         private List<MavenGoal> resolvedJavaSourceGoals;
         private List<CustomDirectoryConfig> customDirectories;
+        private int maxBuildFailures;
 
         /**
          * Constructor.
          */
         public IncrementalBuildConfig() {
-            this.resourceGoals = List.of(DEFAULT_RESOURCES_GOAL);
-            this.javaSourceGoals = List.of(DEFAULT_JAVA_SOURCES_GOAL);
+            this.resourceGoals = DEFAULT_RESOURCES_GOAL;
+            this.javaSourceGoals = DEFAULT_JAVA_SOURCES_GOAL;
         }
 
         /**
-         * Resolves the Maven goals.
+         * Finalize the configuration.
          *
          * @param resolver The resolver.
          * @throws Exception If an error occurs.
          */
-        public void resolve(MavenGoalReferenceResolver resolver) throws Exception {
+        public void finish(MavenGoalReferenceResolver resolver) throws Exception {
+            if (resourceGoals.isEmpty()) {
+                resourceGoals = DEFAULT_RESOURCES_GOAL;
+            }
+            if (javaSourceGoals.isEmpty()) {
+                javaSourceGoals = DEFAULT_JAVA_SOURCES_GOAL;
+            }
             resolvedResourceGoals = resolver.resolve(resourceGoals, new ArrayList<>());
             resolvedJavaSourceGoals = resolver.resolve(javaSourceGoals, new ArrayList<>());
             for (CustomDirectoryConfig directory : customDirectories()) {
-                directory.resolve(resolver);
+                directory.finish(resolver);
             }
         }
 
@@ -182,6 +236,15 @@ public class DevLoopBuildConfig {
         }
 
         /**
+         * Returns the maximum number of build failures allowed before the dev loop should exit.
+         *
+         * @return The maximum.
+         */
+        public int maxBuildFailures() {
+            return maxBuildFailures;
+        }
+
+        /**
          * Sets the resource goals.
          *
          * @param resourceGoals The goals.
@@ -208,12 +271,22 @@ public class DevLoopBuildConfig {
             this.customDirectories = customDirectories;
         }
 
+        /**
+         * Sets the maximum number of full build failures allowed before the dev loop should exit.
+         *
+         * @param maxBuildFailures The count.
+         */
+        public void setMaxBuildFailures(int maxBuildFailures) {
+            this.maxBuildFailures = maxBuildFailures;
+        }
+
         @Override
         public String toString() {
             return "IncrementalBuild{"
                    + "resourceGoals=" + resourceGoals
                    + ", javaSourceGoals=" + javaSourceGoals
                    + ", customDirectories=" + customDirectories
+                   + ", maxBuildFailures=" + maxBuildFailures
                    + '}';
         }
 
@@ -229,12 +302,20 @@ public class DevLoopBuildConfig {
             private BiPredicate<Path, Path> resolvedIncludes;
 
             /**
-             * Resolves the Maven goals.
+             * Constructor.
+             */
+            public CustomDirectoryConfig() {
+                this.includes = "";
+                this.excludes = "";
+            }
+
+            /**
+             * Finalize the configuration.
              *
              * @param resolver The resolver.
              * @throws Exception If an error occurs.
              */
-            public void resolve(MavenGoalReferenceResolver resolver) throws Exception {
+            public void finish(MavenGoalReferenceResolver resolver) throws Exception {
                 if (path.isAbsolute()) {
                     throw new IllegalArgumentException(path + " must be relative");
                 }
@@ -243,7 +324,7 @@ public class DevLoopBuildConfig {
             }
 
             private static List<String> toList(String list) {
-                return list == null ? emptyList() : Arrays.asList(list.split(","));
+                return (list == null || list.isEmpty()) ? emptyList() : Arrays.asList(list.split(","));
             }
 
             /**

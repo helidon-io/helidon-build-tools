@@ -166,20 +166,25 @@ public class DevMojo extends AbstractMojo {
                 MavenLogWriter.install(getLog());
             }
 
-            final DevLoopBuildConfig buildConfig = devLoop == null ? new DevLoopBuildConfig() : devLoop;
-            final MavenEnvironment env = new MavenEnvironment(project, session, mojoDescriptorCreator, defaultLifeCycles,
-                                                              standardDelegate, delegates, plugins);
-            buildConfig.resolve(new MavenGoalReferenceResolver(env));
-
-            final ProjectSupplier projectSupplier = new MavenProjectSupplier(buildConfig);
+            final DevLoopBuildConfig configuration = finishBuildConfig();
+            final ProjectSupplier projectSupplier = new MavenProjectSupplier(configuration);
             final List<String> jvmArgs = toList(appJvmArgs);
             final List<String> args = toList(appArgs);
             final Path dir = devProjectDir.toPath();
-            final DevLoop loop = new DevLoop(dir, projectSupplier, clean, fork, terminalMode, jvmArgs, args, buildConfig);
+            final DevLoop loop = new DevLoop(dir, projectSupplier, clean, fork, terminalMode, jvmArgs, args, configuration);
             loop.start(Integer.MAX_VALUE);
         } catch (Exception e) {
             throw new MojoExecutionException("Error", e);
         }
+    }
+
+    private DevLoopBuildConfig finishBuildConfig() throws Exception {
+        final DevLoopBuildConfig config = devLoop == null ? new DevLoopBuildConfig() : devLoop;
+        final MavenEnvironment env = new MavenEnvironment(project, session, mojoDescriptorCreator, defaultLifeCycles,
+                                                          standardDelegate, delegates, plugins);
+        final MavenGoalReferenceResolver resolver = new MavenGoalReferenceResolver(env);
+        config.finish(resolver);
+        return config;
     }
 
     private static List<String> toList(String args) {

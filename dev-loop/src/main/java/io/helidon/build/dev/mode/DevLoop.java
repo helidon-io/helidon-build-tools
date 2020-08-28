@@ -34,6 +34,7 @@ import io.helidon.build.dev.maven.EmbeddedMavenExecutor;
 import io.helidon.build.dev.maven.ForkedMavenExecutor;
 import io.helidon.build.util.Log;
 
+import static io.helidon.build.dev.BuildType.Incremental;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_COMPLETED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_STARTING;
@@ -69,7 +70,7 @@ public class DevLoop {
      * @param terminalMode {@code true} for terminal output.
      * @param appJvmArgs The application JVM arguments.
      * @param appArgs The application arguments.
-     * @param buildConfig The build config.
+     * @param config The build config.
      */
     public DevLoop(Path rootDir,
                    ProjectSupplier projectSupplier,
@@ -78,9 +79,9 @@ public class DevLoop {
                    boolean terminalMode,
                    List<String> appJvmArgs,
                    List<String> appArgs,
-                   DevLoopBuildConfig buildConfig) {
+                   DevLoopBuildConfig config) {
         this.terminalMode = terminalMode;
-        this.monitor = new DevLoopMonitor(terminalMode, projectSupplier.buildFileName(), appJvmArgs, appArgs, buildConfig);
+        this.monitor = new DevLoopMonitor(terminalMode, projectSupplier.buildFileName(), appJvmArgs, appArgs, config);
         this.buildExecutor = forkBuilds ? new ForkedMavenExecutor(rootDir, monitor, MAX_BUILD_WAIT_SECONDS)
                 : new EmbeddedMavenExecutor(rootDir, monitor);
         this.initialClean = initialClean;
@@ -112,18 +113,20 @@ public class DevLoop {
         private long buildStartTime;
         private final List<String> appJvmArgs;
         private final List<String> appArgs;
-        private final AtomicInteger remainingBuildFailures;
+        private final AtomicInteger remainingFullBuildFailures;
+        private final AtomicInteger remainingIncrementalBuildFailures;
 
         private DevLoopMonitor(boolean terminalMode,
                                String buildFileName,
                                List<String> appJvmArgs,
                                List<String> appArgs,
-                               DevLoopBuildConfig buildConfig) {
+                               DevLoopBuildConfig config) {
             this.terminalMode = terminalMode;
             this.buildFileName = buildFileName;
             this.appJvmArgs = appJvmArgs;
             this.appArgs = appArgs;
-            this.remainingBuildFailures = new AtomicInteger(buildConfig.maxBuildFailures());
+            this.remainingFullBuildFailures = new AtomicInteger(config.fullBuild().maxBuildFailures());
+            this.remainingIncrementalBuildFailures = new AtomicInteger(config.incrementalBuild().maxBuildFailures());
         }
 
         private void header() {
@@ -165,7 +168,7 @@ public class DevLoop {
                 log("%s", BoldBlue.apply("up to date"));
             } else {
                 String operation = cycleNumber == 0 ? DEV_LOOP_BUILD_STARTING : "re" + DEV_LOOP_BUILD_STARTING;
-                if (type == BuildType.Incremental) {
+                if (type == Incremental) {
                     log("%s (%s)", BoldBlue.apply(operation), type);
                 } else {
                     log("%s", BoldBlue.apply(operation));
@@ -189,7 +192,7 @@ public class DevLoop {
             Log.info();
             log("%s", BoldRed.apply(DEV_LOOP_BUILD_FAILED));
             ensureStop();
-            if (remainingBuildFailures.decrementAndGet() > 0) {
+            if (hasRemainingBuildFailures(type)) {
                 String message;
                 if (lastChangeType == ChangeType.BuildFile) {
                     message = String.format("waiting for %s changes", buildFileName);
@@ -204,6 +207,11 @@ public class DevLoop {
                 log("%s", BoldYellow.apply("exiting, max failures reached"));
                 return -1L;
             }
+        }
+
+        private boolean hasRemainingBuildFailures(BuildType type) {
+            AtomicInteger remaining = type == Incremental ? remainingFullBuildFailures : remainingIncrementalBuildFailures;
+            return remaining.decrementAndGet() > 0;
         }
 
         @Override

@@ -1,5 +1,5 @@
 
-package me.batsatt.se.bare;
+package com.acme.se.bare;
 
 import java.util.Collections;
 import java.util.logging.Logger;

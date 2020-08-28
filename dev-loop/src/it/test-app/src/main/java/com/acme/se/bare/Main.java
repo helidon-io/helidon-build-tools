@@ -1,9 +1,8 @@
 
-package me.batsatt.se.bare;
+package com.acme.se.bare;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
@@ -31,12 +30,6 @@ public final class Main {
      * @throws IOException if there are problems reading logging properties
      */
     public static void main(final String[] args) throws IOException {
-        System.out.printf("foo property: %s%n", System.getProperty("foo"));
-        System.out.printf("bar property: %s%n", System.getProperty("bar"));
-        System.out.printf("arguments: %s%n", Arrays.asList(args));
-        if (args.length > 0 && args[0].equals("--fail")) {
-            throw new IllegalArgumentException(args[0]);
-        }
         startServer();
     }
 

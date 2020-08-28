@@ -98,13 +98,13 @@ public class MavenProjectSupplier implements ProjectSupplier {
     /**
      * Constructor.
      *
-     * @param buildConfig The build configuration.
+     * @param config The build configuration.
      */
-    public MavenProjectSupplier(DevLoopBuildConfig buildConfig) {
-        this.buildConfig = buildConfig;
+    public MavenProjectSupplier(DevLoopBuildConfig config) {
+        this.buildConfig = config;
         this.firstBuild = new AtomicBoolean(true);
-        this.cleanBuildCmd = List.of(CLEAN_ARG, buildConfig.fullBuildPhase(), SKIP_TESTS_ARG, ENABLE_HELIDON_CLI);
-        this.buildCmd = List.of(buildConfig.fullBuildPhase(), SKIP_TESTS_ARG, ENABLE_HELIDON_CLI);
+        this.cleanBuildCmd = List.of(CLEAN_ARG, config.fullBuild().phase(), SKIP_TESTS_ARG, ENABLE_HELIDON_CLI);
+        this.buildCmd = List.of(config.fullBuild().phase(), SKIP_TESTS_ARG, ENABLE_HELIDON_CLI);
     }
 
     @Override
