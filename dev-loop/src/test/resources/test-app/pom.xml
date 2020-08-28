@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.helidon.applications</groupId>
+        <artifactId>helidon-se</artifactId>
+        <version>2.0.2-SNAPSHOT</version>
+    </parent>
+    <groupId>me.batsatt-helidon</groupId>
+    <artifactId>new-app</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <name>new-app</name>
+
+    <properties>
+        <mainClass>me.batsatt.se.bare.Main</mainClass>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.media</groupId>
+            <artifactId>helidon-media-jsonp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health-checks</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-libs</id>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Test include/exclude extraction -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <includes>**/*.java</includes>
+                    <excludes>
+                        <exclude>**/*.bmp</exclude>
+                        <exclude>**/*.jpg</exclude>
+                        <exclude>**/*.jpeg</exclude>
+                        <exclude>**/*.gif</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
+            <!-- Custom Plugin Execution -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>exit</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>me.batsatt.se.bare.Exit</mainClass>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>say-hello</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>-c</argument>
+                                <argument>echo; echo Hello; echo</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>say-hola</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>-c</argument>
+                                <argument>echo; echo Hola; echo</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.helidon.build-tools</groupId>
+                <artifactId>helidon-cli-maven-plugin</artifactId>
+                <configuration>
+
+                    <!-- NOTE changes to this configuration will NOT be noticed by the helidon dev command! -->
+
+                    <devLoop>
+                        <fullBuildPhase>process-classes</fullBuildPhase>
+                        <maxBuildFailures>1</maxBuildFailures>
+                        <incrementalBuild>
+
+                            <!-- directories/includes/excludes from maven-resources-plugin config -->
+                            <resourceGoals>
+                                <goal>resources:resources</goal>
+                            </resourceGoals>
+
+                            <!-- directories/includes/excludes from maven-compiler-plugin config -->
+                            <javaSourceGoals>
+                                <goal>compiler:compile</goal>
+                            </javaSourceGoals>
+
+                            <customDirectories>
+                                <directory>
+                                    <path>etc</path>
+                                    <includes>**/*.hola</includes>
+                                    <goals>
+                                        <goal>exec:exec@say-hola</goal>
+                                    </goals>
+                                </directory>
+                                <directory>
+                                    <path>control</path>
+                                    <includes>**/*.exit</includes>
+                                    <goals>
+                                        <goal>exec:java@exit</goal>
+                                    </goals>
+                                </directory>
+                            </customDirectories>
+                        </incrementalBuild>
+                    </devLoop>
+                </configuration>
+            </plugin>
+        </plugins>
+
+        <!-- Test include/exclude extraction -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+                <excludes>
+                    <exclude>**/*.bmp</exclude>
+                    <exclude>**/*.jpg</exclude>
+                    <exclude>**/*.jpeg</exclude>
+                    <exclude>**/*.gif</exclude>
+                </excludes>
+            </resource>
+        </resources>
+    </build>
+</project>
