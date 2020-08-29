@@ -106,6 +106,9 @@ public class DevLoopBuildConfig {
         private String phase;
         private int maxBuildFailures;
 
+        /**
+         * Constructor.
+         */
         public FullBuildConfig() {
             this.phase = DEFAULT_FULL_BUILD_PHASE;
             this.maxBuildFailures = Integer.MAX_VALUE;
