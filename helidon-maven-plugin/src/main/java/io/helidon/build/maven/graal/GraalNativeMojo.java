@@ -63,6 +63,11 @@ public class GraalNativeMojo extends AbstractMojo {
     private static final String NATIVE_IMAGE_CMD = "native-image";
 
     /**
+     * Constant for the file extensions of windows executable scripts.
+     */
+    private static final List<String> WINDOWS_SCRIPT_EXTENSIONS = List.of("bat", "cmd", "ps1");
+
+    /**
      * Constant for the file extensions that are executable on windows.
      */
     private static final List<String> WINDOWS_EXECUTABLE_EXTENSIONS = List.of("exe", "bin", "bat", "cmd", "ps1");
@@ -184,9 +189,13 @@ public class GraalNativeMojo extends AbstractMojo {
         // create the command
         List<String> command = new ArrayList<>();
 
+        File nativeImageCmd = findNativeImageCmd();
+        command.add(nativeImageCmd.getAbsolutePath());
         addStaticOrShared(command);
-        addNativeImageTarget(command);
-        addResources(command);
+
+        String quoteToken = IS_WINDOWS && isWindowsScript(nativeImageCmd) ? "\"" : "";
+        addNativeImageTarget(command, quoteToken);
+        addResources(command, quoteToken);
 
         if (reportExceptionStackTraces) {
             command.add("-H:+ReportExceptionStackTraces");
@@ -241,26 +250,25 @@ public class GraalNativeMojo extends AbstractMojo {
         }
     }
 
-    private void addResources(List<String> command) {
+    private void addResources(List<String> command, String quoteToken) {
         String resources = getResources();
         if (!resources.isEmpty()) {
-            command.add("-H:IncludeResources=\"" + resources + "\"");
+            command.add("-H:IncludeResources=" + quoteToken + resources + quoteToken);
         }
     }
 
-    private void addNativeImageTarget(List<String> command) {
+    private void addNativeImageTarget(List<String> command, String quoteToken) {
         Path outputPath = buildDirectory.toPath().resolve(finalName);
         getLog().info("Building native image :" + outputPath.toAbsolutePath());
 
         // Path is the directory
-        command.add("-H:Path=\"" + buildDirectory.getAbsolutePath() + "\"");
+        command.add("-H:Path=" + quoteToken + buildDirectory.getAbsolutePath() + quoteToken);
 
         // Name is the filename
-        command.add("-H:Name=\"" + finalName + "\"");
+        command.add("-H:Name=" + quoteToken + finalName + quoteToken);
     }
 
     private void addStaticOrShared(List<String> command) throws MojoExecutionException {
-        command.add(findNativeImageCmd().getAbsolutePath());
         if (buildShared || buildStatic) {
             if (buildShared && buildStatic) {
                 throw new MojoExecutionException(
@@ -401,7 +409,7 @@ public class GraalNativeMojo extends AbstractMojo {
                 classpathElements.addAll(runtimeClasspathElements);
             }
 
-            String classpath = String.join(":", classpathElements);
+            String classpath = String.join(File.pathSeparator, classpathElements);
             getLog().debug("Built class-path: " + classpath);
             return classpath;
         } catch (DependencyResolutionRequiredException ex) {
@@ -424,6 +432,17 @@ public class GraalNativeMojo extends AbstractMojo {
                 .map(File::getAbsoluteFile)
                 .findFirst()
                 .orElse(null);
+    }
+
+    /**
+     * Test if the given command file is a windows script.
+     * @param cmd command file
+     * @return {@code true} if a windows script, {@code false} otherwise
+     */
+    private static boolean isWindowsScript(File cmd) {
+        return WINDOWS_SCRIPT_EXTENSIONS.stream()
+                .filter(ext -> cmd.getAbsolutePath().endsWith("." + ext))
+                .count() >= 1;
     }
 
     /**
