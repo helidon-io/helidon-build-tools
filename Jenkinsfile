@@ -36,6 +36,21 @@ pipeline {
             }
           }
         }
+        stage('build-windows'){
+          agent {
+            label "windows"
+          }
+          steps {
+            script {
+              try {
+                bat 'mvn clean install'
+              } finally {
+                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
+                junit testResults: '**/target/surefire-reports/*.xml'
+              }
+            }
+          }
+        }
         stage('copyright'){
           steps {
             sh './etc/scripts/copyright.sh'
