@@ -353,7 +353,7 @@ public class GraalNativeMojo extends AbstractMojo {
                 scanner.scan();
                 for (String included : scanner.getIncludedFiles()) {
                     getLog().debug("Found resource: " + included);
-                    resources.add(included);
+                    resources.add(included.replaceAll("\\\\", "/"));
                 }
             }
         }
