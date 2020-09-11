@@ -166,7 +166,7 @@ public class DevMojo extends AbstractMojo {
                 MavenLogWriter.install(getLog());
             }
 
-            final DevLoopBuildConfig configuration = finishBuildConfig();
+            final DevLoopBuildConfig configuration = buildConfig(true);
             final ProjectSupplier projectSupplier = new MavenProjectSupplier(configuration);
             final List<String> jvmArgs = toList(appJvmArgs);
             final List<String> args = toList(appArgs);
@@ -178,12 +178,15 @@ public class DevMojo extends AbstractMojo {
         }
     }
 
-    private DevLoopBuildConfig finishBuildConfig() throws Exception {
+    DevLoopBuildConfig buildConfig(boolean resolve) throws Exception {
         final DevLoopBuildConfig config = devLoop == null ? new DevLoopBuildConfig() : devLoop;
-        final MavenEnvironment env = new MavenEnvironment(project, session, mojoDescriptorCreator, defaultLifeCycles,
-                                                          standardDelegate, delegates, plugins);
-        final MavenGoalReferenceResolver resolver = new MavenGoalReferenceResolver(env);
-        config.finish(resolver);
+        config.validate();
+        if (resolve) {
+            final MavenEnvironment env = new MavenEnvironment(project, session, mojoDescriptorCreator, defaultLifeCycles,
+                                                              standardDelegate, delegates, plugins);
+            final MavenGoalReferenceResolver resolver = new MavenGoalReferenceResolver(env);
+            config.resolve(resolver);
+        }
         return config;
     }
 

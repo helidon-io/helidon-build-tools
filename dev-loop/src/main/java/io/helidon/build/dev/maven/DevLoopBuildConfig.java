@@ -19,7 +19,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiPredicate;
+import java.util.stream.Collectors;
 
 import io.helidon.build.dev.mode.DevLoop;
 import io.helidon.build.util.PathFilters;
@@ -42,14 +44,24 @@ public class DevLoopBuildConfig {
     }
 
     /**
-     * Finalize the configuration.
+     * Validate the configuration.
+     */
+    public void validate() {
+        assertNonNull(fullBuild, "fullBuild required: " + this);
+        assertNonNull(incrementalBuild, "incrementalBuild required: " + this);
+        fullBuild.validate();
+        incrementalBuild.validate();
+    }
+
+    /**
+     * Resolve goal references.
      *
      * @param resolver The resolver.
      * @throws Exception If an error occurs.
      */
-    public void finish(MavenGoalReferenceResolver resolver) throws Exception {
-        fullBuild.finish(resolver);
-        incrementalBuild.finish(resolver);
+    public void resolve(MavenGoalReferenceResolver resolver) throws Exception {
+        fullBuild.resolve(resolver);
+        incrementalBuild.resolve(resolver);
     }
 
     /**
@@ -91,7 +103,7 @@ public class DevLoopBuildConfig {
 
     @Override
     public String toString() {
-        return "DevLoopBuildConfig{"
+        return "devLoop {"
                + "fullBuild=" + fullBuild
                + ", incrementalBuild=" + incrementalBuild
                + '}';
@@ -115,12 +127,21 @@ public class DevLoopBuildConfig {
         }
 
         /**
-         * Finalize the configuration.
+         * Validate the configuration.
+         */
+        public void validate() {
+            if (maxBuildFailures < 0) {
+                throw new IllegalArgumentException("maxBuildFailures cannot be negative: " + this);
+            }
+        }
+
+        /**
+         * Resolve goal references.
          *
          * @param resolver The resolver.
          * @throws Exception If an error occurs.
          */
-        public void finish(MavenGoalReferenceResolver resolver) throws Exception {
+        public void resolve(MavenGoalReferenceResolver resolver) throws Exception {
             resolver.assertValidPhase(phase);
         }
 
@@ -162,7 +183,7 @@ public class DevLoopBuildConfig {
 
         @Override
         public String toString() {
-            return "FullBuildConfig{"
+            return "fullBuild {"
                    + "phase='" + phase + '\''
                    + ", maxBuildFailures=" + maxBuildFailures
                    + '}';
@@ -173,11 +194,11 @@ public class DevLoopBuildConfig {
      * Incremental build configuration.
      */
     public static class IncrementalBuildConfig {
-        private static final List<String> DEFAULT_RESOURCES_GOAL = List.of("resources:resources");
-        private static final List<String> DEFAULT_JAVA_SOURCES_GOAL = List.of("compiler:compile");
+        private static final List<String> DEFAULT_RESOURCES_GOALS = List.of("resources:resources");
+        private static final List<String> DEFAULT_JAVA_SOURCES_GOALS = List.of("compiler:compile");
 
-        private List<String> resourceGoals;
-        private List<String> javaSourceGoals;
+        private List<String> unresolvedResourceGoals;
+        private List<String> unresolvedJavaSourceGoals;
         private List<MavenGoal> resolvedResourceGoals;
         private List<MavenGoal> resolvedJavaSourceGoals;
         private List<CustomDirectoryConfig> customDirectories;
@@ -187,27 +208,43 @@ public class DevLoopBuildConfig {
          * Constructor.
          */
         public IncrementalBuildConfig() {
-            this.resourceGoals = DEFAULT_RESOURCES_GOAL;
-            this.javaSourceGoals = DEFAULT_JAVA_SOURCES_GOAL;
+            this.unresolvedResourceGoals = DEFAULT_RESOURCES_GOALS;
+            this.unresolvedJavaSourceGoals = DEFAULT_JAVA_SOURCES_GOALS;
+            this.customDirectories = emptyList();
+            this.maxBuildFailures = Integer.MAX_VALUE;
         }
 
         /**
-         * Finalize the configuration.
+         * Validate the configuration.
+         */
+        public void validate() {
+            if (maxBuildFailures < 0) {
+                throw new IllegalArgumentException("maxBuildFailures cannot be negative: " + this);
+            }
+            assertNonNull(unresolvedResourceGoals, "resourceGoals cannot be null: " + this);
+            assertNonNull(unresolvedJavaSourceGoals, "javaSourceGoals cannot be null: " + this);
+            for (CustomDirectoryConfig custom : customDirectories) {
+                custom.validate();
+            }
+        }
+
+        /**
+         * Resolve goal references.
          *
          * @param resolver The resolver.
          * @throws Exception If an error occurs.
          */
-        public void finish(MavenGoalReferenceResolver resolver) throws Exception {
-            if (resourceGoals.isEmpty()) {
-                resourceGoals = DEFAULT_RESOURCES_GOAL;
+        public void resolve(MavenGoalReferenceResolver resolver) throws Exception {
+            if (unresolvedResourceGoals.isEmpty()) {
+                unresolvedResourceGoals = DEFAULT_RESOURCES_GOALS;
             }
-            if (javaSourceGoals.isEmpty()) {
-                javaSourceGoals = DEFAULT_JAVA_SOURCES_GOAL;
+            if (unresolvedJavaSourceGoals.isEmpty()) {
+                unresolvedJavaSourceGoals = DEFAULT_JAVA_SOURCES_GOALS;
             }
-            resolvedResourceGoals = resolver.resolve(resourceGoals, new ArrayList<>());
-            resolvedJavaSourceGoals = resolver.resolve(javaSourceGoals, new ArrayList<>());
+            resolvedResourceGoals = resolver.resolve(unresolvedResourceGoals, new ArrayList<>());
+            resolvedJavaSourceGoals = resolver.resolve(unresolvedJavaSourceGoals, new ArrayList<>());
             for (CustomDirectoryConfig directory : customDirectories()) {
-                directory.finish(resolver);
+                directory.resolve(resolver);
             }
         }
 
@@ -230,12 +267,30 @@ public class DevLoopBuildConfig {
         }
 
         /**
+         * Returns the unresolved resource goals.
+         *
+         * @return The goals.
+         */
+        public List<String> unresolvedResourceGoals() {
+            return unresolvedResourceGoals;
+        }
+
+        /**
+         * Returns the unresolved Java source goals.
+         *
+         * @return The goals.
+         */
+        public List<String> unresolvedJavaSourceGoals() {
+            return unresolvedJavaSourceGoals;
+        }
+
+        /**
          * Returns the custom directory configurations.
          *
          * @return The configurations.
          */
         public List<CustomDirectoryConfig> customDirectories() {
-            return customDirectories == null ? emptyList() : customDirectories;
+            return customDirectories;
         }
 
         /**
@@ -253,7 +308,7 @@ public class DevLoopBuildConfig {
          * @param resourceGoals The goals.
          */
         public void setResourceGoals(List<String> resourceGoals) {
-            this.resourceGoals = resourceGoals;
+            this.unresolvedResourceGoals = distinct(resourceGoals);
         }
 
         /**
@@ -262,7 +317,7 @@ public class DevLoopBuildConfig {
          * @param javaSourceGoals The goals.
          */
         public void setJavaSourceGoals(List<String> javaSourceGoals) {
-            this.javaSourceGoals = javaSourceGoals;
+            this.unresolvedJavaSourceGoals = distinct(javaSourceGoals);
         }
 
         /**
@@ -271,7 +326,7 @@ public class DevLoopBuildConfig {
          * @param customDirectories The configurations.
          */
         public void setCustomDirectories(List<CustomDirectoryConfig> customDirectories) {
-            this.customDirectories = customDirectories;
+            this.customDirectories = distinct(customDirectories);
         }
 
         /**
@@ -285,9 +340,9 @@ public class DevLoopBuildConfig {
 
         @Override
         public String toString() {
-            return "IncrementalBuild{"
-                   + "resourceGoals=" + resourceGoals
-                   + ", javaSourceGoals=" + javaSourceGoals
+            return "incrementalBuild {"
+                   + "resourceGoals=" + unresolvedResourceGoals
+                   + ", javaSourceGoals=" + unresolvedJavaSourceGoals
                    + ", customDirectories=" + customDirectories
                    + ", maxBuildFailures=" + maxBuildFailures
                    + '}';
@@ -300,9 +355,9 @@ public class DevLoopBuildConfig {
             private Path path;
             private String includes;
             private String excludes;
-            private List<String> goals;
+            private List<String> unresolvedGoals;
             private List<MavenGoal> resolvedGoals;
-            private BiPredicate<Path, Path> resolvedIncludes;
+            private BiPredicate<Path, Path> mappedIncludes;
 
             /**
              * Constructor.
@@ -313,17 +368,25 @@ public class DevLoopBuildConfig {
             }
 
             /**
-             * Finalize the configuration.
+             * Validate the configuration.
+             */
+            public void validate() {
+                assertNonNull(path, "path is required: " + this);
+                assertNotEmpty(unresolvedGoals, "one or more goals are required: " + this);
+                mappedIncludes = PathFilters.matches(toList(includes), toList(excludes));
+            }
+
+            /**
+             * Resolve goal references.
              *
              * @param resolver The resolver.
              * @throws Exception If an error occurs.
              */
-            public void finish(MavenGoalReferenceResolver resolver) throws Exception {
+            public void resolve(MavenGoalReferenceResolver resolver) throws Exception {
                 if (path.isAbsolute()) {
-                    throw new IllegalArgumentException(path + " must be relative");
+                    throw new IllegalArgumentException(path + " must be relative: " + this);
                 }
-                this.resolvedGoals = resolver.resolve(goals, new ArrayList<>());
-                this.resolvedIncludes = PathFilters.matches(toList(includes), toList(excludes));
+                this.resolvedGoals = resolver.resolve(unresolvedGoals, new ArrayList<>());
             }
 
             private static List<String> toList(String list) {
@@ -345,7 +408,7 @@ public class DevLoopBuildConfig {
              * @return The predicate.
              */
             public BiPredicate<Path, Path> includes() {
-                return resolvedIncludes;
+                return mappedIncludes;
             }
 
             /**
@@ -355,6 +418,15 @@ public class DevLoopBuildConfig {
              */
             public List<MavenGoal> goals() {
                 return resolvedGoals;
+            }
+
+            /**
+             * Returns the unresolved goals.
+             *
+             * @return The goals.
+             */
+            public List<String> unresolvedGoals() {
+                return unresolvedGoals;
             }
 
             /**
@@ -390,18 +462,52 @@ public class DevLoopBuildConfig {
              * @param goals The goals.
              */
             public void setGoals(List<String> goals) {
-                this.goals = goals;
+                this.unresolvedGoals = distinct(goals);
             }
 
             @Override
             public String toString() {
-                return "CustomDirectory{"
+                return "customDirectory {"
                        + "path='" + path + '\''
                        + ", includes='" + includes + '\''
                        + ", excludes='" + excludes + '\''
-                       + ", goals=" + goals
+                       + ", goals=" + unresolvedGoals
                        + '}';
             }
+
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (o == null || getClass() != o.getClass()) return false;
+                final CustomDirectoryConfig that = (CustomDirectoryConfig) o;
+                return path.equals(that.path)
+                       && includes.equals(that.includes)
+                       && excludes.equals(that.excludes)
+                       && unresolvedGoals.equals(that.unresolvedGoals);
+            }
+
+            @Override
+            public int hashCode() {
+                return Objects.hash(path, includes, excludes, unresolvedGoals);
+            }
         }
+    }
+
+    private static void assertNonNull(Object object, String errorMessage) {
+        if (object == null) {
+            throw new IllegalArgumentException(errorMessage);
+        }
+    }
+
+    private static void assertNotEmpty(List<?> list, String errorMessage) {
+        if (list == null || list.isEmpty()) {
+            throw new IllegalArgumentException(errorMessage);
+        }
+    }
+
+    private static <T> List<T> distinct(List<T> list) {
+        return list.stream()
+                   .distinct()
+                   .collect(Collectors.toList());
     }
 }
