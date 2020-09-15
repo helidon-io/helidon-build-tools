@@ -123,6 +123,8 @@ execution using the `exec` goal of the `exec-maven-plugin`, e.g.:
 This declaration does _not_ specify a phase so is not tied to any lifecycle; it is only executed during the dev loop
 whenever any file with the `.hello` suffix in the `etc` directory changes.
 
+Includes and excludes use [Ant path pattern syntax](http://ant.apache.org/manual/dirtasks.html#patterns).
+
 > **_NOTE:_** Changes to the `devLoop` configuration require a restart to take effect.
 
 
