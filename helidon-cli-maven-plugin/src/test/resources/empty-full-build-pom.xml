@@ -149,50 +149,28 @@
                 <artifactId>helidon-cli-maven-plugin</artifactId>
                 <configuration>
 
-                    <!-- Customize Dev Loop Configuration -->
-                    <!-- NOTE: changes to this configuration will NOT be noticed by the helidon dev command -->
-
                     <devLoop>
-
-                        <!-- This section defines behavior for full builds -->
                         <fullBuild>
                         </fullBuild>
-
-                        <!-- This section defines behavior for incremental builds -->
                         <incrementalBuild>
-
-                            <!-- Specify the goal(s) to execute when any resource file changes. -->
-                            <!-- The directories, includes and excludes are specified in maven-resources-plugin config -->
                             <resourceGoals>
-                                <!-- This is the default goal, here for illustration only -->
                                 <goal>resources:resources</goal>
                                 <!-- Duplicates should be ignored -->
                                 <goal>resources:resources</goal>
-                                <!-- Just for test -->
                                 <goal>resources:test</goal>
                             </resourceGoals>
 
-                            <!-- Specify the goal(s) to execute when any Java source file changes. -->
-                            <!-- The directories, includes and excludes are specified in maven-compiler-plugin config -->
                             <javaSourceGoals>
-                                <!-- This is the default goal, here for illustration only -->
                                 <goal>compiler:compile</goal>
                                 <!-- Duplicates should be ignored -->
                                 <goal>compiler:compile</goal>
                             </javaSourceGoals>
 
-                            <!-- Specify custom directories -->
                             <customDirectories>
-
-                                <!-- Specify a custom directory to watch -->
                                 <directory>
-                                    <!-- Specify the directory path -->
                                     <path>etc</path>
-                                    <!-- Specify what files in the directory should be watched -->
                                     <includes>**/*.hola</includes>
-                                    <!-- Specify what files in the directory should not be watched -->
                                     <excludes />
-                                    <!-- Specify the goal(s) to execute when a watched file changes -->
                                     <goals>
                                         <goal>exec:exec@say-hola</goal>
                                         <goal>exec:exec@say-hola</goal>
@@ -200,15 +178,10 @@
                                     </goals>
                                 </directory>
 
-                                <!-- Specify a custom directory to watch -->
                                 <directory>
-                                    <!-- Specify the directory path -->
                                     <path>ctl</path>
-                                    <!-- Specify what files in the directory should be watched -->
                                     <includes>**/*.exit</includes>
-                                    <!-- Specify what files in the directory should not be watched -->
                                     <excludes />
-                                    <!-- Specify the goal(s) to execute when a watched file changes -->
                                     <goals>
                                         <goal>exec:java@exit</goal>
                                     </goals>
@@ -216,13 +189,9 @@
 
                                 <!-- Duplicates should be ignored -->
                                 <directory>
-                                    <!-- Specify the directory path -->
                                     <path>ctl</path>
-                                    <!-- Specify what files in the directory should be watched -->
                                     <includes>**/*.exit</includes>
-                                    <!-- Specify what files in the directory should not be watched -->
                                     <excludes />
-                                    <!-- Specify the goal(s) to execute when a watched file changes -->
                                     <goals>
                                         <goal>exec:java@exit</goal>
                                     </goals>

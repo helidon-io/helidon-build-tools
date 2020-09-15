@@ -23,6 +23,7 @@ import io.helidon.build.dev.maven.DevLoopBuildConfig.FullBuildConfig;
 import io.helidon.build.dev.maven.DevLoopBuildConfig.IncrementalBuildConfig;
 import io.helidon.build.dev.maven.DevLoopBuildConfig.IncrementalBuildConfig.CustomDirectoryConfig;
 
+import org.apache.maven.plugin.MojoExecutionException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -56,26 +57,33 @@ class DevMojoTest {
 
     @Test
     void testInvalidMaxBuildFailures() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(MojoExecutionException.class,
                      () -> configuredMojoFor("invalid-max-full-build-failures").buildConfig(false),
                      "maxBuildFailures cannot be negative", "fullBuild", "maxBuildFailures=-1");
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(MojoExecutionException.class,
                      () -> configuredMojoFor("invalid-max-incr-build-failures").buildConfig(false),
                      "maxBuildFailures cannot be negative", "incrementalBuild", "maxBuildFailures=-1");
     }
 
     @Test
     void testCustomDirectoryMissingPath() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(MojoExecutionException.class,
                      () -> configuredMojoFor("missing-custom-path").buildConfig(false),
                      "path is required", "customDirectory");
     }
 
     @Test
     void testCustomDirectoryMissingGoal() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(MojoExecutionException.class,
                      () -> configuredMojoFor("missing-custom-goals").buildConfig(false),
                      "one or more goals are required", "customDirectory");
+    }
+
+    @Test
+    void testCustomDirectoryMatchesNone() {
+        assertThrows(MojoExecutionException.class,
+                     () -> configuredMojoFor("matches-none").buildConfig(false),
+                     "will not match any file", "customDirectory");
     }
 
     @Test

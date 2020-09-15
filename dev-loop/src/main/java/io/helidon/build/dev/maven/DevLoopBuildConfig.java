@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 import io.helidon.build.dev.mode.DevLoop;
 import io.helidon.build.util.PathFilters;
 
+import org.apache.maven.plugin.MojoExecutionException;
+
 import static java.util.Collections.emptyList;
 
 /**
@@ -45,8 +47,10 @@ public class DevLoopBuildConfig {
 
     /**
      * Validate the configuration.
+     *
+     * @throws MojoExecutionException If invalid.
      */
-    public void validate() {
+    public void validate() throws MojoExecutionException {
         assertNonNull(fullBuild, "fullBuild required: " + this);
         assertNonNull(incrementalBuild, "incrementalBuild required: " + this);
         fullBuild.validate();
@@ -128,10 +132,12 @@ public class DevLoopBuildConfig {
 
         /**
          * Validate the configuration.
+         *
+         * @throws MojoExecutionException If invalid.
          */
-        public void validate() {
+        public void validate() throws MojoExecutionException {
             if (maxBuildFailures < 0) {
-                throw new IllegalArgumentException("maxBuildFailures cannot be negative: " + this);
+                throw new MojoExecutionException("maxBuildFailures cannot be negative: " + this);
             }
         }
 
@@ -216,10 +222,12 @@ public class DevLoopBuildConfig {
 
         /**
          * Validate the configuration.
+         *
+         * @throws MojoExecutionException If invalid.
          */
-        public void validate() {
+        public void validate() throws MojoExecutionException {
             if (maxBuildFailures < 0) {
-                throw new IllegalArgumentException("maxBuildFailures cannot be negative: " + this);
+                throw new MojoExecutionException("maxBuildFailures cannot be negative: " + this);
             }
             assertNonNull(unresolvedResourceGoals, "resourceGoals cannot be null: " + this);
             assertNonNull(unresolvedJavaSourceGoals, "javaSourceGoals cannot be null: " + this);
@@ -369,11 +377,16 @@ public class DevLoopBuildConfig {
 
             /**
              * Validate the configuration.
+             *
+             * @throws MojoExecutionException If invalid.
              */
-            public void validate() {
+            public void validate() throws MojoExecutionException {
                 assertNonNull(path, "path is required: " + this);
                 assertNotEmpty(unresolvedGoals, "one or more goals are required: " + this);
                 mappedIncludes = PathFilters.matches(toList(includes), toList(excludes));
+                if (mappedIncludes == PathFilters.matchesNone()) {
+                    throw new MojoExecutionException("includes + excludes will not match any file: " + this);
+                }
             }
 
             /**
@@ -493,15 +506,15 @@ public class DevLoopBuildConfig {
         }
     }
 
-    private static void assertNonNull(Object object, String errorMessage) {
+    private static void assertNonNull(Object object, String errorMessage) throws MojoExecutionException {
         if (object == null) {
-            throw new IllegalArgumentException(errorMessage);
+            throw new MojoExecutionException(errorMessage);
         }
     }
 
-    private static void assertNotEmpty(List<?> list, String errorMessage) {
+    private static void assertNotEmpty(List<?> list, String errorMessage) throws MojoExecutionException {
         if (list == null || list.isEmpty()) {
-            throw new IllegalArgumentException(errorMessage);
+            throw new MojoExecutionException(errorMessage);
         }
     }
 

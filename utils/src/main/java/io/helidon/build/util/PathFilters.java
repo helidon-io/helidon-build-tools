@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
  */
 public class PathFilters {
     private static final BiPredicate<Path, Path> ANY = (path, root) -> true;
+    private static final BiPredicate<Path, Path> NONE = (path, root) -> false;
 
     private static final String SINGLE_CHAR_WILDCARD = "?";
     private static final String MULTI_CHAR_WILDCARD = "*";
@@ -59,6 +60,15 @@ public class PathFilters {
      */
     public static BiPredicate<Path, Path> matchesAny() {
         return ANY;
+    }
+
+    /**
+     * Returns a filter that returns {@code false} for any path.
+     *
+     * @return The filter. The second path parameter is always ignored.
+     */
+    public static BiPredicate<Path, Path> matchesNone() {
+        return NONE;
     }
 
     /**
@@ -184,7 +194,11 @@ public class PathFilters {
      */
     public static BiPredicate<Path, Path> matches(List<String> includes, List<String> excludes) {
         if (includes.isEmpty()) {
-            return matchesNone(excludes);
+            if (excludes.size() == 1 && excludes.get(0).equals(ANY_FILE_PATTERN)) {
+                return matchesNone();
+            } else {
+                return matchesNone(excludes);
+            }
         }
         return matchesAny(includes).and(matchesNone(excludes));
     }
