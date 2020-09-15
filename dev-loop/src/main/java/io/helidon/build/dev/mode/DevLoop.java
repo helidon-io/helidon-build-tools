@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.build.dev.BuildExecutor;
 import io.helidon.build.dev.BuildLoop;
@@ -28,10 +29,12 @@ import io.helidon.build.dev.BuildType;
 import io.helidon.build.dev.ChangeType;
 import io.helidon.build.dev.Project;
 import io.helidon.build.dev.ProjectSupplier;
+import io.helidon.build.dev.maven.DevLoopBuildConfig;
 import io.helidon.build.dev.maven.EmbeddedMavenExecutor;
 import io.helidon.build.dev.maven.ForkedMavenExecutor;
 import io.helidon.build.util.Log;
 
+import static io.helidon.build.dev.BuildType.Incremental;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_COMPLETED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_STARTING;
@@ -52,7 +55,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 public class DevLoop {
     private static final int MAX_BUILD_WAIT_SECONDS = 5 * 60;
     private final boolean terminalMode;
-    private final DevModeMonitor monitor;
+    private final DevLoopMonitor monitor;
     private final BuildExecutor buildExecutor;
     private final ProjectSupplier projectSupplier;
     private final boolean initialClean;
@@ -67,6 +70,7 @@ public class DevLoop {
      * @param terminalMode {@code true} for terminal output.
      * @param appJvmArgs The application JVM arguments.
      * @param appArgs The application arguments.
+     * @param config The build config.
      */
     public DevLoop(Path rootDir,
                    ProjectSupplier projectSupplier,
@@ -74,9 +78,10 @@ public class DevLoop {
                    boolean forkBuilds,
                    boolean terminalMode,
                    List<String> appJvmArgs,
-                   List<String> appArgs) {
+                   List<String> appArgs,
+                   DevLoopBuildConfig config) {
         this.terminalMode = terminalMode;
-        this.monitor = new DevModeMonitor(terminalMode, projectSupplier.buildFileName(), appJvmArgs, appArgs);
+        this.monitor = new DevLoopMonitor(terminalMode, projectSupplier.buildFileName(), appJvmArgs, appArgs, config);
         this.buildExecutor = forkBuilds ? new ForkedMavenExecutor(rootDir, monitor, MAX_BUILD_WAIT_SECONDS)
                 : new EmbeddedMavenExecutor(rootDir, monitor);
         this.initialClean = initialClean;
@@ -95,7 +100,7 @@ public class DevLoop {
         run(loop, maxWaitInSeconds);
     }
 
-    static class DevModeMonitor implements BuildMonitor {
+    static class DevLoopMonitor implements BuildMonitor {
         private static final int ON_READY_DELAY = 1000;
         private static final int BUILD_FAIL_DELAY = 1000;
         private static final String HEADER = Bold.apply(DEV_LOOP_HEADER);
@@ -108,13 +113,20 @@ public class DevLoop {
         private long buildStartTime;
         private final List<String> appJvmArgs;
         private final List<String> appArgs;
+        private final AtomicInteger remainingFullBuildFailures;
+        private final AtomicInteger remainingIncrementalBuildFailures;
 
-
-        private DevModeMonitor(boolean terminalMode, String buildFileName, List<String> appJvmArgs, List<String> appArgs) {
+        private DevLoopMonitor(boolean terminalMode,
+                               String buildFileName,
+                               List<String> appJvmArgs,
+                               List<String> appArgs,
+                               DevLoopBuildConfig config) {
             this.terminalMode = terminalMode;
             this.buildFileName = buildFileName;
             this.appJvmArgs = appJvmArgs;
             this.appArgs = appArgs;
+            this.remainingFullBuildFailures = new AtomicInteger(config.fullBuild().maxBuildFailures());
+            this.remainingIncrementalBuildFailures = new AtomicInteger(config.incrementalBuild().maxBuildFailures());
         }
 
         private void header() {
@@ -156,7 +168,7 @@ public class DevLoop {
                 log("%s", BoldBlue.apply("up to date"));
             } else {
                 String operation = cycleNumber == 0 ? DEV_LOOP_BUILD_STARTING : "re" + DEV_LOOP_BUILD_STARTING;
-                if (type == BuildType.Incremental) {
+                if (type == Incremental) {
                     log("%s (%s)", BoldBlue.apply(operation), type);
                 } else {
                     log("%s", BoldBlue.apply(operation));
@@ -180,16 +192,26 @@ public class DevLoop {
             Log.info();
             log("%s", BoldRed.apply(DEV_LOOP_BUILD_FAILED));
             ensureStop();
-            String message;
-            if (lastChangeType == ChangeType.BuildFile) {
-                message = String.format("waiting for %s changes", buildFileName);
-            } else if (lastChangeType == ChangeType.SourceFile) {
-                message = "waiting for source file changes";
+            if (hasRemainingBuildFailures(type)) {
+                String message;
+                if (lastChangeType == ChangeType.BuildFile) {
+                    message = String.format("waiting for %s changes", buildFileName);
+                } else if (lastChangeType == ChangeType.SourceFile) {
+                    message = "waiting for source file changes";
+                } else {
+                    message = "waiting for changes";
+                }
+                log("%s", BoldYellow.apply(message));
+                return BUILD_FAIL_DELAY;
             } else {
-                message = "waiting for changes";
+                log("%s", BoldYellow.apply("exiting, max failures reached"));
+                return -1L;
             }
-            log("%s", BoldYellow.apply(message));
-            return BUILD_FAIL_DELAY;
+        }
+
+        private boolean hasRemainingBuildFailures(BuildType type) {
+            AtomicInteger remaining = type == Incremental ? remainingFullBuildFailures : remainingIncrementalBuildFailures;
+            return remaining.decrementAndGet() > 0;
         }
 
         @Override

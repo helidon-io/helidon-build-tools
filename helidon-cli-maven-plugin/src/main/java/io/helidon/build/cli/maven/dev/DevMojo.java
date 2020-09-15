@@ -17,10 +17,16 @@
 package io.helidon.build.cli.maven.dev;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import io.helidon.build.dev.ProjectSupplier;
+import io.helidon.build.dev.maven.DevLoopBuildConfig;
+import io.helidon.build.dev.maven.MavenEnvironment;
+import io.helidon.build.dev.maven.MavenGoalReferenceResolver;
+import io.helidon.build.dev.maven.MavenProjectConfigCollector;
 import io.helidon.build.dev.maven.MavenProjectSupplier;
 import io.helidon.build.dev.mode.DevLoop;
 import io.helidon.build.util.Log;
@@ -28,6 +34,10 @@ import io.helidon.build.util.MavenLogWriter;
 import io.helidon.build.util.SystemLogWriter;
 
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.lifecycle.DefaultLifecycles;
+import org.apache.maven.lifecycle.LifecycleMappingDelegate;
+import org.apache.maven.lifecycle.internal.DefaultLifecycleMappingDelegate;
+import org.apache.maven.lifecycle.internal.MojoDescriptorCreator;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -97,6 +107,12 @@ public class DevMojo extends AbstractMojo {
     private boolean skip;
 
     /**
+     * DevLoop build lifecycle customization.
+     */
+    @Parameter
+    private DevLoopBuildConfig devLoop;
+
+    /**
      * The current Maven session.
      */
     @Parameter(defaultValue = "${session}", readonly = true)
@@ -108,6 +124,34 @@ public class DevMojo extends AbstractMojo {
     @Component
     private BuildPluginManager plugins;
 
+    /**
+     * The Maven MojoDescriptorCreated component, used to resolve
+     * plugin prefixes.
+     */
+    @Component
+    private MojoDescriptorCreator mojoDescriptorCreator;
+
+    /**
+     * The Maven DefaultLifecycles component, used to map
+     * a phase to a list of goals.
+     */
+    @Component
+    private DefaultLifecycles defaultLifeCycles;
+
+    /**
+     * The Maven DefaultLifecycleMappingDelegate component, used to map
+     * a phase to a list of goals.
+     */
+    @Component(hint = DefaultLifecycleMappingDelegate.HINT)
+    private LifecycleMappingDelegate standardDelegate;
+
+    /**
+     * A map of Maven lifecycle ids to LifecycleMappingDelegate instances, used to map
+     * a phase to a list of goals.
+     */
+    @Component
+    private Map<String, LifecycleMappingDelegate> delegates;
+
     @Override
     public void execute() throws MojoExecutionException {
         if (skip) {
@@ -115,19 +159,35 @@ public class DevMojo extends AbstractMojo {
             return;
         }
         try {
+            MavenProjectConfigCollector.assertSupportedProject(session);
             if (terminalMode) {
                 SystemLogWriter.install(getLog().isDebugEnabled() ? Log.Level.DEBUG : Log.Level.INFO);
             } else {
                 MavenLogWriter.install(getLog());
             }
-            final ProjectSupplier projectSupplier = new MavenProjectSupplier(project, session, plugins);
+
+            final DevLoopBuildConfig configuration = buildConfig(true);
+            final ProjectSupplier projectSupplier = new MavenProjectSupplier(configuration);
             final List<String> jvmArgs = toList(appJvmArgs);
             final List<String> args = toList(appArgs);
-            final DevLoop loop = new DevLoop(devProjectDir.toPath(), projectSupplier, clean, fork, terminalMode, jvmArgs, args);
+            final Path dir = devProjectDir.toPath();
+            final DevLoop loop = new DevLoop(dir, projectSupplier, clean, fork, terminalMode, jvmArgs, args, configuration);
             loop.start(Integer.MAX_VALUE);
         } catch (Exception e) {
             throw new MojoExecutionException("Error", e);
         }
+    }
+
+    DevLoopBuildConfig buildConfig(boolean resolve) throws Exception {
+        final DevLoopBuildConfig config = devLoop == null ? new DevLoopBuildConfig() : devLoop;
+        config.validate();
+        if (resolve) {
+            final MavenEnvironment env = new MavenEnvironment(project, session, mojoDescriptorCreator, defaultLifeCycles,
+                                                              standardDelegate, delegates, plugins);
+            final MavenGoalReferenceResolver resolver = new MavenGoalReferenceResolver(env);
+            config.resolve(resolver);
+        }
+        return config;
     }
 
     private static List<String> toList(String args) {

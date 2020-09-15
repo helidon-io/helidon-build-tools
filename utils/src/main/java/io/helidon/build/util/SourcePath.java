@@ -63,18 +63,25 @@ public class SourcePath {
                 .replace("\\", "/");
     }
 
-    private static String[] parseSegments(String path) throws IllegalArgumentException {
+    /**
+     * Parse a {@code '/'} separated path into segments. Collapses empty or {@code '.'} only segments.
+     * @param path The path.
+     * @return The segments.
+     * @throws IllegalArgumentException If the path is invalid.
+     */
+    public static String[] parseSegments(String path) throws IllegalArgumentException {
         if (path == null || path.isEmpty()) {
             throw new IllegalArgumentException("path is null or empty");
         }
         String[] tokens = path.split("/");
-        if (tokens.length == 0) {
+        int tokenCount = tokens.length;
+        if (tokenCount == 0) {
             throw new IllegalArgumentException("invalid path: " + path);
         }
-        List<String> segments = new LinkedList<>();
-        for (int i = 0; i < tokens.length; i++) {
+        List<String> segments = new ArrayList<>(tokenCount);
+        for (int i = 0; i < tokenCount; i++) {
             String token = tokens[i];
-            if ((i < tokens.length - 1 && token.isEmpty())
+            if ((i < tokenCount - 1 && token.isEmpty())
                     || token.equals(".")) {
                 continue;
             }
@@ -211,6 +218,23 @@ public class SourcePath {
             return segments.length == 0;
         }
         return doRecursiveMatch(segments, 0, parseSegments(pattern), 0);
+    }
+
+    /**
+     * Tests if the given path segments match the given pattern segments.
+     * @param path the path segments to match
+     * @param pattern the pattern segments to match
+     * @return {@code true} if the path matches the pattern, {@code false} otherwise
+     */
+    public static boolean matches(String[] path, String[] pattern) {
+        Objects.requireNonNull(path);
+        if (pattern == null) {
+            return false;
+        }
+        if (pattern.length == 0) {
+            return path.length == 0;
+        }
+        return doRecursiveMatch(path, 0, pattern, 0);
     }
 
     /**

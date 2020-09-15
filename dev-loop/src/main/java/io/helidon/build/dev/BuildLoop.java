@@ -231,12 +231,15 @@ public class BuildLoop {
 
             // Delay if needed
 
-            if (delay.get() > 0) {
+            final long delayMillis = delay.get();
+            if (delayMillis > 0) {
                 try {
-                    Thread.sleep(delay.get());
+                    Thread.sleep(delayMillis);
                 } catch (InterruptedException e) {
                     break;
                 }
+            } else if (delayMillis < 0) {
+                break;
             }
             run.set(cycleEnded());
         }

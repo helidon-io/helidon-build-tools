@@ -64,14 +64,36 @@ public class ProjectConfig extends ConfigProperties {
     public static final String PROJECT_SOURCEDIRS = "project.sourcedirs";
 
     /**
+     * Project's source includes property.
+     */
+    public static final String PROJECT_SOURCE_INCLUDES = "project.source.includes";
+
+    /**
+     * Project's source excludes property.
+     */
+    public static final String PROJECT_SOURCE_EXCLUDES = "project.source.excludes";
+
+    /**
      * Project's class directories property.
      */
     public static final String PROJECT_CLASSDIRS = "project.classdirs";
 
     /**
-     * Project's resource directories property.
+     * Project's resource directories property. Each directory in the list has
+     * the form {@code ${path}:${includesList}:${excludesList}} where the include
+     * and exclude lists are semicolon separated lists and may be empty.
      */
     public static final String PROJECT_RESOURCEDIRS = "project.resourcedirs";
+
+    /**
+     * Resource directory include/exclude separator.
+     */
+    public static final String RESOURCE_INCLUDE_EXCLUDE_SEPARATOR = ":";
+
+    /**
+     * Resource directory include/exclude list separator.
+     */
+    public static final String RESOURCE_INCLUDE_EXCLUDE_LIST_SEPARATOR = ";";
 
     /**
      * Project's main class.
