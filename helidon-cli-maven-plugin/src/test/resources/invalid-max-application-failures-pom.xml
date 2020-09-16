@@ -26,9 +26,9 @@
         <version>2.0.2-SNAPSHOT</version>
     </parent>
     <groupId>com.acme-helidon</groupId>
-    <artifactId>all-config</artifactId>
+    <artifactId>invalid-max-full-build-failures-config</artifactId>
     <version>@project.version@</version>
-    <name>all-config</name>
+    <name>invalid-max-full-build-failures-config</name>
 
     <properties>
         <mainClass>com.acme.se.bare.Main</mainClass>
@@ -156,12 +156,12 @@
 
                         <!-- This section defines behavior for full builds -->
                         <fullBuild>
-                            <!-- The phase to execute. -->
-                            <phase>process-something</phase>
+                            <!-- The phase to execute. This is the default phase, here for illustration only. -->
+                            <phase>process-classes</phase>
 
                             <!-- The maximum number of full build failures to allow before exiting the loop -->
                             <!-- Defaults to Integer.MAX_VALUE -->
-                            <maxBuildFailures>1</maxBuildFailures>
+                            <maxBuildFailures>2192</maxBuildFailures>
                         </fullBuild>
 
                         <!-- This section defines behavior for incremental builds -->
@@ -197,7 +197,7 @@
                                     <!-- Specify what files in the directory should be watched -->
                                     <includes>**/*.hola</includes>
                                     <!-- Specify what files in the directory should not be watched -->
-                                    <excludes>**/*.hello</excludes>
+                                    <excludes />
                                     <!-- Specify the goal(s) to execute when a watched file changes -->
                                     <goals>
                                         <goal>exec:exec@say-hola</goal>
@@ -243,8 +243,7 @@
 
                         <!-- The maximum number of application failures to allow before exiting the loop -->
                         <!-- Defaults to Integer.MAX_VALUE -->
-                        <maxApplicationFailures>16</maxApplicationFailures>
-
+                        <maxApplicationFailures>-1</maxApplicationFailures>
                     </devLoop>
                 </configuration>
             </plugin>

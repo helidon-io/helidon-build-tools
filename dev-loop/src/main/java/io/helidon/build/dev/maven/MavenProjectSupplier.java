@@ -72,6 +72,7 @@ import static java.util.Collections.emptyList;
 public class MavenProjectSupplier implements ProjectSupplier {
     private static final String HELIDON_PLUGIN_VERSION_PROP = "version.plugin.helidon";
     private static final String HELIDON_PLUGIN_VERSION = System.getProperty(HELIDON_PLUGIN_VERSION_PROP);
+    private static final List<String> DEFAULT_EXCLUDES = List.of("**/.*.swp");
     private static final String CLEAN_ARG = "clean";
     private static final String SKIP_TESTS_ARG = "-DskipTests";
     private static final String TARGET_DIR_NAME = "target";
@@ -230,8 +231,8 @@ public class MavenProjectSupplier implements ProjectSupplier {
 
         for (String sourceDir : sourceDirs) {
             Path sourceDirPath = assertDir(projectDir.resolve(sourceDir));
-            BiPredicate<Path, Path> includes = PathFilters.matches(sourceIncludes, sourceExcludes);
-            BuildRootType sourceRootType = BuildRootType.create(DirectoryType.JavaSources, includes);
+            BiPredicate<Path, Path> filter = filter(sourceIncludes, sourceExcludes);
+            BuildRootType sourceRootType = BuildRootType.create(DirectoryType.JavaSources, filter);
             BuildRoot sources = createBuildRoot(sourceRootType, sourceDirPath);
             for (BuildRoot classes : classesRoots) {
                 builder.component(createBuildComponent(sources, classes, compileSteps()));
@@ -243,12 +244,12 @@ public class MavenProjectSupplier implements ProjectSupplier {
         for (String resourcesDirEntry : resourcesDirs) {
             String[] dir = resourcesDirEntry.split(ProjectConfig.RESOURCE_INCLUDE_EXCLUDE_SEPARATOR);
             String resourcesDir = dir[0];
-            List<String> includePatterns = includeExcludeList(dir, 1);
-            List<String> excludePatterns = includeExcludeList(dir, 2);
-            BiPredicate<Path, Path> includes = PathFilters.matches(includePatterns, excludePatterns);
+            List<String> includes = includeExcludeList(dir, 1);
+            List<String> excludes = includeExcludeList(dir, 2);
+            BiPredicate<Path, Path> filter = filter(includes, excludes);
             Path resourcesDirPath = projectDir.resolve(resourcesDir);
             if (Files.isDirectory(resourcesDirPath)) {
-                BuildRootType buildRootType = BuildRootType.create(DirectoryType.Resources, includes);
+                BuildRootType buildRootType = BuildRootType.create(DirectoryType.Resources, filter);
                 BuildRoot resources = createBuildRoot(buildRootType, resourcesDirPath);
                 for (BuildRoot classes : classesRoots) {
                     builder.component(createBuildComponent(resources, classes, resourcesSteps()));
@@ -274,6 +275,20 @@ public class MavenProjectSupplier implements ProjectSupplier {
         }
 
         return builder.build();
+    }
+
+    private static BiPredicate<Path, Path> filter(List<String> includes, List<String> excludes) {
+        return PathFilters.matches(includes, addDefaultExcludes(excludes));
+    }
+
+    private static List<String> addDefaultExcludes(List<String> excludes) {
+        if (excludes.isEmpty()) {
+            return DEFAULT_EXCLUDES;
+        } else {
+            final List<String> result = new ArrayList<>(excludes);
+            result.addAll(DEFAULT_EXCLUDES);
+            return result;
+        }
     }
 
     private static List<String> includeExcludeList(String[] resourceDir, int index) {

@@ -34,7 +34,11 @@ import io.helidon.build.dev.maven.EmbeddedMavenExecutor;
 import io.helidon.build.dev.maven.ForkedMavenExecutor;
 import io.helidon.build.util.Log;
 
+import static io.helidon.build.dev.BuildMonitor.NextAction.CONTINUE;
+import static io.helidon.build.dev.BuildMonitor.NextAction.EXIT;
+import static io.helidon.build.dev.BuildMonitor.NextAction.WAIT_FOR_CHANGE;
 import static io.helidon.build.dev.BuildType.Incremental;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_APPLICATION_FAILED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_COMPLETED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_STARTING;
@@ -115,6 +119,7 @@ public class DevLoop {
         private final List<String> appArgs;
         private final AtomicInteger remainingFullBuildFailures;
         private final AtomicInteger remainingIncrementalBuildFailures;
+        private final AtomicInteger remainingApplicationFailures;
 
         private DevLoopMonitor(boolean terminalMode,
                                String buildFileName,
@@ -127,6 +132,7 @@ public class DevLoop {
             this.appArgs = appArgs;
             this.remainingFullBuildFailures = new AtomicInteger(config.fullBuild().maxBuildFailures());
             this.remainingIncrementalBuildFailures = new AtomicInteger(config.incrementalBuild().maxBuildFailures());
+            this.remainingApplicationFailures = new AtomicInteger(config.maxApplicationFailures());
         }
 
         private void header() {
@@ -189,28 +195,37 @@ public class DevLoop {
 
         @Override
         public long onBuildFail(int cycleNumber, BuildType type, Throwable error) {
+            return onFailure(DEV_LOOP_BUILD_FAILED, type, lastChangeType) ? BUILD_FAIL_DELAY : -1L;
+        }
+
+        private boolean onFailure(String controlMessage, BuildType buildType, ChangeType changeType) {
             Log.info();
-            log("%s", BoldRed.apply(DEV_LOOP_BUILD_FAILED));
+            log("%s", BoldRed.apply(controlMessage));
             ensureStop();
-            if (hasRemainingBuildFailures(type)) {
+            if (hasRemainingFailures(buildType)) {
                 String message;
-                if (lastChangeType == ChangeType.BuildFile) {
+                if (changeType == ChangeType.BuildFile) {
                     message = String.format("waiting for %s changes", buildFileName);
-                } else if (lastChangeType == ChangeType.SourceFile) {
+                } else if (changeType == ChangeType.SourceFile) {
                     message = "waiting for source file changes";
                 } else {
                     message = "waiting for changes";
                 }
                 log("%s", BoldYellow.apply(message));
-                return BUILD_FAIL_DELAY;
+                return true;
             } else {
                 log("%s", BoldYellow.apply("exiting, max failures reached"));
-                return -1L;
+                return false;
             }
         }
 
-        private boolean hasRemainingBuildFailures(BuildType type) {
-            AtomicInteger remaining = type == Incremental ? remainingFullBuildFailures : remainingIncrementalBuildFailures;
+        private boolean hasRemainingFailures(BuildType type) {
+            AtomicInteger remaining;
+            if (type == null) {
+                remaining = remainingApplicationFailures;
+            } else {
+                remaining = type == Incremental ? remainingIncrementalBuildFailures : remainingFullBuildFailures;
+            }
             return remaining.decrementAndGet() > 0;
         }
 
@@ -224,17 +239,19 @@ public class DevLoop {
         }
 
         @Override
-        public boolean onCycleEnd(int cycleNumber) {
+        public NextAction onCycleEnd(int cycleNumber) {
             if (projectExecutor == null) {
-                return true;
+                return CONTINUE;
             } else if (projectExecutor.isRunning()) {
-                return true;
+                return CONTINUE;
             } else if (projectExecutor.hasStdErrMessage()) {
-                // Shutdown and exit loop
-                projectExecutor.stop();
-                return false;
+                if (onFailure(DEV_LOOP_APPLICATION_FAILED, null, null)) {
+                    return WAIT_FOR_CHANGE;
+                } else {
+                    return EXIT;
+                }
             } else {
-                return true;
+                return CONTINUE;
             }
         }
 

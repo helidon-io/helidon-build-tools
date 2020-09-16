@@ -127,10 +127,10 @@ public class TestMonitor implements BuildMonitor {
     }
 
     @Override
-    public boolean onCycleEnd(int cycleNumber) {
+    public NextAction onCycleEnd(int cycleNumber) {
         logCycle("onCycleEnd", cycleNumber);
         cycleEnd[cycleNumber] = true;
-        return cycleNumber < stopCycle;
+        return cycleNumber < stopCycle ? NextAction.CONTINUE : NextAction.EXIT;
     }
 
     @Override

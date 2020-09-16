@@ -55,7 +55,7 @@ public class DevLoopMessages {
     /**
      * Message content when a the dev loop has failed.
      */
-    public static final String DEV_LOOP_FAILED = "failed";
+    public static final String DEV_LOOP_FAILED = "loop failed";
 
     /**
      * Message content when a build has failed.
@@ -68,19 +68,24 @@ public class DevLoopMessages {
     public static final String DEV_LOOP_BUILD_COMPLETED = "completed";
 
     /**
-     * Message content when the server is starting.
+     * Message content when the application is starting.
      */
-    public static final String DEV_LOOP_SERVER_STARTING = "starting";
+    public static final String DEV_LOOP_APPLICATION_STARTING = "starting";
 
     /**
-     * Message content when the server is stopping.
+     * Message content when the application has failed.
      */
-    public static final String DEV_LOOP_SERVER_STOPPING = "stopping";
+    public static final String DEV_LOOP_APPLICATION_FAILED = "failed";
 
     /**
-     * Message content when the server has stopped.
+     * Message content when the application is stopping.
      */
-    public static final String DEV_LOOP_SERVER_STOPPED = "stopped";
+    public static final String DEV_LOOP_APPLICATION_STOPPING = "stopping";
+
+    /**
+     * Message content when the application has stopped.
+     */
+    public static final String DEV_LOOP_APPLICATION_STOPPED = "stopped";
 
     private DevLoopMessages() {
     }

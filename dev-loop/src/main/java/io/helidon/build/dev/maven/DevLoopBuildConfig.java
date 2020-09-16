@@ -36,6 +36,7 @@ import static java.util.Collections.emptyList;
 public class DevLoopBuildConfig {
     private FullBuildConfig fullBuild;
     private IncrementalBuildConfig incrementalBuild;
+    private int maxApplicationFailures;
 
     /**
      * Constructor.
@@ -43,6 +44,7 @@ public class DevLoopBuildConfig {
     public DevLoopBuildConfig() {
         this.fullBuild = new FullBuildConfig();
         this.incrementalBuild = new IncrementalBuildConfig();
+        this.maxApplicationFailures = Integer.MAX_VALUE;
     }
 
     /**
@@ -55,6 +57,9 @@ public class DevLoopBuildConfig {
         assertNonNull(incrementalBuild, "incrementalBuild required: " + this);
         fullBuild.validate();
         incrementalBuild.validate();
+        if (maxApplicationFailures < 0) {
+            throw new MojoExecutionException("maxApplicationFailures cannot be negative: " + this);
+        }
     }
 
     /**
@@ -88,6 +93,15 @@ public class DevLoopBuildConfig {
     }
 
     /**
+     * Returns the maximum number of application failures allowed before the dev loop should exit.
+     *
+     * @return The maximum.
+     */
+    public int maxApplicationFailures() {
+        return maxApplicationFailures;
+    }
+
+    /**
      * Sets the full build config.
      *
      * @param fullBuild The config.
@@ -105,11 +119,21 @@ public class DevLoopBuildConfig {
         this.incrementalBuild = incrementalBuild;
     }
 
+    /**
+     * Sets the maximum number of application failures allowed before the dev loop should exit.
+     *
+     * @param maxApplicationFailures The count.
+     */
+    public void setMaxApplicationFailures(int maxApplicationFailures) {
+        this.maxApplicationFailures = maxApplicationFailures;
+    }
+
     @Override
     public String toString() {
         return "devLoop {"
                + "fullBuild=" + fullBuild
                + ", incrementalBuild=" + incrementalBuild
+               + ", maxApplicationFailures=" + maxApplicationFailures
                + '}';
     }
 
