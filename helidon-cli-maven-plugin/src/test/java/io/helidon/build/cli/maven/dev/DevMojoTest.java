@@ -56,6 +56,13 @@ class DevMojoTest {
     }
 
     @Test
+    void testInvalidMaxApplicationFailures() {
+        assertThrows(MojoExecutionException.class,
+                     () -> configuredMojoFor("invalid-max-application-failures").buildConfig(false),
+                     "maxApplicationFailures cannot be negative", "devLoop", "maxApplicationFailures=-1");
+    }
+
+    @Test
     void testInvalidMaxBuildFailures() {
         assertThrows(MojoExecutionException.class,
                      () -> configuredMojoFor("invalid-max-full-build-failures").buildConfig(false),
@@ -127,6 +134,7 @@ class DevMojoTest {
         assertThat(mojo, is(not(nullValue())));
         DevLoopBuildConfig config = mojo.buildConfig(false);
         assertThat(config, is(not(nullValue())));
+        assertThat(config.maxApplicationFailures(), is(16));
 
         FullBuildConfig fullBuild = config.fullBuild();
         assertThat(fullBuild, is(not(nullValue())));

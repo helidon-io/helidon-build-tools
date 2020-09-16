@@ -40,11 +40,12 @@ import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenV
 import static io.helidon.build.cli.impl.CommandRequirements.requireValidMavenProjectConfig;
 import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
 import static io.helidon.build.util.Constants.ENABLE_HELIDON_CLI;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_APPLICATION_FAILED;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_APPLICATION_STARTING;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_STARTING;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_HEADER;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_MESSAGE_PREFIX;
-import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_SERVER_STARTING;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_START;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_STYLED_MESSAGE_PREFIX;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
@@ -136,7 +137,7 @@ public final class DevCommand extends BaseCommand {
             terminalModeOutput = new TerminalModeOutput();
         }
 
-        // Execute helidon-maven-plugin to enter dev loop
+        // Execute helidon-maven-cli-plugin to enter dev loop
 
         Consumer<String> stdOut = terminalMode
                 ? terminalModeOutput
@@ -267,12 +268,13 @@ public final class DevCommand extends BaseCommand {
                     header(line);
                     return false;
                 } else if (line.startsWith(DEV_LOOP_STYLED_MESSAGE_PREFIX)
-                        || line.startsWith(DEV_LOOP_MESSAGE_PREFIX)) {
+                           || line.startsWith(DEV_LOOP_MESSAGE_PREFIX)) {
                     if (line.contains(DEV_LOOP_BUILD_STARTING)) {
                         insertLineIfError = true;
-                    } else if (line.contains(DEV_LOOP_SERVER_STARTING)) {
+                    } else if (line.contains(DEV_LOOP_APPLICATION_STARTING)) {
                         appendLine = true;
-                    } else if (line.contains(DEV_LOOP_BUILD_FAILED)) {
+                    } else if (line.contains(DEV_LOOP_BUILD_FAILED)
+                               || line.contains(DEV_LOOP_APPLICATION_FAILED)) {
                         insertLine = true;
                     }
                     restoreOutput();
@@ -282,8 +284,8 @@ public final class DevCommand extends BaseCommand {
                 } else if (suspendOutput) {
                     return false;
                 } else if (line.contains(BUILD_SUCCEEDED)
-                        || line.contains(BUILD_FAILED)
-                        || line.contains(HELP_TAG)) {
+                           || line.contains(BUILD_FAILED)
+                           || line.contains(HELP_TAG)) {
                     suspendOutput();
                     return false;
                 } else {
@@ -346,7 +348,7 @@ public final class DevCommand extends BaseCommand {
                 if (levelEnd > 0) {
                     String level = line.substring(0, levelEnd);
                     if (level.contains(MAVEN_ERROR_LEVEL)
-                            || level.contains(MAVEN_FATAL_LEVEL)) {
+                        || level.contains(MAVEN_FATAL_LEVEL)) {
                         return line.substring(levelEnd + 2);
                     }
                 }

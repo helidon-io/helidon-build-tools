@@ -226,7 +226,7 @@ public class BuildRoot extends ProjectDirectory implements Iterable<BuildFile> {
 
         @Override
         public Optional<FileTime> changedTime() {
-            return Optional.of(changedTime);
+            return Optional.ofNullable(changedTime);
         }
 
         private void update(Path file, BuildFile existing) {
