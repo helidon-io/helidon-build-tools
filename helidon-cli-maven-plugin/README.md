@@ -97,7 +97,7 @@ This example describes all configuration elements:
     </configuration>
 </plugin>
 ```
-If multiple goals are specified, they are executed in declaration order.
+If multiple goals are specified they are executed in declaration order.
 
 Any goal configured in the application pom can be executed. This example assumes that the pom contains a `say-hello` 
 execution using the `exec` goal of the `exec-maven-plugin`, e.g.:
