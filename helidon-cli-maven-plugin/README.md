@@ -17,13 +17,14 @@ Implements the development loop for the `helidon dev` command, executing the fol
 If an error occurs during a build, the loop waits for a file change and tries again.
 
 Any `pom.xml` change triggers a full build, meaning a [phase](https://maven.apache.org/ref/3.6.3/maven-core/lifecycles.html) 
-such as `process-classes` is executed. An incremental build executes only the specific goal(s) bound to the watched directory, 
-e.g. `resources:resources` for files in the `src/main/resources` directory or `compiler:compile` for files in the 
-`src/main/java` directory. 
+such as `process-classes` is executed. An incremental build executes only the specific goal(s) bound to the watched 
+directory, e.g. `resources:resources` for files in the `src/main/resources` directory or `compiler:compile` for files in 
+the `src/main/java` directory. 
 
 The actual source/resource directories and their includes/excludes are configured with the `maven-compiler-plugin` and 
 `maven-resources-plugin` and are discovered by this plugin; however, the goal(s) to execute on a file change are 
-configurable here. Further, the full build phase and custom directories can also be configured...  
+configurable here. Further, custom directories and goals can be added to incremental builds, and the full build phase can 
+be changed...  
 
 ### Configuration
 
@@ -33,8 +34,6 @@ This example describes all configuration elements:
     <groupId>io.helidon.build-tools</groupId>
     <artifactId>helidon-cli-maven-plugin</artifactId>
     <configuration>
-
-        <!-- Customize Dev Loop Configuration -->
 
         <devLoop>
 
@@ -54,13 +53,6 @@ This example describes all configuration elements:
            
             <incrementalBuild>
 
-                <!-- Specify the goal(s) to execute when any resource file changes. -->
-                <!-- Directories, includes and excludes are specified in maven-resources-plugin config. -->
-                <resourceGoals>
-                    <!-- This is the default goal, here for illustration only. -->
-                    <goal>resources:resources</goal>
-                </resourceGoals>
-
                 <!-- Specify the goal(s) to execute when any Java source file changes. -->
                 <!-- Directories, includes and excludes are specified in maven-compiler-plugin config. -->
                 <javaSourceGoals>
@@ -68,7 +60,14 @@ This example describes all configuration elements:
                     <goal>compiler:compile</goal>
                 </javaSourceGoals>
 
-                <!-- Specify custom directories -->
+                <!-- Specify the goal(s) to execute when any resource file changes. -->
+                <!-- Directories, includes and excludes are specified in maven-resources-plugin config. -->
+                <resourceGoals>
+                    <!-- This is the default goal, here for illustration only. -->
+                    <goal>resources:resources</goal>
+                </resourceGoals>
+
+                <!-- Specify custom directories to watch and the goal(s) to execute on change. -->
                 <customDirectories>
 
                     <!-- Specify a custom directory to watch -->
@@ -90,11 +89,15 @@ This example describes all configuration elements:
                 <!-- Defaults to Integer.MAX_VALUE -->
                 <maxBuildFailures>1024</maxBuildFailures>
             </incrementalBuild>
+
+            <!-- The maximum number of application failures to allow before exiting the loop. -->
+            <!-- Defaults to Integer.MAX_VALUE -->
+            <maxApplicationFailures>1024</maxApplicationFailures>
         </devLoop>
     </configuration>
 </plugin>
 ```
-If multiple goals are specified, they are executed in declaration order.
+If multiple goals are specified they are executed in declaration order.
 
 Any goal configured in the application pom can be executed. This example assumes that the pom contains a `say-hello` 
 execution using the `exec` goal of the `exec-maven-plugin`, e.g.:
@@ -120,12 +123,13 @@ execution using the `exec` goal of the `exec-maven-plugin`, e.g.:
     </executions>
 </plugin>
 ```
-This declaration does _not_ specify a phase so is not tied to any lifecycle; it is only executed during the dev loop
+This declaration does not specify a phase so is not tied to any lifecycle; it is only executed during the dev loop
 whenever any file with the `.hello` suffix in the `etc` directory changes.
 
-Includes and excludes use [Ant path pattern syntax](http://ant.apache.org/manual/dirtasks.html#patterns).
+Includes and excludes use [Ant path pattern](http://ant.apache.org/manual/dirtasks.html#patterns) syntax.
 
-> **_NOTE:_** Changes to the `devLoop` configuration require a restart to take effect.
+> **_NOTE:_** Changes to the `devLoop` configuration require a restart to take effect (it is injected by Maven
+> at startup).
 
 
 #### Goal References
@@ -135,7 +139,7 @@ Individual goals can be selected using fully qualified references:
    groupId:artifactId:version:goal@executionId
 ```
 A [default executionId](http://maven.apache.org/guides/mini/guide-default-execution-ids.html) will be used if not provided, 
-e.g. the default execution id for the `compile` goal is `default-compile`.
+e.g. the default executionId for the `compile` goal is `default-compile`.
 
 Note that while the version _can_ be declared, it will be ignored since it can only resolve to the plugin configured in the 
 current project. 

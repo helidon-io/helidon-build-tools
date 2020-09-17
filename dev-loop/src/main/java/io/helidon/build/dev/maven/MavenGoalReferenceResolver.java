@@ -158,6 +158,7 @@ public class MavenGoalReferenceResolver {
                 delegate = environment.standardLifecycleDelegate();
             }
         }
+        // Collect the executions for this phase rather than using forEach() since toGoal() throws a checked exception
         List<MojoExecution> executions = delegate.calculateLifecycleMappings(session, project, lifecycle, phase)
                                                  .entrySet()
                                                  .stream()
