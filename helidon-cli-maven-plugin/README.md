@@ -89,6 +89,10 @@ This example describes all configuration elements:
                 <!-- Defaults to Integer.MAX_VALUE -->
                 <maxBuildFailures>1024</maxBuildFailures>
             </incrementalBuild>
+
+            <!-- The maximum number of application failures to allow before exiting the loop. -->
+            <!-- Defaults to Integer.MAX_VALUE -->
+            <maxApplicationFailures>1024</maxApplicationFailures>
         </devLoop>
     </configuration>
 </plugin>
