@@ -208,6 +208,22 @@ public class UserConfig {
     }
 
     /**
+     * Returns the group id to use given the command line arguments, using {@code --groupid} if provided
+     * and {@link #defaultGroupId(SubstitutionVariables)} if not.
+     *
+     * @param groupIdArg The {@code --groupid} argument or {@code null} if not provided.
+     * @param substitutions The substitution variables.
+     * @return The artifactId.
+     */
+    public String groupId(String groupIdArg, SubstitutionVariables substitutions) {
+        if (groupIdArg != null) {
+            return groupIdArg;
+        } else {
+            return defaultGroupId(substitutions);
+        }
+    }
+
+    /**
      * Returns the artifact id to use given the command line arguments, preferring {@code --artifactid}, then {@code --name}
      * and {@link #defaultArtifactId(SubstitutionVariables)} if neither are provided.
      *
@@ -222,7 +238,23 @@ public class UserConfig {
         } else if (artifactIdArg != null) {
             return artifactIdArg;
         } else {
-            return defaultProjectName(substitutions);
+            return defaultArtifactId(substitutions);
+        }
+    }
+
+    /**
+     * Returns the package name to use given the command line arguments, using {@code --package} if provided
+     * and {@link #defaultPackageName(SubstitutionVariables)} if not.
+     *
+     * @param packageArg The {@code --package} argument or {@code null} if not provided.
+     * @param substitutions The substitution variables.
+     * @return The artifactId.
+     */
+    public String packageName(String packageArg, SubstitutionVariables substitutions) {
+        if (packageArg != null) {
+            return packageArg;
+        } else {
+            return defaultPackageName(substitutions);
         }
     }
 
