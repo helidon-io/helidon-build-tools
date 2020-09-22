@@ -44,8 +44,8 @@ pipeline {
             script {
               try {
                 bat '''
-                    set JAVA_HOME=C:tools\\graalvm-ce-java11-20.2.0
-                    set MAVEN_HOME=C:tools\\apache-maven-3.6.3
+                    set JAVA_HOME=C:\\tools\\graalvm-ce-java11-20.2.0
+                    set MAVEN_HOME=C:\\tools\\apache-maven-3.6.3
                     set PATH=%MAVEN_HOME%\\bin;%JAVA_HOME%\\bin;%PATH%
                     mvn --version
                     native-image --version
