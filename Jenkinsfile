@@ -43,7 +43,13 @@ pipeline {
           steps {
             script {
               try {
-                bat 'mvn clean install'
+                bat '''
+                    set JAVA_HOME=graalvm-ce-java11-20.2.0
+                    set PATH=C:\tools\apache-maven-3.6.3\bin;%JAVA_HOME%\bin;%PATH%
+                    mvn --version
+                    native-image --version
+                    mvn clean install -Pnative-image
+                '''
               } finally {
                 archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
                 junit testResults: '**/target/surefire-reports/*.xml'
