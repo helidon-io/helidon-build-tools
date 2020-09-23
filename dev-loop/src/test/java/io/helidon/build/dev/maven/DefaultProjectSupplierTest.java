@@ -32,6 +32,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.util.FileUtils.normalize;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.greaterThan;
@@ -60,10 +61,10 @@ class DefaultProjectSupplierTest {
         final List<BuildComponent> components = project.components();
         assertThat(components, is(not(nullValue())));
         assertThat(components.size(), is(2));
-        assertThat(components.get(0).sourceRoot().path().toString(), endsWith("src/main/java"));
-        assertThat(components.get(0).outputRoot().path().toString(), endsWith("target/classes"));
-        assertThat(components.get(1).sourceRoot().path().toString(), endsWith("src/main/resources"));
-        assertThat(components.get(1).outputRoot().path().toString(), endsWith("target/classes"));
+        assertThat(normalize(components.get(0).sourceRoot().path()), endsWith("src/main/java"));
+        assertThat(normalize(components.get(0).outputRoot().path()), endsWith("target/classes"));
+        assertThat(normalize(components.get(1).sourceRoot().path()), endsWith("src/main/resources"));
+        assertThat(normalize(components.get(1).outputRoot().path()), endsWith("target/classes"));
         assertThat(components.get(1).outputRoot(), is(not(components.get(0).outputRoot())));
 
         assertThat(project.classpath().size(), is(greaterThan(2)));
@@ -87,10 +88,10 @@ class DefaultProjectSupplierTest {
         final List<BuildComponent> components = project.components();
         assertThat(components, is(not(nullValue())));
         assertThat(components.size(), is(2));
-        assertThat(components.get(0).sourceRoot().path().toString(), endsWith("src/main/java"));
-        assertThat(components.get(0).outputRoot().path().toString(), endsWith("target/classes"));
-        assertThat(components.get(1).sourceRoot().path().toString(), endsWith("src/main/resources"));
-        assertThat(components.get(1).outputRoot().path().toString(), endsWith("target/classes"));
+        assertThat(normalize(components.get(0).sourceRoot().path()), endsWith("src/main/java"));
+        assertThat(normalize(components.get(0).outputRoot().path()), endsWith("target/classes"));
+        assertThat(normalize(components.get(1).sourceRoot().path()), endsWith("src/main/resources"));
+        assertThat(normalize(components.get(1).outputRoot().path()), endsWith("target/classes"));
         assertThat(components.get(1).outputRoot(), is(not(components.get(0).outputRoot())));
 
         assertThat(project.classpath().size(), is(greaterThan(2)));

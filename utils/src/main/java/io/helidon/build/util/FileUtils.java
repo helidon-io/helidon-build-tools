@@ -537,6 +537,16 @@ public final class FileUtils {
     }
 
     /**
+     * Normalize a given path.
+     *
+     * @param path path to normalize
+     * @return normalized path
+     */
+    public static String normalize(Path path) {
+        return path.toString().replaceAll("\\\\", "/");
+    }
+
+    /**
      * Returns the path to the java executable, searching the {@code PATH} var first, then checking {@code JAVA_HOME}.
      *
      * @return The path.

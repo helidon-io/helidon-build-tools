@@ -141,7 +141,7 @@ class BuildLoopTest {
         final List<BuildComponent> components = project.components();
         assertThat(components, is(not(nullValue())));
         assertThat(components.isEmpty(), is(false));
-        assertThat(components.get(0).outputRoot().path().toString(), endsWith("target/classes"));
+        assertThat(normalize(components.get(0).outputRoot().path()), endsWith("target/classes"));
         final BuildRoot classes = components.get(0).outputRoot();
         final BuildFile mainClass = classes.findFirstNamed(name -> name.equals("Main.class"));
         assertThat(mainClass.hasChanged(), is(false));
@@ -180,7 +180,7 @@ class BuildLoopTest {
         final List<BuildComponent> components = project.components();
         assertThat(components, is(not(nullValue())));
         assertThat(components.isEmpty(), is(false));
-        assertThat(components.get(0).outputRoot().path().toString(), endsWith("target/classes"));
+        assertThat(normalize(components.get(0).outputRoot().path()), endsWith("target/classes"));
         final BuildRoot classes = components.get(0).outputRoot();
         final BuildFile mainClass = classes.findFirstNamed(name -> name.equals("Main.class"));
         assertThat(mainClass.hasChanged(), is(false));
