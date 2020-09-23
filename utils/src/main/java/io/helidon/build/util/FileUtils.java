@@ -518,7 +518,7 @@ public final class FileUtils {
         return Arrays.stream(requireNonNull(System.getenv(PATH_VAR)).split(File.pathSeparator))
                      .map(dir -> Paths.get(dir))
                      .map(path -> path.resolve(executableName))
-                     .filter(Files::isExecutable)
+                     .filter(path -> !Constants.OS.isPosix() || Files.isExecutable(path))
                      .findFirst();
     }
 
@@ -566,7 +566,7 @@ public final class FileUtils {
         if (javaHomePath != null) {
             final Path javaHome = Paths.get(javaHomePath);
             final Path binary = javaHome.resolve(BIN_DIR_NAME).resolve(JAVA_BINARY_NAME);
-            if (Files.isExecutable(binary)) {
+            if (!Constants.OS.isPosix() || Files.isExecutable(binary)) {
                 return Optional.of(binary);
             } else {
                 throw new IllegalStateException(JAVA_BINARY_NAME + " not found in JAVA_HOME path: " + javaHomePath);
