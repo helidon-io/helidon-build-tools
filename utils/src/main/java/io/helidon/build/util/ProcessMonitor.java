@@ -384,7 +384,7 @@ public final class ProcessMonitor {
      * @throws IllegalStateException If the process was not started.
      */
     public List<String> stdOut() {
-        assertRunning();
+        assertStarted();
         return capturedStdOut;
     }
 
@@ -395,7 +395,7 @@ public final class ProcessMonitor {
      * @throws IllegalStateException If the process was not started.
      */
     public List<String> stdErr() {
-        assertRunning();
+        assertStarted();
         return capturedStdErr;
     }
 
