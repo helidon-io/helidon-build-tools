@@ -25,12 +25,15 @@ import java.nio.file.Paths;
  */
 public class TestUtils {
 
+    private TestUtils() {
+    }
+
     /**
      * Test if the debug log is enabled.
      * @return {@code true} if enabled, {@code false otherwise}
      */
     public static boolean isDebugLogEnabled() {
-        return DebugLogLevel.enabled;
+        return DebugLogLevel.ENABLED;
     }
 
     /**
@@ -61,7 +64,7 @@ public class TestUtils {
     }
 
     private static class DebugLogLevel {
-        static final boolean enabled = resolveDebugLogLevel();
+        static final boolean ENABLED = resolveDebugLogLevel();
     }
 
     private static boolean resolveDebugLogLevel() {
@@ -69,7 +72,7 @@ public class TestUtils {
         if (cmd.length > 0 && "org.apache.maven.surefire.booter.ForkedBooter".equals(cmd[0])) {
             if (cmd.length > 2) {
                 Path dir = Paths.get(cmd[1]);
-                for (int i = 2; i < cmd.length ; i++) {
+                for (int i = 2; i < cmd.length; i++) {
                     Path p = dir.resolve(cmd[i]);
                     if (!Files.isRegularFile(p)) {
                         continue;
