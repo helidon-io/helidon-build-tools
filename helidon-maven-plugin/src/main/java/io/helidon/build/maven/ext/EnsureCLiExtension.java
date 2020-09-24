@@ -40,7 +40,7 @@ import org.codehaus.plexus.logging.Logger;
 import static io.helidon.build.util.Constants.HELIDON_CLI_PROPERTY;
 
 /**
- * Modifies the in memory plugin definition for the {@code helidon-maven-plugin} to switch it to {@code helidon-cli-maven-plugin}.
+ * Modifies the in-memory plugin definition for the {@code helidon-maven-plugin} to switch it to {@code helidon-cli-maven-plugin}.
  * This is required for uses of the 2.1.2 or later CLI with Helidon 2.0.2 applications: the dev-loop extension was configured
  * in the {@code helidon-maven-plugin}, and will pick the wrong version.
  * <p></p>
