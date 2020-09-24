@@ -24,10 +24,14 @@ import java.util.Set;
 
 import io.helidon.build.util.FileUtils;
 import io.helidon.build.test.TestFiles;
+import io.helidon.build.util.Log;
+import io.helidon.build.util.SystemLogWriter;
 import io.helidon.linker.util.Constants;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.util.TestUtils.isDebugLogEnabled;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
@@ -44,6 +48,7 @@ class LinkerTest {
         Configuration config = Configuration.builder()
                                             .jriDirectory(targetDir.resolve("se-jri-no-cds"))
                                             .mainJar(mainJar)
+                                            .maxAppStartSeconds(240)
                                             .replace(true)
                                             .cds(false)
                                             .build();
@@ -62,6 +67,7 @@ class LinkerTest {
         Configuration config = Configuration.builder()
                                             .jriDirectory(targetDir.resolve("se-jri-no-cds-or-debug"))
                                             .mainJar(mainJar)
+                                            .maxAppStartSeconds(240)
                                             .replace(true)
                                             .cds(false)
                                             .stripDebug(true)
@@ -84,6 +90,7 @@ class LinkerTest {
         Configuration config = Configuration.builder()
                                             .jriDirectory(targetDir.resolve("se-jri"))
                                             .mainJar(mainJar)
+                                            .maxAppStartSeconds(240)
                                             .replace(true)
                                             .verbose(false)
                                             .cds(true)
@@ -103,6 +110,7 @@ class LinkerTest {
         Configuration config = Configuration.builder()
                                             .jriDirectory(targetDir.resolve("mp-jri"))
                                             .mainJar(mainJar)
+                                            .maxAppStartSeconds(240)
                                             .replace(true)
                                             .cds(true)
                                             .build();

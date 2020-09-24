@@ -25,6 +25,7 @@ import io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 import io.helidon.build.util.Log;
 
+import io.helidon.build.util.OSType;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.util.Style.strip;
@@ -65,7 +66,9 @@ public class ExecTest {
         } finally {
             System.setOut(stdout);
         }
-        return strip(new String(baos.toByteArray(), StandardCharsets.UTF_8));
+        String out = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+        out = out.replaceAll("\r\n", "\n");
+        return strip(out);
     }
 
     static String exec(String... args) {
@@ -101,7 +104,8 @@ public class ExecTest {
         CommandContext context = context();
         exec(context, "common");
         assertThat(context.exitAction().status(), is(ExitStatus.FAILURE));
-        assertThat(context.exitAction().message(), is("Missing required option: key\nSee 'test-cli common --help'"));
+        assertThat(context.exitAction().message().replaceAll("\r\n", "\n"),
+                is("Missing required option: key\nSee 'test-cli common --help'"));
     }
 
     private static final class TestCommandRegistry extends CommandRegistry {

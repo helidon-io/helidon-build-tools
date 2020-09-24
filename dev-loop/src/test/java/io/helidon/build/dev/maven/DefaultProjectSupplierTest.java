@@ -32,7 +32,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.util.FileUtils.normalize;
+import static io.helidon.build.util.TestUtils.pathOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.greaterThan;
@@ -61,10 +61,10 @@ class DefaultProjectSupplierTest {
         final List<BuildComponent> components = project.components();
         assertThat(components, is(not(nullValue())));
         assertThat(components.size(), is(2));
-        assertThat(normalize(components.get(0).sourceRoot().path()), endsWith("src/main/java"));
-        assertThat(normalize(components.get(0).outputRoot().path()), endsWith("target/classes"));
-        assertThat(normalize(components.get(1).sourceRoot().path()), endsWith("src/main/resources"));
-        assertThat(normalize(components.get(1).outputRoot().path()), endsWith("target/classes"));
+        assertThat(pathOf(components.get(0).sourceRoot().path()), endsWith("src/main/java"));
+        assertThat(pathOf(components.get(0).outputRoot().path()), endsWith("target/classes"));
+        assertThat(pathOf(components.get(1).sourceRoot().path()), endsWith("src/main/resources"));
+        assertThat(pathOf(components.get(1).outputRoot().path()), endsWith("target/classes"));
         assertThat(components.get(1).outputRoot(), is(not(components.get(0).outputRoot())));
 
         assertThat(project.classpath().size(), is(greaterThan(2)));
@@ -75,7 +75,7 @@ class DefaultProjectSupplierTest {
     void testCleanBuild() throws Exception {
         final Path projectDir = TestFiles.helidonSeProjectCopy();
         final TestMonitor monitor = new TestMonitor(1);
-        final BuildExecutor executor = new ForkedMavenExecutor(projectDir, monitor, 30);
+        final BuildExecutor executor = new ForkedMavenExecutor(projectDir, monitor, 5 * 60);
         final ProjectSupplier supplier = new DefaultProjectSupplier();
         final Project project = supplier.newProject(executor, true, true,0);
         assertThat(project, is(not(nullValue())));
@@ -88,10 +88,10 @@ class DefaultProjectSupplierTest {
         final List<BuildComponent> components = project.components();
         assertThat(components, is(not(nullValue())));
         assertThat(components.size(), is(2));
-        assertThat(normalize(components.get(0).sourceRoot().path()), endsWith("src/main/java"));
-        assertThat(normalize(components.get(0).outputRoot().path()), endsWith("target/classes"));
-        assertThat(normalize(components.get(1).sourceRoot().path()), endsWith("src/main/resources"));
-        assertThat(normalize(components.get(1).outputRoot().path()), endsWith("target/classes"));
+        assertThat(pathOf(components.get(0).sourceRoot().path()), endsWith("src/main/java"));
+        assertThat(pathOf(components.get(0).outputRoot().path()), endsWith("target/classes"));
+        assertThat(pathOf(components.get(1).sourceRoot().path()), endsWith("src/main/resources"));
+        assertThat(pathOf(components.get(1).outputRoot().path()), endsWith("target/classes"));
         assertThat(components.get(1).outputRoot(), is(not(components.get(0).outputRoot())));
 
         assertThat(project.classpath().size(), is(greaterThan(2)));

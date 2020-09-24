@@ -72,6 +72,15 @@ public class Config {
     }
 
     /**
+     * Set the user config instance.
+     *
+     * @param config user config to set
+     */
+    public static void setUserConfig(UserConfig config) {
+        USER_CONFIG.set(config);
+    }
+
+    /**
      * Set the user home dir.
      *
      * @param dir The directory.

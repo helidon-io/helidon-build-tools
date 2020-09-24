@@ -23,22 +23,14 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Class HelpTest.
+ * {@code helidon help} test.
  */
-public class HelpTest {
+public class HelpCommandTest {
 
     @Test
     void testCliHelp() throws Exception {
         String output = exec("help");
         assertThat(output, containsString("Helidon Project command line tool"));
-    }
-
-    private static String assertCommandHelp(String command) throws Exception {
-        String commandHelp = exec(command, "--help");
-        String helpCommand = exec("help", command);
-        assertThat(helpCommand, is(commandHelp));
-        assertThat(helpCommand, containsString("Usage:\thelidon " + command));
-        return helpCommand;
     }
 
     @Test
@@ -64,5 +56,13 @@ public class HelpTest {
     @Test
     public void testVersionCommandHelp() throws Exception {
         assertCommandHelp("version");
+    }
+
+    private static String assertCommandHelp(String command) throws Exception {
+        String commandHelp = exec(command, "--help");
+        String helpCommand = exec("help", command);
+        assertThat(helpCommand, is(commandHelp));
+        assertThat(helpCommand, containsString("Usage:\thelidon " + command));
+        return helpCommand;
     }
 }
