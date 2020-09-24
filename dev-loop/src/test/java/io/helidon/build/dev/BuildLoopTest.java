@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.build.dev.TestUtils.newLoop;
 import static io.helidon.build.test.TestFiles.helidonSeProject;
 import static io.helidon.build.test.TestFiles.helidonSeProjectCopy;
+import static io.helidon.build.util.FileUtils.normalize;
 import static io.helidon.build.util.FileUtils.touch;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.lastModifiedTime;
