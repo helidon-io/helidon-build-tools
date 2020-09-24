@@ -48,7 +48,6 @@ class LinkerTest {
         Configuration config = Configuration.builder()
                                             .jriDirectory(targetDir.resolve("se-jri-no-cds"))
                                             .mainJar(mainJar)
-                                            .maxAppStartSeconds(240)
                                             .replace(true)
                                             .cds(false)
                                             .build();
@@ -67,7 +66,6 @@ class LinkerTest {
         Configuration config = Configuration.builder()
                                             .jriDirectory(targetDir.resolve("se-jri-no-cds-or-debug"))
                                             .mainJar(mainJar)
-                                            .maxAppStartSeconds(240)
                                             .replace(true)
                                             .cds(false)
                                             .stripDebug(true)
@@ -90,7 +88,6 @@ class LinkerTest {
         Configuration config = Configuration.builder()
                                             .jriDirectory(targetDir.resolve("se-jri"))
                                             .mainJar(mainJar)
-                                            .maxAppStartSeconds(240)
                                             .replace(true)
                                             .verbose(false)
                                             .cds(true)
@@ -110,7 +107,6 @@ class LinkerTest {
         Configuration config = Configuration.builder()
                                             .jriDirectory(targetDir.resolve("mp-jri"))
                                             .mainJar(mainJar)
-                                            .maxAppStartSeconds(240)
                                             .replace(true)
                                             .cds(true)
                                             .build();

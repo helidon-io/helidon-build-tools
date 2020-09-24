@@ -60,7 +60,6 @@ class StartScriptTest {
     private StartScript.Builder builder() {
         return StartScript.builder()
                           .mainJar(INSTALLED_JAR_FILE)
-                          .maxAppStartSeconds(240)
                           .installHomeDirectory(INSTALL_DIR)
                           .exitOnStartedValue(EXIT_ON_STARTED_VALUE);
     }
