@@ -17,10 +17,13 @@
 package io.helidon.build.cli.maven.dev;
 
 import java.io.File;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import io.helidon.build.dev.ProjectSupplier;
 import io.helidon.build.dev.maven.DevLoopBuildConfig;
@@ -48,6 +51,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
+import static io.helidon.build.util.FileUtils.ensureDirectory;
 import static java.util.Collections.emptyList;
 
 /**
@@ -57,6 +61,10 @@ import static java.util.Collections.emptyList;
         defaultPhase = LifecyclePhase.NONE,
         requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
 public class DevMojo extends AbstractMojo {
+    private static final String HELIDON_VERSION_WITH_INCORRECT_EXTENSION = "2.0.2";
+    private static final Path LOCAL_MAVEN_CONFIG_DIR = Path.of(".mvn");
+    private static final Path LOCAL_EXTENSIONS_FILE = Path.of("extensions.xml");
+    private static final String EXTENSIONS_RESOURCE_PATH = "maven-model-processor-extensions.xml";
 
     /**
      * The Maven project this mojo executes on.
@@ -160,6 +168,7 @@ public class DevMojo extends AbstractMojo {
         }
         try {
             MavenProjectConfigCollector.assertSupportedProject(session);
+            ensureCliExtension();
             if (terminalMode) {
                 SystemLogWriter.install(getLog().isDebugEnabled() ? Log.Level.DEBUG : Log.Level.INFO);
             } else {
@@ -175,6 +184,22 @@ public class DevMojo extends AbstractMojo {
             loop.start(Integer.MAX_VALUE);
         } catch (Exception e) {
             throw new MojoExecutionException("Error", e);
+        }
+    }
+
+    void ensureCliExtension() {
+        if (project.getModel().getParent().getVersion().equals(HELIDON_VERSION_WITH_INCORRECT_EXTENSION)) {
+            final Path extensionsFile = ensureDirectory(LOCAL_MAVEN_CONFIG_DIR).resolve(LOCAL_EXTENSIONS_FILE);
+            if (Files.exists(extensionsFile)) {
+                Log.debug("Helidon version %s, %s already present", HELIDON_VERSION_WITH_INCORRECT_EXTENSION, extensionsFile);
+            } else {
+                Log.debug("Helidon version %s, adding %s", HELIDON_VERSION_WITH_INCORRECT_EXTENSION, extensionsFile);
+                try (InputStream in = getClass().getResourceAsStream(EXTENSIONS_RESOURCE_PATH)) {
+                    Files.copy(Objects.requireNonNull(in), extensionsFile);
+                } catch (Exception e) {
+                    Log.debug("failed to write extension.xml: ", e);
+                }
+            }
         }
     }
 
