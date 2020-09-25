@@ -256,6 +256,8 @@ public final class DevCommand extends BaseCommand {
         private int devLoopStartingUpdates;
         private int devLoopStartingCountDown;
         private boolean devLoopStarted;
+        private boolean buildFailed;
+        private int buildFailedErrorCount;
         private boolean suspendOutput;
         private boolean insertLine;
         private boolean appendLine;
@@ -281,10 +283,14 @@ public final class DevCommand extends BaseCommand {
                     return true;
                 } else if (line.startsWith(SLF4J_PREFIX)) {
                     return false;
+                } else if (buildFailed) {
+                    return isErrorMessage(line);
                 } else if (suspendOutput) {
                     return false;
+                } else if (line.contains(BUILD_FAILED)) {
+                    buildFailed = true;
+                    return false;
                 } else if (line.contains(BUILD_SUCCEEDED)
-                           || line.contains(BUILD_FAILED)
                            || line.contains(HELP_TAG)) {
                     suspendOutput();
                     return false;
@@ -298,13 +304,28 @@ public final class DevCommand extends BaseCommand {
             } else if (line.startsWith(DEBUGGER_LISTEN_MESSAGE_PREFIX)) {
                 debugger = true;
                 return true;
-            } else if (errorMessage(line) != null) {
+            } else if (isErrorMessage(line)) {
+                return true;
+            } else {
+                updateProgress();
+                return false;
+            }
+        }
+
+        private boolean isErrorMessage(String line) {
+            if (errorMessage(line) != null) {
                 devLoopStarted = true;
+                if (buildFailed) {
+                    buildFailedErrorCount++;
+                    if (buildFailedErrorCount >= 2) {
+                        // Only log the first error if build failed.
+                        return false;
+                    }
+                }
                 insertLine = true;
                 insertLineIfError = AnsiConsoleInstaller.areAnsiEscapesEnabled();
                 return true;
             } else {
-                updateProgress();
                 return false;
             }
         }
