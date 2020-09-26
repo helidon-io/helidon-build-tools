@@ -55,8 +55,20 @@ public class Report
 
     static final String[] LICENSES = { APACHE_ID, EPL1_ID, EPL2_ID, MPL2_ID, LGPL2_1_ID };
 
-    static final String INPUT_FILE_PATH_PROPERTY_NAME = "inputFile";
+    static final String INPUT_FILE_DIR_PROPERTY_NAME = "inputFileDir";
+    static final String INPUT_FILE_NAME_PROPERTY_NAME = "inputFileName";
+    static final String OUTPUT_FILE_DIR_PROPERTY_NAME = "outputFileDir";
+    static final String OUTPUT_FILE_NAME_PROPERTY_NAME = "outputFileName";
     static final String MODULES_PROPERTY_NAME = "modules";
+
+    static final String DEFAULT_INPUT_FILE_NAME = "THIRD_PARTY_LICENSES.xml";
+    static final String DEFAULT_INPUT_FILE_DIR = ".";
+    static final String DEFAULT_OUTPUT_FILE_NAME = "THIRD_PARTY_LICENSES.txt";
+    static final String DEFAULT_OUTPUT_FILE_DIR = ".";
+    static final String DEFAULT_MODULES_LIST = "*";
+
+    /*
+    static final String INPUT_FILE_PATH_PROPERTY_NAME = "inputFile";
     static final String ATTRIBUTION_FILE_PROPERTY_NAME = "attributionFile";
     static final String OUTPUT_DIR_PROPERTY_NAME = "outputDir";
 
@@ -64,34 +76,41 @@ public class Report
     static final String DEFAULT_MODULES_LIST = "";
     static final String DEFAULT_ATTRIBUTION_FILE_NAME= "THIRD_PARTY_LICENSES.txt";
     static final String DEFAULT_OUTPUT_DIR= ".";
+    */
 
-    // Input file: -DinputFile="THIRD_PARTY_LICENSES.xml"
-    private static String inputFile;
+    private static File inputFileDir;
+    private static String inputFileName;
 
-    // Comma seperated list of modules/jar files to generate report for. "-Dmodules=helidon-tracing,helidon-webserver"
-    private static String modules;
+    private static File outputFileDir;
+    private static String outputFileName;
 
-    // Directory to place generated report (attributionFile)
-    private static File outputDir;
-
-    // Name of attribution file.
-    private static String attributionFile;
-
-    // List of modules to include. Derived from modules parameter
     private static List<String> moduleList;
 
     public static void main(String[] args) throws IOException, JAXBException {
-        inputFile = System.getProperty(INPUT_FILE_PATH_PROPERTY_NAME, DEFAULT_INPUT_FILE_PATH);
-        modules = System.getProperty(MODULES_PROPERTY_NAME, DEFAULT_MODULES_LIST);
-        attributionFile = System.getProperty(ATTRIBUTION_FILE_PROPERTY_NAME, DEFAULT_ATTRIBUTION_FILE_NAME);
-        outputDir = new File(System.getProperty(OUTPUT_DIR_PROPERTY_NAME, DEFAULT_OUTPUT_DIR));
+
+        inputFileDir = new File(System.getProperty(INPUT_FILE_DIR_PROPERTY_NAME, DEFAULT_INPUT_FILE_DIR));
+        inputFileName = System.getProperty(INPUT_FILE_NAME_PROPERTY_NAME, DEFAULT_INPUT_FILE_NAME);
+
+        outputFileDir = new File(System.getProperty(OUTPUT_FILE_DIR_PROPERTY_NAME, DEFAULT_OUTPUT_FILE_DIR));
+        outputFileName = System.getProperty(OUTPUT_FILE_NAME_PROPERTY_NAME, DEFAULT_OUTPUT_FILE_NAME);
+
+        String modules = System.getProperty(MODULES_PROPERTY_NAME, DEFAULT_MODULES_LIST);
+        if (modules == null || modules.isEmpty() || modules.equals("*")) {
+            moduleList = Collections.emptyList();
+        } else {
+            List<String> tmpList = Arrays.asList(modules.split(","));
+            // Handle the case where the used passed jar file names (with version).
+            // In that case we want to convert helidon-tracing-2.0.2.jar to helidon-tracing
+            moduleList = tmpList.stream().map(Report::convertToArtifactId).collect(Collectors.toList());
+        }
 
         System.out.println(
-                    "inputFile=" + inputFile + "\n" +
-                    "outputDir=" + outputDir.getPath() + "\n" +
-                    "attributionFile=" + attributionFile + "\n" +
-                    "modules="   + modules + "\n" );
-
+                            "inputFileDir=" + inputFileDir + "\n" +
+                            "inputFileName=" + inputFileName + "\n" +
+                            "outputFileDir=" + outputFileDir.getPath() + "\n" +
+                            "outputFileName=" + outputFileName + "\n" +
+                            "modules="   + modules  + "\n" +
+                            "modulesList="   + moduleList.toString() + "\n" );
         execute();
     }
 
@@ -119,38 +138,27 @@ public class Report
 
     static void execute() throws IOException, JAXBException {
 
-        if (!outputDir.exists()) {
+        if (!outputFileDir.exists()) {
             String s = String.format("Can't create output file %s. Directory %s does not exist.",
-                    attributionFile, outputDir.getPath());
+                    outputFileName, outputFileDir.getPath());
             error(s);
             throw new IOException(s);
         }
 
-        if (modules != null && !modules.isEmpty()) {
-            List<String> tmpList = Arrays.asList(modules.split(","));
-            // Handle the case where the used passed jar file names (with version).
-            // In that case we want to convert helidon-tracing-2.0.2.jar to helidon-tracing
-            moduleList = tmpList.stream().map(Report::convertToArtifactId).collect(Collectors.toList());
-        } else {
-            moduleList = Collections.emptyList();
-        }
-
-        info("Module List = " + moduleList.toString());
-
-        File nf = new File(outputDir, attributionFile);
-        File ifile = new File(inputFile);
-        try (FileWriter w = new FileWriter(nf)) {
-            info("Reading input file " + ifile.getCanonicalPath());
-            info("Writing output file " + nf.getCanonicalPath());
-            AttributionDocument document = loadAttributionDocument(ifile);
+        File outputFile = new File(outputFileDir, outputFileName);
+        File inputFile = new File(inputFileDir, inputFileName);
+        try (FileWriter w = new FileWriter(outputFile)) {
+            info("Reading input file " + inputFile.getCanonicalPath());
+            info("Writing output file " + outputFile.getCanonicalPath());
+            AttributionDocument document = loadAttributionDocument(inputFile);
             if (generateAttributionFile(document, w)) {
                 w.flush();
             }
         } catch (IOException e) {
-            error("Error writing file " + nf.getPath());
+            error("Error writing file " + outputFile.getPath() );
             throw e;
         } catch (JAXBException e) {
-            error("JAXB error creating file " + nf.getPath());
+            error("JAXB error creating file " + outputFile.getPath());
             throw e;
         }
     }
@@ -175,7 +183,7 @@ public class Report
                 fis.close();
                 return attributionDocument;
             } catch (JAXBException e) {
-                String s = String.format("Can't load input file %s.", inputFile);
+                String s = String.format("Can't load input file %s.", file);
                 error(s);
                 throw e;
             }

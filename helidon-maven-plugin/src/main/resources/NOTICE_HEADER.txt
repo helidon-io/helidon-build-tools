@@ -1,12 +1,5 @@
 Third Party Attributions
 
-TODO: pick one
-
-The following software (or subsets of the software) are runtime
-dependencies of this product.
-
-The following software (or subsets of the software) are build or
-test dependencies of this product. They are used during builds
-of this product and are generally not required during runtime
-of this product.
+The following software (or subsets of the software) are third party dependencies
+of Helidon. They are identified by the Helidon module(s) that use them.
 
