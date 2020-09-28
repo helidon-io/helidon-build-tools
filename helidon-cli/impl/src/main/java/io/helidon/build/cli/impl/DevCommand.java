@@ -39,7 +39,6 @@ import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.cli.impl.CommandRequirements.requireValidMavenProjectConfig;
 import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
-import static io.helidon.build.util.Constants.ENABLE_HELIDON_CLI;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_APPLICATION_FAILED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_APPLICATION_STARTING;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
@@ -63,6 +62,7 @@ public final class DevCommand extends BaseCommand {
     private static final String TERMINAL_MODE_PROP_PREFIX = "-Ddev.terminalMode=";
     private static final String APP_JVM_ARGS_PROP_PREFIX = "-Ddev.appJvmArgs=";
     private static final String APP_ARGS_PROP_PREFIX = "-Ddev.appArgs=";
+    private static final String HELIDON_CLI_PLUGIN_VERSION_PROP_PREFIX = "-Dversion.plugin.helidon-cli=";
     private static final String CLI_MAVEN_PLUGIN = "io.helidon.build-tools:helidon-cli-maven-plugin";
     private static final String DEV_GOAL_SUFFIX = ":dev";
     private static final String MAVEN_LOG_LEVEL_START = "[";
@@ -114,9 +114,12 @@ public final class DevCommand extends BaseCommand {
 
         String cliPluginVersion = cliPluginVersion();
         String devGoal = CLI_MAVEN_PLUGIN;
+        String cliPluginVersionProperty = null;
         if (cliPluginVersion != null) {
             Log.verbose("Using CLI plugin version %s", cliPluginVersion);
             devGoal += ":" + cliPluginVersion;
+            // Pass along the version so that the loop can specify it when doing full builds
+            cliPluginVersionProperty = HELIDON_CLI_PLUGIN_VERSION_PROP_PREFIX + cliPluginVersion;
         }
         devGoal += DEV_GOAL_SUFFIX;
 
@@ -155,11 +158,11 @@ public final class DevCommand extends BaseCommand {
                     .stdErr(stdErr)
                     .filter(filter)
                     .addArgument(devGoal)
-                    .addArgument(ENABLE_HELIDON_CLI)
                     .addArgument(CLEAN_PROP_PREFIX + clean)
                     .addArgument(FORK_PROP_PREFIX + fork)
                     .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
                     .addArguments(context.propertyArgs(true))
+                    .addOptionalArgument(cliPluginVersionProperty)
                     .addOptionalArgument(jvmArgs)
                     .addOptionalArgument(args)
                     .directory(commonOptions.project())

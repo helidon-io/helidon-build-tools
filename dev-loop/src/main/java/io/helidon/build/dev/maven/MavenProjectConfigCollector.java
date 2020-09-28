@@ -117,6 +117,7 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
                 request.setExecutionListener(new EventListener(request.getExecutionListener()));
             } catch (IllegalStateException e) {
                 supportedProjectDir = null;
+                projectConfig = null;
             }
         } else {
             debug("collector disabled");
