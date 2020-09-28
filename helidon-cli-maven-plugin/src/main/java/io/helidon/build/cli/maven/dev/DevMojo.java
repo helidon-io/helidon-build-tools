@@ -17,13 +17,10 @@
 package io.helidon.build.cli.maven.dev;
 
 import java.io.File;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import io.helidon.build.dev.ProjectSupplier;
 import io.helidon.build.dev.maven.DevLoopBuildConfig;
@@ -51,7 +48,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
-import static io.helidon.build.util.FileUtils.ensureDirectory;
 import static java.util.Collections.emptyList;
 
 /**
@@ -156,12 +152,6 @@ public class DevMojo extends AbstractMojo {
     @Component
     private Map<String, LifecycleMappingDelegate> delegates;
 
-    /**
-     * Enable CLI extension check (see {@link CliExtension}).
-     */
-    @Parameter(defaultValue = "true", property = "dev.checkCliExtension")
-    private boolean checkCliExtension;
-
     @Override
     public void execute() throws MojoExecutionException {
         if (skip) {
@@ -170,9 +160,6 @@ public class DevMojo extends AbstractMojo {
         }
         try {
             MavenProjectConfigCollector.assertSupportedProject(session);
-            if (checkCliExtension) {
-                CliExtension.checkCliExtension(project.getModel().getParent().getVersion());
-            }
             if (terminalMode) {
                 SystemLogWriter.install(getLog().isDebugEnabled() ? Log.Level.DEBUG : Log.Level.INFO);
             } else {
@@ -205,75 +192,5 @@ public class DevMojo extends AbstractMojo {
 
     private static List<String> toList(String args) {
         return args == null ? emptyList() : Arrays.asList(args.split(" "));
-    }
-
-    /**
-     * Manages {@code .mvn/extensions.xml} file if needed to activate the {@code EnsureCliExtension}.
-     * This extension replaces the use of {@code helidon-maven-plugin} with {@code helidon-cli-maven-plugin}.
-     */
-    private static class CliExtension {
-        private static final String HELIDON_VERSION_WITH_INCORRECT_EXTENSION = "2.0.2";
-        private static final Path LOCAL_MAVEN_CONFIG_DIR = Path.of(".mvn");
-        private static final Path LOCAL_EXTENSIONS_FILE = Path.of("extensions.xml");
-        private static final String EXTENSIONS_RESOURCE_PATH = "maven-model-processor-extensions.xml";
-        private static final String EXTENSION_ELEMENT = "<extension>";
-        private static final String ARTIFACT_ID_ELEMENT = "<artifactId>helidon-maven-plugin</artifactId>";
-
-        private static void checkCliExtension(String helidonVersion) {
-
-            // If this is the problematic Helidon version, make sure we have a .mvn/extensions.xml file;
-            // otherwise, remove it if we created it (i.e. app moves to newer version).
-
-            if (helidonVersion.equals(HELIDON_VERSION_WITH_INCORRECT_EXTENSION)) {
-                ensureExtensionsXml();
-            } else {
-                removeExtensionsXml();
-            }
-        }
-
-        private static void ensureExtensionsXml() {
-
-            // Create extensions.xml if not present to activate the EnsureCliExtension class.
-            // If already present, it might not be ours, but we don't want to try to update.
-
-            final Path extensionsFile = ensureDirectory(LOCAL_MAVEN_CONFIG_DIR).resolve(LOCAL_EXTENSIONS_FILE);
-            if (Files.exists(extensionsFile)) {
-                Log.debug("Helidon version %s, %s already present", HELIDON_VERSION_WITH_INCORRECT_EXTENSION, extensionsFile);
-            } else {
-                Log.debug("Helidon version %s, adding %s", HELIDON_VERSION_WITH_INCORRECT_EXTENSION, extensionsFile);
-                try (InputStream in = CliExtension.class.getResourceAsStream(EXTENSIONS_RESOURCE_PATH)) {
-                    Files.copy(Objects.requireNonNull(in), extensionsFile);
-                } catch (Exception e) {
-                    Log.debug("failed to write extensions.xml: ", e);
-                }
-            }
-        }
-
-        private static void removeExtensionsXml() {
-
-            // Remove extensions.xml if present and it is our file
-
-            final Path extensionsFile = LOCAL_MAVEN_CONFIG_DIR.resolve(LOCAL_EXTENSIONS_FILE);
-            if (Files.exists(extensionsFile)) {
-                try {
-                    int extensionCount = 0;
-                    boolean ourArtifactId = false;
-                    for (String line : Files.readAllLines(extensionsFile)) {
-                        if (line.contains(EXTENSION_ELEMENT)) {
-                            extensionCount++;
-                        } else if (line.contains(ARTIFACT_ID_ELEMENT)) {
-                            ourArtifactId = true;
-                            break;
-                        }
-                    }
-                    if (extensionCount == 1 && ourArtifactId) {
-                        Log.debug("removing %s", extensionsFile);
-                        Files.delete(extensionsFile);
-                    }
-                } catch (Exception e) {
-                    Log.debug("failed to remove extensions.xml: ", e);
-                }
-            }
-        }
     }
 }
