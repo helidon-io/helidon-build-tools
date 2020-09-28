@@ -27,6 +27,10 @@ public class ReportMojo
     @Parameter( defaultValue = "${project}", readonly = true, required = true )
     private MavenProject project;
 
+    // True to skip this goal
+    @Parameter(property = "skip" , defaultValue = "false", readonly = true, required = true )
+    private Boolean skip;
+
     // Comma seperated list of (Helidon) modules to include attributions for
     @Parameter(property = Report.MODULES_PROPERTY_NAME , defaultValue = "", readonly = true, required = false )
     private String modules;
@@ -50,6 +54,10 @@ public class ReportMojo
     public void execute()
         throws MojoExecutionException {
         String[] args = {};
+
+        if (skip) {
+            return;
+        }
 
         // If no modules were provided, then scan this project and get all the
         // helidon artifacts that are dependencies and use that for the module list.

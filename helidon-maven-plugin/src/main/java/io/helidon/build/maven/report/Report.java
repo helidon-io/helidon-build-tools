@@ -166,6 +166,8 @@ public class Report
     /**
      * Loads XML and return the attribution document model
      *
+     * @param file XML file to load.
+     *
      * @throws IOException, JAXBException
      */
     private static AttributionDocument loadAttributionDocument(File file) throws IOException, JAXBException {
@@ -177,9 +179,7 @@ public class Report
             }
             try {
                 FileInputStream fis = new FileInputStream(file);
-                JAXBContext contextObj = JAXBContext.newInstance(AttributionDocument.class);
-                Unmarshaller unmarshaller = contextObj.createUnmarshaller();
-                AttributionDocument attributionDocument = (AttributionDocument) unmarshaller.unmarshal(fis);
+                AttributionDocument attributionDocument = loadAttributionDocumentFromStream(fis);
                 fis.close();
                 return attributionDocument;
             } catch (JAXBException e) {
@@ -189,6 +189,18 @@ public class Report
             }
         }
         return null;
+    }
+
+    private static AttributionDocument loadAttributionDocumentFromClasspath(String name) throws JAXBException {
+        InputStream is = Report.class.getClassLoader().getResourceAsStream(name);
+        return loadAttributionDocumentFromStream(is);
+    }
+
+    private static AttributionDocument loadAttributionDocumentFromStream(InputStream is) throws JAXBException {
+        JAXBContext contextObj = JAXBContext.newInstance(AttributionDocument.class);
+        Unmarshaller unmarshaller = contextObj.createUnmarshaller();
+        AttributionDocument attributionDocument = (AttributionDocument) unmarshaller.unmarshal(is);
+        return attributionDocument;
     }
 
     /**
