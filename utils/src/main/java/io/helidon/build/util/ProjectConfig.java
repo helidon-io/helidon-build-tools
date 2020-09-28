@@ -29,7 +29,7 @@ import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertExists;
 
 /**
- * Class ConfigFile.
+ * Class ProjectConfig.
  */
 public class ProjectConfig extends ConfigProperties {
 
@@ -37,6 +37,16 @@ public class ProjectConfig extends ConfigProperties {
      * Helidon CLI config file.
      */
     public static final String DOT_HELIDON = ".helidon";
+
+    /**
+     * Schema version property.
+     */
+    public static final String SCHEMA_VERSION = "schema.version";
+
+    /**
+     * Current schema version.
+     */
+    public static final String CURRENT_SCHEMA_VERSION = "1.1.0";
 
     /**
      * Project's directory property.
@@ -178,6 +188,9 @@ public class ProjectConfig extends ConfigProperties {
      */
     public ProjectConfig(Path file) {
         super(file);
+        if (property(SCHEMA_VERSION) == null) {
+            property(SCHEMA_VERSION, CURRENT_SCHEMA_VERSION);
+        }
     }
 
     /**

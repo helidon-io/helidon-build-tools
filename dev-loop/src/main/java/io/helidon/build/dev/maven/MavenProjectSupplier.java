@@ -70,8 +70,8 @@ import static java.util.Collections.emptyList;
  * A {@code ProjectSupplier} for Maven projects.
  */
 public class MavenProjectSupplier implements ProjectSupplier {
-    private static final String HELIDON_PLUGIN_VERSION_PROP = "version.plugin.helidon";
-    private static final String HELIDON_PLUGIN_VERSION = System.getProperty(HELIDON_PLUGIN_VERSION_PROP);
+    private static final String HELIDON_CLI_PLUGIN_VERSION_PROP = "version.plugin.helidon-cli";
+    private static final String HELIDON_CLI_PLUGIN_VERSION = System.getProperty(HELIDON_CLI_PLUGIN_VERSION_PROP);
     private static final List<String> DEFAULT_EXCLUDES = List.of("**/.*.swp");
     private static final String CLEAN_ARG = "clean";
     private static final String SKIP_TESTS_ARG = "-DskipTests";
@@ -104,8 +104,8 @@ public class MavenProjectSupplier implements ProjectSupplier {
     public MavenProjectSupplier(DevLoopBuildConfig config) {
         this.buildConfig = config;
         this.firstBuild = new AtomicBoolean(true);
-        this.cleanBuildCmd = List.of(CLEAN_ARG, config.fullBuild().phase(), SKIP_TESTS_ARG, ENABLE_HELIDON_CLI);
-        this.buildCmd = List.of(config.fullBuild().phase(), SKIP_TESTS_ARG, ENABLE_HELIDON_CLI);
+        this.cleanBuildCmd = command(CLEAN_ARG, config.fullBuild().phase(), SKIP_TESTS_ARG, ENABLE_HELIDON_CLI);
+        this.buildCmd = command(config.fullBuild().phase(), SKIP_TESTS_ARG, ENABLE_HELIDON_CLI);
     }
 
     @Override
@@ -162,16 +162,12 @@ public class MavenProjectSupplier implements ProjectSupplier {
     }
 
     private void build(BuildExecutor executor, boolean clean, int cycleNumber) throws Exception {
-        List<String> command = clean ? cleanBuildCmd : buildCmd;
-        if (HELIDON_PLUGIN_VERSION != null) {
-            command = new ArrayList<>(command);
-            command.add("-D" + HELIDON_PLUGIN_VERSION_PROP + "=" + HELIDON_PLUGIN_VERSION);
-        }
+        final List<String> command = clean ? cleanBuildCmd : buildCmd;
         executor.monitor().onBuildStart(cycleNumber, buildType);
         executor.execute(command);
         projectConfig = projectConfig(executor.projectDirectory());
         Requirements.require(projectConfig.lastSuccessfulBuildTime() > 0,
-                             "$(cyan helidon-maven-plugin) must be configured as an extension");
+                             "$(cyan helidon-cli-maven-plugin) must be configured as an extension");
     }
 
     private boolean canSkipBuild(Path projectDir) {
@@ -277,6 +273,18 @@ public class MavenProjectSupplier implements ProjectSupplier {
         return builder.build();
     }
 
+    private List<BuildStep> compileSteps() {
+        return new ArrayList<>(buildConfig.incrementalBuild().javaSourceGoals());
+    }
+
+    private List<BuildStep> resourcesSteps() {
+        return new ArrayList<>(buildConfig.incrementalBuild().resourceGoals());
+    }
+
+    private List<BuildStep> customDirectorySteps(CustomDirectoryConfig customDir) {
+        return new ArrayList<>(customDir.goals());
+    }
+
     private static BiPredicate<Path, Path> filter(List<String> includes, List<String> excludes) {
         return PathFilters.matches(includes, addDefaultExcludes(excludes));
     }
@@ -293,23 +301,22 @@ public class MavenProjectSupplier implements ProjectSupplier {
 
     private static List<String> includeExcludeList(String[] resourceDir, int index) {
         if (resourceDir.length > index) {
-            final String list = resourceDir[index];
-            if (!list.isEmpty()) {
-                return Arrays.asList(list.split(ProjectConfig.RESOURCE_INCLUDE_EXCLUDE_LIST_SEPARATOR));
+            final String separatedList = resourceDir[index];
+            if (!separatedList.isEmpty()) {
+                return Arrays.stream(separatedList.split(ProjectConfig.RESOURCE_INCLUDE_EXCLUDE_LIST_SEPARATOR))
+                             .filter(item -> !item.isEmpty())
+                             .collect(Collectors.toList());
             }
         }
         return emptyList();
     }
 
-    private List<BuildStep> compileSteps() {
-        return new ArrayList<>(buildConfig.incrementalBuild().javaSourceGoals());
-    }
-
-    private List<BuildStep> resourcesSteps() {
-        return new ArrayList<>(buildConfig.incrementalBuild().resourceGoals());
-    }
-
-    private List<BuildStep> customDirectorySteps(CustomDirectoryConfig customDir) {
-        return new ArrayList<>(customDir.goals());
+    private static List<String> command(String... arguments) {
+        List<String> command = List.of(arguments);
+        if (HELIDON_CLI_PLUGIN_VERSION != null) {
+            command = new ArrayList<>(command);
+            command.add("-D" + HELIDON_CLI_PLUGIN_VERSION_PROP + "=" + HELIDON_CLI_PLUGIN_VERSION);
+        }
+        return command;
     }
 }
