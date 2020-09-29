@@ -62,8 +62,8 @@ public class Report
     static final String MODULES_PROPERTY_NAME = "modules";
 
     static final String DEFAULT_INPUT_FILE_NAME = "THIRD_PARTY_LICENSES.xml";
-    static final String DEFAULT_INPUT_FILE_DIR = ".";
-    static final String DEFAULT_OUTPUT_FILE_NAME = "THIRD_PARTY_LICENSES.txt";
+    static final String DEFAULT_INPUT_FILE_DIR = "";
+    static final String DEFAULT_OUTPUT_FILE_NAME = "HELIDON_THIRD_PARTY_LICENSES.txt";
     static final String DEFAULT_OUTPUT_FILE_DIR = ".";
     static final String DEFAULT_MODULES_LIST = "*";
 
@@ -78,20 +78,20 @@ public class Report
     static final String DEFAULT_OUTPUT_DIR= ".";
     */
 
-    private static File inputFileDir;
+    private static String inputFileDir;
     private static String inputFileName;
 
-    private static File outputFileDir;
+    private static String outputFileDir;
     private static String outputFileName;
 
     private static List<String> moduleList;
 
     public static void main(String[] args) throws IOException, JAXBException {
 
-        inputFileDir = new File(System.getProperty(INPUT_FILE_DIR_PROPERTY_NAME, DEFAULT_INPUT_FILE_DIR));
+        inputFileDir = System.getProperty(INPUT_FILE_DIR_PROPERTY_NAME, DEFAULT_INPUT_FILE_DIR);
         inputFileName = System.getProperty(INPUT_FILE_NAME_PROPERTY_NAME, DEFAULT_INPUT_FILE_NAME);
 
-        outputFileDir = new File(System.getProperty(OUTPUT_FILE_DIR_PROPERTY_NAME, DEFAULT_OUTPUT_FILE_DIR));
+        outputFileDir = System.getProperty(OUTPUT_FILE_DIR_PROPERTY_NAME, DEFAULT_OUTPUT_FILE_DIR);
         outputFileName = System.getProperty(OUTPUT_FILE_NAME_PROPERTY_NAME, DEFAULT_OUTPUT_FILE_NAME);
 
         String modules = System.getProperty(MODULES_PROPERTY_NAME, DEFAULT_MODULES_LIST);
@@ -99,18 +99,21 @@ public class Report
             moduleList = Collections.emptyList();
         } else {
             List<String> tmpList = Arrays.asList(modules.split(","));
-            // Handle the case where the used passed jar file names (with version).
+            // Handle the case where the user passed jar file names (with version).
             // In that case we want to convert helidon-tracing-2.0.2.jar to helidon-tracing
             moduleList = tmpList.stream().map(Report::convertToArtifactId).collect(Collectors.toList());
         }
 
-        System.out.println(
+        /*
+        info(
                             "inputFileDir=" + inputFileDir + "\n" +
                             "inputFileName=" + inputFileName + "\n" +
-                            "outputFileDir=" + outputFileDir.getPath() + "\n" +
+                            "outputFileDir=" + outputFileDir + "\n" +
                             "outputFileName=" + outputFileName + "\n" +
                             "modules="   + modules  + "\n" +
                             "modulesList="   + moduleList.toString() + "\n" );
+         */
+
         execute();
     }
 
@@ -137,29 +140,36 @@ public class Report
     }
 
     static void execute() throws IOException, JAXBException {
-
-        if (!outputFileDir.exists()) {
-            String s = String.format("Can't create output file %s. Directory %s does not exist.",
-                    outputFileName, outputFileDir.getPath());
-            error(s);
+        if (! new File(outputFileDir).exists()) {
+            String s = String.format("Can't create output file %s. Directory %s does not exist.", outputFileName, outputFileDir);
             throw new IOException(s);
         }
 
         File outputFile = new File(outputFileDir, outputFileName);
-        File inputFile = new File(inputFileDir, inputFileName);
+        File inputFile = null;
+        if (inputFileDir != null && ! inputFileDir.isEmpty()) {
+            // Input file was specified
+            inputFile = new File(inputFileDir, inputFileName);
+        }
         try (FileWriter w = new FileWriter(outputFile)) {
-            info("Reading input file " + inputFile.getCanonicalPath());
-            info("Writing output file " + outputFile.getCanonicalPath());
-            AttributionDocument document = loadAttributionDocument(inputFile);
+            info("Reading input from " + (inputFile != null ? inputFile.getCanonicalPath() :  inputFileName + " on classpath"));
+            info("Writing output to " + outputFile.getCanonicalPath());
+
+            AttributionDocument document;
+            if (inputFile != null) {
+                document = loadAttributionDocument(inputFile);
+            } else {
+                document = loadAttributionDocumentFromClasspath("META-INF/" + inputFileName);
+            }
             if (generateAttributionFile(document, w)) {
                 w.flush();
             }
         } catch (IOException e) {
-            error("Error writing file " + outputFile.getPath() );
-            throw e;
+            String s = "Error writing file " + outputFile.getPath();
+            throw new IOException(s, e);
         } catch (JAXBException e) {
-            error("JAXB error creating file " + outputFile.getPath());
-            throw e;
+            String s = "JAXB error creating file " + outputFile.getPath();
+            throw new JAXBException(s, e);
         }
     }
 
@@ -174,7 +184,6 @@ public class Report
         if (file != null) {
             if (!file.canRead()) {
                 String s = String.format("Can't read input file %s.", file.getCanonicalPath());
-                error(s);
                 throw new IOException(s);
             }
             try {
@@ -184,23 +193,24 @@ public class Report
                 return attributionDocument;
             } catch (JAXBException e) {
                 String s = String.format("Can't load input file %s.", file);
-                error(s);
-                throw e;
+                throw new JAXBException(s, e);
             }
         }
         return null;
     }
 
-    private static AttributionDocument loadAttributionDocumentFromClasspath(String name) throws JAXBException {
+    private static AttributionDocument loadAttributionDocumentFromClasspath(String name) throws JAXBException, IOException {
         InputStream is = Report.class.getClassLoader().getResourceAsStream(name);
+        if (is == null) {
+            throw new IOException("Can't get resource " + name);
+        }
         return loadAttributionDocumentFromStream(is);
     }
 
     private static AttributionDocument loadAttributionDocumentFromStream(InputStream is) throws JAXBException {
         JAXBContext contextObj = JAXBContext.newInstance(AttributionDocument.class);
         Unmarshaller unmarshaller = contextObj.createUnmarshaller();
-        AttributionDocument attributionDocument = (AttributionDocument) unmarshaller.unmarshal(is);
-        return attributionDocument;
+        return (AttributionDocument) unmarshaller.unmarshal(is);
     }
 
     /**
@@ -208,7 +218,7 @@ public class Report
      *
      * @param attributionDocument AttributionDocument to generate attribution report from
      * @param w FileWriter to write report to
-     * @returns true if something was written, else false
+     * @return true if something was written, else false
      * @throws IOException if trouble writing to file
      */
     private static boolean generateAttributionFile(AttributionDocument attributionDocument, FileWriter w) throws IOException {
@@ -216,9 +226,8 @@ public class Report
         boolean first = true;
 
         List<AttributionDependency> deps = attributionDocument.getDependencies();
-        Set<String> licensesUsed = new HashSet<String>();
+        Set<String> licensesUsed = new HashSet<>();
 
-        licensesUsed.clear();
         for (AttributionDependency d : deps) {
             HashSet<String> intersection = new HashSet<>(moduleList);
             intersection.retainAll(d.getConsumers());
@@ -317,12 +326,7 @@ public class Report
         } while (n > 0);
     }
 
-    static void error(String s) {
-        System.err.println(s);
-    }
-
     static void info(String s) {
         System.out.println(s);
     }
-
 }

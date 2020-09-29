@@ -1,7 +1,22 @@
+/*
+ * Copyright (c) 2020 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.build.maven.report;
 
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 
@@ -14,7 +29,6 @@ import org.apache.maven.project.MavenProject;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 /**
  * Goal to generate an attribution report
@@ -31,8 +45,8 @@ public class ReportMojo
     @Parameter(property = "skip" , defaultValue = "false", readonly = true, required = true )
     private Boolean skip;
 
-    // Comma seperated list of (Helidon) modules to include attributions for
-    @Parameter(property = Report.MODULES_PROPERTY_NAME , defaultValue = "", readonly = true, required = false )
+    // Comma separated list of (Helidon) modules to include attributions for
+    @Parameter(property = Report.MODULES_PROPERTY_NAME , readonly = true)
     private String modules;
 
     // Attribution input XML file name
@@ -40,7 +54,7 @@ public class ReportMojo
     private String inputFileName;
 
     // Directory containing attribution input XML file
-    @Parameter( property = Report.INPUT_FILE_DIR_PROPERTY_NAME, defaultValue = Report.DEFAULT_INPUT_FILE_DIR, required = true )
+    @Parameter( property = Report.INPUT_FILE_DIR_PROPERTY_NAME)
     private String inputFileDir;
 
     // Output report (text) file
@@ -48,7 +62,7 @@ public class ReportMojo
     private String outputFileName;
 
     // Directory containing output file
-    @Parameter( property = Report.OUTPUT_FILE_DIR_PROPERTY_NAME, defaultValue = "${project.build.directory}", required = false )
+    @Parameter( property = Report.OUTPUT_FILE_DIR_PROPERTY_NAME, defaultValue = "${project.build.directory}")
     private String outputFileDir;
 
     public void execute()
@@ -62,16 +76,19 @@ public class ReportMojo
         // If no modules were provided, then scan this project and get all the
         // helidon artifacts that are dependencies and use that for the module list.
         if (modules == null || modules.isEmpty()) {
+            getLog().debug("No module list not configured. Using dependencies of " + project.getArtifactId());
             Set<String> moduleList = getHelidonDependencies(project);
-            modules = moduleList.stream().collect(Collectors.joining(","));
+            modules = String.join(",", moduleList);
         }
+
+        getLog().debug("Modules: " + modules);
 
         // The report goal is implemented as a stand-alone Java class so it can be executed
         // from the command line without using the maven plugin. We pass params to it
         // via Java system properties
         System.setProperty(Report.MODULES_PROPERTY_NAME, modules);
         System.setProperty(Report.INPUT_FILE_NAME_PROPERTY_NAME, inputFileName);
-        System.setProperty(Report.INPUT_FILE_DIR_PROPERTY_NAME, inputFileDir);
+        System.setProperty(Report.INPUT_FILE_DIR_PROPERTY_NAME, (inputFileDir == null) ? "" : inputFileDir);
         System.setProperty(Report.OUTPUT_FILE_NAME_PROPERTY_NAME, outputFileName);
         System.setProperty(Report.OUTPUT_FILE_DIR_PROPERTY_NAME, outputFileDir);
 
@@ -116,6 +133,7 @@ public class ReportMojo
                 helidonDependencies.addAll(getHelidonDependencies(p));
             }
         }
+
         return helidonDependencies;
     }
 
