@@ -199,9 +199,7 @@ public class DevLoop {
         }
 
         private boolean onFailure(String controlMessage, BuildType buildType, ChangeType changeType) {
-            Log.info();
-            log("%s", BoldRed.apply(controlMessage));
-            ensureStop();
+            stop(controlMessage);
             if (hasRemainingFailures(buildType)) {
                 String message;
                 if (changeType == ChangeType.BuildFile) {
@@ -217,6 +215,12 @@ public class DevLoop {
                 log("%s", BoldYellow.apply("exiting, max failures reached"));
                 return false;
             }
+        }
+
+        private void stop(String controlMessage) {
+            Log.info();
+            log("%s", BoldRed.apply(controlMessage));
+            ensureStop();
         }
 
         private boolean hasRemainingFailures(BuildType type) {
@@ -244,6 +248,9 @@ public class DevLoop {
                 return CONTINUE;
             } else if (projectExecutor.isRunning()) {
                 return CONTINUE;
+            } else if (projectExecutor.shouldExit()) {
+                stop(DEV_LOOP_APPLICATION_FAILED);
+                return EXIT;
             } else if (projectExecutor.hasStdErrMessage()) {
                 if (onFailure(DEV_LOOP_APPLICATION_FAILED, null, null)) {
                     return WAIT_FOR_CHANGE;
