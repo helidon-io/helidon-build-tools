@@ -49,6 +49,7 @@ import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_START;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_STYLED_MESSAGE_PREFIX;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
 import static io.helidon.build.util.StyleFunction.Bold;
+import static io.helidon.build.util.StyleFunction.BoldBlue;
 import static io.helidon.build.util.StyleFunction.BoldBrightGreen;
 
 /**
@@ -248,6 +249,7 @@ public final class DevCommand extends BaseCommand {
      */
     private static class TerminalModeOutput implements Predicate<String>, Consumer<String> {
         private static final String DEBUGGER_LISTEN_MESSAGE_PREFIX = "Listening for transport";
+        private static final String DOWNLOADING_MESSAGE_PREFIX = "Downloading from";
         private static final String BUILD_SUCCEEDED = "BUILD SUCCESS";
         private static final String BUILD_FAILED = "BUILD FAILURE";
         private static final String HELP_TAG = "[Help";
@@ -258,6 +260,8 @@ public final class DevCommand extends BaseCommand {
         private boolean debugger;
         private int devLoopStartingUpdates;
         private int devLoopStartingCountDown;
+        private boolean progressCompleted;
+        private boolean skipHeader;
         private boolean devLoopStarted;
         private boolean buildFailed;
         private int buildFailedErrorCount;
@@ -270,7 +274,12 @@ public final class DevCommand extends BaseCommand {
         public boolean test(String line) {
             if (devLoopStarted) {
                 if (line.contains(DEV_LOOP_HEADER)) {
-                    header(line);
+                    if (skipHeader) {
+                        skipHeader = false;
+                        System.out.println();
+                    } else {
+                        header(line);
+                    }
                     return false;
                 } else if (line.startsWith(DEV_LOOP_STYLED_MESSAGE_PREFIX)
                            || line.startsWith(DEV_LOOP_MESSAGE_PREFIX)) {
@@ -310,7 +319,7 @@ public final class DevCommand extends BaseCommand {
             } else if (isErrorMessage(line)) {
                 return true;
             } else {
-                updateProgress();
+                updateProgress(line);
                 return false;
             }
         }
@@ -341,22 +350,30 @@ public final class DevCommand extends BaseCommand {
             suspendOutput = false;
         }
 
-        private void updateProgress() {
-            if (devLoopStartingCountDown == 0) {
-                if (devLoopStartingUpdates < MAX_UPDATES) {
-                    if (debugger) {
-                        System.out.println();
-                        devLoopStartingUpdates = MAX_UPDATES;
+        private void updateProgress(String line) {
+            if (!progressCompleted) {
+                if (debugger) {
+                    System.out.println();
+                    progressCompleted = true;
+                } else {
+                    if (line.contains(DOWNLOADING_MESSAGE_PREFIX)) {
+                        header(Bold.apply(DEV_LOOP_HEADER));
+                        System.out.print(DEV_LOOP_STYLED_MESSAGE_PREFIX + BoldBlue.apply(" downloading artifacts "));
+                        progressCompleted = true;
+                        skipHeader = true;
+                    } else if (devLoopStartingCountDown == 0) {
+                        if (devLoopStartingUpdates < MAX_UPDATES) {
+                            System.out.print('.');
+                            devLoopStartingCountDown = LINES_PER_UPDATE;
+                            devLoopStartingUpdates++;
+                        }
                     } else {
-                        System.out.print('.');
-                        devLoopStartingCountDown = LINES_PER_UPDATE;
-                        devLoopStartingUpdates++;
+                        devLoopStartingCountDown--;
                     }
                 }
-            } else {
-                devLoopStartingCountDown--;
             }
         }
+
 
         private void header(String line) {
             if (clearScreen()) {
