@@ -83,6 +83,11 @@ public final class Constants {
     public static final String DIR_SEP = File.separator;
 
     /**
+     * The suffix to append to JRI directories when name must be created.
+     */
+    public static final String JRI_DIR_SUFFIX = "-jri";
+
+    /**
      * Indent function.
      */
     public static final Function<String, String> INDENT = line -> "    " + line;
@@ -113,16 +118,16 @@ public final class Constants {
      * The help message to log if the script execution policy error occurs.
      */
     public static final String WINDOWS_SCRIPT_EXECUTION_POLICY_ERROR_HELP =
-        EOL
-        + EOL
-        + Bold.apply("To enable script execution, run the following command: ")
-        + EOL
-        + EOL
-        + "    "
-        + BoldBrightYellow.apply("powershell Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned")
-        + EOL
-        + EOL
-        + Bold.apply("and answer 'Y' if prompted.");
+            EOL
+            + EOL
+            + Bold.apply("To enable script execution, run the following command: ")
+            + EOL
+            + EOL
+            + "    "
+            + BoldBrightYellow.apply("powershell Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned")
+            + EOL
+            + EOL
+            + Bold.apply("and answer 'Y' if prompted.");
 
     private Constants() {
     }

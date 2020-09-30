@@ -83,9 +83,9 @@ public final class DevCommand extends BaseCommand {
     DevCommand(CommonOptions commonOptions,
                @Flag(name = "clean", description = "Perform a clean before the first build") boolean clean,
                @Flag(name = "fork", description = "Fork mvn execution") boolean fork,
-               @KeyValue(name = "version", description = "helidon-maven-plugin version", visible = false)
+               @KeyValue(name = "version", description = "helidon-cli-maven-plugin version", visible = false)
                        String pluginVersion,
-               @Flag(name = "current", description = "Use the build version as the helidon-maven-cli-plugin version",
+               @Flag(name = "current", description = "Use the build version as the helidon-cli-maven-plugin version",
                        visible = false)
                        boolean currentPluginVersion,
                @KeyValue(name = "app-jvm-args", description = "JVM args used when starting the application")
