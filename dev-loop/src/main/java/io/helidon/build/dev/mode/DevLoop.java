@@ -49,7 +49,6 @@ import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_START;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_STYLED_MESSAGE_PREFIX;
 import static io.helidon.build.util.StyleFunction.Bold;
 import static io.helidon.build.util.StyleFunction.BoldBlue;
-import static io.helidon.build.util.StyleFunction.BoldBrightGreen;
 import static io.helidon.build.util.StyleFunction.BoldRed;
 import static io.helidon.build.util.StyleFunction.BoldYellow;
 import static org.fusesource.jansi.Ansi.ansi;
@@ -271,8 +270,6 @@ public class DevLoop {
 
         @Override
         public void onStopped() {
-            Log.info();
-            Log.info(Bold.apply("helidon dev ") + BoldBrightGreen.apply("exiting "));
             ensureStop();
         }
 

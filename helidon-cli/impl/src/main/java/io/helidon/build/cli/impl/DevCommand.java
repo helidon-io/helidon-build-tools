@@ -145,6 +145,10 @@ public final class DevCommand extends BaseCommand {
             terminalModeOutput = new TerminalModeOutput();
         }
 
+        // Add a shutdown hook to print an exit message
+
+        Runtime.getRuntime().addShutdownHook(new Thread(DevCommand::exiting));
+
         // Execute helidon-maven-cli-plugin to enter dev loop
 
         Consumer<String> stdOut = terminalMode
@@ -173,6 +177,12 @@ public final class DevCommand extends BaseCommand {
                     .directory(commonOptions.project())
                     .build()
                     .execute();
+    }
+
+    private static void exiting() {
+        System.out.println();
+        System.out.println(Bold.apply("helidon dev ") + BoldBrightGreen.apply("exiting "));
+        showCursor();
     }
 
     private String cliPluginVersion() {
@@ -259,6 +269,7 @@ public final class DevCommand extends BaseCommand {
         private static final String BUILD_FAILED = "BUILD FAILURE";
         private static final String HELP_TAG = "[Help";
         private static final String AT_TAG = " @ ";
+        private static final String DOWNLOADING_ARTIFACTS = " downloading artifacts ";
         private static final long PROGRESS_UPDATE_MILLIS = 100;
         private static final String[] SPINNER = {
                 ".   ",
@@ -270,7 +281,6 @@ public final class DevCommand extends BaseCommand {
 
         private final boolean ansiEnabled;
         private boolean debugger;
-        private boolean downloading;
         private long lastProgressMillis;
         private int progressIndex;
         private boolean progressStarted;
@@ -377,11 +387,11 @@ public final class DevCommand extends BaseCommand {
                 } else if (!line.contains(SCANNING_MESSAGE_PREFIX)) {
                     if (!skipHeader) {
                         if (line.contains(DOWNLOADING_MESSAGE_PREFIX)) {
-                            downloading = true;
                             header(Bold.apply(DEV_LOOP_HEADER));
-                            System.out.print(DEV_LOOP_STYLED_MESSAGE_PREFIX + BoldBlue.apply(" downloading artifacts "));
+                            System.out.print(DEV_LOOP_STYLED_MESSAGE_PREFIX + BoldBlue.apply(DOWNLOADING_ARTIFACTS));
                             System.out.flush();
                             skipHeader = true;
+                            progressStarted = false;
                         }
                     }
                     if (ansiEnabled) {
@@ -400,6 +410,7 @@ public final class DevCommand extends BaseCommand {
                 }
             } else {
                 System.out.print(SPINNER[progressIndex++]);
+                System.out.flush();
                 hideCursor();
                 progressStarted = true;
             }

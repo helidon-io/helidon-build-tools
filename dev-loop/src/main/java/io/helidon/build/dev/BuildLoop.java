@@ -102,7 +102,6 @@ public class BuildLoop {
             stopped.get().countDown(); // In case any previous waiters.
             running.set(new CountDownLatch(1));
             stopped.set(new CountDownLatch(1));
-            Runtime.getRuntime().addShutdownHook(new Thread(this::stopped));
             task.set(LOOP_EXECUTOR.submit(() -> {
                 try {
                     loop();
