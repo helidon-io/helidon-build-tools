@@ -102,6 +102,7 @@ public class BuildLoop {
             stopped.get().countDown(); // In case any previous waiters.
             running.set(new CountDownLatch(1));
             stopped.set(new CountDownLatch(1));
+            Runtime.getRuntime().addShutdownHook(new Thread(this::stopped));
             task.set(LOOP_EXECUTOR.submit(() -> {
                 try {
                     loop();
@@ -358,8 +359,10 @@ public class BuildLoop {
     }
 
     private void stopped() {
-        monitor.onStopped();
-        stopped.get().countDown();
+        if (stopped.get().getCount() > 0) {
+            monitor.onStopped();
+            stopped.get().countDown();
+        }
     }
 
     private void setProject(Project project) {
