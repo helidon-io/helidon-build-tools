@@ -38,7 +38,10 @@ import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.cli.impl.CommandRequirements.requireValidMavenProjectConfig;
-import static io.helidon.build.util.AnsiConsoleInstaller.clearScreen;
+import static io.helidon.build.util.ConsoleUtils.clearScreen;
+import static io.helidon.build.util.ConsoleUtils.hideCursor;
+import static io.helidon.build.util.ConsoleUtils.rewriteLine;
+import static io.helidon.build.util.ConsoleUtils.showCursor;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_APPLICATION_FAILED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_APPLICATION_STARTING;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
@@ -49,7 +52,9 @@ import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_START;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_STYLED_MESSAGE_PREFIX;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
 import static io.helidon.build.util.StyleFunction.Bold;
+import static io.helidon.build.util.StyleFunction.BoldBlue;
 import static io.helidon.build.util.StyleFunction.BoldBrightGreen;
+import static java.lang.System.currentTimeMillis;
 
 /**
  * The {@code dev} command.
@@ -70,6 +75,9 @@ public final class DevCommand extends BaseCommand {
     private static final String MAVEN_ERROR_LEVEL = "ERROR";
     private static final String MAVEN_FATAL_LEVEL = "FATAL";
     private static final String SLF4J_PREFIX = "SLF4J:";
+    private static final String HEADER = "%n" + Bold.apply(DEV_LOOP_HEADER + " %s ");
+    private static final String STARTING = BoldBrightGreen.apply("starting");
+    private static final String EXITING = BoldBrightGreen.apply("exiting");
 
     private final CommonOptions commonOptions;
     private final boolean clean;
@@ -112,7 +120,7 @@ public final class DevCommand extends BaseCommand {
 
         // Dev goal
 
-        String cliPluginVersion = cliPluginVersion();
+        String cliPluginVersion = pluginVersion == null ? cliPluginVersion() : pluginVersion;
         String devGoal = CLI_MAVEN_PLUGIN;
         String cliPluginVersionProperty = null;
         if (cliPluginVersion != null) {
@@ -134,11 +142,13 @@ public final class DevCommand extends BaseCommand {
         boolean terminalMode = verbosity == NORMAL;
         if (terminalMode) {
             clearScreen();
-            System.out.println();
-            System.out.print(Bold.apply("helidon dev ") + BoldBrightGreen.apply("starting "));
-            System.out.flush();
+            printState(STARTING, false);
             terminalModeOutput = new TerminalModeOutput();
         }
+
+        // Add a shutdown hook to print an exit message
+
+        Runtime.getRuntime().addShutdownHook(new Thread(DevCommand::exiting));
 
         // Execute helidon-maven-cli-plugin to enter dev loop
 
@@ -168,6 +178,29 @@ public final class DevCommand extends BaseCommand {
                     .directory(commonOptions.project())
                     .build()
                     .execute();
+    }
+
+    private static void exiting() {
+        showCursor();
+        printState(EXITING, true);
+    }
+
+    private static void printState(String state, boolean newline) {
+        final String header = newline ? HEADER + "%n" : HEADER;
+        System.out.printf(header, state);
+        System.out.flush();
+    }
+
+    private static boolean printAllLines(String line) {
+        return true;
+    }
+
+    private static void printStdOutLine(String line) {
+        System.out.println(line);
+    }
+
+    private static void printStdErrLine(String line) {
+        System.out.println(StyleFunction.Red.apply(line));
     }
 
     private String cliPluginVersion() {
@@ -231,33 +264,33 @@ public final class DevCommand extends BaseCommand {
         }
     }
 
-    private static boolean printAllLines(String line) {
-        return true;
-    }
-
-    private static void printStdOutLine(String line) {
-        System.out.println(line);
-    }
-
-    private static void printStdErrLine(String line) {
-        System.out.println(StyleFunction.Red.apply(line));
-    }
-
     /**
      * A stateful filter/transform that cleans up output from {@code DevLoop}.
      */
     private static class TerminalModeOutput implements Predicate<String>, Consumer<String> {
         private static final String DEBUGGER_LISTEN_MESSAGE_PREFIX = "Listening for transport";
+        private static final String DOWNLOADING_MESSAGE_PREFIX = "Downloading from";
         private static final String BUILD_SUCCEEDED = "BUILD SUCCESS";
         private static final String BUILD_FAILED = "BUILD FAILURE";
         private static final String HELP_TAG = "[Help";
         private static final String AT_TAG = " @ ";
-        private static final int LINES_PER_UPDATE = 3;
-        private static final int MAX_UPDATES = 3;
+        private static final String DOWNLOADING_ARTIFACTS = " downloading artifacts ";
+        private static final long PROGRESS_UPDATE_MILLIS = 100;
+        private static final String[] SPINNER = {
+                ".   ",
+                "..  ",
+                "... ",
+                " .. ",
+                "  . "
+        };
 
+        private final boolean ansiEnabled;
         private boolean debugger;
-        private int devLoopStartingUpdates;
-        private int devLoopStartingCountDown;
+        private long lastProgressMillis;
+        private int progressIndex;
+        private boolean progressStarted;
+        private boolean progressCompleted;
+        private boolean skipHeader;
         private boolean devLoopStarted;
         private boolean buildFailed;
         private int buildFailedErrorCount;
@@ -266,11 +299,21 @@ public final class DevCommand extends BaseCommand {
         private boolean appendLine;
         private boolean insertLineIfError;
 
+        private TerminalModeOutput() {
+            this.ansiEnabled = AnsiConsoleInstaller.areAnsiEscapesEnabled();
+        }
+
         @Override
         public boolean test(String line) {
             if (devLoopStarted) {
                 if (line.contains(DEV_LOOP_HEADER)) {
-                    header(line);
+                    clearProgressIndicator();
+                    if (skipHeader) {
+                        skipHeader = false;
+                        System.out.println();
+                    } else {
+                        header(line);
+                    }
                     return false;
                 } else if (line.startsWith(DEV_LOOP_STYLED_MESSAGE_PREFIX)
                            || line.startsWith(DEV_LOOP_MESSAGE_PREFIX)) {
@@ -302,7 +345,7 @@ public final class DevCommand extends BaseCommand {
                 }
             } else if (line.endsWith(DEV_LOOP_START)) {
                 devLoopStarted = true;
-                insertLine = !AnsiConsoleInstaller.areAnsiEscapesEnabled();
+                insertLine = !ansiEnabled;
                 return false;
             } else if (line.startsWith(DEBUGGER_LISTEN_MESSAGE_PREFIX)) {
                 debugger = true;
@@ -310,7 +353,7 @@ public final class DevCommand extends BaseCommand {
             } else if (isErrorMessage(line)) {
                 return true;
             } else {
-                updateProgress();
+                updateProgress(line);
                 return false;
             }
         }
@@ -326,7 +369,7 @@ public final class DevCommand extends BaseCommand {
                     }
                 }
                 insertLine = true;
-                insertLineIfError = AnsiConsoleInstaller.areAnsiEscapesEnabled();
+                insertLineIfError = ansiEnabled;
                 return true;
             } else {
                 return false;
@@ -341,20 +384,52 @@ public final class DevCommand extends BaseCommand {
             suspendOutput = false;
         }
 
-        private void updateProgress() {
-            if (devLoopStartingCountDown == 0) {
-                if (devLoopStartingUpdates < MAX_UPDATES) {
-                    if (debugger) {
-                        System.out.println();
-                        devLoopStartingUpdates = MAX_UPDATES;
-                    } else {
-                        System.out.print('.');
-                        devLoopStartingCountDown = LINES_PER_UPDATE;
-                        devLoopStartingUpdates++;
+        private void updateProgress(String line) {
+            if (!progressCompleted) {
+                if (debugger) {
+                    System.out.println();
+                    progressCompleted = true;
+                } else if (!skipHeader) {
+                    if (line.contains(DOWNLOADING_MESSAGE_PREFIX)) {
+                        header(Bold.apply(DEV_LOOP_HEADER));
+                        System.out.print(DEV_LOOP_STYLED_MESSAGE_PREFIX + BoldBlue.apply(DOWNLOADING_ARTIFACTS));
+                        System.out.flush();
+                        skipHeader = true;
+                        progressStarted = false;
                     }
                 }
+                if (ansiEnabled) {
+                    updateProgressIndicator();
+                }
+            }
+        }
+
+        private void updateProgressIndicator() {
+            final long currentMillis = currentTimeMillis();
+            if (progressStarted) {
+                final long elapsedMillis = currentMillis - lastProgressMillis;
+                if (elapsedMillis >= PROGRESS_UPDATE_MILLIS) {
+                    rewriteLine(SPINNER[progressIndex++]);
+                }
             } else {
-                devLoopStartingCountDown--;
+                hideCursor();
+                System.out.print(SPINNER[progressIndex++]);
+                System.out.flush();
+                progressStarted = true;
+            }
+            if (progressIndex == SPINNER.length) {
+                progressIndex = 0;
+            }
+            lastProgressMillis = currentMillis;
+        }
+
+        private void clearProgressIndicator() {
+            if (progressStarted) {
+                final int charsToClear = SPINNER[0].length();
+                final String blank = " ".repeat(charsToClear);
+                rewriteLine(charsToClear, blank);
+                showCursor();
+                progressCompleted = true;
             }
         }
 
