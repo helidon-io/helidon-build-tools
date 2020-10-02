@@ -75,6 +75,9 @@ public final class DevCommand extends BaseCommand {
     private static final String MAVEN_ERROR_LEVEL = "ERROR";
     private static final String MAVEN_FATAL_LEVEL = "FATAL";
     private static final String SLF4J_PREFIX = "SLF4J:";
+    public static final String HEADER = "%n" + Bold.apply(DEV_LOOP_HEADER + " %s ");
+    public static final String STARTING = BoldBrightGreen.apply("starting");
+    public static final String EXITING = BoldBrightGreen.apply("exiting");
 
     private final CommonOptions commonOptions;
     private final boolean clean;
@@ -117,7 +120,7 @@ public final class DevCommand extends BaseCommand {
 
         // Dev goal
 
-        String cliPluginVersion = cliPluginVersion();
+        String cliPluginVersion = pluginVersion == null ? cliPluginVersion() : pluginVersion;
         String devGoal = CLI_MAVEN_PLUGIN;
         String cliPluginVersionProperty = null;
         if (cliPluginVersion != null) {
@@ -139,9 +142,7 @@ public final class DevCommand extends BaseCommand {
         boolean terminalMode = verbosity == NORMAL;
         if (terminalMode) {
             clearScreen();
-            System.out.println();
-            System.out.print(Bold.apply("helidon dev ") + BoldBrightGreen.apply("starting "));
-            System.out.flush();
+            printState(STARTING, false);
             terminalModeOutput = new TerminalModeOutput();
         }
 
@@ -180,9 +181,26 @@ public final class DevCommand extends BaseCommand {
     }
 
     private static void exiting() {
-        System.out.println();
-        System.out.println(Bold.apply("helidon dev ") + BoldBrightGreen.apply("exiting "));
         showCursor();
+        printState(EXITING, true);
+    }
+
+    private static void printState(String state, boolean newline) {
+        final String header = newline ? HEADER + "%n" : HEADER;
+        System.out.printf(header, state);
+        System.out.flush();
+    }
+
+    private static boolean printAllLines(String line) {
+        return true;
+    }
+
+    private static void printStdOutLine(String line) {
+        System.out.println(line);
+    }
+
+    private static void printStdErrLine(String line) {
+        System.out.println(StyleFunction.Red.apply(line));
     }
 
     private String cliPluginVersion() {
@@ -246,24 +264,11 @@ public final class DevCommand extends BaseCommand {
         }
     }
 
-    private static boolean printAllLines(String line) {
-        return true;
-    }
-
-    private static void printStdOutLine(String line) {
-        System.out.println(line);
-    }
-
-    private static void printStdErrLine(String line) {
-        System.out.println(StyleFunction.Red.apply(line));
-    }
-
     /**
      * A stateful filter/transform that cleans up output from {@code DevLoop}.
      */
     private static class TerminalModeOutput implements Predicate<String>, Consumer<String> {
         private static final String DEBUGGER_LISTEN_MESSAGE_PREFIX = "Listening for transport";
-        private static final String SCANNING_MESSAGE_PREFIX = "Scanning for";
         private static final String DOWNLOADING_MESSAGE_PREFIX = "Downloading from";
         private static final String BUILD_SUCCEEDED = "BUILD SUCCESS";
         private static final String BUILD_FAILED = "BUILD FAILURE";
@@ -384,19 +389,17 @@ public final class DevCommand extends BaseCommand {
                 if (debugger) {
                     System.out.println();
                     progressCompleted = true;
-                } else if (!line.contains(SCANNING_MESSAGE_PREFIX)) {
-                    if (!skipHeader) {
-                        if (line.contains(DOWNLOADING_MESSAGE_PREFIX)) {
-                            header(Bold.apply(DEV_LOOP_HEADER));
-                            System.out.print(DEV_LOOP_STYLED_MESSAGE_PREFIX + BoldBlue.apply(DOWNLOADING_ARTIFACTS));
-                            System.out.flush();
-                            skipHeader = true;
-                            progressStarted = false;
-                        }
+                } else if (!skipHeader) {
+                    if (line.contains(DOWNLOADING_MESSAGE_PREFIX)) {
+                        header(Bold.apply(DEV_LOOP_HEADER));
+                        System.out.print(DEV_LOOP_STYLED_MESSAGE_PREFIX + BoldBlue.apply(DOWNLOADING_ARTIFACTS));
+                        System.out.flush();
+                        skipHeader = true;
+                        progressStarted = false;
                     }
-                    if (ansiEnabled) {
-                        updateProgressIndicator();
-                    }
+                }
+                if (ansiEnabled) {
+                    updateProgressIndicator();
                 }
             }
         }
@@ -409,9 +412,9 @@ public final class DevCommand extends BaseCommand {
                     rewriteLine(SPINNER[progressIndex++]);
                 }
             } else {
+                hideCursor();
                 System.out.print(SPINNER[progressIndex++]);
                 System.out.flush();
-                hideCursor();
                 progressStarted = true;
             }
             if (progressIndex == SPINNER.length) {
