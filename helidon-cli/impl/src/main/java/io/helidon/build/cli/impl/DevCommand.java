@@ -75,9 +75,9 @@ public final class DevCommand extends BaseCommand {
     private static final String MAVEN_ERROR_LEVEL = "ERROR";
     private static final String MAVEN_FATAL_LEVEL = "FATAL";
     private static final String SLF4J_PREFIX = "SLF4J:";
-    public static final String HEADER = "%n" + Bold.apply(DEV_LOOP_HEADER + " %s ");
-    public static final String STARTING = BoldBrightGreen.apply("starting");
-    public static final String EXITING = BoldBrightGreen.apply("exiting");
+    private static final String HEADER = "%n" + Bold.apply(DEV_LOOP_HEADER + " %s ");
+    private static final String STARTING = BoldBrightGreen.apply("starting");
+    private static final String EXITING = BoldBrightGreen.apply("exiting");
 
     private final CommonOptions commonOptions;
     private final boolean clean;
