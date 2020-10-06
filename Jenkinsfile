@@ -51,7 +51,7 @@ pipeline {
                 '''
               } finally {
                 archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,helidon-cli/impl/target/helidon.exe"
-                junit testResults: '**/target/surefire-reports/*.xml'
+                //junit testResults: '**/target/surefire-reports/*.xml'
               }
             }
           }
