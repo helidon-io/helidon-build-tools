@@ -50,7 +50,7 @@ pipeline {
                     mvn clean install -Pnative-image
                 '''
               } finally {
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
+                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,helidon-cli/impl/target/helidon"
                 junit testResults: '**/target/surefire-reports/*.xml'
               }
             }
