@@ -16,6 +16,7 @@
 
 package io.helidon.build.cli.impl;
 
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -32,6 +33,7 @@ import io.helidon.build.util.MavenCommand;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.RequirementFailure;
+import io.helidon.build.util.Strings;
 import io.helidon.build.util.StyleFunction;
 
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
@@ -78,6 +80,9 @@ public final class DevCommand extends BaseCommand {
     private static final String HEADER = "%n" + Bold.apply(DEV_LOOP_HEADER + " %s ");
     private static final String STARTING = BoldBrightGreen.apply("starting");
     private static final String EXITING = BoldBrightGreen.apply("exiting");
+    private static final String DEFAULT_DEBUG_PORT = "5005";
+    private static final Set<String> SUSPEND_FALSE = Set.of("n", "no", "f", "false");
+    private static final String DEBUG_ARGS = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=%s,address=*:%s";
 
     private final CommonOptions commonOptions;
     private final boolean clean;
@@ -87,26 +92,65 @@ public final class DevCommand extends BaseCommand {
     private final String appArgs;
     private TerminalModeOutput terminalModeOutput;
 
+    /**
+     * Constructor for {@link InitCommand}.
+     *
+     * @param commonOptions Common options.
+     */
+    DevCommand(CommonOptions commonOptions) {
+        this(commonOptions, true, false, null,
+             null, null, false, null, false);
+    }
+
     @Creator
     DevCommand(CommonOptions commonOptions,
                @Flag(name = "clean", description = "Perform a clean before the first build") boolean clean,
                @Flag(name = "fork", description = "Fork mvn execution") boolean fork,
                @KeyValue(name = "version", description = "helidon-cli-maven-plugin version", visible = false)
                        String pluginVersion,
-               @Flag(name = "current", description = "Use the build version as the helidon-cli-maven-plugin version",
-                       visible = false)
-                       boolean currentPluginVersion,
                @KeyValue(name = "app-jvm-args", description = "JVM args used when starting the application")
                        String appJvmArgs,
                @KeyValue(name = "app-args", description = "Application args used when starting the application")
-                       String appArgs) {
+                       String appArgs,
+               @Flag(name = "app-debug", description = "Enable application debugger")
+                       boolean appDebug,
+               @KeyValue(name = "app-debug-port", description = "Specify application debugger port")
+                       String appDebugPort,
+               @Flag(name = "app-debug-no-wait", description = "Do not wait for debugger on application start")
+                       boolean appDebugNoWait) {
         super(commonOptions, true);
         this.commonOptions = commonOptions;
         this.clean = clean;
         this.fork = fork;
-        this.pluginVersion = pluginVersion == null ? (currentPluginVersion ? Config.buildVersion() : null) : pluginVersion;
-        this.appJvmArgs = appJvmArgs;
+        this.pluginVersion = defaultPluginVersion(pluginVersion);
+        this.appJvmArgs = appJvmArgs(appJvmArgs, appDebug, appDebugPort, appDebugNoWait);
         this.appArgs = appArgs;
+    }
+
+    private static String defaultPluginVersion(String suppliedVersion) {
+        if (suppliedVersion == null) {
+            // Use build version if this is not a release
+            MavenVersion version = toMavenVersion(Config.buildVersion());
+            return version.isQualified() ? version.toString() : null;
+        } else {
+            return suppliedVersion;
+        }
+    }
+
+    private static String appJvmArgs(String appJvmArgs, boolean appDebug, String appDebugPort, boolean appDebugNoWait) {
+        String result = Strings.isValid(appJvmArgs) ? appJvmArgs : null;
+        String debugArgs = debugArgs(appDebug, appDebugPort, appDebugNoWait);
+        return debugArgs == null ? result : result == null ? debugArgs : result + " " + debugArgs;
+    }
+
+    private static String debugArgs(boolean appDebug, String appDebugPort, boolean appDebugNoWait) {
+        if (!appDebug && appDebugPort == null && !appDebugNoWait) {
+            return null;
+        } else {
+            String port = Strings.isValid(appDebugPort) ? appDebugPort : DEFAULT_DEBUG_PORT;
+            String suspend = appDebugNoWait ? "n" : "y";
+            return String.format(DEBUG_ARGS, suspend, port);
+        }
     }
 
     @Override
@@ -464,7 +508,7 @@ public final class DevCommand extends BaseCommand {
                 }
                 if (line.startsWith(MAVEN_LOG_LEVEL_START)) {
                     String errorMessage = errorMessage(line);
-                    if (errorMessage != null && !errorMessage.isBlank()) {
+                    if (Strings.isValid(errorMessage)) {
                         if (insertLineIfError) {
                             System.out.println();
                             insertLineIfError = false;
