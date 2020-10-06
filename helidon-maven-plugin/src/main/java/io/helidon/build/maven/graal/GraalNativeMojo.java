@@ -26,6 +26,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.helidon.build.util.Strings;
+
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
@@ -476,7 +478,7 @@ public class GraalNativeMojo extends AbstractMojo {
                     "graalvm.home not set,looking in the PATH environment");
 
             String sysPath = System.getenv("PATH");
-            if (sysPath == null || sysPath.isEmpty()) {
+            if (Strings.isNotValid(sysPath)) {
                 throw new MojoExecutionException(
                         "PATH environment variable is unset or empty");
             }

@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.dev.mode.DevLoop;
 import io.helidon.build.util.PathFilters;
+import io.helidon.build.util.Strings;
 
 import org.apache.maven.plugin.MojoExecutionException;
 
@@ -427,7 +428,7 @@ public class DevLoopBuildConfig {
             }
 
             private static List<String> toList(String list) {
-                return (list == null || list.isEmpty()) ? emptyList() : Arrays.asList(list.split(","));
+                return Strings.isValid(list) ? Arrays.asList(list.split(",")) : emptyList();
             }
 
             /**

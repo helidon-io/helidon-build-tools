@@ -132,7 +132,7 @@ final class Visitor {
                 env.getMessager().printMessage(Diagnostic.Kind.ERROR, "option name cannot be empty", var);
                 return false;
             }
-            if (!Option.NAME_PREDICATE.test(name)) {
+            if (!Option.VALID_NAME.test(name)) {
                 env.getMessager().printMessage(Diagnostic.Kind.ERROR,
                         String.format("'%s' is not a valid option name", name),
                         var);

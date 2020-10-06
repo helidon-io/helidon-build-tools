@@ -267,7 +267,7 @@ public class PathFilters {
     }
 
     private static String normalizePattern(String pattern) {
-        if (pattern == null || pattern.isEmpty()) {
+        if (Strings.isNotValid(pattern)) {
             throw new IllegalArgumentException("pattern cannot be null or empty");
         }
 
