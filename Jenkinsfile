@@ -47,11 +47,11 @@ pipeline {
                     set JAVA_HOME=C:\\tools\\graalvm-ce-java11-20.2.0
                     set MAVEN_HOME=C:\\tools\\apache-maven-3.6.3
                     set PATH=%MAVEN_HOME%\\bin;%JAVA_HOME%\\bin;%PATH%
-                    mvn clean install -Pnative-image -DskipTests
+                    mvn clean install -Pnative-image
                 '''
               } finally {
                 archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,helidon-cli/impl/target/helidon.exe"
-                //junit testResults: '**/target/surefire-reports/*.xml'
+                junit testResults: '**/target/surefire-reports/*.xml'
               }
             }
           }
