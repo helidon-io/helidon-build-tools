@@ -104,6 +104,12 @@
                 <artifactId>maven-invoker-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>invoker-install</id>
+                        <goals>
+                            <goal>install</goal>
+                        </goals>
+                    </execution>
+                    <execution>
                         <id>invoker-it</id>
                         <goals>
                             <goal>integration-test</goal>
