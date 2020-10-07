@@ -41,6 +41,7 @@ import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.fileName;
 import static io.helidon.build.util.FileUtils.listFiles;
+import static io.helidon.linker.util.Constants.JRI_DIR_SUFFIX;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -53,7 +54,6 @@ public final class JavaRuntime implements ResourceContainer {
     private static final String JAVA_BASE_JMOD = "java.base.jmod";
     private static final String JMOD_CLASSES_PREFIX = "classes/";
     private static final String JMOD_MODULE_INFO_PATH = JMOD_CLASSES_PREFIX + "module-info.class";
-    private static final String JRI_SUFFIX = "-jri";
     private static final String FILE_SEP = File.separator;
     private static final String JAVA_EXEC = OS.javaExecutable();
     private static final String JAVA_CMD_PATH = "bin" + FILE_SEP + JAVA_EXEC;
@@ -85,7 +85,7 @@ public final class JavaRuntime implements ResourceContainer {
     public static Path prepareJriDirectory(Path jriDirectory, Path mainJar, boolean replaceExisting) throws IOException {
         if (jriDirectory == null) {
             final String jarName = fileName(requireNonNull(mainJar));
-            final String dirName = jarName.substring(0, jarName.lastIndexOf('.')) + JRI_SUFFIX;
+            final String dirName = jarName.substring(0, jarName.lastIndexOf('.')) + JRI_DIR_SUFFIX;
             jriDirectory = FileUtils.WORKING_DIR.resolve(dirName);
         }
         if (Files.exists(jriDirectory)) {

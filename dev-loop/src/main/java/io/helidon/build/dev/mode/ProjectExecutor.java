@@ -51,16 +51,18 @@ public class ProjectExecutor {
     private static final String STARTING = BoldBrightGreen.apply(DEV_LOOP_APPLICATION_STARTING);
     private static final String STOPPING = BoldYellow.apply(DEV_LOOP_APPLICATION_STOPPING);
     private static final String STOPPED = BoldBrightRed.apply(DEV_LOOP_APPLICATION_STOPPED);
-
+    private static final long ERROR_MESSAGES_DONE_NANOS = 100 * 1000;
+    private static final List<String> EXIT_MESSAGE_FRAGMENTS = List.of("BindException: Address already in use",
+                                                                       "--enable-preview");
     private final Project project;
     private final String logPrefix;
     private final String name;
     private ProcessMonitor processMonitor;
     private long pid;
-    private boolean hasStdOutMessage;
-    private boolean hasStdErrMessage;
     private final List<String> appJvmArgs;
     private final List<String> appArgs;
+    private boolean hasExitMessage;
+    private long lastErrorMessageTime;
 
     /**
      * Create an executor from a project.
@@ -173,12 +175,17 @@ public class ProjectExecutor {
     }
 
     /**
-     * Check if project has printed to {@link System#out}.
+     * Check if project has printed a message to {@link System#err} that requires the loop to exit.
      *
-     * @return {@code true} if anything has been printed to {@link System#out}.
+     * @return {@code true} if exit is required.
      */
-    public boolean hasStdOutMessage() {
-        return hasStdErrMessage;
+    public boolean shouldExit() {
+        if (hasExitMessage) {
+            final long elapsedNanos = System.nanoTime() - lastErrorMessageTime;
+            return elapsedNanos > ERROR_MESSAGES_DONE_NANOS;
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -187,7 +194,7 @@ public class ProjectExecutor {
      * @return {@code true} if anything has been printed to {@link System#err}.
      */
     public boolean hasStdErrMessage() {
-        return hasStdErrMessage;
+        return lastErrorMessageTime > 0;
     }
 
     private String stopFailedMessage(String reason) {
@@ -203,7 +210,7 @@ public class ProjectExecutor {
     }
 
     private void start(List<String> command) {
-        hasStdErrMessage = false;
+        lastErrorMessageTime = 0;
         ProcessBuilder processBuilder = JavaProcessBuilder.newInstance()
                                                           .directory(project.root().path().toFile())
                                                           .command(command);
@@ -224,12 +231,17 @@ public class ProjectExecutor {
     }
 
     private void printStdOut(String line) {
-        hasStdOutMessage = true;
         System.out.println(line);
     }
 
     private void printStdErr(String line) {
-        hasStdErrMessage = true;
+        lastErrorMessageTime = System.nanoTime();
+        for (String exitMessageFragment : EXIT_MESSAGE_FRAGMENTS) {
+            if (line.contains(exitMessageFragment)) {
+                hasExitMessage = true;
+                break;
+            }
+        }
         System.err.println(line);
     }
 

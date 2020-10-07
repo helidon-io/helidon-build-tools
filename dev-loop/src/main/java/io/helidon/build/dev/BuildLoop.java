@@ -358,8 +358,10 @@ public class BuildLoop {
     }
 
     private void stopped() {
-        monitor.onStopped();
-        stopped.get().countDown();
+        if (stopped.get().getCount() > 0) {
+            monitor.onStopped();
+            stopped.get().countDown();
+        }
     }
 
     private void setProject(Project project) {

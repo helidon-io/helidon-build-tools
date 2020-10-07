@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Class ConfigProperties.
@@ -58,7 +59,7 @@ public class ConfigProperties {
         if (!(o instanceof ConfigProperties)) return false;
         final ConfigProperties that = (ConfigProperties) o;
         return Objects.equals(file, that.file)
-                && Objects.equals(properties, that.properties);
+               && Objects.equals(properties, that.properties);
     }
 
     @Override
@@ -112,7 +113,13 @@ public class ConfigProperties {
      */
     public List<String> propertyAsList(String key) {
         String value = properties.getProperty(key);
-        return value != null ? Arrays.asList(value.split(DELIMITER)) : Collections.emptyList();
+        if (value == null || value.isEmpty()) {
+            return Collections.emptyList();
+        } else {
+            return Arrays.stream(value.split(DELIMITER))
+                         .filter(v -> !v.isEmpty())
+                         .collect(Collectors.toList());
+        }
     }
 
     /**
