@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static io.helidon.build.util.TestUtils.pathOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -72,10 +73,5 @@ public class CliConfigTest {
         assertThat(pathOf(config.projectDir().get()), is("/usr/tmp"));
         config.clearProjectDir();
         config.store();
-    }
-
-
-    private static String pathOf(Path p) {
-        return p.toString().replace("\\", "/");
     }
 }

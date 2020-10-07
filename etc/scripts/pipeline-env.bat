@@ -16,9 +16,9 @@
 
 if "%JENKINS_HOME%"=="" exit 0
 
-set JAVA_HOME=C:\\tools\\graalvm-ce-java11-20.2.0
-set MAVEN_HOME=C:\\tools\\apache-maven-3.6.3
-set PATH=%MAVEN_HOME%\\bin;%JAVA_HOME%\\bin;%PATH%
+set JAVA_HOME=C:\tools\graalvm-ce-java11-20.2.0
+set MAVEN_HOME=C:\tools\apache-maven-3.6.3
+set PATH=%MAVEN_HOME%\bin;%JAVA_HOME%\bin;%PATH%
 
 set SL4J_ARGS= -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn ^
                -Dorg.slf4j.simpleLogger.showDateTime=true ^
