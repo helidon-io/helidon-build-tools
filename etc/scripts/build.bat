@@ -14,12 +14,12 @@
 @REM limitations under the License.
 @REM
 
-. %~dp0\pipeline-env.bat
+call %~dp0\pipeline-env.bat
 
 cd %~dp0\..\..
 
-mvn %MAVEN_ARGS% `
-    clean install `
-    --fail-at-end `
-    -Dmaven.test.failure.ignore=true `
+mvn %MAVEN_ARGS% ^
+    clean install ^
+    --fail-at-end ^
+    -Dmaven.test.failure.ignore=true ^
     -Pnative-image
