@@ -43,14 +43,9 @@ pipeline {
           steps {
             script {
               try {
-                bat '''
-                    set JAVA_HOME=C:\\tools\\graalvm-ce-java11-20.2.0
-                    set MAVEN_HOME=C:\\tools\\apache-maven-3.6.3
-                    set PATH=%MAVEN_HOME%\\bin;%JAVA_HOME%\\bin;%PATH%
-                    mvn clean install -Pnative-image
-                '''
+                bat './etc/scripts/build.bat'
               } finally {
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,helidon-cli/impl/target/helidon.exe"
+                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,helidon-cli/target/reports/*.txt,helidon-cli/impl/target/helidon.exe"
                 junit testResults: '**/target/surefire-reports/*.xml'
               }
             }
