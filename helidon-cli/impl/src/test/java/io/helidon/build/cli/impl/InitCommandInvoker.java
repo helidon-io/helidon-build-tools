@@ -15,11 +15,6 @@
  */
 package io.helidon.build.cli.impl;
 
-import io.helidon.build.cli.harness.UserConfig;
-import io.helidon.build.util.ProjectConfig;
-import io.helidon.build.util.SubstitutionVariables;
-import org.apache.maven.model.Model;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -29,6 +24,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
+import io.helidon.build.cli.harness.UserConfig;
+import io.helidon.build.util.ProjectConfig;
+import io.helidon.build.util.SubstitutionVariables;
+
+import org.apache.maven.model.Model;
 
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARCHETYPE_NAME;
 import static io.helidon.build.cli.impl.InitCommand.DEFAULT_FLAVOR;

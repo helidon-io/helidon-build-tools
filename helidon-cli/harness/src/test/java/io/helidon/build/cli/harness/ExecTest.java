@@ -24,8 +24,8 @@ import java.nio.charset.StandardCharsets;
 import io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 import io.helidon.build.util.Log;
+import io.helidon.build.util.Strings;
 
-import io.helidon.build.util.OSType;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.util.Style.strip;
@@ -66,8 +66,7 @@ public class ExecTest {
         } finally {
             System.setOut(stdout);
         }
-        String out = new String(baos.toByteArray(), StandardCharsets.UTF_8);
-        out = out.replaceAll("\r\n", "\n");
+        String out = Strings.normalizeNewLines(new String(baos.toByteArray(), StandardCharsets.UTF_8));
         return strip(out);
     }
 
@@ -104,7 +103,7 @@ public class ExecTest {
         CommandContext context = context();
         exec(context, "common");
         assertThat(context.exitAction().status(), is(ExitStatus.FAILURE));
-        assertThat(context.exitAction().message().replaceAll("\r\n", "\n"),
+        assertThat(Strings.normalizeNewLines(context.exitAction().message()),
                 is("Missing required option: key\nSee 'test-cli common --help'"));
     }
 

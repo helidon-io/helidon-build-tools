@@ -35,6 +35,7 @@ import io.helidon.build.archetype.engine.ArchetypeDescriptor.FileSet;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.Property;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.Replacement;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.Transformation;
+import io.helidon.build.util.Strings;
 
 import org.junit.jupiter.api.Test;
 
@@ -144,7 +145,7 @@ public class ArchetypeEngineTest extends ArchetypeBaseTest {
 
         String pomBase64 = testProps.getProperty("pom.xml");
         assertThat(pomBase64, is(not(nullValue())));
-        assertThat(new String(Files.readAllBytes(outputDirPath.resolve("pom.xml")), StandardCharsets.UTF_8).replaceAll("\r\n", "\n"),
+        assertThat(Strings.normalizeNewLines(new String(Files.readAllBytes(outputDirPath.resolve("pom.xml")), StandardCharsets.UTF_8)),
                 is (new String(Base64.getDecoder().decode(pomBase64), StandardCharsets.UTF_8)));
 
         String mainBase64 = testProps.getProperty("main.java");
