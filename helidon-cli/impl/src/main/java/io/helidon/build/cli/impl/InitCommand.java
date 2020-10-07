@@ -254,10 +254,10 @@ public final class InitCommand extends BaseCommand {
             }
         }, systemPropertyOrEnvVarSource());
         String projectNameArg = projectName;
-        projectName = config.projectName(projectName, artifactId, substitutions);
-        groupId = groupId == null ? config.defaultGroupId(substitutions) : groupId;
+        projectName = config.projectName(projectNameArg, artifactId, substitutions);
+        groupId = config.groupId(groupId, substitutions);
         artifactId = config.artifactId(artifactId, projectNameArg, substitutions);
-        packageName = packageName == null ? config.defaultPackageName(substitutions) : packageName;
+        packageName = config.packageName(packageName, substitutions);
     }
 
     private Path initProjectDir() {

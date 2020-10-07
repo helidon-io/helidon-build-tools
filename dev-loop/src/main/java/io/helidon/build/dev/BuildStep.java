@@ -17,12 +17,11 @@
 package io.helidon.build.dev;
 
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 /**
  * A project build step.
  */
-public interface BuildStep extends Predicate<BuildComponent> {
+public interface BuildStep {
 
     /**
      * Returns the name of this build step.
@@ -31,26 +30,6 @@ public interface BuildStep extends Predicate<BuildComponent> {
      */
     default String name() {
         return getClass().getSimpleName();
-    }
-
-    /**
-     * Returns the input type to which this step will apply.
-     *
-     * @return The type.
-     */
-    BuildRootType inputType();
-
-    /**
-     * Returns the output type that this step will produce.
-     *
-     * @return The type.
-     */
-    BuildRootType outputType();
-
-    @Override
-    default boolean test(BuildComponent component) {
-        return component.sourceRoot().buildType() == inputType()
-               && component.outputRoot().buildType() == outputType();
     }
 
     /**

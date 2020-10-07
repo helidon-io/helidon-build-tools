@@ -17,6 +17,7 @@
 package io.helidon.build.dev.maven;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,6 +40,7 @@ import org.apache.maven.project.DependencyResolutionException;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectDependenciesResolver;
 import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyFilter;
@@ -50,7 +52,13 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_DEPENDENCIES;
 import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_RESOURCEDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCEDIRS;
+import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCE_EXCLUDES;
+import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCE_INCLUDES;
 import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
+import static io.helidon.build.util.ProjectConfig.RESOURCE_INCLUDE_EXCLUDE_LIST_SEPARATOR;
+import static io.helidon.build.util.ProjectConfig.RESOURCE_INCLUDE_EXCLUDE_SEPARATOR;
+import static java.lang.String.join;
+import static java.util.Collections.emptyList;
 import static org.eclipse.aether.util.artifact.JavaScopes.COMPILE;
 import static org.eclipse.aether.util.artifact.JavaScopes.RUNTIME;
 import static org.eclipse.aether.util.filter.DependencyFilterUtils.classpathFilter;
@@ -109,6 +117,7 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
                 request.setExecutionListener(new EventListener(request.getExecutionListener()));
             } catch (IllegalStateException e) {
                 supportedProjectDir = null;
+                projectConfig = null;
             }
         } else {
             debug("collector disabled");
@@ -135,7 +144,7 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
         }
     }
 
-    private void collectConfig(MavenProject project, MavenSession session) {
+    private void collectConfig(MavenProject project, MavenSession session, Xpp3Dom pluginConfig) {
         final Path projectDir = project.getBasedir().toPath();
         final ProjectConfig config = ProjectConfig.projectConfig(projectDir);
         final List<Artifact> dependencies = dependencies(project, session);
@@ -144,7 +153,7 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
         final List<String> classesDirs = List.of(outputDir.toString());
         final List<String> resourceDirs = project.getResources()
                                                  .stream()
-                                                 .map(Resource::getDirectory)
+                                                 .map(MavenProjectConfigCollector::format)
                                                  .collect(Collectors.toList());
         if (helidonVersion != null) {
             config.property(HELIDON_VERSION, helidonVersion);
@@ -154,8 +163,42 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
         config.property(PROJECT_VERSION, project.getVersion());
         config.property(PROJECT_CLASSDIRS, classesDirs);
         config.property(PROJECT_SOURCEDIRS, project.getCompileSourceRoots());
+        config.property(PROJECT_SOURCE_INCLUDES, toList(pluginConfig, "includes"));
+        config.property(PROJECT_SOURCE_EXCLUDES, toList(pluginConfig, "excludes"));
         config.property(PROJECT_RESOURCEDIRS, resourceDirs);
         this.projectConfig = config;
+    }
+
+    private static String format(Resource resource) {
+        // Format: ${path}:${includesList}:${excludesList}
+        // where include/exclude lists are semicolon separated lists and may be empty
+        return resource.getDirectory()
+               + RESOURCE_INCLUDE_EXCLUDE_SEPARATOR + join(RESOURCE_INCLUDE_EXCLUDE_LIST_SEPARATOR, resource.getIncludes())
+               + RESOURCE_INCLUDE_EXCLUDE_SEPARATOR + join(RESOURCE_INCLUDE_EXCLUDE_LIST_SEPARATOR, resource.getExcludes());
+    }
+
+    private static List<String> toList(Xpp3Dom pluginConfig, String nodeName) {
+        final Xpp3Dom node = pluginConfig.getChild(nodeName);
+        if (node == null) {
+            return emptyList();
+        } else if (node.getChildCount() == 0) {
+            final String value = node.getValue();
+            if (value == null || value.isEmpty()) {
+                return emptyList();
+            } else {
+                return List.of(value);
+            }
+        } else {
+            final List<String> result = new ArrayList<>();
+            for (int i = 0; i < node.getChildCount(); i++) {
+                final Xpp3Dom child = node.getChild(i);
+                final String value = child.getValue();
+                if (value != null && !value.isEmpty()) {
+                    result.add(value);
+                }
+            }
+            return result;
+        }
     }
 
     private List<Artifact> dependencies(MavenProject project, MavenSession session) {
@@ -255,7 +298,7 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
             final MojoExecution execution = event.getMojoExecution();
             next.mojoSucceeded(event);
             if (execution.getGoal().equals(COMPILE_GOAL)) {
-                collectConfig(event.getProject(), event.getSession());
+                collectConfig(event.getProject(), event.getSession(), execution.getConfiguration());
             }
         }
 

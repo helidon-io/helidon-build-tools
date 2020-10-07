@@ -43,7 +43,21 @@ public class BuildComponent {
     public static BuildComponent createBuildComponent(BuildRoot sourceRoot,
                                                       BuildRoot outputRoot,
                                                       BuildStep... buildSteps) {
-        return new BuildComponent(sourceRoot, outputRoot, Arrays.asList(buildSteps));
+        return createBuildComponent(sourceRoot, outputRoot, Arrays.asList(buildSteps));
+    }
+
+    /**
+     * Returns a new build component.
+     *
+     * @param sourceRoot The source root.
+     * @param outputRoot The output root.
+     * @param buildSteps The build steps.
+     * @return The build component.
+     */
+    public static BuildComponent createBuildComponent(BuildRoot sourceRoot,
+                                                      BuildRoot outputRoot,
+                                                      List<BuildStep> buildSteps) {
+        return new BuildComponent(sourceRoot, outputRoot, buildSteps);
     }
 
     private BuildComponent(BuildRoot sourceRoot, BuildRoot outputRoot, List<BuildStep> buildSteps) {
@@ -81,15 +95,6 @@ public class BuildComponent {
     }
 
     /**
-     * Returns the list of build steps.
-     *
-     * @return The steps.
-     */
-    public List<BuildStep> buildSteps() {
-        return buildSteps;
-    }
-
-    /**
      * Execute the build step for the given changed files only.
      *
      * @param changes The changes.
@@ -115,6 +120,11 @@ public class BuildComponent {
     public void update() {
         sourceRoot().update();
         outputRoot().update();
+    }
+
+    @Override
+    public String toString() {
+        return "BuildComponent{sourceRoot=" + sourceRoot() + "}";
     }
 
     void project(Project project) {

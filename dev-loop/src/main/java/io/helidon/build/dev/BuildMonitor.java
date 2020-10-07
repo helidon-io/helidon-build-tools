@@ -97,12 +97,31 @@ public interface BuildMonitor {
     long onReady(int cycleNumber, Project project);
 
     /**
+     * The action to take on the next cycle.
+     */
+    enum NextAction {
+        /**
+         * Continue.
+         */
+        CONTINUE,
+        /**
+         * Wait for a change.
+         */
+        WAIT_FOR_CHANGE,
+
+        /**
+         * Exit.
+         */
+        EXIT
+    }
+
+    /**
      * Called when a build cycle has completed.
      *
      * @param cycleNumber The cycle number.
      * @return {@code true} to continue to next build cycle, {@code false} to stop.
      */
-    boolean onCycleEnd(int cycleNumber);
+    NextAction onCycleEnd(int cycleNumber);
 
     /**
      * Called when build loop has failed.

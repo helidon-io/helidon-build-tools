@@ -31,7 +31,6 @@ import static java.util.Objects.requireNonNull;
  */
 public class BuildFile implements FileChangeAware {
     private final ProjectDirectory parent;
-    private final FileType type;
     private final Path path;
     private volatile FileTime lastModified;
 
@@ -39,17 +38,15 @@ public class BuildFile implements FileChangeAware {
      * Returns a new build file.
      *
      * @param parent The parent.
-     * @param type The type.
      * @param path The file path.
      * @return The file.
      */
-    public static BuildFile createBuildFile(ProjectDirectory parent, FileType type, Path path) {
-        return new BuildFile(parent, type, path);
+    public static BuildFile createBuildFile(ProjectDirectory parent, Path path) {
+        return new BuildFile(parent, path);
     }
 
-    private BuildFile(ProjectDirectory parent, FileType type, Path path) {
+    private BuildFile(ProjectDirectory parent, Path path) {
         this.parent = requireNonNull(parent);
-        this.type = requireNonNull(type);
         this.path = assertFile(path);
         this.lastModified = FileUtils.lastModifiedTime(path);
     }
@@ -61,15 +58,6 @@ public class BuildFile implements FileChangeAware {
      */
     public ProjectDirectory parent() {
         return parent;
-    }
-
-    /**
-     * Returns the file type.
-     *
-     * @return The type.
-     */
-    public FileType type() {
-        return type;
     }
 
     /**
@@ -138,8 +126,7 @@ public class BuildFile implements FileChangeAware {
     @Override
     public String toString() {
         return "BuildFile{"
-               + "type=" + type
-               + ", path=" + path
+               + "path=" + path
                + '}';
     }
 }

@@ -35,6 +35,8 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
+import static io.helidon.linker.util.Constants.JRI_DIR_SUFFIX;
+
 /**
  * Maven goal to create a custom Java Runtime Image.
  */
@@ -117,7 +119,7 @@ public class JLinkImageMojo extends AbstractMojo {
         }
         final Path buildDir = buildDirectory.toPath();
         final Path mainJar = mainJar(buildDir);
-        final Path outputDir = buildDir.resolve(finalName);
+        final Path outputDir = buildDir.resolve(finalName + JRI_DIR_SUFFIX);
         final Log.Writer writer = new MavenLogWriter(getLog());
         try {
             Configuration config = Configuration.builder()

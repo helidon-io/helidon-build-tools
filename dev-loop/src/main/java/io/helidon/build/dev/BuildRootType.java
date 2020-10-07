@@ -16,32 +16,104 @@
 
 package io.helidon.build.dev;
 
+import java.nio.file.Path;
+import java.util.Objects;
+import java.util.function.BiPredicate;
+
+import io.helidon.build.util.PathFilters;
+
+import static io.helidon.build.util.PathFilters.matchesFileNameSuffix;
+
 /**
  * A build root type.
  */
-public enum BuildRootType {
+public class BuildRootType {
+
+    private static final BiPredicate<Path, Path> JAVA_SOURCE = matchesFileNameSuffix(".java");
+    private static final BiPredicate<Path, Path> JAVA_CLASS = matchesFileNameSuffix(".class");
+    private static final BiPredicate<Path, Path> RESOURCE_FILE = (path, root) -> {
+        final String fileName = path.getFileName().toString();
+        return !fileName.startsWith(".") && !fileName.endsWith(".class") && !fileName.endsWith(".swp") && !fileName.endsWith("~");
+    };
+    private static final BuildRootType JAVA_SOURCES = create(DirectoryType.JavaSources, matchesJavaSource());
+    private static final BuildRootType JAVA_CLASSES = create(DirectoryType.JavaClasses, matchesJavaClass());
+    private static final BuildRootType RESOURCES = BuildRootType.create(DirectoryType.Resources, matchesResource());
 
     /**
-     * Java source files.
+     * Returns the Java sources instance.
+     *
+     * @return The instance.
      */
-    JavaSources(DirectoryType.JavaSources, FileType.JavaSource),
+    public static BuildRootType javaSources() {
+        return JAVA_SOURCES;
+    }
 
     /**
-     * Java classes.
+     * Returns the Java classes instance.
+     *
+     * @return The instance.
      */
-    JavaClasses(DirectoryType.Classes, FileType.JavaClass),
+    public static BuildRootType javaClasses() {
+        return JAVA_CLASSES;
+    }
 
     /**
-     * Resource source files.
+     * Returns the resources instance.
+     *
+     * @return The instance.
      */
-    Resources(DirectoryType.Resources, FileType.NotJavaClass);
+    public static BuildRootType resources() {
+        return RESOURCES;
+    }
+
+    /**
+     * Returns a filter that returns {@code true} for any filename ending with {@code ".java"}.
+     *
+     * @return The filter. The second path parameter is always ignored; a {@code BiPredicate<Path,Path>} is used for symmetry
+     * with other uses of {@link PathFilters}.
+     */
+    public static BiPredicate<Path, Path> matchesJavaSource() {
+        return JAVA_SOURCE;
+    }
+
+    /**
+     * Returns a filter that returns {@code true} for any filename ending with {@code ".class"}.
+     *
+     * @return The filter. The second path parameter is always ignored; a {@code BiPredicate<Path,Path>} is used for symmetry
+     * with other uses of {@link PathFilters}.
+     */
+    public static BiPredicate<Path, Path> matchesJavaClass() {
+        return JAVA_CLASS;
+    }
+
+    /**
+     * Returns a filter that returns {@code true} for any filename that does not start with {@code "."} and does not end with
+     * {@code ".class"}, {@code ".swp"} or {@code "~"}.
+     *
+     * @return The filter. The second path parameter is always ignored; a {@code BiPredicate<Path,Path>} is used for symmetry
+     * with other uses of {@link PathFilters}.
+     */
+    public static BiPredicate<Path, Path> matchesResource() {
+        return RESOURCE_FILE;
+    }
 
     private final DirectoryType directoryType;
-    private final FileType fileType;
+    private final BiPredicate<Path, Path> filter;
 
-    BuildRootType(DirectoryType directoryType, FileType fileType) {
+    /**
+     * Creates a new type.
+     *
+     * @param directoryType The directory type.
+     * @param filter The file filter.
+     * @return The type.
+     */
+    public static BuildRootType create(DirectoryType directoryType, BiPredicate<Path, Path> filter) {
+        return new BuildRootType(directoryType, filter);
+    }
+
+    private BuildRootType(DirectoryType directoryType, BiPredicate<Path, Path> filter) {
         this.directoryType = directoryType;
-        this.fileType = fileType;
+        this.filter = filter;
     }
 
     /**
@@ -54,11 +126,32 @@ public enum BuildRootType {
     }
 
     /**
-     * Returns the associated file type.
+     * Returns the associated file filter.
      *
-     * @return The file type.
+     * @return The filter.
      */
-    public FileType fileType() {
-        return fileType;
+    public BiPredicate<Path, Path> filter() {
+        return filter;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final BuildRootType that = (BuildRootType) o;
+        return directoryType == that.directoryType
+               && Objects.equals(filter, that.filter);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(directoryType, filter);
+    }
+
+    @Override
+    public String toString() {
+        return "BuildRootType{"
+               + "directoryType=" + directoryType
+               + '}';
     }
 }

@@ -29,7 +29,7 @@ import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertExists;
 
 /**
- * Class ConfigFile.
+ * Class ProjectConfig.
  */
 public class ProjectConfig extends ConfigProperties {
 
@@ -37,6 +37,16 @@ public class ProjectConfig extends ConfigProperties {
      * Helidon CLI config file.
      */
     public static final String DOT_HELIDON = ".helidon";
+
+    /**
+     * Schema version property.
+     */
+    public static final String SCHEMA_VERSION = "schema.version";
+
+    /**
+     * Current schema version.
+     */
+    public static final String CURRENT_SCHEMA_VERSION = "1.1.0";
 
     /**
      * Project's directory property.
@@ -64,14 +74,36 @@ public class ProjectConfig extends ConfigProperties {
     public static final String PROJECT_SOURCEDIRS = "project.sourcedirs";
 
     /**
+     * Project's source includes property.
+     */
+    public static final String PROJECT_SOURCE_INCLUDES = "project.source.includes";
+
+    /**
+     * Project's source excludes property.
+     */
+    public static final String PROJECT_SOURCE_EXCLUDES = "project.source.excludes";
+
+    /**
      * Project's class directories property.
      */
     public static final String PROJECT_CLASSDIRS = "project.classdirs";
 
     /**
-     * Project's resource directories property.
+     * Project's resource directories property. Each directory in the list has
+     * the form {@code ${path}:${includesList}:${excludesList}} where the include
+     * and exclude lists are semicolon separated lists and may be empty.
      */
     public static final String PROJECT_RESOURCEDIRS = "project.resourcedirs";
+
+    /**
+     * Resource directory include/exclude separator.
+     */
+    public static final String RESOURCE_INCLUDE_EXCLUDE_SEPARATOR = ":";
+
+    /**
+     * Resource directory include/exclude list separator.
+     */
+    public static final String RESOURCE_INCLUDE_EXCLUDE_LIST_SEPARATOR = ";";
 
     /**
      * Project's main class.
@@ -156,6 +188,9 @@ public class ProjectConfig extends ConfigProperties {
      */
     public ProjectConfig(Path file) {
         super(file);
+        if (property(SCHEMA_VERSION) == null) {
+            property(SCHEMA_VERSION, CURRENT_SCHEMA_VERSION);
+        }
     }
 
     /**

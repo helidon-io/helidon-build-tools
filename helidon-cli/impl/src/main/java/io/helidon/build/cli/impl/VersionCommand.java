@@ -28,7 +28,9 @@ import io.helidon.build.util.ProjectConfig;
 
 import static io.helidon.build.util.ProjectConfig.HELIDON_VERSION;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
+import static io.helidon.build.util.ProjectConfig.PROJECT_RESOURCEDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
+import static io.helidon.build.util.ProjectConfig.RESOURCE_INCLUDE_EXCLUDE_SEPARATOR;
 
 /**
  * The {@code version} command.
@@ -79,7 +81,12 @@ final class VersionCommand extends BaseCommand {
     static void addProjectProperty(String key, String configKey, ProjectConfig config, Map<Object, Object> map) {
         String value = config.property(configKey);
         if (value != null) {
-            map.put("project." + key, key.equals(FLAVOR) ? value.toUpperCase() : value);
+            if (key.equals(FLAVOR)) {
+                value = value.toUpperCase();
+            } else if (key.equals(PROJECT_RESOURCEDIRS)) {
+                value = value.split(RESOURCE_INCLUDE_EXCLUDE_SEPARATOR)[0];
+            }
+            map.put("project." + key, value);
         }
     }
 

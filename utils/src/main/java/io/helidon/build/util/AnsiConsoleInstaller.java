@@ -22,8 +22,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.fusesource.jansi.Ansi;
 import picocli.jansi.graalvm.AnsiConsole;
 
-import static org.fusesource.jansi.Ansi.ansi;
-
 /**
  * Installer for {@link System#out} and {@link System#err} streams that support {@link Ansi} escapes, if possible.
  * Supports {@code GraalVM} native executables.
@@ -176,31 +174,6 @@ public class AnsiConsoleInstaller {
         return install();
     }
 
-    /**
-     * Clears the screen if Ansi escapes are enabled.
-     *
-     * @return {@code true} if Ansi escapes are enabled.
-     */
-    public static boolean clearScreen() {
-        return clearScreen(0);
-    }
-
-    /**
-     * Clears the screen from the given row if Ansi escapes are enabled.
-     *
-     * @param startRow The row at which to start clearing.
-     * @return {@code true} if Ansi escapes are enabled.
-     */
-    public static boolean clearScreen(int startRow) {
-        if (areAnsiEscapesEnabled()) {
-            System.out.print(ansi().cursor(startRow, 0).eraseScreen());
-            System.out.flush();
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     private static ConsoleType desiredConsoleType() {
         if (Boolean.getBoolean(JANSI_FORCE_PROPERTY)) {
             debug("Jansi streams requested: %s=true", JANSI_FORCE_PROPERTY);
@@ -238,7 +211,7 @@ public class AnsiConsoleInstaller {
         } else {
             if (desiredType != ConsoleType.DEFAULT) {
                 debug("Desired = %s, but System.out not a Jansi type (%s) ao Ansi escapes should not be stripped",
-                        desiredType, systemOutClass);
+                      desiredType, systemOutClass);
             }
             return ConsoleType.DEFAULT;
         }
@@ -249,7 +222,7 @@ public class AnsiConsoleInstaller {
         if (Log.hasWriter()) {
             Log.debug(message, args);
         } else if (DEBUG) {
-            System.out.println(String.format(message, args));
+            System.out.printf((message) + "%n", args);
         }
     }
 

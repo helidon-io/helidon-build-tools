@@ -30,6 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.build.dev.BuildMonitor.NextAction;
+
 import static io.helidon.build.dev.BuildType.Complete;
 import static io.helidon.build.dev.BuildType.Incremental;
 import static io.helidon.build.dev.FileChangeAware.changedTimeOf;
@@ -231,14 +233,17 @@ public class BuildLoop {
 
             // Delay if needed
 
-            if (delay.get() > 0) {
+            final long delayMillis = delay.get();
+            if (delayMillis > 0) {
                 try {
-                    Thread.sleep(delay.get());
+                    Thread.sleep(delayMillis);
                 } catch (InterruptedException e) {
                     break;
                 }
+            } else if (delayMillis < 0) {
+                break;
             }
-            run.set(cycleEnded());
+            cycleEnded();
         }
         stopped();
     }
@@ -346,13 +351,17 @@ public class BuildLoop {
         return projectSupplier.changedSince(projectDirectory, lastChangeTime.get());
     }
 
-    private boolean cycleEnded() {
-        return monitor.onCycleEnd(cycleNumber.getAndAdd(1));
+    private void cycleEnded() {
+        if (monitor.onCycleEnd(cycleNumber.getAndAdd(1)) == NextAction.EXIT) {
+            run.set(false);
+        }
     }
 
     private void stopped() {
-        monitor.onStopped();
-        stopped.get().countDown();
+        if (stopped.get().getCount() > 0) {
+            monitor.onStopped();
+            stopped.get().countDown();
+        }
     }
 
     private void setProject(Project project) {
