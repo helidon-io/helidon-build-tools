@@ -15,10 +15,11 @@
  */
 package io.helidon.build.maven.report.model;
 
+import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
-import java.util.Objects;
 
 @XmlRootElement()
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -26,9 +27,17 @@ public class AttributionLicense {
     private String name;
     private String text;
 
+    /**
+     * Default constructor.
+     */
     public AttributionLicense() {
     }
 
+    /**
+     * Construction license with given name and text.
+     * @param name
+     * @param text
+     */
     public AttributionLicense(String name, String text) {
         this.name = name;
         this.text = text;

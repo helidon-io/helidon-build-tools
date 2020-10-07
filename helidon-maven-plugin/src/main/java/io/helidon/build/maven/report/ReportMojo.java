@@ -16,55 +16,59 @@
 
 package io.helidon.build.maven.report;
 
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-
 /**
- * Goal to generate an attribution report
+ * Goal to generate an attribution report.
  */
-@Mojo( name = "report", aggregator=true, requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME,  defaultPhase = LifecyclePhase.PREPARE_PACKAGE )
+@Mojo(name = "report", aggregator = true, requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME,
+        defaultPhase = LifecyclePhase.PREPARE_PACKAGE)
 public class ReportMojo
-    extends AbstractMojo
-{
+    extends AbstractMojo {
+
     // Project to run on.
-    @Parameter( defaultValue = "${project}", readonly = true, required = true )
+    @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject project;
 
     // True to skip this goal
-    @Parameter(property = "skip" , defaultValue = "false", readonly = true, required = true )
+    @Parameter(property = "skip", defaultValue = "false", readonly = true, required = true)
     private Boolean skip;
 
     // Comma separated list of (Helidon) modules to include attributions for
-    @Parameter(property = Report.MODULES_PROPERTY_NAME , readonly = true)
+    @Parameter(property = Report.MODULES_PROPERTY_NAME, readonly = true)
     private String modules;
 
     // Attribution input XML file name
-    @Parameter( property = Report.INPUT_FILE_NAME_PROPERTY_NAME, defaultValue = Report.DEFAULT_INPUT_FILE_NAME, required = true )
+    @Parameter(property = Report.INPUT_FILE_NAME_PROPERTY_NAME, defaultValue = Report.DEFAULT_INPUT_FILE_NAME, required = true)
     private String inputFileName;
 
     // Directory containing attribution input XML file
-    @Parameter( property = Report.INPUT_FILE_DIR_PROPERTY_NAME)
+    @Parameter(property = Report.INPUT_FILE_DIR_PROPERTY_NAME)
     private String inputFileDir;
 
     // Output report (text) file
-    @Parameter( property = Report.OUTPUT_FILE_NAME_PROPERTY_NAME, defaultValue = Report.DEFAULT_OUTPUT_FILE_NAME, required = true )
+    @Parameter(property = Report.OUTPUT_FILE_NAME_PROPERTY_NAME, defaultValue = Report.DEFAULT_OUTPUT_FILE_NAME, required = true)
     private String outputFileName;
 
     // Directory containing output file
-    @Parameter( property = Report.OUTPUT_FILE_DIR_PROPERTY_NAME, defaultValue = "${project.build.directory}")
+    @Parameter(property = Report.OUTPUT_FILE_DIR_PROPERTY_NAME, defaultValue = "${project.build.directory}")
     private String outputFileDir;
 
+    /**
+     * Execute the report goal.
+     * @throws MojoExecutionException
+     */
     public void execute()
         throws MojoExecutionException {
         String[] args = {};
@@ -114,7 +118,7 @@ public class ReportMojo
 
         // Get dependencies for current module include transitive dependencies
         Set<Artifact> artifacts = project.getArtifacts();
-        if (artifacts != null && ! artifacts.isEmpty()) {
+        if (artifacts != null && !artifacts.isEmpty()) {
             for (Artifact artifact : artifacts) {
                 // Save ones that are Helidon artifacts
                 gid = artifact.getGroupId();
@@ -128,7 +132,7 @@ public class ReportMojo
 
         // Traverse sub-projects if any
         List<MavenProject> subProjects = project.getCollectedProjects();
-        if (subProjects != null && ! subProjects.isEmpty()) {
+        if (subProjects != null && !subProjects.isEmpty()) {
             for (MavenProject p : subProjects) {
                 helidonDependencies.addAll(getHelidonDependencies(p));
             }

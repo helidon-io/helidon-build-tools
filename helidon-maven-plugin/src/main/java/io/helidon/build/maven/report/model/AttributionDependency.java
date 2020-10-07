@@ -16,19 +16,20 @@
 
 package io.helidon.build.maven.report.model;
 
+import java.util.Objects;
+import java.util.Set;
+import java.util.SortedSet;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-import java.util.Objects;
-import java.util.Set;
-import java.util.SortedSet;
 
-@XmlRootElement(name="dependency")
+@XmlRootElement(name = "dependency")
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(propOrder={"id", "name", "version", "licensor", "licenseName", "consumers", "attribution"})
+@XmlType(propOrder = {"id", "name", "version", "licensor", "licenseName", "consumers", "attribution"})
 public class AttributionDependency {
 
     private String id;
@@ -38,25 +39,32 @@ public class AttributionDependency {
     private String licensor;
     private String attribution;
 
-    @XmlElementWrapper(name="consumers")
-    @XmlElement(name="consumer")
+    @XmlElementWrapper(name = "consumers")
+    @XmlElement(name = "consumer")
     private SortedSet<String> consumers;
 
+    /**
+     * Default constructor.
+     */
     public AttributionDependency() {
     }
 
     @Override
     public String toString() {
-        return "AttributionDependency{" +
-                "id='" + id + '\'' +
-                ", name='" + name + '\'' +
-                ", version='" + version + '\'' +
-                ", licenseName='" + licenseName + '\'' +
-                ", licensor='" + licensor + '\'' +
-                ", consumers=" + consumers +
-                '}';
+        return "AttributionDependency{"
+                + "id='" + id + '\''
+                + ", name='" + name + '\''
+                + ", version='" + version + '\''
+                + ", licenseName='" + licenseName + '\''
+                + ", licensor='" + licensor + '\''
+                + ", consumers=" + consumers
+                + '}';
     }
 
+    /**
+     * Construct with the given id.
+     * @param id
+     */
     public AttributionDependency(String id) {
         this.id = id;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. 
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,6 @@
 
 package io.helidon.build.maven.report;
 
-import io.helidon.build.maven.report.model.AttributionDependency;
-import io.helidon.build.maven.report.model.AttributionDocument;
-import io.helidon.build.maven.report.model.AttributionLicense;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -38,11 +31,18 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+
+import io.helidon.build.maven.report.model.AttributionDependency;
+import io.helidon.build.maven.report.model.AttributionDocument;
+import io.helidon.build.maven.report.model.AttributionLicense;
+
 /**
- * Generate a report from attribution xml file
+ * Generate a report from attribution xml file.
  */
-public class Report
-{
+public class Report {
     static final String HEADER_80 = "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=";
 
     // SPDX identifier for licenses
@@ -53,7 +53,7 @@ public class Report
     static final String LGPL2_1_ID = "LGPL-2.1-only";
     static final String MPL2_ID = "MPL-2.0";
 
-    static final String[] LICENSES = { APACHE_ID, EPL1_ID, EPL2_ID, MPL2_ID, LGPL2_1_ID };
+    static final String[] LICENSES = {APACHE_ID, EPL1_ID, EPL2_ID, MPL2_ID, LGPL2_1_ID};
 
     static final String INPUT_FILE_DIR_PROPERTY_NAME = "inputFileDir";
     static final String INPUT_FILE_NAME_PROPERTY_NAME = "inputFileName";
@@ -86,6 +86,18 @@ public class Report
 
     private static List<String> moduleList;
 
+    /**
+     * Utility class should not have public default constructor.
+     */
+    private Report() {
+    }
+
+    /**
+     * Main class to support running report outside of Mojo.
+     * @param args
+     * @throws IOException
+     * @throws JAXBException
+     */
     public static void main(String[] args) throws IOException, JAXBException {
 
         inputFileDir = System.getProperty(INPUT_FILE_DIR_PROPERTY_NAME, DEFAULT_INPUT_FILE_DIR);
@@ -118,7 +130,7 @@ public class Report
     }
 
     /**
-     * Converts a path to a jar, or a jar, or a module name to a module name
+     * Converts a path to a jar, or a jar, or a module name to a module name.
      * @param s jar file name, path to a jar file, or a Helidon module name
      * @return String representing a helidon module name
      */
@@ -133,21 +145,21 @@ public class Report
                 // No dashes. Just strip off .jar
                 n = name.lastIndexOf('.');
             }
-            return name.substring(0,n);
+            return name.substring(0, n);
         } else {
             return name;
         }
     }
 
     static void execute() throws IOException, JAXBException {
-        if (! new File(outputFileDir).exists()) {
+        if (!new File(outputFileDir).exists()) {
             String s = String.format("Can't create output file %s. Directory %s does not exist.", outputFileName, outputFileDir);
             throw new IOException(s);
         }
 
         File outputFile = new File(outputFileDir, outputFileName);
         File inputFile = null;
-        if (inputFileDir != null && ! inputFileDir.isEmpty()) {
+        if (inputFileDir != null && !inputFileDir.isEmpty()) {
             // Input file was specified
             inputFile = new File(inputFileDir, inputFileName);
         }
@@ -174,7 +186,7 @@ public class Report
     }
 
     /**
-     * Loads XML and return the attribution document model
+     * Loads XML and return the attribution document model.
      *
      * @param file XML file to load.
      *
@@ -214,7 +226,7 @@ public class Report
     }
 
     /**
-     * Generates a third party attribution file from all found BAs
+     * Generates a third party attribution file from all found BAs.
      *
      * @param attributionDocument AttributionDocument to generate attribution report from
      * @param w FileWriter to write report to
@@ -303,7 +315,7 @@ public class Report
     }
 
     /**
-     * Append the contents of a resource file to the passed FileWriter
+     * Append the contents of a resource file to the passed FileWriter.
      *
      * @param resourceName Name of resource
      * @param writer file to append resource to
