@@ -35,8 +35,8 @@ public @interface Option {
     /**
      * Name predicate to validate option names.
      */
-    Predicate<String> NAME_PREDICATE = Pattern.compile("^[a-zA-Z0-9]{1,}[-]?[a-zA-Z0-9]{1,}[-]?[a-zA-Z0-9]{1,}$")
-                                              .asMatchPredicate();
+    Predicate<String> VALID_NAME = Pattern.compile("^[a-zA-Z0-9]{1,}[-]?[a-zA-Z0-9]{0,}[-]?[a-zA-Z0-9]{0,}[-]?[a-zA-Z0-9]{0,}$")
+                                          .asMatchPredicate();
 
     /**
      * Describes a unique key with a multiple values command line option. It is passed with two separate command line arguments:
@@ -56,7 +56,7 @@ public @interface Option {
          * The option name.
          *
          * @return option name
-         * @see Option#NAME_PREDICATE
+         * @see Option#VALID_NAME
          */
         String name();
 
@@ -96,7 +96,7 @@ public @interface Option {
          * The option name.
          *
          * @return option name
-         * @see Option#NAME_PREDICATE
+         * @see Option#VALID_NAME
          */
         String name();
 
@@ -150,7 +150,7 @@ public @interface Option {
          * The option name.
          *
          * @return option name
-         * @see Option#NAME_PREDICATE
+         * @see Option#VALID_NAME
          */
         String name();
 

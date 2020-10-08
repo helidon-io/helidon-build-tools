@@ -30,6 +30,7 @@ import io.helidon.build.cli.harness.Option.KeyValue;
 import io.helidon.build.cli.harness.UserConfig;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
+import io.helidon.build.util.Strings;
 import io.helidon.build.util.StyleFunction;
 
 import static io.helidon.build.cli.harness.Config.userConfig;
@@ -71,7 +72,7 @@ final class CommonOptions {
         this.debug = debug;
         this.plain = plain || userConfig().richTextDisabled();
         this.projectDir = projectDir != null ? projectDir.toPath().toAbsolutePath() : WORKING_DIR;
-        this.metadataUrl = (metadataUrl == null || metadataUrl.isBlank()) ? userConfig().updateUrl() : metadataUrl;
+        this.metadataUrl = Strings.isValid(metadataUrl) ? metadataUrl : userConfig().updateUrl();
         this.resetCache = resetCache || since != null;
         this.sinceCliVersion = toMavenVersion(since == null ? Config.buildVersion() : since);
     }

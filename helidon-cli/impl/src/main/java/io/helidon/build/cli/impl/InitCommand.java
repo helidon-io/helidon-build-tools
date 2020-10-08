@@ -234,8 +234,7 @@ public final class InitCommand extends BaseCommand {
             boolean startDev = Prompter.promptYesNo("Start development loop?", false);
             if (startDev) {
                 CommonOptions commonOptions = new CommonOptions(projectDir, this.commonOptions);
-                DevCommand devCommand = new DevCommand(commonOptions,
-                                                       true, false, null, false, null, null);
+                DevCommand devCommand = new DevCommand(commonOptions);
                 devCommand.execute(context);
             }
         }
