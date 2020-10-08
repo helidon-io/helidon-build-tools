@@ -16,13 +16,6 @@
 
 package io.helidon.build.maven.report;
 
-import io.helidon.build.maven.report.model.AttributionDependency;
-import io.helidon.build.maven.report.model.AttributionDocument;
-import io.helidon.build.maven.report.model.AttributionLicense;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -38,6 +31,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+
+import io.helidon.build.maven.report.model.AttributionDependency;
+import io.helidon.build.maven.report.model.AttributionDocument;
+import io.helidon.build.maven.report.model.AttributionLicense;
 
 /**
  * Generate a report from attribution xml file.
@@ -343,10 +344,17 @@ public class Report {
         }
     }
 
+    /**
+     * Return the Builder for Report.
+     * @return a builder for Report
+     */
     public static Builder builder() {
         return new Report.Builder();
     }
 
+    /**
+     * Builder for Report.
+     */
     public static class Builder {
         private String inputFileDir;
         private String inputFileName;
@@ -358,60 +366,118 @@ public class Report {
         private Builder() {
         }
 
+        /**
+         * Get the directory containing the XML input file.
+         * @return the directory containing the XML input file.
+         */
         public String inputFileDir() {
             return inputFileDir;
         }
 
+        /**
+         * Set the directory containing the XML input file.
+         * @param inputFileDir the directory contain the XML input file.
+         * @return this Builder
+         */
         public Builder inputFileDir(String inputFileDir) {
             this.inputFileDir = inputFileDir;
             return this;
         }
 
+        /**
+         * Get the name of the XML input file.
+         * @return the name of the XML input file
+         */
         public String inputFileName() {
             return inputFileName;
         }
 
+        /**
+         * Set the name of the XML input file.
+         * @param inputFileName name of the XML input file
+         * @return this Builder
+         */
         public Builder inputFileName(String inputFileName) {
             this.inputFileName = inputFileName;
             return this;
         }
 
+        /**
+         * Get the directory to put the generated output file.
+         * @return the directory to put the generated output file.
+         */
         public String outputFileDir() {
             return outputFileDir;
         }
 
+        /**
+         * Set the directory to put the generated output file.
+         * @param outputFileDir the directory to put the generatd output file.
+         * @return this Builder
+         */
         public Builder outputFileDir(String outputFileDir) {
             this.outputFileDir = outputFileDir;
             return this;
         }
 
+        /**
+         * Get the name of the generated output file.
+         * @return the name of the generated output file.
+         */
         public String outputFileName() {
             return outputFileName;
         }
 
+        /**
+         * Set the name of the generated output file.
+         * @param outputFileName
+         * @return the name of the generated output file.
+         */
         public Builder outputFileName(String outputFileName) {
             this.outputFileName = outputFileName;
             return this;
         }
 
+        /**
+         * Get the list of Helidon modules to get third party attributions for.
+         * @return the list of Helidon modules to get third party attributions for
+         */
         public List<String> moduleList() {
             return moduleList;
         }
 
+        /**
+         * Set the list of Helidon modules to get third party attributions for.
+         * @param moduleList the list of Helidon modules
+         * @return this Builder
+         */
         public Builder moduleList(List<String> moduleList) {
             this.moduleList = moduleList;
             return this;
         }
 
+        /**
+         * Set the handler for informational output.
+         * @return the handler for informational output
+         */
         public Consumer<String> outputHandler() {
             return outputHandler;
         }
 
+        /**
+         * Set the handler for informational output.
+         * @param outputHandler the handler for informational output
+         * @return this Builder
+         */
         public Builder outputHandler(Consumer<String> outputHandler) {
             this.outputHandler = outputHandler;
             return this;
         }
 
+        /**
+         * Build a Report from this builder.
+         * @return a new Report
+         */
         public Report build() {
             return new Report(this);
         }
