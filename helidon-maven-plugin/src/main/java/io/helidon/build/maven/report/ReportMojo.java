@@ -16,9 +16,12 @@
 
 package io.helidon.build.maven.report;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
@@ -67,11 +70,10 @@ public class ReportMojo
 
     /**
      * Execute the report goal.
-     * @throws MojoExecutionException
+     * @throws MojoExecutionException on error
      */
     public void execute()
         throws MojoExecutionException {
-        String[] args = {};
 
         if (skip) {
             return;
@@ -84,20 +86,27 @@ public class ReportMojo
             Set<String> moduleList = getHelidonDependencies(project);
             modules = String.join(",", moduleList);
         }
-
         getLog().debug("Modules: " + modules);
 
-        // The report goal is implemented as a stand-alone Java class so it can be executed
-        // from the command line without using the maven plugin. We pass params to it
-        // via Java system properties
-        System.setProperty(Report.MODULES_PROPERTY_NAME, modules);
-        System.setProperty(Report.INPUT_FILE_NAME_PROPERTY_NAME, inputFileName);
-        System.setProperty(Report.INPUT_FILE_DIR_PROPERTY_NAME, (inputFileDir == null) ? "" : inputFileDir);
-        System.setProperty(Report.OUTPUT_FILE_NAME_PROPERTY_NAME, outputFileName);
-        System.setProperty(Report.OUTPUT_FILE_DIR_PROPERTY_NAME, outputFileDir);
+        Report.Builder builder = Report.builder();
 
+        if (modules == null || modules.isEmpty() || modules.equals("*")) {
+            builder.moduleList(Collections.emptyList());
+        } else {
+            List<String> tmpList = Arrays.asList(modules.split(","));
+            // Handle the case where the user passed jar file names (with version).
+            // In that case we want to convert helidon-tracing-2.0.2.jar to helidon-tracing
+            builder.moduleList(tmpList.stream().map(Report::convertToArtifactId).collect(Collectors.toList()));
+        }
+
+        Report report = builder.inputFileName(inputFileName)
+                .inputFileDir(inputFileDir)
+                .outputFileName(outputFileName)
+                .outputFileDir(outputFileDir)
+                .outputHandler((s) -> getLog().info(s))
+                .build();
         try {
-            Report.main(args);
+            report.execute();
         } catch (Exception e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }

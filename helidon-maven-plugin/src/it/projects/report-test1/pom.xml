@@ -50,10 +50,9 @@
                             <goal>report</goal>
                         </goals>
                         <configuration>
+                            <!-- pick up XML file from project directory -->
                             <inputFileDir>.</inputFileDir>
-                            <inputFileName>THIRD_PARTY_LICENSES.xml</inputFileName>
                             <outputFileDir>.</outputFileDir>
-                            <outputFileName>HELIDON_THIRD_PARTY_LICENSES.txt</outputFileName>
                         </configuration>
                     </execution>
                 </executions>

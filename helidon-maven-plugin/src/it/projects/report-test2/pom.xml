@@ -42,7 +42,7 @@
                         </goals>
                         <configuration>
                             <inputFileDir>.</inputFileDir>
-                            <inputFileName>THIRD_PARTY_LICENSES.xml</inputFileName>
+                            <inputFileName>HELIDON_THIRD_PARTY_LICENSES.xml</inputFileName>
                             <outputFileDir>.</outputFileDir>
                             <outputFileName>HELIDON_THIRD_PARTY_LICENSES.txt</outputFileName>
                             <modules>helidon-tracing-zipkin,helidon-webserver,helidon-webserver-tyrus</modules>

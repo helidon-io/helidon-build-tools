@@ -6,6 +6,7 @@ This plugin provides Maven goals specific to Helidon applications as well as goa
 
 * [native-image](#goal-native-image)
 * [jlink-image](#goal-jlink-image)
+* [report](#goal-report)
 
 #### Goals for All Applications
 
@@ -412,4 +413,33 @@ See [here](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit) for examples 
 
 ![light theme background colors](etc/images/light-theme-background-colors.png)
 
+
+## Goal: `report`
+
+Maven goal to generate a third party license attribution report for a set of
+Helidon dependencies.
+
+By default the goal will scan your application for all Helidon dependencies
+(gid `io.helidon`) and generate `target/HELIDON_THIRD_PARTY_LICENSES.txt`
+that contains attributions for the third party technologies used by those
+dependencies.
+
+To generate the report the plugin needs an XML data file containing the 
+third party attributions. This data file is available as part of every
+Helidon release. See
+[etc/HELIDON_THIRD_PARTY_LICENSES.xml](https://github.com/oracle/helidon/blob/master/etc/HELIDON_THIRD_PARTY_LICENSES.xml)
+for an example. By default this file is loaded as a resource from the
+plugin's classpath.
+
+
+### Parameters
+
+| Property | Type | Default<br/>Value | Description |
+| --- | --- | --- | --- |
+| inputFileDir| File | Plugin's CLASSPATH | Path to the directory containing the input XML file. |
+| inputFileName| String | HELIDON_THIRD_PARTY_LICENSES.xml | Name of the input XML file. |
+| outputFileDir| File | `target` | Directory to place generated report text file. |
+| outputFileName| String | `HELIDON_THIRD_PARTY_LICENSES.txt` | Name of generated report file. |
+| modules| String | `*`  | Comma seperated list of Helidon module names (`helidon-webserver,helidon-microprofile`). `*` means all Helidon modules in application's dependencies |
+| skip| Boolean | false | true to skip this goal. |
 

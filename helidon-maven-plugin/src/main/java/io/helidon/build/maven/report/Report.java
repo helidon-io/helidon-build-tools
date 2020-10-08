@@ -16,6 +16,13 @@
 
 package io.helidon.build.maven.report;
 
+import io.helidon.build.maven.report.model.AttributionDependency;
+import io.helidon.build.maven.report.model.AttributionDocument;
+import io.helidon.build.maven.report.model.AttributionLicense;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -29,15 +36,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-
-import io.helidon.build.maven.report.model.AttributionDependency;
-import io.helidon.build.maven.report.model.AttributionDocument;
-import io.helidon.build.maven.report.model.AttributionLicense;
 
 /**
  * Generate a report from attribution xml file.
@@ -61,72 +61,69 @@ public class Report {
     static final String OUTPUT_FILE_NAME_PROPERTY_NAME = "outputFileName";
     static final String MODULES_PROPERTY_NAME = "modules";
 
-    static final String DEFAULT_INPUT_FILE_NAME = "THIRD_PARTY_LICENSES.xml";
+    static final String DEFAULT_INPUT_FILE_NAME = "HELIDON_THIRD_PARTY_LICENSES.xml";
     static final String DEFAULT_INPUT_FILE_DIR = "";
     static final String DEFAULT_OUTPUT_FILE_NAME = "HELIDON_THIRD_PARTY_LICENSES.txt";
     static final String DEFAULT_OUTPUT_FILE_DIR = ".";
     static final String DEFAULT_MODULES_LIST = "*";
 
-    /*
-    static final String INPUT_FILE_PATH_PROPERTY_NAME = "inputFile";
-    static final String ATTRIBUTION_FILE_PROPERTY_NAME = "attributionFile";
-    static final String OUTPUT_DIR_PROPERTY_NAME = "outputDir";
 
-    static final String DEFAULT_INPUT_FILE_PATH = "THIRD_PARTY_LICENSES.xml";
-    static final String DEFAULT_MODULES_LIST = "";
-    static final String DEFAULT_ATTRIBUTION_FILE_NAME= "THIRD_PARTY_LICENSES.txt";
-    static final String DEFAULT_OUTPUT_DIR= ".";
-    */
+    private String inputFileDir;
+    private String inputFileName;
 
-    private static String inputFileDir;
-    private static String inputFileName;
+    private String outputFileDir;
+    private String outputFileName;
 
-    private static String outputFileDir;
-    private static String outputFileName;
+    private List<String> moduleList;
 
-    private static List<String> moduleList;
+    private Consumer<String> outputHandler;
 
-    /**
-     * Utility class should not have public default constructor.
-     */
     private Report() {
     }
 
     /**
-     * Main class to support running report outside of Mojo.
-     * @param args
-     * @throws IOException
-     * @throws JAXBException
+     * Constuct a Report from a Report.Builder.
+     * @param builder Builder with configuration to use for construction
+     */
+    private Report(Builder builder) {
+        this.inputFileDir = builder.inputFileDir();
+        this.inputFileName = builder.inputFileName();
+
+        this.outputFileDir = builder.outputFileDir();
+        this.outputFileName = builder.outputFileName();
+
+        this.moduleList = builder.moduleList();
+
+        this.outputHandler = builder.outputHandler();
+    }
+
+    /**
+     * Supports running Report from command line.
+     * @param args command line arguments
+     * @throws IOException on IOExceptions when accessing files
+     * @throws JAXBException on JAXBExceptions
      */
     public static void main(String[] args) throws IOException, JAXBException {
-
-        inputFileDir = System.getProperty(INPUT_FILE_DIR_PROPERTY_NAME, DEFAULT_INPUT_FILE_DIR);
-        inputFileName = System.getProperty(INPUT_FILE_NAME_PROPERTY_NAME, DEFAULT_INPUT_FILE_NAME);
-
-        outputFileDir = System.getProperty(OUTPUT_FILE_DIR_PROPERTY_NAME, DEFAULT_OUTPUT_FILE_DIR);
-        outputFileName = System.getProperty(OUTPUT_FILE_NAME_PROPERTY_NAME, DEFAULT_OUTPUT_FILE_NAME);
+        Report.Builder builder = Report.builder();
 
         String modules = System.getProperty(MODULES_PROPERTY_NAME, DEFAULT_MODULES_LIST);
         if (modules == null || modules.isEmpty() || modules.equals("*")) {
-            moduleList = Collections.emptyList();
+            builder.moduleList(Collections.emptyList());
         } else {
             List<String> tmpList = Arrays.asList(modules.split(","));
             // Handle the case where the user passed jar file names (with version).
             // In that case we want to convert helidon-tracing-2.0.2.jar to helidon-tracing
-            moduleList = tmpList.stream().map(Report::convertToArtifactId).collect(Collectors.toList());
+            builder.moduleList(tmpList.stream().map(Report::convertToArtifactId).collect(Collectors.toList()));
         }
 
-        /*
-        info(
-                            "inputFileDir=" + inputFileDir + "\n" +
-                            "inputFileName=" + inputFileName + "\n" +
-                            "outputFileDir=" + outputFileDir + "\n" +
-                            "outputFileName=" + outputFileName + "\n" +
-                            "modules="   + modules  + "\n" +
-                            "modulesList="   + moduleList.toString() + "\n" );
-         */
+        Report report = builder
+                .inputFileDir(System.getProperty(INPUT_FILE_DIR_PROPERTY_NAME, DEFAULT_INPUT_FILE_DIR))
+                .inputFileName(System.getProperty(INPUT_FILE_NAME_PROPERTY_NAME, DEFAULT_INPUT_FILE_NAME))
+                .outputFileDir(System.getProperty(OUTPUT_FILE_DIR_PROPERTY_NAME, DEFAULT_OUTPUT_FILE_DIR))
+                .outputFileName(System.getProperty(OUTPUT_FILE_NAME_PROPERTY_NAME, DEFAULT_OUTPUT_FILE_NAME))
+                .build();
 
-        execute();
+        report.execute();
     }
 
     /**
@@ -151,7 +148,7 @@ public class Report {
         }
     }
 
-    static void execute() throws IOException, JAXBException {
+    void execute() throws IOException, JAXBException {
         if (!new File(outputFileDir).exists()) {
             String s = String.format("Can't create output file %s. Directory %s does not exist.", outputFileName, outputFileDir);
             throw new IOException(s);
@@ -192,7 +189,7 @@ public class Report {
      *
      * @throws IOException, JAXBException
      */
-    private static AttributionDocument loadAttributionDocument(File file) throws IOException, JAXBException {
+    private AttributionDocument loadAttributionDocument(File file) throws IOException, JAXBException {
         if (file != null) {
             if (!file.canRead()) {
                 String s = String.format("Can't read input file %s.", file.getCanonicalPath());
@@ -211,7 +208,7 @@ public class Report {
         return null;
     }
 
-    private static AttributionDocument loadAttributionDocumentFromClasspath(String name) throws JAXBException, IOException {
+    private AttributionDocument loadAttributionDocumentFromClasspath(String name) throws JAXBException, IOException {
         InputStream is = Report.class.getClassLoader().getResourceAsStream(name);
         if (is == null) {
             throw new IOException("Can't get resource " + name);
@@ -219,7 +216,7 @@ public class Report {
         return loadAttributionDocumentFromStream(is);
     }
 
-    private static AttributionDocument loadAttributionDocumentFromStream(InputStream is) throws JAXBException {
+    private AttributionDocument loadAttributionDocumentFromStream(InputStream is) throws JAXBException {
         JAXBContext contextObj = JAXBContext.newInstance(AttributionDocument.class);
         Unmarshaller unmarshaller = contextObj.createUnmarshaller();
         return (AttributionDocument) unmarshaller.unmarshal(is);
@@ -233,7 +230,7 @@ public class Report {
      * @return true if something was written, else false
      * @throws IOException if trouble writing to file
      */
-    private static boolean generateAttributionFile(AttributionDocument attributionDocument, FileWriter w) throws IOException {
+    private boolean generateAttributionFile(AttributionDocument attributionDocument, FileWriter w) throws IOException {
 
         boolean first = true;
 
@@ -288,7 +285,7 @@ public class Report {
         return true;
     }
 
-    private static AttributionLicense getLicense(AttributionDocument attributionDocument, String licenseName) {
+    private AttributionLicense getLicense(AttributionDocument attributionDocument, String licenseName) {
         List<AttributionLicense> licenses = attributionDocument.getLicenses();
 
         for (AttributionLicense l: licenses) {
@@ -306,7 +303,7 @@ public class Report {
      * @param licenseSet Set of license IDs to add to
      * @param attribution Attribution to search for license IDs
      */
-    static void detectLicenses(Set<String> licenseSet, String attribution) {
+    void detectLicenses(Set<String> licenseSet, String attribution) {
         for (String s : LICENSES) {
             if (attribution.contains(s)) {
                 licenseSet.add(s);
@@ -321,7 +318,7 @@ public class Report {
      * @param writer file to append resource to
      * @throws IOException if trouble writing file
      */
-    private static void appendResourceToFile(String resourceName, FileWriter writer) throws IOException {
+    private void appendResourceToFile(String resourceName, FileWriter writer) throws IOException {
         InputStream is = Report.class.getClassLoader().getResourceAsStream(resourceName);
 
         if (is == null) {
@@ -338,7 +335,86 @@ public class Report {
         } while (n > 0);
     }
 
-    static void info(String s) {
-        System.out.println(s);
+    private void info(String s) {
+        if (outputHandler != null) {
+            outputHandler.accept(s);
+        } else {
+            System.out.println(s);
+        }
+    }
+
+    public static Builder builder() {
+        return new Report.Builder();
+    }
+
+    public static class Builder {
+        private String inputFileDir;
+        private String inputFileName;
+        private String outputFileDir;
+        private String outputFileName;
+        private List<String> moduleList;
+        private Consumer<String> outputHandler;
+
+        private Builder() {
+        }
+
+        public String inputFileDir() {
+            return inputFileDir;
+        }
+
+        public Builder inputFileDir(String inputFileDir) {
+            this.inputFileDir = inputFileDir;
+            return this;
+        }
+
+        public String inputFileName() {
+            return inputFileName;
+        }
+
+        public Builder inputFileName(String inputFileName) {
+            this.inputFileName = inputFileName;
+            return this;
+        }
+
+        public String outputFileDir() {
+            return outputFileDir;
+        }
+
+        public Builder outputFileDir(String outputFileDir) {
+            this.outputFileDir = outputFileDir;
+            return this;
+        }
+
+        public String outputFileName() {
+            return outputFileName;
+        }
+
+        public Builder outputFileName(String outputFileName) {
+            this.outputFileName = outputFileName;
+            return this;
+        }
+
+        public List<String> moduleList() {
+            return moduleList;
+        }
+
+        public Builder moduleList(List<String> moduleList) {
+            this.moduleList = moduleList;
+            return this;
+        }
+
+        public Consumer<String> outputHandler() {
+            return outputHandler;
+        }
+
+        public Builder outputHandler(Consumer<String> outputHandler) {
+            this.outputHandler = outputHandler;
+            return this;
+        }
+
+        public Report build() {
+            return new Report(this);
+        }
+
     }
 }
