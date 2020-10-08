@@ -26,7 +26,7 @@ import io.helidon.build.test.TestFiles;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.test.HelidonTestVersions.currentHelidonReleaseVersion;
+import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -63,12 +63,12 @@ class ApplicationGeneratorTest {
 
     @Test
     void testSeGeneration() {
-        testGeneration(HelidonVariant.SE, currentHelidonReleaseVersion());
+        testGeneration(HelidonVariant.SE, helidonTestVersion());
     }
 
     @Test
     void testMpGeneration() {
-        testGeneration(HelidonVariant.MP, currentHelidonReleaseVersion());
+        testGeneration(HelidonVariant.MP, helidonTestVersion());
     }
 
     private void testGeneration(HelidonVariant variant, String version) {

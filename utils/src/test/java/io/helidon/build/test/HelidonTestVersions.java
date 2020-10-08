@@ -16,6 +16,8 @@
 
 package io.helidon.build.test;
 
+import static java.lang.System.getProperty;
+
 /**
  * Helidon test versions.
  * <em>IMPORTANT:</em> The constants must be kept up to date as new Helidon releases occur.
@@ -29,11 +31,18 @@ public class HelidonTestVersions {
     private static final String CURRENT_HELIDON_BUILD_TOOLS_RELEASE_VERSION = "2.1.1";
 
     /**
-     * The test version override property.
+     * The Helidon test version override property.
      */
     public static final String HELIDON_TEST_VERSION_PROPERTY = "helidon.test.version";
-    private static final String HELIDON_TEST_VERSION = System.getProperty(HELIDON_TEST_VERSION_PROPERTY,
-            CURRENT_HELIDON_RELEASE_VERSION);
+    private static final String HELIDON_TEST_VERSION = getProperty(HELIDON_TEST_VERSION_PROPERTY,
+                                                                   CURRENT_HELIDON_RELEASE_VERSION);
+
+    /**
+     * The Helidon build-tools test version override property.
+     */
+    public static final String HELIDON_BUILD_TOOLS_TEST_VERSION_PROPERTY = "helidon.build.tools.test.version";
+    private static final String HELIDON_BUILD_TOOLS_TEST_VERSION = getProperty(HELIDON_BUILD_TOOLS_TEST_VERSION_PROPERTY,
+                                                                               CURRENT_HELIDON_BUILD_TOOLS_RELEASE_VERSION);
 
     /**
      * Returns the current Helidon release version by default. Can be overridden by setting the {@code "helidon.test.version"}
@@ -43,6 +52,16 @@ public class HelidonTestVersions {
      */
     public static String helidonTestVersion() {
         return HELIDON_TEST_VERSION;
+    }
+
+    /**
+     * Returns the current Helidon build tools release version by default. Can be overridden by setting the
+     * {@code "helidon.build.tools.test.version"} system property.
+     *
+     * @return The version.
+     */
+    public static String helidonBuildToolsTestVersion() {
+        return HELIDON_BUILD_TOOLS_TEST_VERSION;
     }
 
     /**

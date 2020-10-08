@@ -22,9 +22,13 @@ import io.helidon.build.cli.harness.Config;
 import io.helidon.build.cli.harness.UserConfig;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 import io.helidon.build.test.TestFiles;
+import io.helidon.build.util.MavenVersion;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+
+import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
+import static io.helidon.build.util.MavenVersion.toMavenVersion;
 
 /**
  * Base class for command tests that require the {@link Metadata}.
@@ -32,6 +36,7 @@ import org.junit.jupiter.api.BeforeAll;
 public class MetadataCommandTest extends BaseCommandTest {
 
     private static MetadataTestServer SERVER;
+    private static String METADATA_URL;
     private static Metadata METADATA;
     private static UserConfig USER_CONFIG;
 
@@ -39,12 +44,24 @@ public class MetadataCommandTest extends BaseCommandTest {
     public static void startMetadataAccess() {
         Config.setUserHome(TestFiles.targetDir().resolve("alice"));
         USER_CONFIG = Config.userConfig();
-        SERVER = new MetadataTestServer(TestVersion.RC1, false).start();
-        METADATA = Metadata.newInstance(SERVER.url());
+        if (canUseMetadataTestServer()) {
+            SERVER = new MetadataTestServer(TestVersion.RC1, false).start();
+            METADATA_URL = SERVER.url();
+        } else {
+            SERVER = null;
+            METADATA_URL = Metadata.DEFAULT_URL;
+        }
+        METADATA = Metadata.newInstance(METADATA_URL);
+    }
+
+    private static boolean canUseMetadataTestServer() {
+        MavenVersion testServerVersion = toMavenVersion(TestVersion.RC1.toString());
+        MavenVersion helidonRelease = toMavenVersion(helidonTestVersion());
+        return helidonRelease.isLessThanOrEqualTo(testServerVersion);
     }
 
     public String metadataUrl() {
-        return SERVER.url();
+        return METADATA_URL;
     }
 
     public Metadata metadata() {

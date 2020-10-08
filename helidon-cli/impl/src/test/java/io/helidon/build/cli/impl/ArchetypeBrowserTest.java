@@ -18,7 +18,7 @@ package io.helidon.build.cli.impl;
 import java.nio.file.Files;
 import java.util.List;
 
-import io.helidon.build.archetype.engine.ArchetypeCatalog;
+import io.helidon.build.archetype.engine.ArchetypeCatalog.ArchetypeEntry;
 import io.helidon.build.cli.impl.InitCommand.Flavor;
 
 import org.junit.jupiter.api.Test;
@@ -39,19 +39,27 @@ public class ArchetypeBrowserTest extends MetadataCommandTest {
     @Test
     public void testMpBrowser() throws Exception {
         ArchetypeBrowser browser = newBrowser(Flavor.MP);
-        List<ArchetypeCatalog.ArchetypeEntry> archetypes = browser.archetypes();
-        assertThat(archetypes.size(), is(1));
-        assertThat(archetypes.get(0).name(), is("bare"));
-        assertThat(archetypes.get(0).artifactId(), is("helidon-bare-mp"));
-        assertThat(Files.exists(browser.archetypeJar(archetypes.get(0))), is(true));
+        List<ArchetypeEntry> archetypes = browser.archetypes();
+        ArchetypeEntry entry = findEntry("bare", browser);
+        assertThat(entry.name(), is("bare"));
+        assertThat(entry.artifactId(), is("helidon-bare-mp"));
+        assertThat(Files.exists(browser.archetypeJar(entry)), is(true));
     }
 
     @Test
     public void testSeBrowser() throws Exception {
         ArchetypeBrowser browser = newBrowser(Flavor.SE);
-        List<ArchetypeCatalog.ArchetypeEntry> archetypes = browser.archetypes();
-        assertThat(archetypes.get(0).name(), is("bare"));
-        assertThat(archetypes.get(0).artifactId(), is("helidon-bare-se"));
-        assertThat(Files.exists(browser.archetypeJar(archetypes.get(0))), is(true));
+        ArchetypeEntry entry = findEntry("bare", browser);
+        assertThat(entry.name(), is("bare"));
+        assertThat(entry.artifactId(), is("helidon-bare-se"));
+        assertThat(Files.exists(browser.archetypeJar(entry)), is(true));
+    }
+
+    private static ArchetypeEntry findEntry(String name, ArchetypeBrowser browser) {
+        return browser.archetypes()
+                      .stream()
+                      .filter(e -> e.name().equals(name))
+                      .findFirst()
+                      .orElseThrow();
     }
 }
