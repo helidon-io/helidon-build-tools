@@ -18,7 +18,6 @@ package io.helidon.build.cli.impl;
 
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
-import io.helidon.build.cli.harness.Config;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
@@ -37,12 +36,12 @@ public final class BuildCommand extends BaseCommand {
 
     private static final String JLINK_OPTION = "-Pjlink-image";
     private static final String NATIVE_OPTION = "-Pnative-image";
-    private static final String PLUGIN_VERSION_PROPERTY_PREFIX = "-Dversion.plugin.helidon=";
 
     private final CommonOptions commonOptions;
     private final boolean clean;
     private final BuildMode buildMode;
-    private final String pluginVersionProperty;
+    private final String pluginVersion;
+    private final boolean useCurrentPluginVersion;
 
     enum BuildMode {
         PLAIN,
@@ -54,14 +53,17 @@ public final class BuildCommand extends BaseCommand {
     BuildCommand(CommonOptions commonOptions,
                  @Flag(name = "clean", description = "Perform a clean before the build") boolean clean,
                  @KeyValue(name = "mode", description = "Build mode", defaultValue = "PLAIN") BuildMode buildMode,
-                 @Flag(name = "current", description = "Use the build version as the helidon-maven-plugin version",
+                 @KeyValue(name = "plugin-version", description = "helidon plugin(s) version", visible = false)
+                         String pluginVersion,
+                 @Flag(name = "current", description = "Use the build version as the helidon plugin(s) version",
                          visible = false)
-                         boolean currentPluginVersion) {
+                         boolean useCurrentPluginVersion) {
         super(commonOptions, true);
         this.commonOptions = commonOptions;
         this.clean = clean;
         this.buildMode = buildMode;
-        this.pluginVersionProperty = currentPluginVersion ? PLUGIN_VERSION_PROPERTY_PREFIX + Config.buildVersion() : null;
+        this.pluginVersion = pluginVersion;
+        this.useCurrentPluginVersion = useCurrentPluginVersion;
     }
 
     @Override
@@ -72,10 +74,15 @@ public final class BuildCommand extends BaseCommand {
 
     @Override
     protected void invoke(CommandContext context) throws Exception {
+        String version = defaultHelidonPluginVersion(pluginVersion, useCurrentPluginVersion);
+        String pluginVersionProperty = version == null ? null : HELIDON_PLUGIN_VERSION_PROPERTY_PREFIX + version;
+        String cliVersion = cliPluginVersion(version);
+        String cliPluginVersionProperty = cliVersion == null ? null : HELIDON_CLI_PLUGIN_VERSION_PROPERTY_PREFIX + cliVersion;
 
         MavenCommand.Builder builder = MavenCommand.builder()
                                                    .addArgument(ENABLE_HELIDON_CLI)
                                                    .addOptionalArgument(pluginVersionProperty)
+                                                   .addOptionalArgument(cliPluginVersionProperty)
                                                    .addArguments(context.propertyArgs(true))
                                                    .verbose(context.verbosity() != NORMAL)
                                                    .directory(commonOptions.project());
