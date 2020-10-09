@@ -23,5 +23,4 @@ cli-data.zip
 .exit
 .hola
 .hello
-THIRD_PARTY_LICENSES.xml
 HELIDON_THIRD_PARTY_LICENSES.xml
