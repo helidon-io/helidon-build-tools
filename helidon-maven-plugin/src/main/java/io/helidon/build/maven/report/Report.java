@@ -36,9 +36,9 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
-import io.helidon.build.maven.report.model.AttributionDependency;
-import io.helidon.build.maven.report.model.AttributionDocument;
-import io.helidon.build.maven.report.model.AttributionLicense;
+import io.helidon.build.util.license.AttributionDependency;
+import io.helidon.build.util.license.AttributionDocument;
+import io.helidon.build.util.license.AttributionLicense;
 
 /**
  * Generate a report from attribution xml file.
@@ -75,7 +75,7 @@ public class Report {
     private String outputFileDir;
     private String outputFileName;
 
-    private List<String> moduleList;
+    private Set<String> moduleList;
 
     private Consumer<String> outputHandler;
 
@@ -105,26 +105,14 @@ public class Report {
      * @throws JAXBException on JAXBExceptions
      */
     public static void main(String[] args) throws IOException, JAXBException {
-        Report.Builder builder = Report.builder();
-
-        String modules = System.getProperty(MODULES_PROPERTY_NAME, DEFAULT_MODULES_LIST);
-        if (modules == null || modules.isEmpty() || modules.equals("*")) {
-            builder.moduleList(Collections.emptyList());
-        } else {
-            List<String> tmpList = Arrays.asList(modules.split(","));
-            // Handle the case where the user passed jar file names (with version).
-            // In that case we want to convert helidon-tracing-2.0.2.jar to helidon-tracing
-            builder.moduleList(tmpList.stream().map(Report::convertToArtifactId).collect(Collectors.toList()));
-        }
-
-        Report report = builder
+        Report.builder()
+                .moduleList(System.getProperty(MODULES_PROPERTY_NAME, DEFAULT_MODULES_LIST))
                 .inputFileDir(System.getProperty(INPUT_FILE_DIR_PROPERTY_NAME, DEFAULT_INPUT_FILE_DIR))
                 .inputFileName(System.getProperty(INPUT_FILE_NAME_PROPERTY_NAME, DEFAULT_INPUT_FILE_NAME))
                 .outputFileDir(System.getProperty(OUTPUT_FILE_DIR_PROPERTY_NAME, DEFAULT_OUTPUT_FILE_DIR))
                 .outputFileName(System.getProperty(OUTPUT_FILE_NAME_PROPERTY_NAME, DEFAULT_OUTPUT_FILE_NAME))
-                .build();
-
-        report.execute();
+                .build()
+                .execute();
     }
 
     /**
@@ -360,7 +348,7 @@ public class Report {
         private String inputFileName;
         private String outputFileDir;
         private String outputFileName;
-        private List<String> moduleList;
+        private Set<String> moduleList;
         private Consumer<String> outputHandler;
 
         private Builder() {
@@ -442,7 +430,7 @@ public class Report {
          * Get the list of Helidon modules to get third party attributions for.
          * @return the list of Helidon modules to get third party attributions for
          */
-        public List<String> moduleList() {
+        public Set<String> moduleList() {
             return moduleList;
         }
 
@@ -451,8 +439,26 @@ public class Report {
          * @param moduleList the list of Helidon modules
          * @return this Builder
          */
-        public Builder moduleList(List<String> moduleList) {
+        public Builder moduleList(Set<String> moduleList) {
             this.moduleList = moduleList;
+            return this;
+        }
+
+        /**
+         * Set the list of Helidon modules to get third party attributions for.
+         * @param moduleList the list of Helidon modules as a comma seperated string. Can
+         *                   also be a list of Helidon jar files.
+         * @return this Builder
+         */
+        public Builder moduleList(String moduleList) {
+            if (moduleList == null || moduleList.isEmpty() || moduleList.equals("*")) {
+                this.moduleList(Collections.emptySet());
+            } else {
+                List<String> tmpList = Arrays.asList(moduleList.split(","));
+                // Handle the case where the user passed jar file names (with version).
+                // In that case we want to convert helidon-tracing-2.0.2.jar to helidon-tracing
+                this.moduleList(tmpList.stream().map(Report::convertToArtifactId).collect(Collectors.toSet()));
+            }
             return this;
         }
 

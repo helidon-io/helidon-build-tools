@@ -79,34 +79,28 @@ public class ReportMojo
             return;
         }
 
-        // If no modules were provided, then scan this project and get all the
-        // helidon artifacts that are dependencies and use that for the module list.
-        if (modules == null || modules.isEmpty()) {
-            getLog().debug("No module list not configured. Using dependencies of " + project.getArtifactId());
-            Set<String> moduleList = getHelidonDependencies(project);
-            modules = String.join(",", moduleList);
-        }
-        getLog().debug("Modules: " + modules);
-
-        Report.Builder builder = Report.builder();
-
-        if (modules == null || modules.isEmpty() || modules.equals("*")) {
-            builder.moduleList(Collections.emptyList());
-        } else {
-            List<String> tmpList = Arrays.asList(modules.split(","));
-            // Handle the case where the user passed jar file names (with version).
-            // In that case we want to convert helidon-tracing-2.0.2.jar to helidon-tracing
-            builder.moduleList(tmpList.stream().map(Report::convertToArtifactId).collect(Collectors.toList()));
-        }
-
-        Report report = builder.inputFileName(inputFileName)
+        Report.Builder builder = Report.builder()
+                .inputFileName(inputFileName)
+                .moduleList(modules)
                 .inputFileDir(inputFileDir)
                 .outputFileName(outputFileName)
                 .outputFileDir(outputFileDir)
-                .outputHandler((s) -> getLog().info(s))
-                .build();
+                .outputHandler((s) -> getLog().info(s));
+
+        // If no modules were provided, then scan this project and get all the
+        // helidon artifacts that are dependencies and use that for the module list.
+        if (modules == null || modules.isEmpty()) {
+            getLog().debug("No module list configured. Using dependencies of " + project.getArtifactId());
+            Set<String> moduleList = getHelidonDependencies(project);
+            getLog().debug("Scanned Modules: " + moduleList);
+            builder.moduleList(moduleList);
+        } else {
+            getLog().debug("Configured Modules: " + modules);
+            builder.moduleList(modules);
+        }
+
         try {
-            report.execute();
+            builder.build().execute();
         } catch (Exception e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }

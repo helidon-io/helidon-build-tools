@@ -17,4 +17,4 @@
 /**
  * Helidon Java Reporting Plugin Model.
  */
-package io.helidon.build.maven.report.model;
+package io.helidon.build.util.license;

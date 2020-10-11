@@ -17,6 +17,7 @@ module helidon.build.utils {
     exports io.helidon.build.util;
     opens io.helidon.build.util;
 
+    requires java.xml.bind;
     requires org.fusesource.jansi;
     requires info.picocli.jansi.graalvm;
     requires maven.model;

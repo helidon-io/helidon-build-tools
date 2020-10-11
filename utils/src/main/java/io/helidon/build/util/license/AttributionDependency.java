@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.maven.report.model;
+package io.helidon.build.util.license;
 
 import java.util.Objects;
 import java.util.Set;
