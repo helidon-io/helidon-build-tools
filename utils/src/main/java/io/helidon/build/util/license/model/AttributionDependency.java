@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.util.license;
+package io.helidon.build.util.license.model;
 
 import java.util.Objects;
 import java.util.Set;

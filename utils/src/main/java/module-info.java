@@ -15,7 +15,11 @@
  */
 module helidon.build.utils {
     exports io.helidon.build.util;
+    exports io.helidon.build.util.license;
+    exports io.helidon.build.util.license.model;
     opens io.helidon.build.util;
+    opens io.helidon.build.util.license;
+    opens io.helidon.build.util.license.model;
 
     requires java.xml.bind;
     requires org.fusesource.jansi;

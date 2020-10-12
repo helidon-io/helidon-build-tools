@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.maven.report;
+package io.helidon.build.util.license;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -36,9 +36,9 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
-import io.helidon.build.util.license.AttributionDependency;
-import io.helidon.build.util.license.AttributionDocument;
-import io.helidon.build.util.license.AttributionLicense;
+import io.helidon.build.util.license.model.AttributionDependency;
+import io.helidon.build.util.license.model.AttributionDocument;
+import io.helidon.build.util.license.model.AttributionLicense;
 
 /**
  * Generate a report from attribution xml file.
@@ -56,18 +56,55 @@ public class Report {
 
     static final String[] LICENSES = {APACHE_ID, EPL1_ID, EPL2_ID, MPL2_ID, LGPL2_1_ID};
 
-    static final String INPUT_FILE_DIR_PROPERTY_NAME = "inputFileDir";
-    static final String INPUT_FILE_NAME_PROPERTY_NAME = "inputFileName";
-    static final String OUTPUT_FILE_DIR_PROPERTY_NAME = "outputFileDir";
-    static final String OUTPUT_FILE_NAME_PROPERTY_NAME = "outputFileName";
-    static final String MODULES_PROPERTY_NAME = "modules";
+    /**
+     * Name of Input File Dir property.
+     */
+    public static final String INPUT_FILE_DIR_PROPERTY_NAME = "inputFileDir";
 
-    static final String DEFAULT_INPUT_FILE_NAME = "HELIDON_THIRD_PARTY_LICENSES.xml";
-    static final String DEFAULT_INPUT_FILE_DIR = "";
-    static final String DEFAULT_OUTPUT_FILE_NAME = "HELIDON_THIRD_PARTY_LICENSES.txt";
-    static final String DEFAULT_OUTPUT_FILE_DIR = ".";
-    static final String DEFAULT_MODULES_LIST = "*";
+    /**
+     * Name of Input File Name property.
+     */
+    public static final String INPUT_FILE_NAME_PROPERTY_NAME = "inputFileName";
 
+    /**
+     * Name of Ouput File Dir property.
+     */
+    public static final String OUTPUT_FILE_DIR_PROPERTY_NAME = "outputFileDir";
+
+    /**
+     * Name of Ouput File Name property.
+     */
+    public static final String OUTPUT_FILE_NAME_PROPERTY_NAME = "outputFileName";
+
+    /**
+     * Name of Modules property.
+     */
+    public static final String MODULES_PROPERTY_NAME = "modules";
+
+    /**
+     * Default input file name.
+     */
+    public static final String DEFAULT_INPUT_FILE_NAME = "HELIDON_THIRD_PARTY_LICENSES.xml";
+
+    /**
+     * Default input file directory.
+     */
+    public static final String DEFAULT_INPUT_FILE_DIR = "";
+
+    /**
+     * Default output file name.
+     */
+    public static final String DEFAULT_OUTPUT_FILE_NAME = "HELIDON_THIRD_PARTY_LICENSES.txt";
+
+    /**
+     * Default output file dirctory.
+     */
+    public static final String DEFAULT_OUTPUT_FILE_DIR = ".";
+
+    /**
+     * Default module list.
+     */
+    public static final String DEFAULT_MODULES_LIST = "*";
 
     private String inputFileDir;
     private String inputFileName;
@@ -137,7 +174,13 @@ public class Report {
         }
     }
 
-    void execute() throws IOException, JAXBException {
+    /**
+     * Execute the Report.
+     *
+     * @throws IOException if can't perform IO on files
+     * @throws JAXBException if can't parse input xml file
+     */
+    public void execute() throws IOException, JAXBException {
         if (!new File(outputFileDir).exists()) {
             String s = String.format("Can't create output file %s. Directory %s does not exist.", outputFileName, outputFileDir);
             throw new IOException(s);
@@ -344,12 +387,12 @@ public class Report {
      * Builder for Report.
      */
     public static class Builder {
-        private String inputFileDir;
-        private String inputFileName;
-        private String outputFileDir;
-        private String outputFileName;
-        private Set<String> moduleList;
-        private Consumer<String> outputHandler;
+        private String inputFileDir = DEFAULT_INPUT_FILE_DIR;
+        private String inputFileName = DEFAULT_INPUT_FILE_NAME;
+        private String outputFileDir = DEFAULT_OUTPUT_FILE_DIR;
+        private String outputFileName = DEFAULT_OUTPUT_FILE_NAME;
+        private Set<String> moduleList = Collections.emptySet();
+        private Consumer<String> outputHandler = (s) -> System.out.println(s);
 
         private Builder() {
         }
@@ -418,7 +461,7 @@ public class Report {
 
         /**
          * Set the name of the generated output file.
-         * @param outputFileName
+         * @param outputFileName Name of output file
          * @return the name of the generated output file.
          */
         public Builder outputFileName(String outputFileName) {

@@ -15,6 +15,6 @@
  */
 
 /**
- * Helidon Java Licensing.
+ * Helidon Java License Report Model.
  */
-package io.helidon.build.util.license;
+package io.helidon.build.util.license.model;
