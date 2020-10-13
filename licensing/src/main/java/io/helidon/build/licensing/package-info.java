@@ -17,4 +17,4 @@
 /**
  * Helidon Java Licensing.
  */
-package io.helidon.build.util.license;
+package io.helidon.build.licensing;

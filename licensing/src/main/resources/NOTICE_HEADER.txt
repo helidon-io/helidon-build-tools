@@ -1,0 +1,5 @@
+Third Party Attributions
+
+The following software (or subsets of the software) are third party dependencies
+of Helidon. They are identified by the Helidon module(s) that use them.
+

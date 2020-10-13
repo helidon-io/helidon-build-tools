@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.util.license;
+package io.helidon.build.licensing;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -36,9 +36,9 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
-import io.helidon.build.util.license.model.AttributionDependency;
-import io.helidon.build.util.license.model.AttributionDocument;
-import io.helidon.build.util.license.model.AttributionLicense;
+import io.helidon.build.licensing.model.AttributionDependency;
+import io.helidon.build.licensing.model.AttributionDocument;
+import io.helidon.build.licensing.model.AttributionLicense;
 
 /**
  * Generate a report from attribution xml file.

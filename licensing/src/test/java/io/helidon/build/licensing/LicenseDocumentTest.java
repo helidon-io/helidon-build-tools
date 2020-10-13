@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.util.license;
+package io.helidon.build.licensing;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -24,7 +24,7 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit test for class {@link io.helidon.build.util.license.model.AttributionDocument}.
+ * Unit test for class {@link io.helidon.build.licensing.model.AttributionDocument}.
  */
 class LicenseDocumentTest {
     @Test

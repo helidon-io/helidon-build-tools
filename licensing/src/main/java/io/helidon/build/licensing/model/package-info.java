@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module helidon.build.utils {
-    exports io.helidon.build.util;
-    opens io.helidon.build.util;
 
-    requires org.fusesource.jansi;
-    requires info.picocli.jansi.graalvm;
-    requires maven.model;
-    requires java.logging;
-    requires maven.artifact;
-    requires maven.plugin.api;
-    requires com.github.mustachejava;
-}
+/**
+ * Helidon Java License Report Model.
+ */
+package io.helidon.build.licensing.model;

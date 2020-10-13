@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.util.license.model;
+package io.helidon.build.licensing.model;
 
 import java.util.Objects;
 
@@ -35,8 +35,8 @@ public class AttributionLicense {
 
     /**
      * Construction license with given name and text.
-     * @param name
-     * @param text
+     * @param name name of license
+     * @param text text of license
      */
     public AttributionLicense(String name, String text) {
         this.name = name;

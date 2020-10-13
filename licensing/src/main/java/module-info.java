@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+module helidon.build.licensing {
+    exports io.helidon.build.licensing;
+    exports io.helidon.build.licensing.model;
+    opens io.helidon.build.licensing;
+    opens io.helidon.build.licensing.model;
 
-/**
- * Helidon Java License Report Model.
- */
-package io.helidon.build.util.license.model;
+    requires java.xml.bind;
+}

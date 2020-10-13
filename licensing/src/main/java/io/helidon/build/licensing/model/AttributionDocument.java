@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.util.license.model;
+package io.helidon.build.licensing.model;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +43,7 @@ public class AttributionDocument {
 
     /**
      * Set dependencies.
-     * @param dependencies
+     * @param dependencies list of dependencies to add.
      */
     public void setDependencies(List<AttributionDependency> dependencies) {
         this.dependencies = dependencies;
@@ -51,7 +51,7 @@ public class AttributionDocument {
 
     /**
      * Set licenses.
-     * @param licenses
+     * @param licenses set list of licenses to add.
      */
     public void setLicenses(List<AttributionLicense> licenses) {
         this.licenses = licenses;
@@ -67,7 +67,7 @@ public class AttributionDocument {
 
     /**
      * Add one dependency.
-     * @param dependency
+     * @param dependency add a single dependency.
      */
     public void addDependency(AttributionDependency dependency) {
         this.dependencies.add(dependency);
@@ -83,7 +83,7 @@ public class AttributionDocument {
 
     /**
      * Add one license.
-     * @param license
+     * @param license license to add.
      */
     public void addLicense(AttributionLicense license) {
         this.licenses.add(license);

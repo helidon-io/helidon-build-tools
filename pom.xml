@@ -191,6 +191,7 @@
         <module>helidon-linker</module>
         <module>snakeyaml-codegen-maven-plugin</module>
         <module>utils</module>
+        <module>licensing</module>
         <module>dev-loop</module>
         <module>stager-maven-plugin</module>
     </modules>

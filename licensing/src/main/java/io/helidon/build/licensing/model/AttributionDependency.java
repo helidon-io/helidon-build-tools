@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.util.license.model;
+package io.helidon.build.licensing.model;
 
 import java.util.Objects;
 import java.util.Set;
@@ -63,7 +63,7 @@ public class AttributionDependency {
 
     /**
      * Construct with the given id.
-     * @param id
+     * @param id unique identifier for dependency.
      */
     public AttributionDependency(String id) {
         this.id = id;
