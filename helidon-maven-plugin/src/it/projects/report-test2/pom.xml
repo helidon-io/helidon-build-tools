@@ -42,6 +42,7 @@
                             <outputFileDir>.</outputFileDir>
                             <outputFileName>HELIDON_THIRD_PARTY_LICENSES.txt</outputFileName>
                             <modules>helidon-tracing-zipkin,helidon-webserver,helidon-webserver-tyrus</modules>
+                            <failOnError>true</failOnError>
                         </configuration>
                     </execution>
                 </executions>

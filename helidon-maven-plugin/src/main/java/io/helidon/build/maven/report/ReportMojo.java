@@ -47,6 +47,10 @@ public class ReportMojo
     @Parameter(property = "skip", defaultValue = "false", readonly = true, required = true)
     private Boolean skip;
 
+    // True to failOnError
+    @Parameter(property = "failOnError", defaultValue = "false", readonly = true, required = true)
+    private Boolean failOnError;
+
     // Comma separated list of (Helidon) modules to include attributions for
     @Parameter(property = Report.MODULES_PROPERTY_NAME, readonly = true)
     private String modules;
@@ -101,7 +105,10 @@ public class ReportMojo
         try {
             builder.build().execute();
         } catch (Exception e) {
-            throw new MojoExecutionException(e.getMessage(), e);
+            getLog().warn(e.toString());
+            if (failOnError) {
+                throw new MojoExecutionException(e.getMessage(), e);
+            }
         }
     }
 

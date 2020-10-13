@@ -49,6 +49,7 @@
                             <!-- pick up XML file from project directory -->
                             <inputFileDir>.</inputFileDir>
                             <outputFileDir>.</outputFileDir>
+                            <failOnError>true</failOnError>
                         </configuration>
                     </execution>
                 </executions>
