@@ -25,10 +25,6 @@
     <name>Test Report Goal</name>
     <packaging>pom</packaging>
 
-    <properties>
-        <helidon.version>2.0.1</helidon.version>
-    </properties>
-
     <build>
         <plugins>
             <plugin>

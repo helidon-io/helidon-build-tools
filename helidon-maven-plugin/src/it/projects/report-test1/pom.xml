@@ -25,16 +25,12 @@
     <name>Test Report Goal</name>
     <packaging>pom</packaging>
 
-    <properties>
-        <helidon.version>2.0.1</helidon.version>
-    </properties>
-
     <!-- Plugin should pick up these Helidon dependencies to determine content of report -->
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>helidon-microprofile</artifactId>
-            <version>${helidon.version}</version>
+            <version>2.0.1</version>
         </dependency>
     </dependencies>
 
