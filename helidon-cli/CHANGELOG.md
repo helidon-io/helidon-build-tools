@@ -7,9 +7,30 @@ All notable changes to the Helidon CLI will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Versions
+## [2.1.2]
 
-### [2.1.0]
+### Changes
+
+- Display a message when exiting the dev-loop [269](https://github.com/oracle/helidon-build-tools/issues/269) [303](https://github.com/oracle/helidon-build-tools/pull/303)
+
+### Fixes
+
+- Dev-loop hangs on startups with new Helidon version [302](https://github.com/oracle/helidon-build-tools/issues/302) [303](https://github.com/oracle/helidon-build-tools/pull/303)
+- Dev-loop hangs if the app cannot start [284](https://github.com/oracle/helidon-build-tools/issues/284) [300](https://github.com/oracle/helidon-build-tools/issues/300)
+- Dev-loop stops on application failure [286](https://github.com/oracle/helidon-build-tools/issues/286) [291](https://github.com/oracle/helidon-build-tools/pull/291)
+- Dev-loop maven extension mis-configured [293](https://github.com/oracle/helidon-build-tools/issues/293) [293](https://github.com/oracle/helidon-build-tools/pull/294)
+- Name conflict between `jlink` and `native` build modes [295](https://github.com/oracle/helidon-build-tools/issues/295) [301](https://github.com/oracle/helidon-build-tools/pull/301)
+- `default.artifact.id` user configuration is ignored [289](https://github.com/oracle/helidon-build-tools/issues/289) [292](https://github.com/oracle/helidon-build-tools/pull/292)
+
+### Notable New Features
+
+- App debug port option [173](https://github.com/oracle/helidon-build-tools/issues/173) [306](https://github.com/oracle/helidon-build-tools/pull/306)
+
+## 2.1.1
+
+This release of helidon-build-tools does not contain changes related to the Helidon CLI.
+
+## [2.1.0]
 
 ### Changes
 
@@ -34,7 +55,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Add option and user preference to disable ANSI colors [256](https://github.com/oracle/helidon-build-tools/issues/256) [236](https://github.com/oracle/helidon-build-tools/pull/236) [192](https://github.com/oracle/helidon-build-tools/issues/192)
 - Support user configurable defaults of init options [252](https://github.com/oracle/helidon-build-tools/pull/252)
 
-### [2.0.2]
+## [2.0.2]
 
 ### Changes
 
@@ -44,15 +65,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Fix Maven version detection [229](https://github.com/oracle/helidon-build-tools/pull/229)
 - Only require JAVA_HOME when java is not found in the PATH [230](https://github.com/oracle/helidon-build-tools/pull/230)
 
-### 2.0.1
+## 2.0.1
 
 This release of helidon-build-tools does not contain changes related to the Helidon CLI.
 
 
-### [2.0.0]
+## [2.0.0]
 
 Initial release of the Helidon CLI.
 
+[2.1.2]: https://github.com/oracle/helidon-build-tools/compare/2.1.1...2.1.2
 [2.1.0]: https://github.com/oracle/helidon-build-tools/compare/2.0.2...2.1.0
 [2.0.2]: https://github.com/oracle/helidon-build-tools/compare/2.0.1...2.0.2
 [2.0.0]: https://github.com/oracle/helidon-build-tools/tree/2.0.0/helidon-cli
