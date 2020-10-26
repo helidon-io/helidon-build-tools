@@ -25,6 +25,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Notable New Features
 
 - App debug port option [173](https://github.com/oracle/helidon-build-tools/issues/173) [306](https://github.com/oracle/helidon-build-tools/pull/306)
+- Dev-loop hooks [244](https://github.com/oracle/helidon-build-tools/issues/244) [281](https://github.com/oracle/helidon-build-tools/pull/281)
 
 ## 2.1.1
 
