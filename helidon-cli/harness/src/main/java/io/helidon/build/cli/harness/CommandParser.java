@@ -188,7 +188,7 @@ public final class CommandParser {
                 parsedParams.put(arg, new FlagParam(arg));
             } else if (isParam(arg)) {
                 String optionName = arg.substring(2);
-                if (!Option.NAME_PREDICATE.test(optionName)) {
+                if (!Option.VALID_NAME.test(optionName)) {
                     throw new CommandParserException(INVALID_OPTION_NAME + ": " + optionName);
                 }
                 ParameterInfo paramInfo = parametersMap.get(optionName);

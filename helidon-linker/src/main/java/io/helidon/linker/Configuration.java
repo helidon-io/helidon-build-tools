@@ -25,6 +25,7 @@ import java.util.List;
 
 import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.Log;
+import io.helidon.build.util.Strings;
 import io.helidon.build.util.SystemLogWriter;
 import io.helidon.linker.util.JavaRuntime;
 
@@ -460,7 +461,7 @@ public final class Configuration {
         }
 
         private static List<String> toList(String value) {
-            if (value != null && !value.isEmpty()) {
+            if (Strings.isValid(value)) {
                 return Arrays.asList(value.split(" "));
             } else {
                 return null;
