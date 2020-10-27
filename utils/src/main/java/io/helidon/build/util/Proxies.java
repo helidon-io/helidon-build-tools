@@ -170,10 +170,10 @@ public class Proxies {
     private static void setProperty(String name, String value, Properties properties) {
         final String existing = properties.getProperty(name);
         if (existing == null) {
-            Log.debug("Setting system property \"%s\" to \"%s\"", name, value);
+            Log.preInitDebug("Setting system property \"%s\" to \"%s\"", name, value);
             properties.setProperty(name, value);
         } else {
-            Log.debug("Skip set system property \"%s\" to \"%s\". Already set to \"%s\"", name, value, existing);
+            Log.preInitDebug("Skip set system property \"%s\" to \"%s\". Already set to \"%s\"", name, value, existing);
         }
     }
 
