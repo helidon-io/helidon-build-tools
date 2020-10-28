@@ -113,7 +113,7 @@ public class ConfigProperties {
      */
     public List<String> propertyAsList(String key) {
         String value = properties.getProperty(key);
-        if (value == null || value.isEmpty()) {
+        if (Strings.isNotValid(value)) {
             return Collections.emptyList();
         } else {
             return Arrays.stream(value.split(DELIMITER))

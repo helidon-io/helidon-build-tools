@@ -25,6 +25,7 @@ import javax.inject.Inject;
 
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.ProjectConfig;
+import io.helidon.build.util.Strings;
 
 import org.apache.maven.AbstractMavenLifecycleParticipant;
 import org.apache.maven.execution.AbstractExecutionListener;
@@ -183,17 +184,13 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
             return emptyList();
         } else if (node.getChildCount() == 0) {
             final String value = node.getValue();
-            if (value == null || value.isEmpty()) {
-                return emptyList();
-            } else {
-                return List.of(value);
-            }
+            return Strings.isValid(value) ? List.of(value) : emptyList();
         } else {
             final List<String> result = new ArrayList<>();
             for (int i = 0; i < node.getChildCount(); i++) {
                 final Xpp3Dom child = node.getChild(i);
                 final String value = child.getValue();
-                if (value != null && !value.isEmpty()) {
+                if (Strings.isValid(value)) {
                     result.add(value);
                 }
             }

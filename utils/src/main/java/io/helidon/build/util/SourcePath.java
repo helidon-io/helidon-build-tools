@@ -70,7 +70,7 @@ public class SourcePath {
      * @throws IllegalArgumentException If the path is invalid.
      */
     public static String[] parseSegments(String path) throws IllegalArgumentException {
-        if (path == null || path.isEmpty()) {
+        if (Strings.isNotValid(path)) {
             throw new IllegalArgumentException("path is null or empty");
         }
         String[] tokens = path.split("/");

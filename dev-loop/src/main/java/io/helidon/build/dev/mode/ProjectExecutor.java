@@ -52,8 +52,12 @@ public class ProjectExecutor {
     private static final String STOPPING = BoldYellow.apply(DEV_LOOP_APPLICATION_STOPPING);
     private static final String STOPPED = BoldBrightRed.apply(DEV_LOOP_APPLICATION_STOPPED);
     private static final long ERROR_MESSAGES_DONE_NANOS = 100 * 1000;
-    private static final List<String> EXIT_MESSAGE_FRAGMENTS = List.of("BindException: Address already in use",
-                                                                       "--enable-preview");
+    private static final List<String> EXIT_MESSAGE_FRAGMENTS = List.of(
+            "JDWP exit error",
+            "BindException: Address already in use",
+            "--enable-preview"
+    );
+
     private final Project project;
     private final String logPrefix;
     private final String name;

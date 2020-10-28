@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 import io.helidon.build.dev.BuildRoot;
 import io.helidon.build.dev.BuildStep;
 import io.helidon.build.util.Log;
+import io.helidon.build.util.Strings;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.lifecycle.internal.MojoDescriptorCreator;
@@ -153,7 +154,7 @@ public class MavenGoal implements BuildStep {
 
     private static Plugin plugin(MavenProject project, String pluginKey) {
         final Plugin plugin = requireNonNull(project.getPlugin(pluginKey), "plugin " + pluginKey + " not found");
-        if (plugin.getVersion() == null || plugin.getVersion().isEmpty()) {
+        if (Strings.isNotValid(plugin.getVersion())) {
             final PluginManagement pm = project.getPluginManagement();
             if (pm != null) {
                 for (Plugin p : pm.getPlugins()) {

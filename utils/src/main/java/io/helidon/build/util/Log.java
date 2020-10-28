@@ -32,6 +32,7 @@ public class Log {
     private static final AtomicInteger MESSAGES = new AtomicInteger();
     private static final AtomicInteger WARNINGS = new AtomicInteger();
     private static final AtomicInteger ERRORS = new AtomicInteger();
+    private static final boolean DEBUG = "debug".equals(System.getProperty("log.level"));
     private static final String PAD = " ";
 
     private Log() {
@@ -358,12 +359,19 @@ public class Log {
         return WRITER.get() instanceof SystemLogWriter;
     }
 
-    private static String padding(int maxKeyWidth, Object key) {
-        final int keyLen = key.toString().length();
-        if (maxKeyWidth > keyLen) {
-            return PAD.repeat(maxKeyWidth - keyLen);
-        } else {
-            return "";
+    /**
+     * Writes a debug message that will not trigger {@link Writer} lazy initialization. If no writer, has been set, the
+     * message is written directly to {@code System.out}.
+     *
+     * @param message The message.
+     * @param args The message arguments.
+     */
+    public static void preInitDebug(String message, Object... args) {
+        // Only use debug() if we already have a writer, otherwise we will end up in a cycle
+        if (hasWriter()) {
+            debug(message, args);
+        } else if (DEBUG) {
+            System.out.printf(message + "%n", args);
         }
     }
 
@@ -385,5 +393,14 @@ public class Log {
             }
         }
         return maxLen;
+    }
+
+    private static String padding(int maxKeyWidth, Object key) {
+        final int keyLen = key.toString().length();
+        if (maxKeyWidth > keyLen) {
+            return PAD.repeat(maxKeyWidth - keyLen);
+        } else {
+            return "";
+        }
     }
 }
