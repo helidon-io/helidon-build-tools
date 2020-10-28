@@ -25,9 +25,9 @@ import static java.lang.System.getProperty;
 public class HelidonTestVersions {
 
     // IMPORTANT: These constants must be kept up to date as new Helidon releases occur.
-    private static final String CURRENT_HELIDON_SNAPSHOT_VERSION = "2.0.3-SNAPSHOT";
-    private static final String CURRENT_HELIDON_RELEASE_VERSION = "2.0.2";
-    private static final String PREVIOUS_HELIDON_RELEASE_VERSION = "2.0.1";
+    private static final String CURRENT_HELIDON_SNAPSHOT_VERSION = "2.1.1-SNAPSHOT";
+    private static final String CURRENT_HELIDON_RELEASE_VERSION = "2.1.0";
+    private static final String PREVIOUS_HELIDON_RELEASE_VERSION = "2.0.2";
     private static final String CURRENT_HELIDON_BUILD_TOOLS_RELEASE_VERSION = "2.1.1";
 
     /**
