@@ -36,6 +36,8 @@ import static io.helidon.build.util.MavenVersion.toMavenVersion;
  */
 public class MetadataCommandTest extends BaseCommandTest {
 
+    private static final boolean DEBUG_PLUGIN = false;
+
     private static MetadataTestServer SERVER;
     private static String METADATA_URL;
     private static Metadata METADATA;
@@ -53,7 +55,7 @@ public class MetadataCommandTest extends BaseCommandTest {
             METADATA_URL = Metadata.DEFAULT_URL;
             Proxies.setProxyPropertiesFromEnv();
         }
-        METADATA = Metadata.newInstance(METADATA_URL, true);
+        METADATA = Metadata.newInstance(METADATA_URL, DEBUG_PLUGIN);
     }
 
     private static boolean canUseMetadataTestServer() {
