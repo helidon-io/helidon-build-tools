@@ -51,7 +51,7 @@ public class MetadataCommandTest extends BaseCommandTest {
             SERVER = null;
             METADATA_URL = Metadata.DEFAULT_URL;
         }
-        METADATA = Metadata.newInstance(METADATA_URL);
+        METADATA = Metadata.newInstance(METADATA_URL, true);
     }
 
     private static boolean canUseMetadataTestServer() {

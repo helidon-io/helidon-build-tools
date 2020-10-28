@@ -111,6 +111,18 @@ public class Metadata {
     }
 
     /**
+     * Returns a new instance with the given url and default configuration but with optional plugin debug output.
+     *
+     * @param url The url.
+     * @param debugPlugin {@code true} if should enable debug logging in plugin.
+     * @return The instance.
+     */
+    public static Metadata newInstance(String url, boolean debugPlugin) {
+        final Path cacheDir = Config.userConfig().cacheDir();
+        return newInstance(cacheDir, url, DEFAULT_UPDATE_FREQUENCY, DEFAULT_UPDATE_FREQUENCY_UNITS, debugPlugin);
+    }
+
+    /**
      * Returns a new instance with the given url and default configuration.
      *
      * @param url The url.

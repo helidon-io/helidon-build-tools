@@ -16,7 +16,6 @@
 package io.helidon.build.cli.impl;
 
 import java.nio.file.Files;
-import java.util.List;
 
 import io.helidon.build.archetype.engine.ArchetypeCatalog.ArchetypeEntry;
 import io.helidon.build.cli.impl.InitCommand.Flavor;
@@ -39,7 +38,6 @@ public class ArchetypeBrowserTest extends MetadataCommandTest {
     @Test
     public void testMpBrowser() throws Exception {
         ArchetypeBrowser browser = newBrowser(Flavor.MP);
-        List<ArchetypeEntry> archetypes = browser.archetypes();
         ArchetypeEntry entry = findEntry("bare", browser);
         assertThat(entry.name(), is("bare"));
         assertThat(entry.artifactId(), is("helidon-bare-mp"));

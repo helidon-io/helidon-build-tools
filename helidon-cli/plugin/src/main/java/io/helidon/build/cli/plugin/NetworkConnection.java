@@ -147,6 +147,7 @@ public class NetworkConnection {
      * Builder.
      */
     public static class Builder {
+        private static final String PROXY_PROPERTY_SUFFIX = ".proxyHost";
         private URL url;
         private int maxAttempts;
         private int connectTimeout;
@@ -285,7 +286,7 @@ public class NetworkConnection {
             if (url == null) {
                 throw new IllegalStateException("url is required");
             }
-            Log.debug("connecting to %s, headers=%s", url, headers);
+            debugConnection(url, headers);
             IOException lastCaught = null;
             for (int attempt = 1; attempt <= maxAttempts; attempt++) {
                 try {
@@ -298,6 +299,15 @@ public class NetworkConnection {
                 }
             }
             throw requireNonNull(lastCaught);
+        }
+
+        private void debugConnection(URL url, Map<String, String> headers) {
+            if (Log.isDebug()) {
+                final String proxyProperty = url.getProtocol() + PROXY_PROPERTY_SUFFIX;
+                final boolean proxyEnabled = System.getProperty(proxyProperty) != null;
+                final String proxy = proxyEnabled ? " via proxy" : "";
+                Log.debug("connecting to %s%s, headers=%s", url, proxy, headers);
+            }
         }
 
         /**
