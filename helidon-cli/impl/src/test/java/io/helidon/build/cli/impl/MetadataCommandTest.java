@@ -23,6 +23,7 @@ import io.helidon.build.cli.harness.UserConfig;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 import io.helidon.build.test.TestFiles;
 import io.helidon.build.util.MavenVersion;
+import io.helidon.build.util.Proxies;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -50,6 +51,7 @@ public class MetadataCommandTest extends BaseCommandTest {
         } else {
             SERVER = null;
             METADATA_URL = Metadata.DEFAULT_URL;
+            Proxies.setProxyPropertiesFromEnv();
         }
         METADATA = Metadata.newInstance(METADATA_URL, true);
     }
