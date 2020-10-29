@@ -252,7 +252,7 @@ public class SourcePath {
      * Matches the given value with a pattern that may contain wildcard(s)
      * character that can filter any sub-sequence in the value.
      *
-     * @param val     the string to filter
+     * @param val the string to filter
      * @param pattern the pattern to use for matching
      * @return returns {@code true} if pattern matches, {@code false} otherwise
      */

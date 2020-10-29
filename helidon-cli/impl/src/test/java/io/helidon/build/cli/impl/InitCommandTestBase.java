@@ -32,8 +32,8 @@ class InitCommandTestBase extends MetadataAccessTestBase {
      * Create a new init command invoker builder.
      * @return InitCommandInvoker.Builder
      */
-    protected InitCommandInvoker.Builder initCommandInvoker() {
-        return InitCommandInvoker.builder()
+    protected CommandInvoker.Builder initCommandInvoker() {
+        return CommandInvoker.builder()
                 .helidonVersion(helidonTestVersion())
                 .metadataUrl(metadataUrl())
                 .userConfig(userConfig())

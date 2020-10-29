@@ -113,14 +113,14 @@ class TestUtils {
         }
 
         ProcessMonitor monitor = ProcessMonitor.builder()
-                .processBuilder(pb)
-                .stdIn(input)
-                .stdOut(Log::info)
-                .stdErr(Log::error)
-                .capture(true)
-                .build()
-                .start()
-                .waitForCompletion(120, TimeUnit.SECONDS);
+                                               .processBuilder(pb)
+                                               .stdIn(input)
+                                               .stdOut(Log::info)
+                                               .stdErr(Log::error)
+                                               .capture(true)
+                                               .build()
+                                               .start()
+                                               .waitForCompletion(120, TimeUnit.SECONDS);
         String output = String.join(EOL, monitor.output());
         return strip(output);
     }

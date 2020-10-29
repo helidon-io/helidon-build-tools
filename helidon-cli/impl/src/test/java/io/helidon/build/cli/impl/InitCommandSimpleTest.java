@@ -34,7 +34,7 @@ import static org.hamcrest.Matchers.containsString;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class InitCommandSimpleTest extends InitCommandTestBase {
 
-    private static final AtomicReference<InitCommandInvoker> INVOKER_REF = new AtomicReference<>();
+    private static final AtomicReference<CommandInvoker> INVOKER_REF = new AtomicReference<>();
 
     @AfterAll
     public static void afterAll() {

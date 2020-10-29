@@ -62,7 +62,7 @@ public class MetadataTestBase {
     /**
      * Prepare for each test.
      *
-     * @param info    The test info.
+     * @param info The test info.
      * @param baseUrl The base url to use.
      */
     protected void prepareEach(TestInfo info, String baseUrl) {
@@ -122,7 +122,7 @@ public class MetadataTestBase {
     /**
      * Returns a new {@link Metadata} instance with the given frequency.
      *
-     * @param updateFrequency      The update frequency.
+     * @param updateFrequency The update frequency.
      * @param updateFrequencyUnits The update frequency units.
      * @return The instance.
      */

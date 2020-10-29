@@ -26,7 +26,7 @@ import static org.hamcrest.Matchers.is;
 public class InitCommandTest extends InitCommandTestBase {
 
     @Override
-    protected InitCommandInvoker.Builder initCommandInvoker() {
+    protected CommandInvoker.Builder initCommandInvoker() {
         return super.initCommandInvoker()
                 .buildProject(true);
     }
@@ -56,7 +56,7 @@ public class InitCommandTest extends InitCommandTestBase {
 
     @Test
     public void testArtifactId() throws Exception {
-        InitCommandInvoker invoker = initCommandInvoker()
+        CommandInvoker invoker = initCommandInvoker()
                 .artifactId("foo-artifact")
                 .invoke()
                 .validateProject();

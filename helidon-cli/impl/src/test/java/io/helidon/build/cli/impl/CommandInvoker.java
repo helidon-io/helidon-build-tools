@@ -46,9 +46,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 
 /**
- * Test utility to invoke {@code helidon init}.
+ * Test utility to invoke {@code helidon}.
  */
-public interface InitCommandInvoker {
+public interface CommandInvoker {
 
     /**
      * Create a new init command invoker builder.
@@ -196,28 +196,28 @@ public interface InitCommandInvoker {
      * @return this invoker
      * @throws Exception if an error occurs
      */
-    InitCommandInvoker validateProject() throws Exception;
+    CommandInvoker validateProject() throws Exception;
 
     /**
      * Assert that the JAR file exists.
      *
      * @return this invoker
      */
-    InitCommandInvoker assertJarExists();
+    CommandInvoker assertJarExists();
 
     /**
      * Assert that the project directory exists.
      *
      * @return this invoker
      */
-    InitCommandInvoker assertProjectExists();
+    CommandInvoker assertProjectExists();
 
     /**
      * Assert that the generated {@code pom.xml} exists and corresponds to the invocation parameters.
      *
      * @return this invoker
      */
-    InitCommandInvoker assertExpectedPom();
+    CommandInvoker assertExpectedPom();
 
     /**
      * Assert that the root directory of the Java package exists under the given "source root" directory.
@@ -225,7 +225,7 @@ public interface InitCommandInvoker {
      * @param sourceRoot source root directory
      * @return this invoker
      */
-    InitCommandInvoker assertPackageExists(Path sourceRoot);
+    CommandInvoker assertPackageExists(Path sourceRoot);
 
     /**
      * Assert that there is at least one {@code .java} file in the given "source root" directory.
@@ -234,7 +234,7 @@ public interface InitCommandInvoker {
      * @return this invoker
      * @throws IOException if an IO error occurs
      */
-    InitCommandInvoker assertSourceFilesExist(Path sourceRoot) throws IOException;
+    CommandInvoker assertSourceFilesExist(Path sourceRoot) throws IOException;
 
     /**
      * Assert that the {@code .helidon} file exists under the project directory.
@@ -242,12 +242,12 @@ public interface InitCommandInvoker {
      *
      * @return this invoker
      */
-    InitCommandInvoker assertProjectConfig();
+    CommandInvoker assertProjectConfig();
 
     /**
      * Invoker implementation.
      */
-    class InvokerImpl implements InitCommandInvoker {
+    class InvokerImpl implements CommandInvoker {
 
         private final String groupId;
         private final String artifactId;
@@ -401,7 +401,7 @@ public interface InitCommandInvoker {
         }
 
         @Override
-        public InitCommandInvoker validateProject() throws Exception {
+        public CommandInvoker validateProject() throws Exception {
             assertProjectExists();
             assertExpectedPom();
             Path sourceRoot = projectDir.resolve("src/main/java");
@@ -416,19 +416,19 @@ public interface InitCommandInvoker {
         }
 
         @Override
-        public InitCommandInvoker assertJarExists() {
+        public CommandInvoker assertJarExists() {
             assertFile(projectDir.resolve("target").resolve(artifactId + ".jar"));
             return this;
         }
 
         @Override
-        public InitCommandInvoker assertProjectExists() {
+        public CommandInvoker assertProjectExists() {
             assertDir(projectDir);
             return this;
         }
 
         @Override
-        public InitCommandInvoker assertExpectedPom() {
+        public CommandInvoker assertExpectedPom() {
             // Check pom and read model
             Path pomFile = assertFile(projectDir().resolve("pom.xml"));
             Model model = readPomModel(pomFile.toFile());
@@ -449,13 +449,13 @@ public interface InitCommandInvoker {
         }
 
         @Override
-        public InitCommandInvoker assertPackageExists(Path sourceRoot) {
+        public CommandInvoker assertPackageExists(Path sourceRoot) {
             TestUtils.assertPackageExists(projectDir, packageName);
             return this;
         }
 
         @Override
-        public InitCommandInvoker assertSourceFilesExist(Path sourceRoot) throws IOException {
+        public CommandInvoker assertSourceFilesExist(Path sourceRoot) throws IOException {
             long sourceFiles = Files.walk(sourceRoot)
                     .filter(file -> file.getFileName().toString().endsWith(".java"))
                     .count();
@@ -464,7 +464,7 @@ public interface InitCommandInvoker {
         }
 
         @Override
-        public InitCommandInvoker assertProjectConfig() {
+        public CommandInvoker assertProjectConfig() {
             Path dotHelidon = projectDir.resolve(DOT_HELIDON);
             ProjectConfig config = new ProjectConfig(dotHelidon);
             assertThat(config.exists(), is(true));
@@ -478,11 +478,11 @@ public interface InitCommandInvoker {
     /**
      * Invoker delegate.
      */
-    class InvocationDelegate implements InitCommandInvoker {
+    class InvocationDelegate implements CommandInvoker {
 
-        final InitCommandInvoker delegate;
+        final CommandInvoker delegate;
 
-        InvocationDelegate(InitCommandInvoker delegate) {
+        InvocationDelegate(CommandInvoker delegate) {
             this.delegate = Objects.requireNonNull(delegate);
         }
 
@@ -557,37 +557,37 @@ public interface InitCommandInvoker {
         }
 
         @Override
-        public InitCommandInvoker validateProject() throws Exception {
+        public CommandInvoker validateProject() throws Exception {
             return delegate.validateProject();
         }
 
         @Override
-        public InitCommandInvoker assertJarExists() {
+        public CommandInvoker assertJarExists() {
             return delegate.assertJarExists();
         }
 
         @Override
-        public InitCommandInvoker assertProjectExists() {
+        public CommandInvoker assertProjectExists() {
             return delegate.assertProjectExists();
         }
 
         @Override
-        public InitCommandInvoker assertExpectedPom() {
+        public CommandInvoker assertExpectedPom() {
             return delegate.assertExpectedPom();
         }
 
         @Override
-        public InitCommandInvoker assertPackageExists(Path sourceRoot) {
+        public CommandInvoker assertPackageExists(Path sourceRoot) {
             return delegate.assertPackageExists(sourceRoot);
         }
 
         @Override
-        public InitCommandInvoker assertSourceFilesExist(Path sourceRoot) throws IOException {
+        public CommandInvoker assertSourceFilesExist(Path sourceRoot) throws IOException {
             return delegate.assertSourceFilesExist(sourceRoot);
         }
 
         @Override
-        public InitCommandInvoker assertProjectConfig() {
+        public CommandInvoker assertProjectConfig() {
             return delegate.assertProjectConfig();
         }
     }
@@ -599,7 +599,7 @@ public interface InitCommandInvoker {
 
         final String output;
 
-        InvocationResult(InitCommandInvoker delegate, String output) {
+        InvocationResult(CommandInvoker delegate, String output) {
             super(delegate);
             this.output = Objects.requireNonNull(output, "output is null");
         }
@@ -615,7 +615,7 @@ public interface InitCommandInvoker {
     }
 
     /**
-     * Builder class for {@link InitCommandInvoker}.
+     * Builder class for {@link CommandInvoker}.
      */
     class Builder {
 
@@ -770,7 +770,7 @@ public interface InitCommandInvoker {
          *
          * @return invoker instance
          */
-        public InitCommandInvoker build() {
+        public CommandInvoker build() {
             return new InvokerImpl(this);
         }
 
@@ -780,7 +780,7 @@ public interface InitCommandInvoker {
          * @return invoker instance
          * @throws Exception if any error occurs
          */
-        public InitCommandInvoker invoke() throws Exception {
+        public CommandInvoker invoke() throws Exception {
             return new InvokerImpl(this).invoke();
         }
     }
