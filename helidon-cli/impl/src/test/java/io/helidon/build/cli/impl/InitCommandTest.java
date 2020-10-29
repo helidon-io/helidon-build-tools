@@ -26,73 +26,73 @@ import static org.hamcrest.Matchers.is;
 public class InitCommandTest extends InitCommandTestBase {
 
     @Override
-    protected CommandInvoker.Builder initCommandInvoker() {
-        return super.initCommandInvoker()
+    protected CommandInvoker.Builder commandInvoker() {
+        return super.commandInvoker()
                 .buildProject(true);
     }
 
     @Test
     public void testDefaults() throws Exception {
-        initCommandInvoker()
-                .invoke()
+        commandInvoker()
+                .invokeInit()
                 .validateProject();
     }
 
     @Test
     public void testFlavor() throws Exception {
-        initCommandInvoker()
+        commandInvoker()
                 .flavor("MP")
-                .invoke()
+                .invokeInit()
                 .validateProject();
     }
 
     @Test
     public void testGroupId() throws Exception {
-        initCommandInvoker()
+        commandInvoker()
                 .groupId("io.helidon.basicapp")
-                .invoke()
+                .invokeInit()
                 .validateProject();
     }
 
     @Test
     public void testArtifactId() throws Exception {
-        CommandInvoker invoker = initCommandInvoker()
+        CommandInvoker invoker = commandInvoker()
                 .artifactId("foo-artifact")
-                .invoke()
+                .invokeInit()
                 .validateProject();
         assertThat(invoker.projectDir().getFileName().toString(), is("foo-artifact"));
     }
 
     @Test
     public void testPackage() throws Exception {
-        initCommandInvoker()
+        commandInvoker()
                 .packageName("io.helidon.mypackage")
-                .invoke()
+                .invokeInit()
                 .validateProject();
     }
 
     @Test
     public void testName() throws Exception {
-        initCommandInvoker()
+        commandInvoker()
                 .projectName("mybasicproject")
-                .invoke()
+                .invokeInit()
                 .validateProject();
     }
 
     @Test
     public void testInteractiveSe() throws Exception {
-        initCommandInvoker()
+        commandInvoker()
                 .input("input.txt")
-                .invoke()
+                .invokeInit()
                 .validateProject();
     }
 
     @Test
     public void testInteractiveMp() throws Exception {
-        initCommandInvoker()
+        commandInvoker()
                 .input("input.txt")
                 .flavor("MP")
-                .invoke()
+                .invokeInit()
                 .validateProject();
     }
 }

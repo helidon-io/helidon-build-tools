@@ -44,7 +44,7 @@ public class InitCommandSimpleTest extends InitCommandTestBase {
     @Test
     @Order(1)
     public void testInit() throws Exception {
-        INVOKER_REF.set(initCommandInvoker().invoke().validateProject());
+        INVOKER_REF.set(commandInvoker().invokeInit().validateProject());
     }
 
     @Test

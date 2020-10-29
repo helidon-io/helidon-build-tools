@@ -149,7 +149,7 @@ public interface CommandInvoker {
      * @return invocation result
      * @throws Exception if an error occurs
      */
-    InvocationResult invoke() throws Exception;
+    InvocationResult invokeInit() throws Exception;
 
     /**
      * Invoke the given command on the project.
@@ -354,7 +354,7 @@ public interface CommandInvoker {
         }
 
         @Override
-        public InvocationResult invoke() throws Exception {
+        public InvocationResult invokeInit() throws Exception {
             List<String> args = new ArrayList<>();
             args.add("init");
             args.add("--url");
@@ -547,8 +547,8 @@ public interface CommandInvoker {
         }
 
         @Override
-        public InvocationResult invoke() throws Exception {
-            return delegate.invoke();
+        public InvocationResult invokeInit() throws Exception {
+            return delegate.invokeInit();
         }
 
         @Override
@@ -766,7 +766,7 @@ public interface CommandInvoker {
         }
 
         /**
-         * Build the init command invoker instance.
+         * Build the command invoker instance.
          *
          * @return invoker instance
          */
@@ -775,13 +775,13 @@ public interface CommandInvoker {
         }
 
         /**
-         * Build the init command invoker instance and invoke it.
+         * Build the command invoker instance and invoke the init command.
          *
          * @return invoker instance
          * @throws Exception if any error occurs
          */
-        public CommandInvoker invoke() throws Exception {
-            return new InvokerImpl(this).invoke();
+        public CommandInvoker invokeInit() throws Exception {
+            return new InvokerImpl(this).invokeInit();
         }
     }
 }
