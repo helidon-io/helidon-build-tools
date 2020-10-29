@@ -145,13 +145,16 @@ public class ArchetypeEngineTest extends ArchetypeBaseTest {
 
         String pomBase64 = testProps.getProperty("pom.xml");
         assertThat(pomBase64, is(not(nullValue())));
-        assertThat(Strings.normalizeNewLines(new String(Files.readAllBytes(outputDirPath.resolve("pom.xml")), StandardCharsets.UTF_8)),
+        assertThat(readFile(outputDirPath.resolve("pom.xml")),
                 is (new String(Base64.getDecoder().decode(pomBase64), StandardCharsets.UTF_8)));
 
         String mainBase64 = testProps.getProperty("main.java");
         assertThat(mainBase64, is(not(nullValue())));
-        assertThat(new String(Files.readAllBytes(outputDirPath.resolve("src/main/java/com/example/myproject/Main.java")),
-                        StandardCharsets.UTF_8).replaceAll("\r\n", "\n"),
+        assertThat(readFile(outputDirPath.resolve("src/main/java/com/example/myproject/Main.java")),
                 is (new String(Base64.getDecoder().decode(mainBase64), StandardCharsets.UTF_8)));
+    }
+
+    private static String readFile(Path file) throws IOException {
+        return Strings.normalizeNewLines(new String(Files.readAllBytes(file), StandardCharsets.UTF_8));
     }
 }

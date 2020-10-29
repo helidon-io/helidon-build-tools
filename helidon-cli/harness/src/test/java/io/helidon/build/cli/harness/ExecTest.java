@@ -51,7 +51,7 @@ public class ExecTest {
     static String resourceAsString(String name) {
         InputStream is = ExecTest.class.getResourceAsStream(name);
         try {
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8).replaceAll("\r\n", "\n");
+            return Strings.normalizeNewLines(new String(is.readAllBytes(), StandardCharsets.UTF_8));
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
