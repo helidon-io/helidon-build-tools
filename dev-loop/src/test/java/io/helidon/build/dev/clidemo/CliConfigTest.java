@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static io.helidon.build.util.TestUtils.pathOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -61,7 +62,7 @@ public class CliConfigTest {
     public void testCliConfigLoadStore1() {
         CliConfig config = new CliConfig(configFile);
         config.projectDir(Path.of("/usr/tmp"));
-        assertThat(config.projectDir().get().toString(), is("/usr/tmp"));
+        assertThat(pathOf(config.projectDir().get()), is("/usr/tmp"));
         config.store();
     }
 
@@ -69,7 +70,7 @@ public class CliConfigTest {
     @Order(3)
     public void testCliConfigLoadStore2() {
         CliConfig config = new CliConfig(configFile);
-        assertThat(config.projectDir().get().toString(), is("/usr/tmp"));
+        assertThat(pathOf(config.projectDir().get()), is("/usr/tmp"));
         config.clearProjectDir();
         config.store();
     }

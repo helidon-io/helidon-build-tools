@@ -36,7 +36,6 @@ import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
 import io.helidon.build.cli.harness.UserConfig;
 import io.helidon.build.cli.impl.FlowNodeControllers.FlowNodeController;
-import io.helidon.build.util.Constants;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.Requirements;
@@ -226,7 +225,7 @@ public final class InitCommand extends BaseCommand {
         configFile.property(HELIDON_VERSION_PROPERTY, helidonVersion);
         configFile.store();
 
-        String dir = BoldBrightCyan.apply(commonOptions.project() + Constants.DIR_SEP + projectDir.getFileName());
+        String dir = BoldBrightCyan.apply(projectDir);
         Prompter.displayLine("Switch directory to " + dir + " to use CLI");
 
         if (!batch) {
@@ -261,13 +260,13 @@ public final class InitCommand extends BaseCommand {
     }
 
     private Path initProjectDir() {
-        Path parentDirectory = commonOptions.project();
-        Path projectDir = parentDirectory.resolve(projectName);
+        Path projectDir = commonOptions.project();
         if (Files.exists(projectDir)) {
             if (config.failOnProjectNameCollision()) {
                 Requirements.failed("Directory %s already exists", projectDir);
             }
             Log.info("Project \"%s\" already exists, generating unique name", projectName);
+            Path parentDirectory = projectDir.getParent();
             for (int i = 2; i < 128; i++) {
                 Path newProjectDir = parentDirectory.resolve(projectName + "-" + i);
                 if (!Files.exists(newProjectDir)) {

@@ -18,14 +18,17 @@ package io.helidon.linker;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 import io.helidon.build.test.TestFiles;
 
 import io.helidon.build.util.Constants;
+import io.helidon.build.util.Log;
+import io.helidon.build.util.SystemLogWriter;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.util.TestUtils.isDebugLogEnabled;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.greaterThan;
@@ -37,8 +40,16 @@ import static org.hamcrest.Matchers.nullValue;
  * Unit test for class {@link ClassDataSharing}.
  */
 class ClassDataSharingTest {
+
     private static final Path JAVA_HOME = Path.of(Constants.javaHome());
     private static final String APP_CLASS = "org/jboss/weld/environment/deployment/discovery/BeanArchiveScanner";
+
+    @BeforeAll
+    static void setup() {
+        if (isDebugLogEnabled()) {
+            Log.writer(SystemLogWriter.create(Log.Level.DEBUG));
+        }
+    }
 
     @Test
     void testQuickstartMp() throws Exception {
@@ -49,7 +60,7 @@ class ClassDataSharingTest {
                                                .jri(JAVA_HOME)
                                                .applicationJar(mainJar)
                                                .createArchive(false)
-                                               .logOutput(false)
+                                               .logOutput(true)
                                                .exitOnStartedValue(exitOnStarted)
                                                .build();
         assertThat(cds, is(not(nullValue())));
@@ -70,7 +81,7 @@ class ClassDataSharingTest {
                               .applicationJar(mainJar)
                               .classListFile(cds.classListFile())
                               .archiveFile(archiveFile)
-                              .logOutput(false)
+                              .logOutput(true)
                               .exitOnStartedValue(exitOnStarted)
                               .build();
 

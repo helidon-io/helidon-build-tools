@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 import io.helidon.build.util.Log;
+import io.helidon.build.util.Strings;
 
 import org.junit.jupiter.api.Test;
 
@@ -50,7 +51,7 @@ public class ExecTest {
     static String resourceAsString(String name) {
         InputStream is = ExecTest.class.getResourceAsStream(name);
         try {
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            return Strings.normalizeNewLines(new String(is.readAllBytes(), StandardCharsets.UTF_8));
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -65,7 +66,8 @@ public class ExecTest {
         } finally {
             System.setOut(stdout);
         }
-        return strip(new String(baos.toByteArray(), StandardCharsets.UTF_8));
+        String out = Strings.normalizeNewLines(new String(baos.toByteArray(), StandardCharsets.UTF_8));
+        return strip(out);
     }
 
     static String exec(String... args) {
@@ -101,7 +103,8 @@ public class ExecTest {
         CommandContext context = context();
         exec(context, "common");
         assertThat(context.exitAction().status(), is(ExitStatus.FAILURE));
-        assertThat(context.exitAction().message(), is("Missing required option: key\nSee 'test-cli common --help'"));
+        assertThat(Strings.normalizeNewLines(context.exitAction().message()),
+                is("Missing required option: key\nSee 'test-cli common --help'"));
     }
 
     private static final class TestCommandRegistry extends CommandRegistry {

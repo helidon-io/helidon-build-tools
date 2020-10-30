@@ -15,80 +15,56 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.io.IOException;
-import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.build.cli.harness.Config;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static io.helidon.build.cli.impl.InitCommand.Flavor;
-import static io.helidon.build.cli.impl.TestUtils.exec;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
 /**
- * Class CommandTest.
+ * Simple sequence of commands that starts with {@code helidon init}.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class CommandTest extends InitCommandBaseTest {
+public class InitCommandSimpleTest extends InitCommandTestBase {
 
-    @BeforeEach
-    public void beforeEach() {
-        super.beforeEach();
-        flavor(Flavor.SE.toString());
-    }
-
-    @AfterEach
-    public void afterEach() throws IOException {
-        super.afterEach();
-    }
+    private static final AtomicReference<CommandInvoker> INVOKER_REF = new AtomicReference<>();
 
     @AfterAll
     public static void afterAll() {
-        MetadataCommandTest.stopMetadataAccess();
+        MetadataAccessTestBase.stopMetadataAccess();
     }
 
     @Test
     @Order(1)
     public void testInit() throws Exception {
-        generate();
-        assertValid();
+        INVOKER_REF.set(commandInvoker().invokeInit().validateProject());
     }
 
     @Test
     @Order(2)
     public void testBuild() throws Exception {
-        generate();
-        assertValid();
-        Path projectDir = projectDir();
-        exec("build", "--project ", projectDir.toString());
-        assertJarExists();
+        INVOKER_REF.get().invokeBuildCommand().assertJarExists();
     }
 
     @Test
     @Order(3)
     public void testInfo() throws Exception {
         Config.userConfig().clearPlugins();
-        initArguments();
-        Path projectDir = projectDir();
-        String result = exec("info", "--project ", projectDir.toString());
-        assertThat(result, containsString("plugin"));
+        assertThat(INVOKER_REF.get().invokeInfoCommand().output(), containsString("plugin"));
     }
 
     @Test
     @Order(4)
     public void testVersion() throws Exception {
-        initArguments();
-        Path projectDir = projectDir();
-        String result = exec("version", "--project ", projectDir.toString());
-        assertThat(result, containsString("version"));
-        assertThat(result, containsString("helidon.version"));
+        String output = INVOKER_REF.get().invokeVersionCommand().output();
+        assertThat(output, containsString("version"));
+        assertThat(output, containsString("helidon.version"));
     }
 }

@@ -33,7 +33,6 @@ import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.Strings;
 import io.helidon.build.util.StyleFunction;
 
-import static io.helidon.build.cli.harness.Config.userConfig;
 import static io.helidon.build.cli.harness.GlobalOptions.DEBUG_FLAG_DESCRIPTION;
 import static io.helidon.build.cli.harness.GlobalOptions.DEBUG_FLAG_NAME;
 import static io.helidon.build.cli.harness.GlobalOptions.PLAIN_FLAG_DESCRIPTION;
@@ -70,9 +69,9 @@ final class CommonOptions {
                           visible = false) String since) {
         this.verbose = verbose || debug;
         this.debug = debug;
-        this.plain = plain || userConfig().richTextDisabled();
+        this.plain = plain || Config.userConfig().richTextDisabled();
         this.projectDir = projectDir != null ? projectDir.toPath().toAbsolutePath() : WORKING_DIR;
-        this.metadataUrl = Strings.isValid(metadataUrl) ? metadataUrl : userConfig().updateUrl();
+        this.metadataUrl = Strings.isValid(metadataUrl) ? metadataUrl : Config.userConfig().updateUrl();
         this.resetCache = resetCache || since != null;
         this.sinceCliVersion = toMavenVersion(since == null ? Config.buildVersion() : since);
     }
@@ -106,7 +105,7 @@ final class CommonOptions {
 
     Metadata metadata() {
         if (metadata == null) {
-            UserConfig config = userConfig();
+            UserConfig config = Config.userConfig();
             if (resetCache) {
                 try {
                     Log.debug("clearing plugins and metadata cache");

@@ -15,6 +15,10 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.ServerSocket;
+
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 import io.helidon.build.util.Log;
 
@@ -25,8 +29,8 @@ import org.mockserver.mock.Expectation;
 import org.mockserver.model.NottableString;
 import org.mockserver.netty.MockServer;
 
+import static io.helidon.build.cli.impl.TestMetadata.CLI_DATA_FILE_NAME;
 import static io.helidon.build.cli.impl.TestMetadata.etag;
-import static io.helidon.build.cli.impl.TestMetadata.zipPath;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import static org.mockserver.model.NottableString.not;
@@ -37,7 +41,6 @@ import static org.mockserver.model.NottableString.not;
 public class MetadataTestServer {
     private static final String USAGE = "Usage: [--port <port>] [--rc1 | --rc2] [--quiet] [--help]";
     private static final int DEFAULT_MAIN_PORT = 8080;
-    private static final int DEFAULT_TEST_PORT = 8088;
     private static final String VERBOSE_LEVEL = "INFO";
     private static final String NORMAL_LEVEL = "WARN";
     private static final String URL_PREFIX = "http://localhost:";
@@ -52,19 +55,22 @@ public class MetadataTestServer {
     private static Expectation zipRequestWithoutEtag(TestVersion version) {
         return new Expectation(request().withMethod("GET")
                                         .withHeader(not(IF_NONE_MATCH_HEADER))
-                                        .withPath(zipPath(version))).withId(version + "-zip-without-etag");
+                                        .withPath("/" + version + "/" + CLI_DATA_FILE_NAME))
+                                        .withId(version + "-zip-without-etag");
     }
 
     private static Expectation zipRequestWithoutMatchingEtag(TestVersion version, byte[] data) {
         return new Expectation(request().withMethod("GET")
                                         .withHeader(NottableString.string(IF_NONE_MATCH_HEADER), not(etag(version, data)))
-                                        .withPath(zipPath(version))).withId(version + "-zip-without-matching-etag");
+                                        .withPath("/" + version + "/" + CLI_DATA_FILE_NAME))
+                                        .withId(version + "-zip-without-matching-etag");
     }
 
     private static Expectation zipRequestWithMatchingEtag(TestVersion version, byte[] data) {
         return new Expectation(request().withMethod("GET")
                                         .withHeader(IF_NONE_MATCH_HEADER, etag(version, data))
-                                        .withPath(zipPath(version))).withId(version + "-zip-with-matching-etag");
+                                        .withPath("/" + version + "/" + CLI_DATA_FILE_NAME))
+                                        .withId(version + "-zip-with-matching-etag");
     }
 
     private final int port;
@@ -115,7 +121,7 @@ public class MetadataTestServer {
      * @param verbose Whether or not to do verbose logging.
      */
     public MetadataTestServer(TestVersion latest, boolean verbose) {
-        this(DEFAULT_TEST_PORT, latest, verbose);
+        this(freePort(), latest, verbose);
     }
 
     /**
@@ -229,6 +235,14 @@ public class MetadataTestServer {
         mockServer.stop();
     }
 
+    /**
+     * Get the next argument or return the usage.
+     *
+     * @param currentIndex current index
+     * @param allArgs      the arguments array
+     * @return next arguments at {@code currentIndex + 1}, or the usage if the next argument is not found in
+     * {@code allArgs}
+     */
     static String nextArg(int currentIndex, String[] allArgs) {
         final int nextIndex = currentIndex + 1;
         if (nextIndex < allArgs.length) {
@@ -247,4 +261,18 @@ public class MetadataTestServer {
         System.exit(exitCode);
     }
 
+    private static int freePort() {
+        ServerSocket s = null;
+        try {
+            s = new ServerSocket(0);
+            return s.getLocalPort();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        } finally {
+            try {
+                s.close();
+            } catch (IOException ignore) {
+            }
+        }
+    }
 }

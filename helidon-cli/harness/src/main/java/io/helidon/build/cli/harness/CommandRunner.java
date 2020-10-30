@@ -21,8 +21,6 @@ import io.helidon.build.cli.harness.CommandParser.CommandParserException;
 import io.helidon.build.util.AnsiConsoleInstaller;
 import io.helidon.build.util.Proxies;
 
-import static io.helidon.build.cli.harness.Config.userConfig;
-
 /**
  * Command runner.
  */
@@ -69,7 +67,7 @@ public final class CommandRunner {
      */
     private void doExecuteCommand(CommandModel command) {
         CommandParser.Resolver globalResolver = parser.globalResolver();
-        if (globalResolver.resolve(GlobalOptions.PLAIN_FLAG_INFO) || userConfig().richTextDisabled()) {
+        if (globalResolver.resolve(GlobalOptions.PLAIN_FLAG_INFO) || Config.userConfig().richTextDisabled()) {
             AnsiConsoleInstaller.disable();
         } else {
             AnsiConsoleInstaller.install();

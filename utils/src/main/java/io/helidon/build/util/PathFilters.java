@@ -15,6 +15,7 @@
  */
 package io.helidon.build.util;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.BiPredicate;
@@ -35,6 +36,7 @@ public class PathFilters {
     private static final BiPredicate<Path, Path> ANY = (path, root) -> true;
     private static final BiPredicate<Path, Path> NONE = (path, root) -> false;
 
+    private static final Path ROOT = Path.of(File.separator);
     private static final String SINGLE_CHAR_WILDCARD = "?";
     private static final String MULTI_CHAR_WILDCARD = "*";
     private static final char SINGLE_CHAR_WILDCARD_CHAR = '?';
@@ -254,8 +256,12 @@ public class PathFilters {
         return value.substring(0, value.length() - constant.length());
     }
 
+    private static boolean isAbsolute(Path path) {
+        return path.isAbsolute() || ROOT.equals(path.getRoot());
+    }
+
     private static Path relativizePath(Path path, Path root) {
-        return path.isAbsolute() ? root.relativize(path) : path;
+        return isAbsolute(path) ? root.relativize(path) : path;
     }
 
     private static String normalizePath(Path path, Path root) {
