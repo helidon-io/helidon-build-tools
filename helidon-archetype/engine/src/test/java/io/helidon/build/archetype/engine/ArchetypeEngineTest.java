@@ -35,9 +35,11 @@ import io.helidon.build.archetype.engine.ArchetypeDescriptor.FileSet;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.Property;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.Replacement;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.Transformation;
+import io.helidon.build.util.Strings;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.util.TestUtils.pathOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -131,7 +133,7 @@ public class ArchetypeEngineTest extends ArchetypeBaseTest {
         assertThat(Files.exists(outputDirPath), is(true));
         assertThat(Files.walk(outputDirPath)
                 .filter(p -> !Files.isDirectory(p))
-                .map((p) -> outputDirPath.relativize(p).toString())
+                .map((p) -> pathOf(outputDirPath.relativize(p)))
                 .sorted()
                 .collect(Collectors.toList()),
                 is(List.of("pom.xml", "src/main/java/com/example/myproject/Main.java")));
@@ -143,13 +145,16 @@ public class ArchetypeEngineTest extends ArchetypeBaseTest {
 
         String pomBase64 = testProps.getProperty("pom.xml");
         assertThat(pomBase64, is(not(nullValue())));
-        assertThat(new String(Files.readAllBytes(outputDirPath.resolve("pom.xml")), StandardCharsets.UTF_8),
+        assertThat(readFile(outputDirPath.resolve("pom.xml")),
                 is (new String(Base64.getDecoder().decode(pomBase64), StandardCharsets.UTF_8)));
 
         String mainBase64 = testProps.getProperty("main.java");
         assertThat(mainBase64, is(not(nullValue())));
-        assertThat(new String(Files.readAllBytes(outputDirPath.resolve("src/main/java/com/example/myproject/Main.java")),
-                StandardCharsets.UTF_8),
+        assertThat(readFile(outputDirPath.resolve("src/main/java/com/example/myproject/Main.java")),
                 is (new String(Base64.getDecoder().decode(mainBase64), StandardCharsets.UTF_8)));
+    }
+
+    private static String readFile(Path file) throws IOException {
+        return Strings.normalizeNewLines(new String(Files.readAllBytes(file), StandardCharsets.UTF_8));
     }
 }

@@ -179,7 +179,7 @@ public final class Configuration {
      */
     public static final class Builder {
         static final String DEFAULT_DEBUG = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005";
-        static final int DEFAULT_MAX_APP_START_SECONDS = 60;
+        static final int DEFAULT_MAX_APP_START_SECONDS = 1000;
         private JavaRuntime jdk;
         private Path mainJar;
         private List<String> defaultJvm;

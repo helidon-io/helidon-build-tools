@@ -16,9 +16,9 @@ vuex-router-sync.js
 .txt
 .mustache
 .json
+.bat
 javax.annotation.processing.Processor
 /cli-data/latest
-cli-data.zip
 cli-data.zip
 .exit
 .hola

@@ -24,10 +24,14 @@ import java.util.Set;
 
 import io.helidon.build.util.FileUtils;
 import io.helidon.build.test.TestFiles;
+import io.helidon.build.util.Log;
+import io.helidon.build.util.SystemLogWriter;
 import io.helidon.linker.util.Constants;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.util.TestUtils.isDebugLogEnabled;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;

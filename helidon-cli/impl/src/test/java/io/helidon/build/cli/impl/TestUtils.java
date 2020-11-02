@@ -18,6 +18,7 @@ package io.helidon.build.cli.impl;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,6 +43,11 @@ class TestUtils {
     private TestUtils() {
     }
 
+    /**
+     * Get the path of the java executable to use.
+     *
+     * @return absolute path, never {@code null}
+     */
     static String javaPath() {
         String javaHome = System.getProperty("java.home");
         if (javaHome != null) {
@@ -56,19 +62,41 @@ class TestUtils {
         return "java";
     }
 
+    /**
+     * Get the content of the given resource on the class-path.
+     *
+     * @param name resource name
+     * @return resource content
+     */
     static String resourceAsString(String name) {
         InputStream is = TestUtils.class.getResourceAsStream(name);
         try {
             return new String(is.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException ex) {
-            throw new RuntimeException(ex);
+            throw new UncheckedIOException(ex);
         }
     }
 
+    /**
+     * Execute the given CLI command
+     *
+     * @param args command arguments
+     * @return output stripped of ANSI colors
+     * @throws Exception if an error occurs
+     */
     static String exec(String... args) throws Exception {
         return execWithDirAndInput(null, null, args);
     }
 
+    /**
+     * Execute the given CLI command.
+     *
+     * @param wd    working directory
+     * @param input file to pass as standard input to the process
+     * @param args  command arguments
+     * @return output stripped of ANSI colors
+     * @throws Exception if an error occurs
+     */
     static String execWithDirAndInput(File wd, File input, String... args) throws Exception {
         String classPath = System.getProperty("surefire.test.class.path", System.getProperty("java.class.path"));
         List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-cp", "\"" + classPath + "\""));
@@ -97,6 +125,12 @@ class TestUtils {
         return strip(output);
     }
 
+    /**
+     * Assert that the root directory of the Java package exists under {@code src/main/java} of the given project directory.
+     *
+     * @param projectPath project directory
+     * @param packageName Java package name
+     */
     static void assertPackageExists(Path projectPath, String packageName) {
         assertTrue(Files.exists(projectPath));
         Path path = projectPath.resolve("src/main/java");

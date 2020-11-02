@@ -1,0 +1,787 @@
+/*
+ * Copyright (c) 2020 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.helidon.build.cli.impl;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import io.helidon.build.cli.harness.UserConfig;
+import io.helidon.build.util.ProjectConfig;
+import io.helidon.build.util.SubstitutionVariables;
+
+import org.apache.maven.model.Model;
+
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARCHETYPE_NAME;
+import static io.helidon.build.cli.impl.InitCommand.DEFAULT_FLAVOR;
+import static io.helidon.build.cli.impl.TestUtils.exec;
+import static io.helidon.build.util.FileUtils.assertDir;
+import static io.helidon.build.util.FileUtils.assertFile;
+import static io.helidon.build.util.PomUtils.readPomModel;
+import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
+import static io.helidon.build.util.SubstitutionVariables.systemPropertyOrEnvVarSource;
+import static io.helidon.build.util.TestUtils.uniqueDir;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
+
+/**
+ * Test utility to invoke {@code helidon}.
+ */
+public interface CommandInvoker {
+
+    /**
+     * Create a new init command invoker builder.
+     *
+     * @return Builder
+     */
+    static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Get the Helidon version.
+     *
+     * @return Helidon version, may be {@code null}
+     */
+    String helidonVersion();
+
+    /**
+     * Get the groupId.
+     *
+     * @return groupId, never {@code null}
+     */
+    String groupId();
+
+    /**
+     * Get the artifactId.
+     *
+     * @return artifactId, never {@code null}
+     */
+    String artifactId();
+
+    /**
+     * Get the package name.
+     *
+     * @return package name, never {@code null}
+     */
+    String packageName();
+
+    /**
+     * Get the project name.
+     *
+     * @return project name, never {@code null}
+     */
+    String projectName();
+
+    /**
+     * Get the flavor.
+     *
+     * @return flavor, may be {@code null}
+     */
+    String flavor();
+
+    /**
+     * Get the archetype name.
+     *
+     * @return archetype name, may be {@code null}
+     */
+    String archetypeName();
+
+    /**
+     * Get the project directory
+     *
+     * @return project directory, never {@code null}
+     */
+    Path projectDir();
+
+    /**
+     * Get the metadata URL
+     *
+     * @return metadata URL, may be {@code null}
+     */
+    String metadataUrl();
+
+    /**
+     * Get the batch input file.
+     *
+     * @return input file, may be {@code null}
+     */
+    File input();
+
+    /**
+     * Get the working directory.
+     *
+     * @return working directory, never {@code null}
+     */
+    Path workDir();
+
+    /**
+     * Get the user config.
+     *
+     * @return user config, never {@code null}
+     */
+    UserConfig config();
+
+    /**
+     * Invoke the init command.
+     *
+     * @return invocation result
+     * @throws Exception if an error occurs
+     */
+    InvocationResult invokeInit() throws Exception;
+
+    /**
+     * Invoke the given command on the project.
+     *
+     * @param command command to invoke
+     * @return invocation result
+     * @throws Exception if an error occurs
+     */
+    InvocationResult invokeCommand(String command) throws Exception;
+
+    /**
+     * Invoke the {@code helidon build} command on the project.
+     *
+     * @return invocation result
+     * @throws Exception if an error occurs
+     */
+    default InvocationResult invokeBuildCommand() throws Exception {
+        return invokeCommand("build");
+    }
+
+    /**
+     * Invoke the {@code helidon info} command on the project.
+     *
+     * @return invocation result
+     * @throws Exception if an error occurs
+     */
+    default InvocationResult invokeInfoCommand() throws Exception {
+        return invokeCommand("info");
+    }
+
+    /**
+     * Invoke the {@code helidon version} command on the project.
+     *
+     * @return invocation result
+     * @throws Exception if an error occurs
+     */
+    default InvocationResult invokeVersionCommand() throws Exception {
+        return invokeCommand("version");
+    }
+
+    /**
+     * Assert the generated project, and build it if {@code buildProject} is {@code true}.
+     *
+     * @return this invoker
+     * @throws Exception if an error occurs
+     */
+    CommandInvoker validateProject() throws Exception;
+
+    /**
+     * Assert that the JAR file exists.
+     *
+     * @return this invoker
+     */
+    CommandInvoker assertJarExists();
+
+    /**
+     * Assert that the project directory exists.
+     *
+     * @return this invoker
+     */
+    CommandInvoker assertProjectExists();
+
+    /**
+     * Assert that the generated {@code pom.xml} exists and corresponds to the invocation parameters.
+     *
+     * @return this invoker
+     */
+    CommandInvoker assertExpectedPom();
+
+    /**
+     * Assert that the root directory of the Java package exists under the given "source root" directory.
+     *
+     * @param sourceRoot source root directory
+     * @return this invoker
+     */
+    CommandInvoker assertPackageExists(Path sourceRoot);
+
+    /**
+     * Assert that there is at least one {@code .java} file in the given "source root" directory.
+     *
+     * @param sourceRoot source root directory
+     * @return this invoker
+     * @throws IOException if an IO error occurs
+     */
+    CommandInvoker assertSourceFilesExist(Path sourceRoot) throws IOException;
+
+    /**
+     * Assert that the {@code .helidon} file exists under the project directory.
+     * If {@code buildProject} is {@code true}, check that the last successful build timestamp is {@code >0}.
+     *
+     * @return this invoker
+     */
+    CommandInvoker assertProjectConfig();
+
+    /**
+     * Invoker implementation.
+     */
+    class InvokerImpl implements CommandInvoker {
+
+        private final String groupId;
+        private final String artifactId;
+        private final String packageName;
+        private final String projectName;
+        private final String flavor;
+        private final String archetypeName;
+        private final Path projectDir;
+        private final String metadataUrl;
+        private final File input;
+        private final Path workDir;
+        private final UserConfig config;
+        private final String helidonVersion;
+        private final boolean buildProject;
+
+        private InvokerImpl(Builder builder) {
+            buildProject = builder.buildProject;
+            helidonVersion = builder.helidonVersion;
+            input = builder.input;
+            metadataUrl = builder.metadataUrl;
+            flavor = builder.flavor == null ? DEFAULT_FLAVOR : builder.flavor;
+            archetypeName = builder.archetypeName == null ? DEFAULT_ARCHETYPE_NAME : builder.archetypeName;
+            SubstitutionVariables substitutions = SubstitutionVariables.of(key -> {
+                switch (key.toLowerCase()) {
+                    case "init_flavor":
+                        return flavor.toLowerCase();
+                    case "init_archetype":
+                        return archetypeName;
+                    default:
+                        return null;
+                }
+            }, systemPropertyOrEnvVarSource());
+            config = builder.config == null ? UserConfig.create() : builder.config;
+            projectName = config.projectName(builder.projectName, builder.artifactId, substitutions);
+            groupId = builder.groupId == null ? config.defaultGroupId(substitutions) : builder.groupId;
+            artifactId = config.artifactId(builder.artifactId, builder.projectName, substitutions);
+            packageName = builder.packageName == null ? config.defaultPackageName(substitutions) : builder.packageName;
+            try {
+                workDir = builder.workDir == null ? Files.createTempDirectory("helidon-init") : builder.workDir;
+                projectDir = uniqueDir(workDir, projectName);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
+
+        @Override
+        public String helidonVersion() {
+            return helidonVersion;
+        }
+
+        @Override
+        public String groupId() {
+            return groupId;
+        }
+
+        @Override
+        public String artifactId() {
+            return artifactId;
+        }
+
+        @Override
+        public String packageName() {
+            return packageName;
+        }
+
+        @Override
+        public String projectName() {
+            return projectName;
+        }
+
+        @Override
+        public String flavor() {
+            return flavor;
+        }
+
+        @Override
+        public String archetypeName() {
+            return archetypeName;
+        }
+
+        @Override
+        public Path projectDir() {
+            return projectDir;
+        }
+
+        @Override
+        public String metadataUrl() {
+            return metadataUrl;
+        }
+
+        @Override
+        public File input() {
+            return input;
+        }
+
+        @Override
+        public Path workDir() {
+            return workDir;
+        }
+
+        @Override
+        public UserConfig config() {
+            return config;
+        }
+
+        @Override
+        public InvocationResult invokeInit() throws Exception {
+            List<String> args = new ArrayList<>();
+            args.add("init");
+            args.add("--url");
+            args.add(Objects.requireNonNull(metadataUrl, "metadataUrl is null!"));
+            if (input == null) {
+                args.add("--batch");
+            }
+            if (helidonVersion != null) {
+                args.add("--version");
+                args.add(helidonVersion);
+            }
+            if (!DEFAULT_FLAVOR.equals(flavor)) {
+                args.add("--flavor");
+                args.add(flavor);
+            }
+            if (!DEFAULT_ARCHETYPE_NAME.equals(archetypeName)) {
+                args.add("--archetype");
+                args.add(archetypeName);
+            }
+            args.add("--groupId");
+            args.add(groupId);
+            args.add("--artifactId");
+            args.add(artifactId);
+            args.add("--package");
+            args.add(packageName);
+            args.add("--name");
+            args.add(projectName);
+            args.add("--project");
+            args.add(projectDir.toString());
+            String[] argsArray = args.toArray(new String[]{});
+            System.out.print("Executing with args ");
+            args.forEach(a -> System.out.print(a + " "));
+            System.out.println();
+
+            // Execute and verify process exit code
+            String output = TestUtils.execWithDirAndInput(workDir.toFile(), input, argsArray);
+            return new InvocationResult(this, output);
+        }
+
+        @Override
+        public InvocationResult invokeCommand(String command) throws Exception {
+            String output = exec(command, "--project ", projectDir.toString());
+            return new InvocationResult(this, output);
+        }
+
+        @Override
+        public CommandInvoker validateProject() throws Exception {
+            assertProjectExists();
+            assertExpectedPom();
+            Path sourceRoot = projectDir.resolve("src/main/java");
+            assertPackageExists(sourceRoot);
+            assertSourceFilesExist(sourceRoot);
+            if (buildProject) {
+                invokeBuildCommand();
+                assertJarExists();
+                assertProjectConfig();
+            }
+            return this;
+        }
+
+        @Override
+        public CommandInvoker assertJarExists() {
+            assertFile(projectDir.resolve("target").resolve(artifactId + ".jar"));
+            return this;
+        }
+
+        @Override
+        public CommandInvoker assertProjectExists() {
+            assertDir(projectDir);
+            return this;
+        }
+
+        @Override
+        public CommandInvoker assertExpectedPom() {
+            // Check pom and read model
+            Path pomFile = assertFile(projectDir().resolve("pom.xml"));
+            Model model = readPomModel(pomFile.toFile());
+
+            // Flavor
+            String parentArtifact = model.getParent().getArtifactId();
+            assertThat(parentArtifact, containsString(flavor.toLowerCase()));
+
+            // GroupId
+            assertThat(model.getGroupId(), is(groupId));
+
+            // ArtifactId
+            assertThat(model.getArtifactId(), is(artifactId));
+
+            // Project Name
+            assertThat(model.getName(), is(projectName));
+            return this;
+        }
+
+        @Override
+        public CommandInvoker assertPackageExists(Path sourceRoot) {
+            TestUtils.assertPackageExists(projectDir, packageName);
+            return this;
+        }
+
+        @Override
+        public CommandInvoker assertSourceFilesExist(Path sourceRoot) throws IOException {
+            long sourceFiles = Files.walk(sourceRoot)
+                    .filter(file -> file.getFileName().toString().endsWith(".java"))
+                    .count();
+            assertThat(sourceFiles, is(greaterThan(0L)));
+            return this;
+        }
+
+        @Override
+        public CommandInvoker assertProjectConfig() {
+            Path dotHelidon = projectDir.resolve(DOT_HELIDON);
+            ProjectConfig config = new ProjectConfig(dotHelidon);
+            assertThat(config.exists(), is(true));
+            if (buildProject) {
+                assertThat(config.lastSuccessfulBuildTime(), is(greaterThan(0L)));
+            }
+            return this;
+        }
+    }
+
+    /**
+     * Invoker delegate.
+     */
+    class InvocationDelegate implements CommandInvoker {
+
+        final CommandInvoker delegate;
+
+        InvocationDelegate(CommandInvoker delegate) {
+            this.delegate = Objects.requireNonNull(delegate);
+        }
+
+        @Override
+        public String helidonVersion() {
+            return delegate.helidonVersion();
+        }
+
+        @Override
+        public String groupId() {
+            return delegate.groupId();
+        }
+
+        @Override
+        public String artifactId() {
+            return delegate.artifactId();
+        }
+
+        @Override
+        public String packageName() {
+            return delegate.packageName();
+        }
+
+        @Override
+        public String projectName() {
+            return delegate.projectName();
+        }
+
+        @Override
+        public String flavor() {
+            return delegate.flavor();
+        }
+
+        @Override
+        public String archetypeName() {
+            return delegate.archetypeName();
+        }
+
+        @Override
+        public Path projectDir() {
+            return delegate.projectDir();
+        }
+
+        @Override
+        public String metadataUrl() {
+            return delegate.metadataUrl();
+        }
+
+        @Override
+        public File input() {
+            return delegate.input();
+        }
+
+        @Override
+        public Path workDir() {
+            return delegate.workDir();
+        }
+
+        @Override
+        public UserConfig config() {
+            return delegate.config();
+        }
+
+        @Override
+        public InvocationResult invokeInit() throws Exception {
+            return delegate.invokeInit();
+        }
+
+        @Override
+        public InvocationResult invokeCommand(String command) throws Exception {
+            return delegate.invokeCommand(command);
+        }
+
+        @Override
+        public CommandInvoker validateProject() throws Exception {
+            return delegate.validateProject();
+        }
+
+        @Override
+        public CommandInvoker assertJarExists() {
+            return delegate.assertJarExists();
+        }
+
+        @Override
+        public CommandInvoker assertProjectExists() {
+            return delegate.assertProjectExists();
+        }
+
+        @Override
+        public CommandInvoker assertExpectedPom() {
+            return delegate.assertExpectedPom();
+        }
+
+        @Override
+        public CommandInvoker assertPackageExists(Path sourceRoot) {
+            return delegate.assertPackageExists(sourceRoot);
+        }
+
+        @Override
+        public CommandInvoker assertSourceFilesExist(Path sourceRoot) throws IOException {
+            return delegate.assertSourceFilesExist(sourceRoot);
+        }
+
+        @Override
+        public CommandInvoker assertProjectConfig() {
+            return delegate.assertProjectConfig();
+        }
+    }
+
+    /**
+     * Invoker delegate that holds invocation output.
+     */
+    class InvocationResult extends InvocationDelegate {
+
+        final String output;
+
+        InvocationResult(CommandInvoker delegate, String output) {
+            super(delegate);
+            this.output = Objects.requireNonNull(output, "output is null");
+        }
+
+        /**
+         * Get the invocation result output.
+         *
+         * @return output, never {@code null}
+         */
+        public String output() {
+            return output;
+        }
+    }
+
+    /**
+     * Builder class for {@link CommandInvoker}.
+     */
+    class Builder {
+
+        private String groupId;
+        private String artifactId;
+        private String packageName;
+        private String projectName;
+        private String flavor;
+        private String archetypeName;
+        private UserConfig config;
+        private String metadataUrl;
+        private Path workDir;
+        private File input;
+        private String helidonVersion;
+        private boolean buildProject;
+
+        /**
+         * Set the build project flag.
+         *
+         * @param buildProject build project flag
+         * @return this builder
+         */
+        public Builder buildProject(boolean buildProject) {
+            this.buildProject = buildProject;
+            return this;
+        }
+
+        /**
+         * Set the Helidon version.
+         *
+         * @param helidonVersion Helidon version
+         * @return this builder
+         */
+        public Builder helidonVersion(String helidonVersion) {
+            this.helidonVersion = helidonVersion;
+            return this;
+        }
+
+        /**
+         * Set the groupId.
+         *
+         * @param groupId groupId
+         * @return this builder
+         */
+        public Builder groupId(String groupId) {
+            this.groupId = groupId;
+            return this;
+        }
+
+        /**
+         * Set the artifactId.
+         *
+         * @param artifactId artifactId
+         * @return this builder
+         */
+        public Builder artifactId(String artifactId) {
+            this.artifactId = artifactId;
+            return this;
+        }
+
+        /**
+         * Set the Java package name.
+         *
+         * @param packageName Java package name
+         * @return this builder
+         */
+        public Builder packageName(String packageName) {
+            this.packageName = packageName;
+            return this;
+        }
+
+        /**
+         * Set the project name.
+         *
+         * @param projectName project name
+         * @return this builder
+         */
+        public Builder projectName(String projectName) {
+            this.projectName = projectName;
+            return this;
+        }
+
+        /**
+         * Set the flavor.
+         *
+         * @param flavor flavor
+         * @return this builder
+         */
+        public Builder flavor(String flavor) {
+            this.flavor = flavor.toUpperCase();
+            return this;
+        }
+
+        /**
+         * Set the archetype name.
+         *
+         * @param archetypeName archetype name
+         * @return this builder
+         */
+        public Builder archetypeName(String archetypeName) {
+            this.archetypeName = archetypeName;
+            return this;
+        }
+
+        /**
+         * Set the batch input file.
+         *
+         * @param inputFileName input file
+         * @return this builder
+         */
+        public Builder input(String inputFileName) {
+            URL url = Objects.requireNonNull(getClass().getResource(inputFileName), inputFileName + "not found");
+            this.input = new File(url.getFile());
+            return this;
+        }
+
+        /**
+         * Set the metadata URL.
+         *
+         * @param metadataUrl metadata URL
+         * @return this builder
+         */
+        public Builder metadataUrl(String metadataUrl) {
+            this.metadataUrl = metadataUrl;
+            return this;
+        }
+
+        /**
+         * Set the working directory.
+         *
+         * @param workDir working directory
+         * @return this builder
+         */
+        public Builder workDir(Path workDir) {
+            this.workDir = workDir;
+            return this;
+        }
+
+        /**
+         * Set the user config.
+         *
+         * @param config
+         * @return
+         */
+        public Builder userConfig(UserConfig config) {
+            this.config = config;
+            return this;
+        }
+
+        /**
+         * Build the command invoker instance.
+         *
+         * @return invoker instance
+         */
+        public CommandInvoker build() {
+            return new InvokerImpl(this);
+        }
+
+        /**
+         * Build the command invoker instance and invoke the init command.
+         *
+         * @return invoker instance
+         * @throws Exception if any error occurs
+         */
+        public CommandInvoker invokeInit() throws Exception {
+            return new InvokerImpl(this).invokeInit();
+        }
+    }
+}

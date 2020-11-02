@@ -38,6 +38,7 @@ import static io.helidon.build.test.TestFiles.helidonSeProjectCopy;
 import static io.helidon.build.util.FileUtils.touch;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.lastModifiedTime;
+import static io.helidon.build.util.TestUtils.pathOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
@@ -141,7 +142,7 @@ class BuildLoopTest {
         final List<BuildComponent> components = project.components();
         assertThat(components, is(not(nullValue())));
         assertThat(components.isEmpty(), is(false));
-        assertThat(components.get(0).outputRoot().path().toString(), endsWith("target/classes"));
+        assertThat(pathOf(components.get(0).outputRoot().path()), endsWith("target/classes"));
         final BuildRoot classes = components.get(0).outputRoot();
         final BuildFile mainClass = classes.findFirstNamed(name -> name.equals("Main.class"));
         assertThat(mainClass.hasChanged(), is(false));
@@ -180,7 +181,7 @@ class BuildLoopTest {
         final List<BuildComponent> components = project.components();
         assertThat(components, is(not(nullValue())));
         assertThat(components.isEmpty(), is(false));
-        assertThat(components.get(0).outputRoot().path().toString(), endsWith("target/classes"));
+        assertThat(pathOf(components.get(0).outputRoot().path()), endsWith("target/classes"));
         final BuildRoot classes = components.get(0).outputRoot();
         final BuildFile mainClass = classes.findFirstNamed(name -> name.equals("Main.class"));
         assertThat(mainClass.hasChanged(), is(false));

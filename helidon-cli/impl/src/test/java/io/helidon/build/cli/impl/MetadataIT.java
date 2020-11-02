@@ -15,7 +15,7 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.io.IOException;
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -32,8 +32,8 @@ import org.junit.jupiter.api.TestInfo;
 
 import static io.helidon.build.cli.impl.TestMetadata.HELIDON_BARE_MP;
 import static io.helidon.build.cli.impl.TestMetadata.HELIDON_BARE_SE;
+import static io.helidon.build.cli.impl.TestMetadata.LAST_UPDATE_FILE_NAME;
 import static io.helidon.build.cli.impl.TestMetadata.LATEST_FILE_NAME;
-import static io.helidon.build.cli.impl.TestMetadata.RC2_LAST_UPDATE;
 import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC2;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -45,10 +45,12 @@ import static org.hamcrest.Matchers.nullValue;
 /**
  * Integration test for class {@link Metadata} using {@code helidon.io} default url.
  */
-public class MetadataIT extends BaseMetadataTest {
+public class MetadataIT extends MetadataTestBase {
+
+    static final String RC2_LAST_UPDATE = VERSION_RC2 + File.separator + LAST_UPDATE_FILE_NAME;
 
     @BeforeEach
-    public void beforeEach(TestInfo info) throws IOException {
+    public void beforeEach(TestInfo info) {
         prepareEach(info, Metadata.DEFAULT_URL);
     }
 

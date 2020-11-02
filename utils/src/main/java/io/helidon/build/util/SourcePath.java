@@ -26,9 +26,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Utility class to parse and match path segments.
@@ -37,20 +37,24 @@ public class SourcePath {
 
     private static final char WILDCARD = '*';
     private static final String DOUBLE_WILDCARD = "**";
+    private static final List<String> DEFAULT_INCLUDES = List.of("**/*");
+
     private final String[] segments;
 
     /**
      * Create a new {@link SourcePath} instance for a file in a given directory.
      * The path represented will be the relative path of the file in the directory
-     * @param dir the directory containing the file
+     *
+     * @param dir  the directory containing the file
      * @param file the filed contained in the directory
      */
-    public SourcePath(File dir, File file){
+    public SourcePath(File dir, File file) {
         segments = parseSegments(getRelativePath(dir, file));
     }
 
     /**
      * Create a new {@link SourcePath} instance for the given path.
+     *
      * @param path the path to use as {@code String}
      */
     public SourcePath(String path) {
@@ -93,47 +97,22 @@ public class SourcePath {
 
     /**
      * Filter the given {@code Collection} of {@link SourcePath} with the given filter.
-     * @param paths the paths to filter
+     *
+     * @param paths            the paths to filter
      * @param includesPatterns a {@code Collection} of {@code String} as include patterns
      * @param excludesPatterns a {@code Collection} of {@code String} as exclude patterns
      * @return the filtered {@code Collection} of pages
      */
     public static List<SourcePath> filter(Collection<SourcePath> paths,
                                           Collection<String> includesPatterns,
-                                          Collection<String> excludesPatterns){
+                                          Collection<String> excludesPatterns) {
 
-        if (paths == null || paths.isEmpty()
-                || includesPatterns == null || includesPatterns.isEmpty()) {
+        if (paths == null || paths.isEmpty()) {
             return Collections.emptyList();
         }
-
-        if (excludesPatterns == null) {
-            excludesPatterns = Collections.emptyList();
-        }
-
-        List<SourcePath> included = new LinkedList<>();
-        for (String includesPattern : includesPatterns) {
-            for (SourcePath path : paths) {
-                if (path.matches(includesPattern)) {
-                    included.add(path);
-                }
-            }
-        }
-
-        List<SourcePath> matchedRoutes = new LinkedList<>();
-        for (SourcePath path : included) {
-            boolean matched = false;
-            for (String excludesPattern : excludesPatterns) {
-                if (path.matches(excludesPattern)) {
-                    matched = true;
-                    break;
-                }
-            }
-            if (!matched) {
-                matchedRoutes.add(path);
-            }
-        }
-        return matchedRoutes;
+        return paths.stream()
+                .filter(p -> p.matches(includesPatterns, excludesPatterns))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -166,7 +145,7 @@ public class SourcePath {
     private static boolean doRecursiveMatch(String[] segments,
                                             int offset,
                                             String[] patterns,
-                                            int pOffset){
+                                            int pOffset) {
 
         boolean expand = false;
         // for each segment pattern
@@ -206,9 +185,41 @@ public class SourcePath {
     }
 
     /**
+     * Tests if this {@link SourcePath} matches any of the given include patterns and none of the excludes patterns.
+     *
+     * @param includesPatterns includes patterns, if {@code null} or empty matches everything
+     * @param excludesPatterns excludes patterns, if {@code null} or empty matches nothing
+     * @return {@code true} if this {@link SourcePath} matches, {@code false} otherwise
+     */
+    public boolean matches(Collection<String> includesPatterns, Collection<String> excludesPatterns) {
+        if (includesPatterns == null || includesPatterns.isEmpty()) {
+            includesPatterns = DEFAULT_INCLUDES;
+        }
+        return matches(includesPatterns) && !matches(excludesPatterns);
+    }
+
+    /**
+     * Tests if any of the given patterns match this {@link SourcePath}.
+     *
+     * @param patterns the patterns to match, if {@code null} or empty matches nothing
+     * @return {@code true} if this {@link SourcePath} matches, {@code false} otherwise
+     */
+    public boolean matches(Collection<String> patterns) {
+        if (patterns != null) {
+            for (String pattern : patterns) {
+                if (matches(pattern)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Tests if the given pattern matches this {@link SourcePath}.
-     * @param pattern the pattern to match
-     * @return {@code true} if this {@link SourcePath} matches the pattern, {@code false} otherwise
+     *
+     * @param pattern the pattern to match, if {@code null} matches nothing
+     * @return {@code true} if this {@link SourcePath} matches, {@code false} otherwise
      */
     public boolean matches(String pattern) {
         if (pattern == null) {
@@ -306,10 +317,22 @@ public class SourcePath {
 
     /**
      * Convert this {@link SourcePath} into a {@code String}.
-     * @return the {@code String} representation of this {@link SourcePath}
+     *
+     * @return the absolute {@code String} representation of this {@link SourcePath}
+     * @see #asString(boolean)
      */
     public String asString() {
-        StringBuilder sb = new StringBuilder("/");
+        return asString(true);
+    }
+
+    /**
+     * Convert this {@link SourcePath} into a {@code String}.
+     *
+     * @param absolute {@code true} if the representation should start with a {@code /}
+     * @return the {@code String} representation of this {@link SourcePath}
+     */
+    public String asString(boolean absolute) {
+        StringBuilder sb = new StringBuilder(absolute ? "/" : "");
         for (int i = 0; i < segments.length; i++) {
             sb.append(segments[i]);
             if (i < segments.length - 1) {
@@ -318,6 +341,7 @@ public class SourcePath {
         }
         return sb.toString();
     }
+
 
     @Override
     public String toString() {
@@ -342,10 +366,11 @@ public class SourcePath {
 
     /**
      * Sort the given {@code List} of {@link SourcePath} with natural ordering.
+     *
      * @param sourcePaths the {@code List} of {@link SourcePath} to sort
      * @return the sorted {@code List}
      */
-    public static List<SourcePath> sort(List<SourcePath> sourcePaths){
+    public static List<SourcePath> sort(List<SourcePath> sourcePaths) {
         Objects.requireNonNull(sourcePaths, "sourcePaths");
         sourcePaths.sort(COMPARATOR);
         return sourcePaths;
@@ -353,6 +378,7 @@ public class SourcePath {
 
     /**
      * Scan all files recursively as {@link SourcePath} instance in the given directory.
+     *
      * @param dir the directory to scan
      * @return the {@code List} of scanned {@link SourcePath}
      */
@@ -378,7 +404,8 @@ public class SourcePath {
             if (dirStream != null) {
                 try {
                     dirStream.close();
-                } catch (IOException e) { }
+                } catch (IOException e) {
+                }
             }
         }
         return sort(sourcePaths);

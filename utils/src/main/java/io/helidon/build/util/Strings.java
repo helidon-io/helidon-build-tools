@@ -40,6 +40,19 @@ public class Strings {
         return value == null || value.isBlank();
     }
 
+    /**
+     * Normalize newlines.
+     *
+     * @param value The value to normalize, may be {@code null}
+     * @return normalized value
+     */
+    public static String normalizeNewLines(String value) {
+        if (value == null) {
+            return value;
+        }
+        return value.replaceAll("\r\n", "\n");
+    }
+
     private Strings() {
     }
 }

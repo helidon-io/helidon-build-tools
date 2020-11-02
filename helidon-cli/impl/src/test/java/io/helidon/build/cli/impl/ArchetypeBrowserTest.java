@@ -29,7 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Class AppTypeBrowserTest.
  */
-public class ArchetypeBrowserTest extends MetadataCommandTest {
+public class ArchetypeBrowserTest extends MetadataAccessTestBase {
 
     private ArchetypeBrowser newBrowser(Flavor flavor) throws Exception {
         return new ArchetypeBrowser(metadata(), flavor, helidonTestVersion());

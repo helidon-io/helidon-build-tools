@@ -23,6 +23,7 @@ import java.util.Properties;
 import java.util.Base64;
 
 import io.helidon.build.archetype.engine.ArchetypeDescriptor;
+import io.helidon.build.util.Strings;
 
 import org.junit.jupiter.api.Test;
 
@@ -47,7 +48,7 @@ public class DescriptorConverterTest {
         ArchetypeDescriptor desc = ArchetypeDescriptor.read(getClass().getResourceAsStream("helidon-archetype.xml"));
         StringWriter sw = new StringWriter();
         DescriptorConverter.convert(desc, sw);
-        String convertedDescriptor = sw.toString();
+        String convertedDescriptor = Strings.normalizeNewLines(sw.toString());
         assertThat(convertedDescriptor, is (new String(Base64.getDecoder().decode(mavenArchetypeMetadata), StandardCharsets.UTF_8)));
     }
 }

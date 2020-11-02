@@ -59,13 +59,12 @@ class TestUtils {
             return new EmbeddedMavenExecutor(projectRoot, monitor);
         } else {
             Log.info("Using forked maven executor");
-            return new ForkedMavenExecutor(projectRoot, monitor, 60);
-
+            return new ForkedMavenExecutor(projectRoot, monitor, 5 * 60);
         }
     }
 
     static <T extends BuildMonitor> T run(BuildLoop loop) throws InterruptedException {
-        return run(loop, 30);
+        return run(loop, 120);
     }
 
     @SuppressWarnings("unchecked")

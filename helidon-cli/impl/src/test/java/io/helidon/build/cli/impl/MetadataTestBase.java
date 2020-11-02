@@ -15,9 +15,12 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.build.cli.harness.Config;
@@ -35,7 +38,7 @@ import static io.helidon.build.cli.impl.TestMetadata.LATEST_FILE_NAME;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
-import static java.util.Objects.requireNonNull;
+import static io.helidon.build.util.TestUtils.uniqueDir;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -44,7 +47,9 @@ import static org.hamcrest.Matchers.nullValue;
 /**
  * Base class for {@link Metadata} tests.
  */
-public class BaseMetadataTest {
+public class MetadataTestBase {
+
+    private static final URI CWD_URI = Path.of("").toUri();
 
     protected String baseUrl;
     protected Path cacheDir;
@@ -59,16 +64,15 @@ public class BaseMetadataTest {
      *
      * @param info The test info.
      * @param baseUrl The base url to use.
-     * @throws IOException If an error occurs.
      */
-    protected void prepareEach(TestInfo info, String baseUrl) throws IOException {
-        final String testClassName = info.getTestClass().orElseThrow().getSimpleName();
-        final String testName = info.getTestMethod().orElseThrow().getName();
+    protected void prepareEach(TestInfo info, String baseUrl) {
+        String testClassName = info.getTestClass().orElseThrow().getSimpleName();
+        String testName = info.getTestMethod().orElseThrow().getName();
         Log.info("%n--- %s $(bold %s) -------------------------------------------%n", testClassName, testName);
-        Config.setUserHome(TestFiles.targetDir().resolve("alice"));
-        final UserConfig userConfig = Config.userConfig();
-        userConfig.clearCache();
-        userConfig.clearPlugins();
+        Path userHome = uniqueDir(TestFiles.targetDir(), "alice");
+        Config.setUserHome(userHome);
+        UserConfig userConfig = UserConfig.create(userHome);
+        Config.setUserConfig(userConfig);
         Plugins.reset(false);
         useBaseUrl(baseUrl);
         cacheDir = userConfig.cacheDir();
@@ -92,7 +96,7 @@ public class BaseMetadataTest {
      * @param baseUrl The base url.
      */
     protected void useBaseUrl(String baseUrl) {
-        this.baseUrl = requireNonNull(baseUrl);
+        this.baseUrl = Objects.requireNonNull(baseUrl);
     }
 
     /**
@@ -107,7 +111,7 @@ public class BaseMetadataTest {
     /**
      * Starts the metadata test server and client and sets the base url pointing to it.
      *
-     * @param verbose {@code true} if the server should be verbose.
+     * @param verbose       {@code true} if the server should be verbose.
      * @param latestVersion The version to return from "/latest"
      */
     protected void startMetadataTestServer(TestVersion latestVersion, boolean verbose) {
@@ -126,10 +130,24 @@ public class BaseMetadataTest {
         return Metadata.newInstance(cacheDir, baseUrl, updateFrequency, updateFrequencyUnits, true);
     }
 
+    /**
+     * Returns a new {@link Metadata} instance with the default frequency.
+     *
+     * @return The instance.
+     */
     protected Metadata newDefaultInstance() {
         return newInstance(24, TimeUnit.HOURS);
     }
 
+    /**
+     * Asserts that the very first latest metadata request does a metadata update and make assertions on the logs.
+     *
+     * @param updateFrequency      update frequency of the metadata created
+     * @param updateFrequencyUnits update frequency unit of the metadata created
+     * @param expectedVersion      expected Helidon version
+     * @param expectedEtag         expected ETAG
+     * @param latestFileExists     {@code true} if the latest file is expected to exist, {@code false} otherwise
+     */
     protected void assertInitialLatestVersionRequestPerformsUpdate(long updateFrequency,
                                                                    TimeUnit updateFrequencyUnits,
                                                                    String expectedVersion,
@@ -140,6 +158,16 @@ public class BaseMetadataTest {
                 expectedVersion, expectedEtag, latestFileExists);
     }
 
+    /**
+     * Assert that the very first metadata request does a metadata update and make assertions on the logs.
+     *
+     * @param request              runnable to runs the request
+     * @param updateFrequency      update frequency of the metadata created
+     * @param updateFrequencyUnits update frequency unit of the metadata created
+     * @param expectedVersion      expected Helidon version
+     * @param expectedEtag         expected ETAG
+     * @param latestFileExists     {@code true} if the latest file is expected to exist, {@code false} otherwise
+     */
     protected void assertInitialRequestPerformsUpdate(Runnable request,
                                                       long updateFrequency,
                                                       TimeUnit updateFrequencyUnits,
@@ -151,8 +179,9 @@ public class BaseMetadataTest {
         Path catalogFile = versionDir.resolve(TestMetadata.CATALOG_FILE_NAME);
         Path seJarFile = versionDir.resolve(TestMetadata.HELIDON_BARE_SE + "-" + expectedVersion + ".jar");
         Path mpJarFile = versionDir.resolve(TestMetadata.HELIDON_BARE_MP + "-" + expectedVersion + ".jar");
-        String zipPath = expectedVersion + TestMetadata.CLI_DATA_PATH;
-        String lastUpdatePath = expectedVersion + TestMetadata.LAST_UPDATE_PATH;
+        String zipPath = expectedVersion + File.separator + TestMetadata.CLI_DATA_FILE_NAME;
+        String zipUriPath = expectedVersion + "/" + TestMetadata.CLI_DATA_FILE_NAME;
+        String lastUpdatePath = expectedVersion + File.separator + LAST_UPDATE_FILE_NAME;
 
         // Check expected latest file and version directory existence
 
@@ -172,20 +201,27 @@ public class BaseMetadataTest {
         assertFile(seJarFile);
         assertFile(mpJarFile);
 
+
         logged.assertLinesContainingAll(1, "unpacked", "cli-plugins-", ".jar");
         logged.assertLinesContainingAll(1, "executing", "cli-plugins-", "UpdateMetadata");
         logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
         logged.assertLinesContainingAll(1, "connecting", LATEST_FILE_NAME);
         logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "downloading", zipPath);
-        logged.assertLinesContainingAll(1, "connecting", zipPath);
-        logged.assertLinesContainingAll(1, "connected", zipPath);
+        logged.assertLinesContainingAll(1, "downloading", zipUriPath);
+        logged.assertLinesContainingAll(1, "connecting", zipUriPath);
+        logged.assertLinesContainingAll(1, "connected", zipUriPath);
 
         logged.assertLinesContainingAll(1, "unzipping", zipPath);
         logged.assertLinesContainingAll(1, "deleting", zipPath);
         logged.assertLinesContainingAll(1, "updated", lastUpdatePath, "etag " + expectedEtag);
     }
 
+    /**
+     * Request the latest metadata version and perform assertions on the logs.
+     *
+     * @param expectedVersion expected Helidon version
+     * @param expectUpdate    {@code true} if a metadata update is expected, {@code false otherwise}
+     */
     protected void firstLatestVersionRequest(String expectedVersion, boolean expectUpdate) {
         try {
             String staleType = expectUpdate ? "(not found)" : "(zero delay)";
@@ -202,10 +238,16 @@ public class BaseMetadataTest {
         }
     }
 
+    /**
+     * Perform a catalog request and perform assertions on the logs.
+     *
+     * @param version      Helidon version
+     * @param expectUpdate {@code true} if a metadata update is expected, {@code false otherwise}
+     */
     protected void catalogRequest(String version, boolean expectUpdate) {
         try {
             String staleType = expectUpdate ? "(not found)" : "is false";
-            String staleFilePath = version + "/" + LAST_UPDATE_FILE_NAME;
+            String staleFilePath = version + File.separator + LAST_UPDATE_FILE_NAME;
             meta.catalogOf(version);
             logged.assertLinesContainingAll(1, "stale check", staleType, staleFilePath);
             logged.assertNoLinesContainingAll("Looking up latest Helidon version");

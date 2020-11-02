@@ -248,6 +248,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${version.plugin.surefire}</version>
                     <configuration>
+                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <!-- DO NOT override argLine instead use surefire.argLine -->
                         <argLine>${surefire.argLine} ${surefire.coverage.argline}</argLine>
                         <trimStackTrace>false</trimStackTrace>

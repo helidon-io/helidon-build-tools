@@ -15,7 +15,7 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.io.IOException;
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -37,20 +37,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
 import static io.helidon.build.cli.impl.Metadata.DEFAULT_UPDATE_FREQUENCY;
-import static io.helidon.build.cli.impl.TestMetadata.CLI_DATA_PATH;
+import static io.helidon.build.cli.impl.TestMetadata.CLI_DATA_FILE_NAME;
 import static io.helidon.build.cli.impl.TestMetadata.HELIDON_BARE_MP;
 import static io.helidon.build.cli.impl.TestMetadata.HELIDON_BARE_SE;
+import static io.helidon.build.cli.impl.TestMetadata.LAST_UPDATE_FILE_NAME;
 import static io.helidon.build.cli.impl.TestMetadata.LATEST_FILE_NAME;
 import static io.helidon.build.cli.impl.TestMetadata.MAVEN_VERSION_RC1;
 import static io.helidon.build.cli.impl.TestMetadata.MAVEN_VERSION_RC2;
 import static io.helidon.build.cli.impl.TestMetadata.NO_ETAG;
-import static io.helidon.build.cli.impl.TestMetadata.RC1_CLI_DATA_ZIP_FILE_NAME;
 import static io.helidon.build.cli.impl.TestMetadata.RC1_ETAG;
-import static io.helidon.build.cli.impl.TestMetadata.RC1_LAST_UPDATE;
-import static io.helidon.build.cli.impl.TestMetadata.RC2_CLI_DATA_ZIP_FILE_NAME;
 import static io.helidon.build.cli.impl.TestMetadata.RC2_ETAG;
-import static io.helidon.build.cli.impl.TestMetadata.RC2_LAST_UPDATE;
 import static io.helidon.build.cli.impl.TestMetadata.TEST_CLI_DATA_URL;
+import static io.helidon.build.cli.impl.TestMetadata.TestVersion.RC1;
 import static io.helidon.build.cli.impl.TestMetadata.TestVersion.RC2;
 import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC1;
 import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC2;
@@ -68,10 +66,13 @@ import static org.hamcrest.Matchers.nullValue;
 /**
  * Unit test for class {@link Metadata}.
  */
-public class MetadataTest extends BaseMetadataTest {
+public class MetadataTest extends MetadataTestBase {
+
+    static final String RC1_LAST_UPDATE = VERSION_RC1 + File.separator + LAST_UPDATE_FILE_NAME;
+    static final String RC2_LAST_UPDATE = VERSION_RC2 + File.separator + LAST_UPDATE_FILE_NAME;
 
     @BeforeEach
-    public void beforeEach(TestInfo info) throws IOException {
+    public void beforeEach(TestInfo info) {
         prepareEach(info, TEST_CLI_DATA_URL.toExternalForm());
     }
 
@@ -167,7 +168,7 @@ public class MetadataTest extends BaseMetadataTest {
 
         // Now change the metadata for RC2 such that the cli version returned is newer
 
-        String updatedRc2FileName = VERSION_RC2 + "-updated" + CLI_DATA_PATH;
+        String updatedRc2FileName = VERSION_RC2 + "-updated" + File.separator + CLI_DATA_FILE_NAME;
         byte[] updatedRc2 = TestMetadata.readCliDataFile(updatedRc2FileName);
         testServer.zipData(RC2, updatedRc2);
 
@@ -357,7 +358,7 @@ public class MetadataTest extends BaseMetadataTest {
 
         logged.clear();
         assertThat(meta.propertiesOf(latestVersion), is(not(nullValue())));
-        logged.assertLinesContainingAll(1, "not modified", RC1_CLI_DATA_ZIP_FILE_NAME);
+        logged.assertLinesContainingAll(1, "not modified", RC1 + "/" + CLI_DATA_FILE_NAME);
         logged.assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + RC1_ETAG);
         logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
         logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
@@ -380,7 +381,7 @@ public class MetadataTest extends BaseMetadataTest {
 
         logged.clear();
         assertThat(meta.propertiesOf(latestVersion), is(not(nullValue())));
-        logged.assertLinesContainingAll(1, "not modified", RC2_CLI_DATA_ZIP_FILE_NAME);
+        logged.assertLinesContainingAll(1, "not modified", RC2 + "/" + CLI_DATA_FILE_NAME);
         logged.assertLinesContainingAll(1, "updated", RC2_LAST_UPDATE, "etag " + RC2_ETAG);
         logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
         logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
@@ -408,7 +409,7 @@ public class MetadataTest extends BaseMetadataTest {
         logged.clear();
         catalogRequest(VERSION_RC2, false);
         assertThat(meta.propertiesOf(VERSION_RC2), is(not(nullValue())));
-        logged.assertLinesContainingAll(0, "not modified", RC2_CLI_DATA_ZIP_FILE_NAME);
+        logged.assertLinesContainingAll(0, "not modified", RC2 + "/" + CLI_DATA_FILE_NAME);
         logged.assertLinesContainingAll(0, "updated", RC2_LAST_UPDATE, "etag " + RC2_ETAG);
         logged.assertLinesContainingAll(0, "downloading", LATEST_FILE_NAME);
         logged.assertLinesContainingAll(0, "connected", LATEST_FILE_NAME);
