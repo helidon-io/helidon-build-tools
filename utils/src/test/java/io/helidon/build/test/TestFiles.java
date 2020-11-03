@@ -34,8 +34,8 @@ import io.helidon.build.util.MavenCommand;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import static io.helidon.build.test.HelidonTestVersions.currentHelidonBuildToolsReleaseVersion;
-import static io.helidon.build.test.HelidonTestVersions.currentHelidonReleaseVersion;
+import static io.helidon.build.test.HelidonTestVersions.helidonBuildToolsTestVersion;
+import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
 import static io.helidon.build.util.Constants.DIR_SEP;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.ensureDirectory;
@@ -73,12 +73,12 @@ public class TestFiles implements BeforeAllCallback {
 
     /**
      * Returns the value required for the {@code -Dexit.on.started} property to trigger on
-     * the latest Helidon version.
+     * the current Helidon test version.
      *
      * @return The value.
      */
     public static String exitOnStartedValue() {
-        return currentHelidonReleaseVersion().equals(VERSION_1_4_1) ? "✅" : "!";
+        return helidonTestVersion().equals(VERSION_1_4_1) ? "✅" : "!";
     }
 
     /**
@@ -218,8 +218,8 @@ public class TestFiles implements BeforeAllCallback {
         return ApplicationGenerator.generator()
                                    .helidonVariant(variant)
                                    .parentDirectory(targetDir())
-                                   .helidonVersion(currentHelidonReleaseVersion())
-                                   .pluginVersion(currentHelidonBuildToolsReleaseVersion())
+                                   .helidonVersion(helidonTestVersion())
+                                   .pluginVersion(helidonBuildToolsTestVersion())
                                    .generate();
     }
 

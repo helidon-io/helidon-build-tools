@@ -19,16 +19,24 @@ import io.helidon.build.cli.harness.Config;
 import io.helidon.build.cli.harness.UserConfig;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 import io.helidon.build.test.TestFiles;
+import io.helidon.build.util.MavenVersion;
+import io.helidon.build.util.Proxies;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+
+import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
+import static io.helidon.build.util.MavenVersion.toMavenVersion;
 
 /**
  * Base class for command tests that require the {@link Metadata}.
  */
 public class MetadataAccessTestBase extends CommandTestBase {
 
+    private static final boolean DEBUG_PLUGIN = false;
+
     private static MetadataTestServer SERVER;
+    private static String METADATA_URL;
     private static Metadata METADATA;
     private static UserConfig USER_CONFIG;
 
@@ -39,8 +47,21 @@ public class MetadataAccessTestBase extends CommandTestBase {
     public static void startMetadataAccess() {
         Config.setUserHome(TestFiles.targetDir().resolve("alice"));
         USER_CONFIG = Config.userConfig();
-        SERVER = new MetadataTestServer(TestVersion.RC1, false).start();
-        METADATA = Metadata.newInstance(SERVER.url());
+        if (canUseMetadataTestServer()) {
+            SERVER = new MetadataTestServer(TestVersion.RC1, false).start();
+            METADATA_URL = SERVER.url();
+        } else {
+            SERVER = null;
+            METADATA_URL = Metadata.DEFAULT_URL;
+            Proxies.setProxyPropertiesFromEnv();
+        }
+        METADATA = Metadata.newInstance(METADATA_URL, DEBUG_PLUGIN);
+    }
+
+    private static boolean canUseMetadataTestServer() {
+        MavenVersion testServerVersion = toMavenVersion(TestVersion.RC1.toString());
+        MavenVersion helidonRelease = toMavenVersion(helidonTestVersion());
+        return helidonRelease.isLessThanOrEqualTo(testServerVersion);
     }
 
     /**
@@ -58,7 +79,7 @@ public class MetadataAccessTestBase extends CommandTestBase {
      * @return metadata URL, never {@code null}
      */
     public String metadataUrl() {
-        return SERVER.url();
+        return METADATA_URL;
     }
 
     /**
