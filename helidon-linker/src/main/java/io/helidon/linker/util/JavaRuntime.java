@@ -57,6 +57,8 @@ public final class JavaRuntime implements ResourceContainer {
     private static final String FILE_SEP = File.separator;
     private static final String JAVA_EXEC = OS.javaExecutable();
     private static final String JAVA_CMD_PATH = "bin" + FILE_SEP + JAVA_EXEC;
+    private static final String INVALID_JRI = "Not a valid JRI (" + JAVA_CMD_PATH + " not found): %s";
+    private static final String INCOMPLETE_JDK = "Not a complete JDK, the required *.jmod files are missing (e.g. jmods/%s): %s";
     private final Path javaHome;
     private final Runtime.Version version;
     private final boolean isJdk;
@@ -112,7 +114,7 @@ public final class JavaRuntime implements ResourceContainer {
     public static Path assertJri(Path jriDirectory) {
         final Path result = assertDir(jriDirectory);
         if (!isValidJri(jriDirectory)) {
-            throw new IllegalArgumentException("Not a valid JRI (" + JAVA_CMD_PATH + " not found): " + jriDirectory);
+            throw new IllegalArgumentException(String.format(INVALID_JRI, jriDirectory));
         }
         return result;
     }
@@ -127,7 +129,7 @@ public final class JavaRuntime implements ResourceContainer {
     public static Path assertJdk(Path jdkDirectory) {
         final Path result = assertDir(jdkDirectory);
         if (!isValidJdk(result)) {
-            throw new IllegalArgumentException("Not a valid JDK (" + JAVA_BASE_JMOD + " not found): " + jdkDirectory);
+            throw new IllegalArgumentException(String.format(INCOMPLETE_JDK, JAVA_BASE_JMOD, jdkDirectory));
         }
         return result;
     }
