@@ -39,13 +39,15 @@ import static java.util.jar.Attributes.Name.IMPLEMENTATION_VERSION;
  * in its manifest.
  */
 public final class Application implements ResourceContainer {
-    static final Path APP_DIR = Paths.get("app");
+    /**
+     * The relative path of the application directory.
+     */
+    public static final Path APP_DIR = Paths.get("app");
     private static final Path ARCHIVE_PATH = Paths.get("lib" + DIR_SEP + "start.jsa");
     private static final String HELIDON_JAR_NAME_PREFIX = "helidon-";
     private static final String MP_FILE_PREFIX = HELIDON_JAR_NAME_PREFIX + "microprofile";
     private static final String VERSION_1_4_1 = "1.4.1";
     private static final String UNKNOWN_VERSION = "0.0.0";
-    private static final String SNAPSHOT = "-SNAPSHOT";
     private final Jar mainJar;
     private final List<Jar> classPath;
     private final boolean isMicroprofile;

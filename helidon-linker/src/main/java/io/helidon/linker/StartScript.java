@@ -58,7 +58,10 @@ import static java.util.Objects.requireNonNull;
  * Installs a start script for a main jar.
  */
 public class StartScript {
-    private static final String INSTALL_PATH = OS.withScriptExtension("start");
+    /**
+     * The script file name.
+     */
+    public static final String SCRIPT_FILE_NAME = OS.withScriptExtension("start");
     private final Path installDirectory;
     private final Path scriptFile;
     private final String script;
@@ -645,7 +648,7 @@ public class StartScript {
             if (mainJar == null) {
                 throw new IllegalStateException("mainJar is required");
             }
-            this.scriptFile = scriptInstallDirectory.resolve(INSTALL_PATH);
+            this.scriptFile = scriptInstallDirectory.resolve(SCRIPT_FILE_NAME);
             this.config = toConfig();
             this.script = template().render(config);
             return new StartScript(this);

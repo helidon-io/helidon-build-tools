@@ -20,11 +20,14 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleFinder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -34,13 +37,17 @@ import java.util.zip.ZipFile;
 import io.helidon.build.util.FileUtils;
 import io.helidon.linker.Jar;
 import io.helidon.linker.ResourceContainer;
+import io.helidon.linker.StartScript;
 
 import static io.helidon.build.util.Constants.OS;
 import static io.helidon.build.util.Constants.javaHome;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.fileName;
+import static io.helidon.build.util.FileUtils.findExecutableInPath;
 import static io.helidon.build.util.FileUtils.listFiles;
+import static io.helidon.linker.Application.APP_DIR;
+import static io.helidon.linker.util.Constants.EOL;
 import static io.helidon.linker.util.Constants.JRI_DIR_SUFFIX;
 import static java.util.Objects.requireNonNull;
 
@@ -59,6 +66,17 @@ public final class JavaRuntime implements ResourceContainer {
     private static final String JAVA_CMD_PATH = "bin" + FILE_SEP + JAVA_EXEC;
     private static final String INVALID_JRI = "Not a valid JRI (" + JAVA_CMD_PATH + " not found): %s";
     private static final String INCOMPLETE_JDK = "Not a complete JDK, the required *.jmod files are missing (e.g. jmods/%s): %s";
+    private static final String HELIDON_JRI = "This is a custom Helidon JRI.";
+    private static final String CUSTOM_JRI = "This appears to be a custom JRI.";
+    private static final boolean OPEN_JDK = System.getProperty("java.vm.name").toLowerCase(Locale.ENGLISH).contains("openjdk");
+    private static final String OPEN_JDK_RPM = "OpenJDK builds on Red Hat derivatives provide *.jmod files in a separate RPM "
+                                               + "package (e.g. java-11-openjdk-jmods.x86_64): try 'yum list | grep jmods'.";
+    private static final String OPEN_JDK_DEB = "OpenJDK builds on Debian derivatives provide *.jmod files only in the"
+                                               + " *-jdk-headless-* packages.";
+    private static final Map<String, String> OPEN_JDK_LINUX_PACKAGING = Map.of("yum", OPEN_JDK_RPM,
+                                                                               "apt-get", OPEN_JDK_DEB,
+                                                                               "dpkg", OPEN_JDK_DEB,
+                                                                               "aptitude", OPEN_JDK_DEB);
     private final Path javaHome;
     private final Runtime.Version version;
     private final boolean isJdk;
@@ -129,7 +147,9 @@ public final class JavaRuntime implements ResourceContainer {
     public static Path assertJdk(Path jdkDirectory) {
         final Path result = assertDir(jdkDirectory);
         if (!isValidJdk(result)) {
-            throw new IllegalArgumentException(String.format(INCOMPLETE_JDK, JAVA_BASE_JMOD, jdkDirectory));
+            final StringBuilder sb = new StringBuilder().append(String.format(INCOMPLETE_JDK, JAVA_BASE_JMOD, jdkDirectory));
+            incompleteJdkDetailMessage(jdkDirectory).ifPresent(detail -> sb.append(EOL).append(detail));
+            throw new IllegalArgumentException(sb.toString());
         }
         return result;
     }
@@ -346,6 +366,44 @@ public final class JavaRuntime implements ResourceContainer {
             final Path jmodsDir = jdkDirectory.resolve(JMODS_DIR);
             final Path javaBase = jmodsDir.resolve(JAVA_BASE_JMOD);
             return Files.isDirectory(jmodsDir) && Files.exists(javaBase);
+        }
+        return false;
+    }
+
+    private static Optional<String> incompleteJdkDetailMessage(Path jdkDirectory) {
+        if (isHelidonJri(jdkDirectory)) {
+            return Optional.of(HELIDON_JRI);
+        } else if (isCustomJri(jdkDirectory)) {
+            return Optional.of(CUSTOM_JRI);
+        } else if (OPEN_JDK) {
+            return OPEN_JDK_LINUX_PACKAGING.entrySet()
+                                           .stream()
+                                           .filter(e -> findExecutableInPath(e.getKey()).isPresent())
+                                           .map(Map.Entry::getValue)
+                                           .findFirst();
+        }
+        return Optional.empty();
+    }
+
+    private static boolean isCustomJri(Path jdkDirectory) {
+        if (jdkDirectory.equals(currentJavaHomeDir())) {
+            return ModuleFinder.ofSystem()
+                               .findAll()
+                               .stream()
+                               .map(ref -> ref.descriptor().name())
+                               .anyMatch(moduleName -> !(moduleName.startsWith("java.") || moduleName.startsWith("jdk.")));
+        } else {
+            return false;
+        }
+    }
+
+    private static boolean isHelidonJri(Path jdkDirectory) {
+        final Path appDir = jdkDirectory.resolve(APP_DIR);
+        final Path startScript = jdkDirectory.resolve("bin").resolve(StartScript.SCRIPT_FILE_NAME);
+        if (Files.isDirectory(appDir) && Files.exists(startScript)) {
+            return FileUtils.list(appDir, 2)
+                            .stream()
+                            .anyMatch(path -> path.getFileName().toString().startsWith("helidon-"));
         }
         return false;
     }
