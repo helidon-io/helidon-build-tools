@@ -47,7 +47,6 @@ import static io.helidon.build.util.FileUtils.fileName;
 import static io.helidon.build.util.FileUtils.findExecutableInPath;
 import static io.helidon.build.util.FileUtils.listFiles;
 import static io.helidon.linker.Application.APP_DIR;
-import static io.helidon.linker.util.Constants.EOL;
 import static io.helidon.linker.util.Constants.JRI_DIR_SUFFIX;
 import static java.util.Objects.requireNonNull;
 
@@ -148,7 +147,7 @@ public final class JavaRuntime implements ResourceContainer {
         final Path result = assertDir(jdkDirectory);
         if (!isValidJdk(result)) {
             final StringBuilder sb = new StringBuilder().append(String.format(INCOMPLETE_JDK, JAVA_BASE_JMOD, jdkDirectory));
-            incompleteJdkDetailMessage(jdkDirectory).ifPresent(detail -> sb.append(EOL).append(detail));
+            incompleteJdkDetailMessage(jdkDirectory).ifPresent(detail -> sb.append(". ").append(detail));
             throw new IllegalArgumentException(sb.toString());
         }
         return result;
