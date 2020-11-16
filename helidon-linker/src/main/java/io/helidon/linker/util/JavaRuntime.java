@@ -37,7 +37,6 @@ import java.util.zip.ZipFile;
 import io.helidon.build.util.FileUtils;
 import io.helidon.linker.Jar;
 import io.helidon.linker.ResourceContainer;
-import io.helidon.linker.StartScript;
 
 import static io.helidon.build.util.Constants.OS;
 import static io.helidon.build.util.Constants.javaHome;
@@ -63,8 +62,11 @@ public final class JavaRuntime implements ResourceContainer {
     private static final String FILE_SEP = File.separator;
     private static final String JAVA_EXEC = OS.javaExecutable();
     private static final String JAVA_CMD_PATH = "bin" + FILE_SEP + JAVA_EXEC;
-    private static final String INVALID_JRI = "Not a valid JRI (" + JAVA_CMD_PATH + " not found): %s";
-    private static final String INCOMPLETE_JDK = "Not a complete JDK, the required *.jmod files are missing (e.g. jmods/%s): %s";
+    private static final String JAVA_MODULE_NAME_PREFIX = "java.";
+    private static final String JDK_MODULE_NAME_PREFIX = "java.";
+    private static final String HELIDON_JAR_NAME_PREFIX = "helidon-";
+    private static final String INVALID_JRI = "This is not a valid JRI (" + JAVA_CMD_PATH + " not found): %s";
+    private static final String INCOMPLETE_JDK = "The required *.jmod files (e.g. jmods/%s) are missing in this JDK: %s";
     private static final String HELIDON_JRI = "This is a custom Helidon JRI.";
     private static final String CUSTOM_JRI = "This appears to be a custom JRI.";
     private static final boolean OPEN_JDK = System.getProperty("java.vm.name").toLowerCase(Locale.ENGLISH).contains("openjdk");
@@ -390,7 +392,8 @@ public final class JavaRuntime implements ResourceContainer {
                                .findAll()
                                .stream()
                                .map(ref -> ref.descriptor().name())
-                               .anyMatch(moduleName -> !(moduleName.startsWith("java.") || moduleName.startsWith("jdk.")));
+                               .anyMatch(moduleName -> !(moduleName.startsWith(JAVA_MODULE_NAME_PREFIX)
+                                                         || moduleName.startsWith(JDK_MODULE_NAME_PREFIX)));
         } else {
             return false;
         }
@@ -398,11 +401,10 @@ public final class JavaRuntime implements ResourceContainer {
 
     private static boolean isHelidonJri(Path jdkDirectory) {
         final Path appDir = jdkDirectory.resolve(APP_DIR);
-        final Path startScript = jdkDirectory.resolve("bin").resolve(StartScript.SCRIPT_FILE_NAME);
-        if (Files.isDirectory(appDir) && Files.exists(startScript)) {
+        if (Files.isDirectory(appDir)) {
             return FileUtils.list(appDir, 2)
                             .stream()
-                            .anyMatch(path -> path.getFileName().toString().startsWith("helidon-"));
+                            .anyMatch(path -> path.getFileName().toString().startsWith(HELIDON_JAR_NAME_PREFIX));
         }
         return false;
     }
