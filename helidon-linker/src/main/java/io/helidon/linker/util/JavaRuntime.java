@@ -63,7 +63,7 @@ public final class JavaRuntime implements ResourceContainer {
     private static final String JAVA_EXEC = OS.javaExecutable();
     private static final String JAVA_CMD_PATH = "bin" + FILE_SEP + JAVA_EXEC;
     private static final String JAVA_MODULE_NAME_PREFIX = "java.";
-    private static final String JDK_MODULE_NAME_PREFIX = "java.";
+    private static final String JDK_MODULE_NAME_PREFIX = "jdk.";
     private static final String HELIDON_JAR_NAME_PREFIX = "helidon-";
     private static final String INVALID_JRI = "This is not a valid JRI (" + JAVA_CMD_PATH + " not found): %s";
     private static final String INCOMPLETE_JDK = "The required *.jmod files (e.g. jmods/%s) are missing in this JDK: %s";
