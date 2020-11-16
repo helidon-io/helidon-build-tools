@@ -71,7 +71,8 @@ public final class JavaRuntime implements ResourceContainer {
     private static final String CUSTOM_JRI = "This appears to be a custom JRI.";
     private static final boolean OPEN_JDK = System.getProperty("java.vm.name").toLowerCase(Locale.ENGLISH).contains("openjdk");
     private static final String OPEN_JDK_RPM = "OpenJDK builds on Red Hat derivatives provide *.jmod files in a separate RPM "
-                                               + "package (e.g. java-11-openjdk-jmods.x86_64): try 'yum list | grep jmods'.";
+                                               + "package (e.g. java-11-openjdk-jmods.x86_64): try 'yum list | grep jmods' to "
+                                               + "find the package corresponding to your version.";
     private static final String OPEN_JDK_DEB = "OpenJDK builds on Debian derivatives provide *.jmod files only in the"
                                                + " *-jdk-headless-* packages.";
     private static final Map<String, String> OPEN_JDK_LINUX_PACKAGING = Map.of("yum", OPEN_JDK_RPM,
