@@ -143,7 +143,7 @@ class LinkerTest {
             fail("should have failed");
         } catch (Exception e) {
             String message = e.getMessage();
-            assertThat(message, containsString("jmod files are missing"));
+            assertThat(message, containsString("required *.jmod files (e.g. jmods/java.base.jmod) are missing"));
             assertThat(message, containsString("custom Helidon JRI"));
         }
     }
