@@ -50,7 +50,7 @@ import static io.helidon.linker.util.Constants.JRI_DIR_SUFFIX;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A Java Runtime directory.
+ * Java Runtime metadata.
  */
 public final class JavaRuntime implements ResourceContainer {
     private static final AtomicReference<Path> CURRENT_JAVA_HOME_DIR = new AtomicReference<>();
@@ -76,6 +76,7 @@ public final class JavaRuntime implements ResourceContainer {
     private static final String OPEN_JDK_DEB = "OpenJDK builds on Debian derivatives provide *.jmod files only in the"
                                                + " *-jdk-headless-* packages.";
     private static final Map<String, String> OPEN_JDK_LINUX_PACKAGING = Map.of("yum", OPEN_JDK_RPM,
+                                                                               "apt", OPEN_JDK_DEB,
                                                                                "apt-get", OPEN_JDK_DEB,
                                                                                "dpkg", OPEN_JDK_DEB,
                                                                                "aptitude", OPEN_JDK_DEB);
