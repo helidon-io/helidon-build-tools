@@ -52,6 +52,7 @@ final class CommonOptions {
     private final boolean verbose;
     private final boolean debug;
     private final boolean plain;
+    private final boolean projectDirSpecified;
     private final Path projectDir;
     private final String metadataUrl;
     private final boolean resetCache;
@@ -70,7 +71,8 @@ final class CommonOptions {
         this.verbose = verbose || debug;
         this.debug = debug;
         this.plain = plain || Config.userConfig().richTextDisabled();
-        this.projectDir = projectDir != null ? projectDir.toPath().toAbsolutePath() : WORKING_DIR;
+        this.projectDirSpecified = projectDir != null;
+        this.projectDir = projectDirSpecified ? projectDir.toPath().toAbsolutePath() : WORKING_DIR;
         this.metadataUrl = Strings.isValid(metadataUrl) ? metadataUrl : Config.userConfig().updateUrl();
         this.resetCache = resetCache || since != null;
         this.sinceCliVersion = toMavenVersion(since == null ? Config.buildVersion() : since);
@@ -80,6 +82,7 @@ final class CommonOptions {
         this.verbose = options.verbose;
         this.debug = options.debug;
         this.plain = options.plain;
+        this.projectDirSpecified = options.projectDirSpecified;
         this.projectDir = projectDir;
         this.metadataUrl = options.metadataUrl;
         this.resetCache = false; // Don't do it again
@@ -97,6 +100,10 @@ final class CommonOptions {
 
     boolean plain() {
         return plain;
+    }
+
+    boolean projectSpecified() {
+        return projectDirSpecified;
     }
 
     Path project() {
