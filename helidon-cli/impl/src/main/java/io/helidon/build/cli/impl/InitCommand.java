@@ -260,12 +260,17 @@ public final class InitCommand extends BaseCommand {
     }
 
     private Path initProjectDir() {
+        boolean projectDirSpecified = commonOptions.projectSpecified();
         Path projectDir = commonOptions.project();
+        if (!projectDirSpecified) {
+            projectDir = projectDir.resolve(projectName);
+        }
         if (Files.exists(projectDir)) {
-            if (config.failOnProjectNameCollision()) {
-                Requirements.failed("Directory %s already exists", projectDir);
+            if (projectDirSpecified || config.failOnProjectNameCollision()) {
+                Requirements.failed("$(red Directory $(plain %s) already exists)", projectDir);
             }
-            Log.info("Project \"%s\" already exists, generating unique name", projectName);
+            Log.info();
+            Log.info("$(italic,yellow Directory $(plain %s) already exists, generating unique name)", projectDir);
             Path parentDirectory = projectDir.getParent();
             for (int i = 2; i < 128; i++) {
                 Path newProjectDir = parentDirectory.resolve(projectName + "-" + i);
