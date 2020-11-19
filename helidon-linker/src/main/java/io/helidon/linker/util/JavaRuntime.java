@@ -45,6 +45,7 @@ import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.fileName;
 import static io.helidon.build.util.FileUtils.findExecutableInPath;
 import static io.helidon.build.util.FileUtils.listFiles;
+import static io.helidon.build.util.OSType.Linux;
 import static io.helidon.linker.Application.APP_DIR;
 import static io.helidon.linker.util.Constants.JRI_DIR_SUFFIX;
 import static java.util.Objects.requireNonNull;
@@ -70,11 +71,11 @@ public final class JavaRuntime implements ResourceContainer {
     private static final String HELIDON_JRI = "This is a custom Helidon JRI.";
     private static final String CUSTOM_JRI = "This appears to be a custom JRI.";
     private static final boolean OPEN_JDK = System.getProperty("java.vm.name").toLowerCase(Locale.ENGLISH).contains("openjdk");
-    private static final String OPEN_JDK_RPM = "OpenJDK builds on Red Hat derivatives provide *.jmod files in a separate RPM "
-                                               + "package (e.g. java-11-openjdk-jmods.x86_64): try 'yum list | grep jmods' to "
+    private static final String OPEN_JDK_RPM = "RPM based OpenJDK distributions provide *.jmod files in separate "
+                                               + "\"java-*-openjdk-jmods\" packages: try 'yum list | grep jmods' to "
                                                + "find the package corresponding to your version.";
-    private static final String OPEN_JDK_DEB = "OpenJDK builds on Debian derivatives provide *.jmod files only in the"
-                                               + " *-jdk-headless-* packages.";
+    private static final String OPEN_JDK_DEB = "Debian based OpenJDK distributions provide *.jmod files only in the "
+                                               + "\"openjdk-*-jdk-headless\" packages.";
     private static final Map<String, String> OPEN_JDK_LINUX_PACKAGING = Map.of("yum", OPEN_JDK_RPM,
                                                                                "apt", OPEN_JDK_DEB,
                                                                                "apt-get", OPEN_JDK_DEB,
@@ -378,7 +379,7 @@ public final class JavaRuntime implements ResourceContainer {
             return Optional.of(HELIDON_JRI);
         } else if (isCustomJri(jdkDirectory)) {
             return Optional.of(CUSTOM_JRI);
-        } else if (OPEN_JDK) {
+        } else if (OPEN_JDK && OS == Linux) {
             return OPEN_JDK_LINUX_PACKAGING.entrySet()
                                            .stream()
                                            .filter(e -> findExecutableInPath(e.getKey()).isPresent())
