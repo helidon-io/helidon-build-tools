@@ -516,7 +516,7 @@ public final class FileUtils {
      */
     public static Optional<Path> findExecutableInPath(String executableName) {
         return Arrays.stream(requireNonNull(System.getenv(PATH_VAR)).split(File.pathSeparator))
-                     .map(dir -> Paths.get(dir))
+                     .map(Paths::get)
                      .map(path -> path.resolve(executableName))
                      .filter(path -> !Constants.OS.isPosix() || Files.isExecutable(path))
                      .findFirst();

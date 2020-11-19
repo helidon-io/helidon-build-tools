@@ -25,12 +25,15 @@ import java.util.Set;
 import io.helidon.build.test.TestFiles;
 import io.helidon.build.util.FileUtils;
 import io.helidon.linker.util.Constants;
+import io.helidon.linker.util.JavaRuntime;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Unit test for class {@link Linker}.
@@ -53,6 +56,7 @@ class LinkerTest {
         assertApplication(jri, mainJar.getFileName().toString());
         assertCdsArchive(jri, false);
         assertScript(jri);
+        assertHelidonJri(jri);
     }
 
     @Test
@@ -94,6 +98,7 @@ class LinkerTest {
         assertApplication(jri, mainJar.getFileName().toString());
         assertCdsArchive(jri, true);
         assertScript(jri);
+        assertHelidonJri(jri);
     }
 
     @Test
@@ -112,6 +117,7 @@ class LinkerTest {
         assertApplication(jri, mainJar.getFileName().toString());
         assertCdsArchive(jri, true);
         assertScript(jri);
+        assertHelidonJri(jri);
     }
 
     private static void assertApplication(Path jri, String mainJarName) throws IOException {
@@ -129,6 +135,17 @@ class LinkerTest {
         Path binDir = FileUtils.assertDir(jri.resolve("bin"));
         Path scriptFile = FileUtils.assertFile(binDir.resolve(Constants.OS.withScriptExtension("start")));
         assertExecutable(scriptFile);
+    }
+
+    private static void assertHelidonJri(Path jri) {
+        try {
+            JavaRuntime.assertJdk(jri);
+            fail("should have failed");
+        } catch (Exception e) {
+            String message = e.getMessage();
+            assertThat(message, containsString("required *.jmod files (e.g. jmods/java.base.jmod) are missing"));
+            assertThat(message, containsString("custom Helidon JRI"));
+        }
     }
 
     private static void assertCdsArchive(Path jri, boolean archiveExists) {

@@ -20,11 +20,14 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleFinder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -40,12 +43,15 @@ import static io.helidon.build.util.Constants.javaHome;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.fileName;
+import static io.helidon.build.util.FileUtils.findExecutableInPath;
 import static io.helidon.build.util.FileUtils.listFiles;
+import static io.helidon.build.util.OSType.Linux;
+import static io.helidon.linker.Application.APP_DIR;
 import static io.helidon.linker.util.Constants.JRI_DIR_SUFFIX;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A Java Runtime directory.
+ * Java Runtime metadata.
  */
 public final class JavaRuntime implements ResourceContainer {
     private static final AtomicReference<Path> CURRENT_JAVA_HOME_DIR = new AtomicReference<>();
@@ -57,8 +63,24 @@ public final class JavaRuntime implements ResourceContainer {
     private static final String FILE_SEP = File.separator;
     private static final String JAVA_EXEC = OS.javaExecutable();
     private static final String JAVA_CMD_PATH = "bin" + FILE_SEP + JAVA_EXEC;
-    private static final String INVALID_JRI = "Not a valid JRI (" + JAVA_CMD_PATH + " not found): %s";
-    private static final String INCOMPLETE_JDK = "Not a complete JDK, the required *.jmod files are missing (e.g. jmods/%s): %s";
+    private static final String JAVA_MODULE_NAME_PREFIX = "java.";
+    private static final String JDK_MODULE_NAME_PREFIX = "jdk.";
+    private static final String HELIDON_JAR_NAME_PREFIX = "helidon-";
+    private static final String INVALID_JRI = "This is not a valid JRI (" + JAVA_CMD_PATH + " not found): %s";
+    private static final String INCOMPLETE_JDK = "The required *.jmod files (e.g. jmods/%s) are missing in this JDK: %s";
+    private static final String HELIDON_JRI = "This is a custom Helidon JRI.";
+    private static final String CUSTOM_JRI = "This appears to be a custom JRI.";
+    private static final boolean OPEN_JDK = System.getProperty("java.vm.name").toLowerCase(Locale.ENGLISH).contains("openjdk");
+    private static final String OPEN_JDK_RPM = "RPM based OpenJDK distributions provide *.jmod files in separate "
+                                               + "\"java-*-openjdk-jmods\" packages: try 'yum list | grep jmods' to "
+                                               + "find the package corresponding to your version.";
+    private static final String OPEN_JDK_DEB = "Debian based OpenJDK distributions provide *.jmod files only in the "
+                                               + "\"openjdk-*-jdk-headless\" packages.";
+    private static final Map<String, String> OPEN_JDK_LINUX_PACKAGING = Map.of("yum", OPEN_JDK_RPM,
+                                                                               "apt", OPEN_JDK_DEB,
+                                                                               "apt-get", OPEN_JDK_DEB,
+                                                                               "dpkg", OPEN_JDK_DEB,
+                                                                               "aptitude", OPEN_JDK_DEB);
     private final Path javaHome;
     private final Runtime.Version version;
     private final boolean isJdk;
@@ -129,7 +151,9 @@ public final class JavaRuntime implements ResourceContainer {
     public static Path assertJdk(Path jdkDirectory) {
         final Path result = assertDir(jdkDirectory);
         if (!isValidJdk(result)) {
-            throw new IllegalArgumentException(String.format(INCOMPLETE_JDK, JAVA_BASE_JMOD, jdkDirectory));
+            final StringBuilder sb = new StringBuilder().append(String.format(INCOMPLETE_JDK, JAVA_BASE_JMOD, jdkDirectory));
+            incompleteJdkDetailMessage(jdkDirectory).ifPresent(detail -> sb.append(". ").append(detail));
+            throw new IllegalArgumentException(sb.toString());
         }
         return result;
     }
@@ -346,6 +370,44 @@ public final class JavaRuntime implements ResourceContainer {
             final Path jmodsDir = jdkDirectory.resolve(JMODS_DIR);
             final Path javaBase = jmodsDir.resolve(JAVA_BASE_JMOD);
             return Files.isDirectory(jmodsDir) && Files.exists(javaBase);
+        }
+        return false;
+    }
+
+    private static Optional<String> incompleteJdkDetailMessage(Path jdkDirectory) {
+        if (isHelidonJri(jdkDirectory)) {
+            return Optional.of(HELIDON_JRI);
+        } else if (isCustomJri(jdkDirectory)) {
+            return Optional.of(CUSTOM_JRI);
+        } else if (OPEN_JDK && OS == Linux) {
+            return OPEN_JDK_LINUX_PACKAGING.entrySet()
+                                           .stream()
+                                           .filter(e -> findExecutableInPath(e.getKey()).isPresent())
+                                           .map(Map.Entry::getValue)
+                                           .findFirst();
+        }
+        return Optional.empty();
+    }
+
+    private static boolean isCustomJri(Path jdkDirectory) {
+        if (jdkDirectory.equals(currentJavaHomeDir())) {
+            return ModuleFinder.ofSystem()
+                               .findAll()
+                               .stream()
+                               .map(ref -> ref.descriptor().name())
+                               .anyMatch(moduleName -> !(moduleName.startsWith(JAVA_MODULE_NAME_PREFIX)
+                                                         || moduleName.startsWith(JDK_MODULE_NAME_PREFIX)));
+        } else {
+            return false;
+        }
+    }
+
+    private static boolean isHelidonJri(Path jdkDirectory) {
+        final Path appDir = jdkDirectory.resolve(APP_DIR);
+        if (Files.isDirectory(appDir)) {
+            return FileUtils.list(appDir, 2)
+                            .stream()
+                            .anyMatch(path -> path.getFileName().toString().startsWith(HELIDON_JAR_NAME_PREFIX));
         }
         return false;
     }
