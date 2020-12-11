@@ -56,7 +56,7 @@ function init {
     $defaultDebug="<DEFAULT_APP_DEBUG>"
     $defaultJvm="<DEFAULT_APP_JVM>"
     $defaultArgs="<DEFAULT_APP_ARGS>"
-    $cdsOption="<CDS_UNLOCK>-XX:SharedArchiveFile=lib\start.jsa -Xshare:"
+    $cdsOption="<CDS_UNLOCK>-XX:SharedArchiveFile=$homeDir\lib\start.jsa -Xshare:"
     $exitOption="`"-Dexit.on.started=<EXIT_ON_STARTED>`""
     $debugDefaults = if (Test-Path env:DEFAULT_APP_DEBUG) { $env:DEFAULT_APP_DEBUG } else { $defaultDebug }
     $jvmDefaults = if (Test-Path env:DEFAULT_APP_JVM) { $env:DEFAULT_APP_JVM } else { $defaultJvm }
@@ -82,15 +82,14 @@ function init {
         $i++
     }
     $jvmOptions = if ($jvm) { $jvm } else { $jvmDefaults }
-    if (${useCds}) { $jvmOptions = appendVar "$jvmOptions" "${cdsOption}${share}" }
+    if (${useCds}) { setupCds }
     if (${debug}) { $jvmOptions = appendVar "$jvmOptions" "$debugDefaults" }
     if ($test) {
     	$jvmOptions = appendVar "$jvmOptions" "$exitOption"
     	if ($useCds) { checkTimeStamps }
     }
     $commandArgs = if ($args) { $args } else { $argDefaults }
-    $global:command="bin\java.exe $jvmOptions -jar app\$jarName $commandArgs"
-    Set-Location -Path "$homeDir"
+    $global:command="$homeDir\bin\java.exe $jvmOptions -jar $homeDir\app\$jarName $commandArgs"
 }
 
 function appendVar {
@@ -106,6 +105,12 @@ function checkTimeStamps {
         Write-Host "WARNING: CDS will likely fail since it appears this image is a copy (timestamps differ)."
         Write-Host "         <COPY_INSTRUCTIONS>"
     }
+}
+
+function setupCds {
+    $jvmOptions = appendVar "$jvmOptions" "${cdsOption}${share}"
+    Set-Location -Path "$homeDir"
+    $pathPrefix=""
 }
 
 function getLastWriteTotalSeconds {
