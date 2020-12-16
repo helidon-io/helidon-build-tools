@@ -48,6 +48,7 @@ public class StartScriptTemplate extends StartScript.SimpleTemplate {
     private static final String MODULES_FILE = "lib/modules";
     private static final String OVERRIDES = "Overrides %s${default%s}%s.";
     private static final String CHECK_TIME_STAMPS = OS == Windows ? "function checkTimeStamps" : "checkTimeStamps()";
+    private static final String SETUP_CDS = OS == Windows ? "function setupCds" : "setupCds()";
     private static final String SETS = "Sets default %s.";
     private static final String CDS = "cds";
     private static final String DEBUG = "debug";
@@ -68,7 +69,8 @@ public class StartScriptTemplate extends StartScript.SimpleTemplate {
     public String render(TemplateConfig config) {
 
         if (!config.cdsInstalled()) {
-            removeCheckTimeStampFunction();
+            removeFunction(CHECK_TIME_STAMPS);
+            removeFunction(SETUP_CDS);
             removeLines(CDS, true);
         }
 
@@ -126,8 +128,8 @@ public class StartScriptTemplate extends StartScript.SimpleTemplate {
         }
     }
 
-    private void removeCheckTimeStampFunction() {
-        final int startIndex = indexOf(0, CHECK_TIME_STAMPS, false);
+    private void removeFunction(String functionName) {
+        final int startIndex = indexOf(0, functionName, false);
         final int endIndex = indexOfEquals(startIndex, "}") + 1;
         removeLines((index, line) -> index >= startIndex && index <= endIndex);
     }

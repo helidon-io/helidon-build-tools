@@ -55,10 +55,11 @@ init() {
     local -r defaultDebug="<DEFAULT_APP_DEBUG>"
     local -r defaultJvm="<DEFAULT_APP_JVM>"
     local -r defaultArgs="<DEFAULT_APP_ARGS>"
-    local -r cdsOption="<CDS_UNLOCK>-XX:SharedArchiveFile=lib/start.jsa -Xshare:"
+    local -r cdsOption="<CDS_UNLOCK>-XX:SharedArchiveFile=${homeDir}/lib/start.jsa -Xshare:"
     local -r exitOption="-Dexit.on.started=<EXIT_ON_STARTED>"
     local -r jvmDefaults="${DEFAULT_APP_JVM:-${defaultJvm}}"
     local -r argDefaults="${DEFAULT_APP_ARGS:-${defaultArgs}}"
+    local pathPrefix="${homeDir}/"
     local args jvm test share=auto
     local useCds=true
     local debug
@@ -78,18 +79,23 @@ init() {
     done
 
     local jvmOptions=${jvm:-${jvmDefaults}}
-    [[ ${useCds} ]] && appendVar jvmOptions "${cdsOption}${share}"
+    [[ ${useCds} ]] && setupCds
     [[ ${debug} ]] && appendVar jvmOptions "${DEFAULT_APP_DEBUG:-${defaultDebug}}"
     if [[ ${test} ]]; then
         appendVar jvmOptions "${exitOption}"
         [[ ${useCds} ]] && checkTimeStamps
     fi
-    command="bin/java ${jvmOptions} -jar app/${jarName} ${args:-${argDefaults}}"
-    cd "${homeDir}"
+    command="${pathPrefix}bin/java ${jvmOptions} -jar ${pathPrefix}app/${jarName} ${args:-${argDefaults}}"
 }
 
 appendVar() {
     export ${1}="${!1:+${!1} }${2}"
+}
+
+setupCds() {
+    appendVar jvmOptions "${cdsOption}${share}"
+    pathPrefix=
+    cd ${homeDir}
 }
 
 checkTimeStamps() {
