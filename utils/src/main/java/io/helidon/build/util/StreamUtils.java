@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ public final class StreamUtils {
      * @return The string.
      */
     public static String toString(ByteArrayOutputStream out) {
-        return new String(out.toByteArray(), UTF_8);
+        return out.toString(UTF_8);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ public class ExecTest {
         } finally {
             System.setOut(stdout);
         }
-        String out = Strings.normalizeNewLines(new String(baos.toByteArray(), StandardCharsets.UTF_8));
+        String out = Strings.normalizeNewLines(baos.toString(StandardCharsets.UTF_8));
         return strip(out);
     }
 
