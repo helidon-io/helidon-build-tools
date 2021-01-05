@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -308,7 +308,10 @@ public class Style {
         try {
             STRIP_BYTES.reset();
             STRIP.write(input.getBytes(UTF_8));
-            return new String(STRIP_BYTES.toByteArray(), UTF_8);
+            // Using new String(toByteArray(), UTF_8) here would result in 2 copies of the bytes, since
+            // the String ctors always create their own copy; by using toString(UTF_8) we avoid a copy
+            // and it is still safe to reuse our stream.
+            return STRIP_BYTES.toString(UTF_8); // always copies
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         } finally {
