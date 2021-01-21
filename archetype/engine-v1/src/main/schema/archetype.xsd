@@ -1,0 +1,957 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<xs:schema elementFormDefault="qualified"
+           targetNamespace="https://helidon.io/archetype/2.0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <xs:attributeGroup name="src-group">
+        <xs:attribute type="xs:string" name="src" use="optional">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    File path of a script relative to the current script directory ; a leading <code>/</code> can be
+                    used to
+                    refer to the archetype root directory.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute type="xs:anyURI" name="url" use="optional">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">URL of a script.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+
+    <xs:complexType name="exec-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Directive that executes a script in its respective directory.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attributeGroup ref="src-group"/>
+    </xs:complexType>
+
+    <xs:complexType name="source-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Directive that executes a script in the current script directory.
+                <br/>
+                <br/>
+                <b>NOTE:</b>
+                Relative file path will be resolved in the current script directory, thus files that
+                are co-located with the script to be executed won't be resolved.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attributeGroup ref="src-group"/>
+    </xs:complexType>
+
+    <xs:group name="file-includes-group">
+        <xs:sequence>
+            <xs:element type="xs:string" name="directory" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="version">2.0</xs:documentation>
+                    <xs:documentation source="description">
+                        File path of a base directory that contains the files to be included. Relative file path
+                        are resolved relative to the current script directory. A leading <code>/</code> can be used to
+                        refer to the archetype root directory.
+                        <br/>
+                        <br/>
+                        By default everything is included, unless includes or excludes patterns are set.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="includes" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="version">2.0</xs:documentation>
+                    <xs:documentation source="description">
+                        Set of include patterns.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element type="xs:string" name="include">
+                            <xs:annotation>
+                                <xs:documentation source="version">2.0</xs:documentation>
+                                <xs:documentation source="description">
+                                    Ant glob pattern.
+                                    <br/>
+                                    <ul>
+                                        <li>
+                                            Use <code>*</code> to wildcard file and directory names and
+                                            <code>**</code>
+                                            to wildcard any depth of directory structure.
+                                        </li>
+                                        <li>
+                                            E.g.
+                                            <code>&lt;include&gt;**/*.java&lt;/include&gt;</code>
+                                        </li>
+                                    </ul>
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="excludes" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="version">2.0</xs:documentation>
+                    <xs:documentation source="description">
+                        Set of exclude patterns.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element type="xs:string" name="exclude">
+                            <xs:annotation>
+                                <xs:documentation source="version">2.0</xs:documentation>
+                                <xs:documentation source="description">
+                                    Ant glob pattern.
+                                    <br/>
+                                    Use <code>*</code> to wildcard file and directory names and <code>**</code> to
+                                    wildcard any depth of directory structure.
+                                    <br/>
+                                    E.g.
+                                    <code>&lt;include&gt;**/*.java&lt;/include&gt;</code>
+                                    <code>**/*.java</code>
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:group>
+
+    <xs:attributeGroup name="transformations-group">
+        <xs:attribute name="transformations" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Define the set of path transformations to apply.
+                    <br/>
+                    <br/>
+                    Multiple transformations can be specified, separated by a comma (<code>,</code>) character.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+
+    <xs:attributeGroup name="if-group">
+        <xs:attribute name="if" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Flow context path expression to guard this element.
+                    <br/>
+                    <br/>
+                    <p>
+                        Flow context path expressions are boolean expressions that can be used to query the flow
+                        context.
+                        <br/>
+                        <br/>
+                        Values can be either flow context path values or literal, and are only of the following types:
+                    </p>
+                    <ul>
+                        <li><b>Boolean</b>: <code>true</code> or
+                            <code>false</code>
+                        </li>
+                        <li><b>Text</b>:
+                            <code>'foo'</code>
+                        </li>
+                        <li><b>Array</b>:
+                            <code>['foo', 'bar']</code>
+                        </li>
+                    </ul>
+                    The following operators are supported:
+                    <ul>
+                        <li>
+                            <b>
+                                <code>&amp;&amp;</code>
+                            </b>
+                            : logical AND
+                        </li>
+                        <li>
+                            <b>
+                                <code>||</code>
+                            </b>
+                            : logical OR
+                        </li>
+                        <li>
+                            <b>
+                                <code>!</code>
+                            </b>
+                            : logical negation
+                        </li>
+                        <li>
+                            <b>
+                                <code>contains</code>
+                            </b>
+                            : array contains
+                        </li>
+                        <li>
+                            <b>
+                                <code>==</code>
+                            </b>
+                            : equality
+                        </li>
+                    </ul>
+                    Example:
+                    <br/>
+                    <code>
+                        <br/>
+                        if="${security}"
+                        <br/>
+                        <br/>
+                        if="${media-support.json.provider} == 'jackson'"
+                        <br/>
+                        <br/>
+                        if="${security} &amp;&amp; ${media-support}"
+                        <br/>
+                        <br/>
+                        if="${security} || ${media-support}"
+                        <br/>
+                        <br/>
+                        if="${security.authentication.provider} contains 'basic-auth'"
+                        <br/>
+                        <br/>
+                        if="!(${security} &amp;&amp; ${media-support}) || ${health}"
+                    </code>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+
+    <xs:attributeGroup name="key-group">
+        <xs:attribute name="key" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Data key.
+                    <br/>
+                    <br/>
+                    <p>
+                        The template data model is shared across the flow. The key identifies the data to set.
+
+                        The key is the identifier used when resolving data from a template. The syntax for
+                        resolving data from a template is template specific. E.g. in mustache: <code>{{my-key}}</code>.
+                    </p>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+
+    <xs:attributeGroup name="order-group">
+        <xs:attribute name="order" type="xs:integer" use="optional" default="100">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Data model order.
+                    <br/>
+                    <br/>
+                    <p>
+                        The order is used to affect how the data for the same keys are merged. The value is an integer
+                        with a default value of <code>100</code>.
+                    </p>
+                    <p>
+                        Data is sorted by comparing order, data with higher order is inserted before data with lower
+                        order. When the order is equal, the distance to the root input node and the declaration order
+                        is used.
+                    </p>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+
+    <xs:complexType name="value-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Value data type.
+                <br/>
+                <br/>
+                <p>
+                    The value for the data can be declared as a literal or it can also use a property like syntax
+                    to resolve the value of an input.
+                    <br/>
+                    <br/>
+                    E.g.
+                    <ul>
+                        <li>
+                            <code>&lt;value&gt;${media-support.json.provider}&lt;/value&gt;</code>
+                        </li>
+                        <li>
+                            <code>&lt;value&gt;foo&lt;/value&gt;</code>
+                        </li>
+                    </ul>
+                    Inline search and replace regular expressions are also supported:
+                    <ul>
+                        <li>
+                            <code>&lt;value&gt;${package/\./\/}&lt;/value&gt;</code>
+                        </li>
+                    </ul>
+                </p>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="file" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation source="version">2.0</xs:documentation>
+                        <xs:documentation source="description">
+                            File path to a file containing the content for this value.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="url" type="xs:anyURI" use="optional">
+                    <xs:annotation>
+                        <xs:documentation source="version">2.0</xs:documentation>
+                        <xs:documentation source="description">
+                            URL point at a file containing the content for this value.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="template" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation source="version">2.0</xs:documentation>
+                        <xs:documentation source="description">
+                            Pre-process the value with the given template engine. The value must match
+                            a template engine registered with the archetype engine.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attributeGroup ref="if-group"/>
+                <xs:attributeGroup ref="order-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="keyed-value-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Value data type.
+                <br/>
+                <br/>
+                <p>
+                    The value for the data can be declared as a literal or it can also use a property like syntax
+                    to resolve the value of an input.
+                    <br/>
+                    <br/>
+                    E.g.
+                    <ul>
+                        <li>
+                            <code>&lt;value&gt;${media-support.json.provider}&lt;/value&gt;</code>
+                        </li>
+                        <li>
+                            <code>&lt;value&gt;foo&lt;/value&gt;</code>
+                        </li>
+                    </ul>
+                    Inline search and replace regular expressions are also supported:
+                    <ul>
+                        <li>
+                            <code>&lt;value&gt;${package/\./\/}&lt;/value&gt;</code>
+                        </li>
+                    </ul>
+                </p>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="value-type">
+                <xs:attributeGroup ref="key-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="map-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Map data type.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="value" type="keyed-value-type" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="list" type="keyed-list-type" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="map" type="keyed-map-type" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attributeGroup ref="if-group"/>
+        <xs:attributeGroup ref="order-group"/>
+    </xs:complexType>
+
+    <xs:complexType name="keyed-map-type">
+        <xs:complexContent>
+            <xs:extension base="map-type">
+                <xs:attributeGroup ref="key-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="list-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                List data type. Nested elements do not require a <code>key</code> attribute.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="value" type="value-type" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="list" type="list-type" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="map" type="map-type" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attributeGroup ref="if-group"/>
+        <xs:attributeGroup ref="order-group"/>
+    </xs:complexType>
+
+    <xs:complexType name="keyed-list-type">
+        <xs:complexContent>
+            <xs:extension base="list-type">
+                <xs:attributeGroup ref="key-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="context-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Define a read-only value for an input.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="value" type="xs:string" minOccurs="1" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation source="version">2.0</xs:documentation>
+                    <xs:documentation source="description">
+                        Define a value.
+                        <br/>
+                        <br/>
+                        The value type must match the type of input:
+                        <ul>
+                            <li>
+                                the value of an option input can be either true or false
+                            </li>
+                            <li>
+                                the value of a text input can be anything
+                            </li>
+                            <li>
+                                the value of a select input can only be one of the selectable options
+                            </li>
+                        </ul>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="path" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    The flow context path of the input whose value is to be set.
+                    <br/>
+                    <br/>
+                    <p>
+                        A path can be used to point at a node in the flow context. Path members are separated with a
+                        dot (<code>.</code>) character.
+                    </p>
+                    <br/>
+                    <p>
+                        The configured common prefix may be omitted in absolute paths. For example, In the context
+                        of the root node, with a common prefix <code>flavor.base</code>, both are equivalent:
+                    </p>
+                    <ul>
+                        <li>
+                            <code>flavor.base.media-support.provider</code>
+                        </li>
+                        <li>
+                            <code>media-support.provider</code>
+                        </li>
+                    </ul>
+                    <p>
+                        When used within the descriptors, paths are always relative to their current directory,
+                        unless they start with <code>ROOT</code> or <code>PARENT</code>.
+                    </p>
+                    <ul>
+                        <li>
+                            <code>${ROOT.flavor.base.security}</code>
+                            is absolute and resolved as
+                            <code>${flavor.base.security}</code>
+                        </li>
+                        <li>
+                            <code>${ROOT.security}</code>
+                            is absolute and is resolved as
+                            <code>${flavor.base.security}</code>
+                        </li>
+                        <li>
+                            <code>${provider}</code>
+                            is resolved as
+                            <code>${flavor.base.security.provider}</code>
+                            if the current flow context node is
+                            <code>flavor.base.security</code>
+                        </li>
+                        <li>
+                            <code>${PARENT.security.provider}</code>
+                            is resolved as
+                            <code>${flavor.base.security.provider}</code>
+                            if the parent of the current flow context node is
+                            <code>flavor.base.security</code>
+                        </li>
+                    </ul>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="help-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Define rich help text for the enclosing element.
+                <br/>
+                <br/>
+                Special case when enclosed by <code>&lt;archetype-script&gt;</code>:
+                <ul>
+                    <li>
+                        If declared in the entry-point script, it defines the help text for the entire archetype
+                    </li>
+                    <li>
+                        Otherwise it defines the help text for the enclosing element of the directive used to invoke
+                        the script
+                    </li>
+                </ul>
+                The rich text format is a limited markdown format:
+                <br/>
+                <br/>
+                <code>
+                    **bold text**
+                    <br/>_italic_
+                    <br/>
+                    <br/>paragraphs
+                    <br/>
+                    <br/>`code`
+                    <br/>[Links](https://example.com)
+                    <br/>{::color-primary}text in primary color{:/}
+                    <br/>{::color-secondary}text in secondary color{:/}
+                    <br/>{::color-accent}text in accent color{:/}
+                    <br/>{::color-error}text in error color{:/}
+                    <br/>{::color-info}text in info color{:/}
+                    <br/>{::color-success}text in success color{:/}
+                    <br/>{::color-warning}text in warning color{:/}
+                </code>
+                <br/>
+                <br/>
+                Example:
+                <br/>
+                <br/>
+                <code>
+                    &lt;help&gt;&lt;![CDATA[
+                    <br/>This is a rich help text. **THIS IS BOLD** ; **THIS IS ITALIC**.
+                    <br/>
+                    <br/>This is a paragraph
+                    <br/>
+                    <br/>This is a Java code snippet:
+                    <br/>```java
+                    <br/>request.content()
+                    <br/>&#160;&#160;&#160;&#160;&#160;&#160;&#160;.as(JsonObject.class)
+                    <br/>&#160;&#160;&#160;&#160;&#160;&#160;&#160;.thenAccept(json -> {
+                    <br/>
+                    <br/>&#160;&#160;&#160;&#160;System.output.println(json);
+                    <br/>&#160;&#160;&#160;&#160;response.send("OK");
+                    <br/>});
+                    <br/>```
+                    <br/>]]&gt;&lt;/help&gt;
+                </code>
+            </xs:documentation>
+        </xs:annotation>
+    </xs:complexType>
+
+    <xs:attributeGroup name="label-group">
+        <xs:attribute name="label" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Label: title for step or input components.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+
+    <xs:complexType name="input-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                A user input.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence minOccurs="0">
+            <xs:element name="help" type="help-type" maxOccurs="1" />
+            <xs:element name="option" minOccurs="0">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation source="version">2.0</xs:documentation>
+                        <xs:documentation source="description">
+                            A selectable option.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:sequence minOccurs="0">
+                        <xs:element name="help" type="help-type" maxOccurs="1" />
+                        <xs:choice maxOccurs="unbounded">
+                            <xs:element name="context" type="context-type" />
+                            <xs:element name="exec" type="exec-type" />
+                            <xs:element name="source" type="source-type" />
+                            <xs:element name="input" type="input-type" />
+                            <xs:element name="step" type="step-type" />
+                        </xs:choice>
+                        <xs:element name="output" type="output-type" maxOccurs="1" />
+                    </xs:sequence>
+                    <xs:attribute name="value" use="required">
+                        <xs:annotation>
+                            <xs:documentation source="version">2.0</xs:documentation>
+                            <xs:documentation source="description">
+                                The value for the selectable option.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attributeGroup ref="label-group"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:choice maxOccurs="unbounded">
+                <xs:element name="context" type="context-type" />
+                <xs:element name="exec" type="exec-type" />
+                <xs:element name="source" type="source-type" />
+                <xs:element name="input" type="input-type" />
+                <xs:element name="step" type="step-type" />
+            </xs:choice>
+            <xs:element name="output" type="output-type" maxOccurs="1" />
+        </xs:sequence>
+        <xs:attribute name="type" use="required">
+            <xs:simpleType>
+                <xs:annotation>
+                    <xs:documentation source="version">2.0</xs:documentation>
+                    <xs:documentation source="description">
+                        The input type.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="option">
+                        <xs:annotation>
+                            <xs:documentation source="version">2.0</xs:documentation>
+                            <xs:documentation source="description">
+                                An option input.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                    <xs:enumeration value="text">
+                        <xs:annotation>
+                            <xs:documentation source="version">2.0</xs:documentation>
+                            <xs:documentation source="description">
+                                A text input.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                    <xs:enumeration value="select">
+                        <xs:annotation>
+                            <xs:documentation source="version">2.0</xs:documentation>
+                            <xs:documentation source="description">
+                                A select input.
+                                <br/>
+                                <br/>
+                                <ul>
+                                    <li>
+                                        Use nested <code>&lt;option&gt;</code> elements to define the selectable options
+                                    </li>
+                                    <li>
+                                        Single value is selectable by default, use
+                                        <code>multiple="true"</code>
+                                        to allow for multiple values to be selected.
+                                    </li>
+                                </ul>
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="name" use="required">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    The input name in the flow. Must be unique among siblings.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="prompt" use="optional">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    The prompt for this input. Defaults to the label if not defined.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="multiple" use="optional">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                   When <code>type="select"</code> is used, indicates that multiple options can be selected.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attributeGroup ref="label-group"/>
+    </xs:complexType>
+
+    <xs:complexType name="step-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Step. A logical group of inputs to be presented together like a pane or a window.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:choice>
+                <xs:element name="context" type="context-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="exec" type="exec-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="source" type="source-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="help" type="help-type" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="input" type="input-type" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:choice>
+        </xs:sequence>
+        <xs:attributeGroup ref="if-group"/>
+        <xs:attributeGroup ref="label-group"/>
+    </xs:complexType>
+
+    <xs:complexType name="output-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Configuration of files, template and data model for the current context.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice>
+            <xs:element name="transformation" maxOccurs="unbounded" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="version">2.0</xs:documentation>
+                    <xs:documentation source="description">
+                        Define a set of replacements to be applied on the path of created files.
+                        <br/>
+                        <br/>
+                        <p>
+                            Replacements are search and replace regular expressions declared using <code>
+                            &lt;replace&gt;</code>. They form a chain where the first input is the included file path,
+                            the result is passed to the next replacement and the last result is used as the final file
+                            path.
+                        </p>
+                        <br/>
+                        Example:
+                        <br/>
+                        <br/>
+                        <code>&lt;transformation id="packaged"&gt;
+                            <br/>&#160;&#160;&lt;replace regex="__pkg__" replacement="${package/\./\/}"/&gt;
+                            <br/>&lt;/transformation&gt;
+                            <br/>&lt;files transformations="packaged">
+                            <br/>&#160;&#160;&lt;directory>files/src/main/java&lt;/directory&gt;
+                            <br/>&#160;&#160;&lt;includes&gt;
+                            <br/>&#160;&#160;&#160;&#160;&lt;include&gt;**/*.java&lt;/include&gt;
+                            <br/>&#160;&#160;&lt;/includes&gt;
+                            <br/>&lt;/files&gt;
+                        </code>
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="replace" minOccurs="1" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation source="version">2.0</xs:documentation>
+                                <xs:documentation source="description">
+                                    Pair of search and replace regular expressions.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:complexType>
+                                <xs:attribute type="xs:string" name="regex" use="required">
+                                    <xs:annotation>
+                                        <xs:documentation source="version">2.0</xs:documentation>
+                                        <xs:documentation source="description">
+                                            Search regular expression.
+                                            <br/>
+                                            <br/>
+                                            <p>
+                                                A property like syntax can be used to resolve the value of an input.
+                                                <br/>
+                                                <br/>
+                                                E.g.
+                                                <ul>
+                                                    <li>
+                                                        <code>${media-support.json.provider}</code>
+                                                    </li>
+                                                    <li>
+                                                        <code>${security.authentication.provider}</code>
+                                                    </li>
+                                                    <li>
+                                                        <code>${security}</code>
+                                                    </li>
+                                                </ul>
+                                                Inline search and replace regular expressions are also supported:
+                                                <ul>
+                                                    <li>
+                                                        <code>${package/\./\/}</code>
+                                                    </li>
+                                                </ul>
+                                            </p>
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute type="xs:string" name="replacement" use="required">
+                                    <xs:annotation>
+                                        <xs:documentation source="version">2.0</xs:documentation>
+                                        <xs:documentation source="description">
+                                            Replace regular expression.
+                                            <br/>
+                                            <br/>
+                                            <p>
+                                                A property like syntax can be used to resolve the value of an input.
+                                                <br/>
+                                                <br/>
+                                                E.g.
+                                                <ul>
+                                                    <li>
+                                                        <code>${media-support.json.provider}</code>
+                                                    </li>
+                                                    <li>
+                                                        <code>${security.authentication.provider}</code>
+                                                    </li>
+                                                    <li>
+                                                        <code>${security}</code>
+                                                    </li>
+                                                </ul>
+                                                Inline search and replace regular expressions are also supported:
+                                                <ul>
+                                                    <li>
+                                                        <code>${package/\./\/}</code>
+                                                    </li>
+                                                </ul>
+                                            </p>
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                    <xs:attribute type="xs:string" name="id" use="required">
+                        <xs:annotation>
+                            <xs:documentation source="version">2.0</xs:documentation>
+                            <xs:documentation source="description">
+                                The id of the path transformation. The id must be unique across all the descriptors
+                                of an archetype.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="files" maxOccurs="unbounded" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="version">2.0</xs:documentation>
+                    <xs:documentation source="description">
+                        Defines a set of static files.
+                        <br/>
+                        <ul>
+                            <li>
+                                The path of the files included are relative to the configured <code>directory</code>.
+                            </li>
+                            <li>Transformations can be used to modify the final path of the files to be created</li>
+                        </ul>
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:group ref="file-includes-group"/>
+                    <xs:attributeGroup ref="transformations-group"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="templates" maxOccurs="unbounded" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="version">2.0</xs:documentation>
+                    <xs:documentation source="description">
+                        Defines a set of template files.
+                        <br/>
+                        <ul>
+                            <li>
+                                The path of the files template files included are relative to the configured
+                                <code>directory</code>
+                            </li>
+                            <li>Transformations can be used to modify the final path of the files to be created</li>
+                        </ul>
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:group ref="file-includes-group"/>
+                    <xs:attribute name="engine" type="xs:string" use="optional">
+                        <xs:annotation>
+                            <xs:documentation source="version">2.0</xs:documentation>
+                            <xs:documentation source="description">
+                                Associates the included template files with a template engine.
+                                <br/>
+                                <br/>
+                                The value must match a template engine registered with the archetype engine.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attributeGroup ref="transformations-group"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="model">
+                <xs:annotation>
+                    <xs:documentation source="version">2.0</xs:documentation>
+                    <xs:documentation source="description">
+                        Define data for the template model in the output of the current context.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="value" type="keyed-value-type" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="list" type="keyed-list-type" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="map" type="keyed-map-type" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                    <xs:attributeGroup ref="if-group"/>
+                </xs:complexType>
+            </xs:element>
+        </xs:choice>
+        <xs:attributeGroup ref="if-group"/>
+    </xs:complexType>
+
+    <xs:element name="archetype-script">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                The &lt;archetype-script&gt; element is the root of the descriptor.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence minOccurs="0">
+                <xs:element name="help" type="help-type" maxOccurs="1" />
+                <xs:choice maxOccurs="unbounded">
+                    <xs:element name="context" type="context-type" />
+                    <xs:element name="exec" type="exec-type" />
+                    <xs:element name="source" type="source-type" />
+                    <xs:element name="input" type="input-type" />
+                    <xs:element name="step" type="step-type" />
+                </xs:choice>
+                <xs:element name="output" type="output-type" maxOccurs="1" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

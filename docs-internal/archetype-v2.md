@@ -44,10 +44,10 @@ This new version of the archetype engine will provide the low-level archetype su
 V1 had a concept of input flow that models user inputs, V2 expands that concept into an advanced graph of inputs
  (referred to as "flow) that are logically grouped as steps and eventually infer output files.
 
-V2 archetypes are "scripts" that define the flow, and the V2 archetype engine is an "interpreter". The generation of a
- new project has two phases:
-- Execute the scripts to resolve the output files
-- Render the output files
+V2 archetypes are "scripts" that define the flow, and the V2 archetype engine is a simplistic "interpreter".
+ The generation of a new project has two phases:
+ - Execute the scripts to resolve the output files
+ - Render the output files
 
 V1 has a concept of a catalog that aggregates multiple standalone archetypes, instead V2 uses a "main" archetype
  that encapsulates all possible choices.
@@ -56,20 +56,20 @@ Fine-grained "features" can be modeled by creating logical groups of inputs and 
  the flow. Scripts can be split to fit those features and encapsulate related definitions.
 
 A V2 archetype project is a set of scripts and output files. Helidon will use a single "main" archetype:
-- all "scripts" are co-located, making it easy to maintain
-- all "scripts" are co-located, making it easy to understand
-- all "scripts" are co-located, making it easy to re-use
+ - all "scripts" are co-located, making it easy to maintain
+ - all "scripts" are co-located, making it easy to understand
+ - all "scripts" are co-located, making it easy to re-use
 
 ## Archetype scripts
 
 Archetype scripts are XML descriptors. Scripts are composed with the following set of directives:
-- `<exec>`: execute a script, files are resolved relative to the script
-- `<source>`: execute a script, files are resolved relative to the current directory
-- `<context>`: set a read-only value in the context
-- `<step>`: define a step
-- `<input>`: define an input
-- `<output>`: define output files
-- `<help>`: define rich help text
+ - `<exec>`: execute a script, files are resolved relative to the script
+ - `<source>`: execute a script, files are resolved relative to the current directory
+ - `<context>`: set a read-only value in the context
+ - `<step>`: define a step
+ - `<input>`: define an input
+ - `<output>`: define output files
+ - `<help>`: define rich help text
 
 Since the concepts of V2 are more advanced, the descriptor is more complex and requires more understanding from the
  archetype maintainers. An XML schema will be provided for IDE documentation and auto-completion. See below a skeleton
@@ -78,7 +78,7 @@ Since the concepts of V2 are more advanced, the descriptor is more complex and r
 ```xml
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
+                xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
     <context path="">
         <value></value>
@@ -86,11 +86,14 @@ Since the concepts of V2 are more advanced, the descriptor is more complex and r
     <exec src="" />
     <source src="" />
     <step label="" if="">
+        <help/>
         <input />
         <output />
     </step>
     <input name="" type="" label="" prompt="">
+        <help/>
         <option value="" label="">
+            <help/>
             <exec src="" />
             <source src="" />
             <step />
@@ -101,6 +104,7 @@ Since the concepts of V2 are more advanced, the descriptor is more complex and r
         <source src="" />
         <output />
     </input>
+    <help/>
     <output if="">
         <transformation id="" if="">
             <replace regex="" replacement=""/>
@@ -133,7 +137,7 @@ Since the concepts of V2 are more advanced, the descriptor is more complex and r
 
 ### File Paths
 
-All paths are relative to their current directory, `/` can be used to refer to the archetype root directory.
+All paths are relative to their current directory, a leading `/` can be used to refer to the archetype root directory.
 
 ## Flow
 
@@ -145,7 +149,7 @@ The flow is formed by way of nesting `<input>` elements. `<input>` requires a `n
  among siblings.
 
 An input can be of different types:
-- `type="option"`: an option (`true` or `false`) ; opt-in by default (`true`), but can be declared as opt-out (`default="false"`)
+- `type="option"`: an option (`true` or `false`) ; opt-in by default but can be declared as opt-out (`default="false"`)
 - `type="select"`: pick and choose ; single optional choice by default, but can be required (`required="true"`) and or multiple (`multiple="true"`)
 - `type="text"`: text value ; may have a default value (`placeholder="my-default-value"`)
 
@@ -203,7 +207,7 @@ E.g.
 - `se/se.xml` executes `se/hello-world/hello-world-se.xml` AND THEN executes `common/customize-project.xml`
 - `se/hello-world/hello-world-se.xml` executes `se/hello-world/customize-hello-world.xml` as the very last step.
 
-The declaration order for the two customization steps is first hello-world and then project.
+The declaration order for the two customization steps is first `customize-hello-world` and then `customize-project`.
 
 When interpreting the flow, the next steps are always computed. If the next steps are all optional, it is possible to
  skip them and generate the project.
@@ -255,7 +259,7 @@ interface SelectionOption extends ContextValue {}
 
 ### Flow Context Path
 
-A path can be used to point at a node in the flow context. Path members are separated with a `.`.
+A path can be used to point at a node in the flow context. Path members are separated with a dot.
 
 E.g.
 - `flavor.base`
@@ -278,11 +282,10 @@ security.authentication.provider // resolved flavor.base.security.authentication
 When used within the descriptors, paths are always relative to their current context, unless they start with
  `ROOT.` or `PARENT.`:
 ```
-${ROOT.flavor.base.security.authentication.provider} // absolute!! resolved as flavor.base.security.authentication.provider
-${ROOT.security.authentication.provider} // absolute!! resolved as flavor.base.security.authentication.provider
-${PARENT.security.provider} // resolved as $(current.parent).security.provider
-${PARENT.PARENT.security.provider} // resolved as $(current.parent.parent).security.provider
-${provider} // resolved as $(current).provider
+${ROOT.flavor.base.security.authentication.provider} // absolute, resolved as flavor.base.security.authentication.provider
+${ROOT.security.authentication.provider} // absolute, resolved as flavor.base.security.authentication.provider
+${provider} // resolved as flavor.base.security.provider if current is flavor.base
+${PARENT.security.provider} // resolved as flavor.base.security.provider if the parent of current is flavor.base
 ```
 
 Invalid paths must be validated at build time and reported as errors.
@@ -314,11 +317,10 @@ The example choices below are effectively "presets".
 </archetype-script>
 ```
 
-### Flow Context Path Expressions
+### Flow Context Path Values
 
-Flow context path expressions are boolean expressions that can be used to query the flow context.
+A property like syntax can be used to resolve the value of an input.
 
-Operands can use `${}` to specify a path in the choices graph.
 E.g. 
 - `${media-support.json.provider}`
 - `${security.authentication.provider}`
@@ -327,39 +329,45 @@ E.g.
 Inline search and replace regular expressions are also supported:
 - `${package/\./\/}`
 
-At build time, the expressions are parsed and validated:
-- paths must be valid in the current context
-- operators must be valid (E.g. `== true` is invalid be used on a text option or select option)
+This can be used to add data in the template data model, or to set default values for other inputs.
 
-An expression with a single operand will test if an input is set in the choices graph, regardless of the type of input:
-- `${security}`
+### Flow Context Path Expressions
 
-The operator `==` can be used to test equality:
-- `${security} == true`
-- `${media-support.json.provider} == jackson`
+Flow context path expressions are boolean expressions that can be used to query the flow context.
 
-The operator `!=` can be used to test equality:
-- `${media-support.json.provider} != jackson`
+Values can be either flow context path values or literal, and are only of the following types: 
+ - Boolean: `true` or `false`
+ - Text: `'foo'`
+ - Array: `['foo', 'bar']`
 
-The operators `&&` and `||` can be used for logical AND / OR:
-- `${security} && ${media-support}`
-- `${security} || ${media-support}`
+The following operators are supported:
+ - `&&`: logical AND
+ - `||`: logical OR
+ - `!`: logical negation
+ - `contains`: array contains
+ - `==`: equality
 
-The operator `contains` can be used to test if a multiple select contains a value:
-- `${security.authentication.provider} contains basic-auth`
+```
+${security}
+${media-support.json.provider} == 'jackson'
+${security} && ${media-support}
+${security} || ${media-support}
+${security.authentication.provider} contains 'basic-auth'
+!(${security} && ${media-support}) || ${health}
+```
 
-The operator `!` can be used to negate sub expressions, parenthesis can be used to group expressions:
-- `!(${security} && ${media-support}) || ${health}`
-
-Choices expressions are supported in the following elements:
-- anything under `<output if="expr">`
-- `<step if="expr">`
+Flow context path expressions are supported in the following elements:
+ - anything under `<output if="expr">`
+ - `<step if="expr">`
 
 ### External Flow Context Values
 
 Values in the flow context can also be set externally using CLI options or URI query parameters. The flow context
  nodes are identified using absolute paths, thus the common prefix can be omitted (`PARENT.` and `ROOT.` are not
  allowed).
+
+When declaring external flow context values, gating input option values can be inferred.
+ E.g. `media-support.json.provider=jackson` implies both `media-support=true` and `media-support.json=true`.
 
 Query parameters:
 ```
@@ -389,23 +397,28 @@ helidon init \
 ## Help text
 
 The step, input and option elements support a `label` attribute that is used for description purpose. Label is meant
- to be inline and short. Larger, multi-line description text can be provided with a nested `<help>` element.
+ to be inline and short. Larger multi-line description text can be provided with a nested `<help>` element.
 
 The `<help>` element supports a limited markdown format:
-- `**bold text**`
-- `_italic_`
-- paragraphs
-- `` `code` ``
-- `[Links](https://example.com)`
+ - `**bold text**`
+ - `_italic_`
+ - paragraphs
+ - `` `code` ``
+ - `[Links](https://example.com)`
 
-We can expand the markdown support over time to provide more rich text features e.g. add support for colors:
-- primary
-- secondary
-- accent
-- error
-- info
-- success
-- warning
+Non standard markdown syntax should follow [kramdown's extension](https://kramdown.gettalong.org/syntax.html#extensions).
+
+For instance, we can add support for colors like this:
+ - `{::color-info}This is an info colored text{:/}`
+
+The actual colors would be abstracted away with names that can be implemented with various backends:
+ - `primary`
+ - `secondary`
+ - `accent`
+ - `error`
+ - `info`
+ - `success`
+ - `warning`
 
 E.g.
 ````xml
@@ -521,10 +534,10 @@ Templates can be declared in the output using `<templates>`. The attribute `engi
 Transformations are used to modify the files paths for included files and templates.
 
 E.g.
-- A mustache template `pom.xml.mustache` needs to create a file called `pom.xml.mustache
+- A mustache template `pom.xml.mustache` needs to create a file called `pom.xml`
 - A java file need to be expanded with the package name as its directory structure
 
-A transformation is basically a named search and replace regular expressions:
+A transformation is basically a named set of search and replace regular expressions:
 
 ```xml
 <output>
@@ -622,8 +635,11 @@ E.g.
 
 #### Merge order
 
-Keys are not unique, data for a given key can be declared at different levels and is effectively merged. The default
- order is based on the declaration order, but it can also be controlled using the `order` attribute.
+The template data model is shared across the flow. Keys are not unique so that inputs from various level can contribute
+ to the same data. This means that the data for the same keys needs to be merged.
+
+ The default merge order is based on the declaration order, however the order attribute is provided to indicate how to
+  merge a particular element. Lower order is resolved with higher priority.
 
 E.g.
 ```xml
@@ -642,12 +658,8 @@ E.g.
 
 ## Build time processing
 
-The archetype is processed at build time by the `helidon-archetype-maven-plugin`. The build-time processing validates
- the following:
-- XML files are checked against the schema
-- optional steps contain only optional inputs
-- expressions are valid
-- choices paths are valid
+The `helidon-archetype-maven-plugin` exposes configuration that takes an `<archetype-script>` that defines the
+ entry-point. The content of the entry-point is written out to a reserved file: `/helidon-archetype.xml`.
 
 The `helidon-archetype-maven-plugin` will also expose configuration for `<archetype-script>`:
 ```xml
@@ -667,12 +679,15 @@ The `helidon-archetype-maven-plugin` will also expose configuration for `<archet
 </build>
 ```
 
-The `<archetype-script>` element defined in the plugin configuration is required and is effectively the entry-point. The
- entry-point descriptor is a reserved archive entry name: `/helidon-archetype.xml`.
+The maven plugin checks that all XML files against the schema, and performs a dry-run execution to:
+- enforce optional steps contain only optional inputs
+- validate flow context paths
+- validate flow context expressions
+- detect expressions type mismatch
 
 ### Maven properties
 
-Archetype may need to inject values derived from Maven properties, E.g. `${project.version}`. This can be done by
+Archetype may need to inject values derived from Maven properties, e.g. `${project.version}`. This can be done by
  adding to entry-point script since Maven properties are automatically expanded in plugin configuration.
 
 ```xml
@@ -718,7 +733,7 @@ The class-loader used to execute the groovy script is the plugin class-loader fo
  parent class-loader and `ClassLoader.getSystemClassLoader()` is not usable within a groovy script. This means that
  the script has to be standalone and create class-loaders manually.
 
-The Helidon archetypes declare the required dependencies so that `mvn archetype:generate` resolves them transitively
+The Helidon archetypes declares the required dependencies so that `mvn archetype:generate` resolves them transitively
  when resolving the archetype. The post generation script resolves the Maven installation to create a class-loader
  that can invoke `aether` in order to resolve the archetype transitive dependencies and create a class-loader
  that can be used to invoke the Helidon archetype engine.
@@ -730,11 +745,11 @@ The Helidon engine also requires Java 11, so the script must check and enforce a
 
 ### Supported archetypes
 
-The new V2 archetype will be compatible, however we do want to keep publishing the current set of Maven compatible
+The main archetype will be compatible, however we do want to keep publishing the current set of Maven compatible
  archetypes such as `bare` and `quickstart`. These consist of an entry-point that defines presets and invokes the
  main archetype.
 
-Support for a custom URL handler `mvn://` will be added to reference the V2 archetype from the local repository:
+Support for a custom URL handler `mvn://` will be added to reference the main archetype from the local repository:
  - `<exec url="mvn:groupId:artifactId:version/helidon-archetype.xml"/>`
 
 E.g. for `quickstart-se`:
@@ -748,9 +763,13 @@ E.g. for `quickstart-se`:
                 <configuration>
                     <archetype-script>
                         <!-- presets for quickstart-se -->
-                        <context path="flavor"><value>se</value></context>
-                        <context path="base"><value>quickstart</value></context>
-                        <!-- invoke the actual V2 archetype -->
+                        <context path="flavor">
+                            <value>se</value>
+                        </context>
+                        <context path="base">
+                            <value>quickstart</value>
+                        </context>
+                        <!-- execute the main archetype -->
                         <exec url="mvn://io.helidon.archetypes:helidon-archetype:${project.version}/helidon-archetype.xml"/>
                     </archetype-script>
                 </configuration>
@@ -759,7 +778,7 @@ E.g. for `quickstart-se`:
     </build>
     <dependencies>
         <dependencies>
-            <!-- V2 mono archetype -->
+            <!-- main archetype -->
             <dependency>
                 <groupId>io.helidon.archetypes</groupId>
                 <artifactId>helidon-archetype</artifactId>
