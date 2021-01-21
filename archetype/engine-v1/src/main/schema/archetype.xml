@@ -17,52 +17,72 @@
 
 -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
-                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <help></help>
-    <context path="">
-        <value></value>
+    <help>Script help text</help>
+    <context path="my.flow.context.path">
+        <value>Foo</value>
     </context>
-    <context path="">
-        <value></value>
+    <context path="my.other.flow.context.path">
+        <value>Bar</value>
     </context>
-    <input type="select" name="foo" label="Foo">
-        <help/>
-        <input type="text" name="" label=""/>
-        <input type="text" name="" label=""/>
-        <option value="bar" label="Bar">
-            <output/>
-            <input type="option" name="" label=""/>
-            <input type="text" name="" label=""/>
-        </option>
-        <output />
+    <step label="A Step Title">
+        <help><![CDATA[
+Some **rich** help text !
+
+```java
+System.out.println("YEAH");
+```
+]]></help>
+        <input type="text" name="some-input" label="Some text input"/>
+    </step>
+    <input type="text" name="test" label="test">
+        <exec src="test.xml" />
     </input>
-    <input type="text" name="" label="" />
-    <source src=""/>
-    <exec url=""/>
-    <output if="">
-        <transformation id="">
-            <replace replacement="" regex=""></replace>
+    <input type="select" name="foo" label="Foo">
+        <help>Text to help the user make a decision</help>
+        <option value="bar" label="Bar">
+            <help>Talk about bar</help>
+            <step label="yeah">
+                <help>Well.. yeah!</help>
+                <input type="text" name="foo-again" label="Foo again !"/>
+            </step>
+            <input type="option" name="a-super-option" label="A super option"/>
+            <input type="text" name="your-name" label="Your Name"/>
+        </option>
+    </input>
+    <input type="text" name="some-input" label="Some input"/>
+    <source src="dir1/dir2/file.xml"/>
+    <exec url="mvn://groupId:artifactId:version/helidon-archetype.xml"/>
+    <output if="${foo} == 'bar'">
+        <transformation id="t1">
+            <replace replacement="token" regex="foo"></replace>
         </transformation>
-        <templates transformations="" engine="">
-            <directory></directory>
+        <templates transformations="t1" engine="mustache">
+            <directory>files</directory>
             <includes>
-                <include></include>
+                <include>**/*.foo</include>
             </includes>
         </templates>
-        <files transformations="">
-            <directory></directory>
+        <files transformations="t1">
+            <directory>files</directory>
         </files>
         <model>
-            <map key="">
-                <value key=""></value>
-                <list key=""></list>
+            <map key="foo">
+                <value key="first">What a foo</value>
+                <list key="second">
+                    <value>Oh my foo</value>
+                    <value>How is the foo?</value>
+                </list>
             </map>
             <value key="" order="100"></value>
             <list key="dependencies">
-                <value></value>
-                <list></list>
+                <value>you depend on ME</value>
+                <list>
+                    <value>d1</value>
+                    <value>d2</value>
+                </list>
                 <map>
                     <value key="groupId">io.helidon</value>
                     <value key="artifactId">helidon-foo</value>
