@@ -623,6 +623,9 @@
                         <xs:documentation source="version">2.0</xs:documentation>
                         <xs:documentation source="description">
                             A selectable option.
+                            <br/>
+                            <br/>
+                            This is only usable with <code>&lt;input type="select"&gt;</code>.
                         </xs:documentation>
                     </xs:annotation>
                     <xs:sequence>
@@ -713,6 +716,22 @@
                 <xs:documentation source="version">2.0</xs:documentation>
                 <xs:documentation source="description">
                     When <code>type="select"</code> is used, indicates that multiple options can be selected.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="default" use="optional">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Sets the default value for the input.
+                    <br/>
+                    <br/>
+                    The default value is specific to the type of input:
+                    <ul>
+                        <li>select: comma separated list of options</li>
+                        <li>text: place-holder text</li>
+                        <li>option: true or false (options opt-in by default, i.e default="false")</li>
+                    </ul>
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -884,6 +903,7 @@
                     <xs:complexType>
                         <xs:group ref="a:file-includes-group"/>
                         <xs:attributeGroup ref="a:transformations-group"/>
+                        <xs:attributeGroup ref="a:if-group"/>
                     </xs:complexType>
                 </xs:element>
                 <xs:element name="templates">
@@ -915,6 +935,7 @@
                             </xs:annotation>
                         </xs:attribute>
                         <xs:attributeGroup ref="a:transformations-group"/>
+                        <xs:attributeGroup ref="a:if-group"/>
                     </xs:complexType>
                 </xs:element>
             </xs:choice>

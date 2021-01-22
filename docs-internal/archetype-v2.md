@@ -76,59 +76,79 @@ Since the concepts of V2 are more advanced, the descriptor is more complex and r
  of the new XML descriptor:
 
 ```xml
-<archetype-script xmlns="https://helidon.io/archetype/2.0"
-                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
-
-    <context path="">
-        <value></value>
+<archetype-script>
+    <help>
+        <!-- rich help for the archetype or invoking element goes here ... -->
+    </help>
+    <!-- Set a read-only value for foo -->
+    <context path="foo">
+        <value>bar</value>
     </context>
-    <exec src="" />
-    <source src="" />
-    <step label="" if="">
-        <help/>
-        <input />
-        <output />
+    <exec src="path-to-script.xml" />
+    <source src="path-to-script.xml" />
+    <step label="My Step" if="${bar} == 'foo'">
+        <help>
+            <!-- rich help for the step goes here ... -->
+        </help>
+        <!-- text input -->
+        <input name="your-name" type="text" label="Your Name" prompt="Type your name"/>
     </step>
-    <input name="" type="" label="" prompt="">
-        <help/>
-        <option value="" label="">
-            <help/>
-            <exec src="" />
-            <source src="" />
-            <step />
-            <input />
+    <input name="select-items" type="select" label="Select an item" prompt="Please select an item">
+        <help>
+            <!-- rich help for the step -->
+        </help>
+        <option value="foo" label="Foo">
+            <help>
+                <!-- rich help for the selectable option -->
+            </help>
+            <exec src="path-to-script.xml" />
+            <source src="path-to-script.xml" />
+            <step label="Nested foo step">
+                <!-- ... -->
+            </step>
+            <input name="nested foo input" type="option" label="Foo option" prompt="Do you want foo option?">
+                <!-- ... -->
+            </input>
             <output />
         </option>
-        <exec src="" />
-        <source src="" />
-        <output />
+        <exec src="path-to-script.xml" />
+        <source src="path-to-script.xml" />
+        <output>
+            <!-- ... -->
+        </output>
     </input>
-    <help/>
-    <output if="">
-        <transformation id="" if="">
-            <replace regex="" replacement=""/>
+    <help>
+        <!-- see below -->
+    </help>
+    <output if="${bar} == 'foo'">
+        <transformation id="mustache">
+            <replace regex="\.mustache$" replacement=""/>
         </transformation>
-        <templates transformations="" if="" engine="">
-            <directory></directory>
-            <sources>
-                <source></include>
+        <transformation id="foo">
+            <replace regex="\.foo$" replacement="\.bar"/>
+        </transformation>
+        <templates transformations="mustache" if="" engine="mustache">
+            <directory>files</directory>
+            <includes>
+                <include>**/*.mustache</include>
             </includes>
         </templates>
-        <files transformations="" if="">
-            <directory></directory>
+        <files transformations="foo" if="">
+            <directory>files</directory>
             <excludes>
-                <exclude></exclude>
+                <exclude>**/*.mustache</exclude>
             </excludes>
         </files>
-        <model if="">
-            <value key="" order="" if=""></value>
-            <list key="" order="" if="">
-                <map order="" if="">
-                    <value key=""></value>
+        <model>
+            <value key="bob" if="${bar} == 'foo'">alice</value>
+            <list key="names" order="30">
+                <map>
+                    <value key="foo">bar</value>
+                    <value key="bar">foo</value>
                 </map>
-            <map key="" order="" if="">
-                <value key=""></value>
+            <map key="dependencies">
+                <value key="groupId">com.example</value>
+                <value key="artifactId">my-project</value>
             </map>
         </model>
     </output>
@@ -679,7 +699,7 @@ The `helidon-archetype-maven-plugin` will also expose configuration for `<archet
 </build>
 ```
 
-The maven plugin checks that all XML files against the schema, and performs a dry-run execution to:
+The maven plugin checks that all XML files are valid against the schema, and performs a dry-run execution to:
 - enforce optional steps contain only optional inputs
 - validate flow context paths
 - validate flow context expressions
@@ -791,7 +811,7 @@ E.g. for `quickstart-se`:
             <!-- mvn:// URL support -->
             <dependency>
                 <groupId>io.helidon.build-tools.archetype</groupId>
-                <artifactId>helidon-archetype-maven-url</artifactId>
+                <artifactId>helidon-archetype-maven-url-handler</artifactId>
             </dependency>
         </dependencies>
     </dependencies>
@@ -827,7 +847,7 @@ E.g. for `quickstart-se`:
 -----------------------------------------
 ```
 
-Such a step requires not user action. Clicking the check box expands nested inputs:
+Such a step requires no user action. Clicking the check box expands nested inputs:
 
 ```
 (2) Kubernetes

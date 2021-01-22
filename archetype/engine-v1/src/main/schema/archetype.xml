@@ -40,7 +40,7 @@ System.out.println("YEAH");
     <input type="text" name="test" label="test">
         <exec src="test.xml" />
     </input>
-    <input type="select" name="foo" label="Foo">
+    <input type="select" name="foo" label="Foo" prompt="Select a foo">
         <help>Text to help the user make a decision</help>
         <option value="bar" label="Bar">
             <help>Talk about bar</help>
@@ -52,7 +52,7 @@ System.out.println("YEAH");
             <input type="text" name="your-name" label="Your Name"/>
         </option>
     </input>
-    <input type="text" name="some-input" label="Some input"/>
+    <input type="text" name="some-input" label="Some input" default="The place-holder"/>
     <source src="dir1/dir2/file.xml"/>
     <exec url="mvn://groupId:artifactId:version/helidon-archetype.xml"/>
     <output if="${foo} == 'bar'">
