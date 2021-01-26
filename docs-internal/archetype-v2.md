@@ -17,6 +17,7 @@ This document describes the design of Helidon archetype engine V2.
     * [Flow Context Path Expressions](#flow-context-path-expressions)
     * [External Flow Context Values](#external-flow-context-values)
  * [Help text](#help-text)
+ * [Web UI Generate Window](#web-ui-generate-window)
  * [Output](#output)
     * [Static files](#static-files)
     * [Templates](#templates)
@@ -41,16 +42,18 @@ This document describes the design of Helidon archetype engine V2.
 This new version of the archetype engine will provide the low-level archetype support needed for the project
  [starter](https://github.com/batsatt/helidon-build-tools/blob/starter/starter-proposal/starter-proposal.md).
 
-V1 had a concept of input flow that models user inputs, V2 expands that concept into an advanced graph of inputs
- (referred to as "flow) that are logically grouped as steps and eventually infer output files.
+V1 had a concept of input flow that models user inputs, abd V2 expands that concept into an advanced graph of inputs
+ that are logically grouped as steps and eventually infer output files.  Traversal of the input graph at runtime
+  results in a series of user choices that is dynamic, dependent on the selections made. The entire graph of possible
+   inputs is referred to simply as the "flow".
 
 V2 archetypes are "scripts" that define the flow, and the V2 archetype engine is a simplistic "interpreter".
  The generation of a new project has two phases:
  - Execute the scripts to resolve the output files
  - Render the output files
 
-V1 has a concept of a catalog that aggregates multiple standalone archetypes, instead V2 uses a "main" archetype
- that encapsulates all possible choices.
+V1 has a concept of a catalog that aggregates multiple standalone archetypes; V2 uses a "main" archetype that
+ encapsulates all possible choices.
 
 Fine-grained "features" can be modeled by creating logical groups of inputs and templates that are re-usable throughout
  the flow. Scripts can be split to fit those features and encapsulate related definitions.
@@ -60,16 +63,21 @@ A V2 archetype project is a set of scripts and output files. Helidon will use a 
  - all "scripts" are co-located, making it easy to understand
  - all "scripts" are co-located, making it easy to re-use
 
-## Archetype scripts
+See [this mockup](https://github.com/romain-grecourt/helidon/tree/new-archetype-engine-design/archetypes/src/main/archetype)
+ for the updated Helidon archetypes.
+
+## Archetype Scripts
 
 Archetype scripts are XML descriptors. Scripts are composed with the following set of directives:
- - `<exec>`: execute a script, files are resolved relative to the script
- - `<source>`: execute a script, files are resolved relative to the current directory
+ - `<exec>`: execute a script, changing `currentDirectory` to that of the target script for relative path resolution
+ - `<source>`: execute a script, files are resolved without changing the `current` directory
  - `<context>`: set a read-only value in the context
  - `<step>`: define a step
  - `<input>`: define an input
  - `<output>`: define output files
  - `<help>`: define rich help text
+
+`currentDirectory` is one of the state maintained by the interpreter that corresponds to the current directory.
 
 Since the concepts of V2 are more advanced, the descriptor is more complex and requires more understanding from the
  archetype maintainers. An XML schema will be provided for IDE documentation and auto-completion. See below a skeleton
@@ -124,7 +132,7 @@ Since the concepts of V2 are more advanced, the descriptor is more complex and r
         <transformation id="mustache">
             <replace regex="\.mustache$" replacement=""/>
         </transformation>
-        <transformation id="foo">
+        <transformation id="foo-ext">
             <replace regex="\.foo$" replacement="\.bar"/>
         </transformation>
         <templates transformations="mustache" if="" engine="mustache">
@@ -133,7 +141,7 @@ Since the concepts of V2 are more advanced, the descriptor is more complex and r
                 <include>**/*.mustache</include>
             </includes>
         </templates>
-        <files transformations="foo" if="">
+        <files transformations="foo-ext">
             <directory>files</directory>
             <excludes>
                 <exclude>**/*.mustache</exclude>
@@ -157,7 +165,9 @@ Since the concepts of V2 are more advanced, the descriptor is more complex and r
 
 ### File Paths
 
-All paths are relative to their current directory, a leading `/` can be used to refer to the archetype root directory.
+Paths with a leading `/` are resolved relative to the archetype root directory.
+ Paths without a leading `/` are resolved relative to the `current` directory, which varies depending on whether
+ the script is invoked via `<exec>` or `<source>`.
 
 ## Flow
 
@@ -165,43 +175,37 @@ The flow is the graph of inputs.
 
 ### Input
 
-The flow is formed by way of nesting `<input>` elements. `<input>` requires a `name` attribute that must be unique
- among siblings.
+The flow is formed by way of nesting input elements:
+- `<text>`: text value
+- `<boolean>`: yes/no, checkbox
+- `<enum>`: one of
+- `<list>`: any of
+
+Input elements must be declared within an `<input>` element:
+```xml
+<input>
+    <text name="project-name" label="Project Name" placeholder="my-project" />
+    <boolean name="option1" label="Option1" />
+    <enum name="enum1" label="Enum1">
+        <value label="Foo">foo</value>
+        <value label="Bar">bar</value>
+    </enum>
+    <list name="array1" label="Select1" min="" max="">
+        <value label="Foo">Foo</value>
+    </list>
+</input>
+```
+
+Input elements share common attributes:
+- `label`: required, serves as title to be displayed next to the input
+- `name`: required, must be unique among siblings
+- `optional`: indicates if the input is optional, false by default (required)
+- `default`: sets the default value, the value type must match the type of input
 
 An input can be of different types:
 - `type="option"`: an option (`true` or `false`) ; opt-in by default but can be declared as opt-out (`default="false"`)
 - `type="select"`: pick and choose ; single optional choice by default, but can be required (`required="true"`) and or multiple (`multiple="true"`)
 - `type="text"`: text value ; may have a default value (`placeholder="my-default-value"`)
-
-An input can also be declared as hidden. Hidden inputs are not exposed in UIs. The only way to set a value of hidden
- inputs is via preset (`<context>`, CLI options, URL query params etc).
-
-Example of a selection:
-```xml
-<input name="tracing"
-       type="select"
-       label="Select a tracing provider">
-
-    <option value="zipkin" label="Zipkin" />
-    <option value="jaeger" label="Jaeger" />
-</input>
-```
-
-Example of an option:
-```xml
-<input name="kubernetes"
-       type="option"
-       label="Kubernetes Support"
-       prompt="Do you want support for Kubernetes"/>
-```
-
-Example of a text value:
-```xml
-<input name="name"
-       type="text"
-       label="Project name"
-       placeholder="myproject"/>
-```
 
 ### Step
 
@@ -214,10 +218,14 @@ Steps are required by default and can be made optional using the optional attrib
 </step>
 ```
 
+`<input>` elements must be enclosed inside a `<step>`, however they are allowed at the top-level so that they can
+ be included with either `<exec>` or `<source>`. When evaluating the scripts, the first `<input>` element found
+ must be nested inside a `<step>` element, otherwise this is considered a runtime error.
+
 ### Optional Steps
 
-Optional steps must have inputs with defaults. An optional step with non default inputs is invalid and should be
- validated as an error.
+Optional steps must have inputs with defaults. An optional step with non default inputs is invalid, and must result in
+ an error during validation.
 
 Customization of features can be modeled using an optional step declared as the last child of the step to be
  customized. The order is the declaration order, the enclosing steps must declare the optional step used for
@@ -236,25 +244,41 @@ An optional step requires no action other than continuing to the next step (unle
 
 ## Flow Context
 
-The flow context is a tree of resolved inputs that represents the choices. The tree nodes represent choices that
- are a pair of an input path its resolved value.
+The flow context is a tree of _resolved_ inputs, where each node has a name (and so can be addressed via a path) and
+ contains the resolved value and any children.
 
-The context may be populated with various mechanisms:
-- `<context>` directive
-- query parameters
-- CLI option
+The context may be populated _without_ user input to constrain the choices presented to the user, causing the
+ interpreter to skip over the associated inputs as if the user had already made the choice.
+ Several mechanisms can be used for this purpose:
+ - the `<context>` directive
+ - URI query parameters passed as arguments to the interpreter (Javascript in this case)
+ - CLI option options passed arguments to the interpreter (Java in this case)
 
-E.g.
+Values set by the `<context>` directive may not need to be declared by inputs, in this case they act as internal
+ variables that can be used by scripts.
+
+When the context is populated with values for all the required inputs, user input actions are not needed:
+- When the UI is interactive, it shows a `CONTINUE` action for the current step as well as the global `GENERATE` action
+ active.
+- When the UI is not interactive (i.e. batch), the project gets generated. If require inputs values are missing, it
+ fails with an error.
+
+The snippet below represents a flow context. Some values are marked as read-only as they are set with the
+ `<context>` directive and cannot be updated by the UI.
+
 ```
-|- flavor (select input) // value=se
-    |- base (select input) // value=secure-hello-world
-        |- media-support (option input) // read-only
-            |- provider (select input) // value=[jackson,jaxb] ; read-only
-        |- security (option input) // read-only
-            |- authentication (option input) // read-only
-                |- provider (select input) // value=[basic-auth,digest] ; read-only
+|- flavor (enum input) // value=se
+    |- base (enum input) // value=secure-hello-world
+        |- media-support (boolean input) // read-only
+            |- provider (list input) // value=[jackson,jaxb] ; read-only
+        |- security (boolean input) // read-only
+            |- authentication (boolean input) // read-only
+                |- provider (list input) // value=[basic-auth,digest] ; read-only
         |- hello-phrase (text input) // value="Bonjour Monde"
 ```
+
+Updating the value of a non read-only node will trigger a re-evaluation of the corresponding directives. If the value
+ for a non read-only boolean input is set to false, the children will be discarded in the flow context.
 
 The Java API for the flow context might look like the following:
 ```java
@@ -312,7 +336,7 @@ Invalid paths must be validated at build time and reported as errors.
 
 ### Flow Context Directive
 
-The `<context>` directive can be used to pre-set the value of a given input in the flow context. The values set
+The `<context>` directive can be used to preset the value of a given input in the flow context. The values set
  by this directive are flagged as read-only, and the inputs rendered by the UIs will be disabled.
 
 The `path` attribute is used to specify the path of the flow context node whose value is to be set.
@@ -382,9 +406,9 @@ Flow context path expressions are supported in the following elements:
 
 ### External Flow Context Values
 
-Values in the flow context can also be set externally using CLI options or URI query parameters. The flow context
- nodes are identified using absolute paths, thus the common prefix can be omitted (`PARENT.` and `ROOT.` are not
- allowed).
+Values in the flow context can also be set externally using CLI options or URI query parameters.
+ The flow context nodes must be identified using absolute paths; the common prefix can be omitted, but `PARENT.` and
+ `ROOT.` are not allowed.
 
 When declaring external flow context values, gating input option values can be inferred.
  E.g. `media-support.json.provider=jackson` implies both `media-support=true` and `media-support.json=true`.
@@ -414,7 +438,7 @@ helidon init \
     --input project-name=my-super-project
 ```
 
-## Help text
+## Help Text
 
 The step, input and option elements support a `label` attribute that is used for description purpose. Label is meant
  to be inline and short. Larger multi-line description text can be provided with a nested `<help>` element.
@@ -497,6 +521,24 @@ Helidon flavor
   (2) MP
 Enter selection (Default: 1): help
 ```
+
+## Web UI Generate Window
+
+When the user clicks on `GENERATE`, we want two things to happen:
+- the download of the application `zip` file is initiated (could be disabled with a checkbox)
+- a new window is displayed
+
+That window shows the following:
+- install instructions (unzip + git etc.) customized to the user's OS (with a tab to switch between OSes)
+- a preview of the project `README`
+- in the future we could support a full file explorer to browse the generated project
+
+The rich help text suggests a client rendering of markdown that consumes a JSON view of the formatted text. We may
+ decide to invest more in this area and have full support for asciidoc/markdown based off a common JSON AST view so that
+ the Helidon docs and the rich help text use the same rendering.
+
+With such support any rich text displayed would be served as JSON. The file explorer would leverage that and serve
+ the files using the JSON AST view.
 
 ## Output
 
@@ -691,6 +733,7 @@ The `helidon-archetype-maven-plugin` will also expose configuration for `<archet
             <configuration>
                 <sourceDirectory>src/main/archetype</sourceDirectory>
                 <archetype-script>
+                    <!-- inputs declared from here on must be wrapped in a step -->
                     <exec src="my-entry-point.xml" />
                 </archetype-script>
             </configuration>
@@ -740,6 +783,43 @@ The archetype archive is a JAR archive that contains the `src/main/archetype` di
 
 The archive could be optimized in the future to contain serialized objects instead of the XML, this would remove the
  need to parse all descriptors from XML.
+
+See below a mockup of the Java API for that models the archive:
+
+```java
+ interface Archetype {
+  Path getFile(String path);
+  Descriptor getDescriptor(String path);
+  List<String> getPaths(); // all the paths in the archive
+ }
+
+ // used at build-time, or unit test
+ class DirectoryArchetype implements Archetype {}
+ class ZipArchetype implements Archetype {}
+ // stores serialized object data
+ class SerializedZipArchetype implements Archetype {}
+ // stores serialized object data in an optimized archive format (jimage)
+ class SerializedMemoryMappedArchetype implements Archetype {}
+```
+
+The `Archetype` interface is a facade over the archive files and descriptors. It can lazily load XML descriptors,
+ and knows the paths of all scripts.
+
+ The web UI wizard will implement a Javascript interpreter in order to render the steps, the following is the JSON
+ it consumes:
+ ```json
+ {
+     "descriptors": {
+         "path1": {
+         },
+         "path2": {
+         }
+     },
+     "entryPoint": "path1"
+ }
+ ```
+
+This is a combined view of the archive where all descriptors are mapped by Path and in-lined as JSON.
 
 ## Maven compatibility
 
@@ -847,14 +927,15 @@ E.g. for `quickstart-se`:
 -----------------------------------------
 ```
 
-Such a step requires no user action. Clicking the check box expands nested inputs:
+Such a step does not require user action (so the CONTINUE button is active), but allows it; clicking the check box
+ expands nested inputs:
 
 ```
 (2) Kubernetes
  |
  | [ x ] Kubernetes support
- |   |- [ x ] add a service
- |   |- [ x ] add an Istio sidecar
+ |   |- [   ] add a service
+ |   |- [   ] add an Istio sidecar
  |
  | [CONTINUE]
 -----------------------------------------

@@ -430,37 +430,7 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:complexType name="context-type">
-        <xs:annotation>
-            <xs:documentation source="version">2.0</xs:documentation>
-            <xs:documentation source="description">
-                Define a read-only value for an input.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element name="value" type="xs:string" minOccurs="1" maxOccurs="unbounded">
-                <xs:annotation>
-                    <xs:documentation source="version">2.0</xs:documentation>
-                    <xs:documentation source="description">
-                        Define a value.
-                        <br/>
-                        <br/>
-                        The value type must match the type of input:
-                        <ul>
-                            <li>
-                                the value of an option input can be either true or false
-                            </li>
-                            <li>
-                                the value of a text input can be anything
-                            </li>
-                            <li>
-                                the value of a select input can only be one of the selectable options
-                            </li>
-                        </ul>
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:sequence>
+    <xs:attributeGroup name="path-group">
         <xs:attribute name="path" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
@@ -518,6 +488,83 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+    </xs:attributeGroup>
+
+    <xs:complexType name="context-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Define a read-only value for an input.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="boolean">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation source="version">2.0</xs:documentation>
+                        <xs:documentation source="description">
+                            Define a boolean value.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleContent>
+                        <xs:extension base="xs:boolean">
+                            <xs:attributeGroup ref="a:path-group"/>
+                        </xs:extension>
+                    </xs:simpleContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="text">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation source="version">2.0</xs:documentation>
+                        <xs:documentation source="description">
+                            Define a text value.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleContent>
+                        <xs:extension base="xs:string">
+                            <xs:attributeGroup ref="a:path-group"/>
+                        </xs:extension>
+                    </xs:simpleContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="enum">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation source="version">2.0</xs:documentation>
+                        <xs:documentation source="description">
+                            Define an enum value.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:sequence minOccurs="1" maxOccurs="unbounded">
+                        <xs:element name="value">
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string"/>
+                            </xs:simpleType>
+                        </xs:element>
+                    </xs:sequence>
+                    <xs:attributeGroup ref="a:path-group"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="list">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation source="version">2.0</xs:documentation>
+                        <xs:documentation source="description">
+                            Define a list value.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:sequence minOccurs="1" maxOccurs="unbounded">
+                        <xs:element name="value">
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string"/>
+                            </xs:simpleType>
+                        </xs:element>
+                    </xs:sequence>
+                    <xs:attributeGroup ref="a:path-group"/>
+                </xs:complexType>
+            </xs:element>
+        </xs:choice>
     </xs:complexType>
 
     <xs:complexType name="help-type">
@@ -596,6 +643,17 @@
         </xs:attribute>
     </xs:attributeGroup>
 
+    <xs:attributeGroup name="optional-group">
+        <xs:attribute name="optional" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Indicate if the step or input is optional.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+
     <xs:group name="directive-group">
         <xs:sequence>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
@@ -608,93 +666,7 @@
         </xs:sequence>
     </xs:group>
 
-    <xs:complexType name="input-type">
-        <xs:annotation>
-            <xs:documentation source="version">2.0</xs:documentation>
-            <xs:documentation source="description">
-                A user input.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:sequence minOccurs="0">
-            <xs:element name="help" type="a:help-type" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="option" minOccurs="0" maxOccurs="unbounded">
-                <xs:complexType>
-                    <xs:annotation>
-                        <xs:documentation source="version">2.0</xs:documentation>
-                        <xs:documentation source="description">
-                            A selectable option.
-                            <br/>
-                            <br/>
-                            This is only usable with <code>&lt;input type="select"&gt;</code>.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:sequence>
-                        <xs:element name="help" type="a:help-type" minOccurs="0" maxOccurs="1"/>
-                        <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
-                        <xs:element name="output" type="a:output-type" minOccurs="0" maxOccurs="1"/>
-                    </xs:sequence>
-                    <xs:attribute name="value" use="required">
-                        <xs:annotation>
-                            <xs:documentation source="version">2.0</xs:documentation>
-                            <xs:documentation source="description">
-                                The value for the selectable option.
-                            </xs:documentation>
-                        </xs:annotation>
-                    </xs:attribute>
-                    <xs:attributeGroup ref="a:label-group"/>
-                </xs:complexType>
-            </xs:element>
-            <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="output" type="a:output-type" minOccurs="0" maxOccurs="1"/>
-        </xs:sequence>
-        <xs:attribute name="type" use="required">
-            <xs:simpleType>
-                <xs:annotation>
-                    <xs:documentation source="version">2.0</xs:documentation>
-                    <xs:documentation source="description">
-                        The input type.
-                    </xs:documentation>
-                </xs:annotation>
-                <xs:restriction base="xs:string">
-                    <xs:enumeration value="option">
-                        <xs:annotation>
-                            <xs:documentation source="version">2.0</xs:documentation>
-                            <xs:documentation source="description">
-                                An option input.
-                            </xs:documentation>
-                        </xs:annotation>
-                    </xs:enumeration>
-                    <xs:enumeration value="text">
-                        <xs:annotation>
-                            <xs:documentation source="version">2.0</xs:documentation>
-                            <xs:documentation source="description">
-                                A text input.
-                            </xs:documentation>
-                        </xs:annotation>
-                    </xs:enumeration>
-                    <xs:enumeration value="select">
-                        <xs:annotation>
-                            <xs:documentation source="version">2.0</xs:documentation>
-                            <xs:documentation source="description">
-                                A select input.
-                                <br/>
-                                <br/>
-                                <ul>
-                                    <li>
-                                        Use nested <code>&lt;option&gt;</code> elements to define the selectable options
-                                    </li>
-                                    <li>
-                                        Single value is selectable by default, use
-                                        <code>multiple="true"</code>
-                                        to allow for multiple values to be selected.
-                                    </li>
-                                </ul>
-                            </xs:documentation>
-                        </xs:annotation>
-                    </xs:enumeration>
-                </xs:restriction>
-            </xs:simpleType>
-        </xs:attribute>
+    <xs:attributeGroup name="input-group">
         <xs:attribute name="name" use="required">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
@@ -711,31 +683,142 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="multiple" use="optional">
-            <xs:annotation>
-                <xs:documentation source="version">2.0</xs:documentation>
-                <xs:documentation source="description">
-                    When <code>type="select"</code> is used, indicates that multiple options can be selected.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="default" use="optional">
-            <xs:annotation>
-                <xs:documentation source="version">2.0</xs:documentation>
-                <xs:documentation source="description">
-                    Sets the default value for the input.
-                    <br/>
-                    <br/>
-                    The default value is specific to the type of input:
-                    <ul>
-                        <li>select: comma separated list of options</li>
-                        <li>text: place-holder text</li>
-                        <li>option: true or false (options opt-in by default, i.e default="false")</li>
-                    </ul>
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
+    </xs:attributeGroup>
+
+    <xs:complexType name="text-input-type">
+        <xs:sequence>
+            <xs:element name="help" type="a:help-type" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attributeGroup ref="a:input-group"/>
         <xs:attributeGroup ref="a:label-group"/>
+        <xs:attributeGroup ref="a:optional-group"/>
+        <xs:attribute name="default" type="xs:string">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Default text input value.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="boolean-input-type">
+        <xs:sequence>
+            <xs:element name="help" type="a:help-type" minOccurs="0" maxOccurs="1"/>
+            <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="output" type="a:output-type" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attributeGroup ref="a:input-group"/>
+        <xs:attributeGroup ref="a:label-group"/>
+        <xs:attributeGroup ref="a:optional-group"/>
+        <xs:attribute name="default" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Default boolean input value.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="enum-input-type">
+        <xs:sequence>
+            <xs:element name="help" type="a:help-type" minOccurs="0" maxOccurs="1"/>
+            <xs:choice minOccurs="1" maxOccurs="unbounded">
+                <xs:element name="option">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="help" type="a:help-type" minOccurs="0" maxOccurs="1"/>
+                            <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
+                            <xs:element name="output" type="a:output-type" minOccurs="0" maxOccurs="1"/>
+                        </xs:sequence>
+                        <xs:attribute name="value" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation source="version">2.0</xs:documentation>
+                                <xs:documentation source="description">
+                                    Enum constant value.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attributeGroup ref="a:label-group"/>
+                    </xs:complexType>
+                </xs:element>
+            </xs:choice>
+        </xs:sequence>
+        <xs:attributeGroup ref="a:input-group"/>
+        <xs:attributeGroup ref="a:label-group"/>
+        <xs:attribute name="default" type="xs:string">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Default enum input value.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="list-input-type">
+        <xs:sequence>
+            <xs:element name="help" type="a:help-type" minOccurs="0" maxOccurs="1"/>
+            <xs:choice minOccurs="1" maxOccurs="unbounded">
+                <xs:element name="option">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="help" type="a:help-type" minOccurs="0" maxOccurs="1"/>
+                            <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
+                            <xs:element name="output" type="a:output-type" minOccurs="0" maxOccurs="1"/>
+                        </xs:sequence>
+                        <xs:attribute name="value" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation source="version">2.0</xs:documentation>
+                                <xs:documentation source="description">
+                                    List constant value.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attributeGroup ref="a:label-group"/>
+                    </xs:complexType>
+                </xs:element>
+            </xs:choice>
+        </xs:sequence>
+        <xs:attributeGroup ref="a:optional-group"/>
+        <xs:attributeGroup ref="a:input-group"/>
+        <xs:attributeGroup ref="a:label-group"/>
+        <xs:attribute name="default" type="xs:string">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Default list input value.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="min" type="xs:integer"/>
+        <xs:attribute name="max">
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:pattern value="[0-9]+|unbounded"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="input-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                A user input.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence minOccurs="0">
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="text" type="a:text-input-type"/>
+                <xs:element name="boolean" type="a:boolean-input-type"/>
+                <xs:element name="enum" type="a:enum-input-type"/>
+                <xs:element name="list" type="a:list-input-type"/>
+            </xs:choice>
+            <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="output" type="a:output-type" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
     </xs:complexType>
 
     <xs:complexType name="step-type">
@@ -746,7 +829,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:element name="help" type="a:help-type" minOccurs="0" maxOccurs="1" />
+            <xs:element name="help" type="a:help-type" minOccurs="0" maxOccurs="1"/>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element name="context" type="a:context-type"/>
                 <xs:element name="exec" type="a:exec-type"/>
@@ -767,7 +850,7 @@
         </xs:annotation>
         <xs:sequence>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
-                <xs:element name="transformation" >
+                <xs:element name="transformation">
                     <xs:annotation>
                         <xs:documentation source="version">2.0</xs:documentation>
                         <xs:documentation source="description">
@@ -776,8 +859,10 @@
                             <br/>
                             <p>
                                 Replacements are search and replace regular expressions declared using <code>
-                                &lt;replace&gt;</code>. They form a chain where the first input is the included file path,
-                                the result is passed to the next replacement and the last result is used as the final file
+                                &lt;replace&gt;</code>. They form a chain where the first input is the included file
+                                path,
+                                the result is passed to the next replacement and the last result is used as the final
+                                file
                                 path.
                             </p>
                             <br/>
@@ -949,8 +1034,8 @@
                     </xs:annotation>
                     <xs:complexType>
                         <xs:choice minOccurs="0" maxOccurs="unbounded">
-                            <xs:element name="value" type="a:keyed-value-type" />
-                            <xs:element name="list" type="a:keyed-list-type" />
+                            <xs:element name="value" type="a:keyed-value-type"/>
+                            <xs:element name="list" type="a:keyed-list-type"/>
                             <xs:element name="map" type="a:keyed-map-type"/>
                         </xs:choice>
                         <xs:attributeGroup ref="a:if-group"/>
@@ -971,7 +1056,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="help" type="a:help-type" minOccurs="0" maxOccurs="1"/>
-                <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded" />
+                <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="output" type="a:output-type" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
         </xs:complexType>

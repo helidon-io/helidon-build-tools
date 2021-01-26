@@ -20,12 +20,17 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <help>Script help text</help>
-    <context path="my.flow.context.path">
-        <value>Foo</value>
-    </context>
-    <context path="my.other.flow.context.path">
-        <value>Bar</value>
+    <context>
+        <boolean path="test.option1">true</boolean>
+        <list path="test.array1">
+            <value>hello</value>
+        </list>
+        <enum path="test.enum1">
+            <value>bob</value> <!-- error, this is not one of the enum values -->
+        </enum>
+        <enum path="test.array1">
+            <value>bob</value> <!-- error, this is declared as an array -->
+        </enum>
     </context>
     <step label="A Step Title">
         <help><![CDATA[
@@ -35,24 +40,57 @@ Some **rich** help text !
 System.out.println("YEAH");
 ```
 ]]></help>
-        <input type="text" name="some-input" label="Some text input"/>
+        <input>
+            <text name="some-input" label="Some text input"/>
+        </input>
     </step>
-    <input type="text" name="test" label="test">
+    <input>
+        <text name="test" label="test"></text>
+        <boolean name="" label="" />
         <exec src="test.xml" />
+        <step label="next">
+            <help></help>
+            <input>
+                <text name="project-name" label="Project Name" default="my-project"/>
+                <boolean name="option1" label="Option1">
+                    <input />
+                </boolean>
+                <enum name="enum1" label="Enum1">
+                    <help/>
+                    <option label="Foo" value="foo">
+                        <help/>
+                    </option>
+                    <option label="Bar" value="bar" />
+                </enum>
+                <list name="array1" label="Select1" min="0" max="100">
+                    <help></help>
+                    <option label="Foo" value="foo">
+                        <help/>
+                    </option>
+                </list>
+            </input>
+        </step>
     </input>
-    <input type="select" name="foo" label="Foo" prompt="Select a foo">
-        <help>Text to help the user make a decision</help>
-        <option value="bar" label="Bar">
+    <input>
+        <list name="foo" label="Foo" prompt="Select a foo">
+            <help>Text to help the user make a decision</help>
+            <option label="Bar" value="bar" />
+        </list>
+        <boolean name="bar" label="Bar">
             <help>Talk about bar</help>
             <step label="yeah">
                 <help>Well.. yeah!</help>
-                <input type="text" name="foo-again" label="Foo again !"/>
+                <input>
+                    <text name="foo-again" label="Foo again !"/>
+                </input>
             </step>
-            <input type="option" name="a-super-option" label="A super option"/>
-            <input type="text" name="your-name" label="Your Name"/>
-        </option>
+            <input>
+                <boolean name="a-super-option" label="A super option" />
+                <text name="your-name" label="Your Name"/>
+            </input>
+        </boolean>
+        <text name="some-input" label="Some input" default="The place-holder" />
     </input>
-    <input type="text" name="some-input" label="Some input" default="The place-holder"/>
     <source src="dir1/dir2/file.xml"/>
     <exec url="mvn://groupId:artifactId:version/helidon-archetype.xml"/>
     <output if="${foo} == 'bar'">
