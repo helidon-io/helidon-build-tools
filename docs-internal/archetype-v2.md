@@ -69,13 +69,13 @@ See [this mockup](https://github.com/romain-grecourt/helidon/tree/new-archetype-
 ## Archetype Scripts
 
 Archetype scripts are XML descriptors. Scripts are composed with the following set of directives:
- - `<exec>`: execute a script, changing `currentDirectory` to that of the target script for relative path resolution
- - `<source>`: execute a script, files are resolved without changing the `current` directory
- - `<context>`: set a read-only value in the context
- - `<step>`: define a step
- - `<input>`: define an input
- - `<output>`: define output files
- - `<help>`: define rich help text
+ - `<exec>` - execute a script, changing `currentDirectory` to that of the target script for relative path resolution
+ - `<source>`- execute a script, files are resolved without changing the `current` directory
+ - `<context>` - set a read-only value in the context
+ - `<step>` - define a step
+ - `<input>` - define an input
+ - `<output>` - define output files
+ - `<help>` - define rich help text
 
 `currentDirectory` is one of the state maintained by the interpreter that corresponds to the current directory.
 
@@ -88,9 +88,12 @@ Since the concepts of V2 are more advanced, the descriptor is more complex and r
     <help>
         <!-- rich help for the archetype or invoking element goes here ... -->
     </help>
-    <!-- Set a read-only value for foo -->
-    <context path="foo">
-        <value>bar</value>
+    <!-- Set context values -->
+    <context>
+        <boolean path="test.option1">true</boolean>
+        <list path="test.array1">
+            <value>hello</value>
+        </list>
     </context>
     <exec src="path-to-script.xml" />
     <source src="path-to-script.xml" />
@@ -98,36 +101,51 @@ Since the concepts of V2 are more advanced, the descriptor is more complex and r
         <help>
             <!-- rich help for the step goes here ... -->
         </help>
-        <!-- text input -->
-        <input name="your-name" type="text" label="Your Name" prompt="Type your name"/>
+        <input>
+            <!-- text input -->
+            <text name="your-name" label="Your Name" prompt="Type your name"/>
+            <enum name="pick-a-bar" label="Select a Bar" prompt="Please select a Bar">
+                <help>
+                    <!-- rich help for the enum input goes here -->
+                </help>
+                <option value="bar1"  label="Bar1">
+                    <help>
+                        <!-- rich help for the option -->
+                    </help>
+                </option>
+                <option label="Bar2" />
+                <option value="bar3" label="Bar3" />
+            </enum>
+        </input>
     </step>
-    <input name="select-items" type="select" label="Select an item" prompt="Please select an item">
-        <help>
-            <!-- rich help for the step -->
-        </help>
-        <option value="foo" label="Foo">
+    <input>
+        <list name="select-item" label="Select an item" prompt="Please select an item">
             <help>
-                <!-- rich help for the selectable option -->
+                <!-- rich help for the list input goes here -->
             </help>
+            <option value="foo" label="Foo">
+                <help>
+                    <!-- rich help for the option -->
+                </help>
+                <exec src="path-to-script.xml" />
+                <source src="path-to-script.xml" />
+                <step label="Nested foo step">
+                    <input>
+                        <text name="foo-name" label="Foo name" prompt="Please give a name for Foo" />
+                    </input>
+                </step>
+                <input>
+                    <boolean name="foo-option" label="Foo option" prompt="Do you want foo option?" />
+                </input>
+                <output />
+            </option>
             <exec src="path-to-script.xml" />
             <source src="path-to-script.xml" />
-            <step label="Nested foo step">
+            <output>
                 <!-- ... -->
-            </step>
-            <input name="nested foo input" type="option" label="Foo option" prompt="Do you want foo option?">
-                <!-- ... -->
-            </input>
-            <output />
-        </option>
-        <exec src="path-to-script.xml" />
-        <source src="path-to-script.xml" />
-        <output>
-            <!-- ... -->
-        </output>
+            </output>
+        </list>
     </input>
-    <help>
-        <!-- see below -->
-    </help>
     <output if="${bar} == 'foo'">
         <transformation id="mustache">
             <replace regex="\.mustache$" replacement=""/>
@@ -176,10 +194,10 @@ The flow is the graph of inputs.
 ### Input
 
 The flow is formed by way of nesting input elements:
-- `<text>`: text value
-- `<boolean>`: yes/no, checkbox
-- `<enum>`: one of
-- `<list>`: any of
+- `<text>` - text value
+- `<boolean>` - yes/no, checkbox
+- `<enum>` - one of
+- `<list>` - any of
 
 Input elements must be declared within an `<input>` element:
 ```xml
@@ -187,25 +205,25 @@ Input elements must be declared within an `<input>` element:
     <text name="project-name" label="Project Name" placeholder="my-project" />
     <boolean name="option1" label="Option1" />
     <enum name="enum1" label="Enum1">
-        <value label="Foo">foo</value>
-        <value label="Bar">bar</value>
+        <option value="foo" label="Foo" />
+        <option value="bar" label="Bar" />
     </enum>
     <list name="array1" label="Select1" min="" max="">
-        <value label="Foo">Foo</value>
+        <option value="foo" label="Foo" />
     </list>
 </input>
 ```
 
 Input elements share common attributes:
-- `label`: required, serves as title to be displayed next to the input
-- `name`: required, must be unique among siblings
-- `optional`: indicates if the input is optional, false by default (required)
-- `default`: sets the default value, the value type must match the type of input
+- `label` - required, serves as title to be displayed next to the input
+- `name` - required, must be unique among siblings
+- `optional` - indicates if the input is optional, false by default (required)
+- `default` - sets the default value, the value type must match the type of input
 
 An input can be of different types:
-- `type="option"`: an option (`true` or `false`) ; opt-in by default but can be declared as opt-out (`default="false"`)
-- `type="select"`: pick and choose ; single optional choice by default, but can be required (`required="true"`) and or multiple (`multiple="true"`)
-- `type="text"`: text value ; may have a default value (`placeholder="my-default-value"`)
+- `type="option"` - an option (`true` or `false`) ; opt-in by default but can be declared as opt-out (`default="false"`)
+- `type="select"` - pick and choose ; single optional choice by default, but can be required (`required="true"`) and or multiple (`multiple="true"`)
+- `type="text"` - text value ; may have a default value (`placeholder="my-default-value"`)
 
 ### Step
 
@@ -277,22 +295,22 @@ The snippet below represents a flow context. Some values are marked as read-only
         |- hello-phrase (text input) // value="Bonjour Monde"
 ```
 
-Updating the value of a non read-only node will trigger a re-evaluation of the corresponding directives. If the value
- for a non read-only boolean input is set to false, the children will be discarded in the flow context.
+Updating the value of a non-read-only node will trigger a re-evaluation of the corresponding directives. If the value
+ for a non-read-only boolean input is set to false, the children will be discarded in the flow context.
 
 The Java API for the flow context might look like the following:
 ```java
-interface ContextNode {
-    String name();
-    Optional<ContextValue>();
-    List<ContextNode> children();
-}
 interface ContextValue {
     // Flags this value as declared externally prior to any flow invocation.
     // E.g. passed-in with query parameter or CLI option
     boolean external();
     // Flags this value as set by a <context> directive
     boolean readOnly();
+}
+interface ContextNode {
+    String name();
+    Optional<ContextValue>();
+    List<ContextNode> children();
 }
 interface TextContextValue extends ContextValue {}
 interface SelectContextValue extends ContextValue {
@@ -345,18 +363,17 @@ The example choices below are effectively "presets".
 
 ```xml
 <archetype-script>
-    <context path="media-support.json.provider"> <!-- example of a single value choice -->
-        <value>jackson</value>
-    </context>
-    <context path="security.authentication.provider"> <!-- example of a multi-value choice (i.e a select with multiple values) -->
-        <value>basic-auth</value>
-        <value>digest-auth</value>
-    </context>
-    <context path="health"> <!-- example of opting out of an option that defaults to true -->
-        <value>false</value>
-    </context>
-    <context path="project-name"> <!-- example of a text choice -->
-        <value>my-super-project</value>
+    <context>
+        <boolean path="test.option1">true</boolean>
+        <list path="test.array1">
+            <value>hello</value>
+        </list>
+        <enum path="test.enum1">
+            <value>bob</value> <!-- error, this is not one of the enum values -->
+        </enum>
+        <enum path="test.array1">
+            <value>bob</value> <!-- error, this is declared as an array -->
+        </enum>
     </context>
 </archetype-script>
 ```
