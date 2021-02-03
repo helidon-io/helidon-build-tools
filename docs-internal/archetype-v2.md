@@ -40,7 +40,7 @@ This document describes the design of Helidon archetype engine V2.
 ## Introduction
 
 This new version of the archetype engine will provide the low-level archetype support needed for the project
- [starter](https://github.com/batsatt/helidon-build-tools/blob/starter/starter-proposal/starter-proposal.md).
+ [starter](./starter-proposal.md).
 
 V1 had a concept of input flow that models user inputs, abd V2 expands that concept into an advanced graph of inputs
  that are logically grouped as steps and eventually infer output files.  Traversal of the input graph at runtime
@@ -172,6 +172,7 @@ Since the concepts of V2 are more advanced, the descriptor is more complex and r
                     <value key="foo">bar</value>
                     <value key="bar">foo</value>
                 </map>
+            </list>
             <map key="dependencies">
                 <value key="groupId">com.example</value>
                 <value key="artifactId">my-project</value>
@@ -309,7 +310,7 @@ interface ContextValue {
 }
 interface ContextNode {
     String name();
-    Optional<ContextValue>();
+    Optional<ContextValue> value();
     List<ContextNode> children();
 }
 interface TextContextValue extends ContextValue {}
@@ -402,11 +403,11 @@ Values can be either flow context path values or literal, and are only of the fo
  - Array: `['foo', 'bar']`
 
 The following operators are supported:
- - `&&`: logical AND
- - `||`: logical OR
- - `!`: logical negation
- - `contains`: array contains
- - `==`: equality
+ - `&&` - logical AND
+ - `||` - logical OR
+ - `!` - logical negation
+ - `contains` - array contains
+ - `==` - equality
 
 ```
 ${security}
@@ -467,7 +468,7 @@ The `<help>` element supports a limited markdown format:
  - `` `code` ``
  - `[Links](https://example.com)`
 
-Non standard markdown syntax should follow [kramdown's extension](https://kramdown.gettalong.org/syntax.html#extensions).
+Non-standard markdown syntax should follow [kramdown extension](https://kramdown.gettalong.org/syntax.html#extensions).
 
 For instance, we can add support for colors like this:
  - `{::color-info}This is an info colored text{:/}`
