@@ -85,7 +85,24 @@ System.out.println("YEAH");
                 </input>
             </step>
             <input>
-                <boolean name="a-super-option" label="A super option" />
+                <boolean name="a-super-option" label="A super option">
+                    <output>
+                        <template engine="mustache" source="Dockerfile.mustache" target="Dockerfile.native">
+                            <model>
+                                <value key="native-image">true</value>
+                            </model>
+                        </template>
+                        <templates transformations="t1" engine="mustache">
+                            <directory>files</directory>
+                            <includes>
+                                <include>**/*.mustache</include>
+                            </includes>
+                            <model>
+                                <value key="template-specific-model">yeah</value>
+                            </model>
+                        </templates>
+                    </output>
+                </boolean>
                 <text name="your-name" label="Your Name"/>
             </input>
         </boolean>

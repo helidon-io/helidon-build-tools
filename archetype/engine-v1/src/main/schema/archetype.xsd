@@ -841,6 +841,22 @@
         <xs:attributeGroup ref="a:label-group"/>
     </xs:complexType>
 
+    <xs:complexType name="model-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Define data for the template model. The data-model is global unless it is scoped under &lt;template&gt;
+                or &lt;templates&gt;.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="value" type="a:keyed-value-type"/>
+            <xs:element name="list" type="a:keyed-list-type"/>
+            <xs:element name="map" type="a:keyed-map-type"/>
+        </xs:choice>
+        <xs:attributeGroup ref="a:if-group"/>
+    </xs:complexType>
+
     <xs:complexType name="output-type">
         <xs:annotation>
             <xs:documentation source="version">2.0</xs:documentation>
@@ -971,6 +987,39 @@
                         </xs:attribute>
                     </xs:complexType>
                 </xs:element>
+                <xs:element name="file">
+                    <xs:annotation>
+                        <xs:documentation source="version">2.0</xs:documentation>
+                        <xs:documentation source="description">
+                            Defines a static file.
+                            <br/>
+                            <ul>
+                                <li>
+                                    The path of the file is relative to the configured <code>directory</code>.
+                                </li>
+                            </ul>
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="source" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation source="version">2.0</xs:documentation>
+                                <xs:documentation source="description">
+                                    The file source.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="target" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation source="version">2.0</xs:documentation>
+                                <xs:documentation source="description">
+                                    The file target.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attributeGroup ref="a:if-group"/>
+                    </xs:complexType>
+                </xs:element>
                 <xs:element name="files">
                     <xs:annotation>
                         <xs:documentation source="version">2.0</xs:documentation>
@@ -991,6 +1040,54 @@
                         <xs:attributeGroup ref="a:if-group"/>
                     </xs:complexType>
                 </xs:element>
+                <xs:element name="template">
+                    <xs:annotation>
+                        <xs:documentation source="version">2.0</xs:documentation>
+                        <xs:documentation source="description">
+                            Define a template file.
+                            <br/>
+                            <ul>
+                                <li>
+                                    The path of the template file is relative to the configured
+                                    <code>directory</code>
+                                </li>
+                            </ul>
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="model" type="a:model-type" minOccurs="0" maxOccurs="1"/>
+                        </xs:sequence>
+                        <xs:attribute name="engine" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation source="version">2.0</xs:documentation>
+                                <xs:documentation source="description">
+                                    Associates the included template files with a template engine.
+                                    <br/>
+                                    <br/>
+                                    The value must match a template engine registered with the archetype engine.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="source" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation source="version">2.0</xs:documentation>
+                                <xs:documentation source="description">
+                                    The template file source.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="target" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation source="version">2.0</xs:documentation>
+                                <xs:documentation source="description">
+                                    The processed file target.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attributeGroup ref="a:if-group"/>
+                    </xs:complexType>
+                </xs:element>
                 <xs:element name="templates">
                     <xs:annotation>
                         <xs:documentation source="version">2.0</xs:documentation>
@@ -999,7 +1096,7 @@
                             <br/>
                             <ul>
                                 <li>
-                                    The path of the files template files included are relative to the configured
+                                    The path of the template files included are relative to the configured
                                     <code>directory</code>
                                 </li>
                                 <li>Transformations can be used to modify the final path of the files to be created</li>
@@ -1007,7 +1104,10 @@
                         </xs:documentation>
                     </xs:annotation>
                     <xs:complexType>
-                        <xs:group ref="a:file-includes-group"/>
+                        <xs:sequence>
+                            <xs:group ref="a:file-includes-group"/>
+                            <xs:element name="model" type="a:model-type" minOccurs="0" maxOccurs="1"/>
+                        </xs:sequence>
                         <xs:attribute name="engine" type="xs:string" use="optional">
                             <xs:annotation>
                                 <xs:documentation source="version">2.0</xs:documentation>
@@ -1025,22 +1125,7 @@
                 </xs:element>
             </xs:choice>
             <xs:choice minOccurs="0" maxOccurs="1">
-                <xs:element name="model">
-                    <xs:annotation>
-                        <xs:documentation source="version">2.0</xs:documentation>
-                        <xs:documentation source="description">
-                            Define data for the template model in the output of the current context.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:complexType>
-                        <xs:choice minOccurs="0" maxOccurs="unbounded">
-                            <xs:element name="value" type="a:keyed-value-type"/>
-                            <xs:element name="list" type="a:keyed-list-type"/>
-                            <xs:element name="map" type="a:keyed-map-type"/>
-                        </xs:choice>
-                        <xs:attributeGroup ref="a:if-group"/>
-                    </xs:complexType>
-                </xs:element>
+                <xs:element name="model" type="a:model-type"/>
             </xs:choice>
         </xs:sequence>
         <xs:attributeGroup ref="a:if-group"/>

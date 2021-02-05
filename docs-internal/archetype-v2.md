@@ -606,8 +606,14 @@ Templates can be declared in the output using `<templates>`. The attribute `engi
     <sources>
         <source>**/*.mustache</include>
     </includes>
+    <model>
+        <value key="template-specific-model">some-value</value>
+    </model>
 </templates>
 ```
+
+The `<model>` element above is declared under `<templates>` and thus defines data that is scoped to the
+ included templates. This allows to derive the same templates multiple times with different model.
 
 ### Transformations
 
