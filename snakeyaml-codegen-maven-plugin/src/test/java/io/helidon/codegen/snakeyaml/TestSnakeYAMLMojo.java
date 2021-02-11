@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,5 +77,15 @@ public class TestSnakeYAMLMojo {
                 "Expected replacement getter 'getThing'; found '" + sub.getter() + "' instead");
         assertEquals("setThing", sub.setter(),
                 "Expected replacement setter 'getThing'; found '" + sub.setter() + "' instead");
+    }
+
+    @Test
+    public void testPropName() {
+        String setterMethodName = "setMyProperty";
+        assertEquals("myProperty", SnakeYAMLMojo.EndpointScanner.propertyName(setterMethodName));
+
+        setterMethodName = "setIPAddress";
+        assertEquals("IPAddress", SnakeYAMLMojo.EndpointScanner.propertyName(setterMethodName));
+
     }
 }
