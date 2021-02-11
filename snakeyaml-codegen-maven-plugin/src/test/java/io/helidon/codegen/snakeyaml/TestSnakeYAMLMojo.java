@@ -78,4 +78,14 @@ public class TestSnakeYAMLMojo {
         assertEquals("setThing", sub.setter(),
                 "Expected replacement setter 'getThing'; found '" + sub.setter() + "' instead");
     }
+
+    @Test
+    public void testPropName() {
+        String setterMethodName = "setMyProperty";
+        assertEquals("myProperty", SnakeYAMLMojo.EndpointScanner.propertyName(setterMethodName));
+
+        setterMethodName = "setIPAddress";
+        assertEquals("IPAddress", SnakeYAMLMojo.EndpointScanner.propertyName(setterMethodName));
+
+    }
 }

@@ -576,7 +576,7 @@ public class SnakeYAMLMojo extends AbstractMojo {
      * Collects information about types analyzed by the compiler, gathering class/interface,
      * enum, and method information.
      */
-    private static class EndpointScanner extends TreePathScanner<Type, Type> {
+    static class EndpointScanner extends TreePathScanner<Type, Type> {
 
         private final Map<String, Type> types;
         private final Set<Import> imports;
@@ -620,12 +620,26 @@ public class SnakeYAMLMojo extends AbstractMojo {
             CharSequence methodName = node.getName();
             CharSequence namePrefix = methodName.subSequence(0, Math.min(3, methodName.length()));
             if (namePrefix.equals("set") && methodName.length() > 3 && node.getParameters().size() == 1) {
-                String propName = Character.toLowerCase(methodName.charAt(3))
-                        + methodName.subSequence(4, methodName.length()).toString();
                 VariableTree propertyTree = node.getParameters().get(0);
-                addPropertyParametersIfNeeded(propertyTree, type, propName);
+                addPropertyParametersIfNeeded(propertyTree, type, propertyName(methodName));
             }
             return super.visitMethod(node, type);
+        }
+
+        static String propertyName(CharSequence setterMethodName) {
+            /*
+             * Normally, we force the property name to start with a lower-case character.
+             * But, if the SECOND character of the property name is upper-case then we should not force the first character to
+             * lower-case. For example, setIPAddress should NOT yield the property name iPAddress but rather it should be
+             * IPAddress.
+             */
+            boolean forceFirstCharOfPropertyNameToLowerCase = setterMethodName.length() <= 4 // just one extra character so we cannot look past it
+                    || !Character.isUpperCase(setterMethodName.charAt(4));
+            return (
+                    forceFirstCharOfPropertyNameToLowerCase
+                            ? Character.toLowerCase(setterMethodName.charAt(3))
+                            : setterMethodName.charAt(3))
+                    + setterMethodName.subSequence(4, setterMethodName.length()).toString();
         }
 
         private static void addPropertyParametersIfNeeded(VariableTree node, Type type, String propName) {
