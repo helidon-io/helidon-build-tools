@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenLogWriter;
@@ -94,6 +95,12 @@ public class JLinkImageMojo extends AbstractMojo {
     private List<String> defaultArgs;
 
     /**
+     * Additional modules to use when starting the application.
+     */
+    @Parameter(property = "jlink.image.additionalModules")
+    private Set<String> additionalModules;
+
+    /**
      * The maximum number of seconds to wait for the application to start.
      */
     @Parameter(defaultValue = "60", property = "jlink.image.maxAppStartSeconds")
@@ -129,6 +136,7 @@ public class JLinkImageMojo extends AbstractMojo {
                                                 .defaultJvmOptions(defaultJvmOptions)
                                                 .defaultArgs(defaultArgs)
                                                 .defaultDebugOptions(defaultDebugOptions)
+                                                .additionalModules(additionalModules)
                                                 .cds(addClassDataSharingArchive)
                                                 .stripDebug(stripDebug)
                                                 .test(testImage)

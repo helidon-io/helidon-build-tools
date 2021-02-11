@@ -139,6 +139,7 @@ This plugin binds to the `package` phase by default.
 | defaultJvmOptions | List | [] | JVM options to use if none are passed to the `start` script |
 | defaultArgs | List | [] | Application arguments to use if none are passed to the `start` script |
 | defaultDebugOptions | List | [] | JVM debug options to use if the `--debug` flag is passed to the `start` script |
+| additionalModules | Set | [] | Add any modules that may not be found automatically |
 | addClassDataSharingArchive | Boolean | `true` | Add a Class Data Sharing archive to reduce startup time |
 | testImage | Boolean | `true` | Start the application after the image is built |
 | stripDebug | Boolean | `false` | Remove all debug support from the image, including within `.class` files |
