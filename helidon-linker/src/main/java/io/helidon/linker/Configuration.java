@@ -135,7 +135,7 @@ public final class Configuration {
 
     /**
      * Returns modules to use when starting the application.
-     * 
+     *
      * @return the additional modules.
      */
     public Set<String> additionalModules() {
