@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.linker;
 import java.nio.file.Path;
 
 import io.helidon.build.test.TestFiles;
+import io.helidon.linker.util.JavaRuntime;
 
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +36,7 @@ class ApplicationTest {
     @Test
     void testHelidonVersion() {
         Path mainJar = TestFiles.helidonMpJar();
-        Application app = Application.create(mainJar);
+        Application app = Application.create(JavaRuntime.current(true), mainJar);
         String version = app.helidonVersion();
         assertThat(version, is(notNullValue()));
         assertThat(version, is(not("0.0.0")));

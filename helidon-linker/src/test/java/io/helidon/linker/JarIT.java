@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,17 +25,33 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * Unit test for class {@link Jar}.
+ * Run as integration test so jars generated during phase "pre-integration-test"
+ * are available.
  */
-class JarTest {
+class JarIT {
 
     @Test
     @Disabled
     void testSignedJar() {
         Path signed = TestFiles.signedJar();
-        Jar jar = Jar.open(signed);
+        Jar jar = Jar.open(signed, Runtime.version());
         assertThat(jar.isSigned(), is(true));
+    }
+
+    @Test
+    void testMultiReleaseJar() {
+        Path multiRelease = TestFiles.targetDir()
+                .resolve("it")
+                .resolve("projects")
+                .resolve("multi-release")
+                .resolve("target")
+                .resolve("multi-release.jar");
+        Jar jar = Jar.open(multiRelease, Runtime.Version.parse("11"));
+        assertThat(jar.isMultiRelease(), is(true));
+        assertThat(jar.moduleDescriptor(), notNullValue());
     }
 }

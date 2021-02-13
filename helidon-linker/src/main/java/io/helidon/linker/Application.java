@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import io.helidon.build.util.Log;
 import io.helidon.linker.util.JavaRuntime;
 
 import static io.helidon.linker.util.Constants.DIR_SEP;
+import java.util.Objects;
 import static java.util.jar.Attributes.Name.IMPLEMENTATION_VERSION;
 
 /**
@@ -48,23 +49,26 @@ public final class Application implements ResourceContainer {
     private static final String MP_FILE_PREFIX = HELIDON_JAR_NAME_PREFIX + "microprofile";
     private static final String VERSION_1_4_1 = "1.4.1";
     private static final String UNKNOWN_VERSION = "0.0.0";
+    private final JavaRuntime javaHome;
     private final Jar mainJar;
     private final List<Jar> classPath;
     private final boolean isMicroprofile;
     private final String version;
 
     /**
-     * Returns a new instance with the given main jar.
+     * Returns a new instance with the given Java Home and main jar.
      *
+     * @param javaHome The Java Home in which to find the dependencies.
      * @param mainJar The main jar.
      * @return The instance.
      */
-    public static Application create(Path mainJar) {
-        return new Application(mainJar);
+    public static Application create(JavaRuntime javaHome, Path mainJar) {
+        return new Application(javaHome, mainJar);
     }
 
-    private Application(Path mainJar) {
-        this.mainJar = Jar.open(mainJar);
+    private Application(JavaRuntime javaHome, Path mainJar) {
+        this.javaHome = Objects.requireNonNull(javaHome);
+        this.mainJar = Jar.open(mainJar, javaHome.version());
         this.classPath = collectClassPath();
         this.isMicroprofile = classPath.stream().anyMatch(jar -> jar.name().startsWith(MP_FILE_PREFIX));
         this.version = extractHelidonVersion();
@@ -73,10 +77,9 @@ public final class Application implements ResourceContainer {
     /**
      * Returns the Java module names on which this application depends.
      *
-     * @param javaHome The Java Home in which to find the dependencies.
      * @return The module names.
      */
-    public Set<String> javaDependencies(JavaRuntime javaHome) {
+    public Set<String> javaDependencies() {
         return JavaDependencies.collect(jars(), javaHome);
     }
 
@@ -211,7 +214,7 @@ public final class Application implements ResourceContainer {
         if (Files.isRegularFile(classPathEntry)) {
             if (Jar.isJar(classPathEntry)) {
                 try {
-                    final Jar classPathJar = Jar.open(classPathEntry);
+                    final Jar classPathJar = Jar.open(classPathEntry, jar.version());
                     addClassPath(classPathJar, visited, classPath);
                 } catch (Exception e) {
                     Log.warn("Could not open class path jar: %s", classPathEntry);
