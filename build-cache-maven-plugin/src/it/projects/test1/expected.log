@@ -1,0 +1,13 @@
+[INFO] ----------------------------{ build-cache }-----------------------------
+[INFO] Cached | org.apache.maven.plugins:maven-resources-plugin:2.6:resources@default-resources
+[INFO] Cached | org.apache.maven.plugins:maven-compiler-plugin:3.1:compile@default-compile
+[INFO] Cached | org.apache.maven.plugins:maven-resources-plugin:2.6:testResources@default-testResources
+[INFO] Cached | org.apache.maven.plugins:maven-compiler-plugin:3.1:testCompile@default-testCompile
+[INFO] Diff   | org.apache.maven.plugins:maven-surefire-plugin:2.12.4:test@default-test
+[INFO]            +- /configuration{32}/skipTests was 'true' but is now '${skipTests}'
+[INFO] Cached | org.apache.maven.plugins:maven-jar-plugin:2.4:jar@default-jar
+[INFO] Cached | org.apache.maven.plugins:maven-install-plugin:2.4:install@default-install
+[INFO] 
+[INFO] --- maven-surefire-plugin:2.12.4:test (default-test) @ test1 ---
+[INFO] No tests to run.
+[INFO] ------------------------------------------------------------------------

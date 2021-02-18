@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,17 @@ public class SourcePath {
      * @param file the filed contained in the directory
      */
     public SourcePath(File dir, File file) {
+        this(dir.toPath(), file.toPath());
+    }
+
+    /**
+     * Create a new {@link SourcePath} instance for a file in a given directory.
+     * The path represented will be the relative path of the file in the directory
+     *
+     * @param dir  the directory containing the file
+     * @param file the filed contained in the directory
+     */
+    public SourcePath(Path dir, Path file) {
         segments = parseSegments(getRelativePath(dir, file));
     }
 
@@ -61,14 +72,15 @@ public class SourcePath {
         segments = parseSegments(path);
     }
 
-    private static String getRelativePath(File sourcedir, File source) {
-        return sourcedir.toPath().relativize(source.toPath()).toString()
+    private static String getRelativePath(Path sourcedir, Path source) {
+        return sourcedir.relativize(source).toString()
                 // force UNIX style path on windows
                 .replace("\\", "/");
     }
 
     /**
      * Parse a {@code '/'} separated path into segments. Collapses empty or {@code '.'} only segments.
+     *
      * @param path The path.
      * @return The segments.
      * @throws IllegalArgumentException If the path is invalid.
@@ -233,7 +245,8 @@ public class SourcePath {
 
     /**
      * Tests if the given path segments match the given pattern segments.
-     * @param path the path segments to match
+     *
+     * @param path    the path segments to match
      * @param pattern the pattern segments to match
      * @return {@code true} if the path matches the pattern, {@code false} otherwise
      */
@@ -252,7 +265,7 @@ public class SourcePath {
      * Matches the given value with a pattern that may contain wildcard(s)
      * character that can filter any sub-sequence in the value.
      *
-     * @param val the string to filter
+     * @param val     the string to filter
      * @param pattern the pattern to use for matching
      * @return returns {@code true} if pattern matches, {@code false} otherwise
      */
