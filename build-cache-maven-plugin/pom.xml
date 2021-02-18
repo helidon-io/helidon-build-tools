@@ -86,7 +86,6 @@
                         </goals>
                         <configuration>
                             <ignoreFailures>false</ignoreFailures>
-<!--                            <streamLogs>true</streamLogs>-->
                             <showErrors>true</showErrors>
                             <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
                             <skipInvocation>${skipTests}</skipInvocation>

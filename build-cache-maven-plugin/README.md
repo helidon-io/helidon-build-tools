@@ -21,12 +21,13 @@ The state of a project consists of the few things that Maven plugins can update 
 - attached artifacts
 - recorded executions with their effective configuration
 
-The state if saved to `target/state.xml`, if present it is loaded by the extension and used to restore the project
- state and detect execution duplicates. The extension also uses a combined "cache archive file" to save and load all the
- files needed to fast-forward builds.
+The state is saved to `target/state.xml`. If the file exists at the start of a build, the state is loaded and used
+ to restore the "build context" and to detect execution duplicates. A combined "cache archive file" may also be created
+ to save and load all the files needed to fast-forward builds.
 
 The state is invalidated when the project files are changed. Changes are detected by looking at the most recent
- `last-modified` file attribute, or by using checksums. When the state is not available, the life-cycle is not modified.
+ `last-modified` file attribute, or by using MD5 checksums. When the state is not available, the life-cycle is not
+ modified.
 
 ### Limitations
 
@@ -72,15 +73,15 @@ This plugin does not provide any goal at the moment.
 | executionsExcludes | List | `[]` | Execution exclude patterns |
 | executionsIncludes | List | `[*]` | Execution include patterns |
 
-All parameters  are mapped to user properties of the form `cache.PROPERTY`. List parameters are passes as comma
+All parameters  are mapped to user properties of the form `cache.PROPERTY`. List parameters are passed as comma
  separated values.
 
 The configuration for the reactor uses the execution root. I.e. the module that contains the top-level `<modules>`
  definition.
 
-The configuration is looked-up from the effective pom ; individual modules can override configuration inherited from
- their parent to configure a given module. E.g. skip the cache for a single module, or configure project files
- excludes etc. Configuration passed with properties trumps everything.
+The configuration is looked-up from the effective pom ; this means individual modules can override configuration
+ inherited from their parent to configure a given module. E.g. skip the cache for a single module, or configure project
+ files excludes etc. Configuration passed with properties trumps everything.
 
 ### General usage
 
