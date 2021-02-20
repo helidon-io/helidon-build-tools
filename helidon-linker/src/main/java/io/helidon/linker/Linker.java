@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,6 +156,7 @@ public final class Linker {
     private void collectJavaDependencies() {
         Log.info("Collecting Java module dependencies");
         this.javaDependencies = application.javaDependencies(config.jdk());
+        this.javaDependencies.addAll(config.additionalModules());
         final List<String> sorted = new ArrayList<>(javaDependencies);
         sorted.sort(null);
         Log.info("Including %d Java dependencies: %s", sorted.size(), String.join(", ", sorted));

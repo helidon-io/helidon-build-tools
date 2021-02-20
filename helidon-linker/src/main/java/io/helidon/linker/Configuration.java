@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.Log;
@@ -34,6 +35,7 @@ import static io.helidon.linker.util.Constants.DOCKER_BUILD;
 import static io.helidon.linker.util.Constants.MINIMUM_DOCKER_JDK_VERSION;
 import static io.helidon.linker.util.Constants.MINIMUM_JDK_VERSION;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -45,6 +47,7 @@ public final class Configuration {
     private final List<String> defaultJvm;
     private final List<String> defaultArgs;
     private final List<String> defaultDebug;
+    private final Set<String> additionalModules;
     private final Path jriDirectory;
     private final boolean verbose;
     private final boolean stripDebug;
@@ -67,6 +70,7 @@ public final class Configuration {
         this.defaultJvm = builder.defaultJvm;
         this.defaultArgs = builder.defaultArgs;
         this.defaultDebug = builder.defaultDebug;
+        this.additionalModules = builder.additionalModules;
         this.jriDirectory = builder.jriDirectory;
         this.verbose = builder.verbose;
         this.stripDebug = builder.stripDebug;
@@ -130,6 +134,15 @@ public final class Configuration {
     }
 
     /**
+     * Returns modules to use when starting the application.
+     *
+     * @return the additional modules.
+     */
+    public Set<String> additionalModules() {
+        return additionalModules;
+    }
+
+    /**
      * Returns whether or not to create a CDS archive.
      *
      * @return {@code true} if a CDS archive should be created.
@@ -185,6 +198,7 @@ public final class Configuration {
         private List<String> defaultJvm;
         private List<String> defaultArgs;
         private List<String> defaultDebug;
+        private Set<String> additionalModules;
         private Path jriDirectory;
         private boolean replace;
         private boolean verbose;
@@ -198,6 +212,7 @@ public final class Configuration {
             defaultJvm = emptyList();
             defaultArgs = emptyList();
             defaultDebug = List.of(DEFAULT_DEBUG);
+            additionalModules = emptySet();
             maxAppStartSeconds = DEFAULT_MAX_APP_START_SECONDS;
             cds = true;
             test = true;
@@ -233,6 +248,8 @@ public final class Configuration {
                         defaultDebugOptions(argAt(++i, args));
                     } else if (arg.equalsIgnoreCase("--defaultArgs")) {
                         defaultArgs(argAt(++i, args));
+                    } else if (arg.equalsIgnoreCase("--additionalModules")) {
+                        additionalModules(argAt(++i, args));
                     } else if (arg.equalsIgnoreCase("--maxAppStartSeconds")) {
                         maxAppStartSeconds(Integer.parseInt(argAt(++i, args)));
                     } else if (arg.equalsIgnoreCase("--replace")) {
@@ -337,6 +354,30 @@ public final class Configuration {
         public Builder defaultDebugOptions(List<String> debugOptions) {
             if (isValid(debugOptions)) {
                 this.defaultDebug = split(debugOptions);
+            }
+            return this;
+        }
+
+        /**
+         * Sets default arguments to use when starting the application.
+         *
+         * @param modules The modules.
+         * @return The builder.
+         */
+        public Builder additionalModules(String modules) {
+            additionalModules(toSet(modules));
+            return this;
+        }
+
+        /**
+         * Sets additional modules to use when starting the application.
+         *
+         * @param modules The modules.
+         * @return The builder.
+         */
+        public Builder additionalModules(Set<String> modules) {
+            if (isValid(modules)) {
+                this.additionalModules = modules;
             }
             return this;
         }
@@ -463,6 +504,14 @@ public final class Configuration {
         private static List<String> toList(String value) {
             if (Strings.isValid(value)) {
                 return Arrays.asList(value.split(" "));
+            } else {
+                return null;
+            }
+        }
+
+        private static Set<String> toSet(String value) {
+            if (Strings.isValid(value)) {
+                return Set.of(value.split(" "));
             } else {
                 return null;
             }
