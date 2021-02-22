@@ -951,6 +951,40 @@
                 </pluginRepository>
             </pluginRepositories>
         </profile>
+        <profile>
+            <id>ossrh-staging</id>
+            <activation>
+                <property>
+                    <name>ossrh</name>
+                </property>
+            </activation>
+            <repositories>
+                <repository>
+                    <id>ossrh-staging</id>
+                    <name>OSS Sonatype Staging</name>
+                    <url>https://oss.sonatype.org/content/groups/staging/</url>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                </repository>
+            </repositories>
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>ossrh-staging</id>
+                    <name>OSS Sonatype Staging</name>
+                    <url>https://oss.sonatype.org/content/groups/staging/</url>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                </pluginRepository>
+            </pluginRepositories>
+        </profile>
     </profiles>
 
     <distributionManagement>

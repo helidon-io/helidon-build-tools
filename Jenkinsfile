@@ -67,15 +67,38 @@ pipeline {
       when {
         branch '**/release-*'
       }
-      environment {
-        GITHUB_SSH_KEY = credentials('helidonrobot-github-ssh-private-key')
-        MAVEN_SETTINGS_FILE = credentials('helidonrobot-maven-settings-ossrh')
-        GPG_PUBLIC_KEY = credentials('helidon-gpg-public-key')
-        GPG_PRIVATE_KEY = credentials('helidon-gpg-private-key')
-        GPG_PASSPHRASE = credentials('helidon-gpg-passphrase')
-      }
-      steps {
-        sh './etc/scripts/release.sh release_build'
+      stages {
+        stage('build') {
+          environment {
+            GITHUB_SSH_KEY = credentials('helidonrobot-github-ssh-private-key')
+            MAVEN_SETTINGS_FILE = credentials('helidonrobot-maven-settings-ossrh')
+            GPG_PUBLIC_KEY = credentials('helidon-gpg-public-key')
+            GPG_PRIVATE_KEY = credentials('helidon-gpg-private-key')
+            GPG_PASSPHRASE = credentials('helidon-gpg-passphrase')
+          }
+          steps {
+            sh './etc/scripts/release.sh release_build'
+          }
+        }
+        stage('cli-native') {
+          parallel {
+            stage('cli-linux') {
+              steps {
+                sh './etc/scripts/build-cli.sh --release'
+                archiveArtifacts artifacts: "helidon-cli/impl/target/helidon"
+              }
+            }
+            stage('cli-windows') {
+              agent {
+                label "windows"
+              }
+              steps {
+                bat './etc/scripts/build-cli.bat /release'
+                archiveArtifacts artifacts: "helidon-cli/impl/target/helidon.exe"
+              }
+            }
+          }
+        }
       }
     }
   }
