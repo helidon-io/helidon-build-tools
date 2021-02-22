@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020,2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public class NetworkConnection {
         /**
          * Performs a delay.
          *
-         * @param attempt The attempt number. Always > 0.
+         * @param attempt The attempt number. Always {@code > 0}.
          * @param maxAttempts The maximum number of attempts.
          */
         void execute(int attempt, int maxAttempts);
@@ -251,6 +251,7 @@ public class NetworkConnection {
          * Open the stream, retrying if needed.
          *
          * @return The stream.
+         * @throws IOException if an IO error occurs
          */
         public InputStream open() throws IOException {
             if (url == null) {

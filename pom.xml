@@ -15,7 +15,9 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
---><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon.build-tools</groupId>
@@ -166,7 +168,7 @@
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
         <version.plugin.gpg>1.6</version.plugin.gpg>
         <version.plugin.jar>3.0.2</version.plugin.jar>
-        <version.plugin.javadoc>3.1.1</version.plugin.javadoc>
+        <version.plugin.javadoc>3.2.0</version.plugin.javadoc>
         <version.plugin.invoker>3.2.1</version.plugin.invoker>
         <version.plugin.license>1.16</version.plugin.license>
         <version.plugin.plexus>2.1.0</version.plugin.plexus>

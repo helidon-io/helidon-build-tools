@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020,2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,7 +128,7 @@ public class SubstitutionVariables {
     /**
      * Returns a system property or environment variable, with the properties taking precedence. If not found in either
      * location, one more attempt is made to look it up as an environment variable by mapping the name to normal env var
-     * syntax: converted to uppercase with {@code "."} replaced by "{@code "_").
+     * syntax: converted to uppercase with {@code "."} replaced by "{@code "_"}.
      *
      * @param propertyName The property name.
      * @return The value or {@code null} if not found.

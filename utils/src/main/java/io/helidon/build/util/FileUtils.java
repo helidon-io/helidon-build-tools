@@ -180,7 +180,7 @@ public final class FileUtils {
     }
 
     /**
-     * List all files in the given directory that match the given filter, recursively if maxDepth > 1.
+     * List all files in the given directory that match the given filter, recursively if maxDepth {@code > 1}.
      *
      * @param directory The directory.
      * @param fileNameFilter The filter.
@@ -192,7 +192,7 @@ public final class FileUtils {
     }
 
     /**
-     * List all files in the given directory that match the given filter, recursively if maxDepth > 1.
+     * List all files in the given directory that match the given filter, recursively if maxDepth {@code > 1}.
      *
      * @param directory The directory.
      * @param pathFilter The filter.
@@ -218,7 +218,7 @@ public final class FileUtils {
     }
 
     /**
-     * List all files and directories in the given directory, recursively if maxDepth > 1.
+     * List all files and directories in the given directory, recursively if maxDepth {@code > 1}.
      *
      * @param directory The directory.
      * @param maxDepth The maximum recursion depth.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020,2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,28 +26,28 @@ import static org.fusesource.jansi.Ansi.ansi;
 /**
  * A string formatter with a substitutions for rich text. Similar to {@link AnsiRenderer}, but supports a syntax that is
  * easier to read and write.
- * <p></p>
+ * <br><br>
  * Colors and styles are applied to text enclosed by {@code "$("} and {@code ")"}, e.g.:
- * <p></p>
+ * <br><br>
  * <pre>
  *    "Here is $(red styled) text"
  * </pre>
  * In this example, the word {@code styled} will (normally) appear in red. If the styled text itself contains parentheses,
  * the closing paren should be escaped with a backslash:
- * <p></p>
+ * <br><br>
  * <pre>
  *    "Here is $(red (and example of\\) styled) text"
  * </pre>
  * The DSL syntax is:
- * <p></p>
+ * <br><br>
  * <pre>
- *   <tt>$(</tt><em>style</em>[<tt>,</tt><em>style</em>]* <em>text</em><tt>)</tt>
+ *   $(style[,style]* text)
  * </pre>
  * where {@code style} is a case-sensitive {@link Style#named name} for a color, background color, emphasis or an alias.
  * Nesting is supported.
- * <p></p>
+ * <br><br>
  * <h3>Examples</h3>
- * <p></p>
+ * <br><br>
  * <ol>
  *     <li>
  *         {@code "This is a bold $(bold example)."}
