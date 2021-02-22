@@ -7,6 +7,18 @@ All notable changes to the Helidon CLI will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.3]
+
+### Notable New Features
+
+- Windows cli support [319](https://github.com/oracle/helidon-build-tools/pull/319)
+
+### Fixes
+
+- Fix default project directory handling in init command [329](https://github.com/oracle/helidon-build-tools/pull/329) [326]([](https://github.com/oracle/helidon-build-tools/issues/326))
+- Windows path fix [341](https://github.com/oracle/helidon-build-tools/pull/341)
+- Change Proxies to avoid initializing Ansi for debug messages [318](https://github.com/oracle/helidon-build-tools/pull/318) [314](https://github.com/oracle/helidon-build-tools/issues/314)
+
 ## [2.1.2]
 
 ### Changes
@@ -44,7 +56,7 @@ This release of helidon-build-tools does not contain changes related to the Heli
 - Close process output readers [268](https://github.com/oracle/helidon-build-tools/pull/268) [273](https://github.com/oracle/helidon-build-tools/pull/273)
 - Fix `STDOUT` processing [270](https://github.com/oracle/helidon-build-tools/pull/270)
 - Redirect `STDIN` for all Maven processes [266](https://github.com/oracle/helidon-build-tools/pull/266)
-- Fix CLI option parsing for non global properties [261](https://github.com/oracle/helidon-build-tools/issues/261) [263](https://github.com/oracle/helidon-build-tools/pull/263)
+- Fix CLI option parsing for non-global properties [261](https://github.com/oracle/helidon-build-tools/issues/261) [263](https://github.com/oracle/helidon-build-tools/pull/263)
 - Use `File.pathSeparator` to create class-path [264](https://github.com/oracle/helidon-build-tools/pull/264)
 - Fix `PATH` environment processing [250](https://github.com/oracle/helidon-build-tools/issues/250)
 - Fix CLI update message [234](https://github.com/oracle/helidon-build-tools/issues/234) [235](https://github.com/oracle/helidon-build-tools/pull/235)
@@ -75,6 +87,7 @@ This release of helidon-build-tools does not contain changes related to the Heli
 
 Initial release of the Helidon CLI.
 
+[2.1.3]: https://github.com/oracle/helidon-build-tools/compare/2.1.2...2.1.3
 [2.1.2]: https://github.com/oracle/helidon-build-tools/compare/2.1.1...2.1.2
 [2.1.0]: https://github.com/oracle/helidon-build-tools/compare/2.0.2...2.1.0
 [2.0.2]: https://github.com/oracle/helidon-build-tools/compare/2.0.1...2.0.2
