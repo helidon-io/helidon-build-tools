@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020,2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,10 +42,10 @@ public class NetworkConnection {
         /**
          * Returns the connection after connecting to the given url.
          *
-         * @param url The url.
-         * @param headers The headers.
+         * @param url            The url.
+         * @param headers        The headers.
          * @param connectTimeout The connect timeout, in milliseconds.
-         * @param readTimeout The read timeout, in milliseconds.
+         * @param readTimeout    The read timeout, in milliseconds.
          * @return The connection.
          * @throws IOException If an error occurs.
          */
@@ -59,7 +59,7 @@ public class NetworkConnection {
         /**
          * Performs a delay.
          *
-         * @param attempt The attempt number. Always > 0.
+         * @param attempt     The attempt number. Always {@code >0}.
          * @param maxAttempts The maximum number of attempts.
          */
         void execute(int attempt, int maxAttempts);
@@ -90,7 +90,7 @@ public class NetworkConnection {
          * Constructor.
          *
          * @param initialDelay The initial delay, in milliseconds.
-         * @param increment The number of milliseconds to add to the initial delay for each retry.
+         * @param increment    The number of milliseconds to add to the initial delay for each retry.
          */
         public LinearRetryDelay(long initialDelay, long increment) {
             this.initialDelay = initialDelay;
@@ -193,7 +193,7 @@ public class NetworkConnection {
         /**
          * Add a header.
          *
-         * @param name The header name.
+         * @param name  The header name.
          * @param value The header value.
          * @return This instance, for chaining.
          */
@@ -281,6 +281,7 @@ public class NetworkConnection {
          * Connect, retrying if needed.
          *
          * @return The connection.
+         * @throws IOException if an IO error occurs
          */
         public URLConnection connect() throws IOException {
             if (url == null) {
@@ -314,6 +315,7 @@ public class NetworkConnection {
          * Open the stream, retrying if needed.
          *
          * @return The stream.
+         * @throws IOException if an IO error occurs
          */
         public InputStream open() throws IOException {
             return connect().getInputStream();

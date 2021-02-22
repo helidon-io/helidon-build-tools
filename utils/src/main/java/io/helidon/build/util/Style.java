@@ -74,7 +74,7 @@ public class Style {
 
     /**
      * Returns the style for the given name.
-     * <p></p>
+     * <br><br>
      * <h3>Text Color Names</h3>
      * <ul>
      *     <li>{@code red}</li>
@@ -89,9 +89,9 @@ public class Style {
      *     <li>{@code bold}</li>
      *     <li>{@code negative}</li>
      * </ul>
-     * <p></p>
+     * <br><br>
      * See Portability below for more on {@code default}, {@code bold} and {@code negative}.
-     * <p></p>
+     * <br><br>
      * <h3>Background Color Names</h3>
      * <ul>
      *     <li>{@code bg_red}</li>
@@ -105,7 +105,7 @@ public class Style {
      *     <li>{@code bg_default}</li>
      *     <li>{@code bg_negative}</li>
      * </ul>
-     * <p></p>
+     * <br><br>
      * <h3>Emphasis Names</h3>
      * <ul>
      *     <li>{@code italic}</li>
@@ -118,9 +118,9 @@ public class Style {
      *     <li>{@code conceal}</li>
      *     <li>{@code blink}</li>
      * </ul>
-     * <p></p>
+     * <br><br>
      * <h3>Aliases</h3>
-     * <p></p>
+     * <br><br>
      * Every text color has the following aliases:
      * <ul>
      *      <li>Bold variant with an uppercase name (e.g. {@code RED})</li>
@@ -130,35 +130,35 @@ public class Style {
      *      <li>Bright variants of the color and all the above with a {@code '!'} suffix
      *      (e.g. {@code red!}, {@code RED!}, {@code *red*!}, {@code _red_!}</li>
      * </ul>
-     * <p></p>
+     * <br><br>
      * Every background color has the following aliases:
      * <ul>
      *     <li> Bright variants with a {@code '!'} suffix (e.g. {@code bg_yellow!})</li>
      * </ul>
-     * <p></p>
+     * <br><br>
      * The {@code bold,italic} combination has the following aliases:
      * <ul>
      *     <li>{@code _bold_}</li>
      *     <li>{@code *italic*}</li>
      *     <li>{@code ITALIC}</li>
      * </ul>
-     * <p></p>
+     * <br><br>
      * When {@code bold} is used without any other color it is an alias for {@code default,bold}.
-     * <p></p>
+     * <br><br>
      * The {@code negative} text color and the {@code bg_negative} background color are identical: they invert *both* the default
      * text color and the background color.
-     * <p></p>
+     * <br><br>
      * <h3>Portability</h3>
-     * <p></p>
+     * <br><br>
      * Most terminals provide mappings between the standard color names used here and what they actually render. So, for example,
      * you may declare {@code red} but a terminal <em>could</em> be configured to render it as blue; generally, though, themes
      * will use a reasonably close variant of the pure color.
-     * <p></p>
+     * <br><br>
      * Where things get interesting is when a color matches (or closely matches) the terminal background color: any use of that
      * color will fade or disappear entirely. The common cases are with {@code white} or {@code bg_white} on a light theme and
      * {@code black} or {@code bg_black} on a dark theme. While explicit use of {@code white} may work well in <em>your</em>
      * terminal, it won't work for everyone; if this matters in your use case...
-     * <p></p>
+     * <br><br>
      * The portability problem can be addressed by using these special colors in place of any white or black style:
      *  <ul>
      *      <li>{@code default} selects the default text color in the current theme</li>
@@ -167,7 +167,7 @@ public class Style {
      *      <li>{@code bg_negative} an alias for {@code negative}</li>
      *      <li>{@code bg_default} selects the default background color in the current theme</li>
      *  </ul>
-     * <p></p>
+     * <br><br>
      * Finally, {@code strikethrough}, (the really annoying) {@code blink} and {@code conceal} may not be enabled or supported in
      * every terminal and may do nothing. For {@code conceal}, presumably you can just leave out whatever you don't want shown; for
      * the other two best to assume they don't work and use them only as <em>additional</em> emphasis.

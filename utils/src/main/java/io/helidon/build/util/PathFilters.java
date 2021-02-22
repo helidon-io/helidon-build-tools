@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020,2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ import java.util.stream.Collectors;
 /**
  * Provides both common and custom filters for path matching; they do <em>not</em> check that the path exists or make
  * any other file system test. Custom filters are created using
- * <a href="http://ant.apache.org/manual/dirtasks.html#patterns>Ant path patterns></a>.
- * <p></p>
+ * <a href="http://ant.apache.org/manual/dirtasks.html#patterns">Ant path patterns</a>.
+ * <br><br>
  * All patterns are matched against a <em>relative</em> path. Since either an absolute or relative path may be passed to the
  * filter, {@code BiPredicate<Path,Path>} is required so that an absolute path may be converted to a relative one prior to
  * matching. The first path parameter to the filter is always the path to match against, and the second is the root directory

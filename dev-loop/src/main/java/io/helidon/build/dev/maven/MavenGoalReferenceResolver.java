@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020,2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,25 +35,25 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Utility to map a Maven goal reference to a {@link MavenGoal}. References are resolved in the context of the specified project.
- * <p></p>
+ * <br><br>
  * References may be fully qualified:
- * <p></p>
+ * <br><br>
  * <pre>
  *    ${groupId}:${artifactId}:${version}:${goal}@${executionId}
  * </pre>
  * The version will be ignored since it can only be resolved to the plugin configured in the current project. If not provided,
  * a <a href="http://maven.apache.org/guides/mini/guide-default-execution-ids.html">default executionId</a> will be used. For
  * example, with the {@code compile} goal the default execution id is {@code default-compile}.
- * <p></p>
+ * <br><br>
  * A <a href="https://maven.apache.org/guides/introduction/introduction-to-plugin-prefix-mapping.html">plugin prefix</a> may
  * be used as an alias for the {@code groupId} and {@code artifactId}, for example {@code compiler} in the following reference:
- * <p></p>
+ * <br><br>
  * <pre>
  *     compiler:compile
  * </pre>
  * Finally, any lifecycle phase (e.g. {@code process-resources}) may be used as a reference, and will expand to the corresponding
  * list of goals.
- * <p></p>
+ * <br><br>
  * <h3>Example References</h3>
  * <ol>
  *     <li>{@code org.apache.maven.plugins:maven-exec-plugin:3.0.0:exec@compile-sass}</li>
