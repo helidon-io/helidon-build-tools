@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ on_error(){
     CODE="${?}" && \
     set +x && \
     printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
-        "${CODE}" "${BASH_SOURCE}" "${LINENO}" "${BASH_COMMAND}"
+        "${CODE}" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}"
 }
 trap on_error ERR
 
@@ -92,6 +92,7 @@ else
 fi
 
 # Path to the root of the workspace
+# shellcheck disable=SC2046
 readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 source ${WS_DIR}/etc/scripts/pipeline-env.sh
@@ -128,6 +129,7 @@ update_version(){
 
     # Hacks to hard-coded versions
     local file="helidon-archetype/maven-plugin/src/it/projects/catalog2/catalog.xml"
+    # shellcheck disable=SC2002
     cat ${file} | sed s@'^\([ \t]*\)version=".*"'@"\1version=\"${FULL_VERSION}\""@g > ${file}.tmp
     mv ${file}.tmp ${file}
 }
@@ -153,8 +155,9 @@ release_build(){
     mvn ${MAVEN_ARGS} nexus-staging:rc-open \
         -DstagingProfileId="6026dab46eed94" \
         -DstagingDescription="${STAGING_DESC}"
+    # shellcheck disable=SC2155
     export STAGING_REPO_ID=$(mvn ${MAVEN_ARGS} nexus-staging:rc-list | \
-        egrep "^[0-9:,]*[ ]?\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
+        grep -E "^[0-9:,]*[ ]?\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
         awk '{print $2" "$3}' | \
         sed -e s@'\[INFO\] '@@g -e s@'OPEN'@@g | \
         head -1)
@@ -171,6 +174,7 @@ release_build(){
         -DstagingDescription="${STAGING_DESC}"
 
     # Create and push a git tag
+    # shellcheck disable=SC2155
     local GIT_REMOTE=$(git config --get remote.origin.url | \
         sed "s,https://\([^/]*\)/,git@\1:,")
 
