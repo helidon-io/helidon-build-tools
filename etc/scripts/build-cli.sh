@@ -23,7 +23,7 @@ on_error(){
     CODE="${?}" && \
     set +x && \
     printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
-        "${CODE}" "${BASH_SOURCE}" "${LINENO}" "${BASH_COMMAND}"
+        "${CODE}" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}"
 }
 trap on_error ERR
 
@@ -35,6 +35,7 @@ else
 fi
 
 # Path to the root of the workspace
+# shellcheck disable=SC2046
 readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 source ${WS_DIR}/etc/scripts/pipeline-env.sh

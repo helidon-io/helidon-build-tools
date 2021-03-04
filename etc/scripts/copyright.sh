@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ on_error(){
     CODE="${?}" && \
     set +x && \
     printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
-        "${CODE}" "${BASH_SOURCE}" "${LINENO}" "${BASH_COMMAND}"
+        "${CODE}" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}"
 }
 trap on_error ERR
 
@@ -35,6 +35,7 @@ else
 fi
 
 # Path to the root of the workspace
+# shellcheck disable=SC2046
 readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 readonly RESULT_FILE=$(mktemp -t XXXcopyright-result)
