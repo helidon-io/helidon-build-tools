@@ -28,3 +28,4 @@ cli-data.zip
 HELIDON_THIRD_PARTY_LICENSES.xml
 /MANIFEST.MF
 /META-INF/services/
+.jar
