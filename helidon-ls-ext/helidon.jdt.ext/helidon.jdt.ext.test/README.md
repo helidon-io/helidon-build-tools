@@ -1,0 +1,1 @@
+To execute it correctly run `mvn clean install` from parent project.
