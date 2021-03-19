@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<!--
+
+    Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Helidon project support for Visual Studio Code</title>
+    <style>
+        button {
+            background-color: #2399ff;
+            border-radius: 8px;
+            padding: 12px 28px;
+            font-size: 16px;
+            font-style: oblique;
+        }
+    </style>
+</head>
+
+<body id="preview">
+
+<h1 class="code-line" data-line-start=0 data-line-end=1><a
+        id="Helidon_project_support_for_Visual_Studio_Code_0"></a>Helidon project support for Visual Studio Code
+</h1>
+
+<p class="has-line-data" data-line-start="1" data-line-end="2">This extension helps users to generate their first
+    Helidon project, develop and run it.
+</p>
+
+<h2 class="code-line" data-line-start=3 data-line-end=4><a id="Requirements_3"></a>Requirements</h2>
+<ul>
+    <li class="has-line-data" data-line-start="4" data-line-end="5">Maven 3.5.3+ is required to be installed on your
+        system.
+    </li>
+    <li class="has-line-data"><a href="https://helidon.io/docs/latest/#/about/05_cli">Helidon CLI</a>
+        is required to be installed on your system if you want to use continuous compilation and application restart.
+    </li>
+    <li class="has-line-data"><a href="https://marketplace.visualstudio.com/items?itemName=redhat.vscode-microprofile">
+        Language Support for Eclipse MicroProfile</a>
+        extension is required to be installed in Visual Studio Code.
+    </li>
+    <li class="has-line-data"><a href="https://marketplace.visualstudio.com/items?itemName=redhat.java">
+        Language Support for Java(TM) by Red Hat</a>
+        extension is required to be installed in Visual Studio Code.
+    </li>
+    <li class="has-line-data" data-line-start="5" data-line-end="7">The <a
+            href="https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack">Java Extension
+        Pack</a> extension is optional but recommended.
+    </li>
+</ul>
+
+<h2 class="code-line"></a>Features</h2>
+<p>
+    The Helidon extension provides:
+<ul>
+    <li class="has-line-data">Helidon project creation wizard.</li>
+    <li class="has-line-data">Start/stop helidon dev.
+        (as you make source code changes the project will automatically recompile and restart your application)
+    </li>
+    <li class="has-line-data">Autocomplition for the application.properties files.</li>
+</ul>
+</p>
+
+<h2 class="code-line" data-line-start=7 data-line-end=8><a id="How_to_start_7"></a>How to generate Helidon Project</h2>
+<ol>
+    <li class="has-line-data" data-line-start="8" data-line-end="9">Open Command Palette by shortcut you are using
+        (default: Ctrl+Shift+P).
+    </li>
+    <li class="has-line-data" data-line-start="9" data-line-end="10">Start typing 'Helidon'.</li>
+    <li class="has-line-data" data-line-start="13" data-line-end="15">Choose 'Helidon: Generate a Helidon project'.
+    </li>
+    <li class="has-line-data">Choose type of the Helidon project.</li>
+    <li class="has-line-data">Follow generator till the end.</li>
+    <li class="has-line-data">You will receive messages during the process and a request where do you want to open the
+        project.
+    </li>
+    <li class="has-line-data">Your new project is generated.</li>
+</ol>
+
+<h2 class="code-line">How to start helidon dev</h2>
+<ul>
+    <li class="has-line-data">Open Command Palette by shortcut you are using (default: Ctrl+Shift+P).</li>
+    <li class="has-line-data">Start typing 'Helidon'.</li>
+    <li class="has-line-data">Choose 'Helidon: Start helidon dev'.</li>
+    <li class="has-line-data">If workspace contains only one helidon project, helidon dev starts automatically.
+        If workspace contains more than one helidon project, you will be asked to choose a directory to start helidon
+        dev.
+    </li>
+    <li class="has-line-data">You will find the server logs in the bottom panel in the output tab.
+        You can select a server to show the logs choosing project directory in the drop-down list.
+    </li>
+</ul>
+
+<h2 class="code-line">How to stop helidon dev</h2>
+<ul>
+    <li class="has-line-data">Open Command Palette by shortcut you are using (default: Ctrl+Shift+P).</li>
+    <li class="has-line-data">Start typing 'Helidon'.</li>
+    <li class="has-line-data">Choose 'Helidon: Stop helidon dev'.</li>
+    <li class="has-line-data">If workspace contains only one running helidon project, helidon dev stops automatically.
+        If workspace contains more than one running helidon project, you will be asked to choose a directory to stop
+        helidon dev.
+    </li>
+</ul>
+
+<h2 class="code-line" data-line-start=13 data-line-end=14><a id="Helidon_Documentation_13"></a>Helidon Documentation
+</h2>
+<p class="has-line-data" data-line-start="14" data-line-end="15">Helidon provides detailed documentation and guides
+    for its components.</p>
+<p class="has-line-data" data-line-start="16" data-line-end="18"><a
+        href="https://helidon.io/docs/latest">Documentation</a><br>
+    <a href="https://helidon.io/docs/latest/#/guides/01_overview">Guides</a></p>
+<h2 class="code-line" data-line-start=19 data-line-end=20><a id="Do_you_have_a_problem_or_question_19"></a>Do you
+    have a problem or question?</h2>
+<p class="has-line-data" data-line-start="20" data-line-end="21">Let us know if you need help with Helidon on our
+    Slack channel or report an issue on our issue tracker.</p>
+<p class="has-line-data" data-line-start="22" data-line-end="24"><a
+        href="https://github.com/oracle/helidon-build-tools/issues">Github issues</a><br>
+    <a
+            href="https://join.slack.com/t/helidon/shared_invite/enQtNDM1NjU3MjkyNDg2LWNiNGIzOGFhZDdjNzAyM2Y2MzlmMDI4NWY4YjE1OWQ2OTdkYTZkN2FlNDcxNmUyZmZmMTZhZmZhNWI2ZTI1NGI">Slack
+        channel</a></p>
+
+<div class="section-div">
+    <h2 class="section-title">Get started</h2>
+    <p>Create a new Helidon project.</p>
+    <a href="command:helidon.generate">
+        <button>Create Helidon project</button>
+    </a>
+</div>
+
+</body>
+
+</html>
