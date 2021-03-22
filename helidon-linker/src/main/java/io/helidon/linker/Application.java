@@ -23,6 +23,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -31,7 +32,6 @@ import io.helidon.build.util.Log;
 import io.helidon.linker.util.JavaRuntime;
 
 import static io.helidon.linker.util.Constants.DIR_SEP;
-import java.util.Objects;
 import static java.util.jar.Attributes.Name.IMPLEMENTATION_VERSION;
 
 /**

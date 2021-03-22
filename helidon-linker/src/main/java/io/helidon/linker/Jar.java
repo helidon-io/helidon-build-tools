@@ -29,8 +29,10 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Spliterator;
@@ -62,8 +64,6 @@ import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.fileName;
 import static java.util.Collections.emptyList;
-import java.util.HashMap;
-import java.util.Map;
 import static java.util.Objects.requireNonNull;
 
 /**
