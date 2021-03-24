@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,49 +15,55 @@
  */
 package io.helidon.build.cli.codegen;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
-import javax.lang.model.element.TypeElement;
+import java.util.stream.Collectors;
 
 import io.helidon.build.cli.harness.Command;
+import io.helidon.build.cli.harness.CommandFragment;
+import io.helidon.build.cli.harness.CommandLineInterface;
+import io.helidon.build.cli.harness.CommandModel.ArgumentInfo;
+import io.helidon.build.cli.harness.CommandModel.CommandInfo;
+import io.helidon.build.cli.harness.CommandModel.FlagInfo;
+import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
+import io.helidon.build.cli.harness.CommandModel.KeyValuesInfo;
+import io.helidon.build.cli.harness.CommandParameters.CommandFragmentInfo;
+import io.helidon.build.cli.harness.CommandParameters.ParameterInfo;
 import io.helidon.build.cli.harness.Option;
+import io.helidon.build.cli.harness.Option.Argument;
+import io.helidon.build.cli.harness.Option.Flag;
+import io.helidon.build.cli.harness.Option.KeyValue;
+import io.helidon.build.cli.harness.Option.KeyValues;
 
 /**
  * Meta model API to represent the processed annotations.
  */
-abstract class MetaModel<T> {
+abstract class MetaModel<T, U extends TypeInfo> {
 
-    private final TypeElement typeElt;
+    private final U annotatedType;
     private final T annotation;
 
-    protected MetaModel(T annotation) {
-        this.annotation = annotation;
-        this.typeElt = null;
-    }
-
-    protected MetaModel(T option, TypeElement typeElt) {
-        this.annotation = option;
-        this.typeElt = typeElt;
+    protected MetaModel(T option, U annotatedType) {
+        this.annotation = Objects.requireNonNull(option, "option is null");
+        this.annotatedType = Objects.requireNonNull(annotatedType, "annotatedType is null");
     }
 
     /**
      * Get the annotation value.
      *
-     * @return annotation value
+     * @return annotation value, never {@code null}
      */
     T annotation() {
         return annotation;
     }
 
     /**
-     * Get the type for this meta-model.
+     * Get the type info for the annotated element.
      *
-     * @return type
+     * @return TypeInfo, never {@code null}
      */
-    TypeElement type() {
-        return typeElt;
+    U annotatedType() {
+        return annotatedType;
     }
 
     /**
@@ -87,177 +93,182 @@ abstract class MetaModel<T> {
     }
 
     /**
-     * Meta-model for {@link io.helidon.build.cli.harness.Option.Argument}.
+     * A meta-model that describes a {@link ParameterInfo}.
      */
-    static class ArgumentMetaModel extends MetaModel<Option.Argument> implements DescribedOptionMetaModel {
+    interface ParameterMetaModel {
 
-        private final Option.Argument option;
+        /**
+         * Get the type of the {@link ParameterInfo}.
+         *
+         * @return TypeInfo
+         */
+        TypeInfo paramInfoType();
+    }
+
+    /**
+     * Meta-model for the elements annotated with {@link Option.Argument}.
+     *
+     * @param <U> type info type
+     */
+    static class ArgumentMetaModel<U extends TypeInfo> extends MetaModel<Argument, U>
+            implements DescribedOptionMetaModel, ParameterMetaModel {
+
+        private final TypeInfo paramInfoType;
 
         /**
          * Create a new argument meta-model.
          *
-         * @param typeElt annotated variable type
-         * @param option  annotation
+         * @param type       annotated variable type
+         * @param annotation annotation
          */
-        ArgumentMetaModel(TypeElement typeElt, Option.Argument option) {
-            super(option, typeElt);
-            this.option = Objects.requireNonNull(option, "option is null");
+        ArgumentMetaModel(Option.Argument annotation, U type) {
+            super(annotation, type);
+            paramInfoType = TypeInfo.of(TypeInfo.of(ArgumentInfo.class), type);
         }
 
         @Override
         public String description() {
-            return option.description();
+            return annotation().description();
         }
 
         @Override
-        public String toString() {
-            return ArgumentMetaModel.class.getSimpleName()
-                    + '{'
-                    + "type=" + type().getQualifiedName()
-                    + ", description=" + option.description()
-                    + '}';
+        public TypeInfo paramInfoType() {
+            return paramInfoType;
         }
     }
 
     /**
-     * Meta-model for {@link io.helidon.build.cli.harness.Option.Flag}.
+     * Meta-model for the elements annotated with {@link Option.Flag}.
      */
-    static class FlagMetaModel extends MetaModel<Option.Flag> implements NamedOptionMetaModel {
-
-        private final Option.Flag option;
+    static class FlagMetaModel extends MetaModel<Flag, TypeInfo>
+            implements NamedOptionMetaModel, ParameterMetaModel {
 
         /**
          * Create a new flag meta-model.
          *
-         * @param option annotation
+         * @param annotation annotation
          */
-        FlagMetaModel(Option.Flag option) {
-            super(option);
-            this.option = Objects.requireNonNull(option, "option is null");
+        FlagMetaModel(Option.Flag annotation) {
+            super(annotation, TypeInfo.of(Boolean.class));
         }
 
         @Override
         public String description() {
-            return option.description();
+            return annotation().description();
         }
 
         @Override
         public String name() {
-            return option.name();
+            return annotation().name();
         }
 
         @Override
-        public String toString() {
-            return FlagMetaModel.class.getSimpleName()
-                    + '{'
-                    + "name=" + option.name()
-                    + ", description=" + option.description()
-                    + '}';
+        public TypeInfo paramInfoType() {
+            return TypeInfo.of(FlagInfo.class);
         }
     }
 
     /**
-     * Meta-model for {@link io.helidon.build.cli.harness.Option.KeyValue}.
+     * Meta-model for the elements annotated with {@link Option.KeyValue}.
+     *
+     * @param <U> type info type
      */
-    static class KeyValueMetaModel extends MetaModel<Option.KeyValue> implements NamedOptionMetaModel {
+    static class KeyValueMetaModel<U extends TypeInfo> extends MetaModel<KeyValue, U>
+            implements NamedOptionMetaModel, ParameterMetaModel {
 
-        private final Option.KeyValue option;
+        private final TypeInfo paramInfoType;
 
         /**
          * Create a new key-value meta-model.
          *
-         * @param typeElt annotated variable type
-         * @param option  annotation
+         * @param type       type info of the annotated element
+         * @param annotation annotation
          */
-        KeyValueMetaModel(TypeElement typeElt, Option.KeyValue option) {
-            super(option, typeElt);
-            this.option = Objects.requireNonNull(option, "option is null");
+        KeyValueMetaModel(Option.KeyValue annotation, U type) {
+            super(annotation, type);
+            paramInfoType = TypeInfo.of(TypeInfo.of(KeyValueInfo.class), type);
         }
 
         @Override
         public String name() {
-            return option.name();
+            return annotation().name();
         }
 
         @Override
         public String description() {
-            return option.description();
+            return annotation().description();
         }
 
         @Override
-        public String toString() {
-            return KeyValueMetaModel.class.getSimpleName()
-                    + '{'
-                    + "type=" + type().getQualifiedName()
-                    + ", name=" + option.name()
-                    + ", description=" + option.description()
-                    + '}';
+        public TypeInfo paramInfoType() {
+            return paramInfoType;
         }
     }
 
     /**
-     * Meta-model for {@link io.helidon.build.cli.harness.Option.KeyValues}.
+     * Meta-model for the elements annotated with {@link Option.KeyValues}.
+     *
+     * @param <U> type info type
      */
-    static class KeyValuesMetaModel extends MetaModel<Option.KeyValues> implements NamedOptionMetaModel {
+    static class KeyValuesMetaModel<U extends TypeInfo> extends MetaModel<KeyValues, U>
+            implements NamedOptionMetaModel, ParameterMetaModel {
 
-        private final Option.KeyValues option;
-        private final TypeElement paramTypeElt;
+        private final TypeInfo paramInfoType;
 
         /**
          * Create a new key-values meta-model.
          *
-         * @param paramTypeElt annotated variable collection parameter type
-         * @param option       annotation
+         * @param annotation annotation
+         * @param type       type info of the annotated element
          */
-        KeyValuesMetaModel(TypeElement paramTypeElt, Option.KeyValues option) {
-            super(option);
-            this.option = Objects.requireNonNull(option, "option is null");
-            this.paramTypeElt = Objects.requireNonNull(paramTypeElt, "paramTypeElt is null");
+        KeyValuesMetaModel(Option.KeyValues annotation, U type) {
+            super(annotation, type);
+            paramInfoType = TypeInfo.of(TypeInfo.of(KeyValuesInfo.class), type);
         }
 
         @Override
         public String description() {
-            return option.description();
+            return annotation().description();
         }
 
         @Override
         public String name() {
-            return option.name();
-        }
-
-        /**
-         * Get the generic parameter type.
-         *
-         * @return type
-         */
-        TypeElement paramType() {
-            return paramTypeElt;
+            return annotation().name();
         }
 
         @Override
-        public String toString() {
-            return KeyValuesMetaModel.class.getSimpleName()
-                    + '{'
-                    + "paramType=" + paramTypeElt.getQualifiedName()
-                    + ", name=" + option.name()
-                    + ", description=" + option.description()
-                    + '}';
+        public TypeInfo paramInfoType() {
+            return paramInfoType;
         }
     }
 
     /**
-     * Base meta-model for {@link io.helidon.build.cli.harness.CommandFragment} and
-     * {@link io.helidon.build.cli.harness.Command}.
+     * Base meta-model for the elements annotated with {@link CommandFragment} and {@link Command}.
+     *
+     * @param <T> annotation type
+     * @param <U> type info type
      */
-    abstract static class ParametersMetaModel<T> extends MetaModel<T> {
+    abstract static class ParametersMetaModel<T, U extends TypeInfo> extends MetaModel<T, U>
+            implements ParameterMetaModel {
 
-        private final List<MetaModel<?>> params;
-        private final String pkg;
+        private final List<ParameterMetaModel> params;
+        private final List<String> paramNames;
 
-        protected ParametersMetaModel(T annotation, TypeElement typeElt, String pkg, List<MetaModel<?>> params) {
-            super(annotation, Objects.requireNonNull(typeElt, "typeElt is null"));
-            this.pkg = Objects.requireNonNull(pkg, "pk is null");
-            this.params = params;
+        /**
+         * Create a new parameters meta-model.
+         *
+         * @param annotation annotation
+         * @param type       type info of the annotated element
+         * @param params     parameters meta-model
+         */
+        protected ParametersMetaModel(T annotation, U type, List<ParameterMetaModel> params) {
+            super(annotation, type);
+            this.params = Objects.requireNonNull(params, "params is null");
+            paramNames = params.stream()
+                               .filter(NamedOptionMetaModel.class::isInstance)
+                               .map(NamedOptionMetaModel.class::cast)
+                               .map(NamedOptionMetaModel::name)
+                               .collect(Collectors.toList());
         }
 
         /**
@@ -265,106 +276,120 @@ abstract class MetaModel<T> {
          *
          * @return list of models for the parameters
          */
-        final List<MetaModel<?>> params() {
+        final List<ParameterMetaModel> params() {
             return params;
         }
 
         /**
-         * Get the java package.
+         * Get the parameter names.
          *
-         * @return java package name
+         * @return list of parameter name
          */
-        final String pkg() {
-            return pkg;
+        final List<String> paramNames() {
+            return paramNames;
         }
 
         /**
-         * Get the option names.
+         * Compute the duplicates between the given parameters name with the ones of this instance.
          *
-         * @return option names
+         * @param names name of parameters to compare duplicates for
+         * @return list of duplicated parameters name
          */
-        final List<String> optionNames() {
-            List<String> names = new ArrayList<>();
-            for (MetaModel attr : params) {
-                if (attr instanceof NamedOptionMetaModel) {
-                    names.add(((NamedOptionMetaModel) attr).name());
-                }
-            }
-            return names;
-        }
-
-        /**
-         * Get the duplicates between the given option names and the current option names of this fragment.
-         *
-         * @param optionNames option names to compare duplicates for
-         * @return list of duplicated option names
-         */
-        final List<String> optionDuplicates(List<String> optionNames) {
-            List<String> duplicates = new ArrayList<>();
-            for (String optionName : optionNames()) {
-                if (optionNames.contains(optionName)) {
-                    duplicates.add(optionName);
-                }
-            }
-            return duplicates;
+        final List<String> duplicates(List<String> names) {
+            return names.stream()
+                        .filter(this.paramNames::contains)
+                        .collect(Collectors.toList());
         }
     }
 
     /**
-     * Meta-model for {@link io.helidon.build.cli.harness.CommandFragment}.
+     * Meta-model for the elements annotated with {@link CommandFragment}.
+     *
+     * @param <U> type info type
      */
-    static final class CommandFragmentMetaModel extends ParametersMetaModel<Void> {
+    static final class FragmentMetaModel<U extends TypeInfo> extends ParametersMetaModel<CommandFragment, U> {
+
+        private final TypeInfo paramInfoType;
 
         /**
          * Create a new command fragment meta-model.
          *
-         * @param typeElt annotated class type
-         * @param pkg     java package
-         * @param params  all options for this fragment
+         * @param annotation annotation
+         * @param type       type info of the annotated element
+         * @param params     parameters meta-model
          */
-        CommandFragmentMetaModel(TypeElement typeElt, String pkg, List<MetaModel<?>> params) {
-            super(null, typeElt, pkg, params);
+        FragmentMetaModel(CommandFragment annotation, U type, List<ParameterMetaModel> params) {
+            super(annotation, type, params);
+            paramInfoType = TypeInfo.of(TypeInfo.of(CommandFragmentInfo.class), type);
         }
 
         @Override
-        public String toString() {
-            return CommandFragmentMetaModel.class.getSimpleName()
-                    + '{'
-                    + "type=" + type().getQualifiedName()
-                    + ", params=" + params()
-                    + '}';
+        public TypeInfo paramInfoType() {
+            return paramInfoType;
         }
     }
 
     /**
-     * Meta-model for {@link io.helidon.build.cli.harness.Command}.
+     * Meta-model for the elements annotated with {@link Command}.
+     *
+     * @param <U> type info type
      */
-    static final class CommandMetaModel extends ParametersMetaModel<Command> implements Comparable<CommandMetaModel> {
+    static final class CommandMetaModel<U extends TypeInfo> extends ParametersMetaModel<Command, U>
+            implements Comparable<CommandMetaModel<?>> {
+
+        private final TypeInfo paramInfoType;
 
         /**
          * Create a new command meta-model.
          *
-         * @param typeElt annotated class type
-         * @param pkg     java package
-         * @param params  all options for this fragment
-         * @param command command annotation
+         * @param annotation annotation
+         * @param type       type info of the annotated element
+         * @param params     parameters meta-model
          */
-        CommandMetaModel(TypeElement typeElt, String pkg, List<MetaModel<?>> params, Command annotation) {
-            super(annotation, typeElt, pkg, params);
+        CommandMetaModel(Command annotation, U type, List<ParameterMetaModel> params) {
+            super(annotation, type, params);
+            paramInfoType = TypeInfo.of(CommandInfo.class);
         }
 
         @Override
-        public int compareTo(CommandMetaModel cmd) {
-            return annotation().name().compareTo(cmd.annotation().name());
+        public int compareTo(CommandMetaModel<?> model) {
+            return annotation().name().compareTo(model.annotation().name());
         }
 
         @Override
-        public String toString() {
-            return CommandMetaModel.class.getSimpleName()
-                    + '{'
-                    + "type=" + type().getQualifiedName()
-                    + ", params=" + params()
-                    + '}';
+        public TypeInfo paramInfoType() {
+            return paramInfoType;
+        }
+    }
+
+    /**
+     * Meta-model for the elements annotated with {@link CommandLineInterface}.
+     *
+     * @param <U> type info type
+     */
+    static final class CLIMetaModel<U extends TypeInfo> extends MetaModel<CommandLineInterface, U> {
+
+        private final List<CommandMetaModel<U>> commands;
+
+        /**
+         * Create a new CLI meta-model.
+         *
+         * @param annotation annotation
+         * @param type       type info of the annotated element
+         * @param commands   command meta-models
+         */
+        CLIMetaModel(CommandLineInterface annotation, U type, List<CommandMetaModel<U>> commands) {
+            super(annotation, type);
+            this.commands = Objects.requireNonNull(commands, "commands is null");
+        }
+
+        /**
+         * Get the commands.
+         *
+         * @return list of command meta-models
+         */
+        List<CommandMetaModel<U>> commands() {
+            return commands;
         }
     }
 }

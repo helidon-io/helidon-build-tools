@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,301 +15,339 @@
  */
 package io.helidon.build.cli.codegen;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.SimpleAnnotationValueVisitor9;
 import javax.lang.model.util.SimpleElementVisitor9;
-import javax.lang.model.util.SimpleTypeVisitor9;
 import javax.lang.model.util.Types;
-import javax.tools.Diagnostic;
 
 import io.helidon.build.cli.codegen.MetaModel.ArgumentMetaModel;
-import io.helidon.build.cli.codegen.MetaModel.CommandFragmentMetaModel;
+import io.helidon.build.cli.codegen.MetaModel.CLIMetaModel;
 import io.helidon.build.cli.codegen.MetaModel.CommandMetaModel;
 import io.helidon.build.cli.codegen.MetaModel.FlagMetaModel;
+import io.helidon.build.cli.codegen.MetaModel.FragmentMetaModel;
 import io.helidon.build.cli.codegen.MetaModel.KeyValueMetaModel;
 import io.helidon.build.cli.codegen.MetaModel.KeyValuesMetaModel;
+import io.helidon.build.cli.codegen.MetaModel.ParameterMetaModel;
+import io.helidon.build.cli.codegen.MetaModel.ParametersMetaModel;
+import io.helidon.build.cli.codegen.TypeInfo.ElementInfo;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandExecution;
 import io.helidon.build.cli.harness.CommandFragment;
+import io.helidon.build.cli.harness.CommandLineInterface;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option;
+import io.helidon.build.cli.harness.Option.Argument;
+import io.helidon.build.cli.harness.Option.Flag;
+import io.helidon.build.cli.harness.Option.KeyValue;
+import io.helidon.build.cli.harness.Option.KeyValues;
 
 /**
  * Meta-model visitor.
  */
 final class Visitor {
 
-    private static final List<String> ARGUMENT_TYPES =
-            Option.Argument.SUPPORTED_TYPES.stream().map(Class::getName).collect(Collectors.toList());
-    private static final List<String> KEY_VALUE_TYPES =
-            Option.KeyValue.SUPPORTED_TYPES.stream().map(Class::getName).collect(Collectors.toList());
-    private static final List<String> KEY_VALUES_TYPES =
-            Option.KeyValues.SUPPORTED_TYPES.stream().map(Class::getName).collect(Collectors.toList());
+    //CHECKSTYLE:OFF
+    static final String MISSING_CLI_ANNOTATION = String.format("Missing @%s annotation", CommandLineInterface.class.getSimpleName());
+    static final String MISSING_FRAGMENT_ANNOTATION = String.format("Missing @%s annotation", CommandFragment.class.getSimpleName());
+    static final String MISSING_COMMAND_ANNOTATION = String.format("Missing @%s annotation", Command.class.getSimpleName());
+    static final String MISSING_CREATOR_ANNOTATION = String.format("Missing a constructor annotated with @%s", Creator.class.getSimpleName());
+    static final String MISSING_COMMAND_EXECUTION = String.format("Classes annotated with @%s must implement %s", Command.class.getSimpleName(), CommandExecution.class.getSimpleName());
+    static final String FRAGMENT_OPTION_DUPLICATES = "Fragment has duplicated options";
+    static final String INVALID_ARGUMENT_TYPE = String.format("Invalid @%s type", Option.Argument.class.getSimpleName());
+    static final String INVALID_FLAG_TYPE = String.format("Invalid @%s type", Option.Flag.class.getSimpleName());
+    static final String INVALID_KEY_VALUE_TYPE = String.format("Invalid @%s type", Option.KeyValue.class.getSimpleName());
+    static final String INVALID_KEY_VALUES_TYPE = String.format("Invalid @%s type", Option.KeyValues.class.getSimpleName());
+    static final String INVALID_KEY_VALUES_TYPE_PARAMETER = String.format("Invalid @%s type parameter", Option.KeyValues.class.getSimpleName());
+    static final String INVALID_OPTION = "Invalid option";
+    static final String INVALID_NAME = "Invalid name";
+    static final String INVALID_DESCRIPTION = "Invalid description";
+    static final String OPTION_ALREADY_DEFINED = "Option already defined";
+    //CHECKSTYLE:ON
 
-    private final Map<String, CommandFragmentMetaModel> fragmentsByQualifiedName = new HashMap<>();
-    private final ProcessingEnvironment env;
-    private final Set<String> rootTypes;
+    private static final ParameterProcessor<?>[] OPTION_PROCESSORS = new ParameterProcessor<?>[]{
+            new ArgumentProcessor(),
+            new FlagProcessor(),
+            new KeyValueProcessor(),
+            new KeyValuesProcessor()
+    };
+    private static final CommandProcessor COMMAND_PROCESSOR = new CommandProcessor();
+    private static final FragmentProcessor FRAGMENT_PROCESSOR = new FragmentProcessor();
 
-    Visitor(ProcessingEnvironment env, Set<String> rootTypes) {
-        this.env = env;
+    private final List<CLIMetaModel<ElementInfo>> clis = new LinkedList<>();
+    private final Map<TypeInfo, FragmentMetaModel<ElementInfo>> fragments = new HashMap<>();
+    private final Map<TypeInfo, CommandMetaModel<ElementInfo>> commands = new HashMap<>();
+    private final ConstructorVisitor constructorVisitor = new ConstructorVisitor();
+    private final ParametersVisitor<FragmentMetaModel<ElementInfo>, CommandFragment> fragmentVisitor
+            = new ParametersVisitor<>(FRAGMENT_PROCESSOR);
+    private final ParametersVisitor<CommandMetaModel<ElementInfo>, Command> commandVisitor
+            = new ParametersVisitor<>(COMMAND_PROCESSOR);
+    private final CLIVisitor cliVisitor = new CLIVisitor();
+    private final Set<TypeInfo> rootTypes;
+    private final Types typeUtils;
+
+    /**
+     * Create a new instance.
+     *
+     * @param env       processing environment
+     * @param rootTypes root types
+     */
+    Visitor(ProcessingEnvironment env, Set<TypeInfo> rootTypes) {
+        typeUtils = env.getTypeUtils();
         this.rootTypes = rootTypes;
     }
 
     /**
-     * Visitor a command fragment class.
+     * Get the meta-models for the visited commands.
      *
-     * @param elt element to visit
-     * @return meta-model
+     * @return collection of CommandMetaModel
      */
-    CommandFragmentMetaModel visitCommandFragment(Element elt) {
-        return elt.accept(new CommandFragmentVisitor(), null);
+    Collection<CommandMetaModel<ElementInfo>> commands() {
+        return commands.values();
     }
 
     /**
-     * Visitor a command class.
+     * Get the meta-models for the visited command fragments.
+     *
+     * @return collection of CommandFragmentMetaModel
+     */
+    Collection<FragmentMetaModel<ElementInfo>> fragments() {
+        return fragments.values();
+    }
+
+    /**
+     * Get the meta-models for the visited CLI classes.
+     *
+     * @return collection of CLIMetaModel
+     */
+    Collection<CLIMetaModel<ElementInfo>> clis() {
+        return clis;
+    }
+
+    /**
+     * Visit a command fragment class.
      *
      * @param elt element to visit
-     * @return meta-model
+     * @throws VisitorError if a visitor error occurs
      */
-    CommandMetaModel visitCommand(Element elt) {
-        return elt.accept(new CommandVisitor(), null);
+    void visitCommandFragment(Element elt) throws VisitorError {
+        FragmentMetaModel<ElementInfo> metaModel = elt.accept(fragmentVisitor, null);
+        fragments.put(metaModel.annotatedType(), metaModel);
     }
 
-    private final class TypeParamVisitor extends SimpleTypeVisitor9<TypeElement, Void> {
+    /**
+     * Visit a command class.
+     *
+     * @param elt element to visit
+     * @throws VisitorError if a visitor error occurs
+     */
+    void visitCommand(Element elt) throws VisitorError {
+        CommandMetaModel<ElementInfo> metaModel = elt.accept(commandVisitor, null);
+        commands.put(metaModel.annotatedType(), metaModel);
+    }
+
+    /**
+     * Visit a CLI class.
+     *
+     * @param elt element to visit
+     * @throws VisitorError if a visitor error occurs
+     */
+    void visitCLI(Element elt) throws VisitorError {
+        CLIMetaModel<ElementInfo> metaModel = elt.accept(cliVisitor, null);
+        clis.add(metaModel);
+    }
+
+    /**
+     * Visitor error.
+     */
+    static final class VisitorError extends RuntimeException {
+
+        private final Element element;
+
+        private VisitorError(String message, Element element) {
+            super(message);
+            this.element = element;
+        }
+
+        /**
+         * Get the visited element associated with the error.
+         *
+         * @return Element
+         */
+        Element element() {
+            return element;
+        }
+    }
+
+    private final class CLIVisitor extends SimpleElementVisitor9<CLIMetaModel<ElementInfo>, Void> {
+
+        AnnotationValue annotationValue(String name, AnnotationMirror mirror) {
+            Map<? extends ExecutableElement, ? extends AnnotationValue> values = mirror.getElementValues();
+            for (Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : values.entrySet()) {
+                if (name.equals(entry.getKey().accept(new SimpleElementVisitor9<String, Void>() {
+                    @Override
+                    public String visitExecutable(ExecutableElement e, Void o) {
+                        return e.getSimpleName().toString();
+                    }
+                }, null))) {
+                    return entry.getValue();
+                }
+            }
+            throw new IllegalStateException("Annotation value not found: " + name + ", mirror: " + mirror);
+        }
+
+        List<ElementInfo> valueAsTypes(AnnotationValue value) {
+            return value.accept(
+                    new SimpleAnnotationValueVisitor9<List<ElementInfo>, Void>() {
+                        @Override
+                        public List<ElementInfo> visitArray(List<? extends AnnotationValue> values, Void unused) {
+                            List<ElementInfo> elementInfos = new LinkedList<>();
+                            for (AnnotationValue value : values) {
+                                elementInfos.add(value.accept(new SimpleAnnotationValueVisitor9<ElementInfo, Void>() {
+
+                                    @Override
+                                    public ElementInfo visitType(TypeMirror t, Void unused) {
+                                        return TypeInfo.of((TypeElement) typeUtils.asElement(t), typeUtils);
+                                    }
+                                }, null));
+                            }
+                            return elementInfos;
+                        }
+                    }, null);
+        }
+
+        CommandLineInterface annotationProxy(String name, String description) {
+            return (CommandLineInterface) Proxy.newProxyInstance(
+                    this.getClass().getClassLoader(), new Class<?>[]{CommandLineInterface.class},
+                    (proxy, method, args) -> {
+                        String methodName = method.getName();
+                        switch (methodName) {
+                            case "name":
+                                return name;
+                            case "description":
+                                return description;
+                            default:
+                                throw new UnsupportedOperationException(methodName);
+                        }
+                    });
+        }
 
         @Override
-        public TypeElement visitDeclared(DeclaredType t, Void p) {
-            List<? extends TypeMirror> typeArguments = t.getTypeArguments();
-            if (typeArguments.size() == 1) {
-                TypeElement type = (TypeElement) env.getTypeUtils().asElement(typeArguments.get(0));
-                return type;
+        public CLIMetaModel<ElementInfo> visitType(TypeElement type, Void p) {
+            // Accessing the class objects directly from the annotation instance throws exceptions if the class is
+            // not already compiled.
+            // Using the annotation mirrors instead...
+            AnnotationMirror mirror = null;
+            for (AnnotationMirror am : type.getAnnotationMirrors()) {
+                ElementInfo elementInfo = TypeInfo.of((TypeElement) am.getAnnotationType().asElement(), typeUtils);
+                if (elementInfo.is(CommandLineInterface.class)) {
+                    mirror = am;
+                }
             }
-            return null;
+            if (mirror == null) {
+                throw new VisitorError(MISSING_CLI_ANNOTATION, type);
+            }
+
+            String name = (String) annotationValue("name", mirror).getValue();
+            if (name.isEmpty() || !CommandLineInterface.VALID_NAME.test(name)) {
+                throw new VisitorError(INVALID_NAME, type);
+            }
+
+            String description = (String) annotationValue("description", mirror).getValue();
+            if (description.isEmpty()) {
+                throw new VisitorError(INVALID_DESCRIPTION, type);
+            }
+
+            // Resolve the annotation value into a list of element info
+            AnnotationValue commandClasses = annotationValue("commands", mirror);
+            List<ElementInfo> elementInfos = valueAsTypes(commandClasses);
+            List<CommandMetaModel<ElementInfo>> commands = new LinkedList<>();
+            for (ElementInfo elementInfo : elementInfos) {
+                CommandMetaModel<ElementInfo> command = Visitor.this.commands.get(elementInfo);
+                if (command != null) {
+                    commands.add(command);
+                } else {
+                    if (rootTypes.contains(rootTypeOf(elementInfo))) {
+                        // report an error if the file is present in the compilation unit
+                        throw new VisitorError(MISSING_COMMAND_ANNOTATION, type);
+                    }
+                }
+            }
+            return new CLIMetaModel<>(annotationProxy(name, description), TypeInfo.of(type, typeUtils), commands);
         }
     }
 
-    private final class ConstructorVisitor extends SimpleElementVisitor9<List<MetaModel<?>>, Void> {
-
-        private boolean isValidType(TypeElement type, Class<?> validType) {
-            String typeQualifiedName = type.getQualifiedName().toString();
-            if (!validType.getName().equals(typeQualifiedName)) {
-                TypeElement superTypeElt = (TypeElement) env.getTypeUtils().asElement(type.getSuperclass());
-                String superTypeQualifiedName = superTypeElt.getQualifiedName().toString();
-                return validType.getName().equals(superTypeQualifiedName);
-            }
-            return true;
-        }
-
-        private boolean isValidType(TypeElement type, List<String> validTypes) {
-            String typeQualifiedName = type.getQualifiedName().toString();
-            if (!validTypes.contains(typeQualifiedName)) {
-                TypeElement superTypeElt = (TypeElement) env.getTypeUtils().asElement(type.getSuperclass());
-                String superTypeQualifiedName = superTypeElt.getQualifiedName().toString();
-                return validTypes.contains(superTypeQualifiedName);
-            }
-            return true;
-        }
-
-        private boolean checkOptionName(String name, VariableElement var, List<String> options) {
-            if (name.isEmpty()) {
-                env.getMessager().printMessage(Diagnostic.Kind.ERROR, "option name cannot be empty", var);
-                return false;
-            }
-            if (!Option.VALID_NAME.test(name)) {
-                env.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                        String.format("'%s' is not a valid option name", name),
-                        var);
-                return false;
-            }
-            if (options.contains(name)) {
-                env.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                        String.format("option named '%s' is already defined", name),
-                        var);
-                return false;
-            }
-            return true;
-        }
-
-        private boolean checkOptionDescription(String description, VariableElement var) {
-            if (description.isEmpty()) {
-                env.getMessager().printMessage(Diagnostic.Kind.ERROR, "description cannot be empty", var);
-                return false;
-            }
-            return true;
-        }
-
-        private boolean processOption(VariableElement var, TypeElement type, List<String> options, List<MetaModel<?>> params) {
-            Option.Argument argument = var.getAnnotation(Option.Argument.class);
-            if (argument != null) {
-                if (checkOptionDescription(argument.description(), var)) {
-                    if (isValidType(type, ARGUMENT_TYPES)) {
-                        params.add(new ArgumentMetaModel(type, argument));
+    private ElementInfo rootTypeOf(ElementInfo elementInfo) {
+        Element element = elementInfo.element();
+        while (element.getEnclosingElement().accept(
+                new SimpleElementVisitor9<>() {
+                    @Override
+                    protected Boolean defaultAction(Element e, Object o) {
                         return true;
-                    } else {
-                        env.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                                String.format("%s is not a valid argument type: ", type),
-                                var);
+                    }
+
+                    @Override
+                    public Boolean visitPackage(PackageElement e, Object o) {
+                        return false;
+                    }
+                }, null)) {
+            element = element.getEnclosingElement();
+        }
+        return TypeInfo.of(element, typeUtils);
+    }
+
+    private final class ConstructorVisitor extends SimpleElementVisitor9<List<ParameterMetaModel>, Void> {
+
+        @Override
+        public List<ParameterMetaModel> visitExecutable(ExecutableElement executable, Void p) {
+            List<ParameterMetaModel> params = new LinkedList<>();
+            List<String> names = new ArrayList<>();
+            for (VariableElement variable : executable.getParameters()) {
+                ElementInfo elementInfo = TypeInfo.of(variable, typeUtils);
+                ParameterContext context = new ParameterContext(elementInfo, names, params);
+                boolean isOption = false;
+                for (ParameterProcessor<?> processor : OPTION_PROCESSORS) {
+                    if (processor.process(context)) {
+                        isOption = true;
+                        break;
                     }
                 }
-                return false;
-            }
-            Option.Flag flag = var.getAnnotation(Option.Flag.class);
-            if (flag != null) {
-                if (checkOptionName(flag.name(), var, options) && checkOptionDescription(flag.description(), var)) {
-                    if (isValidType(type, Boolean.class)) {
-                        params.add(new FlagMetaModel(flag));
-                        options.add(flag.name());
-                        return true;
-                    } else {
-                        env.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                                String.format("%s is not a valid flag type: ", type),
-                                var);
-                    }
-                }
-                return false;
-            }
-            Option.KeyValue keyValue = var.getAnnotation(Option.KeyValue.class);
-            if (keyValue != null) {
-                if (checkOptionName(keyValue.name(), var, options) && checkOptionDescription(keyValue.description(), var)) {
-                    if (isValidType(type, KEY_VALUE_TYPES)) {
-                        params.add(new KeyValueMetaModel(type, keyValue));
-                        options.add(keyValue.name());
-                        return true;
-                    } else {
-                        env.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                                String.format("%s is not a valid key-value type: ", type),
-                                var);
-                    }
-                }
-                return false;
-            }
-            Option.KeyValues keyValues = var.getAnnotation(Option.KeyValues.class);
-            if (keyValues != null) {
-                if (checkOptionName(keyValues.name(), var, options)
-                        && checkOptionDescription(keyValues.description(), var)) {
-                    if (isValidType(type, Collection.class)) {
-                        TypeElement paramTypeElt = var.asType().accept(new TypeParamVisitor(), null);
-                        if (paramTypeElt != null) {
-                            if (isValidType(paramTypeElt, KEY_VALUES_TYPES)) {
-                                params.add(new KeyValuesMetaModel(paramTypeElt, keyValues));
-                                options.add(keyValues.name());
-                                return true;
-                            } else {
-                                env.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                                        String.format("%s is not a valid option values type parameter: ", paramTypeElt),
-                                        var);
+                if (!isOption) {
+                    if (!elementInfo.isPrimitive()) {
+                        FragmentMetaModel<ElementInfo> fragment = fragments.get(elementInfo);
+                        if (fragment != null) {
+                            if (!fragment.duplicates(names).isEmpty()) {
+                                throw new VisitorError(FRAGMENT_OPTION_DUPLICATES, elementInfo.element());
+                            }
+                            names.addAll(fragment.paramNames());
+                            params.add(fragment);
+                        } else {
+                            if (rootTypes.contains(rootTypeOf(elementInfo))) {
+                                // report an error if the file is present in the compilation unit
+                                throw new VisitorError(MISSING_FRAGMENT_ANNOTATION, elementInfo.element());
                             }
                         }
                     } else {
-                        env.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                                String.format("%s is not a valid key-values type: ", type),
-                                var);
-                    }
-                }
-                return false;
-            }
-            return false;
-        }
-
-        private boolean processArgument(VariableElement var, TypeElement type, List<MetaModel<?>> params) {
-            Option.Argument argumentAnnot = var.getAnnotation(Option.Argument.class);
-            if (argumentAnnot != null) {
-                if (argumentAnnot.description() == null) {
-                    env.getMessager().printMessage(Diagnostic.Kind.ERROR, "description cannot be null", var);
-                } else {
-                    if (isValidType(type, ARGUMENT_TYPES)) {
-                        env.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                                String.format("%s is not a valid argument value type: ", type),
-                                var);
-                    } else {
-                        params.add(new ArgumentMetaModel(type, argumentAnnot));
-                    }
-                }
-                return true;
-            }
-            return false;
-        }
-
-        private void processFragment(VariableElement var, TypeElement type, List<String> options, List<MetaModel<?>> params) {
-            String fragmentQualifiedName = type.getQualifiedName().toString();
-            CommandFragmentMetaModel fragmentModel = fragmentsByQualifiedName.get(fragmentQualifiedName);
-            if (fragmentModel == null) {
-                if (rootTypes.contains(fragmentQualifiedName)) {
-                    // report an error if the fragment related file is present in the compilation unit
-                    env.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                            String.format("type '%s' is not annotated with @%s", type,
-                                    CommandFragment.class.getSimpleName()),
-                            var);
-                }
-            } else {
-                List<String> optionDuplicates = fragmentModel.optionDuplicates(options);
-                if (!optionDuplicates.isEmpty()) {
-                    StringBuilder sb = new StringBuilder();
-                    Iterator<String> it = optionDuplicates.iterator();
-                    while (it.hasNext()) {
-                        sb.append(it.next());
-                        if (it.hasNext()) {
-                            sb.append(", ");
-                        }
-                    }
-                    env.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                            String.format("command fragment duplicates options: '%s'", sb),
-                            var);
-                }
-                options.addAll(fragmentModel.optionNames());
-                params.add(fragmentModel);
-            }
-        }
-
-        @Override
-        public List<MetaModel<?>> visitExecutable(ExecutableElement elt, Void p) {
-            Types types = env.getTypeUtils();
-            List<MetaModel<?>> params = new LinkedList<>();
-            List<String> optionNames = new ArrayList<>();
-            for (VariableElement var : elt.getParameters()) {
-                String varName = var.getSimpleName().toString();
-                // resolve the type
-                TypeMirror varType = var.asType();
-                TypeKind varTypeKind = varType.getKind();
-                boolean primitive = varTypeKind.isPrimitive();
-                TypeElement type;
-                if (primitive) {
-                    type = types.boxedClass(types.getPrimitiveType(varTypeKind));
-                } else {
-                    type = (TypeElement) types.asElement(var.asType());
-                }
-                if (type == null) {
-                    throw new IllegalStateException("Unable to resolve type for variable: " + varName);
-                }
-
-                // process the variable
-                if (!processOption(var, type, optionNames, params)
-                        && !processArgument(var, type, params)) {
-
-                    if (!primitive) {
-                        processFragment(var, type, optionNames, params);
-                    } else {
-                        env.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                                String.format("%s is not a valid attribute", varName),
-                                var);
-                        return null;
+                        throw new VisitorError(INVALID_OPTION, variable);
                     }
                 }
             }
@@ -317,59 +355,227 @@ final class Visitor {
         }
     }
 
-    private final class CommandVisitor extends SimpleElementVisitor9<CommandMetaModel, Void> {
+    private class ParametersVisitor<T extends ParametersMetaModel<U, ElementInfo>, U extends Annotation>
+            extends SimpleElementVisitor9<T, Void> {
 
-        private boolean implementsCommandExecution(TypeElement type) {
-            for (TypeMirror iface : type.getInterfaces()) {
-                TypeElement ifaceTypeElt = (TypeElement) env.getTypeUtils().asElement(iface);
-                if (CommandExecution.class.getName().equals(ifaceTypeElt.getQualifiedName().toString())) {
-                    return true;
-                }
-            }
-            TypeMirror parent = type.getSuperclass();
-            if (parent != null) {
-                return implementsCommandExecution((TypeElement) env.getTypeUtils().asElement(parent));
-            }
-            env.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                    String.format("%s does not implement %s", type, CommandExecution.class.getSimpleName()),
-                    type);
-            return false;
+        private final ParametersProcessor<T, U> processor;
+
+        ParametersVisitor(ParametersProcessor<T, U> processor) {
+            this.processor = processor;
         }
 
         @Override
-        public CommandMetaModel visitType(TypeElement type, Void p) {
-            if (implementsCommandExecution(type)) {
-                Command annotation = type.getAnnotation(Command.class);
-                CommandFragmentMetaModel fragment = type.accept(new CommandFragmentVisitor(), null);
-                if (fragment != null) {
-                    return new CommandMetaModel(fragment.type(), fragment.pkg(), fragment.params(), annotation);
-                }
+        public T visitType(TypeElement type, Void unused) {
+            ElementInfo elementInfo = TypeInfo.of(type, typeUtils);
+            U annotation = type.getAnnotation(processor.annotationClass);
+            if (annotation == null) {
+                throw new IllegalStateException(String.format("Missing @%s annotation",
+                        processor.annotationClass.getSimpleName()));
             }
-            return null;
-        }
-    }
-
-    private final class CommandFragmentVisitor extends SimpleElementVisitor9<CommandFragmentMetaModel, Void> {
-
-        @Override
-        public CommandFragmentMetaModel visitType(TypeElement type, Void p) {
-            List<MetaModel<?>> params = null;
-            for (Element elt : type.getEnclosedElements()) {
-                if (elt.getKind() == ElementKind.CONSTRUCTOR && elt.getAnnotation(Creator.class) != null) {
-                    params = elt.accept(new ConstructorVisitor(), null);
+            processor.processType(annotation, elementInfo);
+            Element creatorElement = null;
+            for (Element element : type.getEnclosedElements()) {
+                if (element.getKind() == ElementKind.CONSTRUCTOR && element.getAnnotation(Creator.class) != null) {
+                    creatorElement = element;
                     break;
                 }
             }
-            if (params != null) {
-                String pkg = env.getElementUtils().getPackageOf(type).getQualifiedName().toString();
-                CommandFragmentMetaModel model = new CommandFragmentMetaModel(type, pkg, params);
-                fragmentsByQualifiedName.put(type.getQualifiedName().toString(), model);
-                return model;
+            if (creatorElement == null) {
+                throw new VisitorError(MISSING_CREATOR_ANNOTATION, type);
             }
-            env.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                        String.format("No constructor annotated with @%s found", Creator.class.getSimpleName()),
-                        type);
-            return null;
+            List<ParameterMetaModel> params = creatorElement.accept(constructorVisitor, null);
+            return processor.processParameters(annotation, new ParametersContext(elementInfo, params));
+        }
+    }
+
+    private static final class CommandProcessor extends ParametersProcessor<CommandMetaModel<ElementInfo>, Command> {
+
+        CommandProcessor() {
+            super(Command.class);
+        }
+
+        @Override
+        void processType(Command command, ElementInfo elementInfo) {
+            if (command.name().isEmpty() || !Option.VALID_NAME.test(command.name())) {
+                throw new VisitorError(INVALID_NAME, elementInfo.element());
+            }
+            if (command.description().isEmpty()) {
+                throw new VisitorError(INVALID_DESCRIPTION, elementInfo.element());
+            }
+            if (!elementInfo.hasInterface(CommandExecution.class)) {
+                throw new VisitorError(MISSING_COMMAND_EXECUTION, elementInfo.element());
+            }
+        }
+
+        @Override
+        CommandMetaModel<ElementInfo> processParameters(Command annotation, ParametersContext context) {
+            return new CommandMetaModel<>(annotation, context.elementInfo, context.params);
+        }
+    }
+
+    private static final class FragmentProcessor extends ParametersProcessor<FragmentMetaModel<ElementInfo>, CommandFragment> {
+
+        FragmentProcessor() {
+            super(CommandFragment.class);
+        }
+
+        @Override
+        FragmentMetaModel<ElementInfo> processParameters(CommandFragment annotation, ParametersContext context) {
+            return new FragmentMetaModel<>(annotation, context.elementInfo, context.params);
+        }
+    }
+
+    private static class ParametersContext {
+
+        private final ElementInfo elementInfo;
+        private final List<ParameterMetaModel> params;
+
+        ParametersContext(ElementInfo elementInfo, List<ParameterMetaModel> params) {
+            this.elementInfo = elementInfo;
+            this.params = params;
+        }
+    }
+
+    private static class ParameterContext {
+
+        private final ElementInfo elementInfo;
+        private final List<String> names;
+        private final List<ParameterMetaModel> params;
+
+        ParameterContext(ElementInfo elementInfo, List<String> names, List<ParameterMetaModel> params) {
+            this.elementInfo = elementInfo;
+            this.names = names;
+            this.params = params;
+        }
+
+        void checkOptionName(String name) {
+            if (name.isEmpty() || !Option.VALID_NAME.test(name)) {
+                throw new VisitorError(INVALID_NAME, elementInfo.element());
+            }
+            if (names.contains(name)) {
+                throw new VisitorError(OPTION_ALREADY_DEFINED, elementInfo.element());
+            }
+        }
+
+        void checkOptionDescription(String description) {
+            if (description.isEmpty()) {
+                throw new VisitorError(INVALID_DESCRIPTION, elementInfo.element());
+            }
+        }
+    }
+
+    private abstract static class ParametersProcessor<T extends ParametersMetaModel<U, ElementInfo>, U extends Annotation> {
+
+        private final Class<U> annotationClass;
+
+        ParametersProcessor(Class<U> annotationClass) {
+            this.annotationClass = annotationClass;
+        }
+
+        abstract T processParameters(U annotation, ParametersContext context);
+
+        void processType(U annotation, ElementInfo elementInfo) {
+        }
+    }
+
+    private abstract static class ParameterProcessor<T extends Annotation> {
+
+        private final Class<T> annotationClass;
+
+        ParameterProcessor(Class<T> annotationClass) {
+            this.annotationClass = annotationClass;
+        }
+
+        boolean process(ParameterContext context) {
+            T annotation = context.elementInfo.element().getAnnotation(annotationClass);
+            if (annotation != null) {
+                context.params.add(processOption(annotation, context));
+                return true;
+            }
+            return false;
+        }
+
+        abstract ParameterMetaModel processOption(T annotation, ParameterContext context);
+    }
+
+    private static final class ArgumentProcessor extends ParameterProcessor<Argument> {
+
+        ArgumentProcessor() {
+            super(Option.Argument.class);
+        }
+
+        @Override
+        ArgumentMetaModel<?> processOption(Option.Argument annotation, ParameterContext context) {
+            context.checkOptionDescription(annotation.description());
+            if (context.elementInfo.is(Option.Argument.SUPPORTED_TYPES)) {
+                return new ArgumentMetaModel<>(annotation, context.elementInfo);
+            } else {
+                throw new VisitorError(INVALID_ARGUMENT_TYPE, context.elementInfo.element());
+            }
+        }
+    }
+
+    private static final class FlagProcessor extends ParameterProcessor<Flag> {
+
+        FlagProcessor() {
+            super(Option.Flag.class);
+        }
+
+        @Override
+        ParameterMetaModel processOption(Option.Flag annotation, ParameterContext context) {
+            context.checkOptionName(annotation.name());
+            context.checkOptionDescription(annotation.description());
+            if (context.elementInfo.is(Boolean.class)) {
+                context.names.add(annotation.name());
+                return new FlagMetaModel(annotation);
+            } else {
+                throw new VisitorError(INVALID_FLAG_TYPE, context.elementInfo.element());
+            }
+        }
+    }
+
+    private static final class KeyValueProcessor extends ParameterProcessor<KeyValue> {
+
+        KeyValueProcessor() {
+            super(Option.KeyValue.class);
+        }
+
+        @Override
+        ParameterMetaModel processOption(Option.KeyValue annotation, ParameterContext context) {
+            context.checkOptionName(annotation.name());
+            context.checkOptionDescription(annotation.description());
+            if (context.elementInfo.is(Option.KeyValue.SUPPORTED_TYPES)) {
+                context.names.add(annotation.name());
+                return new KeyValueMetaModel<>(annotation, context.elementInfo);
+            } else {
+                throw new VisitorError(INVALID_KEY_VALUE_TYPE, context.elementInfo.element());
+            }
+        }
+    }
+
+    private static final class KeyValuesProcessor extends ParameterProcessor<KeyValues> {
+
+        KeyValuesProcessor() {
+            super(Option.KeyValues.class);
+        }
+
+        @Override
+        ParameterMetaModel processOption(Option.KeyValues annotation, ParameterContext context) {
+            context.checkOptionName(annotation.name());
+            context.checkOptionDescription(annotation.description());
+            if (context.elementInfo.is(Collection.class)) {
+                TypeInfo[] typeParams = context.elementInfo.typeParams();
+                if (typeParams.length == 1) {
+                    TypeInfo typeParam = typeParams[0];
+                    if (typeParam.is(Option.KeyValues.SUPPORTED_TYPES)) {
+                        context.names.add(annotation.name());
+                        return new KeyValuesMetaModel<>(annotation, typeParam);
+                    }
+                }
+                throw new VisitorError(INVALID_KEY_VALUES_TYPE_PARAMETER, context.elementInfo.element());
+            } else {
+                throw new VisitorError(INVALID_KEY_VALUES_TYPE, context.elementInfo.element());
+            }
         }
     }
 }

@@ -262,6 +262,7 @@
                         <excludes>
                             <exclude>**/*IT.java</exclude>
                         </excludes>
+                        <useModulePath>false</useModulePath>
                     </configuration>
                     <dependencies>
                         <dependency>
