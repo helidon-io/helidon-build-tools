@@ -127,18 +127,18 @@ public class CommandAP extends AbstractProcessor {
 
             try {
                 // process the fragments classes
-                for (Element elt : roundEnv.getElementsAnnotatedWith(CommandFragment.class)) {
-                    visitor.visitCommandFragment(elt);
+                for (Element element : roundEnv.getElementsAnnotatedWith(CommandFragment.class)) {
+                    visitor.visitFragment(element);
                 }
 
                 // process the command classes
-                for (Element elt : roundEnv.getElementsAnnotatedWith(Command.class)) {
-                    visitor.visitCommand(elt);
+                for (Element element : roundEnv.getElementsAnnotatedWith(Command.class)) {
+                    visitor.visitCommand(element);
                 }
 
                 // process the cli classes
-                for (Element elt : roundEnv.getElementsAnnotatedWith(CommandLineInterface.class)) {
-                    visitor.visitCLI(elt);
+                for (Element element : roundEnv.getElementsAnnotatedWith(CommandLineInterface.class)) {
+                    visitor.visitCLI(element);
                 }
 
                 generateSources(visitor);
