@@ -24,10 +24,10 @@ import java.util.List;
 import javax.tools.Diagnostic.Kind;
 
 import io.helidon.build.cli.codegen.CompilerHelper.JavaSourceFromString;
-import io.helidon.build.util.Strings;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.cli.codegen.Unchecked.unchecked;
+import static io.helidon.build.util.Strings.normalizeNewLines;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -576,8 +576,8 @@ class CommandAPTest {
                  String resourcePath = outputDir.relativize(path).toString();
                  InputStream inputStream = CommandAPTest.class.getClassLoader().getResourceAsStream(resourcePath);
                  assertThat(inputStream, is(notNullValue()));
-                 assertThat(Strings.normalizeNewLines(Files.readString(path)),
-                         is(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8)));
+                 assertThat(Files.readString(path),
+                         is(normalizeNewLines(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8))));
              }));
     }
 }
