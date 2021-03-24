@@ -24,6 +24,7 @@ import java.util.List;
 import javax.tools.Diagnostic.Kind;
 
 import io.helidon.build.cli.codegen.CompilerHelper.JavaSourceFromString;
+import io.helidon.build.util.Strings;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.cli.codegen.Unchecked.unchecked;
@@ -575,7 +576,8 @@ class CommandAPTest {
                  String resourcePath = outputDir.relativize(path).toString();
                  InputStream inputStream = CommandAPTest.class.getClassLoader().getResourceAsStream(resourcePath);
                  assertThat(inputStream, is(notNullValue()));
-                 assertThat(Files.readString(path), is(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8)));
+                 assertThat(Strings.normalizeNewLines(Files.readString(path)),
+                         is(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8)));
              }));
     }
 }
