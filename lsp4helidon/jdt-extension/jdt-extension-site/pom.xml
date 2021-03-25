@@ -16,19 +16,15 @@
     limitations under the License.
 
 -->
-<site>
-   <bundle id="helidon.jdt.ext.core" version="0.0.0">
-    <category name="core"/>
-   </bundle>
-   <bundle id="helidon.jdt.ext.test" version="0.0.0">
-   	<category name="sdk" />
-   </bundle>
-   <bundle id="helidon.jdt.ext.core.source" version="0.0.0">
-   	<category name="sdk" />
-   </bundle>
-   <bundle id="helidon.jdt.ext.test.source" version="0.0.0">
-   	<category name="sdk" />
-   </bundle>
-   <category-def name="core" label="helidon.jdt.ext extension"/>
-   <category-def name="sdk"  label="helidon.jdt.ext extension (Developer Resources)"/>
-</site>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<artifactId>jdt-extension</artifactId>
+		<groupId>io.helidon</groupId>
+		<version>3.0.0-SNAPSHOT</version>
+	</parent>
+	<artifactId>jdt-extension-site</artifactId>
+	<packaging>eclipse-repository</packaging>
+	<name>Jdt-extension :: update site</name>
+</project>

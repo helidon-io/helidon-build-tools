@@ -1,8 +1,8 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: helidon.jdt.ext Test Plugin
-Bundle-SymbolicName: helidon.jdt.ext.test
-Bundle-Version: 0.0.1.qualifier
+Bundle-Name: jdt-extension-test Plugin
+Bundle-SymbolicName: jdt-extension-test
+Bundle-Version: 3.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.junit,
  org.apache.commons.io,

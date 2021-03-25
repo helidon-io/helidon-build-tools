@@ -17,48 +17,30 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>jdt-extension</artifactId>
+        <groupId>io.helidon</groupId>
+        <version>3.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>jdt-extension-test</artifactId>
+    <packaging>eclipse-test-plugin</packaging>
+    <name>Tests for jdt-extension</name>
+    <description>Jdt-extension Test Plugin</description>
+
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
-    <parent>
-		<artifactId>helidon.jdt.ext</artifactId>
-		<groupId>io.helidon</groupId>
-		<version>0.0.1-SNAPSHOT</version>
-	</parent>
-    <artifactId>helidon.jdt.ext.test</artifactId>
-    <packaging>eclipse-test-plugin</packaging>
-    <name>helidon.jdt.ext test</name>
-    <description>helidon.jdt.ext Test Plugin</description>
 
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.eclipse.tycho</groupId>
-                    <artifactId>target-platform-configuration</artifactId>
-                    <version>${tycho.version}</version>
-                    <configuration>
-                        <dependency-resolution>
-                            <extraRequirements>
-                                <requirement>
-                                    <id>helidon.jdt.ext.core</id>
-                                    <versionRange>0.0.0</versionRange>
-                                    <type>eclipse-plugin</type>
-                                </requirement>
-                            </extraRequirements>
-                        </dependency-resolution>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
         <plugins>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -80,6 +62,7 @@
             </plugin>
         </plugins>
     </build>
+
     <profiles>
         <profile>
             <id>macosx-jvm-flags</id>
@@ -97,12 +80,12 @@
                         <plugin>
                             <groupId>org.eclipse.tycho</groupId>
                             <artifactId>tycho-surefire-plugin</artifactId>
-                            <version>${tycho.version}</version>
+                            <version>${version.tycho}</version>
                             <configuration>
                                 <dependencies>
                                     <dependency>
                                         <artifactId>org.eclipse.jdt</artifactId>
-                                        <version>0.0.0</version>
+                                        <version>${version.jdt.ext}</version>
                                         <type>eclipse-feature</type>
                                     </dependency>
                                 </dependencies>
