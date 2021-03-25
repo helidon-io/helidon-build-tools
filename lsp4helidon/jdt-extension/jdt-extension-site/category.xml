@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 
     Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
@@ -15,9 +16,19 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>org.acme</groupId>
-  <artifactId>empty-maven-project</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-</project>
+<site>
+   <bundle id="jdt-extension-core" version="0.0.0">
+       <category name="core"/>
+   </bundle>
+    <bundle id="jdt-extension-test" version="0.0.0">
+        <category name="sdk"/>
+    </bundle>
+    <bundle id="jdt-extension-core.source" version="0.0.0">
+        <category name="sdk"/>
+    </bundle>
+    <bundle id="jdt-extension-test.source" version="0.0.0">
+        <category name="sdk"/>
+    </bundle>
+    <category-def name="core" label="jdt-extension extension"/>
+    <category-def name="sdk" label="jdt-extension extension (Developer Resources)"/>
+</site>
