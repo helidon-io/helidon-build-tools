@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.cli.impl;
+package com.acme.cli;
 
-import io.helidon.build.cli.harness.CLIDefinition;
-import io.helidon.build.cli.harness.CommandRunner;
+import io.helidon.build.cli.harness.*;
 
-/**
- * Main entry point for the CLI.
- */
-public final class Main {
+@CommandLineInterface(
+        name = "test1",
+        description = "Test cli #1",
+        commands = {
+                TestCommand1.class,
+                TestCommand2.class,
+        })
+class TestCli1 {
 
-    private static final CLIDefinition CLI_DEFINITION = CLIDefinition.create("helidon", "Helidon Project command line tool");
-
-    private Main() {
-    }
-
-    /**
-     * Execute the command.
-     * @param args raw command line arguments
-     */
     public static void main(String[] args) {
-        CommandRunner.execute(CLI_DEFINITION, Main.class, args);
     }
 }

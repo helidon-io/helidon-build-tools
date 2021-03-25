@@ -28,7 +28,7 @@
     <name>Helidon Command Line Interface Impl</name>
 
     <properties>
-        <mainClass>io.helidon.build.cli.impl.Main</mainClass>
+        <mainClass>io.helidon.build.cli.impl.Helidon</mainClass>
     </properties>
 
     <dependencies>
@@ -178,6 +178,9 @@
                             <version>${project.version}</version>
                         </path>
                     </annotationProcessorPaths>
+                    <compilerArgs>
+                        <arg>-Xplugin:file-header</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>
