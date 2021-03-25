@@ -24,11 +24,8 @@ import java.util.stream.Collectors;
 import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
 import io.helidon.build.cli.impl.Plugins.PluginFailed;
-import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.Requirements;
 
-import static io.helidon.build.cli.impl.CommandRequirements.requireSupportedHelidonVersion;
-import static io.helidon.build.util.MavenVersion.toMavenVersion;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -36,8 +33,6 @@ import static java.util.Objects.requireNonNull;
  */
 class ArchetypeBrowser {
 
-    private static final String CATALOG_FILE_NAME = "archetype-catalog.xml";
-    private static final String JAR_SUFFIX = ".jar";
     private static final String HELIDON_VERSION_NOT_FOUND = "$(red Helidon version) $(RED %s) $(red not found.)";
 
     private final Metadata metadata;
@@ -50,15 +45,14 @@ class ArchetypeBrowser {
      * @param metadata       metadata
      * @param flavor         flavor
      * @param helidonVersion Helidon version
-     * @throws IOException  If an IO error occurs.
+     * @throws IOException If an IO error occurs.
      */
     ArchetypeBrowser(Metadata metadata, Flavor flavor, String helidonVersion) throws IOException {
         this.metadata = requireNonNull(metadata);
         this.flavor = requireNonNull(flavor);
         ArchetypeCatalog catalog = null;
         try {
-            MavenVersion version = toMavenVersion(requireSupportedHelidonVersion(helidonVersion));
-            catalog = ArchetypeCatalog.read(metadata.versionedFile(version, CATALOG_FILE_NAME, false));
+            catalog = metadata.catalogOf(helidonVersion);
         } catch (PluginFailed e) {
             Requirements.failed(HELIDON_VERSION_NOT_FOUND, helidonVersion);
         }
@@ -89,9 +83,7 @@ class ArchetypeBrowser {
      */
     Path archetypeJar(ArchetypeCatalog.ArchetypeEntry archetype) {
         try {
-            MavenVersion helidonVersion = toMavenVersion(archetype.version());
-            String fileName = archetype.artifactId() + "-" + helidonVersion + JAR_SUFFIX;
-            return metadata.versionedFile(helidonVersion, fileName, false);
+            return metadata.archetypeOf(archetype);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

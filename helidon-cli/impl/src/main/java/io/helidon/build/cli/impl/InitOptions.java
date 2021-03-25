@@ -35,6 +35,7 @@ public final class InitOptions {
     private static final String GROUP_ID_PROPERTY = "groupId";
     private static final String ARTIFACT_ID_PROPERTY = "artifactId";
     private static final String PACKAGE_NAME_PROPERTY = "package";
+    private static final String HELIDON_VERSION_PROPERTY = "helidonVersion";
     private static final String MAVEN_PROPERTY = "maven";
 
     /**
@@ -168,6 +169,33 @@ public final class InitOptions {
     }
 
     /**
+     * Get the groupId.
+     *
+     * @return groupId
+     */
+    String groupId() {
+        return groupId;
+    }
+
+    /**
+     * Get the artifactId.
+     *
+     * @return artifactId
+     */
+    String artifactId() {
+        return artifactId;
+    }
+
+    /**
+     * Get the package name.
+     *
+     * @return package name
+     */
+    String packageName() {
+        return packageName;
+    }
+
+    /**
      * Transform the init options by applying the given user configuration.
      *
      * @param config user configuration
@@ -193,17 +221,17 @@ public final class InitOptions {
     }
 
     /**
-     * Convert the init options to a map.
+     * Create init properties.
      *
      * @return Map of init options
      */
-    Map<String, String> asMap() {
+    Map<String, String> initProperties() {
         Map<String, String> result = new HashMap<>();
         result.put(PROJECT_NAME_PROPERTY, projectName);
         result.put(GROUP_ID_PROPERTY, groupId);
         result.put(ARTIFACT_ID_PROPERTY, artifactId);
         result.put(PACKAGE_NAME_PROPERTY, packageName);
-        result.put(helidonVersion, helidonVersion);
+        result.put(HELIDON_VERSION_PROPERTY, helidonVersion);
         result.putIfAbsent(MAVEN_PROPERTY, "true");        // No gradle support yet
         return result;
     }

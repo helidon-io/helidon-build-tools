@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
 import io.helidon.build.cli.impl.Plugins.PluginFailed;
 import io.helidon.build.util.ConfigProperties;
 import io.helidon.build.util.Log;
@@ -68,7 +69,9 @@ public class Metadata {
     private static final String LATEST_VERSION_FILE_NAME = "latest";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     private static final String METADATA_FILE_NAME = "metadata.properties";
+    private static final String CATALOG_FILE_NAME = "archetype-catalog.xml";
     private static final String PLUGIN_NAME = "UpdateMetadata";
+    private static final String JAR_SUFFIX = ".jar";
     private static final int PLUGIN_MAX_WAIT_SECONDS = 30;
     private static final int PLUGIN_MAX_ATTEMPTS = 3;
     private static final String CLI_MESSAGE_PREFIX = "cli.";
@@ -201,9 +204,10 @@ public class Metadata {
      * Returns the latest Helidon version.
      *
      * @return The version.
-     * @throws Exception If an error occurs.
+     * @throws IOException If an IO error occurs.
+     * @throws PluginFailed If a plugin error occurs.
      */
-    public MavenVersion latestVersion() throws Exception {
+    public MavenVersion latestVersion() throws IOException, PluginFailed {
         return latestVersion(false);
     }
 
@@ -212,9 +216,10 @@ public class Metadata {
      *
      * @param quiet If info messages should be suppressed.
      * @return The version.
-     * @throws Exception If an error occurs.
+     * @throws IOException If an IO error occurs.
+     * @throws PluginFailed If a plugin error occurs.
      */
-    public MavenVersion latestVersion(boolean quiet) throws Exception {
+    public MavenVersion latestVersion(boolean quiet) throws IOException, PluginFailed {
         // If we fail, we only want to do so once per command, so we cache any failure
         Exception initialFailure = latestVersionFailure.get();
         if (initialFailure == null) {
@@ -225,12 +230,16 @@ public class Metadata {
                     latestVersion.set(readLatestVersion());
                 }
                 return latestVersion.get();
-            } catch (Exception e) {
+            } catch (IOException | PluginFailed e) {
                 latestVersionFailure.set(e);
                 throw e;
             }
         } else {
-            throw initialFailure;
+            if (initialFailure instanceof IOException) {
+                throw (IOException) initialFailure;
+            } else {
+                throw (PluginFailed) initialFailure;
+            }
         }
     }
 
@@ -240,9 +249,10 @@ public class Metadata {
      * @param helidonVersion The version.
      * @param quiet If info messages should be suppressed.
      * @return The version.
-     * @throws Exception If an error occurs.
+     * @throws IOException If an IO error occurs.
+     * @throws PluginFailed If a plugin error occurs.
      */
-    public MavenVersion cliPluginVersion(MavenVersion helidonVersion, boolean quiet) throws Exception {
+    public MavenVersion cliPluginVersion(MavenVersion helidonVersion, boolean quiet) throws IOException, PluginFailed {
         return cliPluginVersion(helidonVersion, toMavenVersion(Config.buildVersion()), quiet);
     }
 
@@ -253,11 +263,12 @@ public class Metadata {
      * @param thisCliVersion This CLI version.
      * @param quiet If info messages should be suppressed.
      * @return The version.
-     * @throws Exception If an error occurs.
+     * @throws IOException If an IO error occurs.
+     * @throws PluginFailed If a plugin error occurs.
      */
     public MavenVersion cliPluginVersion(MavenVersion helidonVersion,
                                          MavenVersion thisCliVersion,
-                                         boolean quiet) throws Exception {
+                                         boolean quiet) throws IOException, PluginFailed {
 
         // Create a map from CLI version to CLI plugin versions, including latest
 
@@ -294,9 +305,10 @@ public class Metadata {
      * @param helidonVersion The version.
      * @param quiet If info messages should be suppressed.
      * @return The properties.
-     * @throws Exception If an error occurs.
+     * @throws IOException If an IO error occurs.
+     * @throws PluginFailed If a plugin error occurs.
      */
-    public MavenVersion cliVersionOf(MavenVersion helidonVersion, boolean quiet) throws Exception {
+    public MavenVersion cliVersionOf(MavenVersion helidonVersion, boolean quiet) throws IOException, PluginFailed {
         return toMavenVersion(requiredProperty(helidonVersion, CLI_VERSION_PROPERTY, quiet));
     }
 
@@ -306,9 +318,12 @@ public class Metadata {
      * @param thisCliVersion The version of this CLI.
      * @param quiet If info messages should be suppressed.
      * @return A valid CLI version if a more recent CLI is available.
-     * @throws Exception If an error occurs.
+     * @throws IOException If an IO error occurs.
+     * @throws PluginFailed If a plugin error occurs.
      */
-    public Optional<MavenVersion> checkForCliUpdate(MavenVersion thisCliVersion, boolean quiet) throws Exception {
+    public Optional<MavenVersion> checkForCliUpdate(MavenVersion thisCliVersion, boolean quiet)
+            throws IOException, PluginFailed {
+
         final MavenVersion latestHelidonVersion = latestVersion(quiet);
         final MavenVersion latestCliVersion = cliVersionOf(latestHelidonVersion, quiet);
         if (latestCliVersion.isGreaterThan(thisCliVersion)) {
@@ -324,10 +339,11 @@ public class Metadata {
      * @param latestHelidonVersion The latest Helidon version.
      * @param sinceCliVersion The CLI version to start with.
      * @return The notes, in sorted order.
-     * @throws Exception If an error occurs.
+     * @throws IOException If an IO error occurs.
+     * @throws PluginFailed If a plugin error occurs.
      */
     public Map<MavenVersion, String> cliReleaseNotesOf(MavenVersion latestHelidonVersion,
-                                                       MavenVersion sinceCliVersion) throws Exception {
+                                                       MavenVersion sinceCliVersion) throws IOException, PluginFailed {
         requireNonNull(latestHelidonVersion, "latestHelidonVersion must not be null");
         requireNonNull(sinceCliVersion, "sinceCliVersion must not be null");
         final ConfigProperties props = propertiesOf(latestHelidonVersion, true);
@@ -349,9 +365,10 @@ public class Metadata {
      *
      * @param helidonVersion The version.
      * @return The properties.
-     * @throws Exception If an error occurs.
+     * @throws IOException If an IO error occurs.
+     * @throws PluginFailed If a plugin error occurs.
      */
-    public ConfigProperties propertiesOf(String helidonVersion) throws Exception {
+    public ConfigProperties propertiesOf(String helidonVersion) throws IOException, PluginFailed {
         return propertiesOf(toMavenVersion(helidonVersion));
     }
 
@@ -360,9 +377,10 @@ public class Metadata {
      *
      * @param helidonVersion The version.
      * @return The properties.
-     * @throws Exception If an error occurs.
+     * @throws IOException If an IO error occurs.
+     * @throws PluginFailed If a plugin error occurs.
      */
-    public ConfigProperties propertiesOf(MavenVersion helidonVersion) throws Exception {
+    public ConfigProperties propertiesOf(MavenVersion helidonVersion) throws IOException, PluginFailed {
         return propertiesOf(helidonVersion, false);
     }
 
@@ -372,21 +390,54 @@ public class Metadata {
      * @param helidonVersion The version.
      * @param quiet If info messages should be suppressed.
      * @return The properties.
-     * @throws Exception If an error occurs.
+     * @throws IOException If an IO error occurs.
+     * @throws PluginFailed If a plugin error occurs.
      */
-    public ConfigProperties propertiesOf(MavenVersion helidonVersion, boolean quiet) throws Exception {
+    public ConfigProperties propertiesOf(MavenVersion helidonVersion, boolean quiet) throws IOException, PluginFailed {
         return new ConfigProperties(versionedFile(helidonVersion, METADATA_FILE_NAME, quiet));
     }
 
-    @SuppressWarnings("ConstantConditions")
-    Path versionedFile(MavenVersion helidonVersion, String fileName, boolean quiet) throws IOException, PluginFailed {
-        final Path versionDir = rootDir.resolve(requireNonNull(helidonVersion).toString());
-        final Path checkFile = versionDir.resolve(LAST_UPDATE_FILE_NAME);
-        checkForUpdates(helidonVersion, checkFile, quiet);
-        return assertFile(requireHelidonVersionDir(versionDir).resolve(fileName));
+    /**
+     * Returns the catalog for the given Helidon version.
+     *
+     * @param helidonVersion The version.
+     * @return The catalog.
+     * @throws IOException If an IO error occurs.
+     * @throws PluginFailed If a plugin error occurs.
+     */
+    public ArchetypeCatalog catalogOf(String helidonVersion) throws IOException, PluginFailed {
+        return catalogOf(toMavenVersion(helidonVersion));
     }
 
-    private String requiredProperty(MavenVersion helidonVersion, String propertyName, boolean quiet) throws Exception {
+    /**
+     * Returns the catalog for the given Helidon version.
+     *
+     * @param helidonVersion The version.
+     * @return The catalog.
+     * @throws IOException If an IO error occurs.
+     * @throws PluginFailed If a plugin error occurs.
+     */
+    public ArchetypeCatalog catalogOf(MavenVersion helidonVersion) throws IOException, PluginFailed {
+        return ArchetypeCatalog.read(versionedFile(helidonVersion, CATALOG_FILE_NAME, false));
+    }
+
+    /**
+     * Returns the path to the archetype jar for the given catalog entry.
+     *
+     * @param catalogEntry The catalog entry.
+     * @return The path to the archetype jar.
+     * @throws IOException If an IO error occurs.
+     * @throws PluginFailed If a plugin error occurs.
+     */
+    public Path archetypeOf(ArchetypeCatalog.ArchetypeEntry catalogEntry) throws IOException, PluginFailed {
+        final MavenVersion helidonVersion = toMavenVersion(catalogEntry.version());
+        final String fileName = catalogEntry.artifactId() + "-" + helidonVersion + JAR_SUFFIX;
+        return versionedFile(helidonVersion, fileName, false);
+    }
+
+    private String requiredProperty(MavenVersion helidonVersion, String propertyName, boolean quiet)
+            throws IOException, PluginFailed {
+
         ConfigProperties properties = propertiesOf(helidonVersion, quiet);
         return Requirements.requireNonNull(properties.property(propertyName), "missing " + propertyName);
     }
@@ -426,6 +477,16 @@ public class Metadata {
 
     private static String toCliMessageKey(MavenVersion version) {
         return CLI_MESSAGE_PREFIX + version.toString() + CLI_MESSAGE_SUFFIX;
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    private Path versionedFile(MavenVersion helidonVersion, String fileName, boolean quiet)
+            throws IOException, PluginFailed {
+
+        final Path versionDir = rootDir.resolve(requireNonNull(helidonVersion).toString());
+        final Path checkFile = versionDir.resolve(LAST_UPDATE_FILE_NAME);
+        checkForUpdates(helidonVersion, checkFile, quiet);
+        return assertFile(requireHelidonVersionDir(versionDir).resolve(fileName));
     }
 
     private boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, boolean quiet)
@@ -535,7 +596,7 @@ public class Metadata {
         Log.info(line);
     }
 
-    private MavenVersion readLatestVersion() throws Exception {
+    private MavenVersion readLatestVersion() throws IOException {
         final List<String> lines = Files.readAllLines(latestVersionFile, UTF_8);
         for (String line : lines) {
             if (!line.isEmpty()) {

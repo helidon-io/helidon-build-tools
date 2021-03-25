@@ -16,7 +16,6 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
@@ -45,8 +44,6 @@ import static org.hamcrest.Matchers.nullValue;
  * Base class for {@link Metadata} tests.
  */
 public class MetadataTestBase {
-
-    private static final URI CWD_URI = Path.of("").toUri();
 
     protected String baseUrl;
     protected Path cacheDir;

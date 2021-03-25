@@ -70,6 +70,42 @@ abstract class ArchetypeInvoker {
     }
 
     /**
+     * Get the interactive flag.
+     *
+     * @return {@code true} if interactive, {@code false} if batch
+     */
+    protected boolean isInteractive() {
+        return !batch;
+    }
+
+    /**
+     * Get the metadata.
+     *
+     * @return Metadata
+     */
+    protected Metadata metadata() {
+        return metadata;
+    }
+
+    /**
+     * Get the init options.
+     *
+     * @return InitOptions
+     */
+    protected InitOptions initOptions() {
+        return initOptions;
+    }
+
+    /**
+     * Get the project directory supplier.
+     *
+     * @return Supplier of Path
+     */
+    protected Supplier<Path> projectDirSupplier() {
+        return projectDirSupplier;
+    }
+
+    /**
      * Invoke the archetype engine to generate the project.
      *
      * @return project directory
@@ -79,6 +115,7 @@ abstract class ArchetypeInvoker {
 
     /**
      * Get the archetype engine version of this invoker.
+     *
      * @return EngineVersion
      */
     abstract EngineVersion engineVersion();
@@ -179,16 +216,16 @@ abstract class ArchetypeInvoker {
 
         @Override
         Path invoke() throws IOException {
-            String helidonVersion = super.initOptions.helidonVersion();
-            Flavor flavor = super.initOptions.flavor();
+            String helidonVersion = initOptions().helidonVersion();
+            Flavor flavor = initOptions().flavor();
 
             // Gather archetype names
-            ArchetypeBrowser browser = new ArchetypeBrowser(super.metadata, flavor, helidonVersion);
+            ArchetypeBrowser browser = new ArchetypeBrowser(metadata(), flavor, helidonVersion);
             List<ArchetypeCatalog.ArchetypeEntry> archetypes = browser.archetypes();
             require(!archetypes.isEmpty(), "Unable to find archetypes for %s and %s.", flavor, helidonVersion);
 
             ArchetypeEntry archetype;
-            if (!super.batch) {
+            if (isInteractive()) {
                 // Select archetype interactively
                 List<String> descriptions = archetypes.stream()
                                                       .map(a -> a.name() + " | " + a.description().orElse(a.summary()))
@@ -198,7 +235,7 @@ abstract class ArchetypeInvoker {
             } else {
                 // find the archetype that matches archetypeName
                 archetype = archetypes.stream()
-                                      .filter(a -> a.name().equals(super.initOptions.archetypeName()))
+                                      .filter(a -> a.name().equals(initOptions().archetypeName()))
                                       .findFirst()
                                       .orElse(null);
             }
@@ -210,12 +247,12 @@ abstract class ArchetypeInvoker {
 
             Map<String, String> initProperties = new HashMap<>();
             initProperties.putAll(Maps.fromProperties(System.getProperties()));
-            initProperties.putAll(super.initOptions.asMap());
+            initProperties.putAll(initOptions().initProperties());
 
             ArchetypeEngine engine = new ArchetypeEngine(loader, initProperties);
 
             // Run input flow if not in batch mode
-            if (!super.batch) {
+            if (isInteractive()) {
                 ArchetypeDescriptor descriptor = engine.descriptor();
                 ArchetypeDescriptor.InputFlow inputFlow = descriptor.inputFlow();
 
@@ -225,7 +262,7 @@ abstract class ArchetypeInvoker {
                          .forEach(FlowNodeController::execute);
             }
 
-            Path projectDir = super.projectDirSupplier.get();
+            Path projectDir = projectDirSupplier().get();
             engine.generate(projectDir.toFile());
             return projectDir;
         }
