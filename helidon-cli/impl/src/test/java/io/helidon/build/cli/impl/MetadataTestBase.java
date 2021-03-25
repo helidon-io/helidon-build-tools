@@ -198,9 +198,6 @@ public class MetadataTestBase {
         assertFile(seJarFile);
         assertFile(mpJarFile);
 
-
-        logged.assertLinesContainingAll(1, "unpacked", "cli-plugins-", ".jar");
-        logged.assertLinesContainingAll(1, "executing", "cli-plugins-", "UpdateMetadata");
         logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
         logged.assertLinesContainingAll(1, "connecting", LATEST_FILE_NAME);
         logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);

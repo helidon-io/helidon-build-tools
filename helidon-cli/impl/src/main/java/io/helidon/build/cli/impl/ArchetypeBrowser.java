@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,49 +16,50 @@
 
 package io.helidon.build.cli.impl;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import io.helidon.build.archetype.engine.ArchetypeCatalog;
-import io.helidon.build.cli.impl.InitCommand.Flavor;
-import io.helidon.build.util.ProcessMonitor;
+import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
+import io.helidon.build.cli.impl.InitOptions.Flavor;
+import io.helidon.build.cli.impl.Plugins.PluginFailed;
+import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.Requirements;
 
 import static io.helidon.build.cli.impl.CommandRequirements.requireSupportedHelidonVersion;
+import static io.helidon.build.util.MavenVersion.toMavenVersion;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Class ArchetypeBrowser.
+ * Archetype browser for the V1 archetypes.
  */
 class ArchetypeBrowser {
 
-    /**
-     * Helidon version not found message.
-     */
+    private static final String CATALOG_FILE_NAME = "archetype-catalog.xml";
+    private static final String JAR_SUFFIX = ".jar";
     private static final String HELIDON_VERSION_NOT_FOUND = "$(red Helidon version) $(RED %s) $(red not found.)";
-
-    /**
-     * Archetype not found message.
-     */
-    static final String ARCHETYPE_NOT_FOUND = "$(red Archetype \")$(RED %s)$(red \" not found.)";
-
-    /**
-     * Download failed message.
-     */
-    private static final String DOWNLOAD_FAILED = "Unable to download %s from %s";
 
     private final Metadata metadata;
     private final Flavor flavor;
     private final ArchetypeCatalog catalog;
 
-    ArchetypeBrowser(Metadata metadata, Flavor flavor, String helidonVersion) throws Exception {
+    /**
+     * Create a new archetype browser for the V1 engine.
+     *
+     * @param metadata       metadata
+     * @param flavor         flavor
+     * @param helidonVersion Helidon version
+     * @throws IOException  If an IO error occurs.
+     */
+    ArchetypeBrowser(Metadata metadata, Flavor flavor, String helidonVersion) throws IOException {
         this.metadata = requireNonNull(metadata);
         this.flavor = requireNonNull(flavor);
         ArchetypeCatalog catalog = null;
         try {
-            catalog = metadata.catalogOf(requireSupportedHelidonVersion(helidonVersion));
-        } catch (ProcessMonitor.ProcessFailedException e) {
+            MavenVersion version = toMavenVersion(requireSupportedHelidonVersion(helidonVersion));
+            catalog = ArchetypeCatalog.read(metadata.versionedFile(version, CATALOG_FILE_NAME, false));
+        } catch (PluginFailed e) {
             Requirements.failed(HELIDON_VERSION_NOT_FOUND, helidonVersion);
         }
         this.catalog = catalog;
@@ -88,7 +89,9 @@ class ArchetypeBrowser {
      */
     Path archetypeJar(ArchetypeCatalog.ArchetypeEntry archetype) {
         try {
-            return metadata.archetypeOf(archetype);
+            MavenVersion helidonVersion = toMavenVersion(archetype.version());
+            String fileName = archetype.artifactId() + "-" + helidonVersion + JAR_SUFFIX;
+            return metadata.versionedFile(helidonVersion, fileName, false);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

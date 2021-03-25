@@ -30,8 +30,8 @@ import io.helidon.build.util.SubstitutionVariables;
 
 import org.apache.maven.model.Model;
 
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARCHETYPE_NAME;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_FLAVOR;
+import static io.helidon.build.cli.impl.InitOptions.DEFAULT_ARCHETYPE_NAME;
+import static io.helidon.build.cli.impl.InitOptions.DEFAULT_FLAVOR;
 import static io.helidon.build.cli.impl.TestUtils.exec;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;

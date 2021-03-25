@@ -38,7 +38,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.build-tools.archetype</groupId>
-            <artifactId>helidon-archetype-engine</artifactId>
+            <artifactId>helidon-archetype-engine-v1</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

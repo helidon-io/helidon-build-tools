@@ -15,6 +15,7 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -30,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import io.helidon.build.archetype.engine.ArchetypeCatalog;
+import io.helidon.build.cli.impl.Plugins.PluginFailed;
 import io.helidon.build.util.ConfigProperties;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
@@ -67,9 +68,7 @@ public class Metadata {
     private static final String LATEST_VERSION_FILE_NAME = "latest";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     private static final String METADATA_FILE_NAME = "metadata.properties";
-    private static final String CATALOG_FILE_NAME = "archetype-catalog.xml";
     private static final String PLUGIN_NAME = "UpdateMetadata";
-    private static final String JAR_SUFFIX = ".jar";
     private static final int PLUGIN_MAX_WAIT_SECONDS = 30;
     private static final int PLUGIN_MAX_ATTEMPTS = 3;
     private static final String CLI_MESSAGE_PREFIX = "cli.";
@@ -379,39 +378,12 @@ public class Metadata {
         return new ConfigProperties(versionedFile(helidonVersion, METADATA_FILE_NAME, quiet));
     }
 
-    /**
-     * Returns the catalog for the given Helidon version.
-     *
-     * @param helidonVersion The version.
-     * @return The catalog.
-     * @throws Exception If an error occurs.
-     */
-    public ArchetypeCatalog catalogOf(String helidonVersion) throws Exception {
-        return catalogOf(toMavenVersion(helidonVersion));
-    }
-
-    /**
-     * Returns the catalog for the given Helidon version.
-     *
-     * @param helidonVersion The version.
-     * @return The catalog.
-     * @throws Exception If an error occurs.
-     */
-    public ArchetypeCatalog catalogOf(MavenVersion helidonVersion) throws Exception {
-        return ArchetypeCatalog.read(versionedFile(helidonVersion, CATALOG_FILE_NAME, false));
-    }
-
-    /**
-     * Returns the path to the archetype jar for the given catalog entry.
-     *
-     * @param catalogEntry The catalog entry.
-     * @return The path to the archetype jar.
-     * @throws Exception If an error occurs.
-     */
-    public Path archetypeOf(ArchetypeCatalog.ArchetypeEntry catalogEntry) throws Exception {
-        final MavenVersion helidonVersion = toMavenVersion(catalogEntry.version());
-        final String fileName = catalogEntry.artifactId() + "-" + helidonVersion + JAR_SUFFIX;
-        return versionedFile(helidonVersion, fileName, false);
+    @SuppressWarnings("ConstantConditions")
+    Path versionedFile(MavenVersion helidonVersion, String fileName, boolean quiet) throws IOException, PluginFailed {
+        final Path versionDir = rootDir.resolve(requireNonNull(helidonVersion).toString());
+        final Path checkFile = versionDir.resolve(LAST_UPDATE_FILE_NAME);
+        checkForUpdates(helidonVersion, checkFile, quiet);
+        return assertFile(requireHelidonVersionDir(versionDir).resolve(fileName));
     }
 
     private String requiredProperty(MavenVersion helidonVersion, String propertyName, boolean quiet) throws Exception {
@@ -456,19 +428,15 @@ public class Metadata {
         return CLI_MESSAGE_PREFIX + version.toString() + CLI_MESSAGE_SUFFIX;
     }
 
-    @SuppressWarnings("ConstantConditions")
-    private Path versionedFile(MavenVersion helidonVersion, String fileName, boolean quiet) throws Exception {
-        final Path versionDir = rootDir.resolve(requireNonNull(helidonVersion).toString());
-        final Path checkFile = versionDir.resolve(LAST_UPDATE_FILE_NAME);
-        checkForUpdates(helidonVersion, checkFile, quiet);
-        return assertFile(requireHelidonVersionDir(versionDir).resolve(fileName));
-    }
+    private boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, boolean quiet)
+            throws IOException, PluginFailed {
 
-    private boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, boolean quiet) throws Exception {
         return checkForUpdates(helidonVersion, checkFile, System.currentTimeMillis(), quiet);
     }
 
-    boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, long currentTimeMillis, boolean quiet) throws Exception {
+    boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, long currentTimeMillis, boolean quiet)
+            throws IOException, PluginFailed {
+
         if (isStale(checkFile, currentTimeMillis)) {
             update(helidonVersion, quiet);
             return true;
@@ -532,7 +500,7 @@ public class Metadata {
         }
     }
 
-    private void update(MavenVersion helidonVersion, boolean quiet) throws Exception {
+    private void update(MavenVersion helidonVersion, boolean quiet) throws IOException, PluginFailed {
         final boolean logInfo = Log.isDebug() || !quiet;
         final int maxAttempts = quiet ? 1 : PLUGIN_MAX_ATTEMPTS;
         final List<String> args = new ArrayList<>();

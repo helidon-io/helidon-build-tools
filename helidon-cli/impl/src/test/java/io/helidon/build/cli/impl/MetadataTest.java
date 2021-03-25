@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import io.helidon.build.archetype.engine.ArchetypeCatalog;
-import io.helidon.build.archetype.engine.ArchetypeCatalog.ArchetypeEntry;
+import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
+import io.helidon.build.archetype.engine.v1.ArchetypeCatalog.ArchetypeEntry;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 import io.helidon.build.util.ConfigProperties;
 import io.helidon.build.util.Log;
