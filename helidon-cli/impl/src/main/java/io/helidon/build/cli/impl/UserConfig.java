@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.cli.harness;
+package io.helidon.build.cli.impl;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.SubstitutionVariables;
 
@@ -49,8 +50,8 @@ public class UserConfig {
     private static final String DEFAULT_PACKAGE_NAME_KEY = "default.package.name";
     private static final String DEFAULT_PACKAGE_NAME_DEFAULT_VALUE = "me.${user.name}.${init_flavor}.${init_archetype}";
     private static final String FAIL_ON_PROJECT_NAME_COLLISION_KEY = "fail.on.project.name.collision";
-    private static final String RICH_TEXT_KEY = "use.rich.text";
-    private static final String RICH_TEXT_DEFAULT_VALUE = "true";
+    private static final String RICH_TEXT_KEY = CommandContext.InternalOptions.RICH_TEXT_KEY;
+    private static final String RICH_TEXT_DEFAULT_VALUE = CommandContext.InternalOptions.RICH_TEXT_DEFAULT_VALUE;
     private static final String FAIL_ON_PROJECT_NAME_COLLISION_DEFAULT_VALUE = "false";
     private static final String UPDATE_INTERVAL_HOURS_KEY = "update.check.retry.hours";
     private static final String UPDATE_INTERVAL_HOURS_DEFAULT_VALUE = "12";
@@ -61,59 +62,59 @@ public class UserConfig {
     private static final String SYSTEM_PROPERTY_PREFIX = "system_";
     private static final String DEFAULT_CONFIG =
             "\n"
-            + "# When using the init command to create a new project, default values for the\n"
-            + "# project name, group id and artifact id are defined here. Property substitution\n"
-            + "# is performed with values looked up first from system properties then environment\n"
-            + "# variables. A few special properties are defined and resolved during init command\n"
-            + "# execution and are distinguished with an \"init_\" prefix:\n"
-            + "#\n"
-            + "#  init_flavor     the selected Helidon flavor, e.g. \"SE\", converted to lowercase\n"
-            + "#  init_archetype  the name of the selected archetype, e.g. \"quickstart\"\n"
-            + "#  init_build      the selected build type, e.g. \"maven\", converted to lowercase\n"
-            + "\n"
-            + DEFAULT_PROJECT_NAME_KEY + "=" + DEFAULT_PROJECT_NAME_DEFAULT_VALUE + "\n"
-            + DEFAULT_GROUP_ID_KEY + "=" + DEFAULT_GROUP_ID_DEFAULT_VALUE + "\n"
-            + DEFAULT_ARTIFACT_ID_KEY + "=" + DEFAULT_ARTIFACT_DEFAULT_VALUE + "\n"
-            + DEFAULT_PACKAGE_NAME_KEY + "=" + DEFAULT_PACKAGE_NAME_DEFAULT_VALUE + "\n"
-            + "\n"
-            + "# When using the init command and a project with the same name already exists,\n"
-            + "# this value controls whether it should fail or if the name should be made unique \n"
-            + "# by appending a unique digit, e.g. \"quickstart-se-1\".\n"
-            + "\n"
-            + FAIL_ON_PROJECT_NAME_COLLISION_KEY + "=" + FAIL_ON_PROJECT_NAME_COLLISION_DEFAULT_VALUE + "\n"
-            + "\n"
-            + "# The CLI can use rich text (color, italic, etc.) where supported; setting this\n"
-            + "# value to \"false\" will disable this feature and is equivalent to using the\n"
-            + "# \"--plain\" option on all commands.\n"
-            + "\n"
-            + RICH_TEXT_KEY + "=" + RICH_TEXT_DEFAULT_VALUE + "\n"
-            + "\n"
-            + "# The CLI regularly updates information about new Helidon and/or CLI releases, and\n"
-            + "# this value controls the minimum number of hours between rechecks. Update checks\n"
-            + "# can be forced on every invocation with a zero value or disabled with a negative\n"
-            + "# value.\n"
-            + "\n"
-            + UPDATE_INTERVAL_HOURS_KEY + "=" + UPDATE_INTERVAL_HOURS_DEFAULT_VALUE + "\n"
-            + "\n"
-            + "# The CLI can download new releases to help reduce the number of installation\n"
-            + "# steps, and this value controls whether or not to do so.\n"
-            + "\n"
-            + DOWNLOAD_UPDATES_KEY + "=" + DOWNLOAD_UPDATES_DEFAULT_VALUE + "\n"
-            + "\n"
-            + "# System properties can be set by using the \"system_\" key prefix, e.g.:\n"
-            + "\n"
-            + "# " + "system_http.proxyHost=http://proxy.acme.com" + "\n"
-            + "# " + "system_http.proxyPort=80" + "\n"
-            + "# " + "system_http.nonProxyHosts=*.local|localhost|127.0.0.1|*.acme.com" + "\n"
-            + "# " + "system_https.proxyHost=http://proxy.acme.com" + "\n"
-            + "# " + "system_https.proxyPort=80" + "\n"
-            + "# " + "system_https.nonProxyHosts=*.local|localhost|127.0.0.1|*.acme.com" + "\n"
-            + "\n"
-            + "# The CLI fetches update information from this location. Setting this may be\n"
-            + "# necessary in environments with restricted internet access.\n"
-            + "\n"
-            + "# " + UPDATE_URL_KEY + "=" + UPDATE_URL_DEFAULT_VALUE + "\n"
-            + "\n";
+                    + "# When using the init command to create a new project, default values for the\n"
+                    + "# project name, group id and artifact id are defined here. Property substitution\n"
+                    + "# is performed with values looked up first from system properties then environment\n"
+                    + "# variables. A few special properties are defined and resolved during init command\n"
+                    + "# execution and are distinguished with an \"init_\" prefix:\n"
+                    + "#\n"
+                    + "#  init_flavor     the selected Helidon flavor, e.g. \"SE\", converted to lowercase\n"
+                    + "#  init_archetype  the name of the selected archetype, e.g. \"quickstart\"\n"
+                    + "#  init_build      the selected build type, e.g. \"maven\", converted to lowercase\n"
+                    + "\n"
+                    + DEFAULT_PROJECT_NAME_KEY + "=" + DEFAULT_PROJECT_NAME_DEFAULT_VALUE + "\n"
+                    + DEFAULT_GROUP_ID_KEY + "=" + DEFAULT_GROUP_ID_DEFAULT_VALUE + "\n"
+                    + DEFAULT_ARTIFACT_ID_KEY + "=" + DEFAULT_ARTIFACT_DEFAULT_VALUE + "\n"
+                    + DEFAULT_PACKAGE_NAME_KEY + "=" + DEFAULT_PACKAGE_NAME_DEFAULT_VALUE + "\n"
+                    + "\n"
+                    + "# When using the init command and a project with the same name already exists,\n"
+                    + "# this value controls whether it should fail or if the name should be made unique \n"
+                    + "# by appending a unique digit, e.g. \"quickstart-se-1\".\n"
+                    + "\n"
+                    + FAIL_ON_PROJECT_NAME_COLLISION_KEY + "=" + FAIL_ON_PROJECT_NAME_COLLISION_DEFAULT_VALUE + "\n"
+                    + "\n"
+                    + "# The CLI can use rich text (color, italic, etc.) where supported; setting this\n"
+                    + "# value to \"false\" will disable this feature and is equivalent to using the\n"
+                    + "# \"--plain\" option on all commands.\n"
+                    + "\n"
+                    + RICH_TEXT_KEY + "=" + RICH_TEXT_DEFAULT_VALUE + "\n"
+                    + "\n"
+                    + "# The CLI regularly updates information about new Helidon and/or CLI releases, and\n"
+                    + "# this value controls the minimum number of hours between rechecks. Update checks\n"
+                    + "# can be forced on every invocation with a zero value or disabled with a negative\n"
+                    + "# value.\n"
+                    + "\n"
+                    + UPDATE_INTERVAL_HOURS_KEY + "=" + UPDATE_INTERVAL_HOURS_DEFAULT_VALUE + "\n"
+                    + "\n"
+                    + "# The CLI can download new releases to help reduce the number of installation\n"
+                    + "# steps, and this value controls whether or not to do so.\n"
+                    + "\n"
+                    + DOWNLOAD_UPDATES_KEY + "=" + DOWNLOAD_UPDATES_DEFAULT_VALUE + "\n"
+                    + "\n"
+                    + "# System properties can be set by using the \"system_\" key prefix, e.g.:\n"
+                    + "\n"
+                    + "# " + "system_http.proxyHost=http://proxy.acme.com" + "\n"
+                    + "# " + "system_http.proxyPort=80" + "\n"
+                    + "# " + "system_http.nonProxyHosts=*.local|localhost|127.0.0.1|*.acme.com" + "\n"
+                    + "# " + "system_https.proxyHost=http://proxy.acme.com" + "\n"
+                    + "# " + "system_https.proxyPort=80" + "\n"
+                    + "# " + "system_https.nonProxyHosts=*.local|localhost|127.0.0.1|*.acme.com" + "\n"
+                    + "\n"
+                    + "# The CLI fetches update information from this location. Setting this may be\n"
+                    + "# necessary in environments with restricted internet access.\n"
+                    + "\n"
+                    + "# " + UPDATE_URL_KEY + "=" + UPDATE_URL_DEFAULT_VALUE + "\n"
+                    + "\n";
 
     private final Path homeDir;
     private final Path configDir;
@@ -152,7 +153,14 @@ public class UserConfig {
         this.systemProperties = setSystemProperties();
     }
 
-    private String property(String key, String defaultValue) {
+    /**
+     * Lookup a property.
+     *
+     * @param key          property key
+     * @param defaultValue default value
+     * @return the resolve value, or the supplied default value if not found
+     */
+    public String property(String key, String defaultValue) {
         return allProperties.getOrDefault(key, defaultValue);
     }
 
@@ -312,7 +320,7 @@ public class UserConfig {
 
     private void illegalPackageName(String name) {
         throw new IllegalStateException(DEFAULT_PACKAGE_NAME_KEY + " in " + configFile + " does not resolve to a valid "
-                                        + "package name: " + name);
+                + "package name: " + name);
     }
 
     /**

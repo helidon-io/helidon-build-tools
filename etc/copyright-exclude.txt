@@ -18,6 +18,7 @@ vuex-router-sync.js
 .json
 .bat
 javax.annotation.processing.Processor
+com.sun.source.util.Plugin
 /cli-data/latest
 cli-data.zip
 .exit

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,8 +94,8 @@ final class CommandMatcher {
     private static int perfectScore(String target) {
         int perfectScore = 0;
         int[] weight = weight(target);
-        for (int i = 0; i < weight.length; i++) {
-            perfectScore += weight[i];
+        for (int j : weight) {
+            perfectScore += j;
         }
         return perfectScore;
     }
@@ -103,10 +103,10 @@ final class CommandMatcher {
     private static int score(String source, String target) {
         int[] weight = weight(target);
         char[] src = source.toCharArray();
-        int tlen = target.length();
-        boolean[] matches = new boolean[tlen];
+        int len = target.length();
+        boolean[] matches = new boolean[len];
         int score = 0;
-        for (int i = 0; i < src.length && i < tlen; i++) {
+        for (int i = 0; i < src.length && i < len; i++) {
             char c = src[i];
             if (target.charAt(i) == c) {
                 score += weight[i];

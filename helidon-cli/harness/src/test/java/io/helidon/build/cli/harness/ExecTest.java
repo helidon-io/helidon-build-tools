@@ -42,10 +42,9 @@ public class ExecTest {
     static final String CLI_USAGE = resourceAsString("cli-usage.txt");
     static final String HELP_CMD_HELP = resourceAsString("help-cmd-help.txt");
     static final String SIMPLE_CMD_HELP = resourceAsString("simple-cmd-help.txt");
-    static final CLIDefinition TEST_CLI = CLIDefinition.create("test-cli", "A test cli");
 
     static CommandContext context() {
-        return CommandContext.create(REGISTRY, TEST_CLI);
+        return new CommandContext(REGISTRY, null);
     }
 
     static String resourceAsString(String name) {
@@ -62,7 +61,7 @@ public class ExecTest {
         PrintStream stdout = System.out;
         try {
             System.setOut(new PrintStream(baos));
-            CommandRunner.execute(context, args);
+            CommandRunner.execute2(context, args);
         } finally {
             System.setOut(stdout);
         }
@@ -110,7 +109,7 @@ public class ExecTest {
     private static final class TestCommandRegistry extends CommandRegistry {
 
         public TestCommandRegistry() {
-            super(/* pkg */"");
+            super("", "test-cli", "A test cli");
             register(new CommandWithCommonOptions());
             register(new SimpleCommand());
         }
@@ -174,7 +173,12 @@ public class ExecTest {
 
     private static final class CommonOptionsInfo extends CommandParameters.CommandFragmentInfo<CommonOptions> {
 
-        private static final KeyValueInfo<String> KEY_OPTION = new KeyValueInfo<>(String.class, "key", "key option", null, true);
+        private static final KeyValueInfo<String> KEY_OPTION = new KeyValueInfo<>(
+                String.class,
+                "key",
+                "key option",
+                null,
+                true);
 
         private CommonOptionsInfo() {
             super(CommonOptions.class, KEY_OPTION);

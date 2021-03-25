@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.cli.harness;
+package io.helidon.build.cli.impl;
 
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicReference;
@@ -26,6 +26,7 @@ import static java.util.Objects.requireNonNull;
  * Utilities to access configuration.
  */
 public class Config {
+
     private static final AtomicReference<Path> USER_HOME_DIR = new AtomicReference<>();
     private static final AtomicReference<UserConfig> USER_CONFIG = new AtomicReference<>();
     private static final AtomicReference<BuildToolsProperties> BUILD_TOOLS_PROPERTIES = new AtomicReference<>();

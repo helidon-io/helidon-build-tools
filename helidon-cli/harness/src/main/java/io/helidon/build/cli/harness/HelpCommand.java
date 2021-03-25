@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ class HelpCommand extends CommandModel {
         return new HelpCommandExecution(resolver);
     }
 
-    private final class HelpCommandExecution implements CommandExecution {
+    private static final class HelpCommandExecution implements CommandExecution {
 
         private final CommandParser.Resolver resolver;
 
@@ -78,7 +78,7 @@ class HelpCommand extends CommandModel {
 
         private String optionDescription(NamedOptionInfo<?> option) {
             String desc = option.description();
-            if (option instanceof KeyValueInfo && !((KeyValueInfo) option).required()) {
+            if (option instanceof KeyValueInfo && !((KeyValueInfo<?>) option).required()) {
                 Object defaultValue = ((KeyValueInfo<?>) option).defaultValue();
                 if (defaultValue != null) {
                     desc += " (default: " + defaultValue + ")";
@@ -88,31 +88,30 @@ class HelpCommand extends CommandModel {
         }
 
         private void doExecute(CommandContext context, CommandModel model) {
-            Map<String, String> options = new LinkedHashMap<>();
-            options.putAll(UsageCommand.GLOBAL_OPTIONS);
-            String usage = "";
+            Map<String, String> options = new LinkedHashMap<>(UsageCommand.GLOBAL_OPTIONS);
+            StringBuilder usage = new StringBuilder();
             String argument = "";
             for (ParameterInfo<?> param : model.parameters()) {
                 if (!param.visible()) {
                     continue;
                 }
-                if (!usage.isEmpty()) {
-                    usage += " ";
+                if (usage.length() > 0) {
+                    usage.append(" ");
                 }
                 if (param instanceof ArgumentInfo) {
-                    argument = ((ArgumentInfo) param).usage();
+                    argument = ((ArgumentInfo<?>) param).usage();
                 } else if (param instanceof OptionInfo) {
-                    usage += ((OptionInfo) param).usage();
+                    usage.append(((OptionInfo<?>) param).usage());
                 }
                 if (param instanceof NamedOptionInfo) {
                     NamedOptionInfo<?> option = (NamedOptionInfo<?>) param;
                     options.put("--" + option.name(), optionDescription(option));
                 } else if (param instanceof CommandFragmentInfo) {
-                    for (ParameterInfo<?> fragmentParam : ((CommandFragmentInfo) param).parameters()) {
+                    for (ParameterInfo<?> fragmentParam : ((CommandFragmentInfo<?>) param).parameters()) {
                         if (fragmentParam.visible()) {
                             if (fragmentParam instanceof NamedOptionInfo) {
                                 NamedOptionInfo<?> fragmentOption = (NamedOptionInfo<?>) fragmentParam;
-                                usage += fragmentOption.usage();
+                                usage.append(fragmentOption.usage());
                                 options.put("--" + fragmentOption.name(), optionDescription(fragmentOption));
                             }
                         }
@@ -120,9 +119,10 @@ class HelpCommand extends CommandModel {
                 }
             }
             if (!argument.isEmpty()) {
-                usage += (usage.isEmpty() ? argument : (" " + argument));
+                usage.append((usage.length() == 0) ? argument : (" " + argument));
             }
-            Log.info(String.format("%nUsage:\t%s %s [OPTIONS] %s%n", context.cli().name(), model.command().name(), usage));
+            Log.info(String.format("%nUsage:\t%s %s [OPTIONS] %s%n", context.cliName(), model.command().name(),
+                    usage.toString()));
             Log.info(model.command().description());
             Log.info("\nOptions:");
             Log.info(OutputHelper.table(options));
