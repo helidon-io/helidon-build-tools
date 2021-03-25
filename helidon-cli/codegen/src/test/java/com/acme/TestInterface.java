@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.acme;
 
-/**
- * Helidon CLI implementation.
- */
-module io.helidon.build.cli.impl {
-    requires io.helidon.build.cli.harness;
-    requires helidon.build.utils;
-    provides io.helidon.build.cli.harness.CommandRegistry
-            with io.helidon.build.cli.impl.CommandRegistryImpl;
+public interface TestInterface {
 }

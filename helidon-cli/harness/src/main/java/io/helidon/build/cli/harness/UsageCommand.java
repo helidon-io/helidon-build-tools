@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,9 +54,9 @@ final class UsageCommand extends CommandModel {
     }
 
     private void execute(CommandContext context) {
-        String styledName = Bold.apply(context.cli().name());
+        String styledName = Bold.apply(context.cliName());
         Log.info(String.format("%nUsage:\t%s [OPTIONS] COMMAND%n", styledName));
-        Log.info(context.cli().description());
+        Log.info(context.cliDescription());
         Log.info("\nOptions:");
         Log.info(OutputHelper.table(GLOBAL_OPTIONS));
         Log.info("\nCommands:");
@@ -68,6 +68,6 @@ final class UsageCommand extends CommandModel {
         if (!commands.isEmpty()) {
             Log.info(OutputHelper.table(commands));
         }
-        Log.info(String.format("%nRun '%s COMMAND --help' for more information on a command.", context.cli().name()));
+        Log.info(String.format("%nRun '%s COMMAND --help' for more information on a command.", context.cliName()));
     }
 }
