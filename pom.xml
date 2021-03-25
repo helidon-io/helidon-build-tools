@@ -197,6 +197,8 @@
         <module>dev-loop</module>
         <module>stager-maven-plugin</module>
         <module>build-cache-maven-plugin</module>
+        <module>lsp4helidon/ls-extension</module>
+        <module>lsp4helidon/jdt-extension</module>
     </modules>
 
     <build>
