@@ -38,7 +38,7 @@ import static org.eclipse.lsp4mp.jdt.core.MicroProfileAssert.vh;
  */
 public class HelidonPropertiesProviderTest extends BasePropertiesManagerTest {
 
-    private static final String HELIDON_COMMON_JAR = getJarPath("helidon-common-2.2.1-SNAPSHOT.jar");
+    private static final String HELIDON_COMMON_JAR = getJarPath("test-helidon-dependency.jar");
 
     @Test
     public void testPropertiesProvider() throws Exception {
