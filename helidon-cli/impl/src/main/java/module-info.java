@@ -23,6 +23,7 @@ module io.helidon.build.cli.impl {
     requires io.helidon.build.archetype.engine;
     requires helidon.build.utils;
     requires maven.model;
+    requires org.graalvm.sdk;
     provides io.helidon.build.cli.harness.CommandRegistry
             with io.helidon.build.cli.impl.HelidonRegistry;
 }
