@@ -41,18 +41,31 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>jars</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+            <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>create-test-helidon-jar</id>
                         <phase>package</phase>
                         <goals>
                             <goal>single</goal>
                         </goals>
                         <configuration>
-                            <appendAssemblyId>true</appendAssemblyId>
-                            <outputDirectory>${project.build.directory}/projects</outputDirectory>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <outputDirectory>${project.basedir}/jars</outputDirectory>
+                            <finalName>test-helidon-dependency</finalName>
                             <descriptors>
-                                <descriptor>src/main/assembly/projects.xml</descriptor>
+                                <descriptor>src/main/assembly/helidon-dependency.xml</descriptor>
                             </descriptors>
                         </configuration>
                     </execution>
@@ -60,39 +73,5 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>macosx-jvm-flags</id>
-            <activation>
-                <os>
-                    <family>mac</family>
-                </os>
-            </activation>
-            <properties>
-                <os.testArgs>-XstartOnFirstThread -noverify</os.testArgs>
-            </properties>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.eclipse.tycho</groupId>
-                            <artifactId>tycho-surefire-plugin</artifactId>
-                            <version>${version.tycho}</version>
-                            <configuration>
-                                <dependencies>
-                                    <dependency>
-                                        <artifactId>org.eclipse.jdt</artifactId>
-                                        <version>${version.jdt.ext}</version>
-                                        <type>eclipse-feature</type>
-                                    </dependency>
-                                </dependencies>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-    </profiles>
 
 </project>

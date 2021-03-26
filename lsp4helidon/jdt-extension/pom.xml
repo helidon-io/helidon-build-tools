@@ -20,10 +20,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.build-tools</groupId>
-        <artifactId>helidon-build-tools-project</artifactId>
+        <groupId>io.helidon</groupId>
+        <artifactId>lsp4helidon</artifactId>
         <version>3.0.0-SNAPSHOT</version>
-        <relativePath>../../</relativePath>
     </parent>
     <groupId>io.helidon</groupId>
     <artifactId>jdt-extension</artifactId>
@@ -58,6 +57,7 @@
         <version.jdt.ls>0.52.1.20200318153300</version.jdt.ls>
         <version.jdt.ext>0.0.0</version.jdt.ext>
         <version.gson>2.8.5</version.gson>
+        <version.plugin.clean>3.1.0</version.plugin.clean>
     </properties>
 
     <repositories>
@@ -107,28 +107,15 @@
                 <version>${version.tycho}</version>
                 <extensions>true</extensions>
             </plugin>
-            <plugin>
-                <groupId>org.eclipse.tycho</groupId>
-                <artifactId>target-platform-configuration</artifactId>
-                <version>${version.tycho}</version>
-                <configuration>
-                    <resolver>p2</resolver>
-                    <target>
-                        <artifact>
-                            <groupId>org.eclipse.jdt.ls</groupId>
-                            <artifactId>org.eclipse.jdt.ls.tp</artifactId>
-                            <version>${version.jdt.ls}</version>
-                        </artifact>
-                    </target>
-                    <resolver>p2</resolver>
-                    <pomDependencies>consider</pomDependencies>
-                    <ignoreTychoRepositories>true</ignoreTychoRepositories>
-                </configuration>
-            </plugin>
         </plugins>
 
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>${version.plugin.clean}</version>
+                </plugin>
                 <plugin>
                     <groupId>org.eclipse.tycho</groupId>
                     <artifactId>tycho-packaging-plugin</artifactId>
@@ -236,6 +223,37 @@
                         </executions>
                     </plugin>
                 </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>macosx-jvm-flags</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                </os>
+            </activation>
+            <properties>
+                <os.testArgs>-XstartOnFirstThread -noverify</os.testArgs>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.eclipse.tycho</groupId>
+                            <artifactId>tycho-surefire-plugin</artifactId>
+                            <version>${version.tycho}</version>
+                            <configuration>
+                                <dependencies>
+                                    <dependency>
+                                        <artifactId>org.eclipse.jdt</artifactId>
+                                        <version>${version.jdt.ext}</version>
+                                        <type>eclipse-feature</type>
+                                    </dependency>
+                                </dependencies>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
             </build>
         </profile>
     </profiles>

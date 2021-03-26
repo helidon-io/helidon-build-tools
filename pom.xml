@@ -200,6 +200,7 @@
         <module>build-cache-maven-plugin</module>
         <module>copyright-maven-plugin</module>
         <module>services-maven-plugin</module>
+        <module>lsp4helidon</module>
     </modules>
 
     <build>
