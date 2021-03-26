@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Simple logging.
  */
-public class Log {
+class Log {
     private static final AtomicReference<Verbosity> VERBOSITY = new AtomicReference<>(Verbosity.NORMAL);
     private static final String EOL = System.getProperty("line.separator");
     private static final String DEBUG_STYLE = "italic";
@@ -36,7 +36,7 @@ public class Log {
     /**
      * Verbosity levels.
      */
-    public enum Verbosity {
+    enum Verbosity {
         /**
          * Normal level.
          */
@@ -63,7 +63,7 @@ public class Log {
          *
          * @return {@code true} if verbose.
          */
-        public boolean isVerbose() {
+        boolean isVerbose() {
             return verbose;
         }
 
@@ -72,7 +72,7 @@ public class Log {
          *
          * @return {@code true} if verbose.
          */
-        public boolean isDebug() {
+        boolean isDebug() {
             return debug;
         }
     }
@@ -82,7 +82,7 @@ public class Log {
      *
      * @param verbosity The level.
      */
-    public static void verbosity(Verbosity verbosity) {
+    static void verbosity(Verbosity verbosity) {
         VERBOSITY.set(requireNonNull(verbosity));
     }
 
@@ -91,7 +91,7 @@ public class Log {
      *
      * @return The level.
      */
-    public static Verbosity verbosity() {
+    static Verbosity verbosity() {
         return VERBOSITY.get();
     }
 
@@ -100,7 +100,7 @@ public class Log {
      *
      * @return {@code true} if enabled.
      */
-    public static boolean isDebug() {
+    static boolean isDebug() {
         return verbosity().isDebug();
     }
 
@@ -109,7 +109,7 @@ public class Log {
      *
      * @return {@code true} if enabled.
      */
-    public static boolean isVerbose() {
+    static boolean isVerbose() {
         return verbosity().isVerbose();
     }
 
@@ -119,7 +119,7 @@ public class Log {
      * @param message The message.
      * @param args The message args.
      */
-    public static void debug(String message, Object... args) {
+    static void debug(String message, Object... args) {
         if (isDebug()) {
             log("$(italic " + message + ")", args);
         }
@@ -131,7 +131,7 @@ public class Log {
      * @param message The message.
      * @param args The message args.
      */
-    public static void verbose(String message, Object... args) {
+    static void verbose(String message, Object... args) {
         if (isVerbose()) {
             log(message, args);
         }
@@ -140,7 +140,7 @@ public class Log {
     /**
      * Log an empty message.
      */
-    public static void info() {
+    static void info() {
         log("");
     }
 
@@ -150,7 +150,7 @@ public class Log {
      * @param message The message.
      * @param args The message args.
      */
-    public static void info(String message, Object... args) {
+    static void info(String message, Object... args) {
         log(message, args);
     }
 
@@ -160,7 +160,7 @@ public class Log {
      * @param message The message.
      * @param args The message args.
      */
-    public static void warn(String message, Object... args) {
+    static void warn(String message, Object... args) {
         log(style(WARN_STYLE, message, args));
     }
 
@@ -171,7 +171,7 @@ public class Log {
      * @param msg Message to be logged.
      * @param args Format string arguments.
      */
-    public static void warn(Throwable thrown, String msg, Object... args) {
+    static void warn(Throwable thrown, String msg, Object... args) {
         log(thrown, style(WARN_STYLE, msg, args));
     }
 
@@ -181,7 +181,7 @@ public class Log {
      * @param message The message.
      * @param args The message args.
      */
-    public static void error(String message, Object... args) {
+    static void error(String message, Object... args) {
         log(style(ERROR_STYLE, message, args));
     }
 
@@ -192,7 +192,7 @@ public class Log {
      * @param msg Message to be logged.
      * @param args Format string arguments.
      */
-    public static void error(Throwable thrown, String msg, Object... args) {
+    static void error(Throwable thrown, String msg, Object... args) {
         log(thrown, style(ERROR_STYLE, msg, args));
     }
 
