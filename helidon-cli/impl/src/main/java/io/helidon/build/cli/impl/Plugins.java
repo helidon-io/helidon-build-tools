@@ -15,8 +15,15 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -49,8 +56,9 @@ public class Plugins {
     private static final String JIT_TWO_COMPILER_THREADS = "-XX:CICompilerCount=2";
     private static final String TIMED_OUT_SUFFIX = " timed out";
     private static final String UNSUPPORTED_CLASS_VERSION_ERROR = UnsupportedClassVersionError.class.getSimpleName();
+    private static final String PLUGIN_CLASS_NAME = "io.helidon.build.cli.plugin.Plugin";
 
-    private static Path pluginJar() throws Exception {
+    private static Path pluginJar() {
         Path pluginJar = PLUGINS_JAR.get();
         if (pluginJar == null) {
             final String cliVersion = Config.buildProperties().buildRevision();
@@ -61,7 +69,11 @@ public class Plugins {
                 final ClassLoader loader = Plugins.class.getClassLoader();
                 final InputStream input = requireNonNull(loader.getResourceAsStream(resourcePath), resourcePath + " not found!");
                 Log.debug("unpacked %s", pluginJar);
-                Files.copy(input, pluginJar);
+                try {
+                    Files.copy(input, pluginJar);
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
             }
             PLUGINS_JAR.set(pluginJar.toAbsolutePath());
         }
@@ -90,33 +102,84 @@ public class Plugins {
     /**
      * Execute a plugin and wait for it to complete.
      *
-     * @param pluginName The plugin name.
-     * @param pluginArgs The plugin args.
+     * @param pluginName     The plugin name.
+     * @param pluginArgs     The plugin args.
      * @param maxWaitSeconds The maximum number of seconds to wait for completion.
-     * @throws Exception If an error occurs.
      */
     public static void execute(String pluginName,
                                List<String> pluginArgs,
-                               int maxWaitSeconds) throws Exception {
+                               int maxWaitSeconds) {
         execute(pluginName, pluginArgs, maxWaitSeconds, Plugins::devNull);
     }
 
     /**
-     * Execute a plugin and wait for it to complete.
+     * Execute a plugin.
+     * If the plugin class is available on the class-path, the plugin is executed via reflection.
+     * Otherwise a process is forked and monitored until completion.
      *
-     * @param pluginName The plugin name.
-     * @param pluginArgs The plugin args.
-     * @param maxWaitSeconds The maximum number of seconds to wait for completion.
-     * @param stdOut The std out consumer.
-     * @throws Exception If an error occurs.
+     * @param pluginName     The plugin name.
+     * @param pluginArgs     The plugin args.
+     * @param maxWaitSeconds If forked, the maximum number of seconds to wait for completion.
+     * @param stdOut         The std out consumer.
      */
     public static void execute(String pluginName,
                                List<String> pluginArgs,
                                int maxWaitSeconds,
-                               Consumer<String> stdOut) throws Exception {
+                               Consumer<String> stdOut) {
+
+        try {
+            embedded(pluginName, pluginArgs, stdOut);
+        } catch (ClassNotFoundException ignored) {
+            forked(pluginName, pluginArgs, maxWaitSeconds, stdOut);
+        }
+    }
+
+    private static void embedded(String pluginName,
+                                 List<String> pluginArgs,
+                                 Consumer<String> stdOut) throws ClassNotFoundException {
+
+        Class<?> pluginClass = Class.forName(PLUGIN_CLASS_NAME);
+        PrintStream origStdOut = System.out;
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(baos));
+            List<String> command = new ArrayList<>();
+            command.add(requireNonNull(pluginName));
+            if (Log.isDebug()) {
+                command.add("--debug");
+            } else if (Log.isVerbose()) {
+                command.add("--verbose");
+            }
+            command.addAll(pluginArgs);
+            Method method = pluginClass.getMethod("execute", String[].class);
+            method.invoke(null, new Object[]{command.toArray(new String[0])});
+            try (BufferedReader reader = new BufferedReader(new StringReader(baos.toString()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    stdOut.accept(line);
+                }
+            } catch (IOException ex) {
+                throw new PluginFailed(ex);
+            }
+        } catch (InvocationTargetException ex) {
+            if (ex.getCause() != null) {
+                throw new PluginFailed(ex.getCause());
+            } else {
+                throw new PluginFailed(ex);
+            }
+        } catch (NoSuchMethodException | IllegalAccessException ex) {
+            throw new PluginFailed(ex);
+        } finally {
+            System.setOut(origStdOut);
+        }
+    }
+
+    private static void forked(String pluginName,
+                               List<String> pluginArgs,
+                               int maxWaitSeconds,
+                               Consumer<String> stdOut) {
 
         // Create the command
-
         final List<String> command = new ArrayList<>();
         command.add("java");
         command.add(JIT_LEVEL_ONE);
@@ -144,15 +207,15 @@ public class Plugins {
         Log.debug("executing %s", command);
 
         final List<String> stdErr = new ArrayList<>();
-        ProcessMonitor processMonitor = ProcessMonitor.builder()
-                                                      .processBuilder(processBuilder)
-                                                      .stdOut(stdOut)
-                                                      .stdErr(stdErr::add)
-                                                      .capture(true)
-                                                      .build()
-                                                      .start();
         try {
-            processMonitor.waitForCompletion(maxWaitSeconds, TimeUnit.SECONDS);
+            ProcessMonitor.builder()
+                          .processBuilder(processBuilder)
+                          .stdOut(stdOut)
+                          .stdErr(stdErr::add)
+                          .capture(true)
+                          .build()
+                          .start()
+                          .waitForCompletion(maxWaitSeconds, TimeUnit.SECONDS);
         } catch (ProcessMonitor.ProcessFailedException error) {
             if (containsUnsupportedClassVersionError(stdErr)) {
                 unsupportedJavaVersion();
@@ -173,12 +236,12 @@ public class Plugins {
     /**
      * Plugin failure.
      */
-    public static class PluginFailed extends Exception {
+    public static class PluginFailed extends RuntimeException {
         private PluginFailed(String message) {
             super(message);
         }
 
-        private PluginFailed(Exception cause) {
+        private PluginFailed(Throwable cause) {
             super(cause);
         }
 
