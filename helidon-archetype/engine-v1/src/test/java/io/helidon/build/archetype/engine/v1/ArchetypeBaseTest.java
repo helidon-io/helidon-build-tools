@@ -13,17 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.build.archetype.engine.v1;
+
+import java.io.File;
+import java.net.URL;
+
+import org.junit.jupiter.api.BeforeAll;
 
 /**
- * Helidon CLI implementation.
+ * Class ArchetypeBaseTest.
  */
-module io.helidon.build.cli.impl {
-    requires io.helidon.build.cli.harness;
-    requires io.helidon.build.archetype.engine.v1;
-    requires io.helidon.build.cli.plugin;
-    requires helidon.build.utils;
-    requires maven.model;
-    requires org.graalvm.sdk;
-    provides io.helidon.build.cli.harness.CommandRegistry
-            with io.helidon.build.cli.impl.HelidonRegistry;
+public class ArchetypeBaseTest {
+
+    static private File targetDir;
+
+    @BeforeAll
+    static void initialize() {
+        URL url = ArchetypeEngineTest.class.getClassLoader().getResource("pom.xml.mustache");
+        assert url != null;
+        targetDir = new File(url.getFile()).getParentFile();
+    }
+
+    static File targetDir() {
+        return targetDir;
+    }
 }

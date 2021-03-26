@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@ package io.helidon.build.archetype.maven;
 
 import java.io.Writer;
 
-import io.helidon.build.archetype.engine.ArchetypeDescriptor;
-import io.helidon.build.archetype.engine.ArchetypeDescriptor.Property;
+import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor;
+import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.Property;
 
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.Xpp3DomWriter;

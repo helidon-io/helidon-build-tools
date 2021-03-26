@@ -15,15 +15,10 @@
  */
 
 /**
- * Helidon CLI implementation.
+ * Helidon archetype engine.
  */
-module io.helidon.build.cli.impl {
-    requires io.helidon.build.cli.harness;
-    requires io.helidon.build.archetype.engine.v1;
-    requires io.helidon.build.cli.plugin;
+module io.helidon.build.archetype.engine.v1 {
     requires helidon.build.utils;
-    requires maven.model;
-    requires org.graalvm.sdk;
-    provides io.helidon.build.cli.harness.CommandRegistry
-            with io.helidon.build.cli.impl.HelidonRegistry;
+    requires com.github.mustachejava;
+    exports io.helidon.build.archetype.engine.v1;
 }
