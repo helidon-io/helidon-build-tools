@@ -59,7 +59,10 @@ public class MetadataAccessTestBase extends CommandTestBase {
             METADATA_URL = Metadata.DEFAULT_URL;
             Proxies.setProxyPropertiesFromEnv();
         }
-        METADATA = Metadata.newInstance(METADATA_URL, DEBUG_PLUGIN);
+        METADATA = Metadata.builder()
+                           .url(METADATA_URL)
+                           .debugPlugin(DEBUG_PLUGIN)
+                           .build();
     }
 
     private static boolean canUseMetadataTestServer() {
