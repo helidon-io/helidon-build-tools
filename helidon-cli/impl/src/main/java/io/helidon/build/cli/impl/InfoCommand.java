@@ -64,7 +64,7 @@ public final class InfoCommand extends BaseCommand {
     }
 
     @Override
-    protected void invoke(CommandContext context) throws Exception {
+    protected void invoke(CommandContext context) {
 
         // User config
 

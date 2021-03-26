@@ -77,7 +77,7 @@ public abstract class Plugin {
      * @return The instance.
      * @throws Exception If an error occurs.
      */
-    public static Plugin newInstance(String simpleClassName) throws Exception {
+    static Plugin newInstance(String simpleClassName) throws Exception {
         final String className = Plugin.class.getPackageName() + "." + simpleClassName;
         return (Plugin) Class.forName(className).getDeclaredConstructor().newInstance();
     }

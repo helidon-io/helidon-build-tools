@@ -123,7 +123,10 @@ final class CommonOptions {
             if (!metadataUrl.equals(Metadata.DEFAULT_URL)) {
                 Log.debug("using metadata url %s", metadataUrl);
             }
-            metadata = Metadata.newInstance(metadataUrl, config.checkForUpdatesIntervalHours());
+            metadata = Metadata.builder()
+                               .url(metadataUrl)
+                               .updateFrequency(config.checkForUpdatesIntervalHours())
+                               .build();
         }
         return metadata;
     }

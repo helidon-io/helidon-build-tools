@@ -117,18 +117,20 @@
         Changing these version requires approval for a new third party dependency!
         -->
         <version.lib.helidon>0.9.0</version.lib.helidon>
+        <version.lib.apache.commons>3.10</version.lib.apache.commons>
         <version.lib.asciidoctorj>1.6.0-RC.2</version.lib.asciidoctorj>
         <version.lib.asciidoctorj-diagram>1.5.4.1</version.lib.asciidoctorj-diagram>
         <version.lib.checkstyle>8.29</version.lib.checkstyle>
         <version.lib.diffutils>2.2</version.lib.diffutils>
         <version.lib.doxia>1.9.1</version.lib.doxia>
         <version.lib.freemarker>2.3.23</version.lib.freemarker>
-        <version.lib.junit>5.6.0</version.lib.junit>
+        <version.lib.graalvm-sdk>21.0.0.2</version.lib.graalvm-sdk>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.invoker>3.0.1</version.lib.invoker>
         <version.lib.jaxb-api>2.3.3</version.lib.jaxb-api>
         <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
         <version.lib.jaxb-impl>2.3.3</version.lib.jaxb-impl>
+        <version.lib.junit>5.6.0</version.lib.junit>
         <version.lib.maven>3.6.2</version.lib.maven>
         <version.lib.maven-annotations>3.5</version.lib.maven-annotations>
         <version.lib.maven-archiver>3.5.0</version.lib.maven-archiver>
@@ -150,7 +152,6 @@
         <version.lib.site-plugin>3.8.2</version.lib.site-plugin>
         <version.lib.mock-server>5.10.0</version.lib.mock-server>
         <version.lib.jackson>2.11.0</version.lib.jackson>
-        <version.lib.apache.commons>3.10</version.lib.apache.commons>
 
         <!--
             !Version statement! - end
@@ -720,6 +721,11 @@
                 <artifactId>commons-lang3</artifactId>
                 <version>${version.lib.apache.commons}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.graalvm.sdk</groupId>
+                <artifactId>graal-sdk</artifactId>
+                <version>${version.lib.graalvm-sdk}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * A plugin that logs build info.
  */
-public class GetInfo extends Plugin {
+class GetInfo extends Plugin {
     private static final String BUILD_PROPERTIES_PATH = "build.properties";
     private static final AtomicReference<Properties> BUILD_PROPERTIES = new AtomicReference<>();
     private static final String BUILD_PREFIX = "plugin.build.";
@@ -47,7 +47,7 @@ public class GetInfo extends Plugin {
      *
      * @return The properties.
      */
-    public static Properties buildProperties() {
+    static Properties buildProperties() {
         Properties result = BUILD_PROPERTIES.get();
         if (result == null) {
             try {
@@ -68,7 +68,7 @@ public class GetInfo extends Plugin {
     /**
      * Constructor.
      */
-    public GetInfo() {
+    GetInfo() {
         info = new LinkedHashMap<>();
     }
 
@@ -127,7 +127,7 @@ public class GetInfo extends Plugin {
      * @param key The key.
      * @return The padding.
      */
-    static String padding(int maxKeyWidth, String key) {
+    String padding(int maxKeyWidth, String key) {
         final int keyLen = key.length();
         if (maxKeyWidth > keyLen) {
             return PAD.repeat(maxKeyWidth - keyLen);

@@ -16,7 +16,6 @@
 
 package io.helidon.build.cli.impl;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,6 +25,7 @@ import io.helidon.build.cli.impl.InitOptions.Flavor;
 import io.helidon.build.cli.impl.Plugins.PluginFailed;
 import io.helidon.build.util.Requirements;
 
+import static io.helidon.build.cli.impl.CommandRequirements.requireSupportedHelidonVersion;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -45,14 +45,13 @@ class ArchetypeBrowser {
      * @param metadata       metadata
      * @param flavor         flavor
      * @param helidonVersion Helidon version
-     * @throws IOException If an IO error occurs.
      */
-    ArchetypeBrowser(Metadata metadata, Flavor flavor, String helidonVersion) throws IOException {
+    ArchetypeBrowser(Metadata metadata, Flavor flavor, String helidonVersion) {
         this.metadata = requireNonNull(metadata);
         this.flavor = requireNonNull(flavor);
         ArchetypeCatalog catalog = null;
         try {
-            catalog = metadata.catalogOf(helidonVersion);
+            catalog = metadata.catalogOf(requireSupportedHelidonVersion(helidonVersion));
         } catch (PluginFailed e) {
             Requirements.failed(HELIDON_VERSION_NOT_FOUND, helidonVersion);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 /**
  * A plugin that fetches the latest metadata and updates the cache.
  */
-public class UpdateMetadata extends Plugin {
+class UpdateMetadata extends Plugin {
     private static final int DEFAULT_TIMEOUT_MILLIS = 500;
     private static final String VERSION_ARG = "--version";
     private static final String CLI_VERSION_ARG = "--cliVersion";
@@ -77,7 +77,7 @@ public class UpdateMetadata extends Plugin {
     /**
      * Constructor.
      */
-    public UpdateMetadata() {
+    UpdateMetadata() {
         this.connectTimeout = DEFAULT_TIMEOUT_MILLIS;
         this.readTimeout = DEFAULT_TIMEOUT_MILLIS;
         this.maxAttempts = NetworkConnection.DEFAULT_MAXIMUM_ATTEMPTS;
@@ -149,8 +149,6 @@ public class UpdateMetadata extends Plugin {
             } else {
                 throw new Failed(e.toString());
             }
-        } catch (Throwable e) {
-            throw new Failed(e.toString());
         }
     }
 

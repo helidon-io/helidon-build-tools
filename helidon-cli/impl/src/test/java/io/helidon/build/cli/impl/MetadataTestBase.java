@@ -16,11 +16,13 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.build.cli.impl.Plugins.PluginFailed;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 import io.helidon.build.test.CapturingLogWriter;
 import io.helidon.build.test.TestFiles;
@@ -56,7 +58,7 @@ public class MetadataTestBase {
     /**
      * Prepare for each test.
      *
-     * @param info The test info.
+     * @param info    The test info.
      * @param baseUrl The base url to use.
      */
     protected void prepareEach(TestInfo info, String baseUrl) {
@@ -116,12 +118,18 @@ public class MetadataTestBase {
     /**
      * Returns a new {@link Metadata} instance with the given frequency.
      *
-     * @param updateFrequency The update frequency.
+     * @param updateFrequency      The update frequency.
      * @param updateFrequencyUnits The update frequency units.
      * @return The instance.
      */
     protected Metadata newInstance(long updateFrequency, TimeUnit updateFrequencyUnits) {
-        return Metadata.newInstance(cacheDir, baseUrl, updateFrequency, updateFrequencyUnits, true);
+        return Metadata.builder()
+                       .rootDir(cacheDir)
+                       .url(baseUrl)
+                       .updateFrequency(updateFrequency)
+                       .updateFrequencyUnits(updateFrequencyUnits)
+                       .debugPlugin(true)
+                       .build();
     }
 
     /**
@@ -214,19 +222,15 @@ public class MetadataTestBase {
      * @param expectUpdate    {@code true} if a metadata update is expected, {@code false otherwise}
      */
     protected void firstLatestVersionRequest(String expectedVersion, boolean expectUpdate) {
-        try {
-            String staleType = expectUpdate ? "(not found)" : "(zero delay)";
-            latestVersion = meta.latestVersion();
-            assertThat(latestVersion, is(not(nullValue())));
-            if (expectedVersion != null) {
-                assertThat(latestVersion, is(toMavenVersion(expectedVersion)));
-            }
-            logged.assertLinesContainingAll(1, "stale check", staleType, LATEST_FILE_NAME);
-            logged.assertLinesContainingAll("Looking up latest Helidon version");
-            logged.assertNoLinesContainingAll("Updating metadata for Helidon version " + expectedVersion);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        String staleType = expectUpdate ? "(not found)" : "(zero delay)";
+        latestVersion = meta.latestVersion();
+        assertThat(latestVersion, is(not(nullValue())));
+        if (expectedVersion != null) {
+            assertThat(latestVersion, is(toMavenVersion(expectedVersion)));
         }
+        logged.assertLinesContainingAll(1, "stale check", staleType, LATEST_FILE_NAME);
+        logged.assertLinesContainingAll("Looking up latest Helidon version");
+        logged.assertNoLinesContainingAll("Updating metadata for Helidon version " + expectedVersion);
     }
 
     /**
@@ -236,19 +240,15 @@ public class MetadataTestBase {
      * @param expectUpdate {@code true} if a metadata update is expected, {@code false otherwise}
      */
     protected void catalogRequest(String version, boolean expectUpdate) {
-        try {
-            String staleType = expectUpdate ? "(not found)" : "is false";
-            String staleFilePath = version + File.separator + LAST_UPDATE_FILE_NAME;
-            meta.catalogOf(version);
-            logged.assertLinesContainingAll(1, "stale check", staleType, staleFilePath);
-            logged.assertNoLinesContainingAll("Looking up latest Helidon version");
-            if (expectUpdate) {
-                logged.assertLinesContainingAll("Updating metadata for Helidon version " + version);
-            } else {
-                logged.assertNoLinesContainingAll("Updating metadata for Helidon version " + version);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        String staleType = expectUpdate ? "(not found)" : "is false";
+        String staleFilePath = version + File.separator + LAST_UPDATE_FILE_NAME;
+        meta.catalogOf(version);
+        logged.assertLinesContainingAll(1, "stale check", staleType, staleFilePath);
+        logged.assertNoLinesContainingAll("Looking up latest Helidon version");
+        if (expectUpdate) {
+            logged.assertLinesContainingAll("Updating metadata for Helidon version " + version);
+        } else {
+            logged.assertNoLinesContainingAll("Updating metadata for Helidon version " + version);
         }
     }
 }
