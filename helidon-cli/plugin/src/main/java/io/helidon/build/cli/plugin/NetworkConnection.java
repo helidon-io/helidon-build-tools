@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020,2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,12 +33,12 @@ import static java.util.Objects.requireNonNull;
 /**
  * A builder for accessing a network stream. Supports retries.
  */
-public class NetworkConnection {
+class NetworkConnection {
 
     /**
      * Connects to a URL.
      */
-    public interface Connector {
+    interface Connector {
         /**
          * Returns the connection after connecting to the given url.
          *
@@ -55,7 +55,7 @@ public class NetworkConnection {
     /**
      * Performs retry delays.
      */
-    public interface RetryDelay {
+    interface RetryDelay {
         /**
          * Performs a delay.
          *
@@ -68,7 +68,7 @@ public class NetworkConnection {
     /**
      * The default connector.
      */
-    public static final Connector DEFAULT_CONNECTOR = (url, headers, connectTimeout, readTimeout) -> {
+    static final Connector DEFAULT_CONNECTOR = (url, headers, connectTimeout, readTimeout) -> {
         final URLConnection connection = url.openConnection();
         connection.setConnectTimeout(connectTimeout);
         connection.setReadTimeout(readTimeout);
@@ -82,7 +82,7 @@ public class NetworkConnection {
     /**
      * A {@link RetryDelay} that supports a linearly increasing delay.
      */
-    public static final class LinearRetryDelay implements RetryDelay {
+    static final class LinearRetryDelay implements RetryDelay {
         private final long initialDelay;
         private final long increment;
 
@@ -92,7 +92,7 @@ public class NetworkConnection {
          * @param initialDelay The initial delay, in milliseconds.
          * @param increment    The number of milliseconds to add to the initial delay for each retry.
          */
-        public LinearRetryDelay(long initialDelay, long increment) {
+        LinearRetryDelay(long initialDelay, long increment) {
             this.initialDelay = initialDelay;
             this.increment = increment;
         }
@@ -117,36 +117,36 @@ public class NetworkConnection {
     /**
      * The default maximum number of attempts.
      */
-    public static final int DEFAULT_MAXIMUM_ATTEMPTS = 5;
+    static final int DEFAULT_MAXIMUM_ATTEMPTS = 5;
 
     /**
      * The default connect timeout, in milliseconds.
      */
-    public static final int DEFAULT_CONNECT_TIMEOUT = 500;
+    static final int DEFAULT_CONNECT_TIMEOUT = 500;
 
     /**
      * The default read timeout, in milliseconds.
      */
-    public static final int DEFAULT_READ_TIMEOUT = 500;
+    static final int DEFAULT_READ_TIMEOUT = 500;
 
     /**
      * The default retry delay. Linear, with an initial delay of 500 milliseconds, incrementing by 500 on each retry.
      */
-    public static final RetryDelay DEFAULT_RETRY_DELAY = new LinearRetryDelay(500, 500);
+    static final RetryDelay DEFAULT_RETRY_DELAY = new LinearRetryDelay(500, 500);
 
     /**
      * Returns a new builder.
      *
      * @return The builder.
      */
-    public static Builder builder() {
+    static Builder builder() {
         return new Builder();
     }
 
     /**
      * Builder.
      */
-    public static class Builder {
+    static class Builder {
         private static final String PROXY_PROPERTY_SUFFIX = ".proxyHost";
         private URL url;
         private int maxAttempts;
@@ -171,7 +171,7 @@ public class NetworkConnection {
          * @param url The url to open.
          * @return This instance, for chaining.
          */
-        public Builder url(String url) {
+        Builder url(String url) {
             try {
                 return url(new URL(requireNonNull(url)));
             } catch (MalformedURLException e) {
@@ -185,7 +185,7 @@ public class NetworkConnection {
          * @param url The url to open.
          * @return This instance, for chaining.
          */
-        public Builder url(URL url) {
+        Builder url(URL url) {
             this.url = requireNonNull(url);
             return this;
         }
@@ -197,7 +197,7 @@ public class NetworkConnection {
          * @param value The header value.
          * @return This instance, for chaining.
          */
-        public Builder header(String name, String value) {
+        Builder header(String name, String value) {
             headers.put(requireNonNull(name), requireNonNull(value));
             return this;
         }
@@ -208,7 +208,7 @@ public class NetworkConnection {
          * @param headers The headers.
          * @return This instance, for chaining.
          */
-        public Builder headers(Map<String, String> headers) {
+        Builder headers(Map<String, String> headers) {
             this.headers.putAll(requireNonNull(headers));
             return this;
         }
@@ -219,7 +219,7 @@ public class NetworkConnection {
          * @param maxAttempts The maximum number of attempts.
          * @return This instance, for chaining.
          */
-        public Builder maxAttempts(int maxAttempts) {
+        Builder maxAttempts(int maxAttempts) {
             if (maxAttempts <= 0) {
                 throw new IllegalArgumentException("maxAttempts must be > 0");
             }
@@ -233,7 +233,7 @@ public class NetworkConnection {
          * @param connectTimeout The timeout.
          * @return This instance, for chaining.
          */
-        public Builder connectTimeout(int connectTimeout) {
+        Builder connectTimeout(int connectTimeout) {
             if (connectTimeout <= 0) {
                 throw new IllegalArgumentException("connect timeout must be > 0");
             }
@@ -247,7 +247,7 @@ public class NetworkConnection {
          * @param readTimeout The timeout.
          * @return This instance, for chaining.
          */
-        public Builder readTimeout(int readTimeout) {
+        Builder readTimeout(int readTimeout) {
             if (readTimeout <= 0) {
                 throw new IllegalArgumentException("read timeout must be > 0");
             }
@@ -261,7 +261,7 @@ public class NetworkConnection {
          * @param connector The connector.
          * @return This instance, for chaining.
          */
-        public Builder connector(Connector connector) {
+        Builder connector(Connector connector) {
             this.connector = requireNonNull(connector);
             return this;
         }
@@ -272,7 +272,7 @@ public class NetworkConnection {
          * @param retryDelay The delay.
          * @return This instance, for chaining.
          */
-        public Builder retryDelay(RetryDelay retryDelay) {
+        Builder retryDelay(RetryDelay retryDelay) {
             this.delay = requireNonNull(retryDelay);
             return this;
         }
@@ -283,7 +283,7 @@ public class NetworkConnection {
          * @return The connection.
          * @throws IOException if an IO error occurs
          */
-        public URLConnection connect() throws IOException {
+        URLConnection connect() throws IOException {
             if (url == null) {
                 throw new IllegalStateException("url is required");
             }
@@ -317,7 +317,7 @@ public class NetworkConnection {
          * @return The stream.
          * @throws IOException if an IO error occurs
          */
-        public InputStream open() throws IOException {
+        InputStream open() throws IOException {
             return connect().getInputStream();
         }
     }

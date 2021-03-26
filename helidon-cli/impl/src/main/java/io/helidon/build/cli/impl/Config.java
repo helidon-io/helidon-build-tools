@@ -15,10 +15,13 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
-
-import io.helidon.build.util.BuildToolsProperties;
 
 import static java.util.Objects.requireNonNull;
 
@@ -27,9 +30,21 @@ import static java.util.Objects.requireNonNull;
  */
 public class Config {
 
+    private static final String VERSION_KEY = "version";
+    private static final String BUILD_REVISION_KEY = "revision";
+    private static final String BUILD_PROPERTIES_PATH = "build.properties";
+    private static final AtomicReference<Properties> BUILD_PROPERTIES = new AtomicReference<>();
     private static final AtomicReference<Path> USER_HOME_DIR = new AtomicReference<>();
     private static final AtomicReference<UserConfig> USER_CONFIG = new AtomicReference<>();
-    private static final AtomicReference<BuildToolsProperties> BUILD_TOOLS_PROPERTIES = new AtomicReference<>();
+
+    /**
+     * Returns the build tools build revision.
+     *
+     * @return The build revision.
+     */
+    public static String buildRevision() {
+        return requireNonNull(buildProperties().getProperty(BUILD_REVISION_KEY));
+    }
 
     /**
      * Returns the build version.
@@ -37,19 +52,28 @@ public class Config {
      * @return The version.
      */
     public static String buildVersion() {
-        return buildProperties().version();
+        return requireNonNull(buildProperties().getProperty(VERSION_KEY));
     }
 
     /**
-     * Returns the build tools properties.
+     * Returns the build properties.
      *
      * @return The properties.
      */
-    public static BuildToolsProperties buildProperties() {
-        BuildToolsProperties result = BUILD_TOOLS_PROPERTIES.get();
+    public static Properties buildProperties() {
+        Properties result = BUILD_PROPERTIES.get();
         if (result == null) {
-            result = BuildToolsProperties.instance();
-            BUILD_TOOLS_PROPERTIES.set(result);
+            try {
+                InputStream stream = Config.class.getResourceAsStream(BUILD_PROPERTIES_PATH);
+                requireNonNull(stream, BUILD_PROPERTIES_PATH + " resource not found");
+                try (InputStreamReader reader = new InputStreamReader(stream)) {
+                    result = new Properties();
+                    result.load(reader);
+                    BUILD_PROPERTIES.set(result);
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
         return result;
     }
@@ -88,15 +112,6 @@ public class Config {
      */
     public static void setUserHome(Path dir) {
         USER_HOME_DIR.set(requireNonNull(dir));
-    }
-
-    /**
-     * Sets the build tools properties from the given resource path.
-     *
-     * @param resourcePath The resource path.
-     */
-    static void setBuildToolsProperties(String resourcePath) {
-        BUILD_TOOLS_PROPERTIES.set(BuildToolsProperties.from(resourcePath));
     }
 
     private Config() {

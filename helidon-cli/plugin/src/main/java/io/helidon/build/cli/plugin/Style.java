@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Utility to convert strings to the {@code StyleRenderer} DSL. Assumes output will be rendered.
  */
-public class Style {
+class Style {
     private static final String STYLE_PREFIX = "$(";
     private static final String STYLE_SUFFIX = ")";
     private static final String ESCAPED_STYLE_SUFFIX = "\\)";
@@ -29,7 +29,7 @@ public class Style {
     /**
      * Disable styles.
      */
-    public static void disable() {
+    static void disable() {
         ENABLED.set(false);
     }
 
@@ -41,7 +41,7 @@ public class Style {
      * @param args The message args.
      * @return The formatted message.
      */
-    public static String style(String style, Object message, Object... args) {
+    static String style(String style, Object message, Object... args) {
         if (ENABLED.get()) {
             final String msg = String.format(message.toString(), args).replace(STYLE_SUFFIX, ESCAPED_STYLE_SUFFIX);
             return STYLE_PREFIX + style + " " + msg + STYLE_SUFFIX;
@@ -56,7 +56,7 @@ public class Style {
      * @param message The message.
      * @return The formatted message.
      */
-    public static String italic(Object message) {
+    static String italic(Object message) {
         return style("italic", message);
     }
 
@@ -66,7 +66,7 @@ public class Style {
      * @param message The message.
      * @return The formatted message.
      */
-    public static String boldCyan(Object message) {
+    static String boldCyan(Object message) {
         return style("CYAN", message);
     }
 
@@ -76,7 +76,7 @@ public class Style {
      * @param message The message.
      * @return The formatted message.
      */
-    public static String boldBlue(Object message) {
+    static String boldBlue(Object message) {
         return style("BLUE", message);
     }
 

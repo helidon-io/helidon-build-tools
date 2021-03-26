@@ -44,7 +44,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 /**
  * A plugin that fetches the latest metadata and updates the cache.
  */
-public class UpdateMetadata extends Plugin {
+class UpdateMetadata extends Plugin {
     private static final int DEFAULT_TIMEOUT_MILLIS = 500;
     private static final String VERSION_ARG = "--version";
     private static final String CLI_VERSION_ARG = "--cliVersion";
@@ -77,7 +77,7 @@ public class UpdateMetadata extends Plugin {
     /**
      * Constructor.
      */
-    public UpdateMetadata() {
+    UpdateMetadata() {
         this.connectTimeout = DEFAULT_TIMEOUT_MILLIS;
         this.readTimeout = DEFAULT_TIMEOUT_MILLIS;
         this.maxAttempts = NetworkConnection.DEFAULT_MAXIMUM_ATTEMPTS;
