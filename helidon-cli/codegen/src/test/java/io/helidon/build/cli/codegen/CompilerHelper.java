@@ -34,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static io.helidon.build.cli.codegen.Unchecked.unchecked;
@@ -45,21 +46,21 @@ import static java.util.stream.Collectors.toList;
 final class CompilerHelper {
 
     private final DiagnosticCollector<JavaFileObject> diagnostics;
-    private final CompilationTask task;
+    private final List<File> classpath;
+    private final List<Processor> processors;
+    private final List<String> options;
+    private final List<JavaFileObject> compilationUnits;
     private final Path outputDir;
     private boolean called;
     private boolean success;
 
-    CompilerHelper(Processor processor, List<String> options, List<? extends JavaFileObject> compilationUnits) throws IOException {
+    CompilerHelper(Processor processor, List<String> options, List<JavaFileObject> compilationUnits) throws IOException {
         diagnostics = new DiagnosticCollector<>();
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager manager = compiler.getStandardFileManager(diagnostics, null, null);
-        List<File> classpath = resolveClasspath("java.class.path", "jdk.module.path");
-        manager.setLocation(StandardLocation.CLASS_PATH, classpath);
+        classpath = resolveClasspath("java.class.path", "jdk.module.path");
         outputDir = Files.createTempDirectory("compiler-helper");
-        manager.setLocation(StandardLocation.CLASS_OUTPUT, List.of(outputDir.toFile()));
-        task = compiler.getTask(null, manager, diagnostics, options, null, compilationUnits);
-        task.setProcessors(List.of(processor));
+        processors = processor != null ? List.of(processor) : Collections.emptyList();
+        this.options = options;
+        this.compilationUnits = compilationUnits;
     }
 
     CompilerHelper(Processor processor, List<String> options, JavaFileObject... compilationUnits) throws IOException {
@@ -76,8 +77,14 @@ final class CompilerHelper {
      * @param printDiagnostics {@code true} if the diagnostics should be printed in STDERR.
      * @return {@code true} if the task was successful, {@code false} otherwise
      */
-    boolean call(boolean printDiagnostics) {
+    boolean call(boolean printDiagnostics) throws IOException {
         if (!called) {
+            JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+            StandardJavaFileManager manager = compiler.getStandardFileManager(diagnostics, null, null);
+            manager.setLocation(StandardLocation.CLASS_PATH, classpath);
+            manager.setLocation(StandardLocation.CLASS_OUTPUT, List.of(outputDir.toFile()));
+            CompilationTask task = compiler.getTask(null, manager, diagnostics, options, null, compilationUnits);
+            task.setProcessors(processors);
             success = task.call();
             called = true;
             if (printDiagnostics) {
@@ -127,7 +134,7 @@ final class CompilerHelper {
                      .collect(toList());
     }
 
-    private static List<JavaSourceFromURL> resolveCompilationUnits(String... resources) {
+    private static List<JavaFileObject> resolveCompilationUnits(String... resources) {
         return Arrays.stream(resources)
                      .map(CompilerHelper.class.getClassLoader()::getResource)
                      .map(unchecked(JavaSourceFromURL::new))
