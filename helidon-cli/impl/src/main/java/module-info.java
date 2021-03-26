@@ -19,6 +19,7 @@
  */
 module io.helidon.build.cli.impl {
     requires io.helidon.build.cli.harness;
+    requires io.helidon.build.cli.plugin;
     requires io.helidon.build.archetype.engine;
     requires helidon.build.utils;
     requires maven.model;
