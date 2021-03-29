@@ -12,5 +12,5 @@ Require-Bundle: org.eclipse.lsp4mp.jdt.core,
  org.eclipse.lsp4j,
  com.google.gson
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Export-Package: io.helidon.core.extension
