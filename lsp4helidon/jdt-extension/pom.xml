@@ -39,7 +39,6 @@
         <tycho.scmUrl>scm:git:https://github.com/oracle/helidon-build-tools.git</tycho.scmUrl>
         <tycho.generateSourceReferences>true</tycho.generateSourceReferences>
         <tycho.test.platformArgs/>
-        <tycho.test.jvmArgs>-Xmx512m ${tycho.test.platformArgs}</tycho.test.jvmArgs>
         <lsp4mp.p2.url>http://download.eclipse.org/lsp4mp/snapshots/0.2.0/repository/</lsp4mp.p2.url>
 
         <!-- Code coverage -->
@@ -51,7 +50,7 @@
         <surefire.timeout>600</surefire.timeout>
 
         <!-- Versions -->
-        <version.tycho>1.7.0</version.tycho>
+        <version.tycho>2.2.0</version.tycho>
         <version.junit>4.12</version.junit>
         <version.jacoco>0.7.9</version.jacoco>
         <version.jdt.ls>0.52.1.20200318153300</version.jdt.ls>
@@ -74,7 +73,7 @@
         <repository>
             <id>lsp4mp.p2</id>
             <layout>p2</layout>
-            <url>${lsp4mp.p2.url}</url>
+            <url>http://download.eclipse.org/lsp4mp/snapshots/0.2.0/repository/</url>
         </repository>
         <repository>
             <id>jdt.ls.maven</id>
