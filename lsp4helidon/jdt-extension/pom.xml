@@ -31,8 +31,8 @@
     <description>Jdt-extension parent</description>
 
     <properties>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <tycho.extras.version>${version.tycho}</tycho.extras.version>
@@ -109,19 +109,42 @@
             <plugin>
                 <groupId>org.eclipse.tycho</groupId>
                 <artifactId>target-platform-configuration</artifactId>
-                <configuration>
-                    <resolver>p2</resolver>
-                    <target>
-                        <artifact>
-                            <groupId>org.eclipse.jdt.ls</groupId>
-                            <artifactId>org.eclipse.jdt.ls.tp</artifactId>
-                            <version>${version.jdt.ls}</version>
-                        </artifact>
-                    </target>
-                    <resolver>p2</resolver>
-                    <pomDependencies>consider</pomDependencies>
-                    <ignoreTychoRepositories>true</ignoreTychoRepositories>
-                </configuration>
+                <version>${version.tycho}</version>
+                <!--                <configuration>-->
+                <!--                    <resolver>p2</resolver>-->
+                <!--                    <target>-->
+                <!--                        <artifact>-->
+                <!--                            <groupId>org.eclipse.jdt.ls</groupId>-->
+                <!--                            <artifactId>org.eclipse.jdt.ls.tp</artifactId>-->
+                <!--                            <version>${version.jdt.ls}</version>-->
+                <!--                        </artifact>-->
+                <!--                    </target>-->
+                <!--                    <resolver>p2</resolver>-->
+                <!--                    <pomDependencies>consider</pomDependencies>-->
+                <!--                    <ignoreTychoRepositories>true</ignoreTychoRepositories>-->
+                <!--                    <environments>-->
+                <!--                        <environment>-->
+                <!--                            <os>linux</os>-->
+                <!--                            <ws>gtk</ws>-->
+                <!--                            <arch>x86</arch>-->
+                <!--                        </environment>-->
+                <!--                        <environment>-->
+                <!--                            <os>linux</os>-->
+                <!--                            <ws>gtk</ws>-->
+                <!--                            <arch>x86_64</arch>-->
+                <!--                        </environment>-->
+                <!--                        <environment>-->
+                <!--                            <os>win32</os>-->
+                <!--                            <ws>win32</ws>-->
+                <!--                            <arch>x86_64</arch>-->
+                <!--                        </environment>-->
+                <!--                        <environment>-->
+                <!--                            <os>macosx</os>-->
+                <!--                            <ws>cocoa</ws>-->
+                <!--                            <arch>x86_64</arch>-->
+                <!--                        </environment>-->
+                <!--                    </environments>-->
+                <!--                </configuration>-->
             </plugin>
         </plugins>
 
