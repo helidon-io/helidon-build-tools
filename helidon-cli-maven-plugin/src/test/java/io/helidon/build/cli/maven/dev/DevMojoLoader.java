@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.build.cli.maven.dev;
 
 import java.io.File;
@@ -23,7 +22,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.build.test.TestFiles;
+import io.helidon.build.common.test.utils.TestFiles;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Model;
@@ -33,20 +32,19 @@ import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.io.ModelReader;
 import org.apache.maven.plugin.Mojo;
 import org.apache.maven.plugin.MojoExecution;
-import org.apache.maven.plugin.PluginParameterExpressionEvaluator;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.LocalRepositoryManager;
 
-import static io.helidon.build.util.FileUtils.USER_HOME_DIR;
-import static io.helidon.build.util.FileUtils.assertDir;
+import static io.helidon.build.common.FileUtils.USER_HOME_DIR;
+import static io.helidon.build.common.FileUtils.requireDirectory;
 import static java.util.Objects.requireNonNull;
 
 /**
  * Loader for {@link DevMojo} instances configured from a given project pom file.
- * Based on MavenPluginHelper by rgrecour.
+ * Based on MavenPluginHelper.
  */
 @SuppressWarnings("UnconstructableJUnitTestCase")
 public final class DevMojoLoader extends AbstractMojoTestCase {
@@ -166,13 +164,13 @@ public final class DevMojoLoader extends AbstractMojoTestCase {
         // Set a local repo manager
         ((DefaultRepositorySystemSession) session.getRepositorySession()).setLocalRepositoryManager(repoManager);
         // Resolve build plugin versions
-        resolveBuildPluginVersions(project, new PluginParameterExpressionEvaluator(session));
+        resolveBuildPluginVersions(project);
         return session;
     }
 
-    private static void resolveBuildPluginVersions(MavenProject project, PluginParameterExpressionEvaluator evaluator) {
+    private static void resolveBuildPluginVersions(MavenProject project) {
         if (project.getParent() != null) {
-            resolveBuildPluginVersions(project.getParent(), evaluator);
+            resolveBuildPluginVersions(project.getParent());
         }
         for (Plugin plugin : project.getBuild().getPlugins()) {
             String version = plugin.getVersion();
@@ -193,12 +191,20 @@ public final class DevMojoLoader extends AbstractMojoTestCase {
                         version = "1.6.0";
                         break;
                     case "helidon-cli-maven-plugin":
-                        version = "2.0.3";
+                        version = projectVersion();
                         break;
                 }
                 plugin.setVersion(version);
             }
         }
+    }
+
+    private static String projectVersion() {
+        String version = System.getProperties().getProperty("version");
+        if (version == null) {
+            throw new IllegalStateException("Unable to resolve project version from system properties");
+        }
+        return version;
     }
 
     private static LocalRepositoryManager newLocalRepositoryManager(Path localRepoDir) throws Exception {
@@ -216,6 +222,6 @@ public final class DevMojoLoader extends AbstractMojoTestCase {
         } else {
             dir = USER_HOME_DIR.resolve(DEFAULT_LOCAL_REPO_DIR);
         }
-        return assertDir(dir);
+        return requireDirectory(dir);
     }
 }

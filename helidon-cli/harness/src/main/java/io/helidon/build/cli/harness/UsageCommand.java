@@ -18,9 +18,9 @@ package io.helidon.build.cli.harness;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import io.helidon.build.util.Log;
+import io.helidon.build.common.Log;
 
-import static io.helidon.build.util.StyleFunction.Bold;
+import static io.helidon.build.common.ansi.StyleFunction.Bold;
 
 /**
  * Built-in usage command.

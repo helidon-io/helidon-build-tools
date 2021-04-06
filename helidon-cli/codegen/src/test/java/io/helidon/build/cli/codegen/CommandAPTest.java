@@ -27,7 +27,7 @@ import io.helidon.build.cli.codegen.CompilerHelper.JavaSourceFromString;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.cli.codegen.Unchecked.unchecked;
-import static io.helidon.build.util.Strings.normalizeNewLines;
+import static io.helidon.build.common.Strings.normalizeNewLines;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;

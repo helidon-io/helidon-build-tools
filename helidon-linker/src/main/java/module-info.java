@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,5 +24,6 @@ module helidon.linker {
     requires jandex;
     requires org.fusesource.jansi;
     requires org.objectweb.asm;
-    requires helidon.build.utils;
+    requires io.helidon.build.common;
+    requires io.helidon.build.common.ansi;
 }

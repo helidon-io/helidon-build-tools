@@ -34,10 +34,10 @@ import io.helidon.build.archetype.engine.v1.FlowNodeControllers;
 import io.helidon.build.archetype.engine.v1.FlowNodeControllers.FlowNodeController;
 import io.helidon.build.archetype.engine.v1.Maps;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
-import io.helidon.build.util.MavenVersion;
+import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
-import static io.helidon.build.util.Requirements.require;
+import static io.helidon.build.common.Requirements.require;
 
 /**
  * Class ArchetypeInvoker.

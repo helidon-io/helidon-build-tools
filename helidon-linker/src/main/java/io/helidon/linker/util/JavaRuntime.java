@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,18 +34,19 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import io.helidon.build.util.FileUtils;
+import io.helidon.build.common.FileUtils;
+import io.helidon.build.common.OSType;
 import io.helidon.linker.Jar;
 import io.helidon.linker.ResourceContainer;
 
-import static io.helidon.build.util.Constants.OS;
-import static io.helidon.build.util.Constants.javaHome;
-import static io.helidon.build.util.FileUtils.assertDir;
-import static io.helidon.build.util.FileUtils.assertFile;
-import static io.helidon.build.util.FileUtils.fileName;
-import static io.helidon.build.util.FileUtils.findExecutableInPath;
-import static io.helidon.build.util.FileUtils.listFiles;
-import static io.helidon.build.util.OSType.Linux;
+import static io.helidon.build.common.FileUtils.WORKING_DIR;
+import static io.helidon.build.common.FileUtils.fileName;
+import static io.helidon.build.common.FileUtils.findExecutableInPath;
+import static io.helidon.build.common.FileUtils.javaHome;
+import static io.helidon.build.common.FileUtils.listFiles;
+import static io.helidon.build.common.FileUtils.requireDirectory;
+import static io.helidon.build.common.FileUtils.requireFile;
+import static io.helidon.build.common.OSType.Linux;
 import static io.helidon.linker.Application.APP_DIR;
 import static io.helidon.linker.util.Constants.JRI_DIR_SUFFIX;
 import static java.util.Objects.requireNonNull;
@@ -54,6 +55,7 @@ import static java.util.Objects.requireNonNull;
  * Java Runtime metadata.
  */
 public final class JavaRuntime implements ResourceContainer {
+    private static final OSType OS = OSType.currentOS();
     private static final AtomicReference<Path> CURRENT_JAVA_HOME_DIR = new AtomicReference<>();
     private static final String JMODS_DIR = "jmods";
     private static final String JMOD_SUFFIX = ".jmod";
@@ -110,7 +112,7 @@ public final class JavaRuntime implements ResourceContainer {
         if (jriDirectory == null) {
             final String jarName = fileName(requireNonNull(mainJar));
             final String dirName = jarName.substring(0, jarName.lastIndexOf('.')) + JRI_DIR_SUFFIX;
-            jriDirectory = FileUtils.WORKING_DIR.resolve(dirName);
+            jriDirectory = WORKING_DIR.resolve(dirName);
         }
         if (Files.exists(jriDirectory)) {
             if (Files.isDirectory(jriDirectory)) {
@@ -134,7 +136,7 @@ public final class JavaRuntime implements ResourceContainer {
      * @throws IllegalArgumentException If the directory is not a valid JRI.
      */
     public static Path assertJri(Path jriDirectory) {
-        final Path result = assertDir(jriDirectory);
+        final Path result = requireDirectory(jriDirectory);
         if (!isValidJri(jriDirectory)) {
             throw new IllegalArgumentException(String.format(INVALID_JRI, jriDirectory));
         }
@@ -149,7 +151,7 @@ public final class JavaRuntime implements ResourceContainer {
      * @throws IllegalArgumentException If the directory is not a valid JDK.
      */
     public static Path assertJdk(Path jdkDirectory) {
-        final Path result = assertDir(jdkDirectory);
+        final Path result = requireDirectory(jdkDirectory);
         if (!isValidJdk(result)) {
             final StringBuilder sb = new StringBuilder().append(String.format(INCOMPLETE_JDK, JAVA_BASE_JMOD, jdkDirectory));
             incompleteJdkDetailMessage(jdkDirectory).ifPresent(detail -> sb.append(". ").append(detail));
@@ -166,7 +168,7 @@ public final class JavaRuntime implements ResourceContainer {
      * @throws IllegalArgumentException If the directory is not a valid JDK.
      */
     public static Path javaCommand(Path jriDirectory) {
-        return assertFile(assertDir(jriDirectory).resolve(JAVA_CMD_PATH));
+        return requireFile(requireDirectory(jriDirectory).resolve(JAVA_CMD_PATH));
     }
 
     /**
@@ -221,7 +223,7 @@ public final class JavaRuntime implements ResourceContainer {
     }
 
     private JavaRuntime(Path javaHome, Runtime.Version version, boolean isJdk) {
-        this.javaHome = assertDir(javaHome);
+        this.javaHome = requireDirectory(javaHome);
         this.jmodsDir = javaHome.resolve(JMODS_DIR);
         if (isJdk) {
             final List<Path> jmodFiles = listFiles(jmodsDir, fileName -> fileName.endsWith(JMOD_SUFFIX));
@@ -345,7 +347,7 @@ public final class JavaRuntime implements ResourceContainer {
     }
 
     private Runtime.Version findVersion() {
-        final Path javaBase = assertFile(jmodsDir.resolve(JAVA_BASE_JMOD));
+        final Path javaBase = requireFile(jmodsDir.resolve(JAVA_BASE_JMOD));
         try (ZipFile zip = new ZipFile(javaBase.toFile())) {
             final ZipEntry entry = zip.getEntry(JMOD_MODULE_INFO_PATH);
             if (entry == null) {

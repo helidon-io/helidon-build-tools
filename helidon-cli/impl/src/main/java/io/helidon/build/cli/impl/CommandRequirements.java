@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,21 +18,21 @@ package io.helidon.build.cli.impl;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import io.helidon.build.util.FileUtils;
-import io.helidon.build.util.MavenCommand;
-import io.helidon.build.util.MavenVersion;
-import io.helidon.build.util.PomUtils;
-import io.helidon.build.util.ProjectConfig;
-import io.helidon.build.util.RequirementFailure;
-import io.helidon.build.util.Requirements;
-import io.helidon.build.util.StyleRenderer;
+import io.helidon.build.cli.common.ProjectConfig;
+import io.helidon.build.common.RequirementFailure;
+import io.helidon.build.common.Requirements;
+import io.helidon.build.common.ansi.StyleRenderer;
+import io.helidon.build.common.maven.MavenCommand;
+import io.helidon.build.common.maven.MavenVersion;
+import io.helidon.build.common.maven.PomUtils;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 
-import static io.helidon.build.util.FileUtils.assertDir;
-import static io.helidon.build.util.MavenVersion.toMavenVersion;
-import static io.helidon.build.util.ProjectConfig.ensureProjectConfig;
+import static io.helidon.build.cli.common.ProjectConfig.ensureProjectConfig;
+import static io.helidon.build.common.FileUtils.requireDirectory;
+import static io.helidon.build.common.FileUtils.requireJavaExecutable;
+import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 
 /**
  * Command assertions with message strings formatted via {@link StyleRenderer#render(String, Object...)}.
@@ -77,7 +77,7 @@ public class CommandRequirements {
      * An unsupported Java version was found.
      */
     static void unsupportedJavaVersion() {
-        Requirements.failed(UNSUPPORTED_JAVA_VERSION, FileUtils.assertJavaExecutable());
+        Requirements.failed(UNSUPPORTED_JAVA_VERSION, requireJavaExecutable());
     }
 
     /**
@@ -86,7 +86,7 @@ public class CommandRequirements {
      * @throws RequirementFailure If the installed version does not meet the requirement.
      */
     static void requireMinimumMavenVersion() {
-        MavenCommand.assertRequiredMavenVersion(MINIMUM_REQUIRED_MAVEN_VERSION);
+        MavenCommand.requireMavenVersion(MINIMUM_REQUIRED_MAVEN_VERSION);
     }
 
     /**
@@ -125,7 +125,7 @@ public class CommandRequirements {
      */
     static Path requireHelidonVersionDir(Path versionDir) {
         try {
-            return assertDir(versionDir);
+            return requireDirectory(versionDir);
         } catch (Exception e) {
             Requirements.failed(UNKNOWN_VERSION, versionDir.getFileName());
             return null;

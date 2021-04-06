@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
-import io.helidon.build.util.OSType;
+import io.helidon.build.common.OSType;
 
-import static io.helidon.build.util.OSType.currentOS;
-import static io.helidon.build.util.StyleFunction.Bold;
-import static io.helidon.build.util.StyleFunction.BoldBrightYellow;
+import static io.helidon.build.common.ansi.StyleFunction.Bold;
+import static io.helidon.build.common.ansi.StyleFunction.BoldBrightYellow;
 
 /**
  * Shared constants.
@@ -35,7 +34,7 @@ public final class Constants {
     /**
      * The current operating system type.
      */
-    public static final OSType OS = currentOS();
+    public static final OSType OS = OSType.currentOS();
 
     /**
      * The minimum supported JDK version.

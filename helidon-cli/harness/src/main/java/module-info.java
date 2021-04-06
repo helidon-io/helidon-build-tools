@@ -20,9 +20,8 @@
 module io.helidon.build.cli.harness {
     requires java.logging;
     requires static com.github.spotbugs.annotations;
-    requires helidon.build.utils;
-    requires org.fusesource.jansi;
-    requires info.picocli.jansi.graalvm;
+    requires io.helidon.build.common;
+    requires transitive io.helidon.build.common.ansi;
     exports io.helidon.build.cli.harness;
     uses io.helidon.build.cli.harness.CommandRegistry;
 }

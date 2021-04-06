@@ -33,16 +33,16 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
-import io.helidon.build.util.ConfigProperties;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.MavenVersion;
-import io.helidon.build.util.Requirements;
-import io.helidon.build.util.TimeUtils;
+import io.helidon.build.common.ConfigProperties;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.Requirements;
+import io.helidon.build.common.Time;
+import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.cli.impl.CommandRequirements.requireHelidonVersionDir;
-import static io.helidon.build.util.FileUtils.assertFile;
-import static io.helidon.build.util.FileUtils.lastModifiedTime;
-import static io.helidon.build.util.MavenVersion.toMavenVersion;
+import static io.helidon.build.common.FileUtils.lastModifiedTime;
+import static io.helidon.build.common.FileUtils.requireFile;
+import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -387,7 +387,7 @@ public class Metadata {
         final Path versionDir = rootDir.resolve(requireNonNull(helidonVersion).toString());
         final Path checkFile = versionDir.resolve(LAST_UPDATE_FILE_NAME);
         checkForUpdates(helidonVersion, checkFile, quiet);
-        return assertFile(requireHelidonVersionDir(versionDir).resolve(fileName));
+        return requireFile(requireHelidonVersionDir(versionDir).resolve(fileName));
     }
 
     private boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, boolean quiet) {
@@ -422,8 +422,8 @@ public class Metadata {
                     final long remainingMillis = updateFrequencyMillis - elapsedMillis;
                     final boolean stale = remainingMillis <= 0;
                     if (Log.isDebug()) {
-                        final String lastModifiedTime = TimeUtils.toDateTime(lastModifiedMillis);
-                        final String currentTime = TimeUtils.currentDateTime();
+                        final String lastModifiedTime = Time.toDateTime(lastModifiedMillis);
+                        final String currentTime = Time.currentDateTime();
                         final Duration elapsed = Duration.ofMillis(elapsedMillis);
                         final String elapsedDays = elapsed.toDaysPart() == 1 ? "day" : "days";
                         if (stale) {

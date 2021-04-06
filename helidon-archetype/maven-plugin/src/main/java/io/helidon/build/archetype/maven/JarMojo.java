@@ -33,8 +33,8 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor;
 import io.helidon.build.archetype.engine.v1.ArchetypeEngine;
-import io.helidon.build.util.MustacheHelper;
-import io.helidon.build.util.SourcePath;
+import io.helidon.build.archetype.engine.v1.MustacheHelper;
+import io.helidon.build.common.SourcePath;
 
 import org.apache.maven.archiver.MavenArchiveConfiguration;
 import org.apache.maven.archiver.MavenArchiver;
@@ -56,11 +56,11 @@ import org.codehaus.plexus.archiver.ArchiverException;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
 import org.codehaus.plexus.archiver.jar.ManifestException;
 
+import static io.helidon.build.archetype.engine.v1.MustacheHelper.MUSTACHE_EXT;
+import static io.helidon.build.archetype.engine.v1.MustacheHelper.renderMustacheTemplate;
 import static io.helidon.build.archetype.maven.MojoHelper.PLUGIN_GROUP_ID;
 import static io.helidon.build.archetype.maven.MojoHelper.PLUGIN_VERSION;
 import static io.helidon.build.archetype.maven.MojoHelper.templateProperties;
-import static io.helidon.build.util.MustacheHelper.MUSTACHE_EXT;
-import static io.helidon.build.util.MustacheHelper.renderMustacheTemplate;
 
 /**
  * {@code archetype:jar} mojo.
@@ -393,9 +393,9 @@ public class JarMojo extends AbstractMojo {
         Map<String, List<String>> allResources = new HashMap<>();
         for (Resource resource : project.getResources()) {
             List<String> resources = SourcePath.scan(new File(resource.getDirectory())).stream()
-                    .filter(p -> p.matches(resource.getIncludes(), resource.getExcludes()))
-                    .map(p -> p.asString(false))
-                    .collect(Collectors.toList());
+                                               .filter(p -> p.matches(resource.getIncludes(), resource.getExcludes()))
+                                               .map(p -> p.asString(false))
+                                               .collect(Collectors.toList());
             if (getLog().isDebugEnabled()) {
                 resources.forEach(r -> getLog().debug("Found resource: " + r));
             }

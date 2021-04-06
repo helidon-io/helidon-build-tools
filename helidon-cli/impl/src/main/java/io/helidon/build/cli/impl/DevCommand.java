@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,31 +25,31 @@ import io.helidon.build.cli.harness.CommandContext.Verbosity;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
-import io.helidon.build.util.AnsiConsoleInstaller;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.MavenCommand;
-import io.helidon.build.util.Strings;
-import io.helidon.build.util.StyleFunction;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.Strings;
+import io.helidon.build.common.ansi.AnsiConsoleInstaller;
+import io.helidon.build.common.maven.MavenCommand;
 
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.cli.impl.CommandRequirements.requireValidMavenProjectConfig;
-import static io.helidon.build.util.ConsoleUtils.clearScreen;
-import static io.helidon.build.util.ConsoleUtils.hideCursor;
-import static io.helidon.build.util.ConsoleUtils.rewriteLine;
-import static io.helidon.build.util.ConsoleUtils.showCursor;
-import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_APPLICATION_FAILED;
-import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_APPLICATION_STARTING;
-import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
-import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_STARTING;
-import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_HEADER;
-import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_MESSAGE_PREFIX;
-import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_START;
-import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_STYLED_MESSAGE_PREFIX;
-import static io.helidon.build.util.StyleFunction.Bold;
-import static io.helidon.build.util.StyleFunction.BoldBlue;
-import static io.helidon.build.util.StyleFunction.BoldBrightGreen;
+import static io.helidon.build.common.ansi.ConsoleUtils.clearScreen;
+import static io.helidon.build.common.ansi.ConsoleUtils.hideCursor;
+import static io.helidon.build.common.ansi.ConsoleUtils.rewriteLine;
+import static io.helidon.build.common.ansi.ConsoleUtils.showCursor;
+import static io.helidon.build.common.ansi.StyleFunction.Bold;
+import static io.helidon.build.common.ansi.StyleFunction.BoldBlue;
+import static io.helidon.build.common.ansi.StyleFunction.BoldBrightGreen;
+import static io.helidon.build.common.ansi.StyleFunction.Red;
+import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_APPLICATION_FAILED;
+import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_APPLICATION_STARTING;
+import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
+import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_BUILD_STARTING;
+import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_HEADER;
+import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_MESSAGE_PREFIX;
+import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_START;
+import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_STYLED_MESSAGE_PREFIX;
 import static java.lang.System.currentTimeMillis;
 
 /**
@@ -233,7 +233,7 @@ public final class DevCommand extends BaseCommand {
     }
 
     private static void printStdErrLine(String line) {
-        System.out.println(StyleFunction.Red.apply(line));
+        System.out.println(Red.apply(line));
     }
 
 

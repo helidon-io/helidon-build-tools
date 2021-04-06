@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,33 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.linker;
-
-import java.nio.file.Path;
-
-import io.helidon.build.test.TestFiles;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * Unit test for class {@link Application}.
  */
 class ApplicationTest {
-
-    @Test
-    void testHelidonVersion() {
-        Path mainJar = TestFiles.helidonMpJar();
-        Application app = Application.create(mainJar);
-        String version = app.helidonVersion();
-        assertThat(version, is(notNullValue()));
-        assertThat(version, is(not("0.0.0")));
-    }
 
     @Test
     void testExitOnStartedValue() {

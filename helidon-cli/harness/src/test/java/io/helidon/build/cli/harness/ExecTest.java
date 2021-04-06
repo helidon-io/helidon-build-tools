@@ -23,12 +23,12 @@ import java.nio.charset.StandardCharsets;
 
 import io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.Strings;
 
+import io.helidon.build.common.Log;
+import io.helidon.build.common.Strings;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.util.Style.strip;
+import static io.helidon.build.common.ansi.Style.strip;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;

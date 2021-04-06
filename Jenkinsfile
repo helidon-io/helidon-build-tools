@@ -31,7 +31,7 @@ pipeline {
                 sh './etc/scripts/build.sh'
               } finally {
                 archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,**/target/it/**/*.log"
-                junit testResults: '**/target/surefire-reports/*.xml,**/target/invoker-reports/*.xml'
+                junit testResults: '**/target/surefire-reports/*.xml,**/target/invoker-reports/*.xml,**/target/it/projects/*/TEST-*.xml'
               }
             }
           }
@@ -46,7 +46,7 @@ pipeline {
                 bat './etc/scripts/build.bat'
               } finally {
                 archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,helidon-cli/target/reports/*.txt,helidon-cli/impl/target/helidon.exe"
-                junit testResults: '**/target/surefire-reports/*.xml'
+                junit testResults: '**/target/surefire-reports/*.xml,**/target/invoker-reports/*.xml,**/target/it/projects/*/TEST-*.xml'
               }
             }
           }

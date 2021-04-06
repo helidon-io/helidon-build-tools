@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
 import io.helidon.build.cli.impl.Plugins.PluginFailed;
-import io.helidon.build.util.Requirements;
+import io.helidon.build.common.Requirements;
 
 import static io.helidon.build.cli.impl.CommandRequirements.requireSupportedHelidonVersion;
 import static java.util.Objects.requireNonNull;

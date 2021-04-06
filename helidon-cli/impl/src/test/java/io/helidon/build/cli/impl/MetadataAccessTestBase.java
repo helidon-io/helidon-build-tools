@@ -15,19 +15,18 @@
  */
 package io.helidon.build.cli.impl;
 
-import io.helidon.build.cli.impl.TestMetadata.TestVersion;
-import io.helidon.build.test.TestFiles;
-import io.helidon.build.util.MavenVersion;
-import io.helidon.build.util.Proxies;
+import java.nio.file.Path;
 
+import io.helidon.build.cli.impl.TestMetadata.TestVersion;
+import io.helidon.build.common.Proxies;
+import io.helidon.build.common.maven.MavenVersion;
+
+import io.helidon.build.common.test.utils.TestFiles;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 
-import java.nio.file.Path;
-
-import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
-import static io.helidon.build.util.MavenVersion.toMavenVersion;
-import static io.helidon.build.util.TestUtils.uniqueDir;
+import static io.helidon.build.common.FileUtils.unique;
+import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 
 /**
  * Base class for command tests that require the {@link Metadata}.
@@ -46,7 +45,7 @@ public class MetadataAccessTestBase extends CommandTestBase {
      */
     @BeforeAll
     public static void startMetadataAccess() {
-        Path userHome = uniqueDir(TestFiles.targetDir(), "alice");
+        Path userHome = unique(TestFiles.targetDir(MetadataAccessTestBase.class), "alice");
         Config.setUserHome(userHome);
         USER_CONFIG = UserConfig.create(userHome);
         Config.setUserConfig(USER_CONFIG);
@@ -67,7 +66,7 @@ public class MetadataAccessTestBase extends CommandTestBase {
 
     private static boolean canUseMetadataTestServer() {
         MavenVersion testServerVersion = toMavenVersion(TestVersion.RC1.toString());
-        MavenVersion helidonRelease = toMavenVersion(helidonTestVersion());
+        MavenVersion helidonRelease = toMavenVersion(Config.buildVersion());
         return helidonRelease.isLessThanOrEqualTo(testServerVersion);
     }
 

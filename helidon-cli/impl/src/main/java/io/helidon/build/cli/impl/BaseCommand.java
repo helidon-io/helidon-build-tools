@@ -18,15 +18,15 @@ package io.helidon.build.cli.impl;
 
 import java.nio.file.Path;
 
+import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.CommandExecution;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.MavenVersion;
-import io.helidon.build.util.ProjectConfig;
-import io.helidon.build.util.RequirementFailure;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.RequirementFailure;
+import io.helidon.build.common.maven.MavenVersion;
 
-import static io.helidon.build.util.MavenVersion.toMavenVersion;
-import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
+import static io.helidon.build.cli.common.ProjectConfig.DOT_HELIDON;
+import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 
 /**
  * Class BaseCommand.

@@ -125,12 +125,14 @@
         <version.lib.doxia>1.9.1</version.lib.doxia>
         <version.lib.freemarker>2.3.23</version.lib.freemarker>
         <version.lib.graalvm-sdk>21.0.0.2</version.lib.graalvm-sdk>
+        <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.invoker>3.0.1</version.lib.invoker>
         <version.lib.jaxb-api>2.3.3</version.lib.jaxb-api>
         <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
         <version.lib.jaxb-impl>2.3.3</version.lib.jaxb-impl>
-        <version.lib.junit>5.6.0</version.lib.junit>
+        <version.lib.junit>5.8.0-M1</version.lib.junit>
+        <version.lib.junit-platform>1.8.0-M1</version.lib.junit-platform>
         <version.lib.maven>3.6.2</version.lib.maven>
         <version.lib.maven-annotations>3.5</version.lib.maven-annotations>
         <version.lib.maven-archiver>3.5.0</version.lib.maven-archiver>
@@ -170,7 +172,7 @@
         <version.plugin.gpg>1.6</version.plugin.gpg>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.javadoc>3.2.0</version.plugin.javadoc>
-        <version.plugin.invoker>3.2.1</version.plugin.invoker>
+        <version.plugin.invoker>3.2.2</version.plugin.invoker>
         <version.plugin.license>1.16</version.plugin.license>
         <version.plugin.plexus>2.1.0</version.plugin.plexus>
         <version.plugin.plugin-plugin>3.6.0</version.plugin.plugin-plugin>
@@ -180,12 +182,13 @@
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>3.1.12</version.plugin.spotbugs>
         <version.plugin.surefire.provider.junit>1.0.3</version.plugin.surefire.provider.junit>
-        <version.plugin.surefire>3.0.0-M4</version.plugin.surefire>
-        <version.plugin.failsafe>3.0.0-M4</version.plugin.failsafe>
+        <version.plugin.surefire>3.0.0-M5</version.plugin.surefire>
+        <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
     </properties>
 
     <modules>
+        <module>common</module>
         <module>sitegen-maven-plugin</module>
         <module>helidon-maven-plugin</module>
         <module>helidon-cli-maven-plugin</module>
@@ -193,7 +196,6 @@
         <module>helidon-archetype</module>
         <module>helidon-linker</module>
         <module>snakeyaml-codegen-maven-plugin</module>
-        <module>utils</module>
         <module>licensing</module>
         <module>dev-loop</module>
         <module>stager-maven-plugin</module>
@@ -430,6 +432,25 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-invoker-plugin</artifactId>
                     <version>${version.plugin.invoker}</version>
+                    <configuration>
+                        <addTestClassPath>true</addTestClassPath>
+                        <settingsFile>src/it/settings.xml</settingsFile>
+                        <ignoreFailures>false</ignoreFailures>
+                        <showErrors>true</showErrors>
+                        <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
+                        <skipInvocation>${skipTests}</skipInvocation>
+                        <pomIncludes>
+                            <pomInclude>projects/*/pom.xml</pomInclude>
+                        </pomIncludes>
+                        <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.codehaus.groovy</groupId>
+                            <artifactId>groovy-all</artifactId>
+                            <version>${version.lib.groovy-all}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -639,6 +660,31 @@
                 <version>${version.lib.junit}</version>
             </dependency>
             <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${version.lib.junit}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${version.lib.junit}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-reporting</artifactId>
+                <version>${version.lib.junit-platform}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-engine</artifactId>
+                <version>${version.lib.junit-platform}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-launcher</artifactId>
+                <version>${version.lib.junit-platform}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-all</artifactId>
                 <version>${version.lib.hamcrest}</version>
@@ -829,6 +875,27 @@
                                 </configuration>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>debug-invoker</id>
+            <activation>
+                <property>
+                    <name>env.MAVEN_DEBUG_OPTS</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-invoker-plugin</artifactId>
+                        <configuration>
+                            <environmentVariables>
+                                <MAVEN_DEBUG_OPTS>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8001</MAVEN_DEBUG_OPTS>
+                            </environmentVariables>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

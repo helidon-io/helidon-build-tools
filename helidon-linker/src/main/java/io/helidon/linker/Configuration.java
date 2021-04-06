@@ -24,13 +24,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import io.helidon.build.util.FileUtils;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.Strings;
-import io.helidon.build.util.SystemLogWriter;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.Strings;
+import io.helidon.build.common.SystemLogWriter;
 import io.helidon.linker.util.JavaRuntime;
 
-import static io.helidon.build.util.FileUtils.assertFile;
+import static io.helidon.build.common.FileUtils.requireExistent;
+import static io.helidon.build.common.FileUtils.requireFile;
 import static io.helidon.linker.util.Constants.DOCKER_BUILD;
 import static io.helidon.linker.util.Constants.MINIMUM_DOCKER_JDK_VERSION;
 import static io.helidon.linker.util.Constants.MINIMUM_JDK_VERSION;
@@ -266,7 +266,7 @@ public final class Configuration {
                         throw new IllegalArgumentException("Unknown argument: " + arg);
                     }
                 } else if (mainJar == null) {
-                    mainJar(FileUtils.assertExists(Paths.get(arg)));
+                    mainJar(requireExistent(Paths.get(arg)));
                 } else {
                     throw new IllegalArgumentException("Unknown argument: " + arg);
                 }
@@ -282,7 +282,7 @@ public final class Configuration {
          * @return The builder.
          */
         public Builder mainJar(Path mainJar) {
-            this.mainJar = assertFile(mainJar);
+            this.mainJar = requireFile(mainJar);
             return this;
         }
 

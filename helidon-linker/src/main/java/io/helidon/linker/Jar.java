@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,8 +46,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 
-import io.helidon.build.util.Log;
-import io.helidon.build.util.StreamUtils;
+import io.helidon.build.common.InputStreams;
+import io.helidon.build.common.Log;
 import io.helidon.linker.util.Constants;
 
 import org.jboss.jandex.Index;
@@ -58,9 +58,9 @@ import org.jboss.jandex.UnsupportedVersion;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 
-import static io.helidon.build.util.FileUtils.assertDir;
-import static io.helidon.build.util.FileUtils.assertFile;
-import static io.helidon.build.util.FileUtils.fileName;
+import static io.helidon.build.common.FileUtils.fileName;
+import static io.helidon.build.common.FileUtils.requireDirectory;
+import static io.helidon.build.common.FileUtils.requireFile;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
@@ -153,7 +153,7 @@ public final class Jar implements ResourceContainer {
     }
 
     private Jar(Path path) {
-        this.path = assertFile(path); // Absolute and normalized
+        this.path = requireFile(path); // Absolute and normalized
         this.isJmod = fileName(path).endsWith(JMOD_SUFFIX);
         try {
             this.jar = new JarFile(path.toFile());
@@ -316,7 +316,7 @@ public final class Jar implements ResourceContainer {
      */
     public Path copyToDirectory(Path targetDir, boolean ensureIndex, boolean stripDebug) {
         final Path fileName = path.getFileName();
-        final Path targetFile = assertDir(targetDir).resolve(fileName);
+        final Path targetFile = requireDirectory(targetDir).resolve(fileName);
         if (ensureIndex) {
             ensureIndex();
         }
@@ -329,7 +329,7 @@ public final class Jar implements ResourceContainer {
             } else if (stripDebug) {
                 copy(out, false, true);
             } else {
-                StreamUtils.transfer(Files.newInputStream(path), out);
+                InputStreams.transfer(Files.newInputStream(path), out);
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -450,7 +450,7 @@ public final class Jar implements ResourceContainer {
                          try {
                              jar.putNextEntry(newJarEntry(entry));
                              if (!entry.isDirectory()) {
-                                 StreamUtils.transfer(data(entry, stripDebug), jar);
+                                 InputStreams.transfer(data(entry, stripDebug), jar);
                              }
                              jar.flush();
                              jar.closeEntry();
@@ -509,7 +509,7 @@ public final class Jar implements ResourceContainer {
             final JarEntry entry = new JarEntry(JANDEX_INDEX_RESOURCE_PATH);
             entry.setLastModifiedTime(FileTime.fromMillis(System.currentTimeMillis()));
             jar.putNextEntry(entry);
-            StreamUtils.transfer(data, jar);
+            InputStreams.transfer(data, jar);
             jar.flush();
             jar.closeEntry();
         } catch (IOException e) {

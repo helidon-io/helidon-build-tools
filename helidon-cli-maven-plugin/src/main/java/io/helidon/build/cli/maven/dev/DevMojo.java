@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,16 +22,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.build.dev.ProjectSupplier;
-import io.helidon.build.dev.maven.DevLoopBuildConfig;
-import io.helidon.build.dev.maven.MavenEnvironment;
-import io.helidon.build.dev.maven.MavenGoalReferenceResolver;
-import io.helidon.build.dev.maven.MavenProjectConfigCollector;
-import io.helidon.build.dev.maven.MavenProjectSupplier;
-import io.helidon.build.dev.mode.DevLoop;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.MavenLogWriter;
-import io.helidon.build.util.SystemLogWriter;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.SystemLogWriter;
+import io.helidon.build.common.maven.MavenLogWriter;
+import io.helidon.build.devloop.ProjectSupplier;
+import io.helidon.build.devloop.maven.DevLoopBuildConfig;
+import io.helidon.build.devloop.maven.MavenEnvironment;
+import io.helidon.build.devloop.maven.MavenGoalReferenceResolver;
+import io.helidon.build.devloop.maven.MavenProjectConfigCollector;
+import io.helidon.build.devloop.maven.MavenProjectSupplier;
+import io.helidon.build.devloop.mode.DevLoop;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.lifecycle.DefaultLifecycles;
@@ -161,9 +161,9 @@ public class DevMojo extends AbstractMojo {
         try {
             MavenProjectConfigCollector.assertSupportedProject(session);
             if (terminalMode) {
-                SystemLogWriter.install(getLog().isDebugEnabled() ? Log.Level.DEBUG : Log.Level.INFO);
+                Log.writer(SystemLogWriter.create(getLog().isDebugEnabled() ? Log.Level.DEBUG : Log.Level.INFO));
             } else {
-                MavenLogWriter.install(getLog());
+                Log.writer(MavenLogWriter.create(getLog()));
             }
 
             final DevLoopBuildConfig configuration = buildConfig(true);

@@ -15,6 +15,9 @@
  */
 package io.helidon.build.cli.impl;
 
+import io.helidon.build.common.Log;
+import io.helidon.build.common.ProcessMonitor;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,18 +30,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.build.util.Log;
-import io.helidon.build.util.ProcessMonitor;
-
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
-import static io.helidon.build.util.Style.strip;
-import static io.helidon.build.util.Constants.EOL;
+import static io.helidon.build.common.ansi.Style.strip;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * CLI test utils.
  */
 class TestUtils {
+
+    private static final String EOL = System.lineSeparator();
 
     private TestUtils() {
     }
@@ -140,5 +141,19 @@ class TestUtils {
             path = path.resolve(dir);
             assertTrue(Files.exists(path));
         }
+    }
+
+    /**
+     * Get the Helidon test version.
+     *
+     * @return version
+     * @throws IllegalStateException if the {@code helidon.test.version} is system property not found
+     */
+    static String helidonTestVersion() {
+        String version = System.getProperty("helidon.test.version");
+        if (version == null) {
+            throw new IllegalStateException("Unable to resolve helidon.test.version from test.properties");
+        }
+        return version;
     }
 }

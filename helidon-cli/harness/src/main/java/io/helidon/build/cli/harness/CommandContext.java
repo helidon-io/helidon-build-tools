@@ -26,20 +26,19 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import io.helidon.build.cli.harness.CommandModel.CommandInfo;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.Log.Level;
-import io.helidon.build.util.Requirements;
-import io.helidon.build.util.Style;
-import io.helidon.build.util.SystemLogWriter;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.Log.Level;
+import io.helidon.build.common.Requirements;
+import io.helidon.build.common.SystemLogWriter;
+import io.helidon.build.common.ansi.Style;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import static io.helidon.build.util.Log.Level.DEBUG;
-import static io.helidon.build.util.Log.Level.ERROR;
-import static io.helidon.build.util.Log.Level.INFO;
-import static io.helidon.build.util.Log.Level.VERBOSE;
-import static io.helidon.build.util.Log.Level.WARN;
-import static io.helidon.build.util.StyleFunction.Red;
+import static io.helidon.build.common.Log.Level.ERROR;
+import static io.helidon.build.common.Log.Level.INFO;
+import static io.helidon.build.common.Log.Level.VERBOSE;
+import static io.helidon.build.common.Log.Level.WARN;
+import static io.helidon.build.common.ansi.StyleFunction.Red;
 
 /**
  * The command context.
@@ -421,7 +420,7 @@ public final class CommandContext {
         this.verbosity = verbosity;
         switch (verbosity) {
             case DEBUG: {
-                logWriter().level(DEBUG);
+                logWriter().level(Level.DEBUG);
                 break;
             }
             case VERBOSE: {
@@ -446,7 +445,7 @@ public final class CommandContext {
     private SystemLogWriter logWriter() {
         SystemLogWriter writer = logWriter.get();
         if (writer == null) {
-            writer = SystemLogWriter.install(INFO);
+            writer = SystemLogWriter.create(INFO);
             logWriter.set(writer);
         }
         return writer;

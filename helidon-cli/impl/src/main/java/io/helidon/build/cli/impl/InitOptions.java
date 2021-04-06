@@ -21,9 +21,9 @@ import java.util.Map;
 import io.helidon.build.cli.harness.CommandFragment;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.KeyValue;
-import io.helidon.build.util.SubstitutionVariables;
+import io.helidon.build.common.SubstitutionVariables;
 
-import static io.helidon.build.util.SubstitutionVariables.systemPropertyOrEnvVarSource;
+import static io.helidon.build.common.SubstitutionVariables.systemPropertyOrEnvVarSource;
 
 /**
  * Init options.

@@ -39,7 +39,7 @@ import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.Property;
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.Replacement;
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.TemplateSets;
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.Transformation;
-import io.helidon.build.util.SourcePath;
+import io.helidon.build.common.SourcePath;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
