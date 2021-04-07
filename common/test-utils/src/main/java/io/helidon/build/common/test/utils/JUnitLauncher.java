@@ -78,6 +78,7 @@ public class JUnitLauncher {
     private final Map<String, String> parameters;
     private final String suiteId;
     private final String suiteDisplayName;
+    private final boolean ignoreFailures;
 
     private JUnitLauncher(Builder builder) throws IOException {
         if (builder.outputFile != null) {
@@ -87,6 +88,7 @@ public class JUnitLauncher {
             out = System.out;
             err = System.err;
         }
+        ignoreFailures = builder.ignoreFailures;
         reportsDir = builder.reportsDir;
         selectors = builder.selectors;
         filters = builder.filters;
@@ -142,6 +144,9 @@ public class JUnitLauncher {
         launcher.execute(request, listeners.toArray(new TestExecutionListener[0]));
         TestExecutionSummary summary = summaryListener.getSummary();
         summary.printTo(outWriter);
+        if (ignoreFailures) {
+            return;
+        }
         if (!summary.getFailures().isEmpty()) {
             StringWriter sw = new StringWriter();
             summary.printFailuresTo(new PrintWriter(sw));
@@ -173,6 +178,7 @@ public class JUnitLauncher {
      */
     public static final class Builder {
 
+        private boolean ignoreFailures = false;
         private String suiteId = "junit-launcher";
         private String suiteDisplayName = "JUnit Launcher";
         private File reportsDir;
@@ -182,6 +188,18 @@ public class JUnitLauncher {
         private final Map<String, String> parameters = new HashMap<>();
 
         private Builder() {
+        }
+
+        /**
+         * Set ignore failures flag.
+         *
+         * @param ignoreFailures {@code false} if {@link #launch()} should throw an exception on test failures. Default
+         *                       value is based on the system property {@code maven.test.failure.ignore}.
+         * @return this builder
+         */
+        Builder ignoreFailures(boolean ignoreFailures) {
+            this.suiteId = suiteId;
+            return this;
         }
 
         /**
@@ -299,7 +317,7 @@ public class JUnitLauncher {
 
     /**
      * A test engine that uses {@link JupiterTestEngine} as delegate and wraps the discovered {@link TestDescriptor}
-     *  to customize {@link TestDescriptor#getUniqueId()} and {@link TestDescriptor#getDisplayName()}.
+     * to customize {@link TestDescriptor#getUniqueId()} and {@link TestDescriptor#getDisplayName()}.
      */
     private static final class SimpleSuiteTestEngine extends HierarchicalTestEngine<JupiterEngineExecutionContext> {
 

@@ -435,7 +435,8 @@
                     <configuration>
                         <addTestClassPath>true</addTestClassPath>
                         <settingsFile>src/it/settings.xml</settingsFile>
-                        <ignoreFailures>false</ignoreFailures>
+                        <!--suppress MavenModelInspection -->
+                        <ignoreFailures>${maven.test.failure.ignore}</ignoreFailures>
                         <showErrors>true</showErrors>
                         <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
                         <skipInvocation>${skipTests}</skipInvocation>

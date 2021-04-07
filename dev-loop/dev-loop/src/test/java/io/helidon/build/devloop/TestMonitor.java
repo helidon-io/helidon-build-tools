@@ -134,7 +134,7 @@ public class TestMonitor implements BuildMonitor {
 
     @Override
     public void onLoopFail(int cycleNumber, Throwable error) {
-        logCycle("onLoopFail", cycleNumber);
+        logCycle("onLoopFail", cycleNumber, error.getMessage());
         loopFailed[cycleNumber] = error;
     }
 
