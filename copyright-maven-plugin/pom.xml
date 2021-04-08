@@ -35,8 +35,13 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.build-tools</groupId>
-            <artifactId>helidon-utils</artifactId>
+            <groupId>io.helidon.build-tools.common</groupId>
+            <artifactId>helidon-build-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools.common</groupId>
+            <artifactId>helidon-build-common-maven</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

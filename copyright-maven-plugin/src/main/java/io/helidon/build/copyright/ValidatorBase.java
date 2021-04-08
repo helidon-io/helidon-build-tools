@@ -27,7 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.build.util.Log;
+import io.helidon.build.common.Log;
 
 import static io.helidon.build.copyright.Copyright.logBad;
 import static io.helidon.build.copyright.Copyright.logGood;

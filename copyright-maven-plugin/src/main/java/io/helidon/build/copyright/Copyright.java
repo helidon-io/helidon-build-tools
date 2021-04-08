@@ -37,7 +37,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.helidon.build.util.Log;
+import io.helidon.build.common.Log;
 
 /**
  * Copyright checking.

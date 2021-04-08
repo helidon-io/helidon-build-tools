@@ -21,8 +21,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import io.helidon.build.util.Log;
-import io.helidon.build.util.MavenLogWriter;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.maven.MavenLogWriter;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
@@ -125,7 +125,7 @@ public class CopyrightMojo extends AbstractMojo {
 
         getLog().info("Checking copyright for " + path);
 
-        MavenLogWriter.install(getLog());
+        Log.writer(MavenLogWriter.create(getLog()));
 
         Copyright.Builder builder = Copyright.builder()
                 .checkAll(checkAll)

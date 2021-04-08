@@ -19,8 +19,9 @@ package io.helidon.build.copyright;
 import java.nio.file.Paths;
 import java.util.List;
 
-import io.helidon.build.util.Log;
-import io.helidon.build.util.SystemLogWriter;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.Log.Level;
+import io.helidon.build.common.SystemLogWriter;
 
 /**
  * Main class for copyright checking. The path to check must be a git repository (or a path within a git repository),
@@ -62,7 +63,7 @@ public final class Main {
      * @param args options as documented on {@link io.helidon.build.copyright.Main}
      */
     public static void main(String[] args) {
-        SystemLogWriter.install(Log.Level.INFO);
+        Log.writer(SystemLogWriter.create(Level.INFO));
 
         Copyright.Builder builder = Copyright.builder();
         boolean verbose = false;
@@ -129,9 +130,9 @@ public final class Main {
         }
 
         if (debug) {
-            SystemLogWriter.install(Log.Level.DEBUG);
+            Log.writer(SystemLogWriter.create(Level.DEBUG));
         } else if (verbose) {
-            SystemLogWriter.install(Log.Level.VERBOSE);
+            Log.writer(SystemLogWriter.create(Level.VERBOSE));
         }
 
         Copyright copyright = builder.build();
