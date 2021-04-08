@@ -75,7 +75,7 @@ public class Copyright {
         // add all validators
         ServiceLoader<ValidatorProvider> loader = ServiceLoader.load(ValidatorProvider.class);
         for (ValidatorProvider validatorProvider : loader) {
-            Validator validator = validatorProvider.validator(builder.validatorConfig);
+            Validator validator = validatorProvider.validator(builder.validatorConfig, builder.templateLines);
             allValidators.add(validator);
             for (String suffix : validator.supportedSuffixes()) {
                 suffixToValidator.putIfAbsent(suffix, validator);
@@ -88,6 +88,7 @@ public class Copyright {
         builtIns.add(new ValidatorProperties(builder.validatorConfig, builder.templateLines));
         builtIns.add(new ValidatorXml(builder.validatorConfig, builder.templateLines));
         builtIns.add(new ValidatorAsciidoc(builder.validatorConfig, builder.templateLines));
+        builtIns.add(new ValidatorBat(builder.validatorConfig, builder.templateLines));
         this.textValidator = new ValidatorText(builder.validatorConfig, builder.templateLines);
         builtIns.add(this.textValidator);
 

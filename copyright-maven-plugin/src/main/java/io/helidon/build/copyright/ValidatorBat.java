@@ -17,17 +17,21 @@
 package io.helidon.build.copyright;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
-/**
- * Java service loader interface to extend the functionality of copyright checking.
- */
-public interface ValidatorProvider {
-    /**
-     * Create a custom validator.
-     *
-     * @param config configuration
-     * @param templateLines lines of copyright template
-     * @return a new validator instance
-     */
-    Validator validator(Validator.ValidatorConfig config, List<TemplateLine> templateLines);
+class ValidatorBat extends ValidatorBase {
+    protected ValidatorBat(ValidatorConfig validatorConfig, List<TemplateLine> templateLines) {
+        super(validatorConfig, templateLines);
+    }
+
+    @Override
+    public Set<String> supportedSuffixes() {
+        return Set.of(".bat");
+    }
+
+    @Override
+    protected Optional<String> lineCommentStart() {
+        return Optional.of("@REM");
+    }
 }
