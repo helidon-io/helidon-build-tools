@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.build.common.ansi;
 
 import java.io.PrintWriter;
@@ -21,19 +20,20 @@ import java.io.StringWriter;
 import java.util.EnumMap;
 import java.util.Map;
 
-import io.helidon.build.common.Log;
 import io.helidon.build.common.Log.Level;
+import io.helidon.build.common.LogWriter;
+import io.helidon.build.common.RichTextRenderer;
 import io.helidon.build.common.SystemLogWriter;
 
-import static io.helidon.build.common.ansi.StyleFunction.BoldYellow;
-import static io.helidon.build.common.ansi.StyleFunction.Italic;
-import static io.helidon.build.common.ansi.StyleFunction.ItalicRed;
-import static io.helidon.build.common.ansi.StyleFunction.Plain;
-import static io.helidon.build.common.ansi.StyleFunction.Red;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldYellow;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Italic;
+import static io.helidon.build.common.ansi.AnsiTextStyles.ItalicRed;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Plain;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Red;
 
 /**
- * {@link Log.Writer} that writes to {@link System#out} and {@link System#err}. Supports use of
- * {@link StyleRenderer} substitutions in log messages.
+ * {@link LogWriter} that writes to {@link System#out} and {@link System#err}. Supports use of
+ * {@link RichTextRenderer} substitutions in log messages.
  */
 public final class AnsiLogWriter extends SystemLogWriter {
 
@@ -43,11 +43,11 @@ public final class AnsiLogWriter extends SystemLogWriter {
     private static final String ERROR_PREFIX = STYLES_ENABLED ? Red.apply("error: ") : "ERROR: ";
     private static final String DEFAULT_LEVEL = "info";
     private static final String LEVEL_PROPERTY = "log.level";
-    private static final Map<Level, StyleFunction> DEFAULT_STYLES = defaultStyles();
-    private final Map<Level, StyleFunction> styles;
+    private static final Map<Level, AnsiTextStyles> DEFAULT_STYLES = defaultStyles();
+    private final Map<Level, AnsiTextStyles> styles;
 
-    private static Map<Level, StyleFunction> defaultStyles() {
-        final Map<Level, StyleFunction> styles = new EnumMap<>(Level.class);
+    private static Map<Level, AnsiTextStyles> defaultStyles() {
+        final Map<Level, AnsiTextStyles> styles = new EnumMap<>(Level.class);
         styles.put(Level.DEBUG, Italic);
         styles.put(Level.VERBOSE, Plain);
         styles.put(Level.INFO, Plain);
@@ -57,49 +57,28 @@ public final class AnsiLogWriter extends SystemLogWriter {
     }
 
     /**
-     * Installs an instance of this type as the writer in {@code io.helidon.build.common.ansi.Log} at the given level.
-     *
-     * @param level The level.
-     * @return The instance.
+     * Create a new instance.
      */
-    public static AnsiLogWriter install(Level level) {
-        final AnsiLogWriter writer = create(level);
-        Log.writer(writer);
-        return writer;
-    }
-
-    /**
-     * Returns a new instance.
-     *
-     * @return The instance.
-     */
-    public static AnsiLogWriter create() {
-        final Level level = Level.valueOf(System.getProperty(LEVEL_PROPERTY, DEFAULT_LEVEL).toUpperCase());
-        return create(level);
+    public AnsiLogWriter() {
+        this(Level.valueOf(System.getProperty(LEVEL_PROPERTY, DEFAULT_LEVEL).toUpperCase()));
     }
 
     /**
      * Returns a new instance with the given level.
      *
      * @param level The level at or above which messages should be logged.
-     * @return The instance.
      */
-    public static AnsiLogWriter create(Level level) {
-        return create(level, DEFAULT_STYLES);
+    public AnsiLogWriter(Level level) {
+        this(level, DEFAULT_STYLES);
     }
 
     /**
-     * Returns a new instance with the given level.
+     * Create a new instance with the given level.
      *
      * @param level  The level at or above which messages should be logged.
      * @param styles The style to apply to messages at a given level.
-     * @return The instance.
      */
-    public static AnsiLogWriter create(Level level, Map<Level, StyleFunction> styles) {
-        return new AnsiLogWriter(level, styles);
-    }
-
-    private AnsiLogWriter(Level level, Map<Level, StyleFunction> styles) {
+    public AnsiLogWriter(Level level, Map<Level, AnsiTextStyles> styles) {
         super(level);
         this.styles = styles;
     }
@@ -127,7 +106,7 @@ public final class AnsiLogWriter extends SystemLogWriter {
     }
 
     private String render(Level level, Throwable thrown, String message, Object... args) {
-        final String rendered = StyleRenderer.render(message, args);
+        final String rendered = RichTextRenderer.render(message, args);
         final String styled = toStyled(level, rendered);
         final String trace = toStackTrace(thrown);
         if (trace == null) {
@@ -140,7 +119,7 @@ public final class AnsiLogWriter extends SystemLogWriter {
     }
 
     private String toStyled(Level level, String message) {
-        return Style.isStyled(message) ? message : style(level, message);
+        return AnsiTextStyle.isStyled(message) ? message : style(level, message);
     }
 
     private String toStackTrace(Throwable thrown) {
@@ -160,7 +139,7 @@ public final class AnsiLogWriter extends SystemLogWriter {
     }
 
     private String style(Level level, String message) {
-        final StyleFunction style = styles.get(level);
+        final AnsiTextStyles style = styles.get(level);
         return style == Plain ? message : style.apply(message);
     }
 }

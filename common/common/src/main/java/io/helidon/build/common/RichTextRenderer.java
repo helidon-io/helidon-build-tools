@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.build.common;
 
-package io.helidon.build.common.ansi;
-
-import io.helidon.build.common.ansi.Style.StyleList;
-
-import org.fusesource.jansi.Ansi;
-import org.fusesource.jansi.AnsiRenderer;
-
-import static org.fusesource.jansi.Ansi.ansi;
+import io.helidon.build.common.RichTextProvider.Holder;
+import io.helidon.build.common.RichTextStyle.StyleList;
 
 /**
- * A string formatter with a substitutions for rich text. Similar to {@link AnsiRenderer}, but supports a syntax that is
- * easier to read and write.
+ * A string formatter with a substitutions for rich text. The syntax that is easy to read and write.
  * <br><br>
  * Colors and styles are applied to text enclosed by {@code "$("} and {@code ")"}, e.g.:
  * <br><br>
@@ -43,33 +37,11 @@ import static org.fusesource.jansi.Ansi.ansi;
  * <pre>
  *   $(style[,style]* text)
  * </pre>
- * where {@code style} is a case-sensitive {@link Style#named name} for a color, background color, emphasis or an alias.
+ * where {@code style} is a case-sensitive style name.
  * Nesting is supported.
- * <br><br>
- * <h3>Examples</h3>
- * <br><br>
- * <ol>
- *     <li>
- *         {@code "This is a bold $(bold example)."}
- *     </li>
- *     <li>
- *         {@code "This is a red $(red example containing an escaped \\) close paren)."}
- *     </li>
- *     <li>
- *         {@code "This is a bright bold cyan $(CYAN! example)."}
- *     </li>
- *     <li>
- *         {@code "This is a bright green background $(bg_green! example)."}
- *     </li>
- *     <li>
- *         {@code "This is a bold blue underlined $(BLUE,underline example)."}
- *     </li>
- *     <li>
- *         {@code "This is a bold red $(RED,bg_yellow! example) on a bright yellow background."}
- *     </li>
- * </ol>
  */
-public class StyleRenderer {
+public class RichTextRenderer {
+
     private static final String START_TOKEN = "$(";
     private static final int START_TOKEN_LEN = START_TOKEN.length();
     private static final char ESCAPE_CHAR = '\\';
@@ -78,23 +50,21 @@ public class StyleRenderer {
     private static final char END_TOKEN_CHAR = ')';
     private static final String ESCAPED_END_TOKEN = "\\)";
     private static final String END_TOKEN = ")";
-    private static final Style NONE = Style.none();
 
     private final String text;
     private final int textLength;
-    private final Ansi ansi;
+    private final RichText richText;
     private int textStart;
     private int tokenStart;
     private int tokenEnd;
-    private Style nestedStyle;
+    private RichTextStyle nestedStyle;
 
-
-    private StyleRenderer(String text, int tokenStart) {
+    private RichTextRenderer(String text, int tokenStart) {
         this.text = text;
+        this.richText = Holder.INSTANCE.richText();
         this.textLength = text.length();
-        this.ansi = ansi();
         this.tokenStart = tokenStart;
-        this.nestedStyle = NONE;
+        this.nestedStyle = RichTextStyle.NONE;
     }
 
     /**
@@ -106,7 +76,7 @@ public class StyleRenderer {
     public static String render(String text) {
         final int tokenStart = text.indexOf(START_TOKEN);
         if (tokenStart >= 0) {
-            return new StyleRenderer(text, tokenStart).render();
+            return new RichTextRenderer(text, tokenStart).render();
         } else {
             return text;
         }
@@ -126,16 +96,16 @@ public class StyleRenderer {
     private String render() {
         while (tokenStart >= 0) {
             if (textStart < tokenStart) {
-                ansi.a(text, textStart, tokenStart);
+                richText.append(text, textStart, tokenStart);
             }
             if (!replaceNext(tokenStart)) {
                 break;
             }
         }
         if (textStart < textLength) {
-            ansi.a(text.substring(textStart));
+            richText.append(text.substring(textStart));
         }
-        return ansi.toString();
+        return richText.text();
     }
 
     private boolean replaceNext(int tokenStart) {
@@ -159,8 +129,8 @@ public class StyleRenderer {
         final String styleNames = text.substring(stylesStart, stylesEnd);
         final String styledText = text.substring(styledTextStart, styledTextEnd);
         final String unescapedText = styledText.replace(ESCAPED_END_TOKEN, END_TOKEN);
-        final Style style = Style.of(styleNames.split(STYLE_SEP));
-        style.apply(ansi).a(unescapedText);
+        RichTextStyle style = Holder.INSTANCE.styleOf(styleNames.split(STYLE_SEP));
+        style.apply(richText).append(unescapedText);
 
         if (nested) {
             push(style);
@@ -168,10 +138,10 @@ public class StyleRenderer {
                 pop();
                 tokenEnd = tokenEnd(textStart);
                 if (tokenEnd < 0) {
-                    style.reset(ansi);
+                    style.reset(richText);
                     return false;
                 }
-                ansi.a(text, textStart, tokenEnd);
+                richText.append(text, textStart, tokenEnd);
                 nextTokenStart = tokenStart(tokenEnd);
             } else {
                 return false;
@@ -179,12 +149,12 @@ public class StyleRenderer {
         }
         tokenStart = nextTokenStart;
         textStart = tokenEnd + 1;
-        style.reset(ansi);
+        style.reset(richText);
         return true;
     }
 
-    private void push(Style style) {
-        if (nestedStyle == NONE) {
+    private void push(RichTextStyle style) {
+        if (nestedStyle == RichTextStyle.NONE) {
             nestedStyle = style;
         } else if (!(nestedStyle instanceof StyleList)) {
             nestedStyle = new StyleList(nestedStyle).add(style);
@@ -194,7 +164,7 @@ public class StyleRenderer {
     }
 
     private void pop() {
-        nestedStyle.apply(ansi);
+        nestedStyle.apply(richText);
         if (nestedStyle instanceof StyleList) {
             ((StyleList) nestedStyle).pop();
         }

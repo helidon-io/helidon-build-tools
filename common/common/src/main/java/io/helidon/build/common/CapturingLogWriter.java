@@ -25,10 +25,10 @@ import io.helidon.build.common.Log.Level;
 /**
  * A {@link Log#writer} that captures all output.
  */
-public class CapturingLogWriter implements Log.Writer {
+public class CapturingLogWriter implements LogWriter {
 
     private static final String EOL = System.getProperty("line.separator");
-    private final Log.Writer delegate;
+    private final LogWriter delegate;
     private final List<LogEntry> entries;
 
     private CapturingLogWriter() {
@@ -104,14 +104,12 @@ public class CapturingLogWriter implements Log.Writer {
     }
 
     /**
-     * Install a new instance.
+     * Create a new instance.
      *
      * @return The instance.
      */
-    public static CapturingLogWriter install() {
-        final CapturingLogWriter writer = new CapturingLogWriter();
-        Log.writer(writer);
-        return writer;
+    public static CapturingLogWriter create() {
+        return new CapturingLogWriter();
     }
 
     @Override

@@ -18,7 +18,6 @@ package io.helidon.build.common.ansi;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -27,31 +26,32 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import io.helidon.build.common.Log;
+import io.helidon.build.common.RichText;
+import io.helidon.build.common.RichTextStyle;
 
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.Ansi.Attribute;
 import org.fusesource.jansi.Ansi.Color;
 import org.fusesource.jansi.AnsiOutputStream;
 
+import static io.helidon.build.common.ansi.AnsiTextProvider.ANSI_ENABLED;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
-import static org.fusesource.jansi.Ansi.ansi;
 
 /**
- * Rich text styles.
+ * Ansi rich text styles.
  */
 @SuppressWarnings("StaticInitializerReferencesSubClass")
-public class Style {
-    private static final Style NONE = new Style();
-    private static final Style PLAIN = new Emphasis(Attribute.RESET);
-    private static final Style BOLD = new Emphasis(Attribute.INTENSITY_BOLD);
-    private static final Style ITALIC = new Emphasis(Attribute.ITALIC);
-    private static final Style FAINT = new Emphasis(Attribute.INTENSITY_FAINT);
-    private static final Style BOLD_ITALIC = new StyleList(BOLD).add(ITALIC);
-    private static final Style NEGATIVE = new Emphasis(Attribute.NEGATIVE_ON);
-    private static final boolean ENABLED = AnsiConsoleInstaller.install();
+public class AnsiTextStyle implements RichTextStyle {
+    private static final AnsiTextStyle NONE = new AnsiTextStyle();
+    private static final AnsiTextStyle PLAIN = new Emphasis(Attribute.RESET);
+    private static final AnsiTextStyle BOLD = new Emphasis(Attribute.INTENSITY_BOLD);
+    private static final AnsiTextStyle ITALIC = new Emphasis(Attribute.ITALIC);
+    private static final AnsiTextStyle FAINT = new Emphasis(Attribute.INTENSITY_FAINT);
+    private static final StyleList BOLD_ITALIC = new StyleList(BOLD).add(ITALIC);
+    private static final AnsiTextStyle NEGATIVE = new Emphasis(Attribute.NEGATIVE_ON);
     private static final String ANSI_ESCAPE_BEGIN = "\033[";
-    private static final Map<String, Style> STYLES = stylesByName();
+    private static final Map<String, RichTextStyle> STYLES = stylesByName();
     private static final Lock STRIP_LOCK = new ReentrantReadWriteLock().writeLock();
     private static final ByteArrayOutputStream STRIP_BYTES = new ByteArrayOutputStream();
     private static final AnsiOutputStream STRIP = new AnsiOutputStream(STRIP_BYTES);
@@ -61,7 +61,7 @@ public class Style {
      *
      * @return The styles. Not immutable, so may be (carefully!) modified.
      */
-    public static Map<String, Style> styles() {
+    public static Map<String, RichTextStyle> styles() {
         return STYLES;
     }
 
@@ -70,7 +70,7 @@ public class Style {
      *
      * @return The style.
      */
-    public static Style none() {
+    public static AnsiTextStyle none() {
         return NONE;
     }
 
@@ -175,22 +175,22 @@ public class Style {
      * the other two best to assume they don't work and use them only as <em>additional</em> emphasis.
      *
      * @param name The name.
-     * @return The style or {@link #none} if styles are disabled.
+     * @return The style or {@link RichTextStyle#NONE} if styles are disabled.
      */
-    public static Style named(String name) {
+    public static RichTextStyle named(String name) {
         return named(name, false);
     }
 
     /**
      * Returns the style for the given name, or optionally fails if not present.
      *
-     * @param name The name.
+     * @param name     The name.
      * @param required {@code true} if required.
-     * @return The style, or {@link #none()} if styles are disabled of if name not found and not required.
+     * @return The style, or {@link RichTextStyle#NONE} if styles are disabled of if name not found and not required.
      * @throws IllegalArgumentException If required and name is not found.
      */
-    public static Style named(String name, boolean required) {
-        final Style style = STYLES.get(name);
+    public static RichTextStyle named(String name, boolean required) {
+        final RichTextStyle style = STYLES.get(name);
         if (style == null) {
             if (required) {
                 throw new IllegalArgumentException("Unknown style: " + name);
@@ -198,7 +198,7 @@ public class Style {
                 return NONE;
             }
         }
-        return ENABLED ? style : NONE;
+        return ANSI_ENABLED ? style : NONE;
     }
 
     /**
@@ -217,7 +217,7 @@ public class Style {
      */
     public static List<String> backgroundColorNames() {
         return List.of("bg_red", "bg_yellow", "bg_green", "bg_cyan", "bg_blue", "bg_magenta", "bg_white", "bg_black",
-                       "bg_default", "bg_negative");
+                "bg_default", "bg_negative");
     }
 
     /**
@@ -230,30 +230,14 @@ public class Style {
     }
 
     /**
-     * Returns a style composed from the given names, or {@link #none} if empty.
-     *
-     * @param names The names.
-     * @return The style.
-     */
-    public static Style of(String... names) {
-        if (names.length == 0) {
-            return NONE;
-        } else if (names.length == 1) {
-            return Style.named(names[0]);
-        } else {
-            return new StyleList(names);
-        }
-    }
-
-    /**
      * Returns a style from the given color and attributes.
      *
-     * @param color The color.
+     * @param color      The color.
      * @param background {@code true} if background color.
-     * @param bright {@code true} if bright color.
+     * @param bright     {@code true} if bright color.
      * @return The style.
      */
-    public static Style of(Color color, boolean background, boolean bright) {
+    public static AnsiTextStyle of(Color color, boolean background, boolean bright) {
         return new Hue(color, background, bright);
     }
 
@@ -263,29 +247,13 @@ public class Style {
      * @param attributes The attributes.
      * @return The style.
      */
-    public static Style of(Attribute... attributes) {
+    public static RichTextStyle of(Attribute... attributes) {
         if (attributes.length == 0) {
             return NONE;
         } else if (attributes.length == 1) {
             return new Emphasis(attributes[0]);
         } else {
-            return new StyleList(attributes);
-        }
-    }
-
-    /**
-     * Returns a style composed from the given styles, or {@link #none} if empty.
-     *
-     * @param styles The styles.
-     * @return The style.
-     */
-    public static Style of(Style... styles) {
-        if (styles.length == 0) {
-            return NONE;
-        } else if (styles.length == 1) {
-            return styles[0];
-        } else {
-            return new StyleList(styles);
+            return new StyleList(Emphasis::new, attributes);
         }
     }
 
@@ -374,11 +342,11 @@ public class Style {
         String example = " Example 1234 !@#$% ";
         String rowFormat = "│ %-19s│ %22s │ %22s │ %22s │ %22s │";
         Log.info("┌────────────────────┬──────────────────────┬──────────────────────┬──────────────────────┬───────────"
-                 + "───────────┐");
+                + "───────────┐");
         Log.info("│ %-19s│        Plain         │        Italic        │         Bold         │    Italic & Bold     │",
-                 header);
+                header);
         Log.info("├────────────────────┼──────────────────────┼──────────────────────┼──────────────────────┼───────────"
-                 + "───────────┤");
+                + "───────────┤");
         names.forEach(name -> {
             String textColor = background ? "default" : name;
             String backgroundColor = background ? name : "bg_default";
@@ -386,51 +354,21 @@ public class Style {
             String textColorBright = background ? textColor : textColor + "!";
             String backgroundColorBright = background ? backgroundColor + "!" : backgroundColor;
 
-            String plain = Style.of(backgroundColor, textColor).apply(example);
-            String italic = Style.of(backgroundColor, textColor, "italic").apply(example);
-            String bold = Style.of(backgroundColor, textColor, "bold").apply(example);
-            String italicBold = Style.of(backgroundColor, textColor, "ITALIC").apply(example);
+            String plain = RichTextStyle.of(backgroundColor, textColor).apply(example);
+            String italic = RichTextStyle.of(backgroundColor, textColor, "italic").apply(example);
+            String bold = RichTextStyle.of(backgroundColor, textColor, "bold").apply(example);
+            String italicBold = RichTextStyle.of(backgroundColor, textColor, "ITALIC").apply(example);
 
-            String plainBright = Style.of(backgroundColorBright, textColorBright).apply(example);
-            String italicBright = Style.of(backgroundColorBright, textColorBright, "italic").apply(example);
-            String boldBright = Style.of(backgroundColorBright, textColorBright, "bold").apply(example);
-            String italicBoldBright = Style.of(backgroundColorBright, textColorBright, "ITALIC").apply(example);
+            String plainBright = RichTextStyle.of(backgroundColorBright, textColorBright).apply(example);
+            String italicBright = RichTextStyle.of(backgroundColorBright, textColorBright, "italic").apply(example);
+            String boldBright = RichTextStyle.of(backgroundColorBright, textColorBright, "bold").apply(example);
+            String italicBoldBright = RichTextStyle.of(backgroundColorBright, textColorBright, "ITALIC").apply(example);
 
             Log.info(rowFormat, name, plain, italic, bold, italicBold);
             Log.info(rowFormat, name + "!", plainBright, italicBright, boldBright, italicBoldBright);
         });
         Log.info("└────────────────────┴──────────────────────┴──────────────────────┴──────────────────────┴────────────"
-                 + "──────────┘");
-    }
-
-    /**
-     * Returns this style applied to the given text.
-     *
-     * @param text The text.
-     * @return The new text.
-     */
-    public String apply(Object text) {
-        return apply(ansi()).a(text).reset().toString();
-    }
-
-    /**
-     * Applies this style to the given ansi instance.
-     *
-     * @param ansi The instance.
-     * @return The instance, for chaining.
-     */
-    public Ansi apply(Ansi ansi) {
-        return ansi;
-    }
-
-    /**
-     * Reset an ansi instance.
-     *
-     * @param ansi The instance.
-     * @return The instance, for chaining.
-     */
-    public Ansi reset(Ansi ansi) {
-        return ansi;
+                + "──────────┘");
     }
 
     @Override
@@ -438,74 +376,17 @@ public class Style {
         return "none";
     }
 
-    static class StyleList extends Style {
-        private final List<Style> styles = new ArrayList<>();
-
-        StyleList(String... names) {
-            for (String name : names) {
-                add(name);
-            }
-        }
-
-        StyleList(Attribute... attributes) {
-            for (Attribute attribute : attributes) {
-                add(attribute);
-            }
-        }
-
-        StyleList(Style... styles) {
-            for (Style style : styles) {
-                add(style);
-            }
-        }
-
-        StyleList add(String name) {
-            add(Style.named(name));
-            return this;
-        }
-
-        StyleList add(Attribute attribute) {
-            add(new Emphasis(attribute));
-            return this;
-        }
-
-        StyleList add(Style style) {
-            styles.add(style);
-            return this;
-        }
-
-        int size() {
-            return styles.size();
-        }
-
-        Style pop() {
-            if (styles.isEmpty()) {
-                return none();
-            } else {
-                return styles.remove(size() - 1);
-            }
-        }
-
-        @Override
-        public Ansi apply(Ansi ansi) {
-            for (Style style : styles) {
-                style.apply(ansi);
-            }
-            return ansi;
-        }
-
-        @Override
-        public Ansi reset(Ansi ansi) {
-            return ansi.reset();
-        }
-
-        @Override
-        public String toString() {
-            return styles.toString();
-        }
+    @Override
+    public RichText apply(RichText richText) {
+        return richText;
     }
 
-    static class Hue extends Style {
+    @Override
+    public RichText reset(RichText richText) {
+        return richText;
+    }
+
+    static class Hue extends AnsiTextStyle {
         private final Color color;
         private final boolean background;
         private final boolean bright;
@@ -517,7 +398,8 @@ public class Style {
         }
 
         @Override
-        public Ansi apply(Ansi ansi) {
+        public RichText apply(RichText richText) {
+            Ansi ansi = ((AnsiText) richText).ansi();
             if (background) {
                 if (bright) {
                     ansi.bgBright(color);
@@ -531,25 +413,25 @@ public class Style {
                     ansi.fg(color);
                 }
             }
-            return ansi;
+            return richText;
         }
 
         @Override
-        public Ansi reset(Ansi ansi) {
-            return ansi.reset();
+        public RichText reset(RichText richText) {
+            return richText.reset();
         }
 
         @Override
         public String toString() {
             return color
-                   + ", background="
-                   + background
-                   + ", bright="
-                   + bright;
+                    + ", background="
+                    + background
+                    + ", bright="
+                    + bright;
         }
     }
 
-    static class Emphasis extends Style {
+    static class Emphasis extends AnsiTextStyle {
         private final Attribute attribute;
 
         Emphasis(Attribute attribute) {
@@ -557,13 +439,14 @@ public class Style {
         }
 
         @Override
-        public Ansi apply(Ansi ansi) {
+        public RichText apply(RichText richText) {
+            Ansi ansi = ((AnsiText) richText).ansi();
             ansi.a(attribute);
-            return ansi;
+            return richText;
         }
 
         @Override
-        public Ansi reset(Ansi ansi) {
+        public RichText reset(RichText ansi) {
             return ansi.reset();
         }
 
@@ -573,13 +456,13 @@ public class Style {
         }
     }
 
-    private static Map<String, Style> stylesByName() {
-        final Map<String, Style> styles = new LinkedHashMap<>();
+    private static Map<String, RichTextStyle> stylesByName() {
+        final Map<String, RichTextStyle> styles = new LinkedHashMap<>();
 
         // None
 
-        styles.put("none", Style.none());
-        styles.put("bg_none", Style.none());
+        styles.put("none", AnsiTextStyle.none());
+        styles.put("bg_none", AnsiTextStyle.none());
 
         // Hues and aliases
 
@@ -590,14 +473,14 @@ public class Style {
             final boolean negative = lowerName.equals("negative");
             final String upperName = lowerName.toUpperCase(Locale.ENGLISH);
             final Color color = negative ? null : Color.valueOf(upperName);
-            final Style basic = negative ? NEGATIVE : Style.of(color, false, false);
-            final Style bright = negative ? NEGATIVE : Style.of(color, false, true);
-            final Style bold = Style.of(BOLD, basic);
-            final Style italic = Style.of(ITALIC, basic);
-            final Style italicBold = Style.of(BOLD_ITALIC, basic);
-            final Style boldBright = Style.of(BOLD, bright);
-            final Style italicBright = Style.of(bright, ITALIC);
-            final Style italicBoldBright = Style.of(BOLD, ITALIC, bright);
+            final RichTextStyle basic = negative ? NEGATIVE : AnsiTextStyle.of(color, false, false);
+            final RichTextStyle bright = negative ? NEGATIVE : AnsiTextStyle.of(color, false, true);
+            final RichTextStyle bold = RichTextStyle.of(BOLD, basic);
+            final RichTextStyle italic = RichTextStyle.of(ITALIC, basic);
+            final RichTextStyle italicBold = RichTextStyle.of(BOLD_ITALIC, basic);
+            final RichTextStyle boldBright = RichTextStyle.of(BOLD, bright);
+            final RichTextStyle italicBright = RichTextStyle.of(bright, ITALIC);
+            final RichTextStyle italicBoldBright = RichTextStyle.of(BOLD, ITALIC, bright);
 
             styles.put(lowerName, basic);
 
@@ -629,8 +512,8 @@ public class Style {
 
             // Background colors
 
-            styles.put("bg_" + lowerName, negative ? NEGATIVE : Style.of(color, true, false));
-            styles.put("bg_" + lowerName + "!", negative ? NEGATIVE : Style.of(color, true, true));
+            styles.put("bg_" + lowerName, negative ? NEGATIVE : AnsiTextStyle.of(color, true, false));
+            styles.put("bg_" + lowerName + "!", negative ? NEGATIVE : AnsiTextStyle.of(color, true, true));
         });
 
         // Emphasis and aliases
@@ -650,10 +533,10 @@ public class Style {
 
         styles.put("plain", PLAIN);
         styles.put("faint", FAINT);
-        styles.put("underline", Style.of(Attribute.UNDERLINE));
-        styles.put("strikethrough", Style.of(Attribute.STRIKETHROUGH_ON));
-        styles.put("blink", Style.of(Attribute.BLINK_SLOW));
-        styles.put("conceal", Style.of(Attribute.CONCEAL_ON));
+        styles.put("underline", AnsiTextStyle.of(Attribute.UNDERLINE));
+        styles.put("strikethrough", AnsiTextStyle.of(Attribute.STRIKETHROUGH_ON));
+        styles.put("blink", AnsiTextStyle.of(Attribute.BLINK_SLOW));
+        styles.put("conceal", AnsiTextStyle.of(Attribute.CONCEAL_ON));
 
         return styles;
     }

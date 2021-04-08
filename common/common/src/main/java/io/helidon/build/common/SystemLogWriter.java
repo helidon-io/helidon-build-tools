@@ -21,9 +21,9 @@ import java.io.StringWriter;
 import io.helidon.build.common.Log.Level;
 
 /**
- * {@link Log.Writer} that writes to {@link System#out} and {@link System#err}.
+ * {@link LogWriter} that writes to {@link System#out} and {@link System#err}.
  */
-public class SystemLogWriter implements Log.Writer {
+public class SystemLogWriter implements LogWriter {
 
     private static final String WARN_PREFIX = "WARNING: ";
     private static final String ERROR_PREFIX = "ERROR: ";

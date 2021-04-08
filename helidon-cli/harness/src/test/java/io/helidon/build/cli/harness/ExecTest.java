@@ -28,7 +28,7 @@ import io.helidon.build.common.Log;
 import io.helidon.build.common.Strings;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.common.ansi.Style.strip;
+import static io.helidon.build.common.ansi.AnsiTextStyle.strip;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;

@@ -21,7 +21,7 @@ import java.nio.file.Path;
 import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.common.RequirementFailure;
 import io.helidon.build.common.Requirements;
-import io.helidon.build.common.ansi.StyleRenderer;
+import io.helidon.build.common.RichTextRenderer;
 import io.helidon.build.common.maven.MavenCommand;
 import io.helidon.build.common.maven.MavenVersion;
 import io.helidon.build.common.maven.PomUtils;
@@ -35,7 +35,7 @@ import static io.helidon.build.common.FileUtils.requireJavaExecutable;
 import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 
 /**
- * Command assertions with message strings formatted via {@link StyleRenderer#render(String, Object...)}.
+ * Command assertions with message strings formatted via {@link RichTextRenderer#render(String, Object...)}.
  */
 public class CommandRequirements {
 

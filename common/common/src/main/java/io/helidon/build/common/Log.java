@@ -15,45 +15,19 @@
  */
 package io.helidon.build.common;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.build.common.LogWriter.Holder;
+
+import static io.helidon.build.common.Strings.padding;
 import static java.util.Objects.requireNonNull;
 
 /**
  * Simple, centralized logging.
  */
 public class Log {
-
-    /**
-     * The log writer.
-     */
-    public interface Writer {
-
-        /**
-         * Writes the record.
-         *
-         * @param level   log level
-         * @param thrown  exception thrown
-         * @param message log message
-         * @param args    formatting arguments
-         */
-        void write(Level level, Throwable thrown, String message, Object[] args);
-
-        /**
-         * Returns whether or not debug messages will be written.
-         *
-         * @return {@code true} if enabled.
-         */
-        boolean isDebug();
-
-        /**
-         * Returns whether or not verbose messages will be written.
-         *
-         * @return {@code true} if enabled.
-         */
-        boolean isVerbose();
-    }
 
     /**
      * Levels.
@@ -97,11 +71,12 @@ public class Log {
         }
     }
 
-    private static final AtomicReference<Writer> WRITER = new AtomicReference<>();
+    private static final AtomicReference<LogWriter> WRITER = new AtomicReference<>();
     private static final AtomicInteger MESSAGES = new AtomicInteger();
     private static final AtomicInteger WARNINGS = new AtomicInteger();
     private static final AtomicInteger ERRORS = new AtomicInteger();
     private static final boolean DEBUG = "debug".equals(System.getProperty("log.level"));
+    private static final String PAD = " ";
 
     private Log() {
     }
@@ -156,7 +131,7 @@ public class Log {
      *
      * @param writer The writer.
      */
-    public static void writer(Writer writer) {
+    public static void writer(LogWriter writer) {
         WRITER.set(requireNonNull(writer));
     }
 
@@ -165,11 +140,11 @@ public class Log {
      *
      * @return The writer.
      */
-    public static Writer writer() {
-        Writer writer = WRITER.get();
+    public static LogWriter writer() {
+        LogWriter writer = WRITER.get();
         if (writer == null) {
-            writer = SystemLogWriter.create();
-            writer(writer);
+            writer = Holder.INSTANCE;
+            WRITER.set(writer);
         }
         return writer;
     }
@@ -265,6 +240,41 @@ public class Log {
     }
 
     /**
+     * Log the entries using the given styles.
+     *
+     * @param level      The level.
+     * @param map        The entries.
+     * @param keyStyle   The style to apply to all keys.
+     * @param valueStyle The style to apply to all values.
+     */
+    public static void log(Level level, Map<Object, Object> map, RichTextStyle keyStyle, RichTextStyle valueStyle) {
+        log(level, map, maxKeyWidth(map), keyStyle, valueStyle);
+    }
+
+    /**
+     * Log the entries using the given styles.
+     *
+     * @param level      The level.
+     * @param map         The entries.
+     * @param maxKeyWidth The maximum key width.
+     * @param keyStyle    The style to apply to all keys.
+     * @param valueStyle  The style to apply to all values.
+     */
+    public static void log(Level level,
+                           Map<Object, Object> map,
+                           int maxKeyWidth,
+                           RichTextStyle keyStyle,
+                           RichTextStyle valueStyle) {
+
+        if (!map.isEmpty()) {
+            map.forEach((key, value) -> {
+                final String padding = padding(PAD, maxKeyWidth, key.toString());
+                Log.log(level, "%s %s %s", keyStyle.apply(key), padding, valueStyle.apply(value));
+            });
+        }
+    }
+
+    /**
      * Log the message and throwable if at or above the given level.
      *
      * @param level   The level.
@@ -292,6 +302,26 @@ public class Log {
     }
 
     /**
+     * Returns the maximum key width.
+     *
+     * @param maps The maps.
+     * @return The max key width.
+     */
+    @SafeVarargs
+    public static int maxKeyWidth(Map<Object, Object>... maps) {
+        int maxLen = 0;
+        for (Map<Object, Object> map : maps) {
+            for (Object key : map.keySet()) {
+                final int len = key.toString().length();
+                if (len > maxLen) {
+                    maxLen = len;
+                }
+            }
+        }
+        return maxLen;
+    }
+
+    /**
      * Tests whether or not a writer has been set.
      *
      * @return {@code true} if set.
@@ -310,7 +340,7 @@ public class Log {
     }
 
     /**
-     * Writes a debug message that will not trigger {@link Writer} lazy initialization. If no writer, has been set, the
+     * Writes a debug message that will not trigger {@link LogWriter} lazy initialization. If no writer, has been set, the
      * message is written directly to {@code System.out}.
      *
      * @param message The message.

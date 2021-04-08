@@ -22,7 +22,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 
-import io.helidon.build.common.Log;
+import io.helidon.build.common.LogWriter;
 import io.helidon.build.common.maven.MavenLogWriter;
 import io.helidon.linker.Configuration;
 import io.helidon.linker.Linker;
@@ -127,7 +127,7 @@ public class JLinkImageMojo extends AbstractMojo {
         final Path buildDir = buildDirectory.toPath();
         final Path mainJar = mainJar(buildDir);
         final Path outputDir = buildDir.resolve(finalName + JRI_DIR_SUFFIX);
-        final Log.Writer writer = MavenLogWriter.create(getLog());
+        final LogWriter writer = MavenLogWriter.create(getLog());
         try {
             Configuration config = Configuration.builder()
                                                 .logWriter(writer)

@@ -14,10 +14,15 @@
  * limitations under the License.
  */
 
+import io.helidon.build.common.LogWriter;
+import io.helidon.build.common.RichTextProvider;
+
 /**
  * Helidon Build Tools Common.
  */
 module io.helidon.build.common {
     requires java.logging;
     exports io.helidon.build.common;
+    uses RichTextProvider;
+    uses LogWriter;
 }

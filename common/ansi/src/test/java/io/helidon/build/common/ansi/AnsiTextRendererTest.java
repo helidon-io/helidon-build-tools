@@ -16,6 +16,8 @@
 
 package io.helidon.build.common.ansi;
 
+import io.helidon.build.common.RichTextRenderer;
+
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.AnsiRenderer;
 import org.junit.jupiter.api.Assumptions;
@@ -26,34 +28,33 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Unit test for class {@link StyleRenderer}.
+ * Unit test for class {@link RichTextRenderer} using {@link AnsiText}.
  */
-class StyleRendererTest {
+class AnsiTextRendererTest {
 
     static {
         System.setProperty("jansi.force", "true");
         Ansi.setEnabled(true);
-        AnsiConsoleInstaller.install();
     }
 
     @BeforeEach
     void checkAnsi() {
-        Assumptions.assumeTrue(AnsiConsoleInstaller.install());
+        Assumptions.assumeTrue(AnsiTextProvider.ANSI_ENABLED);
     }
 
     @Test
     void testUnknownStyle() {
-        assertThat(StyleRenderer.render("$(bogus text)"), is("text"));
+        assertThat(RichTextRenderer.render("$(bogus text)"), is("text"));
     }
 
     @Test
     void testUnclosed() {
-        assertThat(StyleRenderer.render("$(red text"), is("$(red text"));
+        assertThat(RichTextRenderer.render("$(red text"), is("$(red text"));
     }
 
     @Test
     void testMalformed() {
-        assertThat(StyleRenderer.render("$(red)"), is("$(red)"));
+        assertThat(RichTextRenderer.render("$(red)"), is("$(red)"));
     }
 
     @Test
@@ -232,7 +233,7 @@ class StyleRendererTest {
 
     private static void assertMatching(String renderAnsi, String renderStyle) {
         String expected = AnsiRenderer.render(renderAnsi);
-        String rendered = StyleRenderer.render(renderStyle);
+        String rendered = RichTextRenderer.render(renderStyle);
         System.out.println("expected: " + expected);
         System.out.println("rendered: " + rendered);
         assertThat(rendered, is(expected));

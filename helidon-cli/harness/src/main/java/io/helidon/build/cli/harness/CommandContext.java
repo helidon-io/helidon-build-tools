@@ -30,7 +30,7 @@ import io.helidon.build.common.Log;
 import io.helidon.build.common.Log.Level;
 import io.helidon.build.common.Requirements;
 import io.helidon.build.common.SystemLogWriter;
-import io.helidon.build.common.ansi.Style;
+import io.helidon.build.common.ansi.AnsiTextStyle;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -38,7 +38,7 @@ import static io.helidon.build.common.Log.Level.ERROR;
 import static io.helidon.build.common.Log.Level.INFO;
 import static io.helidon.build.common.Log.Level.VERBOSE;
 import static io.helidon.build.common.Log.Level.WARN;
-import static io.helidon.build.common.ansi.StyleFunction.Red;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Red;
 
 /**
  * The command context.
@@ -215,7 +215,7 @@ public final class CommandContext {
                 case FAILURE:
                     if (failure != null) {
                         Requirements.toFailure(failure).ifPresentOrElse(ce -> {
-                            if (Style.isStyled(ce.getMessage())) {
+                            if (AnsiTextStyle.isStyled(ce.getMessage())) {
                                 exit(ce.getMessage(), null, INFO, 1);
                             } else {
                                 exit(Red.apply(ce.getMessage()), null, INFO, 1);
@@ -238,7 +238,7 @@ public final class CommandContext {
                 if (Log.isVerbose()) {
                     Log.info();
                 }
-                if (Style.isStyled(message)) {
+                if (AnsiTextStyle.isStyled(message)) {
                     Log.info(message);
                 } else {
                     if (message == null) {

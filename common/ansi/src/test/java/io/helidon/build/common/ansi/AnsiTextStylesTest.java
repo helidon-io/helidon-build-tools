@@ -16,6 +16,7 @@
 package io.helidon.build.common.ansi;
 
 import io.helidon.build.common.Log;
+
 import org.fusesource.jansi.Ansi;
 import org.junit.jupiter.api.Test;
 
@@ -23,17 +24,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Unit test for class {@link StyleFunction}.
+ * Unit test for class {@link AnsiTextStyles}.
  */
-class StyleFunctionTest {
+class AnsiTextStylesTest {
 
     @Test
     void testAll() {
-        boolean enabled = AnsiConsoleInstaller.areAnsiEscapesEnabled();
+        boolean enabled = AnsiTextProvider.ANSI_ENABLED;
         Ansi.setEnabled(enabled);
-        for (StyleFunction function : StyleFunction.values()) {
+        for (AnsiTextStyles function : AnsiTextStyles.values()) {
             String example = function.apply("example");
-            assertThat(Style.isStyled(example), is(enabled));
+            assertThat(AnsiTextStyle.isStyled(example), is(enabled));
             Log.info("%22s [ %s ]", function, example);
             String name = function.name().toLowerCase();
             String styleName;
@@ -57,7 +58,7 @@ class StyleFunctionTest {
                 }
             }
 
-            String expected = Style.named(styleName,true).apply("example");
+            String expected = AnsiTextStyle.named(styleName,true).apply("example");
             assertThat(example, is(expected));
         }
     }

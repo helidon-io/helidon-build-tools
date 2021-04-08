@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.helidon.build.common.Log;
+import io.helidon.build.common.RichTextStyle;
+
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.Ansi.Attribute;
 import org.fusesource.jansi.Ansi.Color;
@@ -41,9 +43,9 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Unit test for class {@link Style}.
+ * Unit test for class {@link AnsiTextStyle}.
  */
-class StyleTest {
+class AnsiTextStyleTest {
 
     static final String RED_TEXT_CODE = color(RED);
     static final String GREEN_TEXT_CODE = color(GREEN);
@@ -100,7 +102,7 @@ class StyleTest {
 
     static final Map<String, String> CODES_BY_NAME = buildCodesByName();
 
-    static final Map<String, Style> STYLES = Style.styles();
+    static final Map<String, RichTextStyle> STYLES = AnsiTextStyle.styles();
 
     static Map<String, String> buildCodesByName() {
         Map<String, String> codes = new HashMap<>();
@@ -196,7 +198,7 @@ class StyleTest {
         assertExpectedStyle(STYLES.get(name), code);
     }
 
-    static void assertExpectedStyle(Style style, String code) {
+    static void assertExpectedStyle(RichTextStyle style, String code) {
         assertThat(style, is(not(nullValue())));
         assertThat(code, is(not(nullValue())));
         String example = style.apply("example");
@@ -208,22 +210,22 @@ class StyleTest {
 
     @Test
     void testRequiredNameNotFound() {
-        assertThrows(IllegalArgumentException.class, () -> Style.named("foo", true));
+        assertThrows(IllegalArgumentException.class, () -> AnsiTextStyle.named("foo", true));
     }
 
     @Test
     void testNameNotFound() {
-        assertThat(Style.named("foo"), is(Style.none()));
+        assertThat(AnsiTextStyle.named("foo"), is(AnsiTextStyle.none()));
     }
 
     @Test
     void testNamed() {
-        buildCodesByName().forEach(StyleTest::assertExpectedStyle);
+        buildCodesByName().forEach(AnsiTextStyleTest::assertExpectedStyle);
     }
 
     @Test
     void testAliases() {
-        Map<String, Style> styles = Style.styles();
+        Map<String, RichTextStyle> styles = AnsiTextStyle.styles();
         Log.info("Checking all %d style names and aliases", styles.size());
         styles.forEach((styleName, style) -> {
             Log.debug("    checking %s", styleName);
@@ -279,18 +281,18 @@ class StyleTest {
 
     @Test
     void testStrip() {
-        Assumptions.assumeTrue(AnsiConsoleInstaller.install());
+        Assumptions.assumeTrue(AnsiTextProvider.ANSI_ENABLED);
         String sample = "sample";
-        Style style = Style.of("RED!");
+        RichTextStyle style = RichTextStyle.of("RED!");
         String styled = style.apply(sample);
-        String stripped = Style.strip(styled);
-        assertThat(Style.isStyled(styled), is(true));
-        assertThat(Style.isStyled(stripped), is(false));
+        String stripped = AnsiTextStyle.strip(styled);
+        assertThat(AnsiTextStyle.isStyled(styled), is(true));
+        assertThat(AnsiTextStyle.isStyled(stripped), is(false));
         assertThat(stripped, is(sample));
     }
 
     @Test
     void logTables() {
-        Style.logSummaryTables();
+        AnsiTextStyle.logSummaryTables();
     }
 }

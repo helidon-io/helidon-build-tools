@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
-import static io.helidon.build.common.ansi.Style.strip;
+import static io.helidon.build.common.ansi.AnsiTextStyle.strip;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**

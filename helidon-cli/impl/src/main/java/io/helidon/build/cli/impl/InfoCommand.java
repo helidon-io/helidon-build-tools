@@ -29,8 +29,8 @@ import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.common.ConfigProperties;
 import io.helidon.build.common.Log;
+import io.helidon.build.common.Log.Level;
 import io.helidon.build.common.Time;
-import io.helidon.build.common.ansi.AnsiLog;
 import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.cli.common.ProjectConfig.HELIDON_VERSION;
@@ -42,7 +42,9 @@ import static io.helidon.build.cli.common.ProjectConfig.PROJECT_RESOURCEDIRS;
 import static io.helidon.build.cli.common.ProjectConfig.PROJECT_SOURCEDIRS;
 import static io.helidon.build.cli.common.ProjectConfig.PROJECT_VERSION;
 import static io.helidon.build.cli.impl.VersionCommand.addProjectProperty;
-import static io.helidon.build.common.ansi.AnsiLog.maxKeyWidth;
+import static io.helidon.build.common.Log.maxKeyWidth;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Italic;
 
 /**
  * The {@code info} command.
@@ -198,7 +200,7 @@ public final class InfoCommand extends BaseCommand {
     private static void log(String header, Map<Object, Object> map, int maxKeyWidth) {
         if (!map.isEmpty()) {
             logHeader(header);
-            AnsiLog.logEntries(map, maxKeyWidth);
+            Log.log(Level.INFO, map, maxKeyWidth, Italic, BoldBlue);
         }
     }
 }

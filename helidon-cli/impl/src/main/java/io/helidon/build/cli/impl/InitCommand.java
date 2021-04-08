@@ -35,7 +35,7 @@ import static io.helidon.build.cli.common.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.cli.common.ProjectConfig.PROJECT_FLAVOR;
 import static io.helidon.build.cli.impl.ArchetypeInvoker.EngineVersion.V1;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
-import static io.helidon.build.common.ansi.StyleFunction.BoldBrightCyan;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightCyan;
 
 /**
  * The {@code init} command.

@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+import io.helidon.build.common.LogWriter;
+import io.helidon.build.common.RichTextProvider;
+import io.helidon.build.common.ansi.AnsiLogWriter;
+import io.helidon.build.common.ansi.AnsiTextProvider;
+
 /**
  * Helidon Build Common Ansi.
  */
@@ -22,4 +27,6 @@ module io.helidon.build.common.ansi {
     requires org.fusesource.jansi;
     requires info.picocli.jansi.graalvm;
     exports io.helidon.build.common.ansi;
+    provides RichTextProvider with AnsiTextProvider;
+    provides LogWriter with AnsiLogWriter;
 }

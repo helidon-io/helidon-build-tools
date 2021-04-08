@@ -15,7 +15,7 @@
  */
 package io.helidon.build.devloop.common;
 
-import static io.helidon.build.common.ansi.StyleFunction.Bold;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
 
 /**
  * Constants supporting coordination between {@code DevLoop} and {@code DevCommand}.

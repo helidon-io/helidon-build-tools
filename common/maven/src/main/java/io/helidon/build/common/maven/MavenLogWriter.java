@@ -15,14 +15,14 @@
  */
 package io.helidon.build.common.maven;
 
-import io.helidon.build.common.Log;
 import io.helidon.build.common.Log.Level;
-import io.helidon.build.common.ansi.StyleRenderer;
+import io.helidon.build.common.LogWriter;
+import io.helidon.build.common.RichTextRenderer;
 
 /**
- * {@link Log.Writer} that writes to a maven log.
+ * {@link LogWriter} that writes to a maven log.
  */
-public class MavenLogWriter implements Log.Writer {
+public class MavenLogWriter implements LogWriter {
     private final org.apache.maven.plugin.logging.Log log;
 
     /**
@@ -56,7 +56,7 @@ public class MavenLogWriter implements Log.Writer {
             case DEBUG:
             case VERBOSE:
                 if (log.isDebugEnabled()) {
-                    final String msg = StyleRenderer.render(message, args);
+                    final String msg = RichTextRenderer.render(message, args);
                     if (thrown == null) {
                         log.debug(msg);
                     } else {
@@ -66,7 +66,7 @@ public class MavenLogWriter implements Log.Writer {
                 break;
             case INFO: {
                 if (log.isInfoEnabled()) {
-                    final String msg = StyleRenderer.render(message, args);
+                    final String msg = RichTextRenderer.render(message, args);
                     if (thrown == null) {
                         log.info(msg);
                     } else {
@@ -77,7 +77,7 @@ public class MavenLogWriter implements Log.Writer {
             }
             case WARN: {
                 if (log.isWarnEnabled()) {
-                    final String msg = StyleRenderer.render(message, args);
+                    final String msg = RichTextRenderer.render(message, args);
                     if (thrown == null) {
                         log.warn(msg);
                     } else {
@@ -88,7 +88,7 @@ public class MavenLogWriter implements Log.Writer {
             }
             case ERROR: {
                 if (log.isErrorEnabled()) {
-                    final String msg = StyleRenderer.render(message, args);
+                    final String msg = RichTextRenderer.render(message, args);
                     if (thrown == null) {
                         log.error(msg);
                     } else {

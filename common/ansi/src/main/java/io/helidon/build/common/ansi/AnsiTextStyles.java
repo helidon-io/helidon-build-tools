@@ -16,12 +16,14 @@
 
 package io.helidon.build.common.ansi;
 
-import java.util.function.Function;
+import io.helidon.build.common.RichText;
+import io.helidon.build.common.RichTextStyle;
 
 /**
- * Text style functions.
+ * Ansi text styles.
  */
-public enum StyleFunction implements Function<Object, String> {
+public enum AnsiTextStyles implements RichTextStyle {
+
     /**
      * Default.
      */
@@ -257,10 +259,10 @@ public enum StyleFunction implements Function<Object, String> {
      */
     BoldBrightItalicMagenta("_MAGENTA_!");
 
-    private final Style style;
+    private final RichTextStyle style;
 
-    StyleFunction(String name) {
-        this.style = Style.named(name, true);
+    AnsiTextStyles(String name) {
+        this.style = AnsiTextStyle.named(name, true);
     }
 
     /**
@@ -272,6 +274,11 @@ public enum StyleFunction implements Function<Object, String> {
      */
     public String format(String format, Object... args) {
         return apply(String.format(format, args));
+    }
+
+    @Override
+    public RichText apply(RichText richText) {
+        return null;
     }
 
     /**

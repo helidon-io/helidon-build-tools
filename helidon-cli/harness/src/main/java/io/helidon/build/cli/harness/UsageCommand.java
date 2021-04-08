@@ -20,7 +20,7 @@ import java.util.Map;
 
 import io.helidon.build.common.Log;
 
-import static io.helidon.build.common.ansi.StyleFunction.Bold;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
 
 /**
  * Built-in usage command.

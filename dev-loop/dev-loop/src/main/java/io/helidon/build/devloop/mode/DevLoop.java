@@ -34,10 +34,10 @@ import io.helidon.build.devloop.maven.DevLoopBuildConfig;
 import io.helidon.build.devloop.maven.EmbeddedMavenExecutor;
 import io.helidon.build.devloop.maven.ForkedMavenExecutor;
 
-import static io.helidon.build.common.ansi.StyleFunction.Bold;
-import static io.helidon.build.common.ansi.StyleFunction.BoldBlue;
-import static io.helidon.build.common.ansi.StyleFunction.BoldRed;
-import static io.helidon.build.common.ansi.StyleFunction.BoldYellow;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldRed;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldYellow;
 import static io.helidon.build.devloop.BuildMonitor.NextAction.CONTINUE;
 import static io.helidon.build.devloop.BuildMonitor.NextAction.EXIT;
 import static io.helidon.build.devloop.BuildMonitor.NextAction.WAIT_FOR_CHANGE;

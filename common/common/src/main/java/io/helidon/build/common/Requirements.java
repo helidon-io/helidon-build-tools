@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.build.common;
 
 import java.util.Optional;
@@ -22,6 +21,7 @@ import java.util.Optional;
  * Assertions with formatted message strings.
  */
 public class Requirements {
+
     /**
      * Throws a {@code RequirementFailure} with a formatted message formatted if the given instance is {@code null}.
      *

@@ -28,10 +28,10 @@ import io.helidon.build.common.OSType;
 import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.devloop.Project;
 
-import static io.helidon.build.common.ansi.StyleFunction.BoldBrightCyan;
-import static io.helidon.build.common.ansi.StyleFunction.BoldBrightGreen;
-import static io.helidon.build.common.ansi.StyleFunction.BoldBrightRed;
-import static io.helidon.build.common.ansi.StyleFunction.BoldYellow;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightCyan;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightGreen;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightRed;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldYellow;
 import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_APPLICATION_STARTING;
 import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_APPLICATION_STOPPED;
 import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_APPLICATION_STOPPING;

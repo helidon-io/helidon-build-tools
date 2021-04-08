@@ -44,8 +44,8 @@ import static io.helidon.build.common.FileUtils.listFiles;
 import static io.helidon.build.common.FileUtils.requireDirectory;
 import static io.helidon.build.common.FileUtils.requireJavaExecutable;
 import static io.helidon.build.common.ansi.AnsiConsoleInstaller.isHelidonChildProcess;
-import static io.helidon.build.common.ansi.StyleFunction.Bold;
-import static io.helidon.build.common.ansi.StyleFunction.Red;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Red;
 import static java.io.File.pathSeparatorChar;
 import static java.util.Objects.requireNonNull;
 

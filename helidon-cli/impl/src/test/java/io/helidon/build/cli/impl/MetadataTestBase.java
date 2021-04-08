@@ -72,7 +72,8 @@ public class MetadataTestBase {
         useBaseUrl(baseUrl);
         cacheDir = userConfig.cacheDir();
         latestFile = cacheDir.resolve(LATEST_FILE_NAME);
-        logged = CapturingLogWriter.install();
+        logged = CapturingLogWriter.create();
+        Log.writer(logged);
     }
 
     /**

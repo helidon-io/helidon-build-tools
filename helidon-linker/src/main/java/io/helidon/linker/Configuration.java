@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Set;
 
 import io.helidon.build.common.Log;
+import io.helidon.build.common.LogWriter;
 import io.helidon.build.common.Strings;
 import io.helidon.build.common.SystemLogWriter;
 import io.helidon.linker.util.JavaRuntime;
@@ -205,7 +206,7 @@ public final class Configuration {
         private boolean stripDebug;
         private boolean cds;
         private boolean test;
-        private Log.Writer logWriter;
+        private LogWriter logWriter;
         private int maxAppStartSeconds;
 
         private Builder() {
@@ -444,7 +445,7 @@ public final class Configuration {
          * @param logWriter The writer.
          * @return The builder.
          */
-        public Builder logWriter(Log.Writer logWriter) {
+        public Builder logWriter(LogWriter logWriter) {
             this.logWriter = requireNonNull(logWriter);
             return this;
         }

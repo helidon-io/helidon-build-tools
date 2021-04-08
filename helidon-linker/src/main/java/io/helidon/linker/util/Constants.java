@@ -23,8 +23,8 @@ import java.util.function.Function;
 
 import io.helidon.build.common.OSType;
 
-import static io.helidon.build.common.ansi.StyleFunction.Bold;
-import static io.helidon.build.common.ansi.StyleFunction.BoldBrightYellow;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightYellow;
 
 /**
  * Shared constants.
