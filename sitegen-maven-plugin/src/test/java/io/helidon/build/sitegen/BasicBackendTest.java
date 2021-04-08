@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package io.helidon.build.sitegen;
 
 import java.io.File;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.CollectionsHelper.listOf;
 import static io.helidon.build.sitegen.TestHelper.SOURCE_DIR_PREFIX;
 import static io.helidon.build.sitegen.TestHelper.assertRendering;
 import static io.helidon.build.sitegen.TestHelper.getFile;
@@ -37,9 +37,9 @@ public class BasicBackendTest {
     public void testBasic1() throws Exception {
         File sourcedir = getFile(SOURCE_DIR_PREFIX + "testbasic1");
         Site.builder()
-                .pages(listOf(SourcePathFilter.builder()
-                        .includes(listOf("**/*.adoc"))
-                        .excludes(listOf("**/_*"))
+                .pages(List.of(SourcePathFilter.builder()
+                        .includes(List.of("**/*.adoc"))
+                        .excludes(List.of("**/_*"))
                         .build()))
                 .build()
                 .generate(sourcedir, OUTPUT_DIR);
@@ -53,9 +53,9 @@ public class BasicBackendTest {
     public void testBasic2() throws Exception {
         File sourcedir = getFile(SOURCE_DIR_PREFIX + "testbasic2");
         Site.builder()
-                .pages(listOf(SourcePathFilter.builder()
-                        .includes(listOf("**/*.adoc"))
-                        .excludes(listOf("**/_*"))
+                .pages(List.of(SourcePathFilter.builder()
+                        .includes(List.of("**/*.adoc"))
+                        .excludes(List.of("**/_*"))
                         .build()))
                 .build()
                 .generate(sourcedir, OUTPUT_DIR);
@@ -69,9 +69,9 @@ public class BasicBackendTest {
     public void testBasic3() throws Exception {
         File sourcedir = getFile(SOURCE_DIR_PREFIX + "testbasic3");
         Site.builder()
-                .pages(listOf(SourcePathFilter.builder()
-                        .includes(listOf("**/*.adoc"))
-                        .excludes(listOf("**/_*"))
+                .pages(List.of(SourcePathFilter.builder()
+                        .includes(List.of("**/*.adoc"))
+                        .excludes(List.of("**/_*"))
                         .build()))
                 .build()
                 .generate(sourcedir, OUTPUT_DIR);

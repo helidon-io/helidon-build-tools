@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.Map;
 import io.helidon.build.sitegen.asciidoctor.AsciidocPageRenderer;
 
 import static io.helidon.build.sitegen.asciidoctor.AsciidocPageRenderer.ADOC_EXT;
-import static io.helidon.common.CollectionsHelper.mapOf;
 
 /**
  * A basic backend implementation.
@@ -39,7 +38,7 @@ public class BasicBackend extends Backend {
      */
     public BasicBackend() {
         super(BACKEND_NAME);
-        this.pageRenderers = mapOf(
+        this.pageRenderers = Map.of(
                 ADOC_EXT, new AsciidocPageRenderer(BACKEND_NAME)
         );
     }

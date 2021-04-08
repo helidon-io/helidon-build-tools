@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,20 @@
 package io.helidon.build.sitegen;
 
 import java.io.File;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
+import java.util.Map;
 
 import io.helidon.build.sitegen.asciidoctor.AsciidocEngine;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.CollectionsHelper.listOf;
-import static io.helidon.common.CollectionsHelper.mapOf;
-import static io.helidon.build.sitegen.TestHelper.*;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import static org.junit.jupiter.api.Assertions.*;
+import static io.helidon.build.sitegen.TestHelper.SOURCE_DIR_PREFIX;
+import static io.helidon.build.sitegen.TestHelper.getFile;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -45,28 +46,28 @@ public class VuetifyBackendTest {
         File outputdir = getFile(outputdirPath.toString());
 
         Site.builder()
-                .pages(listOf(SourcePathFilter.builder()
-                        .includes(listOf("**/*.adoc"))
+                .pages(List.of(SourcePathFilter.builder()
+                        .includes(List.of("**/*.adoc"))
                         .build()))
-                .assets(listOf(StaticAsset.builder()
-                        .includes(listOf("sunset.jpg"))
+                .assets(List.of(StaticAsset.builder()
+                        .includes(List.of("sunset.jpg"))
                         .target("images")
                         .build()))
                 .backend(VuetifyBackend.builder()
                         .homePage("home.adoc")
-                        .releases(listOf("1.0"))
+                        .releases(List.of("1.0"))
                         .navigation(VuetifyNavigation.builder()
                                 .title("Pet Project doc")
                                 .glyph(Glyph.builder()
                                         .type("icon")
                                         .value("import_contacts")
                                         .build())
-                                .items(listOf(VuetifyNavigation.Group.builder()
-                                        .items(listOf(
+                                .items(List.of(VuetifyNavigation.Group.builder()
+                                        .items(List.of(
                                                 VuetifyNavigation.SubGroup.builder()
                                                         .pathprefix("/about")
-                                                        .items(listOf(VuetifyNavigation.Pages.builder()
-                                                                .includes(listOf("about/*.adoc"))
+                                                        .items(List.of(VuetifyNavigation.Pages.builder()
+                                                                .includes(List.of("about/*.adoc"))
                                                                 .build()))
                                                         .title("What is it about?")
                                                         .glyph(Glyph.builder()
@@ -76,8 +77,8 @@ public class VuetifyBackendTest {
                                                         .build(),
                                                 VuetifyNavigation.SubGroup.builder()
                                                         .pathprefix("/getting-started")
-                                                        .items(listOf(VuetifyNavigation.Pages.builder()
-                                                                .includes(listOf("getting-started/*.adoc"))
+                                                        .items(List.of(VuetifyNavigation.Pages.builder()
+                                                                .includes(List.of("getting-started/*.adoc"))
                                                                 .build()))
                                                         .title("Getting started")
                                                         .glyph(Glyph.builder()
@@ -87,8 +88,8 @@ public class VuetifyBackendTest {
                                                         .build(),
                                                 VuetifyNavigation.SubGroup.builder()
                                                         .pathprefix("/lets-code")
-                                                        .items(listOf(VuetifyNavigation.Pages.builder()
-                                                                .includes(listOf("lets-code/*.adoc"))
+                                                        .items(List.of(VuetifyNavigation.Pages.builder()
+                                                                .includes(List.of("lets-code/*.adoc"))
                                                                 .build()))
                                                         .title("Let's code!")
                                                         .glyph(Glyph.builder()
@@ -137,17 +138,17 @@ public class VuetifyBackendTest {
         File sourcedir = getFile(SOURCE_DIR_PREFIX + "testvuetify2");
         File outputdir = getFile("target/vuetify-backend-test/testvuetify2");
         Site.builder()
-                .pages(listOf(
+                .pages(List.of(
                         SourcePathFilter.builder()
-                                .includes(listOf("**/*.adoc"))
+                                .includes(List.of("**/*.adoc"))
                                 .build()))
                 .backend(VuetifyBackend.builder()
                         .homePage("home.adoc")
                         .build())
                 .engine(SiteEngine.builder()
                         .asciidoctor(AsciidocEngine.builder()
-                                .libraries(listOf("asciidoctor-diagram"))
-                                .attributes(mapOf("plantumlconfig", "_plantuml-config.txt"))
+                                .libraries(List.of("asciidoctor-diagram"))
+                                .attributes(Map.of("plantumlconfig", "_plantuml-config.txt"))
                                 .build())
                         .build())
                 .build()

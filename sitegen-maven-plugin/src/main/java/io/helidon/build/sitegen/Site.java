@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import io.helidon.config.ConfigFilters;
 import io.helidon.config.ConfigMappers;
 import io.helidon.config.ConfigSources;
 
-import static io.helidon.build.sitegen.AbstractBuilder.asType;
 import static io.helidon.build.sitegen.Helper.checkNonNull;
 
 /**
@@ -156,47 +155,49 @@ public class Site {
             Config config = Config.builder()
                 .addFilter(ConfigFilters.valueResolving())
                 .addMapper(Properties.class, (Config c) -> ConfigMappers.toProperties(c.detach()))
-                .sources(ConfigSources.file(configFile.getAbsolutePath()), ConfigSources.from(properties))
+                .sources(ConfigSources.file(configFile.getAbsolutePath()), ConfigSources.create(properties))
                 .build();
 
             // backend
-            config.get(BACKEND_PROP).ifExistsOrElse(c -> {
-                Backend backend = Backend.builder().config(c).build();
-                put(BACKEND_PROP, backend);
-                THREADLOCAL.set(backend.getName());
-            }, () -> {
-                // default backend
-                Backend backend = new BasicBackend();
-                put(BACKEND_PROP, backend);
-                THREADLOCAL.set(backend.getName());
-            });
+            config.get(BACKEND_PROP)
+                    .asNode()
+                    .ifPresentOrElse(c -> {
+                        Backend backend = Backend.builder().config(c).build();
+                        put(BACKEND_PROP, backend);
+                        THREADLOCAL.set(backend.getName());
+                    }, () -> {
+                        // default backend
+                        Backend backend = new BasicBackend();
+                        put(BACKEND_PROP, backend);
+                        THREADLOCAL.set(backend.getName());
+                    });
 
             //  engine
-            config.get(ENGINE_PROP).ifExists(c
-                    -> put(ENGINE_PROP, SiteEngine.builder()
-                            .config(c)
-                            .build()));
+            config.get(ENGINE_PROP).ifExists(c -> put(ENGINE_PROP, SiteEngine.builder()
+                    .config(c)
+                    .build()));
 
             // assets
-            config.get(ASSETS_PROP).ifExists(c
-                    -> put(ASSETS_PROP, c.asNodeList()
+            config.get(ASSETS_PROP)
+                    .asNodeList()
+                    .ifPresent(list -> put(ASSETS_PROP, list
                             .stream()
                             .map(n -> StaticAsset.builder().config(n).build())
                             .collect(Collectors.toList())));
 
             // header
-            config.get(HEADER_PROP).ifExists(c
-                    -> put(HEADER_PROP, Header.builder()
-                            .config(c)
-                            .build()));
+            config.get(HEADER_PROP).ifExists(c -> put(HEADER_PROP, Header.builder()
+                    .config(c)
+                    .build()));
 
             // pages
-            config.get(PAGES_PROP).ifExists(c
-                    -> put(PAGES_PROP, c.asNodeList()
+            config.get(PAGES_PROP)
+                    .asNodeList()
+                    .ifPresent(list -> put(PAGES_PROP, list
                             .stream()
                             .map(n -> SourcePathFilter.builder()
-                                            .config(n)
-                                            .build())
+                                    .config(n)
+                                    .build())
                             .collect(Collectors.toList())));
 
             return this;

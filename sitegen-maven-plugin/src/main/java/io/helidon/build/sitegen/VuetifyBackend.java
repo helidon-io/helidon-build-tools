@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ import static io.helidon.build.sitegen.Helper.checkNonNullNonEmpty;
 import static io.helidon.build.sitegen.Helper.copyResources;
 import static io.helidon.build.sitegen.Helper.loadResourceDirAsPath;
 import static io.helidon.build.sitegen.asciidoctor.AsciidocPageRenderer.ADOC_EXT;
-import static io.helidon.common.CollectionsHelper.mapOf;
 
 /**
  * A backend implementation for vuetifyjs.
@@ -75,7 +74,7 @@ public class VuetifyBackend extends Backend {
         this.navigation = navigation;
         this.homePage = homePage;
         this.releases = releases == null ? Collections.emptyList() : releases;
-        this.pageRenderers = mapOf(
+        this.pageRenderers = Map.of(
                 ADOC_EXT, new AsciidocPageRenderer(BACKEND_NAME)
         );
         try {
@@ -269,8 +268,10 @@ public class VuetifyBackend extends Backend {
         public Builder config(Config node) {
             if (node.exists()) {
                 // theme
-                node.get(THEME_PROP).ifExists(c
-                        -> put(THEME_PROP, c.detach().asMap()));
+                node.get(THEME_PROP)
+                        .detach()
+                        .asMap()
+                        .ifPresent(it -> put(THEME_PROP, it));
 
                 // navigation
                 node.get(NAVIGATION_PROP).ifExists(c
@@ -279,12 +280,14 @@ public class VuetifyBackend extends Backend {
                                 .build()));
 
                 // homePage
-                node.get(HOME_PAGE_PROP).ifExists(c
-                        -> put(HOME_PAGE_PROP, c.asString()));
+                node.get(HOME_PAGE_PROP)
+                        .asString()
+                        .ifPresent(it -> put(HOME_PAGE_PROP, it));
 
                 // releases
-                node.get(RELEASES_PROP).ifExists(c
-                        -> put(RELEASES_PROP, c.asStringList()));
+                node.get(RELEASES_PROP)
+                        .asList(String.class)
+                        .ifPresent(it -> put(RELEASES_PROP, it));
             }
             return this;
         }
@@ -313,7 +316,7 @@ public class VuetifyBackend extends Backend {
                         break;
                     default:
                         throw new IllegalStateException(
-                                "Unkown attribute: " + attr);
+                                "Unknown attribute: " + attr);
                 }
             }
             return new VuetifyBackend(theme, navigation, homePage, releases);
@@ -324,7 +327,6 @@ public class VuetifyBackend extends Backend {
      * Create a new {@link Builder} instance.
      * @return the created builder
      */
-    @SuppressWarnings("unchecked")
     public static Builder builder(){
         return new Builder();
     }
