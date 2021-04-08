@@ -201,6 +201,7 @@
         <module>dev-loop</module>
         <module>stager-maven-plugin</module>
         <module>build-cache-maven-plugin</module>
+        <module>enforcer-maven-plugin</module>
     </modules>
 
     <build>
