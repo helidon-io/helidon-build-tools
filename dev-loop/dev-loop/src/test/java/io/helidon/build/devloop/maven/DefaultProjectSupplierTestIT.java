@@ -28,7 +28,6 @@ import io.helidon.build.devloop.ProjectSupplier;
 import io.helidon.build.devloop.BuildType;
 import io.helidon.build.devloop.TestMonitor;
 
-import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
@@ -63,7 +62,7 @@ class DefaultProjectSupplierTestIT {
         assertThat(project.isBuildUpToDate(), is(true));
         assertThat(monitor.buildStart(0), is(false));
         assertThat(project, is(not(nullValue())));
-        MatcherAssert.assertThat(project.root().directoryType(), Matchers.is(DirectoryType.Project));
+        assertThat(project.root().directoryType(), Matchers.is(DirectoryType.Project));
         assertThat(project.root().path(), is(projectDir));
         final List<BuildComponent> components = project.components();
         assertThat(components, is(not(nullValue())));
