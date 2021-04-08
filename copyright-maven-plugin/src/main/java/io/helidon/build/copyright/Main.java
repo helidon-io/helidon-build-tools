@@ -52,7 +52,10 @@ import io.helidon.build.util.SystemLogWriter;
  * This program is made available under the Apache 2.0 license.
  * </pre></code>
  */
-public class Main {
+public final class Main {
+    private Main() {
+    }
+
     /**
      * Invoke the copyright check.
      *

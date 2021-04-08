@@ -287,6 +287,11 @@ public class Copyright {
         private Builder() {
         }
 
+        /**
+         * Build a new copyright.
+         *
+         * @return copyright from this builder
+         */
         public Copyright build() {
             if (checkPath == null) {
                 throw new CopyrightException("The directory to check must be defined");

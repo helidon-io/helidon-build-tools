@@ -19,7 +19,7 @@ package io.helidon.build.copyright;
 /**
  * Exception thrown by copyright checking.
  */
-public class CopyrightException extends RuntimeException{
+public class CopyrightException extends RuntimeException {
     /**
      * Exception with message.
      * @param message message

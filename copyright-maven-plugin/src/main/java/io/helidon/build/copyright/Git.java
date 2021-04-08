@@ -211,7 +211,8 @@ final class Git {
         try {
             int i = process.waitFor();
             if (i != 0) {
-                throw new CopyrightException("Failed to read modified files, git exit code: " + i + ", process output: " + changedFiles);
+                throw new CopyrightException("Failed to read modified files, git exit code: "
+                                                     + i + ", process output: " + changedFiles);
             }
         } catch (InterruptedException ex) {
             throw new CopyrightException("Process to get modified files was interrupted", ex);
@@ -275,7 +276,8 @@ final class Git {
         try {
             int i = process.waitFor();
             if (i != 0) {
-                throw new CopyrightException("Failed to read modified files, git exit code: " + i + ", process output: " + changedFiles);
+                throw new CopyrightException("Failed to read modified files, git exit code: "
+                                                     + i + ", process output: " + changedFiles);
             }
         } catch (InterruptedException ex) {
             throw new CopyrightException("Process to get modified files was interrupted", ex);
