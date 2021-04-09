@@ -1,0 +1,145 @@
+{
+  "name": "helidon",
+  "displayName": "Helidon",
+  "description": "Helidon Project Visual Studio Support",
+  "version": "3.0.0-SNAPSHOT",
+  "icon": "images/helidon_logo.png",
+  "author": "Oracle Corporation",
+  "publisher": "Oracle",
+  "license": "SEE LICENSE IN LICENSE.txt",
+  "bugs": "https://github.com/oracle/helidon-build-tools/issues",
+  "engines": {
+    "vscode": "^1.43.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "galleryBanner": {
+    "color": "#b3d4fc",
+    "theme": "light"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oracle/helidon-build-tools"
+  },
+  "keywords": [
+    "java",
+    "helidon",
+    "maven"
+  ],
+  "activationEvents": [
+    "onCommand:helidon.generate",
+    "onCommand:helidon.startPage",
+    "onCommand:helidon.startDev",
+    "onCommand:helidon.stopDev",
+    "onLanguage:java",
+    "workspaceContains:**/src/main/resources/application.properties",
+    "workspaceContains:**src/main/resources/META-INF/microprofile-config.properties",
+    "workspaceContains:**/src/main/resources/application.yaml",
+    "workspaceContains:**/src/main/resources/application.yml",
+    "onLanguage:microprofile-properties",
+    "onLanguage:helidon-properties"
+  ],
+  "extensionDependencies": [
+    "redhat.vscode-microprofile",
+    "redhat.java"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "javaExtensions": [
+      "./jars/io.helidon.jdt.extension.core.jar"
+    ],
+    "microprofile": {
+      "jarExtensions": [
+        "./server/io.helidon.ls4mp.extension.jar"
+      ],
+      "documentSelector": [
+        {
+          "scheme": "file",
+          "language": "helidon-properties"
+        }
+      ]
+    },
+    "languages": [
+      {
+        "id": "helidon-properties",
+        "aliases": [
+          "Helidon properties"
+        ],
+        "filenames": [
+          "application.properties"
+        ],
+        "configuration": "./lang-configs/properties-config/language-configuration.json"
+      }
+    ],
+    "configuration": [
+      {
+        "title": "Helidon support configuration",
+        "properties": {
+          "helidon.showStartPage": {
+            "type": "boolean",
+            "default": true,
+            "description": "If start page should be displayed on extension startup."
+          }
+        }
+      }
+    ],
+    "commands": [
+      {
+        "command": "helidon.generate",
+        "title": "Helidon: generate a new Helidon project"
+      },
+      {
+        "command": "helidon.startPage",
+        "title": "Helidon: start page"
+      },
+      {
+        "command": "helidon.startDev",
+        "title": "Helidon: start 'helidon dev'"
+      },
+      {
+        "command": "helidon.stopDev",
+        "title": "Helidon: stop 'helidon dev'"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "gulp build && webpack --mode production",
+    "package": "vsce package -o target/vscode-helidon.vsix",
+    "webpack": "webpack --mode development",
+    "webpack-dev": "webpack --mode development --watch",
+    "test-compile": "tsc -p ./"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.2.14",
+    "@types/glob": "^7.1.1",
+    "@types/mocha": "^7.0.1",
+    "@types/node": "^12.11.7",
+    "@types/sinon": "^9.0.11",
+    "@types/vscode": "^1.43.0",
+    "@typescript-eslint/eslint-plugin": "^2.18.0",
+    "@typescript-eslint/parser": "^2.18.0",
+    "chai": "^4.3.0",
+    "eslint": "^6.8.0",
+    "glob": "^7.1.6",
+    "gulp": "^4.0.2",
+    "gulp-rename": "^1.4.0",
+    "mocha": "^7.0.1",
+    "sinon": "^9.2.4",
+    "ts-loader": "^8.1.0",
+    "ts-mock-imports": "^1.3.3",
+    "tslint": "^6.1.3",
+    "tslint-loader": "^3.5.4",
+    "typescript": "^3.7.5",
+    "vsce": "^1.87.1",
+    "vscode-test": "^1.3.0",
+    "webpack": "^5.32.0",
+    "webpack-cli": "^4.6.0"
+  },
+  "dependencies": {
+    "command-exists": "^1.2.9",
+    "strip-ansi": "^6.0.0",
+    "tree-kill": "^1.2.2",
+    "vscode-uri": "^3.0.1"
+  }
+}

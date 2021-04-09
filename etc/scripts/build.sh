@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
-    clean install -debug -X \
+    clean install \
     --fail-at-end \
-    -Dmaven.test.failure.ignore=true
+    -Dmaven.test.failure.ignore=true \
+    -Pide-support
