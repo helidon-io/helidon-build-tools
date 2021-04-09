@@ -315,7 +315,9 @@ final class Git {
             String line;
             while ((line = reader.readLine()) != null) {
                 String trimmed = line.trim();
-                if (trimmed.startsWith("M") || trimmed.startsWith("A")) {
+                if (trimmed.startsWith("AM")) {
+                    changedFiles.add(trimmed.substring(2).trim().replace('\\', '/'));
+                } else if (trimmed.startsWith("M") || trimmed.startsWith("A")) {
                     changedFiles.add(trimmed.substring(1).trim().replace('\\', '/'));
                 }
             }
