@@ -224,6 +224,12 @@ public class Copyright {
 
         FileRequest file = FileRequest.create(rootPath, relativePath);
 
+        // file may have been deleted from GIT (or locally)
+        if (!Files.exists(file.path())) {
+            Log.debug("File " + relativePath + " does not exist, ignoring.");
+            return;
+        }
+
         for (Exclude exclude : excludes) {
             if (exclude.exclude(file)) {
                 Log.debug("Excluding " + relativePath);
