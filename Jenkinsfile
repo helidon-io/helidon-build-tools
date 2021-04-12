@@ -25,10 +25,7 @@ pipeline {
     stage('init') {
       steps {
         script {
-          sh '''
-            . ./etc/scripts/pipeline-env.sh
-            mvn dependency:go-offline
-          '''
+          sh './etc/scripts/init.sh'
         }
       }
     }
