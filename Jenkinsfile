@@ -22,6 +22,16 @@ pipeline {
     parallelsAlwaysFailFast()
   }
   stages {
+    stage('init') {
+      steps {
+        script {
+          sh '''
+            . ./etc/scripts/pipeline-env.sh
+            mvn dependency:go-offline
+          '''
+        }
+      }
+    }
     stage('default') {
       parallel {
         stage('build'){
