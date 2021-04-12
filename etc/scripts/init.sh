@@ -39,4 +39,4 @@ readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
-mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml dependency:go-offline
+mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml validate
