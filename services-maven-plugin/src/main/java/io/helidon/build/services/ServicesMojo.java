@@ -263,7 +263,10 @@ public class ServicesMojo extends AbstractMojo {
                     Set<String> missing = new LinkedHashSet<>(provider.providers());
                     moduleInfoProvider.providers().forEach(missing::remove);
                     if (!missing.isEmpty()) {
-                        problems.add("Service " + service + " is missing the following providers in module-info.java: " + missing);
+                        problems.add("Service "
+                                             + service
+                                             + " is missing the following providers in module-info.java: "
+                                             + missing);
                     }
                 }
             }
