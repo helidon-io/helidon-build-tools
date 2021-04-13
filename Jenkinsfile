@@ -22,13 +22,6 @@ pipeline {
     parallelsAlwaysFailFast()
   }
   stages {
-    stage('init') {
-      steps {
-        script {
-          sh './etc/scripts/init.sh'
-        }
-      }
-    }
     stage('default') {
       parallel {
         stage('build'){

@@ -164,7 +164,7 @@ release_build(){
     echo "Nexus staging repository ID: ${STAGING_REPO_ID}"
 
     # Perform deployment
-    mvn ${MAVEN_ARGS} clean deploy -Prelease -DskipTests \
+    mvn ${MAVEN_ARGS} clean deploy -Prelease,ide-support -DskipTests \
         -DstagingRepositoryId="${STAGING_REPO_ID}" \
         -DretryFailedDeploymentCount="10"
 
