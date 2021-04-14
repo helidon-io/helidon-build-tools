@@ -27,6 +27,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -194,6 +195,8 @@ public class Copyright {
         for (String relativePath : filesToCheck) {
             addValidFile(relativePath, locallyModified, validPaths, messages);
         }
+
+        validPaths.sort(Comparator.comparing(o -> o.file.relativePath()));
 
         return validPaths;
     }
