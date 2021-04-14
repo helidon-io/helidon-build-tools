@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {OutputChannel} from "vscode";
+import { OutputChannel } from "vscode";
 
 /**
  * Formats and sends string to OutputChannel.
@@ -37,12 +37,12 @@ export class OutputFormatter {
     public formatInputString(data: string) {
         data = data.toString();
 
-        let countFinishedLines = data.match(/[\n\r]/g)?.length ?? 0;
+        const countFinishedLines = data.match(/[\n\r]/g)?.length ?? 0;
         if (countFinishedLines === 0) {
             this.tempString += data;
             return;
         }
-        let splitData = data.split(/[\n\r]/g);
+        const splitData = data.split(/[\n\r]/g);
         if (splitData[splitData.length - 1] === '') {
             splitData.splice(splitData.length - 1, 1);
         }

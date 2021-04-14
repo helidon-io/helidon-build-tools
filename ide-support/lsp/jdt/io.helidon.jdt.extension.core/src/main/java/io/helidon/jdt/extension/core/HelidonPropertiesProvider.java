@@ -15,6 +15,11 @@
  */
 package io.helidon.jdt.extension.core;
 
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import com.google.gson.Gson;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IClasspathEntry;
@@ -29,11 +34,6 @@ import org.eclipse.lsp4mp.jdt.core.IPropertiesProvider;
 import org.eclipse.lsp4mp.jdt.core.SearchContext;
 import org.eclipse.lsp4mp.jdt.core.utils.JDTTypeUtils;
 
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 public class HelidonPropertiesProvider implements IPropertiesProvider {
 
     private static final Logger LOGGER = Logger.getLogger(HelidonPropertiesProvider.class.getName());
@@ -44,10 +44,14 @@ public class HelidonPropertiesProvider implements IPropertiesProvider {
     private boolean excludeTestCode;
     private final Gson gson;
 
+    /**
+     * Create a new instance.
+     */
     public HelidonPropertiesProvider() {
         gson = new Gson();
     }
 
+    @Override
     public void endSearch(SearchContext context, IProgressMonitor monitor) {
         // Loop for each JAR and try to load the /META-INF/helidon-configuration-metadata.json
         for (IClasspathEntry entry : resolvedClasspath) {
@@ -74,6 +78,7 @@ public class HelidonPropertiesProvider implements IPropertiesProvider {
         }
     }
 
+    @Override
     public void contributeToClasspath(BuildingScopeContext context, IProgressMonitor monitor) {
         javaProject = context.getJavaProject();
         resolvedClasspath = context.getResolvedClasspath();
@@ -99,6 +104,7 @@ public class HelidonPropertiesProvider implements IPropertiesProvider {
         }
     }
 
+    @Override
     public SearchPattern createSearchPattern() {
         return null;
     }

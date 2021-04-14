@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {ChildProcess} from "child_process";
+import { ChildProcess } from "child_process";
 
 export class ChildProcessAPI {
 

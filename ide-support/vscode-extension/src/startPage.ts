@@ -16,7 +16,7 @@
 
 import * as vscode from "vscode";
 import * as path from "path";
-import {getPageContent} from "./common";
+import { getPageContent } from "./common";
 
 export async function openStartPage(context: vscode.ExtensionContext) {
 
@@ -40,4 +40,3 @@ export async function openStartPage(context: vscode.ExtensionContext) {
     getPageContent(path.join(context.extensionPath, RESOURCE_FOLDER, 'start_page.html'))
         .then(content => panel.webview.html = content);
 }
-

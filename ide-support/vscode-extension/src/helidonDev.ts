@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import {OutputChannel, QuickPickItem} from "vscode";
+import { OutputChannel, QuickPickItem } from "vscode";
 import * as path from 'path';
-import {ChildProcess} from "child_process";
-import {VSCodeAPI} from "./VSCodeAPI";
-import {FileSystemAPI} from "./FileSystemAPI";
-import {ChildProcessAPI} from "./ChildProcessAPI";
-import {OutputFormatter} from "./OutputFormatter";
+import { ChildProcess } from "child_process";
+import { VSCodeAPI } from "./VSCodeAPI";
+import { FileSystemAPI } from "./FileSystemAPI";
+import { ChildProcessAPI } from "./ChildProcessAPI";
+import { OutputFormatter } from "./OutputFormatter";
 
 const POM_XML_FILE: string = 'pom.xml';
 const SRC_DIR: string = 'src';
@@ -35,7 +35,7 @@ export interface HelidonServerInstance {
 }
 
 export function addLaunchedServers(servers: Map<string, HelidonServerInstance>) {
-    for (let [key, value] of servers) {
+    for (const [key, value] of servers) {
         launchedServers.set(key, value);
     }
 }
@@ -50,15 +50,15 @@ export async function startHelidonDev(): Promise<Map<string, HelidonServerInstan
             VSCodeAPI.showInformationMessage('Helidon CLI is not installed');
             return new Map();
         }
-        let helidonProjectDirs = getHelidonProjectDirs();
+        const helidonProjectDirs = getHelidonProjectDirs();
         let helidonProjectDir: string;
 
-        if (helidonProjectDirs.length == 0) {
+        if (helidonProjectDirs.length === 0) {
             return new Map();
-        } else if (helidonProjectDirs.length == 1) {
+        } else if (helidonProjectDirs.length === 1) {
             helidonProjectDir = helidonProjectDirs[0];
         } else {
-            let directory = await obtainHelidonProjectDirToStart(helidonProjectDirs);
+            const directory = await obtainHelidonProjectDirToStart(helidonProjectDirs);
 
             if (!directory) {
                 return new Map();
@@ -66,7 +66,7 @@ export async function startHelidonDev(): Promise<Map<string, HelidonServerInstan
             helidonProjectDir = directory.description!;
         }
 
-        let helidonServer = obtainHelidonServerInstance(helidonProjectDir);
+        const helidonServer = obtainHelidonServerInstance(helidonProjectDir);
         launchedServers.set(path.basename(helidonProjectDir), helidonServer);
         return launchedServers;
 
@@ -78,7 +78,7 @@ export async function startHelidonDev(): Promise<Map<string, HelidonServerInstan
 
 async function obtainHelidonProjectDirToStart(helidonProjectDirs: string[]): Promise<QuickPickItem | undefined> {
 
-    let helidonProjectDirItems: QuickPickItem[] = [];
+    const helidonProjectDirItems: QuickPickItem[] = [];
     helidonProjectDirs.forEach((value: string) => {
 
         helidonProjectDirItems.push({
@@ -98,16 +98,16 @@ async function obtainHelidonProjectDirToStart(helidonProjectDirs: string[]): Pro
 
 function obtainHelidonServerInstance(helidonProjectDir: string): HelidonServerInstance {
 
-    let helidonDirName = path.basename(helidonProjectDir);
+    const helidonDirName = path.basename(helidonProjectDir);
     refreshLaunchedServers();
 
     if (launchedServers.has(helidonDirName)) {
-        let helidonServer = launchedServers.get(helidonDirName)!;
+        const helidonServer = launchedServers.get(helidonDirName)!;
         if (helidonServer.isActive) {
             helidonServer.outputChannel.show();
             return helidonServer;
         }
-        //change existing instance
+        // change existing instance
         helidonServer.serverProcess = obtainNewServerProcess(helidonProjectDir);
         helidonServer.outputChannel.show();
         configureServerOutput(helidonServer.serverProcess, helidonServer.outputChannel);
@@ -116,10 +116,10 @@ function obtainHelidonServerInstance(helidonProjectDir: string): HelidonServerIn
         return helidonServer;
     }
 
-    //create new instance
-    let outputChannel = VSCodeAPI.createOutputChannel(helidonDirName);
+    // create new instance
+    const outputChannel = VSCodeAPI.createOutputChannel(helidonDirName);
     outputChannel.show();
-    let serverProcess = obtainNewServerProcess(helidonProjectDir);
+    const serverProcess = obtainNewServerProcess(helidonProjectDir);
     configureServerOutput(serverProcess, outputChannel);
 
     return {
@@ -131,7 +131,7 @@ function obtainHelidonServerInstance(helidonProjectDir: string): HelidonServerIn
 }
 
 function refreshLaunchedServers() {
-    let helidonProjectDirs = getHelidonProjectDirs();
+    const helidonProjectDirs = getHelidonProjectDirs();
     launchedServers.forEach((server, name) => {
         if (!helidonProjectDirs.includes(server.projectFolder)) {
             launchedServers.delete(name);
@@ -140,26 +140,26 @@ function refreshLaunchedServers() {
 }
 
 function obtainNewServerProcess(helidonProjectDir: string): ChildProcess {
-    let cmdSpan = "helidon";
-    let args = ['dev'];
-    let opts = {
-        cwd: helidonProjectDir //cwd means -> current working directory (where this maven command will by executed)
+    const cmdSpan = "helidon";
+    const args = ['dev'];
+    const opts = {
+        cwd: helidonProjectDir // cwd means -> current working directory (where this maven command will by executed)
     };
-    let serverProcess = ChildProcessAPI.spawnProcess(cmdSpan, args, opts);
+    const serverProcess = ChildProcessAPI.spawnProcess(cmdSpan, args, opts);
     return serverProcess;
 }
 
 function configureServerOutput(serverProcess: ChildProcess, outputChannel: OutputChannel) {
 
-    let outputFormatter = new OutputFormatter(outputChannel);
+    const outputFormatter = new OutputFormatter(outputChannel);
 
-    serverProcess!.stdout!.on('data', function (data: string) {
+    serverProcess!.stdout!.on('data', (data: string) => {
         outputFormatter.formatInputString(data);
     });
 
     serverProcess!.stderr!.on('data', (data: string) => {
         console.error(data);
-        VSCodeAPI.showErrorMessage(data)
+        VSCodeAPI.showErrorMessage(data);
     });
 
     serverProcess.on('close', (code: string) => {
@@ -173,34 +173,34 @@ export async function stopHelidonDev() {
             return;
         }
         let currentHelidonServer: HelidonServerInstance;
-        let activeServerNames = getActiveServerNames();
-        if (activeServerNames.length == 0) {
+        const activeServerNames = getActiveServerNames();
+        if (activeServerNames.length === 0) {
             return;
         }
-        if (activeServerNames.length == 1) {
+        if (activeServerNames.length === 1) {
             currentHelidonServer = launchedServers.get(activeServerNames[0])!;
             deactivateServer(currentHelidonServer);
             return;
         }
 
-        let stopServerName = await obtainStopServerName();
+        const stopServerName = await obtainStopServerName();
 
         if (stopServerName) {
             currentHelidonServer = launchedServers.get(stopServerName)!;
             deactivateServer(currentHelidonServer);
         }
     } catch (e) {
-        VSCodeAPI.showErrorMessage(e)
+        VSCodeAPI.showErrorMessage(e);
         return;
     }
 }
 
 async function obtainStopServerName(): Promise<string | undefined> {
 
-    let runningProjectNames: QuickPickItem[] = [];
+    const runningProjectNames: QuickPickItem[] = [];
     getActiveServerNames().forEach(name => runningProjectNames.push({label: name}));
 
-    let stopServer = await VSCodeAPI.showPickOption({
+    const stopServer = await VSCodeAPI.showPickOption({
         title: "Choose a server that you want to stop.",
         totalSteps: 1,
         currentStep: 1,
@@ -212,7 +212,7 @@ async function obtainStopServerName(): Promise<string | undefined> {
 }
 
 function getActiveServerNames(): string[] {
-    let runningProjectNames: string[] = [];
+    const runningProjectNames: string[] = [];
     launchedServers.forEach((value: HelidonServerInstance, key: string) => {
         if (value.isActive) {
             runningProjectNames.push(key);
@@ -220,7 +220,6 @@ function getActiveServerNames(): string[] {
     });
     return runningProjectNames;
 }
-
 
 function deactivateServer(currentHelidonServer: HelidonServerInstance) {
     if (currentHelidonServer.isActive) {
@@ -233,26 +232,25 @@ function killProcess(process: ChildProcess) {
     ChildProcessAPI.killProcess(process.pid);
 }
 
-
 /**
  * Find folders that contain the specific file and src folder (root folder of the project)
  * @param searchFileName Name of the file for search
  * @param inputDirPaths Directories for search
  */
 function getDirsByFileName(inputDirPaths: string[], searchFileName: string): string[] {
-    let dirPaths: string[] = [];
+    const dirPaths: string[] = [];
     recursiveSearch(inputDirPaths, searchFileName);
     return dirPaths;
 
     function recursiveSearch(inputDirs: string[], searchFile: string) {
-        for (let inputDir of inputDirs) {
-            let searchFilePath = path.join(inputDir, searchFile);
-            let srcDirPath = path.join(inputDir, SRC_DIR);
+        for (const inputDir of inputDirs) {
+            const searchFilePath = path.join(inputDir, searchFile);
+            const srcDirPath = path.join(inputDir, SRC_DIR);
             if (FileSystemAPI.isPathExistsSync(searchFilePath) && FileSystemAPI.isPathExistsSync(srcDirPath)) {
                 dirPaths.push(inputDir);
             }
             FileSystemAPI.readDirSync(inputDir).forEach((file: string) => {
-                let filePath = path.join(inputDir, file);
+                const filePath = path.join(inputDir, file);
                 if (FileSystemAPI.isDirectorySync(filePath)) {
                     if (!isDirMatchesPattern(filePath, EXCLUDE_DIRS)) {
                         recursiveSearch([filePath], searchFile);
@@ -265,7 +263,7 @@ function getDirsByFileName(inputDirPaths: string[], searchFileName: string): str
 }
 
 function isDirMatchesPattern(dirName: string, patterns: RegExp[]): boolean {
-    for (let pattern of patterns) {
+    for (const pattern of patterns) {
         if (pattern.test(path.basename(dirName))) {
             return true;
         }
@@ -274,12 +272,12 @@ function isDirMatchesPattern(dirName: string, patterns: RegExp[]): boolean {
 }
 
 function getHelidonProjectDirs(): string[] {
-    let helidonProjectDirs: string[] = [];
-    let rootDirPaths = getRootDirPaths();
-    let MavenProjectDirs = getDirsByFileName(rootDirPaths, POM_XML_FILE);
-    for (let mavenProject of MavenProjectDirs) {
-        let mavenProjectPomPath = path.join(mavenProject, POM_XML_FILE);
-        let isHelidonProject = isPomFileContainsHelidonDependency(mavenProjectPomPath);
+    const helidonProjectDirs: string[] = [];
+    const rootDirPaths = getRootDirPaths();
+    const MavenProjectDirs = getDirsByFileName(rootDirPaths, POM_XML_FILE);
+    for (const mavenProject of MavenProjectDirs) {
+        const mavenProjectPomPath = path.join(mavenProject, POM_XML_FILE);
+        const isHelidonProject = isPomFileContainsHelidonDependency(mavenProjectPomPath);
         if (isHelidonProject) {
             helidonProjectDirs.push(mavenProject);
         }
@@ -288,8 +286,8 @@ function getHelidonProjectDirs(): string[] {
 }
 
 function isPomFileContainsHelidonDependency(pomFilePath: string): boolean {
-    let regex = /.*<dependency>[^<>]*<groupId>[^<>]*helidon[^<>]*<\/groupId>.*/isg
-    let pomContent = FileSystemAPI.readTextFileSync(pomFilePath, 'utf8');
+    const regex = /.*<dependency>[^<>]*<groupId>[^<>]*helidon[^<>]*<\/groupId>.*/isg;
+    const pomContent = FileSystemAPI.readTextFileSync(pomFilePath, 'utf8');
     if (pomContent) {
         return regex.test(pomContent);
     }
@@ -300,12 +298,12 @@ function isPomFileContainsHelidonDependency(pomFilePath: string): boolean {
  * Find full paths of the root directories for the current workspace
  */
 function getRootDirPaths(): string[] {
-    let dirs = VSCodeAPI.getWorkspaceFolders();
+    const dirs = VSCodeAPI.getWorkspaceFolders();
     if (!dirs) {
         return [];
     }
-    let dirPaths: string[] = [];
-    for (let dir of dirs) {
+    const dirPaths: string[] = [];
+    for (const dir of dirs) {
         dirPaths.push(dir.uri.fsPath);
     }
     return dirPaths;

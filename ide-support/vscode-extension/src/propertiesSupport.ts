@@ -15,12 +15,12 @@
  */
 
 import * as vscode from "vscode";
-import {languages, TextDocument, workspace} from "vscode";
+import { languages, TextDocument, workspace } from "vscode";
 import * as path from "path";
-import {ProjectInformation} from "./ProjectInformation";
+import { ProjectInformation } from "./ProjectInformation";
 
 export function updateWorkspaceDocuments(context: vscode.ExtensionContext) {
-    let updatedDocumentsCache: string[] = [];
+    const updatedDocumentsCache: string[] = [];
     // When extension is started
     workspace.textDocuments.forEach(document => {
         updateDocumentLanguageId(document, updatedDocumentsCache);
@@ -54,7 +54,7 @@ function setDocumentLanguageId(document: TextDocument, fileName: string, documen
     const projectInfo = ProjectInformation.getInformation(document.uri.toString());
     return projectInfo.then(project => {
         if (!project.isHelidonProject()) {
-            //it is not a Helidon project.
+            // it is not a Helidon project.
             return;
         }
         const oldLanguageId: string = document.languageId;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {QuickPickData} from "./common";
+import { QuickPickData } from "./common";
 import {
     commands, InputBox,
     OpenDialogOptions,
@@ -71,7 +71,7 @@ export class VSCodeAPI {
 
     public static async showPickOption(data: QuickPickData) {
         return await new Promise<QuickPickItem | undefined>((resolve, reject) => {
-            let quickPick = window.createQuickPick();
+            const quickPick = window.createQuickPick();
             quickPick.title = data.title;
             quickPick.totalSteps = data.currentStep;
             quickPick.step = data.currentStep;
@@ -120,7 +120,7 @@ export class VSCodeAPI {
     public static async showInputBox(data: InputBoxData) {
         return await new Promise<string | undefined>((resolve, rejects) => {
             // let inputBox = window.createInputBox();
-            let inputBox = window.createInputBox();
+            const inputBox = window.createInputBox();
             inputBox.title = data.title;
             inputBox.placeholder = data.placeholder;
             inputBox.prompt = data.prompt;
@@ -131,8 +131,8 @@ export class VSCodeAPI {
 
             inputBox.show();
             inputBox.onDidAccept(async () => {
-                let t = inputBox.value;
-                let validation: string | undefined = await data.messageValidation(t);
+                const t = inputBox.value;
+                const validation: string | undefined = await data.messageValidation(t);
                 if (validation) {
                     inputBox.validationMessage = validation;
                 } else {
@@ -141,7 +141,7 @@ export class VSCodeAPI {
                 }
             });
             inputBox.onDidChangeValue(async text => {
-                let validation: string | undefined = await data.messageValidation(text);
+                const validation: string | undefined = await data.messageValidation(text);
                 inputBox.validationMessage = validation;
             });
             inputBox.onDidHide(() => {

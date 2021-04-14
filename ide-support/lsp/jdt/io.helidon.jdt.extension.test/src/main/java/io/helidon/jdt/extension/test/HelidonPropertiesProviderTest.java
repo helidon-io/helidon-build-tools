@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.jdt.extension.core.test;
+package io.helidon.jdt.extension.test;
+
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IJavaProject;
@@ -40,6 +43,11 @@ public class HelidonPropertiesProviderTest extends BasePropertiesManagerTest {
 
     private static final String HELIDON_COMMON_JAR = getJarPath("test-helidon-dependency.jar");
 
+    /**
+     * The the provider.
+     *
+     * @throws Exception if an error occurs
+     */
     @Test
     public void testPropertiesProvider() throws Exception {
         String[] classpath = {HELIDON_COMMON_JAR};
@@ -81,7 +89,15 @@ public class HelidonPropertiesProviderTest extends BasePropertiesManagerTest {
                         null,
                         null,
                         0,
-                        "\"text\\/html\",\"text\\/xml\",\"text\\/plain\",\"text\\/css\",\"text\\/javascript\",\"application\\/javascript\"\"application\\/json\",\"application\\/xml\"")
+                        Stream.of("text/html",
+                                "text/xml",
+                                "text/plain",
+                                "text/css",
+                                "text/javascript",
+                                "application/javascript",
+                                "application/json", "application/xml")
+                              .map(s -> "\"" + s.replace("/", "\\/") + "\"")
+                              .collect(Collectors.joining(",")))
         );
 
         assertHints(info,

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {QuickPickItem} from "vscode";
+import { QuickPickItem } from "vscode";
 import * as vscode from "vscode";
 
 export interface QuickPickData {

@@ -15,11 +15,11 @@
  */
 
 import * as path from 'path';
-import {Uri, QuickPickItem} from 'vscode';
-import {validateUserInput} from "./common";
-import {InputBoxData, VSCodeAPI} from "./VSCodeAPI";
-import {FileSystemAPI} from "./FileSystemAPI";
-import {ChildProcessAPI} from "./ChildProcessAPI";
+import { Uri, QuickPickItem } from 'vscode';
+import { validateUserInput } from "./common";
+import { InputBoxData, VSCodeAPI } from "./VSCodeAPI";
+import { FileSystemAPI } from "./FileSystemAPI";
+import { ChildProcessAPI } from "./ChildProcessAPI";
 
 export interface ProjectData extends QuickPickItem {
     projectName: string;
@@ -125,7 +125,7 @@ export async function showHelidonGenerator() {
     }
 
     async function obtainPackages(projectState: Partial<GeneratedProjectData>) {
-        let packages = projectState.projectData ? projectState.projectData.packages : "io.helidon.examples.quickstart";
+        const packages = projectState.projectData ? projectState.projectData.packages : "io.helidon.examples.quickstart";
 
         projectState.packages = await showInputBox({
             title: "Select your project package structure",
@@ -154,20 +154,19 @@ export async function showHelidonGenerator() {
 
         VSCodeAPI.showInformationMessage('Your Helidon project is being created...');
 
-        let cmd = "mvn archetype:generate -DinteractiveMode=false \
+        const cmd = `mvn archetype:generate -DinteractiveMode=false \
             -DarchetypeGroupId=io.helidon.archetypes \
-            -DarchetypeArtifactId=" + projectData.projectData.projectName + " \
-            -DarchetypeVersion=" + projectData.archetypeVersion + " \
-            -DgroupId=" + projectData.groupId + " \
-            -DartifactId=" + projectData.artifactId + " \
-            -Dpackage=" + projectData.packages;
+            -DarchetypeArtifactId=${projectData.projectData.projectName} \
+            -DarchetypeVersion=${projectData.archetypeVersion} \
+            -DgroupId=${projectData.groupId} \
+            -DartifactId=${projectData.artifactId} \
+            -Dpackage=${projectData.packages}`;
 
-
-        let opts = {
-            cwd: targetDir.fsPath //cwd means -> current working directory (where this maven command will by executed)
+        const opts = {
+            cwd: targetDir.fsPath // cwd means -> current working directory (where this maven command will by executed)
         };
 
-        ChildProcessAPI.execProcess(cmd, opts, function (error: string, stdout: string, stderr: string) {
+        ChildProcessAPI.execProcess(cmd, opts, (error: string, stdout: string, stderr: string) => {
             console.log(stdout);
             if (stdout.includes("BUILD SUCCESS")) {
                 VSCodeAPI.showInformationMessage('Project generated...');
@@ -192,7 +191,7 @@ export async function showHelidonGenerator() {
         while (directory && FileSystemAPI.isPathExistsSync(path.join(directory.fsPath, projectName))) {
             const choice: string | undefined = await VSCodeAPI.showWarningMessage(specificFolderMessage, OVERWRITE_EXISTING, NEW_DIR);
             if (choice === OVERWRITE_EXISTING) {
-                //Following line deletes target folder recursively
+                // Following line deletes target folder recursively
                 require("rimraf").sync(path.join(directory.fsPath, projectName));
                 break;
             } else if (choice === NEW_DIR) {
@@ -225,7 +224,7 @@ export async function showHelidonGenerator() {
                 VSCodeAPI.executeCommand(openFolderCommand, newProjectFolderUri, true);
             }
         } else if (VSCodeAPI.getVisibleTextEditors().length > 0) {
-            //If VS does not have any project opened, but has some file opened in it.
+            // If VS does not have any project opened, but has some file opened in it.
             const input: string | undefined = await VSCodeAPI.showInformationMessage(PROJECT_READY, NEW_WINDOW, CURRENT_WINDOW);
             if (input) {
                 VSCodeAPI.executeCommand(openFolderCommand, newProjectFolderUri, NEW_WINDOW === input);

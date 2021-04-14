@@ -15,13 +15,13 @@
  */
 
 import * as vscode from 'vscode';
-import {showHelidonGenerator} from './generator';
-import {startHelidonDev} from "./helidonDev";
-import {stopHelidonDev} from "./helidonDev";
-import {VSCodeHelidonCommands} from "./common";
-import {openStartPage} from "./startPage";
-import {updateWorkspaceDocuments} from "./propertiesSupport";
-import {commands, WorkspaceFoldersChangeEvent} from 'vscode';
+import { showHelidonGenerator } from './generator';
+import { startHelidonDev } from "./helidonDev";
+import { stopHelidonDev } from "./helidonDev";
+import { VSCodeHelidonCommands } from "./common";
+import { openStartPage } from "./startPage";
+import { updateWorkspaceDocuments } from "./propertiesSupport";
+import { commands, WorkspaceFoldersChangeEvent } from 'vscode';
 
 export function activate(context: vscode.ExtensionContext) {
 

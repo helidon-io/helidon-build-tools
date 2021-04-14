@@ -28,18 +28,19 @@ import static org.eclipse.lsp4mp.settings.capabilities.ServerCapabilitiesConstan
  */
 public class HelidonRegistrationConfiguration implements IMicroProfileRegistrationConfiguration {
 
-	@Override
-	public void configure(Registration registration) {
-		switch (registration.getMethod()) {
-		case TEXT_DOCUMENT_FORMATTING:
-		case TEXT_DOCUMENT_RANGE_FORMATTING:
-			// add "helidon-properties" as language document filter
-			((TextDocumentRegistrationOptions) registration.getRegisterOptions()).getDocumentSelector()
-					.add(new DocumentFilter("helidon-properties", null, null));
-			break;
-		default:
-			break;
+    @Override
+    public void configure(Registration registration) {
+        switch (registration.getMethod()) {
+            case TEXT_DOCUMENT_FORMATTING:
+            case TEXT_DOCUMENT_RANGE_FORMATTING:
+                // add "helidon-properties" as language document filter
+                ((TextDocumentRegistrationOptions) registration.getRegisterOptions())
+                        .getDocumentSelector()
+                        .add(new DocumentFilter("helidon-properties", null, null));
+                break;
+            default:
+                break;
 
-		}
-	}
+        }
+    }
 }

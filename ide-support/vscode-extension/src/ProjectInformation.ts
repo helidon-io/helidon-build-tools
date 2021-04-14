@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import {commands} from "vscode";
-import {VSCodeJavaCommands} from "./common";
+import { commands } from "vscode";
+import { VSCodeJavaCommands } from "./common";
 
 export class ProjectInformation {
     uri: string;
@@ -52,4 +52,3 @@ enum ProjectMarker {
     HELIDON = 'helidon',
     Maven = 'maven'
 }
-
