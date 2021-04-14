@@ -18,31 +18,8 @@ const gulp = require('gulp');
 const rename = require('gulp-rename');
 const cp = require('child_process');
 
-const helidonServerExtDir = '../ls4mp-ext'
-const helidonServerExt = 'ls4mp-ext';
-
-const helidonJDTExtDir = '../jdt-ext';
-const helidonExtension = 'jdt-ext-core';
-
-gulp.task('buildLsServerExt', (done) => {
-    cp.execSync('mvn clean verify -DskipTests', {cwd: helidonServerExtDir, stdio: 'inherit'});
-    gulp.src(helidonServerExtDir + '/target/' + helidonServerExt + '-!(*sources).jar')
-        .pipe(rename(helidonServerExt + '.jar'))
-        .pipe(gulp.dest('./server'));
-    gulp.src(helidonServerExtDir + '/target/lib/*.jar')
-        .pipe(gulp.dest('./server'));
+gulp.task('build', (done) => {
+    gulp.src('../lsp/io.helidon.lsp4mp.extension/target/io.helidon.lsp4mp.extension.jar').pipe(gulp.dest('./target/server'));
+    gulp.src('../lsp/jdt/io.helidon.jdt.extension.core/target/io.helidon.jdt.extension.core.jar').pipe(gulp.dest('./target/jars'));
     done();
 });
-
-gulp.task('buildJdtExtension', (done) => {
-    cp.execSync('mvn -pl "' + helidonExtension + '" clean verify -DskipTests', {
-        cwd: helidonJDTExtDir,
-        stdio: 'inherit'
-    });
-    gulp.src(helidonJDTExtDir + '/' + helidonExtension + '/target/' + helidonExtension + '-!(*sources).jar')
-        .pipe(rename(helidonExtension + '.jar'))
-        .pipe(gulp.dest('./jars'));
-    done();
-});
-
-gulp.task('build', gulp.series('buildLsServerExt', 'buildJdtExtension'));

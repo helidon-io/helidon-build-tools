@@ -1,4 +1,4 @@
-# Helidon project support for Visual Studio Code
+# Helidon support for Visual Studio Code
 
 This extension helps users to generate their first Helidon project, develop and run it.
 

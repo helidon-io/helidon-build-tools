@@ -100,7 +100,7 @@ suite('HelidonDev Test Suite', () => {
         expect(resultServers.values().next().value.isActive).is.false;
     });
 
-    test('A helidon server is choosen and stops when a few running Helidon projects exist in the workspace', async () => {
+    test('A helidon server is chosen and stops when a few running Helidon projects exist in the workspace', async () => {
         childProcessAPIManager.mock('isCommandExist', true);
         let launchedServers = new Map([
             ["helidonDir1", <HelidonServerInstance>{
@@ -142,7 +142,7 @@ suite('HelidonDev Test Suite', () => {
         expect(resultServers.get('helidonDir3')!.isActive).is.false;
     });
 
-    test('A helidon server is choosen and starts when a few Helidon projects exist in the workspace', async () => {
+    test('A helidon server is chosen and starts when a few Helidon projects exist in the workspace', async () => {
         childProcessAPIManager.mock('isCommandExist', true);
         vsCodeApiMockManager.mock('getWorkspaceFolders', [
             {uri: {fsPath: '/dir/helidonDir1/'}},

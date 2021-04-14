@@ -17,25 +17,15 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>io.helidon.build-tools</groupId>
-        <artifactId>helidon-build-tools-project</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
-    </parent>
-    <groupId>io.helidon.ide-support</groupId>
-    <artifactId>helidon-ide-support-project</artifactId>
-    <packaging>pom</packaging>
-    <name>Helidon IDE Support Project</name>
-    <description>Helidon IDE Support Project</description>
-
-    <properties>
-        <maven.deploy.skip>true</maven.deploy.skip>
-    </properties>
-
-    <modules>
-        <module>lsp</module>
-        <module>vscode-extension</module>
-    </modules>
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>io.helidon.ide-support.jdt</groupId>
+		<artifactId>helidon-ide-support-jdt-project</artifactId>
+		<version>3.0.0-SNAPSHOT</version>
+	</parent>
+	<artifactId>io.helidon.jdt.extension.site</artifactId>
+	<packaging>eclipse-repository</packaging>
+	<name>Helidon JDT Extension Update Site</name>
+	<description>Helidon Java Development Tool Update Site</description>
 </project>
