@@ -44,12 +44,11 @@ source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
 die(){ echo "${1}" ; exit 1 ;}
 
-mvn ${MAVEN_ARGS} -q org.glassfish.copyright:glassfish-copyright-maven-plugin:copyright \
+mvn ${MAVEN_ARGS} org.glassfish.copyright:glassfish-copyright-maven-plugin:copyright \
         -Dcopyright.exclude="${WS_DIR}/etc/copyright-exclude.txt" \
         -Dcopyright.template="${WS_DIR}/etc/copyright.txt" \
         -Dcopyright.scm="git" \
-        -Pide-support \
-        > ${RESULT_FILE} || die "Error running the Maven command"
+        -Pide-support || die "Error running the Maven command"
 
-grep -i "copyright" ${RESULT_FILE} \
+#grep -i "copyright" ${RESULT_FILE} \
     && die "COPYRIGHT ERROR" || echo "COPYRIGHT OK"
