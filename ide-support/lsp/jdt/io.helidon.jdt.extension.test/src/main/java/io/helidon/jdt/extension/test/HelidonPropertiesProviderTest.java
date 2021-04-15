@@ -95,7 +95,8 @@ public class HelidonPropertiesProviderTest extends BasePropertiesManagerTest {
                                 "text/css",
                                 "text/javascript",
                                 "application/javascript",
-                                "application/json", "application/xml")
+                                "application/json",
+                                "application/xml")
                               .map(s -> "\"" + s.replace("/", "\\/") + "\"")
                               .collect(Collectors.joining(",")))
         );
