@@ -164,7 +164,7 @@
                     <artifactId>tycho-surefire-plugin</artifactId>
                     <version>${version.tycho}</version>
                     <configuration>
-                        <useUIHarness>true</useUIHarness>
+                        <useUIHarness>false</useUIHarness>
                         <argLine>${tycho.test.jvmArgs}</argLine>
                         <!-- kill test JVM if tests take more than 1 minute (60 seconds) to finish -->
                         <forkedProcessTimeoutInSeconds>60</forkedProcessTimeoutInSeconds>
