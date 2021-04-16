@@ -56,31 +56,29 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-clean-plugin</artifactId>
-                <configuration>
-                    <filesets>
-                        <fileset>
-                            <directory>jars</directory>
-                        </fileset>
-                    </filesets>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
+                <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>create-test-helidon-jar</id>
-                        <phase>package</phase>
+                        <id>default-resources</id>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/test-helidon-module</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>create-test-jar</id>
+                        <phase>process-resources</phase>
                         <goals>
-                            <goal>single</goal>
+                            <goal>jar</goal>
                         </goals>
                         <configuration>
-                            <appendAssemblyId>false</appendAssemblyId>
-                            <outputDirectory>jars</outputDirectory>
-                            <finalName>test-helidon-dependency</finalName>
-                            <descriptors>
-                                <descriptor>src/main/assembly/helidon-dependency.xml</descriptor>
-                            </descriptors>
+                            <finalName>test-helidon-module</finalName>
+                            <classesDirectory>${project.build.directory}/test-helidon-module</classesDirectory>
                         </configuration>
                     </execution>
                 </executions>

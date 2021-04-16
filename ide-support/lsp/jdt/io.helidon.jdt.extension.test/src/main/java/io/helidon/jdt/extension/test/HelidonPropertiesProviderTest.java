@@ -15,11 +15,24 @@
  */
 package io.helidon.jdt.extension.test;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.io.FileUtils;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IProjectDescription;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Path;
+import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IPackageFragmentRoot;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.lsp4mp.commons.ClasspathKind;
 import org.eclipse.lsp4mp.commons.DocumentFormat;
 import org.eclipse.lsp4mp.commons.MicroProfileProjectInfo;
@@ -28,8 +41,6 @@ import org.eclipse.lsp4mp.jdt.core.BasePropertiesManagerTest;
 import org.eclipse.lsp4mp.jdt.core.PropertiesManager;
 import org.junit.jupiter.api.Test;
 
-import static org.eclipse.lsp4mp.jdt.core.JavaUtils.createJavaProject;
-import static org.eclipse.lsp4mp.jdt.core.JavaUtils.getJarPath;
 import static org.eclipse.lsp4mp.jdt.core.MicroProfileAssert.assertHints;
 import static org.eclipse.lsp4mp.jdt.core.MicroProfileAssert.assertProperties;
 import static org.eclipse.lsp4mp.jdt.core.MicroProfileAssert.h;
@@ -39,9 +50,7 @@ import static org.eclipse.lsp4mp.jdt.core.MicroProfileAssert.vh;
 /**
  * Test for HelidonPropertiesProvider.
  */
-public class HelidonPropertiesProviderTest extends BasePropertiesManagerTest {
-
-    private static final String HELIDON_COMMON_JAR = getJarPath("test-helidon-dependency.jar");
+class HelidonPropertiesProviderTest extends BasePropertiesManagerTest {
 
     /**
      * The the provider.
@@ -49,15 +58,17 @@ public class HelidonPropertiesProviderTest extends BasePropertiesManagerTest {
      * @throws Exception if an error occurs
      */
     @Test
-    public void testPropertiesProvider() throws Exception {
-        String[] classpath = {HELIDON_COMMON_JAR};
-        IJavaProject project = createJavaProject("test-helidon-common", classpath);
+    void testPropertiesProvider() throws Exception {
+        IJavaProject project = createJavaProject("test-helidon-common", "test-helidon-module.jar");
         MicroProfileProjectInfo info = PropertiesManager
                 .getInstance()
                 .getMicroProfileProjectInfo(
-                        project, MicroProfilePropertiesScope.SOURCES_AND_DEPENDENCIES, ClasspathKind.SRC, JDT_UTILS,
-                        DocumentFormat.Markdown, new NullProgressMonitor()
-                );
+                        project,
+                        MicroProfilePropertiesScope.SOURCES_AND_DEPENDENCIES,
+                        ClasspathKind.SRC,
+                        JDT_UTILS,
+                        DocumentFormat.Markdown,
+                        new NullProgressMonitor());
 
         assertProperties(info,
                 p(null,
@@ -106,5 +117,33 @@ public class HelidonPropertiesProviderTest extends BasePropertiesManagerTest {
                         vh("hint value 1", "Description for hint value 1.", null),
                         vh("hint value 2", "Description for hint value 2.", null))
         );
+    }
+
+    public static IJavaProject createJavaProject(String projectName, String... jars) throws Exception {
+        IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
+        if (!project.exists()) {
+            File dir = new File("target", "workingProjects");
+            FileUtils.forceMkdir(dir);
+            IPath projectLocation = new Path(dir.getAbsolutePath()).append(projectName);
+            IProjectDescription description = ResourcesPlugin.getWorkspace().newProjectDescription(project.getName());
+            description.setLocation(projectLocation);
+            IProgressMonitor monitor = new NullProgressMonitor();
+            project.create(description, monitor);
+            project.open(monitor);
+            description = project.getDescription();
+            description.setNatureIds(new String[] {JavaCore.NATURE_ID});
+            project.setDescription(description, monitor);
+            IJavaProject javaProject = JavaCore.create(project);
+            List<IClasspathEntry> classpath = new ArrayList<>();
+            if (jars != null) {
+                for (String jar : jars) {
+                    IPackageFragmentRoot root = javaProject.getPackageFragmentRoot(new File("target", jar).getAbsolutePath());
+                    IClasspathEntry libClasspath = JavaCore.newLibraryEntry(root.getPath(), null, null);
+                    classpath.add(libClasspath);
+                }
+            }
+            javaProject.setRawClasspath(classpath.toArray(new IClasspathEntry[0]), monitor);
+        }
+        return JavaCore.create(project);
     }
 }
