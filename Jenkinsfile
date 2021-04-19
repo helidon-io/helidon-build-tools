@@ -30,7 +30,7 @@ pipeline {
               try {
                 sh './etc/scripts/build.sh'
               } finally {
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,**/target/it/**/*.log"
+                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,**/target/it/**/*.log,**/target/*.vsix"
                 junit testResults: '**/target/surefire-reports/*.xml,**/target/invoker-reports/*.xml'
               }
             }
