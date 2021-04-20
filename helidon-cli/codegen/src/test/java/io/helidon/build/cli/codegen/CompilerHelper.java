@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -38,6 +37,8 @@ import java.util.Collections;
 import java.util.List;
 
 import static io.helidon.build.cli.codegen.Unchecked.unchecked;
+import static io.helidon.build.util.Strings.normalizeNewLines;
+import static io.helidon.build.util.Strings.read;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -165,7 +166,7 @@ final class CompilerHelper {
 
         @Override
         public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-            return new String(uri.toURL().openStream().readAllBytes(), StandardCharsets.UTF_8);
+            return normalizeNewLines(read(uri.toURL().openStream()));
         }
     }
 }

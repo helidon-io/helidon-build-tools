@@ -17,16 +17,19 @@ package io.helidon.build.cli.codegen;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import javax.tools.Diagnostic.Kind;
 
 import io.helidon.build.cli.codegen.CompilerHelper.JavaSourceFromString;
+
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.cli.codegen.Unchecked.unchecked;
+import static io.helidon.build.util.Strings.normalizeNewLines;
+import static io.helidon.build.util.Strings.read;
+import static java.nio.file.Files.list;
+import static java.nio.file.Files.readString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -569,15 +572,13 @@ class CommandAPTest {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS, resources);
         assertThat(compiler.call(true), is(true));
         Path outputDir = compiler.outputDir();
-        Files.list(outputDir.resolve("com/acme/cli"))
+        list(outputDir.resolve("com/acme/cli"))
              .filter(path -> path.getFileName().toString().endsWith(".java"))
              .forEach(unchecked(path -> {
                  String resourcePath = outputDir.relativize(path).toString();
                  InputStream inputStream = CommandAPTest.class.getClassLoader().getResourceAsStream(resourcePath);
                  assertThat(inputStream, is(notNullValue()));
-                 assertThat(Files.readString(path),
-                         is(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8)
-                                 .replaceAll("\r\n", "\n")));
+                 assertThat(readString(path), is(normalizeNewLines(read(inputStream))));
              }));
     }
 }

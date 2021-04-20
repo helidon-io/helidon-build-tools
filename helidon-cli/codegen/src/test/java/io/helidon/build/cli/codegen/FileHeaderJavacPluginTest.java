@@ -19,8 +19,10 @@ import java.io.IOException;
 import java.util.List;
 
 import io.helidon.build.cli.codegen.CompilerHelper.JavaSourceFromString;
+
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.util.Strings.normalizeNewLines;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -49,7 +51,7 @@ final class FileHeaderJavacPluginTest {
                         + "class HeaderTest1 {\n"
                         + "}"));
         assertThat(compiler.call(true), is(true));
-        assertThat(FileHeaderJavacPlugin.header("com.acme.test.HeaderTest1"), is(header));
+        assertThat(FileHeaderJavacPlugin.header("com.acme.test.HeaderTest1"), is(normalizeNewLines(header)));
     }
 
     @Test
@@ -68,6 +70,7 @@ final class FileHeaderJavacPluginTest {
                         + "    }\n"
                         + "}"));
         assertThat(compiler.call(true), is(true));
-        assertThat(FileHeaderJavacPlugin.header("com.acme.test.HeaderTest2.Nested"), is(header));
+        assertThat(FileHeaderJavacPlugin.header("com.acme.test.HeaderTest2.Nested"),
+                is(normalizeNewLines(header)));
     }
 }
