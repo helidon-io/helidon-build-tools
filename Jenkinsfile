@@ -45,7 +45,7 @@ pipeline {
               try {
                 bat './etc/scripts/build.bat'
               } finally {
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,helidon-cli/target/reports/*.txt,helidon-cli/impl/target/helidon.exe"
+                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,**/target/it/**/*.log,helidon-cli/target/reports/*.txt,helidon-cli/impl/target/helidon.exe"
                 junit testResults: '**/target/surefire-reports/*.xml,**/target/invoker-reports/*.xml,**/target/it/projects/*/TEST-*.xml'
               }
             }
