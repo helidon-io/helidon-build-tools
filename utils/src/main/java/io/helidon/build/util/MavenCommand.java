@@ -225,7 +225,7 @@ public class MavenCommand {
         if (mavenHome != null) {
             if (Files.isDirectory(mavenHome)) {
                 Path executable = mavenHome.resolve("bin").resolve(MAVEN_BINARY_NAME);
-                if (!Constants.OS.isPosix() || Files.isExecutable(executable)) {
+                if (Files.exists(executable) && (!Constants.OS.isPosix() || Files.isExecutable(executable))) {
                     return executable;
                 }
             }
