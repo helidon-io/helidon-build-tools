@@ -164,7 +164,7 @@ public class CommandAP extends AbstractProcessor {
                     modelClass.type().qualifiedName(),
                     metaModel.annotatedType().element());
             try (BufferedWriter bw = new BufferedWriter(fileObject.openWriter())) {
-                bw.write(FileHeaderJavacPlugin.header(metaModel.annotatedType()));
+                bw.write(FileHeaderJavacPlugin.header(metaModel.annotatedType().qualifiedName()));
                 new ASTWriter(bw).write(modelClass);
             }
         }
@@ -176,7 +176,7 @@ public class CommandAP extends AbstractProcessor {
                     modelClass.type().qualifiedName(),
                     metaModel.annotatedType().element());
             try (BufferedWriter bw = new BufferedWriter(fileObject.openWriter())) {
-                bw.write(FileHeaderJavacPlugin.header(metaModel.annotatedType()));
+                bw.write(FileHeaderJavacPlugin.header(metaModel.annotatedType().qualifiedName()));
                 new ASTWriter(bw).write(modelClass);
             }
         }
@@ -188,7 +188,7 @@ public class CommandAP extends AbstractProcessor {
                     declaration.type().qualifiedName(),
                     metaModel.annotatedType().element());
             try (BufferedWriter bw = new BufferedWriter(fileObject.openWriter())) {
-                bw.write(FileHeaderJavacPlugin.header(metaModel.annotatedType()));
+                bw.write(FileHeaderJavacPlugin.header(metaModel.annotatedType().qualifiedName()));
                 new ASTWriter(bw).write(declaration);
             }
             FileObject serviceFileObject = filer.createResource(StandardLocation.CLASS_OUTPUT, "",
