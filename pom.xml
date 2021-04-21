@@ -436,6 +436,7 @@
                     <configuration>
                         <addTestClassPath>true</addTestClassPath>
                         <settingsFile>src/it/settings.xml</settingsFile>
+                        <mergeUserSettings>true</mergeUserSettings>
                         <!--suppress MavenModelInspection -->
                         <ignoreFailures>${maven.test.failure.ignore}</ignoreFailures>
                         <showErrors>true</showErrors>
