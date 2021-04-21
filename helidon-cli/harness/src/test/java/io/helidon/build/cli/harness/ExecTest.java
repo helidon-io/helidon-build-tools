@@ -48,12 +48,7 @@ public class ExecTest {
     }
 
     static String resourceAsString(String name) {
-        InputStream is = ExecTest.class.getResourceAsStream(name);
-        try {
-            return Strings.normalizeNewLines(new String(is.readAllBytes(), StandardCharsets.UTF_8));
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
+        return Strings.normalizeNewLines(Strings.read(ExecTest.class.getResourceAsStream(name)));
     }
 
     static String exec(CommandContext context, String... args) {

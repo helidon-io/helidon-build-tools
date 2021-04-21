@@ -43,7 +43,7 @@ public class CopyrightMojo extends AbstractMojo {
     /**
      * Skip execution for this plugin.
      */
-    @Parameter(defaultValue = "false", property = "log.skip")
+    @Parameter(defaultValue = "false", property = "helidon.copyright.skip")
     private boolean skip;
 
     /**

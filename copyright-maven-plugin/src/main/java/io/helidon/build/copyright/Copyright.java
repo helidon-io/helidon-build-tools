@@ -27,6 +27,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -195,6 +196,8 @@ public class Copyright {
             addValidFile(relativePath, locallyModified, validPaths, messages);
         }
 
+        validPaths.sort(Comparator.comparing(o -> o.file.relativePath()));
+
         return validPaths;
     }
 
@@ -223,6 +226,12 @@ public class Copyright {
                               List<String> messages) {
 
         FileRequest file = FileRequest.create(rootPath, relativePath);
+
+        // file may have been deleted from GIT (or locally)
+        if (!Files.exists(file.path())) {
+            Log.debug("File " + relativePath + " does not exist, ignoring.");
+            return;
+        }
 
         for (Exclude exclude : excludes) {
             if (exclude.exclude(file)) {

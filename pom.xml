@@ -201,6 +201,7 @@
         <module>stager-maven-plugin</module>
         <module>build-cache-maven-plugin</module>
         <module>copyright-maven-plugin</module>
+        <module>services-maven-plugin</module>
     </modules>
 
     <build>

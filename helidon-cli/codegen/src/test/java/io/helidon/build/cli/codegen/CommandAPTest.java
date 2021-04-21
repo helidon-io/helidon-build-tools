@@ -17,17 +17,19 @@ package io.helidon.build.cli.codegen;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import javax.tools.Diagnostic.Kind;
 
 import io.helidon.build.cli.codegen.CompilerHelper.JavaSourceFromString;
+
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.cli.codegen.Unchecked.unchecked;
 import static io.helidon.build.common.Strings.normalizeNewLines;
+import static io.helidon.build.common.Strings.read;
+import static java.nio.file.Files.list;
+import static java.nio.file.Files.readString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -234,33 +236,33 @@ class CommandAPTest {
 
     @Test
     public void testInvalidArgumentType() throws IOException {
-            CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                    new JavaSourceFromString("com/acme/cli/InvalidArgumentType.java", ""
-                            + "package com.acme.cli;\n"
-                            + "\n"
-                            + "import java.util.Date;\n"
-                            + "\n"
-                            + "import io.helidon.build.cli.harness.*;\n"
-                            + "\n"
-                            + "@Command(name = \"xxx\", description = \"xxx\")\n"
-                            + "class InvalidArgumentType implements CommandExecution {\n"
-                            + "\n"
-                            + "    @Creator\n"
-                            + "    InvalidArgumentType(@Option.Argument(description = \"xxx\") Date date) {\n"
-                            + "    }\n"
-                            + "\n"
-                            + "    @Override\n"
-                            + "    public void execute(CommandContext context) throws Exception {\n"
-                            + "    }\n"
-                            + "}"));
-            assertThat(compiler.call(true), is(false));
-            assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.INVALID_ARGUMENT_TYPE));
+        CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
+                new JavaSourceFromString("InvalidArgumentType", ""
+                        + "package com.acme.cli;\n"
+                        + "\n"
+                        + "import java.util.Date;\n"
+                        + "\n"
+                        + "import io.helidon.build.cli.harness.*;\n"
+                        + "\n"
+                        + "@Command(name = \"xxx\", description = \"xxx\")\n"
+                        + "class InvalidArgumentType implements CommandExecution {\n"
+                        + "\n"
+                        + "    @Creator\n"
+                        + "    InvalidArgumentType(@Option.Argument(description = \"xxx\") Date date) {\n"
+                        + "    }\n"
+                        + "\n"
+                        + "    @Override\n"
+                        + "    public void execute(CommandContext context) throws Exception {\n"
+                        + "    }\n"
+                        + "}"));
+        assertThat(compiler.call(true), is(false));
+        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.INVALID_ARGUMENT_TYPE));
     }
 
     @Test
     public void testInvalidFlagType() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("com/acme/cli/InvalidFlagType.java", ""
+                new JavaSourceFromString("InvalidFlagType", ""
                         + "package com.acme.cli;\n"
                         + "\n"
                         + "import io.helidon.build.cli.harness.*;\n"
@@ -283,7 +285,7 @@ class CommandAPTest {
     @Test
     public void testInvalidKeyValueType() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("com/acme/cli/InvalidKeyValueType.java", ""
+                new JavaSourceFromString("InvalidKeyValueType", ""
                         + "package com.acme.cli;\n"
                         + "\n"
                         + "import java.util.Date;\n"
@@ -308,7 +310,7 @@ class CommandAPTest {
     @Test
     public void testEnumKeyValue() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("com/acme/cli/EnumKeyValue.java", ""
+                new JavaSourceFromString("EnumKeyValue", ""
                         + "package com.acme.cli;\n"
                         + "\n"
                         + "import java.util.Date;\n"
@@ -539,7 +541,7 @@ class CommandAPTest {
     @Test
     public void testInvalidCliName() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("com/acme/cli/InvalidCliName.java", ""
+                new JavaSourceFromString("InvalidCliName", ""
                         + "package com.acme.cli;\n"
                         + "\n"
                         + "import io.helidon.build.cli.harness.*;\n"
@@ -554,7 +556,7 @@ class CommandAPTest {
     @Test
     public void testEmptyCliDescription() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("com/acme/cli/EmptyCliDescription.java", ""
+                new JavaSourceFromString("EmptyCliDescription", ""
                         + "package com.acme.cli;\n"
                         + "\n"
                         + "import io.helidon.build.cli.harness.*;\n"
@@ -570,14 +572,13 @@ class CommandAPTest {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS, resources);
         assertThat(compiler.call(true), is(true));
         Path outputDir = compiler.outputDir();
-        Files.list(outputDir.resolve("com/acme/cli"))
+        list(outputDir.resolve("com/acme/cli"))
              .filter(path -> path.getFileName().toString().endsWith(".java"))
              .forEach(unchecked(path -> {
                  String resourcePath = outputDir.relativize(path).toString();
                  InputStream inputStream = CommandAPTest.class.getClassLoader().getResourceAsStream(resourcePath);
                  assertThat(inputStream, is(notNullValue()));
-                 assertThat(Files.readString(path),
-                         is(normalizeNewLines(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8))));
+                 assertThat(readString(path), is(normalizeNewLines(read(inputStream))));
              }));
     }
 }
