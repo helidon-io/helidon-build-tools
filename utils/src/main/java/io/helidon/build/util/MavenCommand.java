@@ -193,7 +193,17 @@ public class MavenCommand {
      * @throws IllegalStateException If the installed version does not meet the requirement.
      */
     public static void assertRequiredMavenVersion(MavenVersion requiredMinimumVersion) {
-        MavenVersion installed = installedVersion();
+        MavenVersion installed;
+        try {
+            installed = installedVersion();
+        } catch (Exception ex) {
+            // Could not determine the Maven version. The code to do so is fragile and is known
+            // not to work in some environments (especially where shims are involved). So
+            // don't fail if we can't determine the maven version.
+            Log.debug("Could not determine Maven version: " + ex.toString() +
+                    " Assuming version is acceptable.");
+            return;
+        }
         Requirements.require(installed.isGreaterThanOrEqualTo(requiredMinimumVersion),
                 VERSION_ERROR, installed, requiredMinimumVersion, MAVEN_DOWNLOAD_URL);
     }
