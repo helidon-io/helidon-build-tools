@@ -124,7 +124,7 @@
         <version.lib.diffutils>2.2</version.lib.diffutils>
         <version.lib.doxia>1.9.1</version.lib.doxia>
         <version.lib.freemarker>2.3.23</version.lib.freemarker>
-        <version.lib.graalvm-sdk>21.0.0.2</version.lib.graalvm-sdk>
+        <version.lib.graalvm-sdk>20.2.0</version.lib.graalvm-sdk>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.invoker>3.0.1</version.lib.invoker>
