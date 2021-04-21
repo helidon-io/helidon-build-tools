@@ -206,8 +206,8 @@ public class MavenCommand {
             // Could not determine the Maven version. The code to do so is fragile and is known
             // not to work in some environments (especially where shims are involved). So
             // don't fail if we can't determine the maven version.
-            Log.debug("Could not determine Maven version: " + ex.toString() +
-                    " Assuming version is acceptable.");
+            Log.debug("Could not determine Maven version: " + ex.toString()
+                    + " Assuming version is acceptable.");
             return;
         }
         // If we were able to determine the maven version, go ahead and make sure it is acceptable.
