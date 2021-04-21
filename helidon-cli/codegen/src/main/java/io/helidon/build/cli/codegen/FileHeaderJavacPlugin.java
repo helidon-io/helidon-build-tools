@@ -15,17 +15,17 @@
  */
 package io.helidon.build.cli.codegen;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.tools.JavaFileObject;
 
-import io.helidon.build.cli.codegen.TypeInfo.ElementInfo;
+import io.helidon.build.cli.codegen.Unchecked.CheckedSupplier;
 
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
@@ -34,9 +34,11 @@ import com.sun.source.tree.Tree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.Plugin;
 import com.sun.source.util.SimpleTreeVisitor;
+import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskEvent.Kind;
 import com.sun.source.util.TaskListener;
+import com.sun.source.util.Trees;
 
 /**
  * A Javac plugin that provides access to the file headers.
@@ -44,7 +46,7 @@ import com.sun.source.util.TaskListener;
 public class FileHeaderJavacPlugin implements Plugin {
 
     private static final QNamesVisitor NAMES_VISITOR = new QNamesVisitor();
-    private static final HashMap<List<String>, JavaFileObject> SOURCES = new HashMap<>();
+    private static final Map<List<String>, CheckedSupplier<String, IOException>> SOURCES = new HashMap<>();
 
     @Override
     public String getName() {
@@ -53,13 +55,15 @@ public class FileHeaderJavacPlugin implements Plugin {
 
     @Override
     public void init(JavacTask task, String... args) {
+        SourcePositions positions = Trees.instance(task).getSourcePositions();
         task.addTaskListener(new TaskListener() {
             @Override
             public void started(TaskEvent event) {
                 if (event.getKind() == Kind.ENTER) {
                     CompilationUnitTree unit = event.getCompilationUnit();
                     if (unit.getKind() == Tree.Kind.COMPILATION_UNIT) {
-                        SOURCES.put(unit.accept(NAMES_VISITOR, null), unit.getSourceFile());
+                        long pos = positions.getStartPosition(unit, unit.getPackage());
+                        SOURCES.put(unit.accept(NAMES_VISITOR, null), () -> header(unit.getSourceFile(), pos));
                     }
                 }
             }
@@ -69,28 +73,21 @@ public class FileHeaderJavacPlugin implements Plugin {
     /**
      * Get the file header of the file that declares the given type element.
      *
-     * @param elementInfo the element info to match the source file of
+     * @param qualifiedName the qualifiedName to match the source file of
      * @return String, never {@code null}
      * @throws IOException if an IO error occurs
      */
-    static String header(ElementInfo elementInfo) throws IOException {
-        JavaFileObject fileObject = null;
-        for (Entry<List<String>, JavaFileObject> entry : SOURCES.entrySet()) {
-            if (entry.getKey().contains(elementInfo.qualifiedName())) {
-                fileObject = entry.getValue();
-                break;
+    static String header(String qualifiedName) throws IOException {
+        for (Entry<List<String>, CheckedSupplier<String, IOException>> entry : SOURCES.entrySet()) {
+            if (entry.getKey().contains(qualifiedName)) {
+                return entry.getValue().get();
             }
         }
-        StringBuilder sb = new StringBuilder();
-        if (fileObject != null) {
-            try (BufferedReader br = new BufferedReader(fileObject.openReader(true))) {
-                String line;
-                while ((line = br.readLine()) != null && !line.trim().startsWith("package")) {
-                    sb.append(line).append("\n");
-                }
-            }
-        }
-        return sb.toString();
+        return "";
+    }
+
+    private static String header(JavaFileObject file, long pos) throws IOException {
+        return file.getCharContent(true).subSequence(0, (int) pos).toString();
     }
 
     private static final class QNamesVisitor extends SimpleTreeVisitor<List<String>, Void> {
@@ -115,7 +112,6 @@ public class FileHeaderJavacPlugin implements Plugin {
                         }
                         continue;
                     default:
-                        continue;
                 }
             }
             return names;

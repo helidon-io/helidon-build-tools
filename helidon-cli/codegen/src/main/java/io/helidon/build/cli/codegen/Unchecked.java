@@ -18,6 +18,7 @@ package io.helidon.build.cli.codegen;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Utility to deal with checked exceptions in lambdas.
@@ -91,6 +92,41 @@ interface Unchecked {
          * @throws E if an error occurs
          */
         void run() throws E;
+    }
+
+    /**
+     * Checked supplier.
+     *
+     * @param <T> supplier type
+     * @param <E> checked exception type
+     */
+    interface CheckedSupplier<T, E extends Exception> {
+
+        /**
+         * Get the value.
+         *
+         * @return T value
+         * @throws E if an error occurs
+         */
+        T get() throws E;
+    }
+
+    /**
+     * Wrap a {@link CheckedSupplier} into a {@link Supplier}.
+     *
+     * @param supplier checked supplier
+     * @param <T>      supplier type
+     * @param <E>      checked exception type
+     * @return Supplier
+     */
+    static <T, E extends Exception> Supplier unchecked(CheckedSupplier<T, E> supplier) {
+        return () -> {
+            try {
+                return supplier.get();
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        };
     }
 
     /**
