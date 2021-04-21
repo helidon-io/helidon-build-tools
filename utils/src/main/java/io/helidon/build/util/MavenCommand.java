@@ -193,6 +193,12 @@ public class MavenCommand {
      * @throws IllegalStateException If the installed version does not meet the requirement.
      */
     public static void assertRequiredMavenVersion(MavenVersion requiredMinimumVersion) {
+        // This catches if we can find the mvn executable or not. We want to
+        // catch this error independently of getting the maven version (since
+        // getting the maven version is fragile).
+        Path executable = mavenExecutable();
+        Log.debug("Found maven executable " + executable);
+
         MavenVersion installed;
         try {
             installed = installedVersion();
@@ -204,6 +210,7 @@ public class MavenCommand {
                     " Assuming version is acceptable.");
             return;
         }
+        // If we were able to determine the maven version, go ahead and make sure it is acceptable.
         Requirements.require(installed.isGreaterThanOrEqualTo(requiredMinimumVersion),
                 VERSION_ERROR, installed, requiredMinimumVersion, MAVEN_DOWNLOAD_URL);
     }
