@@ -122,13 +122,33 @@ public class MavenProjectSupplier implements ProjectSupplier {
     /**
      * Checks whether any matching file has a modified time more recent than the given time.
      *
-     * @param projectDir The project directory.
+     * @param projectDir    The project directory.
      * @param lastCheckTime The time to check against.
-     * @param type The type of search.
+     * @param type          The type of search.
      * @return The time, if changed.
      */
     public static Optional<FileTime> changedSince(Path projectDir, FileTime lastCheckTime, DetectionType type) {
-        return FileChanges.changedSince(projectDir, lastCheckTime, NOT_HIDDEN.and(NOT_TARGET_DIR), NOT_HIDDEN, type);
+        return changedSince(projectDir, lastCheckTime, d -> true, f -> true, type);
+    }
+
+    /**
+     * Checks whether any matching file has a modified time more recent than the given time.
+     *
+     * @param projectDir    The project directory.
+     * @param lastCheckTime The time to check against.
+     * @param dirFilter     A filter for directories to visit.
+     * @param fileFilter    A filter for which files to check.
+     * @param type          The type of search.
+     * @return The time, if changed.
+     */
+    public static Optional<FileTime> changedSince(Path projectDir,
+                                                  FileTime lastCheckTime,
+                                                  Predicate<Path> dirFilter,
+                                                  Predicate<Path> fileFilter,
+                                                  DetectionType type) {
+
+        return FileChanges.changedSince(projectDir, lastCheckTime, NOT_HIDDEN.and(NOT_TARGET_DIR).and(dirFilter),
+                NOT_HIDDEN.and(fileFilter), type);
     }
 
     @Override
@@ -168,7 +188,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
         executor.execute(command);
         projectConfig = projectConfig(executor.projectDirectory());
         Requirements.require(projectConfig.lastSuccessfulBuildTime() > 0,
-                             "$(cyan helidon-cli-maven-plugin) must be configured as an extension");
+                "$(cyan helidon-cli-maven-plugin) must be configured as an extension");
     }
 
     private boolean canSkipBuild(Path projectDir) {

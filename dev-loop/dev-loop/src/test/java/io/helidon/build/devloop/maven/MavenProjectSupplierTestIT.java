@@ -19,6 +19,7 @@ package io.helidon.build.devloop.maven;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import io.helidon.build.common.FileChanges.DetectionType;
 import io.helidon.build.common.Log;
@@ -46,10 +47,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 @Order(3)
 class MavenProjectSupplierTestIT {
 
+    private static final Predicate<Path> NOT_TEST_LOG = f -> !f.getFileName().toString().equals("test.log");
     private static final FileTime TIME_ZERO = FileTime.fromMillis(0);
 
     private static FileTime changedTime(Path dir, FileTime checkTime, DetectionType type) {
-        Optional<FileTime> result = MavenProjectSupplier.changedSince(dir, checkTime, type);
+        Optional<FileTime> result = MavenProjectSupplier.changedSince(dir, checkTime, d -> true, NOT_TEST_LOG, type);
         assertThat(result, is(not(nullValue())));
         assertThat(result.isPresent(), is(true));
         return result.get();
@@ -90,7 +92,7 @@ class MavenProjectSupplierTestIT {
         FileTime touched = touchFile(classFile);
 
         // We should not find the class change since the filter won't allow visiting the target dir
-        Optional<FileTime> found = MavenProjectSupplier.changedSince(projectDir, initial, LATEST);
+        Optional<FileTime> found = MavenProjectSupplier.changedSince(projectDir, initial, d -> true, NOT_TEST_LOG, LATEST);
         assertThat(found.isPresent(), is(false));
 
         // Re-check that it is found without filter
