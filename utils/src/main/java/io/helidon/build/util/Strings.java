@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 package io.helidon.build.util;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * String utility methods.
@@ -51,6 +56,20 @@ public class Strings {
             return value;
         }
         return value.replaceAll("\r\n", "\n");
+    }
+
+    /**
+     * Read a string from an input stream.
+     *
+     * @param inputStream input stream
+     * @return String
+     */
+    public static String read(InputStream inputStream) {
+        try {
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
     }
 
     private Strings() {
