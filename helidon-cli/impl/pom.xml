@@ -230,12 +230,9 @@
                                         <argument>-H:Path=${build.dir}</argument>
                                         <argument>-H:Name=${finalName}</argument>
                                         <argument>-H:+PrintAnalysisCallTree</argument>
-                                        <argument>-H:+ReportExceptionStackTraces</argument>
-                                        <argument>-H:-ParseRuntimeOptions</argument>
-                                        <argument>--no-server</argument>
                                         <argument>--no-fallback</argument>
                                         <argument>-cp</argument>
-                                        <argument>${build.dir}/${finalName}.jar:${build.dir}/libs/*:${build.dir}/native</argument>
+                                        <argument>${build.dir}${file.separator}${finalName}.jar${path.separator}${build.dir}${file.separator}libs${file.separator}*${path.separator}${build.dir}${file.separator}native</argument>
                                         <argument>${mainClass}</argument>
                                     </arguments>
                                 </configuration>
