@@ -20,8 +20,6 @@
 module io.helidon.build.common.maven {
     exports io.helidon.build.common.maven;
     requires io.helidon.build.common;
-    requires maven.model;
     requires io.helidon.build.common.ansi;
-    requires maven.artifact;
-    requires maven.plugin.api;
+    requires io.helidon.build.common.xml;
 }

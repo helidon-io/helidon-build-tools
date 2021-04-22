@@ -33,10 +33,6 @@ import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
  */
 public abstract class BaseCommand implements CommandExecution {
 
-    static final String HELIDON_VERSION_PROPERTY = "helidon.version";
-    static final String HELIDON_PLUGIN_VERSION_PROPERTY_PREFIX = "-Dversion.plugin.helidon=";
-    static final String HELIDON_CLI_PLUGIN_VERSION_PROPERTY_PREFIX = "-Dversion.plugin.helidon-cli=";
-
     private final CommonOptions commonOptions;
     private final boolean quietCheckForUpdates;
     private ProjectConfig projectConfig;

@@ -28,7 +28,7 @@ import java.util.Objects;
 import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.common.SubstitutionVariables;
 
-import org.apache.maven.model.Model;
+import io.helidon.build.common.maven.MavenModel;
 
 import static io.helidon.build.cli.common.ProjectConfig.DOT_HELIDON;
 import static io.helidon.build.cli.impl.InitOptions.DEFAULT_ARCHETYPE_NAME;
@@ -38,7 +38,6 @@ import static io.helidon.build.common.FileUtils.requireDirectory;
 import static io.helidon.build.common.FileUtils.requireFile;
 import static io.helidon.build.common.FileUtils.unique;
 import static io.helidon.build.common.SubstitutionVariables.systemPropertyOrEnvVarSource;
-import static io.helidon.build.common.maven.PomUtils.readPomModel;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -430,7 +429,7 @@ public interface CommandInvoker {
         public CommandInvoker assertExpectedPom() {
             // Check pom and read model
             Path pomFile = requireFile(projectDir().resolve("pom.xml"));
-            Model model = readPomModel(pomFile.toFile());
+            MavenModel model = MavenModel.read(pomFile);
 
             // Flavor
             String parentArtifact = model.getParent().getArtifactId();

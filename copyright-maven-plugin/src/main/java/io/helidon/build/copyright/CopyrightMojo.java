@@ -22,7 +22,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import io.helidon.build.common.Log;
-import io.helidon.build.common.maven.MavenLogWriter;
+import io.helidon.build.common.maven.plugin.MavenLogWriter;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;

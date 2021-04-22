@@ -42,6 +42,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.helidon.build-tools.common</groupId>
+            <artifactId>helidon-build-common-xml</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.github.spullara.mustache.java</groupId>
             <artifactId>compiler</artifactId>
         </dependency>

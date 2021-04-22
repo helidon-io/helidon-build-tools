@@ -19,7 +19,7 @@ package io.helidon.build.maven.log;
 import java.util.List;
 
 import io.helidon.build.common.Log;
-import io.helidon.build.common.maven.MavenLogWriter;
+import io.helidon.build.common.maven.plugin.MavenLogWriter;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.LifecyclePhase;

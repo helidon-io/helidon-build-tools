@@ -32,8 +32,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import io.helidon.build.util.Log;
-import io.helidon.build.util.MavenLogWriter;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.maven.plugin.MavenLogWriter;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -123,8 +123,7 @@ public class ServicesMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        MavenLogWriter.install(getLog());
-
+        Log.writer(MavenLogWriter.create(getLog()));
         if (skip) {
             Log.info("Skipping execution.");
             return;

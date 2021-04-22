@@ -34,16 +34,9 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-model</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-artifact</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-plugin-api</artifactId>
+            <groupId>io.helidon.build-tools.common</groupId>
+            <artifactId>helidon-build-common-xml</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

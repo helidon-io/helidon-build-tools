@@ -18,8 +18,6 @@ package io.helidon.build.common.maven;
 
 import java.util.function.Predicate;
 
-import org.apache.maven.artifact.versioning.ComparableVersion;
-
 /**
  * A Maven version number.
  */

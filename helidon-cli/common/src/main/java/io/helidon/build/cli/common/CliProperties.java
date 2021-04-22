@@ -32,4 +32,19 @@ public abstract class CliProperties {
      * The command line argument to enable cli extensions.
      */
     public static final String ENABLE_HELIDON_CLI = "-D" + HELIDON_CLI_PROPERTY + "=true";
+
+    /**
+     * The Helidon plugin version property name.
+     */
+    public static final String HELIDON_PLUGIN_VERSION_PROPERTY = "version.helidon.plugin";
+
+    /**
+     * The Helidon cli plugin version property name.
+     */
+    public static final String HELIDON_CLI_PLUGIN_VERSION_PROPERTY = "version.plugin.helidon-cli";
+
+    /**
+     * The Helidon version property name.
+     */
+    public static final String HELIDON_VERSION_PROPERTY = "helidon.version";
 }

@@ -24,7 +24,7 @@ import java.util.Map;
 
 import io.helidon.build.common.Log;
 import io.helidon.build.common.SystemLogWriter;
-import io.helidon.build.common.maven.MavenLogWriter;
+import io.helidon.build.common.maven.plugin.MavenLogWriter;
 import io.helidon.build.devloop.ProjectSupplier;
 import io.helidon.build.devloop.maven.DevLoopBuildConfig;
 import io.helidon.build.devloop.maven.MavenEnvironment;

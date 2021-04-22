@@ -23,14 +23,13 @@ import io.helidon.build.common.RequirementFailure;
 import io.helidon.build.common.Requirements;
 import io.helidon.build.common.RichTextRenderer;
 import io.helidon.build.common.maven.MavenCommand;
+import io.helidon.build.common.maven.MavenModel;
+import io.helidon.build.common.maven.MavenModel.Parent;
 import io.helidon.build.common.maven.MavenVersion;
-import io.helidon.build.common.maven.PomUtils;
-
-import org.apache.maven.model.Model;
-import org.apache.maven.model.Parent;
 
 import static io.helidon.build.cli.common.ProjectConfig.ensureProjectConfig;
 import static io.helidon.build.common.FileUtils.requireDirectory;
+import static io.helidon.build.common.FileUtils.requireFile;
 import static io.helidon.build.common.FileUtils.requireJavaExecutable;
 import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 
@@ -97,11 +96,11 @@ public class CommandRequirements {
     static void requireValidMavenProjectConfig(CommonOptions commonOptions) {
         try {
             Path projectDir = commonOptions.project();
-            Path pomFile = PomUtils.toPomFile(projectDir); // asserts present
+            Path pomFile = requireFile(requireDirectory(projectDir).resolve("pom.xml"));
             Path projectConfigFile = ProjectConfig.toDotHelidon(projectDir);
             if (!Files.exists(projectConfigFile)) {
                 // Find the helidon version if we can and create the config file
-                Model model = PomUtils.readPomModel(pomFile);
+                MavenModel model = MavenModel.read(pomFile);
                 Parent parent = model.getParent();
                 String helidonVersion = null;
                 if (parent != null && parent.getGroupId().startsWith("io.helidon.")) {

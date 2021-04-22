@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.archetype.engine.v1;
+package io.helidon.build.common.xml;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,12 +28,12 @@ import java.util.Objects;
 /**
  * Simple XML parser.
  */
-final class SimpleXMLParser {
+public final class SimpleXMLParser {
 
     /**
      * XML Reader.
      */
-    interface Reader {
+    public interface Reader {
 
         /**
          * Receive notification of the start of an element.
@@ -42,7 +42,8 @@ final class SimpleXMLParser {
          * @param attributes the element attributes
          * @throws Exception if any error occurs
          */
-        void startElement(String name, Map<String, String> attributes);
+        default void startElement(String name, Map<String, String> attributes) {
+        }
 
         /**
          * Receive notification of the end of an element.
@@ -50,7 +51,8 @@ final class SimpleXMLParser {
          * @param name the element name
          * @throws Exception if any error occurs
          */
-        void endElement(String name);
+        default void endElement(String name) {
+        }
 
         /**
          * Receive notification of text data inside an element.
@@ -58,8 +60,17 @@ final class SimpleXMLParser {
          * @param data the text data
          * @throws Exception if any error occurs
          */
-        void elementText(String data);
+        default void elementText(String data) {
+        }
 
+        /**
+         * Continue action, can be overridden to stop parsing.
+         *
+         * @return {@code true} to keep parsing, {@code false} to stop parsing
+         */
+        default boolean keepParsing() {
+            return true;
+        }
 
         /**
          * Validate that a child element has a given name.
@@ -127,9 +138,7 @@ final class SimpleXMLParser {
                 return Collections.emptyList();
             }
             List<String> values = new LinkedList<>();
-            for (String item : value.split(",")) {
-                values.add(item);
-            }
+            Collections.addAll(values, value.split(","));
             return values;
         }
     }
@@ -159,8 +168,9 @@ final class SimpleXMLParser {
     private static final char ATTRIBUTE_VALUE = '=';
     private static final char DOUBLE_QUOTE = '"';
     private static final char SINGLE_QUOTE = '\'';
+    private static final char[] ALLOWED_CHARS = new char[]{'_', '.', '-', ':'};
 
-    private char[] buf = new char[1024];
+    private final char[] buf = new char[1024];
     private char c;
     private int position;
     private int limit = 0;
@@ -173,7 +183,7 @@ final class SimpleXMLParser {
     private Map<String, String> attributes = new HashMap<>();
     private STATE state = STATE.START;
     private STATE resumeState = null;
-    private LinkedList<String> stack = new LinkedList<>();
+    private final LinkedList<String> stack = new LinkedList<>();
     private final Reader reader;
     private final InputStreamReader isr;
 
@@ -185,13 +195,12 @@ final class SimpleXMLParser {
     /**
      * Parse the content of the given {@link InputStream} instance as XML using the specified reader.
      *
-     * @param is InputStream containing the content to be parsed.
+     * @param is     InputStream containing the content to be parsed.
      * @param reader the reader to use.
-     *
      * @throws NullPointerException if the given InputStream or Reader is {@code null}
-     * @throws IOException If any IO error occurs
+     * @throws IOException          If any IO error occurs
      */
-    static void parse(InputStream is, Reader reader) throws IOException {
+    public static void parse(InputStream is, Reader reader) throws IOException {
         new SimpleXMLParser(is, reader).doParse();
     }
 
@@ -199,6 +208,8 @@ final class SimpleXMLParser {
         if (hasToken(PROLOG_START)) {
             state = STATE.PROLOG;
             position += PROLOG_START.length();
+        } else if (hasToken(MARKUP_START)) {
+            state = STATE.ELEMENT;
         } else {
             position++;
         }
@@ -234,8 +245,8 @@ final class SimpleXMLParser {
         }
     }
 
-    private void processName() {
-        if (hasToken(MARKUP_END)) {
+    private void processName() throws IOException {
+        if (hasToken(MARKUP_END) || hasToken(ELEMENT_SELF_CLOSE)) {
             state = resumeState;
         } else if (Character.isWhitespace(c)) {
             position++;
@@ -377,7 +388,7 @@ final class SimpleXMLParser {
         while (limit >= 0) {
             position = 0;
             limit = isr.read(buf);
-            while (position < limit) {
+            while (position < limit && reader.keepParsing()) {
                 c = buf[position];
                 if (c == '\n') {
                     lineNo++;
@@ -425,11 +436,13 @@ final class SimpleXMLParser {
                 charNo += (position - lastPosition);
             }
         }
-        if (!stack.isEmpty()) {
-            throw new IllegalStateException(String.format("Unclosed element: %s", stack.peek()));
-        }
-        if (state != STATE.ELEMENT) {
-            throw new IllegalStateException(String.format("Invalid state: %s", state));
+        if (reader.keepParsing()) {
+            if (!stack.isEmpty()) {
+                throw new IllegalStateException(String.format("Unclosed element: %s", stack.peek()));
+            }
+            if (state != STATE.ELEMENT) {
+                throw new IllegalStateException(String.format("Invalid state: %s", state));
+            }
         }
     }
 
@@ -441,8 +454,7 @@ final class SimpleXMLParser {
     }
 
     private void validateNameChar(char c, boolean firstChar) {
-        if (firstChar && !(Character.isLetter(c) || c == '_')
-            || !(Character.isLetter(c) || Character.isDigit(c) || c == '_' || c == '.' || c == '-')) {
+        if (firstChar && !(Character.isLetter(c) || c == '_') || !isAllowedChar(c)) {
             throw new IllegalStateException(String.format(
                     "Invalid character found in name: '%c', line: %d, char: %d", c, lineNo, charNo));
         }
@@ -465,9 +477,21 @@ final class SimpleXMLParser {
 
     private static String decode(String value) {
         return value.replaceAll("&gt;", ">")
-                .replaceAll("&lt;", "<")
-                .replaceAll("&amp;", "&")
-                .replaceAll("&quot;", "\"")
-                .replaceAll("&apos;", "'");
+                    .replaceAll("&lt;", "<")
+                    .replaceAll("&amp;", "&")
+                    .replaceAll("&quot;", "\"")
+                    .replaceAll("&apos;", "'");
+    }
+
+    private static boolean isAllowedChar(char c) {
+        if (Character.isLetter(c) || Character.isDigit(c)) {
+            return true;
+        }
+        for (char a : ALLOWED_CHARS) {
+            if (a == c) {
+                return true;
+            }
+        }
+        return false;
     }
 }

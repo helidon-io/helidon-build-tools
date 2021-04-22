@@ -30,6 +30,7 @@ import io.helidon.build.common.Strings;
 import io.helidon.build.common.ansi.AnsiConsoleInstaller;
 import io.helidon.build.common.maven.MavenCommand;
 
+import static io.helidon.build.cli.common.CliProperties.HELIDON_CLI_PLUGIN_VERSION_PROPERTY;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
@@ -160,7 +161,7 @@ public final class DevCommand extends BaseCommand {
             Log.verbose("Using CLI plugin version %s", cliPluginVersion);
             devGoal += ":" + cliPluginVersion;
             // Pass along the version so that the loop can specify it when doing full builds
-            cliPluginVersionProperty = HELIDON_CLI_PLUGIN_VERSION_PROPERTY_PREFIX + cliPluginVersion;
+            cliPluginVersionProperty = String.format("-D%=%", HELIDON_CLI_PLUGIN_VERSION_PROPERTY, cliPluginVersion);
         }
         devGoal += DEV_GOAL_SUFFIX;
 

@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Set;
 
 import io.helidon.build.common.LogWriter;
-import io.helidon.build.common.maven.MavenLogWriter;
+import io.helidon.build.common.maven.plugin.MavenLogWriter;
 import io.helidon.linker.Configuration;
 import io.helidon.linker.Linker;
 

@@ -31,6 +31,7 @@ import io.helidon.build.common.Log;
 import io.helidon.build.common.Requirements;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
+import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.cli.common.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.cli.common.ProjectConfig.PROJECT_FLAVOR;
 import static io.helidon.build.cli.impl.ArchetypeInvoker.EngineVersion.V1;

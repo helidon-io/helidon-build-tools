@@ -21,6 +21,7 @@ import java.util.LinkedList;
 import java.util.Map;
 
 import io.helidon.build.archetype.engine.v1.ArchetypeCatalog.ArchetypeEntry;
+import io.helidon.build.common.xml.SimpleXMLParser;
 
 /**
  * {@link ArchetypeCatalog} reader.
@@ -69,29 +70,25 @@ final class ArchetypeCatalogReader implements SimpleXMLParser.Reader {
             version = readRequiredAttribute("version", qName, attributes);
             stack.push("archetype-catalog");
         } else {
-            switch (parent) {
-                case "archetype-catalog":
-                    switch (qName) {
-                        case "archetype":
-                            validateChild("archetype", parent, qName);
-                            entries.add(new ArchetypeEntry(
-                                    readAttribute("groupId", qName, attributes, groupId),
-                                    readRequiredAttribute("artifactId", qName, attributes),
-                                    readAttribute("version", qName, attributes, version),
-                                    readRequiredAttribute("name", qName, attributes),
-                                    readRequiredAttribute("title", qName, attributes),
-                                    readRequiredAttribute("summary", qName, attributes),
-                                    attributes.get("description"),
-                                    readAttributeList("tags", qName, attributes)
-                            ));
-                            stack.push(qName);
-                            break;
-                        default:
-                            throw new IllegalStateException("Invalid top-level element: " + qName);
-                    }
-                    break;
-                default:
-                    throw new IllegalStateException("Invalid element: " + qName);
+            if ("archetype-catalog".equals(parent)) {
+                if ("archetype".equals(qName)) {
+                    validateChild("archetype", parent, qName);
+                    entries.add(new ArchetypeEntry(
+                            readAttribute("groupId", qName, attributes, groupId),
+                            readRequiredAttribute("artifactId", qName, attributes),
+                            readAttribute("version", qName, attributes, version),
+                            readRequiredAttribute("name", qName, attributes),
+                            readRequiredAttribute("title", qName, attributes),
+                            readRequiredAttribute("summary", qName, attributes),
+                            attributes.get("description"),
+                            readAttributeList("tags", qName, attributes)
+                    ));
+                    stack.push(qName);
+                } else {
+                    throw new IllegalStateException("Invalid top-level element: " + qName);
+                }
+            } else {
+                throw new IllegalStateException("Invalid element: " + qName);
             }
         }
     }

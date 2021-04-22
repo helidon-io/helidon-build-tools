@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.common.maven;
+package io.helidon.build.common.maven.plugin;
 
 import io.helidon.build.common.Log.Level;
 import io.helidon.build.common.LogWriter;
@@ -23,6 +23,7 @@ import io.helidon.build.common.RichTextRenderer;
  * {@link LogWriter} that writes to a maven log.
  */
 public class MavenLogWriter implements LogWriter {
+
     private final org.apache.maven.plugin.logging.Log log;
 
     /**

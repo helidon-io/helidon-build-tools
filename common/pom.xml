@@ -33,6 +33,8 @@
         <module>common</module>
         <module>ansi</module>
         <module>maven</module>
+        <module>maven-plugin</module>
         <module>test-utils</module>
+        <module>xml</module>
     </modules>
 </project>

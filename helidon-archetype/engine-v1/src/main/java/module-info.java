@@ -21,5 +21,6 @@ module io.helidon.build.archetype.engine.v1 {
     requires io.helidon.build.common;
     requires io.helidon.build.common.ansi;
     requires com.github.mustachejava;
+    requires io.helidon.build.common.xml;
     exports io.helidon.build.archetype.engine.v1;
 }
