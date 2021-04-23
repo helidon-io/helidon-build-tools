@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -215,7 +215,7 @@ public final class InitCommand extends BaseCommand {
         }
 
         // Generate project using archetype engine
-        Path projectDir = initProjectDir();
+        Path projectDir = initProjectDir(properties.get("name"));
         engine.generate(projectDir.toFile());
 
         // Create config file that includes feature information
@@ -259,11 +259,16 @@ public final class InitCommand extends BaseCommand {
         packageName = config.packageName(packageName, substitutions);
     }
 
-    private Path initProjectDir() {
+    private Path initProjectDir(String name) {
         boolean projectDirSpecified = commonOptions.projectSpecified();
         Path projectDir = commonOptions.project();
+
+        if (name == null || name.isEmpty()) {
+            name = projectName;
+        }
+
         if (!projectDirSpecified) {
-            projectDir = projectDir.resolve(projectName);
+            projectDir = projectDir.resolve(name);
         }
         if (Files.exists(projectDir)) {
             if (projectDirSpecified || config.failOnProjectNameCollision()) {
@@ -273,12 +278,12 @@ public final class InitCommand extends BaseCommand {
             Log.info("$(italic,yellow Directory $(plain %s) already exists, generating unique name)", projectDir);
             Path parentDirectory = projectDir.getParent();
             for (int i = 2; i < 128; i++) {
-                Path newProjectDir = parentDirectory.resolve(projectName + "-" + i);
+                Path newProjectDir = parentDirectory.resolve(name + "-" + i);
                 if (!Files.exists(newProjectDir)) {
                     return newProjectDir;
                 }
             }
-            Requirements.failed("Too many existing directories named %s-NN", projectName);
+            Requirements.failed("Too many existing directories named %s-NN", name);
         }
         return projectDir;
     }
