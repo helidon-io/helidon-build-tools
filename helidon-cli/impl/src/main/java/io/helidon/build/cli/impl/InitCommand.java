@@ -132,10 +132,15 @@ public final class InitCommand extends BaseCommand {
         }
     }
 
-    private Path initProjectDir() {
+    private Path initProjectDir(String name) {
         boolean projectDirSpecified = commonOptions.projectSpecified();
         Path projectDir = commonOptions.project();
-        String projectName = initOptions.projectName();
+
+        String projectName = name;
+        if (projectName == null || projectName.isEmpty()) {
+            projectName = initOptions.projectName();
+        }
+
         if (!projectDirSpecified) {
             projectDir = projectDir.resolve(projectName);
         }
