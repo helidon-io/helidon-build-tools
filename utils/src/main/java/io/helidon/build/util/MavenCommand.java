@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,7 +193,24 @@ public class MavenCommand {
      * @throws IllegalStateException If the installed version does not meet the requirement.
      */
     public static void assertRequiredMavenVersion(MavenVersion requiredMinimumVersion) {
-        MavenVersion installed = installedVersion();
+        // This catches if we can find the mvn executable or not. We want to
+        // catch this error independently of getting the maven version (since
+        // getting the maven version is fragile).
+        Path executable = mavenExecutable();
+        Log.debug("Found maven executable " + executable);
+
+        MavenVersion installed;
+        try {
+            installed = installedVersion();
+        } catch (Exception ex) {
+            // Could not determine the Maven version. The code to do so is fragile and is known
+            // not to work in some environments (especially where shims are involved). So
+            // don't fail if we can't determine the maven version.
+            Log.debug("Could not determine Maven version: " + ex.toString()
+                    + " Assuming version is acceptable.");
+            return;
+        }
+        // If we were able to determine the maven version, go ahead and make sure it is acceptable.
         Requirements.require(installed.isGreaterThanOrEqualTo(requiredMinimumVersion),
                 VERSION_ERROR, installed, requiredMinimumVersion, MAVEN_DOWNLOAD_URL);
     }
