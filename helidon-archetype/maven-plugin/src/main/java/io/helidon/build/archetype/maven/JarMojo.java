@@ -44,7 +44,6 @@ import java.util.regex.Pattern;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor;
 import io.helidon.build.archetype.engine.ArchetypeDescriptor.Property;
 import io.helidon.build.archetype.engine.ArchetypeEngine;
-import io.helidon.build.util.MustacheHelper;
 import io.helidon.build.util.MustacheHelper.RawString;
 import io.helidon.build.util.SourcePath;
 
