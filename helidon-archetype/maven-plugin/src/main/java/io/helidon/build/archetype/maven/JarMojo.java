@@ -246,7 +246,7 @@ public class JarMojo extends AbstractMojo {
         // mustache scope
         Map<String, Object> scope = new HashMap<>();
 
-        // list base64 encoded byte code keyed by fully qualified class names
+        // base64 encoded byte code keyed by fully qualified class names
         scope.put("classes", listResources(POST_SCRIPT_PKG)
                 .stream()
                 .filter(path -> path.endsWith(".class"))
@@ -264,7 +264,7 @@ public class JarMojo extends AbstractMojo {
                             }
                         })).entrySet());
 
-        // names of the properties to pass to the Helidon archetype engine
+        // name of the properties to pass to the Helidon archetype engine
         scope.put("propNames", desc.properties().stream()
                                    .filter(Property::isExported)
                                    .map(Property::id)
