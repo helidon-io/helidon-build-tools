@@ -114,8 +114,6 @@ public final class EngineFacade {
                                }
                            }).toArray(URL[]::new);
 
-        System.out.println(Arrays.toString(urls));
-
         URLClassLoader ecl = new URLClassLoader(urls, EngineFacade.class.getClassLoader());
         Properties archetypeProps = request.getProperties();
         Map<String, String> props = new HashMap<>(propNames
