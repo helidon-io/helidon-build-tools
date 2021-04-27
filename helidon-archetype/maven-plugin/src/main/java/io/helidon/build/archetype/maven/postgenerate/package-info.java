@@ -15,6 +15,6 @@
  */
 
 /**
- * Helidon archetype Maven plugin.
+ * Helidon archetype Maven plugin Post Generate Utilities.
  */
-package io.helidon.build.archetype.maven;
+package io.helidon.build.archetype.maven.postgenerate;
