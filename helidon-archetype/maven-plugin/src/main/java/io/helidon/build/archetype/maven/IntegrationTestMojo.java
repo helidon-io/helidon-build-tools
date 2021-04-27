@@ -34,6 +34,11 @@ import java.util.stream.Stream;
 import io.helidon.build.archetype.engine.ArchetypeEngine;
 import io.helidon.build.archetype.engine.Maps;
 
+import org.apache.maven.archetype.ArchetypeGenerationRequest;
+import org.apache.maven.archetype.ArchetypeGenerationResult;
+import org.apache.maven.archetype.exception.ArchetypeNotConfigured;
+import org.apache.maven.archetype.generator.ArchetypeGenerator;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -41,19 +46,32 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.DefaultProjectBuildingRequest;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.apache.maven.shared.invoker.InvocationRequest;
 import org.apache.maven.shared.invoker.InvocationResult;
 import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
+import org.apache.maven.shared.transfer.artifact.install.ArtifactInstallerException;
+import org.apache.maven.shared.transfer.project.NoFileAssignedException;
+import org.apache.maven.shared.transfer.project.install.ProjectInstaller;
+import org.apache.maven.shared.transfer.project.install.ProjectInstallerRequest;
+import org.codehaus.plexus.util.StringUtils;
 
 /**
  * {@code archetype:integration-test} mojo.
  */
-@Mojo(name = "integration-test", requiresProject = true)
+@Mojo(name = "integration-test")
 public class IntegrationTestMojo extends AbstractMojo {
+
+    /**
+     * Archetype generate to invoke Maven compatible archetypes.
+     */
+    @Component
+    private ArchetypeGenerator archetypeGenerator;
 
     /**
      * Maven invoker.
@@ -66,6 +84,12 @@ public class IntegrationTestMojo extends AbstractMojo {
      */
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject project;
+
+    /**
+     * The {@link MavenSession}.
+     */
+    @Parameter(defaultValue = "${session}", readonly = true, required = true)
+    private MavenSession session;
 
     /**
      * Skip the integration test.
@@ -110,6 +134,16 @@ public class IntegrationTestMojo extends AbstractMojo {
     @Parameter
     private Map<String, String> properties = new HashMap<>();
 
+    /**
+     * Indicate if the project should be generated with the maven-archetype-plugin or with the Helidon archetype
+     * engine directly.
+     */
+    @Parameter(defaultValue = "true")
+    private boolean mavenArchetypeCompatible;
+
+    @Component
+    private ProjectInstaller installer;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (skip) {
@@ -128,8 +162,8 @@ public class IntegrationTestMojo extends AbstractMojo {
 
         try {
             List<Path> projectGoals = Files.walk(testProjectsDirectory.toPath())
-                    .filter((p) -> p.endsWith("goal.txt"))
-                    .collect(Collectors.toList());
+                                           .filter((p) -> p.endsWith("goal.txt"))
+                                           .collect(Collectors.toList());
             if (projectGoals.isEmpty()) {
                 getLog().warn("No projects directory with goal.txt found");
                 return;
@@ -138,8 +172,6 @@ public class IntegrationTestMojo extends AbstractMojo {
             for (Path goal : projectGoals) {
                 processIntegrationTest(goal, archetypeFile);
             }
-
-            // TODO test maven compatibility
         } catch (IOException ex) {
             throw new MojoFailureException(ex.getMessage(), ex);
         }
@@ -147,34 +179,92 @@ public class IntegrationTestMojo extends AbstractMojo {
 
     private void processIntegrationTest(Path projectGoal, File archetypeFile) throws IOException, MojoExecutionException {
         getLog().info("Processing Archetype IT project: " + projectGoal.getParent().toString());
+
         Properties props = new Properties();
         try (InputStream in = Files.newInputStream(projectGoal.getParent().resolve("archetype.properties"))) {
             props.load(in);
         }
-        // FIXME
-        props.put("maven", "true");
         props.put("name", "test project");
-        Path outputDir = projectGoal.getParent().resolve("project");
+
+        Path outputDir = projectGoal.getParent().resolve(props.getProperty("artifactId"));
         if (Files.exists(outputDir)) {
             Files.walk(outputDir)
-                    .sorted(Comparator.reverseOrder())
-                    .map(Path::toFile)
-                    .forEach(File::delete);
+                 .sorted(Comparator.reverseOrder())
+                 .map(Path::toFile)
+                 .forEach(File::delete);
         }
         Files.createDirectories(outputDir);
-        new ArchetypeEngine(archetypeFile, Maps.fromProperties(props)).generate(outputDir.toFile());
+
+        if (mavenArchetypeCompatible) {
+            mavenCompatGenerate(
+                    project.getGroupId(),
+                    project.getArtifactId(),
+                    project.getVersion(),
+                    archetypeFile,
+                    props,
+                    outputDir.getParent());
+        } else {
+            props.put("maven", "true");
+            new ArchetypeEngine(archetypeFile, Maps.fromProperties(props)).generate(outputDir.toFile());
+        }
+
         List<String> goals = Files.readAllLines(projectGoal).stream()
-                .flatMap(g -> Stream.of(g.split(" ")))
-                .collect(Collectors.toList());
+                                  .flatMap(g -> Stream.of(g.split(" ")))
+                                  .collect(Collectors.toList());
         if (!goals.isEmpty()) {
             invokePostArchetypeGenerationGoals(goals, outputDir.toFile());
+        }
+    }
+
+    private void mavenCompatGenerate(String archetypeGroupId,
+                                     String archetypeArtifactId,
+                                     String archetypeVersion,
+                                     File archetypeFile,
+                                     Properties properties,
+                                     Path basedir)
+            throws MojoExecutionException {
+
+        // pre install the archetype JAR so that the post-generate script can resolve it
+        ProjectInstallerRequest projectInstallerRequest = new ProjectInstallerRequest().setProject(project);
+        try {
+            installer.install(session.getProjectBuildingRequest(), projectInstallerRequest);
+        } catch (IOException | ArtifactInstallerException | NoFileAssignedException ex) {
+            throw new MojoExecutionException("Unable to pre-install archetype artifact", ex);
+        }
+
+        ProjectBuildingRequest buildRequest = session.getProjectBuildingRequest();
+        ArchetypeGenerationRequest request = new ArchetypeGenerationRequest()
+                .setArchetypeGroupId(archetypeGroupId)
+                .setArchetypeArtifactId(archetypeArtifactId)
+                .setArchetypeVersion(archetypeVersion)
+                .setGroupId(properties.getProperty("groupId"))
+                .setArtifactId(properties.getProperty("artifactId"))
+                .setVersion(properties.getProperty("version"))
+                .setPackage(properties.getProperty("package"))
+                .setOutputDirectory(basedir.toString())
+                .setProperties(properties)
+                .setProjectBuildingRequest(new DefaultProjectBuildingRequest()
+                        .setRepositorySession(buildRequest.getRepositorySession())
+                        .setRemoteRepositories(buildRequest.getRemoteRepositories()));
+
+        ArchetypeGenerationResult result = new ArchetypeGenerationResult();
+        archetypeGenerator.generateArchetype(request, archetypeFile, result);
+
+        if (result.getCause() != null) {
+            if (result.getCause() instanceof ArchetypeNotConfigured) {
+                ArchetypeNotConfigured anc = (ArchetypeNotConfigured) result.getCause();
+                throw new MojoExecutionException(
+                        "Missing required properties in archetype.properties: "
+                                + StringUtils.join(anc.getMissingProperties().iterator(), ", "), anc);
+            }
+            throw new MojoExecutionException(result.getCause().getMessage(), result.getCause());
         }
     }
 
     private void invokePostArchetypeGenerationGoals(List<String> goals, File basedir)
             throws IOException, MojoExecutionException {
 
-        FileLogger logger = setupLogger(basedir);
+        FileLogger logger = setupBuildLogger(basedir);
 
         if (!goals.isEmpty()) {
             getLog().info("Invoking post-archetype-generation goals: " + goals);
@@ -216,7 +306,7 @@ public class IntegrationTestMojo extends AbstractMojo {
         }
     }
 
-    private FileLogger setupLogger(File basedir) throws IOException {
+    private FileLogger setupBuildLogger(File basedir) throws IOException {
         FileLogger logger = null;
         if (!noLog) {
             File outputLog = new File(basedir, "build.log");
@@ -251,7 +341,7 @@ public class IntegrationTestMojo extends AbstractMojo {
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             stream.close();
         }
     }

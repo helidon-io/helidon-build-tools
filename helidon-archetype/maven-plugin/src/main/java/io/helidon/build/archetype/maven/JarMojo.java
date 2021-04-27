@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,22 +18,34 @@ package io.helidon.build.archetype.maven;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
+import java.io.UncheckedIOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.regex.Pattern;
 
 import io.helidon.build.archetype.engine.ArchetypeDescriptor;
+import io.helidon.build.archetype.engine.ArchetypeDescriptor.Property;
 import io.helidon.build.archetype.engine.ArchetypeEngine;
 import io.helidon.build.util.MustacheHelper;
+import io.helidon.build.util.MustacheHelper.RawString;
 import io.helidon.build.util.SourcePath;
 
 import org.apache.maven.archiver.MavenArchiveConfiguration;
@@ -56,45 +68,26 @@ import org.codehaus.plexus.archiver.ArchiverException;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
 import org.codehaus.plexus.archiver.jar.ManifestException;
 
-import static io.helidon.build.archetype.maven.MojoHelper.PLUGIN_GROUP_ID;
-import static io.helidon.build.archetype.maven.MojoHelper.PLUGIN_VERSION;
-import static io.helidon.build.archetype.maven.MojoHelper.templateProperties;
 import static io.helidon.build.util.MustacheHelper.MUSTACHE_EXT;
 import static io.helidon.build.util.MustacheHelper.renderMustacheTemplate;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.regex.Pattern.DOTALL;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * {@code archetype:jar} mojo.
  */
-@Mojo(name = "jar", defaultPhase = LifecyclePhase.PACKAGE, requiresProject = true,
+@Mojo(name = "jar", defaultPhase = LifecyclePhase.PACKAGE,
         requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
 public class JarMojo extends AbstractMojo {
 
-    /**
-     * The archetype engine groupId.
-     */
-    private static final String ENGINE_GROUP_ID = PLUGIN_GROUP_ID;
-
-    /**
-     * The archetype engine artifactId.
-     */
+    private static final String ENGINE_GROUP_ID = MojoHelper.PLUGIN_GROUP_ID;
     private static final String ENGINE_ARTIFACT_ID = "helidon-archetype-engine";
-
-    /**
-     * The archetype engine version.
-     */
-    private static final String ENGINE_VERSION = PLUGIN_VERSION;
-
-    /**
-     * The name for the post groovy script.
-     */
+    private static final String ENGINE_VERSION = MojoHelper.PLUGIN_VERSION;
     private static final String POST_SCRIPT_NAME = "archetype-post-generate.groovy";
-
-    /**
-     * The scripts included by the post groovy script.
-     */
-    private static final Map<String, String> POST_SCRIPT_INCLUDES = Map.of(
-            "aetherScript", "groovy/Aether.groovy",
-            "engineScript", "groovy/HelidonEngine.groovy");
+    private static final String POST_SCRIPT_PKG = "io/helidon/build/archetype/maven/postgenerate";
+    private static final Pattern COPYRIGHT_HEADER = Pattern.compile("^(\\s?\\R)?\\/\\*.*\\*\\/(\\s?\\R)?", DOTALL);
 
     /**
      * The Maven project this mojo executes on.
@@ -181,16 +174,6 @@ public class JarMojo extends AbstractMojo {
         project.getArtifact().setFile(jarFile);
     }
 
-    /**
-     * Process the archetype descriptor.
-     * Find a descriptor template and if present generate the descriptor from it, otherwise find a descriptor copy it.
-     *
-     * @param resources           scanned project resources
-     * @param baseDir             project base directory
-     * @param archetypeDescriptor target file
-     * @throws MojoFailureException   if the no template and no descriptor is found
-     * @throws MojoExecutionException if an IO error occurs
-     */
     private void processDescriptor(Map<String, List<String>> resources, Path baseDir, Path archetypeDescriptor)
             throws MojoFailureException, MojoExecutionException {
 
@@ -220,13 +203,91 @@ public class JarMojo extends AbstractMojo {
         }
     }
 
-    /**
-     * Generate the resources required to make the archetype JAR compatible with the {@code maven-archetype-plugin}.
-     *
-     * @param archetypeDir        the exploded archetype directory
-     * @param archetypeDescriptor the helidon archetype descriptor
-     * @throws MojoExecutionException if an IO error occurs
-     */
+    private static InputStream resolveResource(String path) {
+        InputStream is = JarMojo.class.getClassLoader().getResourceAsStream(path);
+        if (is == null) {
+            throw new IllegalStateException("Unable to resolve resource: " + path);
+        }
+        return is;
+    }
+
+    private static List<String> listResources(String path) throws IOException {
+        URL url = JarMojo.class.getClassLoader().getResource(path);
+        if (url == null) {
+            return Collections.emptyList();
+        }
+        if (url.getProtocol().equals("file")) {
+            try {
+                String[] result = new File(url.toURI()).list();
+                if (result == null) {
+                    return Collections.emptyList();
+                }
+                return Arrays.asList(result);
+            } catch (URISyntaxException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        if (url.getProtocol().equals("jar")) {
+            String jarPath = url.getPath().substring(5, url.getPath().indexOf("!"));
+            JarFile jar = new JarFile(URLDecoder.decode(jarPath, UTF_8));
+            Enumeration<JarEntry> entries = jar.entries();
+            List<String> result = new ArrayList<>();
+            while (entries.hasMoreElements()) {
+                String name = entries.nextElement().getName();
+                if (name.startsWith(path)) {
+                    result.add(name);
+                }
+            }
+            return result;
+        }
+        throw new UnsupportedOperationException("Cannot list resources for URL " + url);
+    }
+
+    private void renderPostScript(Path archetypeDir, ArchetypeDescriptor desc) throws IOException {
+        // mustache scope
+        Map<String, Object> scope = new HashMap<>();
+
+        // base64 encoded byte code keyed by fully qualified class names
+        scope.put("classes", listResources(POST_SCRIPT_PKG)
+                .stream()
+                .filter(path -> path.endsWith(".class"))
+                .collect(toMap(path -> path.replace('/', '.')
+                                           .replace(".class", ""),
+                        path -> {
+                            try {
+                                byte[] byteCode = resolveResource(path).readAllBytes();
+                                String encodedByteCode = new String(Base64.getEncoder().encode(byteCode), UTF_8);
+                                // break line after 140 characters
+                                encodedByteCode = encodedByteCode.replaceAll("(.{100})", "$1\n");
+                                return new RawString(encodedByteCode);
+                            } catch (IOException ex) {
+                                throw new UncheckedIOException(ex);
+                            }
+                        })).entrySet());
+
+        // name of the properties to pass to the Helidon archetype engine
+        scope.put("propNames", desc.properties().stream()
+                                   .filter(Property::isExported)
+                                   .map(Property::id)
+                                   .collect(toList()));
+
+        // Helidon archetype engine GAV
+        scope.put("engineGAV", ENGINE_GROUP_ID + ":" + ENGINE_ARTIFACT_ID + ":" + ENGINE_VERSION);
+
+        // The non mustache post generate script that contains the postGenerate function
+        String postGenerateScript = new String(resolveResource(POST_SCRIPT_NAME).readAllBytes(), UTF_8);
+        postGenerateScript = COPYRIGHT_HEADER.matcher(postGenerateScript).replaceAll("");
+
+        scope.put("postGenerateScript", new RawString(postGenerateScript));
+
+        getLog().info("Rendering " + POST_SCRIPT_NAME);
+
+        renderMustacheTemplate(
+                resolveResource(POST_SCRIPT_NAME + MUSTACHE_EXT), POST_SCRIPT_NAME,
+                archetypeDir.resolve("META-INF/" + POST_SCRIPT_NAME),
+                scope);
+    }
+
     private void processMavenCompat(Path archetypeDir, Path archetypeDescriptor) throws MojoExecutionException {
         try {
             getLog().info("Processing maven-archetype-plugin compatibility");
@@ -255,43 +316,12 @@ public class JarMojo extends AbstractMojo {
                 Files.createFile(mavenArchetypePom);
             }
 
-            getLog().info("Rendering archetype-post-generate.groovy");
-            Path postGroovyScript = archetypeDir.resolve("META-INF/" + POST_SCRIPT_NAME);
-
-            // template properties
-            Map<String, Object> props = new HashMap<>();
-            for (String include : POST_SCRIPT_INCLUDES.keySet()) {
-                String resourcePath = "/" + POST_SCRIPT_INCLUDES.get(include);
-                String script = new String(getClass().getResourceAsStream(resourcePath).readAllBytes(),
-                        StandardCharsets.UTF_8);
-                props.put(include, new MustacheHelper.RawString(script));
-            }
-            props.put("propNames", desc.properties().stream()
-                    .filter(prop -> prop.isExported())
-                    .map(prop -> prop.id())
-                    .collect(Collectors.toList()));
-            props.put("engineGroupId", ENGINE_GROUP_ID);
-            props.put("engineArtifactId", ENGINE_ARTIFACT_ID);
-            props.put("engineVersion", ENGINE_VERSION);
-
-            renderMustacheTemplate(getClass().getResourceAsStream("/" + POST_SCRIPT_NAME + MUSTACHE_EXT),
-                    POST_SCRIPT_NAME, postGroovyScript, props);
-
+            renderPostScript(archetypeDir, desc);
         } catch (IOException ex) {
             throw new MojoExecutionException(ex.getMessage(), ex);
         }
     }
 
-    /**
-     * Process the archetype resources.
-     * Copy the archetype resources, and generate the resources list file.
-     *
-     * @param archetypeDir           the exploded archetype directory
-     * @param baseDir                the project base directory
-     * @param resources              the scanned project resources
-     * @param archetypeResourcesList the archetype resource list file to generate
-     * @throws MojoExecutionException if an IO error occurs
-     */
     private void processArchetypeResources(Map<String, List<String>> resources,
                                            Path archetypeDir,
                                            Path baseDir,
@@ -324,13 +354,6 @@ public class JarMojo extends AbstractMojo {
         }
     }
 
-    /**
-     * Generate the archetype JAR file.
-     *
-     * @param archetypeDir the exploded archetype directory
-     * @return created file
-     * @throws MojoExecutionException if an error occurs
-     */
     private File generateArchetypeJar(Path archetypeDir) throws MojoExecutionException {
         File jarFile = new File(outputDirectory, finalName + ".jar");
 
@@ -350,15 +373,9 @@ public class JarMojo extends AbstractMojo {
         return jarFile;
     }
 
-    /**
-     * Process a mustache template for an archetype descriptor.
-     *
-     * @param template            mustache template
-     * @param archetypeDescriptor the target file
-     */
     private void preProcessDescriptor(Path template, Path archetypeDescriptor) throws MojoExecutionException {
         getLog().info("Rendering " + template);
-        Map<String, String> props = templateProperties(properties, includeProjectProperties, project);
+        Map<String, String> props = MojoHelper.templateProperties(properties, includeProjectProperties, project);
         try {
             renderMustacheTemplate(Files.newInputStream(template),
                     ArchetypeEngine.DESCRIPTOR_RESOURCE_NAME + MUSTACHE_EXT, archetypeDescriptor, props);
@@ -367,35 +384,22 @@ public class JarMojo extends AbstractMojo {
         }
     }
 
-    /**
-     * Find a resource file.
-     *
-     * @param resources scanned project resources
-     * @param baseDir   project base directory
-     * @param name      name of the resource to find
-     * @return Path or {@code null} if not found
-     */
     private Path findResource(Map<String, List<String>> resources, Path baseDir, String name) {
         return resources.entrySet().stream()
-                .filter(e -> e.getValue().contains(name))
-                .map(e -> baseDir.resolve(e.getKey()).resolve(name))
-                .findAny()
-                .orElse(null);
+                        .filter(e -> e.getValue().contains(name))
+                        .map(e -> baseDir.resolve(e.getKey()).resolve(name))
+                        .findAny()
+                        .orElse(null);
     }
 
-    /**
-     * Scan for project resources and produce a comma separated list of included resources.
-     *
-     * @return list of resources
-     */
     private Map<String, List<String>> scanResources() {
         getLog().debug("Scanning project resources");
         Map<String, List<String>> allResources = new HashMap<>();
         for (Resource resource : project.getResources()) {
             List<String> resources = SourcePath.scan(new File(resource.getDirectory())).stream()
-                    .filter(p -> p.matches(resource.getIncludes(), resource.getExcludes()))
-                    .map(p -> p.asString(false))
-                    .collect(Collectors.toList());
+                                               .filter(p -> p.matches(resource.getIncludes(), resource.getExcludes()))
+                                               .map(p -> p.asString(false))
+                                               .collect(toList());
             if (getLog().isDebugEnabled()) {
                 resources.forEach(r -> getLog().debug("Found resource: " + r));
             }

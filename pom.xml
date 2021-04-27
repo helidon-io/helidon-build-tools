@@ -118,6 +118,7 @@
         -->
         <version.lib.helidon>0.9.0</version.lib.helidon>
         <version.lib.apache.commons>3.10</version.lib.apache.commons>
+        <version.lib.archetype-common>3.2.0</version.lib.archetype-common>
         <version.lib.asciidoctorj>1.6.0-RC.2</version.lib.asciidoctorj>
         <version.lib.asciidoctorj-diagram>1.5.4.1</version.lib.asciidoctorj-diagram>
         <version.lib.checkstyle>8.29</version.lib.checkstyle>
@@ -134,6 +135,7 @@
         <version.lib.maven>3.6.2</version.lib.maven>
         <version.lib.maven-annotations>3.5</version.lib.maven-annotations>
         <version.lib.maven-archiver>3.5.0</version.lib.maven-archiver>
+        <version.lib.maven-artifact-transfer>0.13.1</version.lib.maven-artifact-transfer>
         <version.lib.maven.filtering>3.1.1</version.lib.maven.filtering>
         <version.lib.maven-plugin-testing-harness>3.3.0</version.lib.maven-plugin-testing-harness>
         <version.lib.mustache>0.9.6</version.lib.mustache>
@@ -152,6 +154,7 @@
         <version.lib.site-plugin>3.8.2</version.lib.site-plugin>
         <version.lib.mock-server>5.10.0</version.lib.mock-server>
         <version.lib.jackson>2.11.0</version.lib.jackson>
+        <version.lib.wagon-http>3.3.4</version.lib.wagon-http>
 
         <!--
             !Version statement! - end
@@ -727,6 +730,36 @@
                 <artifactId>graal-sdk</artifactId>
                 <version>${version.lib.graalvm-sdk}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.maven.shared</groupId>
+                <artifactId>maven-artifact-transfer</artifactId>
+                <version>${version.lib.maven-artifact-transfer}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.archetype</groupId>
+                <artifactId>archetype-common</artifactId>
+                <version>${version.lib.archetype-common}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-http</artifactId>
+                <version>${version.lib.wagon-http}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-impl</artifactId>
+                <version>${version.lib.maven-resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-transport-wagon</artifactId>
+                <version>${version.lib.maven-resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-connector-basic</artifactId>
+                <version>${version.lib.maven-resolver}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -829,6 +862,27 @@
                                 </configuration>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>debug-invoker</id>
+            <activation>
+                <property>
+                    <name>env.MAVEN_DEBUG_OPTS</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-invoker-plugin</artifactId>
+                        <configuration>
+                            <environmentVariables>
+                                <MAVEN_DEBUG_OPTS>-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:8001</MAVEN_DEBUG_OPTS>
+                            </environmentVariables>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
