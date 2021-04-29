@@ -7,6 +7,21 @@ All notable changes to the Helidon CLI will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Changes
+
+- Update CLI code generation [366](https://github.com/oracle/helidon-build-tools/pull/366)
+- Improve CLI plugins [368](https://github.com/oracle/helidon-build-tools/pull/368)
+- CLI plugin embedded support [367](https://github.com/oracle/helidon-build-tools/pull/367)
+
+### Fixes
+
+- Do not error if the Maven version cannot be resolved. Allow support of shims [390](https://github.com/oracle/helidon-build-tools/pull/390) [364](https://github.com/oracle/helidon-build-tools/pull/364)
+- CLI always generates project in the same directory [393](https://github.com/oracle/helidon-build-tools/pull/393) [333](https://github.com/oracle/helidon-build-tools/pull/333)
+- Fix bad error message when no Maven is not found in the PATH [](https://github.com/oracle/helidon-build-tools/pull/396) [304](https://github.com/oracle/helidon-build-tools/pull/304)
+- Fix aether utility to use Maven settings [397](https://github.com/oracle/helidon-build-tools/pull/397) [383](https://github.com/oracle/helidon-build-tools/issues/383)
+
 ## [2.1.3]
 
 ### Notable New Features
