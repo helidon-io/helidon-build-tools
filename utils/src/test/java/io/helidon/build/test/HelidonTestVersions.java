@@ -28,7 +28,7 @@ public class HelidonTestVersions {
     private static final String CURRENT_HELIDON_SNAPSHOT_VERSION = "2.3.0-SNAPSHOT";
     private static final String CURRENT_HELIDON_RELEASE_VERSION = "2.2.1";
     private static final String PREVIOUS_HELIDON_RELEASE_VERSION = "2.2.0";
-    private static final String CURRENT_HELIDON_BUILD_TOOLS_RELEASE_VERSION = "2.1.3";
+    private static final String CURRENT_HELIDON_BUILD_TOOLS_RELEASE_VERSION = "2.2.0";
 
     /**
      * The Helidon test version override property.
