@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,45 +20,39 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import io.helidon.build.archetype.engine.ArchetypeCatalog;
-import io.helidon.build.cli.impl.InitCommand.Flavor;
-import io.helidon.build.util.ProcessMonitor;
+import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
+import io.helidon.build.cli.impl.InitOptions.Flavor;
+import io.helidon.build.cli.impl.Plugins.PluginFailed;
 import io.helidon.build.util.Requirements;
 
 import static io.helidon.build.cli.impl.CommandRequirements.requireSupportedHelidonVersion;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Class ArchetypeBrowser.
+ * Archetype browser for the V1 archetypes.
  */
 class ArchetypeBrowser {
 
-    /**
-     * Helidon version not found message.
-     */
     private static final String HELIDON_VERSION_NOT_FOUND = "$(red Helidon version) $(RED %s) $(red not found.)";
-
-    /**
-     * Archetype not found message.
-     */
-    static final String ARCHETYPE_NOT_FOUND = "$(red Archetype \")$(RED %s)$(red \" not found.)";
-
-    /**
-     * Download failed message.
-     */
-    private static final String DOWNLOAD_FAILED = "Unable to download %s from %s";
 
     private final Metadata metadata;
     private final Flavor flavor;
     private final ArchetypeCatalog catalog;
 
-    ArchetypeBrowser(Metadata metadata, Flavor flavor, String helidonVersion) throws Exception {
+    /**
+     * Create a new archetype browser for the V1 engine.
+     *
+     * @param metadata       metadata
+     * @param flavor         flavor
+     * @param helidonVersion Helidon version
+     */
+    ArchetypeBrowser(Metadata metadata, Flavor flavor, String helidonVersion) {
         this.metadata = requireNonNull(metadata);
         this.flavor = requireNonNull(flavor);
         ArchetypeCatalog catalog = null;
         try {
             catalog = metadata.catalogOf(requireSupportedHelidonVersion(helidonVersion));
-        } catch (ProcessMonitor.ProcessFailedException e) {
+        } catch (PluginFailed e) {
             Requirements.failed(HELIDON_VERSION_NOT_FOUND, helidonVersion);
         }
         this.catalog = catalog;

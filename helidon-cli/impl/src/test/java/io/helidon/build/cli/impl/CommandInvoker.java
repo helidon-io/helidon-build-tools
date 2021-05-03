@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,14 +25,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import io.helidon.build.cli.harness.UserConfig;
 import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.SubstitutionVariables;
 
 import org.apache.maven.model.Model;
 
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARCHETYPE_NAME;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_FLAVOR;
+import static io.helidon.build.cli.impl.InitOptions.DEFAULT_ARCHETYPE_NAME;
+import static io.helidon.build.cli.impl.InitOptions.DEFAULT_FLAVOR;
 import static io.helidon.build.cli.impl.TestUtils.exec;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,9 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.build.cli.harness.CommandFragment;
-import io.helidon.build.cli.harness.Config;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option;
 import io.helidon.build.cli.harness.Option.KeyValue;
-import io.helidon.build.cli.harness.UserConfig;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.Strings;
@@ -125,7 +123,10 @@ final class CommonOptions {
             if (!metadataUrl.equals(Metadata.DEFAULT_URL)) {
                 Log.debug("using metadata url %s", metadataUrl);
             }
-            metadata = Metadata.newInstance(metadataUrl, config.checkForUpdatesIntervalHours());
+            metadata = Metadata.builder()
+                               .url(metadataUrl)
+                               .updateFrequency(config.checkForUpdatesIntervalHours())
+                               .build();
         }
         return metadata;
     }

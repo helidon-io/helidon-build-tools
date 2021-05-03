@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,17 @@
  * limitations under the License.
  */
 
+import io.helidon.build.cli.codegen.CommandAP;
+import io.helidon.build.cli.codegen.FileHeaderJavacPlugin;
+
 /**
  * Helidon CLI code generator.
  */
 module io.helidon.build.cli.codegen {
     requires io.helidon.build.cli.harness;
     requires java.compiler;
-    provides javax.annotation.processing.Processor with io.helidon.build.cli.codegen.CommandAnnotationProcessor;
+    provides javax.annotation.processing.Processor with CommandAP;
+    provides com.sun.source.util.Plugin with FileHeaderJavacPlugin;
+    requires jdk.compiler;
+    exports io.helidon.build.cli.codegen;
 }

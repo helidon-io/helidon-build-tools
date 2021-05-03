@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -30,8 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import io.helidon.build.archetype.engine.ArchetypeCatalog;
-import io.helidon.build.cli.harness.Config;
+import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
 import io.helidon.build.util.ConfigProperties;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
@@ -50,6 +51,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * CLI metadata access.
  */
 public class Metadata {
+
     /**
      * The default url.
      */
@@ -88,84 +90,18 @@ public class Metadata {
     private final long updateFrequencyMillis;
     private final boolean debugPlugin;
     private final Map<Path, Long> lastChecked;
-    private final AtomicReference<Exception> latestVersionFailure;
+    private final AtomicReference<RuntimeException> latestVersionFailure;
     private final AtomicReference<MavenVersion> latestVersion;
 
-    /**
-     * Returns a new instance with default configuration.
-     *
-     * @return The instance.
-     */
-    public static Metadata newInstance() {
-        return newInstance(DEFAULT_URL);
-    }
-
-    /**
-     * Returns a new instance with the given url and default configuration.
-     *
-     * @param url The url.
-     * @return The instance.
-     */
-    public static Metadata newInstance(String url) {
-        return newInstance(url, DEFAULT_UPDATE_FREQUENCY);
-    }
-
-    /**
-     * Returns a new instance with the given url and default configuration but with optional plugin debug output.
-     *
-     * @param url The url.
-     * @param debugPlugin {@code true} if should enable debug logging in plugin.
-     * @return The instance.
-     */
-    public static Metadata newInstance(String url, boolean debugPlugin) {
-        final Path cacheDir = Config.userConfig().cacheDir();
-        return newInstance(cacheDir, url, DEFAULT_UPDATE_FREQUENCY, DEFAULT_UPDATE_FREQUENCY_UNITS, debugPlugin);
-    }
-
-    /**
-     * Returns a new instance with the given url and default configuration.
-     *
-     * @param url The url.
-     * @param updateFrequencyHours The update frequency, in hours.
-     * @return The instance.
-     */
-    public static Metadata newInstance(String url, long updateFrequencyHours) {
-        final Path cacheDir = Config.userConfig().cacheDir();
-        final boolean debug = Log.isDebug();
-        return newInstance(cacheDir, url, updateFrequencyHours, DEFAULT_UPDATE_FREQUENCY_UNITS, debug);
-    }
-
-    /**
-     * Returns a new instance.
-     *
-     * @param rootDir The root directory.
-     * @param url The url.
-     * @param updateFrequency The update frequency.
-     * @param updateFrequencyUnits The update frequency units.
-     * @param debugPlugin {@code true} if should enable debug logging in plugin.
-     * @return The instance.
-     */
-    public static Metadata newInstance(Path rootDir,
-                                       String url,
-                                       long updateFrequency,
-                                       TimeUnit updateFrequencyUnits,
-                                       boolean debugPlugin) {
-        return new Metadata(rootDir, url, updateFrequency, updateFrequencyUnits, debugPlugin);
-    }
-
-    private Metadata(Path rootDir,
-                     String url,
-                     long updateFrequency,
-                     TimeUnit updateFrequencyUnits,
-                     boolean debugPlugin) {
-        this.rootDir = rootDir;
-        this.url = url;
-        this.latestVersionFile = rootDir.resolve(LATEST_VERSION_FILE_NAME);
-        this.updateFrequencyMillis = updateFrequencyUnits.toMillis(updateFrequency);
-        this.debugPlugin = debugPlugin;
-        this.lastChecked = new HashMap<>();
-        this.latestVersionFailure = new AtomicReference<>();
-        this.latestVersion = new AtomicReference<>();
+    private Metadata(Builder builder) {
+        rootDir = builder.rootDir;
+        url = builder.url;
+        latestVersionFile = rootDir.resolve(LATEST_VERSION_FILE_NAME);
+        updateFrequencyMillis = builder.updateFrequencyUnits.toMillis(builder.updateFrequency);
+        debugPlugin = builder.debugPlugin;
+        lastChecked = new HashMap<>();
+        latestVersionFailure = new AtomicReference<>();
+        latestVersion = new AtomicReference<>();
     }
 
     /**
@@ -203,9 +139,8 @@ public class Metadata {
      * Returns the latest Helidon version.
      *
      * @return The version.
-     * @throws Exception If an error occurs.
      */
-    public MavenVersion latestVersion() throws Exception {
+    public MavenVersion latestVersion() {
         return latestVersion(false);
     }
 
@@ -214,11 +149,10 @@ public class Metadata {
      *
      * @param quiet If info messages should be suppressed.
      * @return The version.
-     * @throws Exception If an error occurs.
      */
-    public MavenVersion latestVersion(boolean quiet) throws Exception {
+    public MavenVersion latestVersion(boolean quiet) {
         // If we fail, we only want to do so once per command, so we cache any failure
-        Exception initialFailure = latestVersionFailure.get();
+        RuntimeException initialFailure = latestVersionFailure.get();
         if (initialFailure == null) {
             try {
                 if (checkForUpdates(null, latestVersionFile, quiet)) {
@@ -227,7 +161,7 @@ public class Metadata {
                     latestVersion.set(readLatestVersion());
                 }
                 return latestVersion.get();
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 latestVersionFailure.set(e);
                 throw e;
             }
@@ -240,11 +174,10 @@ public class Metadata {
      * Returns the {@code helidon-cli-maven-plugin} version for the given Helidon version.
      *
      * @param helidonVersion The version.
-     * @param quiet If info messages should be suppressed.
+     * @param quiet          If info messages should be suppressed.
      * @return The version.
-     * @throws Exception If an error occurs.
      */
-    public MavenVersion cliPluginVersion(MavenVersion helidonVersion, boolean quiet) throws Exception {
+    public MavenVersion cliPluginVersion(MavenVersion helidonVersion, boolean quiet) {
         return cliPluginVersion(helidonVersion, toMavenVersion(Config.buildVersion()), quiet);
     }
 
@@ -253,13 +186,10 @@ public class Metadata {
      *
      * @param helidonVersion The version.
      * @param thisCliVersion This CLI version.
-     * @param quiet If info messages should be suppressed.
+     * @param quiet          If info messages should be suppressed.
      * @return The version.
-     * @throws Exception If an error occurs.
      */
-    public MavenVersion cliPluginVersion(MavenVersion helidonVersion,
-                                         MavenVersion thisCliVersion,
-                                         boolean quiet) throws Exception {
+    public MavenVersion cliPluginVersion(MavenVersion helidonVersion, MavenVersion thisCliVersion, boolean quiet) {
 
         // Create a map from CLI version to CLI plugin versions, including latest
 
@@ -294,11 +224,10 @@ public class Metadata {
      * Returns the CLI version for the given Helidon version.
      *
      * @param helidonVersion The version.
-     * @param quiet If info messages should be suppressed.
+     * @param quiet          If info messages should be suppressed.
      * @return The properties.
-     * @throws Exception If an error occurs.
      */
-    public MavenVersion cliVersionOf(MavenVersion helidonVersion, boolean quiet) throws Exception {
+    public MavenVersion cliVersionOf(MavenVersion helidonVersion, boolean quiet) {
         return toMavenVersion(requiredProperty(helidonVersion, CLI_VERSION_PROPERTY, quiet));
     }
 
@@ -306,11 +235,10 @@ public class Metadata {
      * Checks whether or not there is a more recent CLI version available and returns the version if so.
      *
      * @param thisCliVersion The version of this CLI.
-     * @param quiet If info messages should be suppressed.
+     * @param quiet          If info messages should be suppressed.
      * @return A valid CLI version if a more recent CLI is available.
-     * @throws Exception If an error occurs.
      */
-    public Optional<MavenVersion> checkForCliUpdate(MavenVersion thisCliVersion, boolean quiet) throws Exception {
+    public Optional<MavenVersion> checkForCliUpdate(MavenVersion thisCliVersion, boolean quiet) {
         final MavenVersion latestHelidonVersion = latestVersion(quiet);
         final MavenVersion latestCliVersion = cliVersionOf(latestHelidonVersion, quiet);
         if (latestCliVersion.isGreaterThan(thisCliVersion)) {
@@ -324,12 +252,11 @@ public class Metadata {
      * Returns the release notes for the latest Helidon version that are more recent than the given CLI version.
      *
      * @param latestHelidonVersion The latest Helidon version.
-     * @param sinceCliVersion The CLI version to start with.
+     * @param sinceCliVersion      The CLI version to start with.
      * @return The notes, in sorted order.
-     * @throws Exception If an error occurs.
      */
     public Map<MavenVersion, String> cliReleaseNotesOf(MavenVersion latestHelidonVersion,
-                                                       MavenVersion sinceCliVersion) throws Exception {
+                                                       MavenVersion sinceCliVersion){
         requireNonNull(latestHelidonVersion, "latestHelidonVersion must not be null");
         requireNonNull(sinceCliVersion, "sinceCliVersion must not be null");
         final ConfigProperties props = propertiesOf(latestHelidonVersion, true);
@@ -351,9 +278,8 @@ public class Metadata {
      *
      * @param helidonVersion The version.
      * @return The properties.
-     * @throws Exception If an error occurs.
      */
-    public ConfigProperties propertiesOf(String helidonVersion) throws Exception {
+    public ConfigProperties propertiesOf(String helidonVersion) {
         return propertiesOf(toMavenVersion(helidonVersion));
     }
 
@@ -362,9 +288,8 @@ public class Metadata {
      *
      * @param helidonVersion The version.
      * @return The properties.
-     * @throws Exception If an error occurs.
      */
-    public ConfigProperties propertiesOf(MavenVersion helidonVersion) throws Exception {
+    public ConfigProperties propertiesOf(MavenVersion helidonVersion) {
         return propertiesOf(helidonVersion, false);
     }
 
@@ -372,11 +297,10 @@ public class Metadata {
      * Returns the metadata properties for the given Helidon version.
      *
      * @param helidonVersion The version.
-     * @param quiet If info messages should be suppressed.
+     * @param quiet          If info messages should be suppressed.
      * @return The properties.
-     * @throws Exception If an error occurs.
      */
-    public ConfigProperties propertiesOf(MavenVersion helidonVersion, boolean quiet) throws Exception {
+    public ConfigProperties propertiesOf(MavenVersion helidonVersion, boolean quiet) {
         return new ConfigProperties(versionedFile(helidonVersion, METADATA_FILE_NAME, quiet));
     }
 
@@ -385,9 +309,8 @@ public class Metadata {
      *
      * @param helidonVersion The version.
      * @return The catalog.
-     * @throws Exception If an error occurs.
      */
-    public ArchetypeCatalog catalogOf(String helidonVersion) throws Exception {
+    public ArchetypeCatalog catalogOf(String helidonVersion) {
         return catalogOf(toMavenVersion(helidonVersion));
     }
 
@@ -396,10 +319,13 @@ public class Metadata {
      *
      * @param helidonVersion The version.
      * @return The catalog.
-     * @throws Exception If an error occurs.
      */
-    public ArchetypeCatalog catalogOf(MavenVersion helidonVersion) throws Exception {
-        return ArchetypeCatalog.read(versionedFile(helidonVersion, CATALOG_FILE_NAME, false));
+    public ArchetypeCatalog catalogOf(MavenVersion helidonVersion) {
+        try {
+            return ArchetypeCatalog.read(versionedFile(helidonVersion, CATALOG_FILE_NAME, false));
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
     }
 
     /**
@@ -407,15 +333,14 @@ public class Metadata {
      *
      * @param catalogEntry The catalog entry.
      * @return The path to the archetype jar.
-     * @throws Exception If an error occurs.
      */
-    public Path archetypeOf(ArchetypeCatalog.ArchetypeEntry catalogEntry) throws Exception {
+    public Path archetypeOf(ArchetypeCatalog.ArchetypeEntry catalogEntry) {
         final MavenVersion helidonVersion = toMavenVersion(catalogEntry.version());
         final String fileName = catalogEntry.artifactId() + "-" + helidonVersion + JAR_SUFFIX;
         return versionedFile(helidonVersion, fileName, false);
     }
 
-    private String requiredProperty(MavenVersion helidonVersion, String propertyName, boolean quiet) throws Exception {
+    private String requiredProperty(MavenVersion helidonVersion, String propertyName, boolean quiet) {
         ConfigProperties properties = propertiesOf(helidonVersion, quiet);
         return Requirements.requireNonNull(properties.property(propertyName), "missing " + propertyName);
     }
@@ -426,7 +351,7 @@ public class Metadata {
         final String latest = properties.property(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
         if (latest == null) {
             Log.debug("Helidon version %s does not contain %s, using current CLI version %s", helidonVersion,
-                      LATEST_CLI_PLUGIN_VERSION_PROPERTY, thisCliVersion);
+                    LATEST_CLI_PLUGIN_VERSION_PROPERTY, thisCliVersion);
             return thisCliVersion;
         } else {
             return toMavenVersion(latest);
@@ -435,8 +360,8 @@ public class Metadata {
 
     private static boolean isCliPluginVersionKey(String key) {
         return key.startsWith(CLI_PLUGIN_VERSION_PROPERTY_PREFIX)
-               && key.endsWith(CLI_PLUGIN_VERSION_PROPERTY_SUFFIX)
-               && !key.equals(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
+                && key.endsWith(CLI_PLUGIN_VERSION_PROPERTY_SUFFIX)
+                && !key.equals(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
     }
 
     private static MavenVersion toCliPluginVersion(String key) {
@@ -458,18 +383,18 @@ public class Metadata {
     }
 
     @SuppressWarnings("ConstantConditions")
-    private Path versionedFile(MavenVersion helidonVersion, String fileName, boolean quiet) throws Exception {
+    private Path versionedFile(MavenVersion helidonVersion, String fileName, boolean quiet) {
         final Path versionDir = rootDir.resolve(requireNonNull(helidonVersion).toString());
         final Path checkFile = versionDir.resolve(LAST_UPDATE_FILE_NAME);
         checkForUpdates(helidonVersion, checkFile, quiet);
         return assertFile(requireHelidonVersionDir(versionDir).resolve(fileName));
     }
 
-    private boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, boolean quiet) throws Exception {
+    private boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, boolean quiet) {
         return checkForUpdates(helidonVersion, checkFile, System.currentTimeMillis(), quiet);
     }
 
-    boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, long currentTimeMillis, boolean quiet) throws Exception {
+    boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, long currentTimeMillis, boolean quiet) {
         if (isStale(checkFile, currentTimeMillis)) {
             update(helidonVersion, quiet);
             return true;
@@ -503,19 +428,19 @@ public class Metadata {
                         final String elapsedDays = elapsed.toDaysPart() == 1 ? "day" : "days";
                         if (stale) {
                             Log.debug("stale check is true for %s (last: %s, now: %s, elapsed: %d %s %02d:%02d:%02d)",
-                                      file, lastModifiedTime, currentTime,
-                                      elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
-                                      elapsed.toSecondsPart());
+                                    file, lastModifiedTime, currentTime,
+                                    elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
+                                    elapsed.toSecondsPart());
                         } else {
                             final Duration remain = Duration.ofMillis(remainingMillis);
                             final String remainDays = remain.toDaysPart() == 1 ? "day" : "days";
                             Log.debug("stale check is false for %s (last: %s, now: %s, elapsed: %d %s %02d:%02d:%02d, "
-                                      + "remain: %d %s %02d:%02d:%02d)",
-                                      file, lastModifiedTime, currentTime,
-                                      elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
-                                      elapsed.toSecondsPart(),
-                                      remain.toDaysPart(), remainDays, remain.toHoursPart(), remain.toMinutesPart(),
-                                      remain.toSecondsPart());
+                                            + "remain: %d %s %02d:%02d:%02d)",
+                                    file, lastModifiedTime, currentTime,
+                                    elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
+                                    elapsed.toSecondsPart(),
+                                    remain.toDaysPart(), remainDays, remain.toHoursPart(), remain.toMinutesPart(),
+                                    remain.toSecondsPart());
                         }
                     }
                     return stale;
@@ -533,7 +458,7 @@ public class Metadata {
         }
     }
 
-    private void update(MavenVersion helidonVersion, boolean quiet) throws Exception {
+    private void update(MavenVersion helidonVersion, boolean quiet) {
         final boolean logInfo = Log.isDebug() || !quiet;
         final int maxAttempts = quiet ? 1 : PLUGIN_MAX_ATTEMPTS;
         final List<String> args = new ArrayList<>();
@@ -568,13 +493,105 @@ public class Metadata {
         Log.info(line);
     }
 
-    private MavenVersion readLatestVersion() throws Exception {
-        final List<String> lines = Files.readAllLines(latestVersionFile, UTF_8);
-        for (String line : lines) {
-            if (!line.isEmpty()) {
-                return toMavenVersion(line.trim());
+    private MavenVersion readLatestVersion() {
+        try {
+            final List<String> lines = Files.readAllLines(latestVersionFile, UTF_8);
+            for (String line : lines) {
+                if (!line.isEmpty()) {
+                    return toMavenVersion(line.trim());
+                }
             }
+            throw new IllegalStateException("No version in " + latestVersionFile);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
-        throw new IllegalStateException("No version in " + latestVersionFile);
+    }
+
+    /**
+     * Create a new builder.
+     *
+     * @return Builder
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * {@link Metadata} builder.
+     */
+    public static class Builder {
+
+        private Path rootDir = Config.userConfig().cacheDir();
+        private String url = DEFAULT_URL;
+        private long updateFrequency = DEFAULT_UPDATE_FREQUENCY;
+        private boolean debugPlugin;
+        private TimeUnit updateFrequencyUnits = DEFAULT_UPDATE_FREQUENCY_UNITS;
+
+        protected Builder() {
+        }
+
+        /**
+         * Returns a new instance.
+         *
+         * @param rootDir The root directory.
+         * @return this builder
+         */
+        public Builder rootDir(Path rootDir) {
+            this.rootDir = rootDir;
+            return this;
+        }
+
+        /**
+         * Returns a new instance.
+         *
+         * @param url The url.
+         * @return this builder
+         */
+        public Builder url(String url) {
+            this.url = url;
+            return this;
+        }
+
+        /**
+         * Returns a new instance.
+         *
+         * @param updateFrequencyUnits The update frequency units.
+         * @return this builder
+         */
+        public Builder updateFrequencyUnits(TimeUnit updateFrequencyUnits) {
+            this.updateFrequencyUnits = updateFrequencyUnits;
+            return this;
+        }
+
+        /**
+         * Returns a new instance.
+         *
+         * @param updateFrequency The update frequency.
+         * @return this builder
+         */
+        public Builder updateFrequency(long updateFrequency) {
+            this.updateFrequency = updateFrequency;
+            return this;
+        }
+
+        /**
+         * Returns a new instance.
+         *
+         * @param debugPlugin {@code true} if should enable debug logging in plugin.
+         * @return this builder
+         */
+        public Builder debugPlugin(boolean debugPlugin) {
+            this.debugPlugin = debugPlugin;
+            return this;
+        }
+
+        /**
+         * Builder the metadata instance.
+         *
+         * @return Metadata
+         */
+        public Metadata build() {
+            return new Metadata(this);
+        }
     }
 }

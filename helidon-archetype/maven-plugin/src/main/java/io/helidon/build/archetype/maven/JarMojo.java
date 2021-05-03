@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import io.helidon.build.archetype.engine.ArchetypeDescriptor;
-import io.helidon.build.archetype.engine.ArchetypeEngine;
+import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor;
+import io.helidon.build.archetype.engine.v1.ArchetypeEngine;
 import io.helidon.build.util.MustacheHelper;
 import io.helidon.build.util.SourcePath;
 

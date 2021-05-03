@@ -125,6 +125,7 @@
         <version.lib.diffutils>2.2</version.lib.diffutils>
         <version.lib.doxia>1.9.1</version.lib.doxia>
         <version.lib.freemarker>2.3.23</version.lib.freemarker>
+        <version.lib.graalvm-sdk>21.0.0.2</version.lib.graalvm-sdk>
         <version.lib.gson>2.8.5</version.lib.gson>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.invoker>3.0.1</version.lib.invoker>
@@ -208,6 +209,8 @@
         <module>dev-loop</module>
         <module>stager-maven-plugin</module>
         <module>build-cache-maven-plugin</module>
+        <module>copyright-maven-plugin</module>
+        <module>services-maven-plugin</module>
     </modules>
 
     <build>
@@ -273,6 +276,7 @@
                         <excludes>
                             <exclude>**/*IT.java</exclude>
                         </excludes>
+                        <useModulePath>false</useModulePath>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -817,6 +821,11 @@
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
                 <version>${version.lib.gson}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.graalvm.sdk</groupId>
+                <artifactId>graal-sdk</artifactId>
+                <version>${version.lib.graalvm-sdk}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

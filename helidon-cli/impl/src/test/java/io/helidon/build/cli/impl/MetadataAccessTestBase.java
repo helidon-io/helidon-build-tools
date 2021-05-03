@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 package io.helidon.build.cli.impl;
 
-import io.helidon.build.cli.harness.Config;
-import io.helidon.build.cli.harness.UserConfig;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 import io.helidon.build.test.TestFiles;
 import io.helidon.build.util.MavenVersion;
@@ -25,8 +23,11 @@ import io.helidon.build.util.Proxies;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 
+import java.nio.file.Path;
+
 import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
+import static io.helidon.build.util.TestUtils.uniqueDir;
 
 /**
  * Base class for command tests that require the {@link Metadata}.
@@ -45,8 +46,11 @@ public class MetadataAccessTestBase extends CommandTestBase {
      */
     @BeforeAll
     public static void startMetadataAccess() {
-        Config.setUserHome(TestFiles.targetDir().resolve("alice"));
-        USER_CONFIG = Config.userConfig();
+        Path userHome = uniqueDir(TestFiles.targetDir(), "alice");
+        Config.setUserHome(userHome);
+        USER_CONFIG = UserConfig.create(userHome);
+        Config.setUserConfig(USER_CONFIG);
+        Plugins.reset(false);
         if (canUseMetadataTestServer()) {
             SERVER = new MetadataTestServer(TestVersion.RC1, false).start();
             METADATA_URL = SERVER.url();
@@ -55,7 +59,10 @@ public class MetadataAccessTestBase extends CommandTestBase {
             METADATA_URL = Metadata.DEFAULT_URL;
             Proxies.setProxyPropertiesFromEnv();
         }
-        METADATA = Metadata.newInstance(METADATA_URL, DEBUG_PLUGIN);
+        METADATA = Metadata.builder()
+                           .url(METADATA_URL)
+                           .debugPlugin(DEBUG_PLUGIN)
+                           .build();
     }
 
     private static boolean canUseMetadataTestServer() {

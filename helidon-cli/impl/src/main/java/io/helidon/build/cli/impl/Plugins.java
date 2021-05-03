@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,14 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -25,11 +31,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import io.helidon.build.cli.harness.Config;
+import io.helidon.build.cli.plugin.Plugin;
 import io.helidon.build.util.JavaProcessBuilder;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.ProcessMonitor;
 import io.helidon.build.util.Proxies;
+
+import org.graalvm.nativeimage.ImageInfo;
 
 import static io.helidon.build.cli.impl.CommandRequirements.unsupportedJavaVersion;
 import static io.helidon.build.util.Constants.EOL;
@@ -51,10 +59,10 @@ public class Plugins {
     private static final String TIMED_OUT_SUFFIX = " timed out";
     private static final String UNSUPPORTED_CLASS_VERSION_ERROR = UnsupportedClassVersionError.class.getSimpleName();
 
-    private static Path pluginJar() throws Exception {
+    private static Path pluginJar() {
         Path pluginJar = PLUGINS_JAR.get();
         if (pluginJar == null) {
-            final String cliVersion = Config.buildProperties().buildRevision();
+            final String cliVersion = Config.buildRevision();
             final String jarName = JAR_NAME_PREFIX + cliVersion + JAR_NAME_SUFFIX;
             pluginJar = Config.userConfig().pluginsDir().resolve(jarName);
             if (!Files.exists(pluginJar)) {
@@ -62,7 +70,11 @@ public class Plugins {
                 final ClassLoader loader = Plugins.class.getClassLoader();
                 final InputStream input = requireNonNull(loader.getResourceAsStream(resourcePath), resourcePath + " not found!");
                 Log.debug("unpacked %s", pluginJar);
-                Files.copy(input, pluginJar);
+                try {
+                    Files.copy(input, pluginJar);
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
             }
             PLUGINS_JAR.set(pluginJar.toAbsolutePath());
         }
@@ -91,33 +103,80 @@ public class Plugins {
     /**
      * Execute a plugin and wait for it to complete.
      *
-     * @param pluginName The plugin name.
-     * @param pluginArgs The plugin args.
+     * @param pluginName     The plugin name.
+     * @param pluginArgs     The plugin args.
      * @param maxWaitSeconds The maximum number of seconds to wait for completion.
-     * @throws Exception If an error occurs.
      */
     public static void execute(String pluginName,
                                List<String> pluginArgs,
-                               int maxWaitSeconds) throws Exception {
+                               int maxWaitSeconds) {
         execute(pluginName, pluginArgs, maxWaitSeconds, Plugins::devNull);
     }
 
     /**
-     * Execute a plugin and wait for it to complete.
+     * Execute a plugin.
+     * If executing inside a native executable, the plugin execution is done by spawning a Java process using the
+     * bundled plugin JAR file. Otherwise the execute is done in the current JVM.
      *
-     * @param pluginName The plugin name.
-     * @param pluginArgs The plugin args.
-     * @param maxWaitSeconds The maximum number of seconds to wait for completion.
-     * @param stdOut The std out consumer.
-     * @throws Exception If an error occurs.
+     * @param pluginName     The plugin name.
+     * @param pluginArgs     The plugin args.
+     * @param maxWaitSeconds If spawned, the maximum number of seconds to wait for completion.
+     * @param stdOut         The std out consumer.
      */
     public static void execute(String pluginName,
                                List<String> pluginArgs,
                                int maxWaitSeconds,
-                               Consumer<String> stdOut) throws Exception {
+                               Consumer<String> stdOut) {
+
+        if (ImageInfo.inImageRuntimeCode()) {
+            spawned(pluginName, pluginArgs, maxWaitSeconds, stdOut);
+        } else {
+            embedded(pluginName, pluginArgs, stdOut);
+        }
+    }
+
+    private static void embedded(String pluginName, List<String> pluginArgs, Consumer<String> stdOut) {
+        PrintStream origStdOut = System.out;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            System.setOut(new PrintStream(baos));
+            List<String> command = new ArrayList<>();
+            command.add(requireNonNull(pluginName));
+            if (Log.isDebug()) {
+                command.add("--debug");
+            } else if (Log.isVerbose()) {
+                command.add("--verbose");
+            }
+            command.addAll(pluginArgs);
+            Plugin.execute(command.toArray(new String[0]));
+        } catch (Plugin.Failed ex) {
+            if (ex.getCause() != null) {
+                throw new PluginFailed(ex.getCause());
+            } else {
+                throw new PluginFailed(ex);
+            }
+        } catch (Exception ex) {
+            throw new PluginFailed(ex);
+        } finally {
+            System.setOut(origStdOut);
+        }
+        ByteArrayInputStream is = new ByteArrayInputStream(baos.toByteArray());
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                stdOut.accept(line);
+            }
+        } catch (IOException ex) {
+            throw new PluginFailed(ex);
+        }
+    }
+
+    private static void spawned(String pluginName,
+                                List<String> pluginArgs,
+                                int maxWaitSeconds,
+                                Consumer<String> stdOut) {
 
         // Create the command
-
         final List<String> command = new ArrayList<>();
         command.add("java");
         command.add(JIT_LEVEL_ONE);
@@ -145,15 +204,15 @@ public class Plugins {
         Log.debug("executing %s", command);
 
         final List<String> stdErr = new ArrayList<>();
-        ProcessMonitor processMonitor = ProcessMonitor.builder()
-                                                      .processBuilder(processBuilder)
-                                                      .stdOut(stdOut)
-                                                      .stdErr(stdErr::add)
-                                                      .capture(true)
-                                                      .build()
-                                                      .start();
         try {
-            processMonitor.waitForCompletion(maxWaitSeconds, TimeUnit.SECONDS);
+            ProcessMonitor.builder()
+                          .processBuilder(processBuilder)
+                          .stdOut(stdOut)
+                          .stdErr(stdErr::add)
+                          .capture(true)
+                          .build()
+                          .start()
+                          .waitForCompletion(maxWaitSeconds, TimeUnit.SECONDS);
         } catch (ProcessMonitor.ProcessFailedException error) {
             if (containsUnsupportedClassVersionError(stdErr)) {
                 unsupportedJavaVersion();
@@ -174,12 +233,12 @@ public class Plugins {
     /**
      * Plugin failure.
      */
-    public static class PluginFailed extends Exception {
+    public static class PluginFailed extends RuntimeException {
         private PluginFailed(String message) {
             super(message);
         }
 
-        private PluginFailed(Exception cause) {
+        private PluginFailed(Throwable cause) {
             super(cause);
         }
 
