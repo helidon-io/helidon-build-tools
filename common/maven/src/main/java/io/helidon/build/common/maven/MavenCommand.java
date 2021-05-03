@@ -18,6 +18,7 @@ package io.helidon.build.common.maven;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -130,7 +131,7 @@ public class MavenCommand {
             try {
                 maven = maven.toRealPath();
                 Path shimmed = maven.getParent().getParent().resolve(MAVEN_SHIM_TARGET);
-                if (java.nio.file.Files.exists(shimmed)) {
+                if (Files.exists(shimmed)) {
                     maven = shimmed;
                 }
                 MAVEN_EXECUTABLE.set(maven.toRealPath());
@@ -202,7 +203,24 @@ public class MavenCommand {
      * @throws IllegalStateException If the installed version does not meet the requirement.
      */
     public static void requireMavenVersion(MavenVersion requiredMinimumVersion) {
-        MavenVersion installed = installedVersion();
+        // This catches if we can find the mvn executable or not. We want to
+        // catch this error independently of getting the maven version (since
+        // getting the maven version is fragile).
+        Path executable = mavenExecutable();
+        Log.debug("Found maven executable " + executable);
+
+        MavenVersion installed;
+        try {
+            installed = installedVersion();
+        } catch (Exception ex) {
+            // Could not determine the Maven version. The code to do so is fragile and is known
+            // not to work in some environments (especially where shims are involved). So
+            // don't fail if we can't determine the maven version.
+            Log.debug("Could not determine Maven version: " + ex.toString()
+                    + " Assuming version is acceptable.");
+            return;
+        }
+        // If we were able to determine the maven version, go ahead and make sure it is acceptable.
         Requirements.require(installed.isGreaterThanOrEqualTo(requiredMinimumVersion),
                 VERSION_ERROR, installed, requiredMinimumVersion, MAVEN_DOWNLOAD_URL);
     }
@@ -232,9 +250,9 @@ public class MavenCommand {
     private static Path toMavenExecutable(String mavenHomeEnvVar) {
         Path mavenHome = envVarPath(mavenHomeEnvVar);
         if (mavenHome != null) {
-            if (java.nio.file.Files.isDirectory(mavenHome)) {
+            if (Files.isDirectory(mavenHome)) {
                 Path executable = mavenHome.resolve("bin").resolve(MAVEN_BINARY_NAME);
-                if (!OS.isPosix() || java.nio.file.Files.isExecutable(executable)) {
+                if (Files.exists(executable) && (!OSType.currentOS().isPosix() || Files.isExecutable(executable))) {
                     return executable;
                 }
             }

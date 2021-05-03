@@ -15,6 +15,9 @@
  */
 
 /**
- * Helidon archetype Maven plugin.
+ * Maven copyright plugin and command line copyright tool.
+ *
+ * @see io.helidon.build.maven.enforcer.EnforcerMojo
+ * @see io.helidon.build.maven.enforcer.copyright.Main
  */
-package io.helidon.build.archetype.maven;
+package io.helidon.build.maven.enforcer;

@@ -14,7 +14,29 @@
  * limitations under the License.
  */
 
+package io.helidon.build.maven.enforcer.copyright;
+
 /**
- * Helidon archetype Maven plugin.
+ * Numbered file line.
  */
-package io.helidon.build.archetype.maven;
+class FileLine {
+    private final int lineNumber;
+    private final String line;
+
+    private FileLine(int lineNumber, String line) {
+        this.lineNumber = lineNumber;
+        this.line = line;
+    }
+
+    static FileLine create(int lineNumber, String line) {
+        return new FileLine(lineNumber, line);
+    }
+
+    int lineNumber() {
+        return lineNumber;
+    }
+
+    String line() {
+        return line;
+    }
+}

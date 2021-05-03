@@ -14,7 +14,24 @@
  * limitations under the License.
  */
 
-/**
- * Helidon archetype Maven plugin.
- */
-package io.helidon.build.archetype.maven;
+package io.helidon.build.maven.enforcer.copyright;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+class ValidatorBat extends ValidatorBase {
+    protected ValidatorBat(ValidatorConfig validatorConfig, List<TemplateLine> templateLines) {
+        super(validatorConfig, templateLines);
+    }
+
+    @Override
+    public Set<String> supportedSuffixes() {
+        return Set.of(".bat");
+    }
+
+    @Override
+    protected Optional<String> lineCommentStart() {
+        return Optional.of("@REM");
+    }
+}

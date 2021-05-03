@@ -15,6 +15,7 @@
  */
 
 /**
- * Helidon archetype Maven plugin.
+ * Copyright rule.
+ * Copyright can be launched from command line using {@link io.helidon.build.maven.enforcer.copyright.Main}.
  */
-package io.helidon.build.archetype.maven;
+package io.helidon.build.maven.enforcer.copyright;

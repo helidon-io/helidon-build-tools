@@ -14,7 +14,23 @@
  * limitations under the License.
  */
 
+package io.helidon.build.maven.enforcer.copyright.spi;
+
+import java.util.List;
+
+import io.helidon.build.maven.enforcer.copyright.TemplateLine;
+import io.helidon.build.maven.enforcer.copyright.Validator;
+
 /**
- * Helidon archetype Maven plugin.
+ * Java service loader interface to extend the functionality of copyright checking.
  */
-package io.helidon.build.archetype.maven;
+public interface ValidatorProvider {
+    /**
+     * Create a custom validator.
+     *
+     * @param config configuration
+     * @param templateLines lines of copyright template
+     * @return a new validator instance
+     */
+    Validator validator(Validator.ValidatorConfig config, List<TemplateLine> templateLines);
+}

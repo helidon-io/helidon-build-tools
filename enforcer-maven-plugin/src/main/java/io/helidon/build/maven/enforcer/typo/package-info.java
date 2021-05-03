@@ -15,6 +15,6 @@
  */
 
 /**
- * Helidon archetype Maven plugin.
+ * Typos rule.
  */
-package io.helidon.build.archetype.maven;
+package io.helidon.build.maven.enforcer.typo;

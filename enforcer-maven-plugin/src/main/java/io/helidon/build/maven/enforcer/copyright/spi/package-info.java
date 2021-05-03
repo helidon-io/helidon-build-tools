@@ -15,6 +15,8 @@
  */
 
 /**
- * Helidon archetype Maven plugin.
+ * Copyright rule SPI.
+ * Allows for custom {@link io.helidon.build.maven.enforcer.copyright.Validator validators} to be created
+ * with service {@link io.helidon.build.maven.enforcer.copyright.spi.ValidatorProvider}.
  */
-package io.helidon.build.archetype.maven;
+package io.helidon.build.maven.enforcer.copyright.spi;

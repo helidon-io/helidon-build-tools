@@ -14,7 +14,27 @@
  * limitations under the License.
  */
 
+package io.helidon.build.maven.enforcer;
+
 /**
- * Helidon archetype Maven plugin.
+ * Exception thrown by copyright checking.
  */
-package io.helidon.build.archetype.maven;
+public class EnforcerException extends RuntimeException {
+    /**
+     * Exception with message.
+     * @param message message
+     */
+    public EnforcerException(String message) {
+        super(message);
+    }
+
+    /**
+     * Exception with message and cause.
+     *
+     * @param message message
+     * @param cause cause
+     */
+    public EnforcerException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
