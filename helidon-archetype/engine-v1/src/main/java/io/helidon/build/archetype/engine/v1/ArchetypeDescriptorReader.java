@@ -35,6 +35,7 @@ import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.Replacement;
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.Select;
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.TemplateSets;
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.Transformation;
+import io.helidon.build.common.xml.SimpleXMLParser;
 
 /**
  * {@link ArchetypeDescriptor} reader.
@@ -112,8 +113,8 @@ final class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                             // TODO validate property id (dot separated alphanumerical)
                             readRequiredAttribute("id", qName, attributes),
                             attributes.get("value"),
-                            Boolean.valueOf(Optional.ofNullable(attributes.get("exported")).orElse("true")),
-                            Boolean.valueOf(attributes.get("readonly")));
+                            Boolean.parseBoolean(Optional.ofNullable(attributes.get("exported")).orElse("true")),
+                            Boolean.parseBoolean(attributes.get("readonly")));
                     properties.add(prop);
                     propertiesMap.put(prop.id(), prop);
                     stack.push("properties/property");
@@ -238,6 +239,9 @@ final class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
 
     @Override
     public void elementText(String value) {
+        if (stack.isEmpty()) {
+            return;
+        }
         switch (stack.peek()) {
             case "template-sets/template-set/directory":
                 templateSets.templateSets().getLast().directory(value);

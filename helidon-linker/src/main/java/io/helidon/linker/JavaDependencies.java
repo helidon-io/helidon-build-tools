@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,11 @@ import java.util.function.BiConsumer;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 
-import io.helidon.build.util.Log;
-import io.helidon.build.util.StreamUtils;
+import io.helidon.build.common.InputStreams;
+import io.helidon.build.common.Log;
 import io.helidon.linker.util.JavaRuntime;
 
-import static io.helidon.build.util.StreamUtils.toPrintStream;
+import static io.helidon.build.common.InputStreams.toPrintStream;
 import static io.helidon.linker.util.Constants.EOL;
 import static io.helidon.linker.util.Constants.EXCLUDED_MODULES;
 import static io.helidon.linker.util.Constants.JDEPS_REQUIRES_MISSING_DEPS_OPTION;
@@ -135,7 +135,7 @@ public final class JavaDependencies {
             throw new RuntimeException("Could not collect dependencies of " + jar);
         }
 
-        Arrays.stream(StreamUtils.toString(out).split(EOL))
+        Arrays.stream(InputStreams.toString(out).split(EOL))
               .map(String::trim)
               .filter(line -> !line.isEmpty())
               .forEach(line -> handleJdepsResultLine(line, jar));

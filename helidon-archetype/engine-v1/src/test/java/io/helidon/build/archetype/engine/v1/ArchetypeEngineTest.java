@@ -35,11 +35,11 @@ import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.FileSet;
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.Property;
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.Replacement;
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.Transformation;
-import io.helidon.build.util.Strings;
+import io.helidon.build.common.Strings;
 
+import io.helidon.build.common.test.utils.TestFiles;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.util.TestUtils.pathOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -133,7 +133,7 @@ public class ArchetypeEngineTest extends ArchetypeBaseTest {
         assertThat(Files.exists(outputDirPath), is(true));
         assertThat(Files.walk(outputDirPath)
                 .filter(p -> !Files.isDirectory(p))
-                .map((p) -> pathOf(outputDirPath.relativize(p)))
+                .map((p) -> TestFiles.pathOf(outputDirPath.relativize(p)))
                 .sorted()
                 .collect(Collectors.toList()),
                 is(List.of("pom.xml", "src/main/java/com/example/myproject/Main.java")));

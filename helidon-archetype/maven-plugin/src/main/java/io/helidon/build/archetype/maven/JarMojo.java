@@ -44,8 +44,8 @@ import java.util.regex.Pattern;
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor;
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.Property;
 import io.helidon.build.archetype.engine.v1.ArchetypeEngine;
-import io.helidon.build.util.MustacheHelper.RawString;
-import io.helidon.build.util.SourcePath;
+import io.helidon.build.archetype.engine.v1.MustacheHelper.RawString;
+import io.helidon.build.common.SourcePath;
 
 import org.apache.maven.archiver.MavenArchiveConfiguration;
 import org.apache.maven.archiver.MavenArchiver;
@@ -67,8 +67,8 @@ import org.codehaus.plexus.archiver.ArchiverException;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
 import org.codehaus.plexus.archiver.jar.ManifestException;
 
-import static io.helidon.build.util.MustacheHelper.MUSTACHE_EXT;
-import static io.helidon.build.util.MustacheHelper.renderMustacheTemplate;
+import static io.helidon.build.archetype.engine.v1.MustacheHelper.MUSTACHE_EXT;
+import static io.helidon.build.archetype.engine.v1.MustacheHelper.renderMustacheTemplate;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.regex.Pattern.DOTALL;
 import static java.util.stream.Collectors.toList;

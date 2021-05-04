@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.build.common.Log;
 import io.helidon.build.maven.enforcer.FileRequest;
-import io.helidon.build.util.Log;
 
 class ValidatorJava extends ValidatorBase {
     private static final Optional<String> BLOCK_COMMENT_PREFIX = Optional.of("*");

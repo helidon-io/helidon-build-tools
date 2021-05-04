@@ -16,27 +16,26 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.build.cli.impl.Plugins.PluginFailed;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
-import io.helidon.build.test.CapturingLogWriter;
-import io.helidon.build.test.TestFiles;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.MavenVersion;
 
+import io.helidon.build.common.CapturingLogWriter;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.maven.MavenVersion;
+import io.helidon.build.common.test.utils.TestFiles;
 import org.junit.jupiter.api.TestInfo;
 
 import static io.helidon.build.cli.impl.TestMetadata.LAST_UPDATE_FILE_NAME;
 import static io.helidon.build.cli.impl.TestMetadata.LATEST_FILE_NAME;
-import static io.helidon.build.util.FileUtils.assertDir;
-import static io.helidon.build.util.FileUtils.assertFile;
-import static io.helidon.build.util.MavenVersion.toMavenVersion;
-import static io.helidon.build.util.TestUtils.uniqueDir;
+import static io.helidon.build.common.FileUtils.ensureDirectory;
+import static io.helidon.build.common.FileUtils.requireDirectory;
+import static io.helidon.build.common.FileUtils.requireFile;
+import static io.helidon.build.common.FileUtils.unique;
+import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -65,7 +64,7 @@ public class MetadataTestBase {
         String testClassName = info.getTestClass().orElseThrow().getSimpleName();
         String testName = info.getTestMethod().orElseThrow().getName();
         Log.info("%n--- %s $(bold %s) -------------------------------------------%n", testClassName, testName);
-        Path userHome = uniqueDir(TestFiles.targetDir(), "alice");
+        Path userHome = ensureDirectory(unique(TestFiles.targetDir(MetadataTestBase.class), "alice"));
         Config.setUserHome(userHome);
         UserConfig userConfig = UserConfig.create(userHome);
         Config.setUserConfig(userConfig);
@@ -73,14 +72,17 @@ public class MetadataTestBase {
         useBaseUrl(baseUrl);
         cacheDir = userConfig.cacheDir();
         latestFile = cacheDir.resolve(LATEST_FILE_NAME);
-        logged = CapturingLogWriter.install();
+        logged = CapturingLogWriter.create();
+        Log.writer(logged);
     }
 
     /**
      * Cleanup after each test.
      */
     protected void cleanupEach() {
-        logged.uninstall();
+        if (logged != null) {
+            logged.uninstall();
+        }
         if (testServer != null) {
             testServer.stop();
         }
@@ -196,12 +198,12 @@ public class MetadataTestBase {
         meta = newInstance(updateFrequency, updateFrequencyUnits);
         request.run();
 
-        assertFile(latestFile);
-        assertDir(versionDir);
-        assertFile(propertiesFile);
-        assertFile(catalogFile);
-        assertFile(seJarFile);
-        assertFile(mpJarFile);
+        requireFile(latestFile);
+        requireDirectory(versionDir);
+        requireFile(propertiesFile);
+        requireFile(catalogFile);
+        requireFile(seJarFile);
+        requireFile(mpJarFile);
 
         logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
         logged.assertLinesContainingAll(1, "connecting", LATEST_FILE_NAME);

@@ -25,8 +25,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.build.util.Style;
-import io.helidon.build.util.StyleRenderer;
+import io.helidon.build.common.RichTextRenderer;
+import io.helidon.build.common.ansi.AnsiTextStyle;
 
 /**
  * File system utilities that only throw runtime exceptions.
@@ -91,7 +91,7 @@ public final class FileSystem {
     }
 
     private static String toFileLine(RuleFailure failure) {
-        return "[ERROR] " + failure.fr().relativePath() + ":" + failure.line() + ": " + Style
-                .strip(StyleRenderer.render(failure.message()));
+        return "[ERROR] " + failure.fr().relativePath() + ":" + failure.line() + ": " + AnsiTextStyle
+                .strip(RichTextRenderer.render(failure.message()));
     }
 }

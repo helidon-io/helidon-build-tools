@@ -35,12 +35,17 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.build-tools</groupId>
-            <artifactId>helidon-utils</artifactId>
+            <artifactId>helidon-build-licensing</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.helidon.build-tools</groupId>
-            <artifactId>helidon-build-licensing</artifactId>
+            <groupId>io.helidon.build-tools.common</groupId>
+            <artifactId>helidon-build-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools.common</groupId>
+            <artifactId>helidon-build-common-maven-plugin</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -97,33 +102,11 @@
                 <artifactId>maven-invoker-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>invoker-install</id>
                         <goals>
                             <goal>install</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>invoker-it</id>
-                        <goals>
                             <goal>integration-test</goal>
                             <goal>verify</goal>
                         </goals>
-                        <phase>pre-integration-test</phase>
-                        <configuration>
-                            <ignoreFailures>false</ignoreFailures>
-                            <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
-                            <pomIncludes>
-                                <pomInclude>projects/*/pom.xml</pomInclude>
-                            </pomIncludes>
-                            <goals>
-                                <goal>clean</goal>
-                                <goal>verify</goal>
-                            </goals>
-                            <streamLogs>true</streamLogs>
-                            <showErrors>true</showErrors>
-                            <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
-                            <skipInvocation>${skipTests}</skipInvocation>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

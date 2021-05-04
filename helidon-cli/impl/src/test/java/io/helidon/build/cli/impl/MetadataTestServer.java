@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
-import io.helidon.build.util.Log;
 
+import io.helidon.build.common.Log;
 import org.junit.jupiter.api.Assumptions;
 import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.integration.ClientAndServer;
@@ -56,21 +56,21 @@ public class MetadataTestServer {
         return new Expectation(request().withMethod("GET")
                                         .withHeader(not(IF_NONE_MATCH_HEADER))
                                         .withPath("/" + version + "/" + CLI_DATA_FILE_NAME))
-                                        .withId(version + "-zip-without-etag");
+                .withId(version + "-zip-without-etag");
     }
 
     private static Expectation zipRequestWithoutMatchingEtag(TestVersion version, byte[] data) {
         return new Expectation(request().withMethod("GET")
                                         .withHeader(NottableString.string(IF_NONE_MATCH_HEADER), not(etag(version, data)))
                                         .withPath("/" + version + "/" + CLI_DATA_FILE_NAME))
-                                        .withId(version + "-zip-without-matching-etag");
+                .withId(version + "-zip-without-matching-etag");
     }
 
     private static Expectation zipRequestWithMatchingEtag(TestVersion version, byte[] data) {
         return new Expectation(request().withMethod("GET")
                                         .withHeader(IF_NONE_MATCH_HEADER, etag(version, data))
                                         .withPath("/" + version + "/" + CLI_DATA_FILE_NAME))
-                                        .withId(version + "-zip-with-matching-etag");
+                .withId(version + "-zip-with-matching-etag");
     }
 
     private final int port;
@@ -117,7 +117,7 @@ public class MetadataTestServer {
     /**
      * Constructor.
      *
-     * @param latest The version to return for the "/latest" request.
+     * @param latest  The version to return for the "/latest" request.
      * @param verbose Whether or not to do verbose logging.
      */
     public MetadataTestServer(TestVersion latest, boolean verbose) {
@@ -127,8 +127,8 @@ public class MetadataTestServer {
     /**
      * Constructor.
      *
-     * @param port The port to listen on.
-     * @param latest The version to return for the "/latest" request.
+     * @param port    The port to listen on.
+     * @param latest  The version to return for the "/latest" request.
      * @param verbose Whether or not to do verbose logging.
      */
     @SuppressWarnings("ConstantConditions")
@@ -216,7 +216,7 @@ public class MetadataTestServer {
      * Return the data when no etag or a 304 when etag matches.
      *
      * @param version The version.
-     * @param data The zip data.
+     * @param data    The zip data.
      */
     public void zipData(TestVersion version, byte[] data) {
         final String etag = etag(version, data);
@@ -262,17 +262,10 @@ public class MetadataTestServer {
     }
 
     private static int freePort() {
-        ServerSocket s = null;
-        try {
-            s = new ServerSocket(0);
+        try (ServerSocket s = new ServerSocket(0)) {
             return s.getLocalPort();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        } finally {
-            try {
-                s.close();
-            } catch (IOException ignore) {
-            }
         }
     }
 }

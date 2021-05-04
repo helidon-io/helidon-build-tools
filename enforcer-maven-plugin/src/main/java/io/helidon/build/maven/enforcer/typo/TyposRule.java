@@ -27,12 +27,12 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import io.helidon.build.common.Log;
 import io.helidon.build.maven.enforcer.EnforcerException;
 import io.helidon.build.maven.enforcer.FileMatcher;
 import io.helidon.build.maven.enforcer.FileRequest;
 import io.helidon.build.maven.enforcer.FoundFiles;
 import io.helidon.build.maven.enforcer.RuleFailure;
-import io.helidon.build.util.Log;
 
 /**
  * Rule for typos checking.

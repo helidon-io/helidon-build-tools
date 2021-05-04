@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 
+import io.helidon.build.common.Log;
 import io.helidon.build.maven.enforcer.EnforcerException;
 import io.helidon.build.maven.enforcer.FileMatcher;
 import io.helidon.build.maven.enforcer.FileRequest;
@@ -40,7 +41,6 @@ import io.helidon.build.maven.enforcer.FoundFiles;
 import io.helidon.build.maven.enforcer.RuleFailure;
 import io.helidon.build.maven.enforcer.RuleFailureException;
 import io.helidon.build.maven.enforcer.copyright.spi.ValidatorProvider;
-import io.helidon.build.util.Log;
 
 /**
  * Copyright checking.

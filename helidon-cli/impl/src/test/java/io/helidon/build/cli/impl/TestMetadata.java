@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,8 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.io.File;
+import io.helidon.build.common.maven.MavenVersion;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
@@ -27,12 +28,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.helidon.build.util.MavenVersion;
-
 import static io.helidon.build.cli.impl.TestMetadata.TestVersion.RC1;
 import static io.helidon.build.cli.impl.TestMetadata.TestVersion.RC2;
-import static io.helidon.build.util.FileUtils.assertDir;
-import static io.helidon.build.util.MavenVersion.toMavenVersion;
+import static io.helidon.build.common.FileUtils.requireDirectory;
+import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -89,7 +88,7 @@ public class TestMetadata {
     }
 
     static final URL TEST_CLI_DATA_URL = requireNonNull(MetadataTest.class.getClassLoader().getResource("cli-data"));
-    static final Path TEST_CLI_DATA_PATH = assertDir(pathOf(TEST_CLI_DATA_URL));
+    static final Path TEST_CLI_DATA_PATH = requireDirectory(pathOf(TEST_CLI_DATA_URL));
     static final String LATEST_FILE_NAME = "latest";
     static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     static final String CLI_DATA_FILE_NAME = "cli-data.zip";

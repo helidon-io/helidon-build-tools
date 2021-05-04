@@ -20,9 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import io.helidon.build.common.Log;
 import io.helidon.build.maven.enforcer.FileRequest;
 import io.helidon.build.maven.enforcer.RuleFailureException;
-import io.helidon.build.util.Log;
 
 import static io.helidon.build.maven.enforcer.copyright.Copyright.logBad;
 import static io.helidon.build.maven.enforcer.copyright.Copyright.logGood;

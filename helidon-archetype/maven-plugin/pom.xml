@@ -42,11 +42,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.helidon.build-tools</groupId>
-            <artifactId>helidon-utils</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
@@ -111,40 +106,13 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-invoker-plugin</artifactId>
-                <configuration>
-                    <settingsFile>src/it/settings.xml</settingsFile>
-                    <mergeUserSettings>true</mergeUserSettings>
-                    <!--suppress MavenModelInspection -->
-                    <ignoreFailures>${maven.test.failure.ignore}</ignoreFailures>
-                    <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
-                    <pomIncludes>
-                        <pomInclude>projects/pom.xml</pomInclude>
-                    </pomIncludes>
-                    <goals>
-                        <goal>clean</goal>
-                        <goal>install</goal>
-                    </goals>
-                    <streamLogs>true</streamLogs>
-                    <showErrors>true</showErrors>
-                    <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
-                    <skipInvocation>${skipTests}</skipInvocation>
-                    <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
-                    <skipInstallation>${skipTests}</skipInstallation>
-                </configuration>
                 <executions>
                     <execution>
-                        <id>invoker-install</id>
                         <goals>
                             <goal>install</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>invoker-it</id>
-                        <goals>
                             <goal>integration-test</goal>
                             <goal>verify</goal>
                         </goals>
-                        <phase>pre-integration-test</phase>
                     </execution>
                 </executions>
             </plugin>

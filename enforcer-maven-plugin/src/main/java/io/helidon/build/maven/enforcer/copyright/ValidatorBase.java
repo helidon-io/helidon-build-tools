@@ -27,10 +27,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.build.common.Log;
 import io.helidon.build.maven.enforcer.EnforcerException;
 import io.helidon.build.maven.enforcer.FileRequest;
 import io.helidon.build.maven.enforcer.RuleFailureException;
-import io.helidon.build.util.Log;
 
 import static io.helidon.build.maven.enforcer.copyright.Copyright.logBad;
 import static io.helidon.build.maven.enforcer.copyright.Copyright.logGood;

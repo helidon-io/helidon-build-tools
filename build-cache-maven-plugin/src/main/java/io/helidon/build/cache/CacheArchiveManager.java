@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.build.cache.CacheArchiveIndex.FileEntry;
-import io.helidon.build.util.SourcePath;
+import io.helidon.build.common.SourcePath;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.metadata.ArtifactMetadata;

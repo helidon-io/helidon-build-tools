@@ -20,23 +20,23 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import io.helidon.build.archetype.engine.v1.Prompter;
+import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.impl.InitOptions.BuildSystem;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.ProjectConfig;
-import io.helidon.build.util.Requirements;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.Requirements;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
+import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY;
+import static io.helidon.build.cli.common.ProjectConfig.PROJECT_DIRECTORY;
+import static io.helidon.build.cli.common.ProjectConfig.PROJECT_FLAVOR;
 import static io.helidon.build.cli.impl.ArchetypeInvoker.EngineVersion.V1;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
-import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
-import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
-import static io.helidon.build.util.Requirements.failed;
-import static io.helidon.build.util.StyleFunction.BoldBrightCyan;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightCyan;
 
 /**
  * The {@code init} command.
@@ -67,7 +67,7 @@ public final class InitCommand extends BaseCommand {
         if (initOptions.build() == BuildSystem.MAVEN) {
             requireMinimumMavenVersion();
         } else {
-            failed("$(red Gradle is not yet supported.)");
+            Requirements.failed("$(red Gradle is not yet supported.)");
         }
     }
 
@@ -171,10 +171,10 @@ public final class InitCommand extends BaseCommand {
                 Log.debug("Latest Helidon version found: %s", version);
             } catch (Plugins.PluginFailed e) {
                 Log.info(e.getMessage());
-                failed("$(italic Cannot lookup version, please specify with --version option.)");
+                Requirements.failed("$(italic Cannot lookup version, please specify with --version option.)");
             } catch (Exception e) {
                 Log.info("$(italic,red %s)", e.getMessage());
-                failed("$(italic Cannot lookup version, please specify with --version option.)");
+                Requirements.failed("$(italic Cannot lookup version, please specify with --version option.)");
             }
         }
         return version;

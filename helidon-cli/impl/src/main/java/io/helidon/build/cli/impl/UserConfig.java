@@ -27,10 +27,12 @@ import java.util.Map;
 import java.util.Properties;
 
 import io.helidon.build.cli.harness.CommandContext;
-import io.helidon.build.util.FileUtils;
-import io.helidon.build.util.SubstitutionVariables;
+import io.helidon.build.common.SubstitutionVariables;
 
-import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
+import static io.helidon.build.cli.common.ProjectConfig.DOT_HELIDON;
+import static io.helidon.build.common.FileUtils.USER_HOME_DIR;
+import static io.helidon.build.common.FileUtils.deleteDirectoryContent;
+import static io.helidon.build.common.FileUtils.ensureDirectory;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -130,7 +132,7 @@ public class UserConfig {
      * @return The instance.
      */
     public static UserConfig create() {
-        return create(FileUtils.USER_HOME_DIR);
+        return create(USER_HOME_DIR);
     }
 
     /**
@@ -145,9 +147,9 @@ public class UserConfig {
 
     private UserConfig(Path homeDir) {
         this.homeDir = homeDir.toAbsolutePath();
-        this.configDir = FileUtils.ensureDirectory(homeDir.resolve(DOT_HELIDON));
-        this.cacheDir = FileUtils.ensureDirectory(configDir.resolve(CACHE_DIR_NAME));
-        this.pluginsDir = FileUtils.ensureDirectory(configDir.resolve(PLUGINS_DIR_NAME));
+        this.configDir = ensureDirectory(homeDir.resolve(DOT_HELIDON));
+        this.cacheDir = ensureDirectory(configDir.resolve(CACHE_DIR_NAME));
+        this.pluginsDir = ensureDirectory(configDir.resolve(PLUGINS_DIR_NAME));
         this.configFile = configDir.resolve(CONFIG_FILE_NAME);
         this.allProperties = loadConfig();
         this.systemProperties = setSystemProperties();
@@ -411,7 +413,7 @@ public class UserConfig {
      * @throws IOException if an error occurs.
      */
     public void clearCache() throws IOException {
-        FileUtils.deleteDirectoryContent(cacheDir());
+        deleteDirectoryContent(cacheDir());
     }
 
     /**
@@ -420,7 +422,7 @@ public class UserConfig {
      * @throws IOException if an error occurs.
      */
     public void clearPlugins() throws IOException {
-        FileUtils.deleteDirectoryContent(pluginsDir());
+        deleteDirectoryContent(pluginsDir());
     }
 
     private Map<String, String> loadConfig() {

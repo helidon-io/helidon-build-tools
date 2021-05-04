@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.linker;
 
 import java.io.FileInputStream;
@@ -24,18 +23,19 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.List;
 import java.util.Set;
 
-import io.helidon.build.util.FileUtils;
-import io.helidon.build.util.StreamUtils;
-import io.helidon.build.test.TestFiles;
+import io.helidon.build.common.InputStreams;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.StringContains;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.util.FileUtils.ensureDirectory;
-import static io.helidon.build.util.FileUtils.lastModifiedSeconds;
-import static io.helidon.build.util.OSType.Linux;
-import static io.helidon.build.util.OSType.Windows;
+import static io.helidon.build.common.FileUtils.ensureDirectory;
+import static io.helidon.build.common.FileUtils.ensureFile;
+import static io.helidon.build.common.FileUtils.lastModifiedSeconds;
+import static io.helidon.build.common.OSType.Linux;
+import static io.helidon.build.common.OSType.Windows;
+import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 import static io.helidon.linker.util.Constants.OS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -44,16 +44,17 @@ import static org.hamcrest.Matchers.not;
 /**
  * Unit test for class {@link StartScript}.
  */
+@Order(4)
 class StartScriptTest {
 
-    private static final Path INSTALL_DIR = ensureDirectory(TestFiles.targetDir().resolve("script-home"));
+    private static final Path INSTALL_DIR = ensureDirectory(targetDir(StartScriptTest.class).resolve("script-home"));
     private static final Path BIN_DIR = ensureDirectory(INSTALL_DIR.resolve("bin"));
     private static final Path LIB_DIR = ensureDirectory(INSTALL_DIR.resolve("lib"));
     private static final Path APP_DIR = ensureDirectory(INSTALL_DIR.resolve("app"));
-    private static final Path INSTALLED_JAR_FILE = FileUtils.ensureFile(APP_DIR.resolve("main.jar"));
-    private static final Path INSTALLED_MODULES_FILE = FileUtils.ensureFile(LIB_DIR.resolve("modules"));
+    private static final Path INSTALLED_JAR_FILE = ensureFile(APP_DIR.resolve("main.jar"));
+    private static final Path INSTALLED_MODULES_FILE = ensureFile(LIB_DIR.resolve("modules"));
     private static final String JAR_NAME = INSTALLED_JAR_FILE.getFileName().toString();
-    private static final String EXIT_ON_STARTED_VALUE = TestFiles.exitOnStartedValue();
+    private static final String EXIT_ON_STARTED_VALUE = "!";
     private static final String EXIT_ON_STARTED = "-Dexit.on.started=" + EXIT_ON_STARTED_VALUE;
     private static final String NOT_EQUAL = OS == Windows ? "-ne" : "!=";
 
@@ -240,7 +241,7 @@ class StartScriptTest {
         assertThat(Files.exists(scriptFile), is(true));
         assertExecutable(scriptFile);
         assertThat(scriptFile, is(installedScript));
-        String onDisk = StreamUtils.toString(new FileInputStream(scriptFile.toFile()));
+        String onDisk = InputStreams.toString(new FileInputStream(scriptFile.toFile()));
         assertThat(onDisk, is(script.toString()));
     }
 

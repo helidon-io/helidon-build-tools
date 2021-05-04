@@ -23,12 +23,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.build.common.Log;
+import io.helidon.build.common.maven.plugin.MavenLogWriter;
 import io.helidon.build.maven.enforcer.copyright.Copyright;
 import io.helidon.build.maven.enforcer.copyright.CopyrightConfig;
 import io.helidon.build.maven.enforcer.typo.TypoConfig;
 import io.helidon.build.maven.enforcer.typo.TyposRule;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.MavenLogWriter;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
@@ -122,7 +122,7 @@ public class EnforcerMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        MavenLogWriter.install(getLog());
+        Log.writer(MavenLogWriter.create(getLog()));
 
         if (skip) {
             Log.info("Skipping execution.");
