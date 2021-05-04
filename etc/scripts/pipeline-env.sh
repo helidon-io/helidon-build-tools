@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,7 +35,30 @@ if [ -n "${JENKINS_HOME}" ] ; then
     if [ -n "${MAVEN_SETTINGS_FILE}" ] ; then
         MAVEN_ARGS="${MAVEN_ARGS} -s ${MAVEN_SETTINGS_FILE}"
     fi
+    if [ -n "${NPM_CONFIG_REGISTRY}" ] ; then
+        MAVEN_ARGS="${MAVEN_ARGS} -Dnpm.download.root=${NPM_CONFIG_REGISTRY}/npm/-/"
+    fi
     export MAVEN_ARGS
+    if [ -n "${https_proxy}" ] && [[ ! "${https_proxy}" =~ ^http:// ]] ; then
+        export https_proxy="http://${https_proxy}"
+    fi
+    if [ -n "${http_proxy}" ] && [[ ! "${http_proxy}" =~ ^http:// ]] ; then
+        export http_proxy="http://${http_proxy}"
+    fi
+    if [ ! -e "${HOME}/.npmrc" ] ; then
+        if [ -n "${NPM_CONFIG_REGISTRY}" ] ; then
+            echo "registry = ${NPM_CONFIG_REGISTRY}" >> ${HOME}/.npmrc
+        fi
+        if [ -n "${https_proxy}" ] ; then
+            echo "https-proxy = ${https_proxy}" >> ${HOME}/.npmrc
+        fi
+        if [ -n "${http_proxy}" ] ; then
+            echo "proxy = ${http_proxy}" >> ${HOME}/.npmrc
+        fi
+        if [ -n "${NO_PROXY}" ] ; then
+            echo "noproxy = ${NO_PROXY}" >> ${HOME}/.npmrc
+        fi
+    fi
 
     if [ -n "${GPG_PUBLIC_KEY}" ] ; then
         gpg --import --no-tty --batch ${GPG_PUBLIC_KEY}

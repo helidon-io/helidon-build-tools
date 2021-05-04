@@ -30,7 +30,7 @@ pipeline {
               try {
                 sh './etc/scripts/build.sh'
               } finally {
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,**/target/it/**/*.log"
+                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,**/target/it/**/*.log,**/target/*.vsix"
                 junit testResults: '**/target/surefire-reports/*.xml,**/target/invoker-reports/*.xml,**/target/it/projects/*/TEST-*.xml'
               }
             }
@@ -52,11 +52,17 @@ pipeline {
           }
         }
         stage('copyright'){
+          agent {
+            label "linux"
+          }
           steps {
             sh './etc/scripts/copyright.sh'
           }
         }
         stage('checkstyle'){
+          agent {
+            label "linux"
+          }
           steps {
             sh './etc/scripts/checkstyle.sh'
           }
