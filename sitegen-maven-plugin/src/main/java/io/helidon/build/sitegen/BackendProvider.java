@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.ServiceLoader;
 import io.helidon.config.Config;
 
 import static io.helidon.build.sitegen.Helper.checkNonNullNonEmpty;
-import static io.helidon.common.CollectionsHelper.listOf;
 
 /**
  * Service Provider Interface (SPI) for site backend.
@@ -42,7 +41,7 @@ public interface BackendProvider {
      * The built-in backends.
      */
     List<BackendProvider> BUILTINS =
-            listOf(new BasicBackendProvider(), new VuetifyBackendProvider());
+            List.of(new BasicBackendProvider(), new VuetifyBackendProvider());
 
     /**
      * Get a backend by its name.

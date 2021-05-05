@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,14 +130,18 @@ public class StaticAsset implements Model {
          * @return the {@link Builder} instance
          */
         public Builder config(Config node) {
-            if (node.exists()) {
-                node.get(TARGET_PROP).ifExists(c
-                        -> put(TARGET_PROP, c.asString()));
-                node.get(INCLUDES_PROP).ifExists(c
-                        -> put(INCLUDES_PROP, c.asStringList()));
-                node.get(EXCLUDES_PROP).ifExists(c
-                        -> put(EXCLUDES_PROP, c.asStringList()));
-            }
+            node.get(TARGET_PROP)
+                    .asString()
+                    .ifPresent(it -> put(TARGET_PROP, it));
+
+            node.get(INCLUDES_PROP)
+                    .asList(String.class)
+                    .ifPresent(it -> put(INCLUDES_PROP, it));
+
+            node.get(EXCLUDES_PROP)
+                    .asList(String.class)
+                    .ifPresent(it -> put(EXCLUDES_PROP, it));
+
             return this;
         }
 

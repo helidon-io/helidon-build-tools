@@ -129,7 +129,7 @@
         <version.lib.groovy-all>2.4.21</version.lib.groovy-all>
         <version.lib.gson>2.8.5</version.lib.gson>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
-        <version.lib.helidon>0.9.0</version.lib.helidon>
+        <version.lib.helidon>2.2.2</version.lib.helidon>
         <version.lib.invoker>3.0.1</version.lib.invoker>
         <version.lib.jackson>2.11.0</version.lib.jackson>
         <version.lib.jandex>2.1.1.Final</version.lib.jandex>

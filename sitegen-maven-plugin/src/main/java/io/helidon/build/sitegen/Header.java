@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -157,35 +157,37 @@ public class Header implements Model {
          * @return the {@link Builder} instance
          */
         public Builder config(Config node){
-            if (node.exists()) {
+            // favicon
+            node.get(FAVICON_PROP).ifExists(c -> {
+                put(FAVICON_PROP, WebResource.builder().config(c).build());
+            });
 
-                // favicon
-                node.get(FAVICON_PROP).ifExists(c -> {
-                    put(FAVICON_PROP, WebResource.builder().config(c).build());
-                });
+            // stylesheets
+            node.get(STYLESHEETS_PROP)
+                    .asNodeList()
+                    .ifPresent(nodeList -> {
+                        put(STYLESHEETS_PROP, nodeList
+                                .stream()
+                                .map(c -> WebResource.builder().config(c).build())
+                                .collect(Collectors.toList()));
+                    });
 
-                // stylesheets
-                node.get(STYLESHEETS_PROP).asOptionalNodeList().ifPresent(nodeList -> {
-                    put(STYLESHEETS_PROP, nodeList
-                        .stream()
-                        .map(c -> WebResource.builder().config(c).build())
-                        .collect(Collectors.toList()));
-                });
+            // scripts
+            node.get(SCRIPTS_PROP)
+                    .asNodeList()
+                    .ifPresent(nodeList -> {
+                        put(SCRIPTS_PROP, nodeList
+                                .stream()
+                                .map(c -> WebResource.builder().config(c).build())
+                                .collect(Collectors.toList()));
+                    });
 
-                // scripts
-                node.get(SCRIPTS_PROP).asOptionalNodeList().ifPresent(nodeList -> {
-                    put(SCRIPTS_PROP, nodeList
-                        .stream()
-                        .map(c -> WebResource.builder().config(c).build())
-                        .collect(Collectors.toList()));
-                });
+            // meta
+            node.get(META_PROP)
+                    .detach()
+                    .asMap()
+                    .ifPresent(m -> put(META_PROP, m));
 
-                // meta
-                node.get(META_PROP).detach().asOptionalMap().ifPresent(m -> {
-                    put(META_PROP, m);
-                });
-
-            }
             return this;
         }
 

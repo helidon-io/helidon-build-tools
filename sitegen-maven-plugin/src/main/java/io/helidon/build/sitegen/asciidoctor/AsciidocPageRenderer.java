@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import static io.helidon.build.sitegen.Helper.checkNonNull;
 import static io.helidon.build.sitegen.Helper.checkNonNullNonEmpty;
 import static io.helidon.build.sitegen.Helper.checkValidDir;
 import static io.helidon.build.sitegen.Page.Metadata;
-import static io.helidon.common.CollectionsHelper.mapOf;
 
 /**
  * Implementation of a {@link PageRenderer} for asciidoc documents.
@@ -60,8 +59,8 @@ public class AsciidocPageRenderer implements PageRenderer {
         SiteEngine siteEngine = SiteEngine.get(backendName);
         File target = new File(pagesdir, page.getTargetPath() + "." + ext);
         siteEngine.asciidoc().render(page, ctx, target,
-                mapOf("page", page,
-                        "pages", ctx.getPages()));
+                Map.of("page", page,
+                       "pages", ctx.getPages()));
     }
 
     @Override

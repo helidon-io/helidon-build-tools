@@ -85,12 +85,14 @@ public class SourcePathFilter {
          * @return the {@link Builder} instance
          */
         public Builder config(Config node) {
-            if (node.exists()) {
-                node.get(INCLUDES_PROP).ifExists(c
-                        -> put(INCLUDES_PROP, c.asStringList()));
-                node.get(EXCLUDES_PROP).ifExists(c
-                        -> put(EXCLUDES_PROP, c.asStringList()));
-            }
+            node.get(INCLUDES_PROP)
+                    .asList(String.class)
+                    .ifPresent(it -> put(INCLUDES_PROP, it));
+
+            node.get(EXCLUDES_PROP)
+                    .asList(String.class)
+                    .ifPresent(it -> put(EXCLUDES_PROP, it));
+
             return this;
         }
 

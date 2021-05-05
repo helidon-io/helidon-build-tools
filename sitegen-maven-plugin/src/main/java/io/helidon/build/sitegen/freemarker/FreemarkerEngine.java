@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -237,12 +237,16 @@ public class FreemarkerEngine {
          * @return the {@link Builder} instance
          */
         public Builder config(Config node) {
-            if (node.exists()) {
-                node.get(DIRECTIVES_PROP).ifExists(n
-                        -> put(DIRECTIVES_PROP, n.detach().asMap()));
-                node.get(MODEL_PROP).ifExists(n
-                        -> put(MODEL_PROP, n.detach().asMap()));
-            }
+            node.get(DIRECTIVES_PROP)
+                    .detach()
+                    .asMap()
+                    .ifPresent(it -> put(DIRECTIVES_PROP, it));
+
+            node.get(MODEL_PROP)
+                    .detach()
+                    .asMap()
+                    .ifPresent(it -> put(MODEL_PROP, it));
+
             return this;
         }
 
