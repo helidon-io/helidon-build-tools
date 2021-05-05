@@ -97,9 +97,9 @@ public class EnforcerMojo extends AbstractMojo {
 
     /**
      * Enforcer rules to execute.
-     * Currently supported (and configured) are {@code copyright} and {@code todos}.
+     * Currently supported (and configured) are {@code copyright} and {@code typos}.
      */
-    @Parameter(property = "helidon.enforcer.rules", defaultValue = "copyright,todos")
+    @Parameter(property = "helidon.enforcer.rules", defaultValue = "copyright,typos")
     private String[] rules;
 
     /**
