@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,46 +22,103 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import io.helidon.build.cli.harness.CommandModel.CommandInfo;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.Log.Level;
-import io.helidon.build.util.Requirements;
-import io.helidon.build.util.Style;
-import io.helidon.build.util.SystemLogWriter;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.Log.Level;
+import io.helidon.build.common.Requirements;
+import io.helidon.build.common.SystemLogWriter;
+import io.helidon.build.common.ansi.AnsiTextStyle;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import static io.helidon.build.util.Log.Level.DEBUG;
-import static io.helidon.build.util.Log.Level.ERROR;
-import static io.helidon.build.util.Log.Level.INFO;
-import static io.helidon.build.util.Log.Level.VERBOSE;
-import static io.helidon.build.util.Log.Level.WARN;
-import static io.helidon.build.util.StyleFunction.Red;
+import static io.helidon.build.common.Log.Level.ERROR;
+import static io.helidon.build.common.Log.Level.INFO;
+import static io.helidon.build.common.Log.Level.VERBOSE;
+import static io.helidon.build.common.Log.Level.WARN;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Red;
 
 /**
  * The command context.
  */
 public final class CommandContext {
+
+    /**
+     * Verbosity levels.
+     */
+    public enum Verbosity {
+        /**
+         * Normal level.
+         */
+        NORMAL,
+        /**
+         * Verbose level.
+         */
+        VERBOSE,
+        /**
+         * Debug level.
+         */
+        DEBUG
+    }
+
+    /**
+     * Command context internal options.
+     */
+    public static final class InternalOptions {
+
+        private static final InternalOptions EMPTY = new InternalOptions(null);
+
+        private final BiFunction<String, String, String> lookup;
+
+        /**
+         * Create a new instance.
+         *
+         * @param lookup function used to lookup the internal options
+         */
+        public InternalOptions(BiFunction<String, String, String> lookup) {
+            this.lookup = lookup != null ? lookup : (v1, v2) -> v2;
+        }
+
+        /**
+         * Rich text option.
+         */
+        public static final String RICH_TEXT_KEY = "use.rich.text";
+
+        /**
+         * Rich text option default value.
+         */
+        public static final String RICH_TEXT_DEFAULT_VALUE = "true";
+
+        /**
+         * Returns whether or not rich text should be disabled.
+         *
+         * @return {@code true} if rich text should not be used (equivalent to {@code --plain} option).
+         */
+        public boolean richTextDisabled() {
+            return !Boolean.parseBoolean(lookup.apply(RICH_TEXT_KEY, RICH_TEXT_DEFAULT_VALUE));
+        }
+    }
+
     private final AtomicReference<SystemLogWriter> logWriter = new AtomicReference<>();
-    private final CLIDefinition cli;
     private final CommandRegistry registry;
     private final Properties properties;
+    private final InternalOptions internalOptions;
     private Verbosity verbosity;
     private ExitAction exitAction;
     private CommandParser parser;
 
     @SuppressWarnings("CopyConstructorMissesField")
     CommandContext(CommandContext parent) {
-        this(parent.registry, parent.cli);
+        this(parent.registry, parent.internalOptions);
     }
 
-    private CommandContext(CommandRegistry registry, CLIDefinition cli) {
-        this.cli = Objects.requireNonNull(cli, "cli is null");
+    CommandContext(CommandRegistry registry, InternalOptions internalOptions) {
         this.registry = Objects.requireNonNull(registry, "registry is null");
         this.exitAction = new ExitAction();
         this.properties = new Properties();
+        this.internalOptions = internalOptions != null ? internalOptions : InternalOptions.EMPTY;
     }
 
     /**
@@ -153,12 +210,12 @@ public final class CommandContext {
          * <b>WARNING:</b> This method invokes {@link System#exit(int)}.
          */
         @SuppressFBWarnings
-        public void run() {
+        public void runExitAction() {
             switch (exitAction.status) {
                 case FAILURE:
                     if (failure != null) {
                         Requirements.toFailure(failure).ifPresentOrElse(ce -> {
-                            if (Style.isStyled(ce.getMessage())) {
+                            if (AnsiTextStyle.isStyled(ce.getMessage())) {
                                 exit(ce.getMessage(), null, INFO, 1);
                             } else {
                                 exit(Red.apply(ce.getMessage()), null, INFO, 1);
@@ -181,7 +238,7 @@ public final class CommandContext {
                 if (Log.isVerbose()) {
                     Log.info();
                 }
-                if (Style.isStyled(message)) {
+                if (AnsiTextStyle.isStyled(message)) {
                     Log.info(message);
                 } else {
                     if (message == null) {
@@ -204,12 +261,30 @@ public final class CommandContext {
     }
 
     /**
-     * Get the CLI definition.
+     * Get the CLI name.
      *
-     * @return CLI definition, never {@code null}
+     * @return CLI name, never {@code null}
      */
-    public CLIDefinition cli() {
-        return cli;
+    public String cliName() {
+        return registry.cliName();
+    }
+
+    /**
+     * Get the CLI description.
+     *
+     * @return CLI description, never {@code null}
+     */
+    public String cliDescription() {
+        return registry.cliDescription();
+    }
+
+    /**
+     * Get the internal options.
+     *
+     * @return InternalOptions, never {@code null}
+     */
+    public InternalOptions internalOptions() {
+        return internalOptions;
     }
 
     /**
@@ -238,14 +313,14 @@ public final class CommandContext {
      */
     public void execute(String... args) {
         CommandContext context = new CommandContext(this);
-        CommandRunner.execute(context, args);
+        new CommandRunner(context, args).execute();
         this.exitAction = context.exitAction;
     }
 
     /**
      * Set the error message if not already set.
      *
-     * @param status exit status
+     * @param status  exit status
      * @param message error message
      * @return exit action.
      */
@@ -345,7 +420,7 @@ public final class CommandContext {
         this.verbosity = verbosity;
         switch (verbosity) {
             case DEBUG: {
-                logWriter().level(DEBUG);
+                logWriter().level(Level.DEBUG);
                 break;
             }
             case VERBOSE: {
@@ -370,7 +445,7 @@ public final class CommandContext {
     private SystemLogWriter logWriter() {
         SystemLogWriter writer = logWriter.get();
         if (writer == null) {
-            writer = SystemLogWriter.install(INFO);
+            writer = SystemLogWriter.create(INFO);
             logWriter.set(writer);
         }
         return writer;
@@ -389,12 +464,11 @@ public final class CommandContext {
                                                .map(CommandInfo::name)
                                                .collect(Collectors.toList());
         String match = CommandMatcher.match(command, allCommandNames);
-        String cliName = cli.name();
         if (match != null) {
             error(String.format("'%s' is not a valid command.%nDid you mean '%s'?%nSee '%s --help' for more information",
-                                command, match, cliName));
+                    command, match, cliName()));
         } else {
-            error(String.format("'%s' is not a valid command.%nSee '%s --help' for more information", command, cliName));
+            error(String.format("'%s' is not a valid command.%nSee '%s --help' for more information", command, cliName()));
         }
     }
 
@@ -402,49 +476,66 @@ public final class CommandContext {
      * Set the exit action to {@link ExitStatus#FAILURE} with the given error message.
      *
      * @param message error message
-     * @param args message args.
-     * @return exit action.
+     * @param args    message args.
      */
-    ExitAction error(String message, Object... args) {
-        return exitAction(ExitStatus.FAILURE, String.format(message, args));
+    void error(String message, Object... args) {
+        exitAction = new ExitAction(ExitStatus.FAILURE, String.format(message, args));
     }
 
     /**
      * Set the exit action to {@link ExitStatus#FAILURE} with the given error.
      *
      * @param error error
-     * @return exit action.
      */
-    ExitAction error(Throwable error) {
-        return exitAction(error);
+    void error(Throwable error) {
+        exitAction = new ExitAction(error);
     }
 
     /**
-     * Create a new command context.
+     * CommandContext builder.
      *
-     * @param registry command registry
-     * @param cliDef CLI definition
-     * @return command context, never {@code null}
+     * @param <T> builder sub-class type
      */
-    public static CommandContext create(CommandRegistry registry, CLIDefinition cliDef) {
-        return new CommandContext(registry, cliDef);
-    }
+    public abstract static class Builder<T extends Builder<T>> {
 
-    /**
-     * Verbosity levels.
-     */
-    public enum Verbosity {
+        private Class<?> cliClass;
+        private BiFunction<String, String, String> lookup;
+
+        Builder() {
+        }
+
         /**
-         * Normal level.
+         * Set the internal option lookup.
+         *
+         * @param lookup function used to lookup internal options
+         * @return this builder
          */
-        NORMAL,
+        @SuppressWarnings("unchecked")
+        public T optionLookup(BiFunction<String, String, String> lookup) {
+            this.lookup = lookup;
+            return (T) this;
+        }
+
         /**
-         * Verbose level.
+         * Set the cli class.
+         *
+         * @param cliClass class
+         * @return this builder
          */
-        VERBOSE,
+        @SuppressWarnings("unchecked")
+        public T cliClass(Class<?> cliClass) {
+            this.cliClass = cliClass;
+            return (T) this;
+        }
+
         /**
-         * Debug level.
+         * Build the command context instance.
+         *
+         * @return CommandContext
          */
-        DEBUG
+        protected CommandContext buildContext() {
+            CommandRegistry registry = CommandRegistry.load(cliClass);
+            return new CommandContext(registry, new InternalOptions(lookup));
+        }
     }
 }

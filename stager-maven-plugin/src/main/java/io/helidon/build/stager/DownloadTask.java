@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 
-import io.helidon.build.util.NetworkConnection;
+import io.helidon.build.common.NetworkConnection;
 
 /**
  * Download a file to a given target location.
@@ -89,7 +89,7 @@ final class DownloadTask extends StagingTask {
 
     private InputStream open(URL url) throws IOException {
         return NetworkConnection.builder()
-                .url(url)
-                .open();
+                                .url(url)
+                                .open();
     }
 }

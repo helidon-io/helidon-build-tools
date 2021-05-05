@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,21 @@ package io.helidon.build.cli.impl;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
-import io.helidon.build.cli.harness.Config;
 import io.helidon.build.cli.harness.Creator;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.MavenVersion;
-import io.helidon.build.util.ProjectConfig;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.Log.Level;
+import io.helidon.build.common.maven.MavenVersion;
 
-import static io.helidon.build.util.ProjectConfig.HELIDON_VERSION;
-import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
-import static io.helidon.build.util.ProjectConfig.PROJECT_RESOURCEDIRS;
-import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
-import static io.helidon.build.util.ProjectConfig.RESOURCE_INCLUDE_EXCLUDE_SEPARATOR;
+import static io.helidon.build.cli.common.ProjectConfig.HELIDON_VERSION;
+import static io.helidon.build.cli.common.ProjectConfig.PROJECT_FLAVOR;
+import static io.helidon.build.cli.common.ProjectConfig.PROJECT_RESOURCEDIRS;
+import static io.helidon.build.cli.common.ProjectConfig.PROJECT_VERSION;
+import static io.helidon.build.cli.common.ProjectConfig.RESOURCE_INCLUDE_EXCLUDE_SEPARATOR;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Italic;
 
 /**
  * The {@code version} command.
@@ -67,7 +69,7 @@ final class VersionCommand extends BaseCommand {
             // message has already been logged
         }
 
-        Log.info(map);
+        Log.log(Level.INFO, map, Italic, BoldBlue);
     }
 
     /**

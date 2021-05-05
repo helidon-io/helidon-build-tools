@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,15 +23,14 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.build.cli.harness.CommandFragment;
-import io.helidon.build.cli.harness.Config;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option;
 import io.helidon.build.cli.harness.Option.KeyValue;
-import io.helidon.build.cli.harness.UserConfig;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.MavenVersion;
-import io.helidon.build.util.Strings;
-import io.helidon.build.util.StyleFunction;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.Log.Level;
+import io.helidon.build.common.Strings;
+import io.helidon.build.common.ansi.AnsiTextStyles;
+import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.cli.harness.GlobalOptions.DEBUG_FLAG_DESCRIPTION;
 import static io.helidon.build.cli.harness.GlobalOptions.DEBUG_FLAG_NAME;
@@ -39,8 +38,8 @@ import static io.helidon.build.cli.harness.GlobalOptions.PLAIN_FLAG_DESCRIPTION;
 import static io.helidon.build.cli.harness.GlobalOptions.PLAIN_FLAG_NAME;
 import static io.helidon.build.cli.harness.GlobalOptions.VERBOSE_FLAG_DESCRIPTION;
 import static io.helidon.build.cli.harness.GlobalOptions.VERBOSE_FLAG_NAME;
-import static io.helidon.build.util.FileUtils.WORKING_DIR;
-import static io.helidon.build.util.MavenVersion.toMavenVersion;
+import static io.helidon.build.common.FileUtils.WORKING_DIR;
+import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 
 /**
  * Common options.
@@ -125,7 +124,10 @@ final class CommonOptions {
             if (!metadataUrl.equals(Metadata.DEFAULT_URL)) {
                 Log.debug("using metadata url %s", metadataUrl);
             }
-            metadata = Metadata.newInstance(metadataUrl, config.checkForUpdatesIntervalHours());
+            metadata = Metadata.builder()
+                               .url(metadataUrl)
+                               .updateFrequency(config.checkForUpdatesIntervalHours())
+                               .build();
         }
         return metadata;
     }
@@ -143,7 +145,7 @@ final class CommonOptions {
                 } else {
                     Log.info("$(bold Version %s of this CLI is now available:)", newCliVersion);
                     Log.info();
-                    Log.info(releaseNotes, StyleFunction.Italic, StyleFunction.Plain);
+                    Log.log(Level.INFO, releaseNotes, AnsiTextStyles.Italic, AnsiTextStyles.Plain);
                     Log.info();
                 }
                 Log.info("Please see $(blue %s) to update.", UPDATE_URL);

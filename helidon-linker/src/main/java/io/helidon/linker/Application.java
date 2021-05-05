@@ -27,10 +27,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import io.helidon.build.util.FileUtils;
-import io.helidon.build.util.Log;
+import io.helidon.build.common.Log;
 import io.helidon.linker.util.JavaRuntime;
 
+import static io.helidon.build.common.FileUtils.list;
+import static io.helidon.build.common.FileUtils.sizeOf;
 import static io.helidon.linker.util.Constants.DIR_SEP;
 import static java.util.jar.Attributes.Name.IMPLEMENTATION_VERSION;
 
@@ -110,7 +111,7 @@ public final class Application implements ResourceContainer {
      * @throws UncheckedIOException If an error occurs.
      */
     public long installedSize(JavaRuntime jri) {
-        return FileUtils.sizeOf(jri.path().resolve(APP_DIR));
+        return sizeOf(jri.path().resolve(APP_DIR));
     }
 
     /**
@@ -147,7 +148,7 @@ public final class Application implements ResourceContainer {
      * @throws UncheckedIOException If an error occurs.
      */
     public long diskSize() {
-        return jars().mapToLong(jar -> FileUtils.sizeOf(jar.path()))
+        return jars().mapToLong(jar -> sizeOf(jar.path()))
                      .sum();
     }
 
@@ -224,7 +225,7 @@ public final class Application implements ResourceContainer {
             }
         } else if (Files.isDirectory(classPathEntry)) {
             // This won't happen from a normal Helidon app build, but handle it for the custom case.
-            FileUtils.list(classPathEntry).forEach(path -> addClassPath(jar, path, visited, classPath));
+            list(classPathEntry).forEach(path -> addClassPath(jar, path, visited, classPath));
         }
     }
 

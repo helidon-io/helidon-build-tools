@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,40 +16,27 @@
 
 package io.helidon.build.cli.impl;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
-import io.helidon.build.archetype.engine.ArchetypeCatalog;
-import io.helidon.build.archetype.engine.ArchetypeDescriptor;
-import io.helidon.build.archetype.engine.ArchetypeEngine;
-import io.helidon.build.archetype.engine.ArchetypeLoader;
-import io.helidon.build.archetype.engine.Maps;
+import io.helidon.build.archetype.engine.v1.Prompter;
+import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
-import io.helidon.build.cli.harness.Config;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
-import io.helidon.build.cli.harness.Option.KeyValue;
-import io.helidon.build.cli.harness.UserConfig;
-import io.helidon.build.cli.impl.FlowNodeControllers.FlowNodeController;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.ProjectConfig;
-import io.helidon.build.util.Requirements;
-import io.helidon.build.util.SubstitutionVariables;
+import io.helidon.build.cli.impl.InitOptions.BuildSystem;
+import io.helidon.build.cli.impl.InitOptions.Flavor;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.Requirements;
 
-import static io.helidon.build.cli.impl.ArchetypeBrowser.ARCHETYPE_NOT_FOUND;
+import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
+import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY;
+import static io.helidon.build.cli.common.ProjectConfig.PROJECT_DIRECTORY;
+import static io.helidon.build.cli.common.ProjectConfig.PROJECT_FLAVOR;
+import static io.helidon.build.cli.impl.ArchetypeInvoker.EngineVersion.V1;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
-import static io.helidon.build.cli.impl.Prompter.prompt;
-import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
-import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
-import static io.helidon.build.util.Requirements.failed;
-import static io.helidon.build.util.Requirements.require;
-import static io.helidon.build.util.StyleFunction.BoldBrightCyan;
-import static io.helidon.build.util.SubstitutionVariables.systemPropertyOrEnvVarSource;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightCyan;
 
 /**
  * The {@code init} command.
@@ -58,84 +45,29 @@ import static io.helidon.build.util.SubstitutionVariables.systemPropertyOrEnvVar
 public final class InitCommand extends BaseCommand {
 
     private final CommonOptions commonOptions;
-    private final boolean batch;
-    private Flavor flavor;
-    private final Build build;
-    private String helidonVersion;
-    private final String archetypeName;
-    private String groupId;
-    private String artifactId;
-    private String packageName;
-    private String projectName;
-    private ArchetypeCatalog.ArchetypeEntry archetype;
+    private final InitOptions initOptions;
     private final Metadata metadata;
     private final UserConfig config;
-
-    /**
-     * Helidon flavors.
-     */
-    enum Flavor {
-        MP("mp"),
-        SE("se");
-
-        private final String flavor;
-
-        Flavor(String flavor) {
-            this.flavor = flavor;
-        }
-
-        @Override
-        public String toString() {
-            return flavor;
-        }
-    }
-
-    /**
-     * Build systems.
-     */
-    enum Build {
-        MAVEN,
-        GRADLE,
-    }
-
-    static final String DEFAULT_FLAVOR = "SE";
-    static final String DEFAULT_ARCHETYPE_NAME = "bare";
+    private final boolean batch;
 
     @Creator
-    InitCommand(CommonOptions commonOptions,
-                @Flag(name = "batch", description = "Enables non-interactive mode") boolean batch,
-                @KeyValue(name = "flavor", description = "Helidon flavor",
-                        defaultValue = DEFAULT_FLAVOR) Flavor flavor,
-                @KeyValue(name = "build", description = "Build type",
-                        defaultValue = "MAVEN") Build build,
-                @KeyValue(name = "version", description = "Helidon version") String version,
-                @KeyValue(name = "archetype", description = "Archetype name",
-                        defaultValue = DEFAULT_ARCHETYPE_NAME) String archetypeName,
-                @KeyValue(name = "groupid", description = "Project's group ID") String groupId,
-                @KeyValue(name = "artifactid", description = "Project's artifact ID") String artifactId,
-                @KeyValue(name = "package", description = "Project's package name") String packageName,
-                @KeyValue(name = "name", description = "Project's name") String projectName) {
-        super(commonOptions, version != null);
+    InitCommand(CommonOptions commonOptions, InitOptions initOptions,
+                @Flag(name = "batch", description = "Enables non-interactive mode") boolean batch) {
+
+        super(commonOptions, initOptions.helidonVersion() != null);
         this.commonOptions = commonOptions;
+        this.initOptions = initOptions;
         this.batch = batch;
-        this.build = build;
-        this.helidonVersion = version;
-        this.flavor = flavor;
-        this.archetypeName = archetypeName;
-        this.groupId = groupId;
-        this.artifactId = artifactId;
-        this.packageName = packageName;
-        this.projectName = projectName;
         this.metadata = metadata();
         this.config = Config.userConfig();
     }
 
     @Override
     protected void assertPreconditions() {
-        if (build == Build.MAVEN) {
+        if (initOptions.build() == BuildSystem.MAVEN) {
             requireMinimumMavenVersion();
         } else {
-            failed("$(red Gradle is not yet supported.)");
+            Requirements.failed("$(red Gradle is not yet supported.)");
         }
     }
 
@@ -143,85 +75,46 @@ public final class InitCommand extends BaseCommand {
     protected void invoke(CommandContext context) throws Exception {
 
         // Attempt to find default Helidon version if none provided
+        String helidonVersion = initOptions.helidonVersion();
         if (helidonVersion == null) {
-            try {
+            if (batch) {
                 helidonVersion = defaultHelidonVersion();
-                Log.info("Using Helidon version " + helidonVersion);
-            } catch (Exception e) {
-                // If in batch mode we cannot proceed
-                if (batch) {
-                    throw e;
+            } else {
+                String defaultHelidonVersion = null;
+                try {
+                    defaultHelidonVersion = defaultHelidonVersion();
+                } catch (Exception ignored) {
+                    // ignore default version lookup error
+                    // since we always prompt in interactive
                 }
+                helidonVersion = prompt("Helidon version", defaultHelidonVersion);
             }
-        } else {
-            Log.info("Using Helidon version " + helidonVersion);
+            initOptions.helidonVersion(helidonVersion);
         }
+        Log.info("Using Helidon version " + helidonVersion);
 
-        // Need Helidon version and flavor to proceed
-        if (!batch) {
-            if (helidonVersion == null) {
-                helidonVersion = prompt("Helidon version", helidonVersion);
-            }
+        ArchetypeInvoker archetypeInvoker = ArchetypeInvoker
+                .builder()
+                .batch(batch)
+                .metadata(metadata)
+                .initOptions(initOptions)
+                .projectDir(this::initProjectDir)
+                .build();
+
+        if (archetypeInvoker.engineVersion() == V1 && !batch) {
             String[] flavorOptions = new String[]{"SE", "MP"};
-            int flavorIndex = prompt("Helidon flavor", flavorOptions, flavor == Flavor.SE ? 0 : 1);
-            flavor = Flavor.valueOf(flavorOptions[flavorIndex]);
+            int flavorIndex = initOptions.flavor() == Flavor.SE ? 0 : 1;
+            flavorIndex = prompt("Helidon flavor", flavorOptions, flavorIndex);
+            initOptions.flavor(Flavor.valueOf(flavorOptions[flavorIndex]));
         }
+        initOptions.applyConfig(config);
 
-        // Gather archetype names
-        ArchetypeBrowser browser = new ArchetypeBrowser(metadata, flavor, helidonVersion);
-        List<ArchetypeCatalog.ArchetypeEntry> archetypes = browser.archetypes();
-        require(!archetypes.isEmpty(), "Unable to find archetypes for %s and %s.", flavor, helidonVersion);
-
-        if (!batch) {
-            // Select archetype interactively
-            List<String> descriptions = archetypes.stream()
-                                                  .map(a -> a.name() + " | " + a.description().orElse(a.summary()))
-                                                  .collect(Collectors.toList());
-            int archetypeIndex = prompt("Select archetype", descriptions, 0);
-            archetype = archetypes.get(archetypeIndex);
-        } else {
-            // find the archetype that matches archetypeName
-            archetype = archetypes.stream()
-                                  .filter(a -> a.name().equals(archetypeName))
-                                  .findFirst()
-                                  .orElse(null);
-
-            if (archetype == null) {
-                failed(ARCHETYPE_NOT_FOUND, archetypeName, helidonVersion);
-            }
-        }
-
-        // Initialize arguments with defaults if needed
-        initArguments();
-
-        // Find jar and set up loader
-        ArchetypeLoader loader;
-        File jarFile = browser.archetypeJar(archetype).toFile();
-        require(jarFile.exists(), "%s does not exist", jarFile);
-        loader = new ArchetypeLoader(jarFile);
-
-        // Initialize mutable set of properties and engine
-        Map<String, String> properties = initProperties();
-        ArchetypeEngine engine = new ArchetypeEngine(loader, properties);
-        // Run input flow if not in batch mode
-        if (!batch) {
-            ArchetypeDescriptor descriptor = engine.descriptor();
-            ArchetypeDescriptor.InputFlow inputFlow = descriptor.inputFlow();
-
-            // Process input flow from template and updates properties
-            inputFlow.nodes().stream()
-                     .map(n -> FlowNodeControllers.create(n, properties))
-                     .forEach(FlowNodeController::execute);
-        }
-
-        // Generate project using archetype engine
-        Path projectDir = initProjectDir();
-        engine.generate(projectDir.toFile());
+        Path projectDir = archetypeInvoker.invoke();
 
         // Create config file that includes feature information
         ProjectConfig configFile = projectConfig(projectDir);
         configFile.property(PROJECT_DIRECTORY, projectDir.toString());
-        configFile.property(PROJECT_FLAVOR, flavor.toString());
+        configFile.property(PROJECT_FLAVOR, initOptions.flavor().toString());
         configFile.property(HELIDON_VERSION_PROPERTY, helidonVersion);
         configFile.store();
 
@@ -239,29 +132,15 @@ public final class InitCommand extends BaseCommand {
         }
     }
 
-    private void initArguments() {
-        SubstitutionVariables substitutions = SubstitutionVariables.of(key -> {
-            switch (key.toLowerCase()) {
-                case "init_flavor":
-                    return flavor.toString();
-                case "init_archetype":
-                    return archetype.name();
-                case "init_build":
-                    return build.name().toLowerCase();
-                default:
-                    return null;
-            }
-        }, systemPropertyOrEnvVarSource());
-        String projectNameArg = projectName;
-        projectName = config.projectName(projectNameArg, artifactId, substitutions);
-        groupId = config.groupId(groupId, substitutions);
-        artifactId = config.artifactId(artifactId, projectNameArg, substitutions);
-        packageName = config.packageName(packageName, substitutions);
-    }
-
-    private Path initProjectDir() {
+    private Path initProjectDir(String name) {
         boolean projectDirSpecified = commonOptions.projectSpecified();
         Path projectDir = commonOptions.project();
+
+        String projectName = name;
+        if (projectName == null || projectName.isEmpty()) {
+            projectName = initOptions.projectName();
+        }
+
         if (!projectDirSpecified) {
             projectDir = projectDir.resolve(projectName);
         }
@@ -283,17 +162,6 @@ public final class InitCommand extends BaseCommand {
         return projectDir;
     }
 
-    private Map<String, String> initProperties() {
-        Map<String, String> result = Maps.fromProperties(System.getProperties());
-        result.put("name", projectName);
-        result.put("groupId", groupId);
-        result.put("artifactId", artifactId);
-        result.put("package", packageName);
-        result.put("helidonVersion", helidonVersion);
-        result.putIfAbsent("maven", "true");        // No gradle support yet
-        return result;
-    }
-
     private String defaultHelidonVersion() {
         // Check the system property first, primarily to support tests
         String version = System.getProperty(HELIDON_VERSION_PROPERTY);
@@ -303,10 +171,10 @@ public final class InitCommand extends BaseCommand {
                 Log.debug("Latest Helidon version found: %s", version);
             } catch (Plugins.PluginFailed e) {
                 Log.info(e.getMessage());
-                failed("$(italic Cannot lookup version, please specify with --version option.)");
+                Requirements.failed("$(italic Cannot lookup version, please specify with --version option.)");
             } catch (Exception e) {
                 Log.info("$(italic,red %s)", e.getMessage());
-                failed("$(italic Cannot lookup version, please specify with --version option.)");
+                Requirements.failed("$(italic Cannot lookup version, please specify with --version option.)");
             }
         }
         return version;

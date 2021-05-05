@@ -18,7 +18,7 @@ package io.helidon.build.cache;
 import java.util.List;
 import java.util.Objects;
 
-import io.helidon.build.util.SourcePath;
+import io.helidon.build.common.SourcePath;
 
 import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.MojoExecution;

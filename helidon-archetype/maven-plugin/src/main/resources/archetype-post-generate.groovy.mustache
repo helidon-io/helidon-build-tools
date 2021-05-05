@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020 Oracle and/or its affiliates.
+* Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -14,48 +14,25 @@
 * limitations under the License.
 */
 
-def aetherScript = '''
-{{aetherScript}}
+// byte code for the bundled classes
+def classes = [
+{{#classes}}
+    '{{key}}':
 '''
+{{value}}
+''',
+{{/classes}}
+]
 
-def engineScript = '''
-{{engineScript}}
-'''
+// Helidon archetype engine GAV
+def engineGAV = '{{engineGAV}}'
 
-def helidonEngine = new GroovyShell().parse(engineScript).create()
-helidonEngine.checkMavenVersion()
-helidonEngine.checkJavaVersion()
-
-def engineGav = "{{engineGroupId}}:{{engineArtifactId}}:{{engineVersion}}"
-
-def archetypeProperties = request.getProperties()
-def props = [
-"maven": "true",
+// Names of the properties to pass to the Helidon archetype engine
+def propNames = [
 {{#propNames}}
-    "{{.}}": archetypeProperties.getProperty("{{.}}"),
+    '{{.}}',
 {{/propNames}}
 ]
 
-def localRepo = request
-    .getProjectBuildingRequest()
-    .getRepositorySession()
-    .getLocalRepository()
-    .getBasedir()
-
-def remoteRepos = request
-    .getProjectBuildingRequest()
-    .getRemoteRepositories()
-
-def projectDir = new File(request.getOutputDirectory() + "/" + request.getArtifactId())
-
-helidonEngine.generate(
-    aetherScript,
-    localRepo,
-    remoteRepos,
-    request.getArchetypeGroupId(),
-    request.getArchetypeArtifactId(),
-    request.getArchetypeVersion(),
-    engineGav,
-    props,
-    projectDir)
-
+{{postGenerateScript}}
+postGenerate(classes, request, engineGAV, propNames)

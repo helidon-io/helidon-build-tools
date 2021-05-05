@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import io.helidon.build.archetype.engine.ArchetypeCatalog;
-import io.helidon.build.archetype.engine.ArchetypeCatalog.ArchetypeEntry;
-import io.helidon.build.cli.harness.Config;
+import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
+import io.helidon.build.archetype.engine.v1.ArchetypeCatalog.ArchetypeEntry;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
-import io.helidon.build.util.ConfigProperties;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.MavenVersion;
+import io.helidon.build.common.ConfigProperties;
 
+import io.helidon.build.common.Log;
+import io.helidon.build.common.maven.MavenVersion;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,7 +51,7 @@ import static io.helidon.build.cli.impl.TestMetadata.TestVersion.RC1;
 import static io.helidon.build.cli.impl.TestMetadata.TestVersion.RC2;
 import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC1;
 import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC2;
-import static io.helidon.build.util.MavenVersion.toMavenVersion;
+import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -82,7 +81,7 @@ public class MetadataTest extends MetadataTestBase {
     }
 
     @Test
-    void smokeTest() throws Exception {
+    void smokeTest() {
         assertInitialLatestVersionRequestPerformsUpdate(DEFAULT_UPDATE_FREQUENCY, HOURS, VERSION_RC1, NO_ETAG, false);
 
         // Check properties. Should not perform update.
@@ -148,7 +147,7 @@ public class MetadataTest extends MetadataTestBase {
     }
 
     @Test
-    void testCheckForCliUpdate() throws Exception {
+    void testCheckForCliUpdate() {
 
         // Setup with RC2 as latest
 
@@ -184,7 +183,7 @@ public class MetadataTest extends MetadataTestBase {
     }
 
     @Test
-    void testCliPluginVersion() throws Exception {
+    void testCliPluginVersion() {
 
         // Setup with RC2 as latest
 
@@ -250,7 +249,7 @@ public class MetadataTest extends MetadataTestBase {
 
 
     @Test
-    void testReleaseNotes() throws Exception {
+    void testReleaseNotes() {
         meta = newDefaultInstance();
         MavenVersion helidonVersion = MAVEN_VERSION_RC2;
 
@@ -346,7 +345,7 @@ public class MetadataTest extends MetadataTestBase {
     }
 
     @Test
-    void testZipIsNotDownloadedWhenEtagMatches() throws Exception {
+    void testZipIsNotDownloadedWhenEtagMatches() {
         startMetadataTestServer(TestVersion.RC1);
 
         // Make the initial latestVersion call and validate the result
@@ -366,7 +365,7 @@ public class MetadataTest extends MetadataTestBase {
     }
 
     @Test
-    void testUpdateWhenLatestChanges() throws Exception {
+    void testUpdateWhenLatestChanges() {
 
         // Setup test server with latest set to RC2
 
@@ -396,7 +395,7 @@ public class MetadataTest extends MetadataTestBase {
     }
 
     @Test
-    void testCatalogUpdatesWhenUnseenVersionRequested() throws Exception {
+    void testCatalogUpdatesWhenUnseenVersionRequested() {
         startMetadataTestServer(RC2);
 
         // Make the initial catalog request and validate the result

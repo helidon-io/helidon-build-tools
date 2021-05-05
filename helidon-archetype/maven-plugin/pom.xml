@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2020,2021 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.build-tools.archetype</groupId>
-            <artifactId>helidon-archetype-engine</artifactId>
+            <artifactId>helidon-archetype-engine-v1</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -68,9 +68,36 @@
             <artifactId>maven-invoker</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.build-tools</groupId>
-            <artifactId>helidon-utils</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.apache.maven.shared</groupId>
+            <artifactId>maven-artifact-transfer</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.archetype</groupId>
+            <artifactId>archetype-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.wagon</groupId>
+            <artifactId>wagon-http</artifactId>
+            <optional>true</optional>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-impl</artifactId>
+            <optional>true</optional>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-transport-wagon</artifactId>
+            <optional>true</optional>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-connector-basic</artifactId>
+            <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
@@ -79,38 +106,13 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-invoker-plugin</artifactId>
-                <configuration>
-                    <localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>
-                    <ignoreFailures>false</ignoreFailures>
-                    <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
-                    <pomIncludes>
-                        <pomInclude>projects/pom.xml</pomInclude>
-                    </pomIncludes>
-                    <goals>
-                        <goal>clean</goal>
-                        <goal>install</goal>
-                    </goals>
-                    <streamLogs>true</streamLogs>
-                    <showErrors>true</showErrors>
-                    <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
-                    <skipInvocation>${skipTests}</skipInvocation>
-                    <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
-                    <skipInstallation>${skipTests}</skipInstallation>
-                </configuration>
                 <executions>
                     <execution>
-                        <id>invoker-install</id>
                         <goals>
                             <goal>install</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>invoker-it</id>
-                        <goals>
                             <goal>integration-test</goal>
                             <goal>verify</goal>
                         </goals>
-                        <phase>pre-integration-test</phase>
                     </execution>
                 </executions>
             </plugin>

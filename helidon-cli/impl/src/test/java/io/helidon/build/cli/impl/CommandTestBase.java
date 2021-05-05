@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@ package io.helidon.build.cli.impl;
 
 import org.junit.jupiter.api.BeforeAll;
 
-import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
-import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
-import static io.helidon.build.util.PomUtils.HELIDON_PLUGIN_VERSION_PROPERTY;
+import static io.helidon.build.cli.impl.TestUtils.helidonTestVersion;
+import static io.helidon.build.cli.common.CliProperties.HELIDON_PLUGIN_VERSION_PROPERTY;
+import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY;
 
 /**
  * Base class for command tests.

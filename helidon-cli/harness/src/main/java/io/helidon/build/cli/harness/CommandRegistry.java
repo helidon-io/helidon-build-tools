@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package io.helidon.build.cli.harness;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,20 +29,21 @@ import java.util.stream.Collectors;
 public class CommandRegistry {
 
     private final Map<String, CommandModel> commandsByName;
-    private final String pkg;
-
-    private CommandRegistry() {
-        this.pkg = null;
-        this.commandsByName = Collections.emptyMap();
-    }
+    private final String aClass;
+    private final String cliName;
+    private final String cliDescription;
 
     /**
      * Create a new command registry.
      *
-     * @param pkg the java package this registry is identified with
+     * @param cliClass       the class this registry is derived from
+     * @param cliName        the CLI cliName
+     * @param cliDescription the CLI cliDescription
      */
-    protected CommandRegistry(String pkg) {
-        this.pkg = Objects.requireNonNull(pkg, "pkg is null");
+    protected CommandRegistry(String cliClass, String cliName, String cliDescription) {
+        this.aClass = Objects.requireNonNull(cliClass, "cliClass is null");
+        this.cliName = Objects.requireNonNull(cliName, "cliName is null");
+        this.cliDescription = Objects.requireNonNull(cliDescription, "cliDescription is null");
         commandsByName = new LinkedHashMap<>();
         // built-in commands
         register(new UsageCommand());
@@ -53,15 +53,16 @@ public class CommandRegistry {
     /**
      * Register a command model in the registry.
      *
-     * @param model command model to register
+     * @param models command models to register
      */
-    protected final void register(CommandModel model) {
-        Objects.requireNonNull(model, "model is null");
-        String name = model.command().name();
-        if (commandsByName.containsKey(name)) {
-            throw new IllegalArgumentException("Command already registered for name: " + name);
+    protected final void register(CommandModel... models) {
+        for (CommandModel model : models) {
+            String name = model.command().name();
+            if (commandsByName.containsKey(name)) {
+                throw new IllegalArgumentException("Command already registered for name: " + name);
+            }
+            commandsByName.put(name, model);
         }
-        commandsByName.put(name, model);
     }
 
     /**
@@ -93,28 +94,37 @@ public class CommandRegistry {
     }
 
     /**
-     * Get the package this command registry belongs to.
+     * Get the CLI name.
      *
-     * @return package name
+     * @return CLI name
      */
-    public final String pkg() {
-        return pkg;
+    public String cliName() {
+        return cliName;
+    }
+
+    /**
+     * Get the CLI description.
+     *
+     * @return CLI description
+     */
+    public String cliDescription() {
+        return cliDescription;
     }
 
     /**
      * Load a {@link CommandRegistry} instance.
      *
-     * @param clazz a class to derive the package namespace the registry is associated with
+     * @param aClass class to match with a registry
      * @return command registry, never {@code null}
      */
-    public static CommandRegistry load(Class<?> clazz) {
-        Objects.requireNonNull(clazz, "clazz is null");
-        String pkg = clazz.getPackageName();
+    public static CommandRegistry load(Class<?> aClass) {
+        Objects.requireNonNull(aClass, "aClass is null");
         return ServiceLoader.load(CommandRegistry.class)
-                .stream()
-                .filter((r) -> pkg.equals(r.get().pkg()))
-                .findFirst()
-                .map(ServiceLoader.Provider::get)
-                .orElse(new CommandRegistry());
+                            .stream()
+                            .filter((r) -> aClass.getName().equals(r.get().aClass))
+                            .findFirst()
+                            .map(ServiceLoader.Provider::get)
+                            .orElseThrow(() -> new IllegalArgumentException(
+                                    "No command registry found for class: " + aClass));
     }
 }

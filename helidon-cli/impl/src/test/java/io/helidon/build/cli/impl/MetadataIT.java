@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import io.helidon.build.archetype.engine.ArchetypeCatalog;
-import io.helidon.build.archetype.engine.ArchetypeCatalog.ArchetypeEntry;
-import io.helidon.build.util.ConfigProperties;
+import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
+import io.helidon.build.archetype.engine.v1.ArchetypeCatalog.ArchetypeEntry;
+import io.helidon.build.common.ConfigProperties;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,7 +60,7 @@ public class MetadataIT extends MetadataTestBase {
     }
 
     @Test
-    void smokeTestRc2() throws Exception {
+    void smokeTestRc2() {
 
         // Do the initial catalog request for RC2
 

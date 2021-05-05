@@ -23,12 +23,12 @@ import java.nio.charset.StandardCharsets;
 
 import io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.Strings;
 
+import io.helidon.build.common.Log;
+import io.helidon.build.common.Strings;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.util.Style.strip;
+import static io.helidon.build.common.ansi.AnsiTextStyle.strip;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -42,19 +42,13 @@ public class ExecTest {
     static final String CLI_USAGE = resourceAsString("cli-usage.txt");
     static final String HELP_CMD_HELP = resourceAsString("help-cmd-help.txt");
     static final String SIMPLE_CMD_HELP = resourceAsString("simple-cmd-help.txt");
-    static final CLIDefinition TEST_CLI = CLIDefinition.create("test-cli", "A test cli");
 
     static CommandContext context() {
-        return CommandContext.create(REGISTRY, TEST_CLI);
+        return new CommandContext(REGISTRY, null);
     }
 
     static String resourceAsString(String name) {
-        InputStream is = ExecTest.class.getResourceAsStream(name);
-        try {
-            return Strings.normalizeNewLines(new String(is.readAllBytes(), StandardCharsets.UTF_8));
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
+        return Strings.normalizeNewLines(Strings.read(ExecTest.class.getResourceAsStream(name)));
     }
 
     static String exec(CommandContext context, String... args) {
@@ -62,7 +56,7 @@ public class ExecTest {
         PrintStream stdout = System.out;
         try {
             System.setOut(new PrintStream(baos));
-            CommandRunner.execute(context, args);
+            CommandRunner.execute2(context, args);
         } finally {
             System.setOut(stdout);
         }
@@ -110,7 +104,7 @@ public class ExecTest {
     private static final class TestCommandRegistry extends CommandRegistry {
 
         public TestCommandRegistry() {
-            super(/* pkg */"");
+            super("", "test-cli", "A test cli");
             register(new CommandWithCommonOptions());
             register(new SimpleCommand());
         }
@@ -174,7 +168,12 @@ public class ExecTest {
 
     private static final class CommonOptionsInfo extends CommandParameters.CommandFragmentInfo<CommonOptions> {
 
-        private static final KeyValueInfo<String> KEY_OPTION = new KeyValueInfo<>(String.class, "key", "key option", null, true);
+        private static final KeyValueInfo<String> KEY_OPTION = new KeyValueInfo<>(
+                String.class,
+                "key",
+                "key option",
+                null,
+                true);
 
         private CommonOptionsInfo() {
             super(CommonOptions.class, KEY_OPTION);

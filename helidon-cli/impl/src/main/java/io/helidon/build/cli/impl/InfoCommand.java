@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,26 +22,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.build.archetype.engine.ArchetypeCatalog;
+import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
+import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
-import io.helidon.build.cli.harness.Config;
 import io.helidon.build.cli.harness.Creator;
-import io.helidon.build.util.ConfigProperties;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.MavenVersion;
-import io.helidon.build.util.ProjectConfig;
-import io.helidon.build.util.TimeUtils;
+import io.helidon.build.common.ConfigProperties;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.Log.Level;
+import io.helidon.build.common.Time;
+import io.helidon.build.common.maven.MavenVersion;
 
+import static io.helidon.build.cli.common.ProjectConfig.HELIDON_VERSION;
+import static io.helidon.build.cli.common.ProjectConfig.PROJECT_CLASSDIRS;
+import static io.helidon.build.cli.common.ProjectConfig.PROJECT_DIRECTORY;
+import static io.helidon.build.cli.common.ProjectConfig.PROJECT_FLAVOR;
+import static io.helidon.build.cli.common.ProjectConfig.PROJECT_MAINCLASS;
+import static io.helidon.build.cli.common.ProjectConfig.PROJECT_RESOURCEDIRS;
+import static io.helidon.build.cli.common.ProjectConfig.PROJECT_SOURCEDIRS;
+import static io.helidon.build.cli.common.ProjectConfig.PROJECT_VERSION;
 import static io.helidon.build.cli.impl.VersionCommand.addProjectProperty;
-import static io.helidon.build.util.ProjectConfig.HELIDON_VERSION;
-import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
-import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
-import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
-import static io.helidon.build.util.ProjectConfig.PROJECT_MAINCLASS;
-import static io.helidon.build.util.ProjectConfig.PROJECT_RESOURCEDIRS;
-import static io.helidon.build.util.ProjectConfig.PROJECT_SOURCEDIRS;
-import static io.helidon.build.util.ProjectConfig.PROJECT_VERSION;
+import static io.helidon.build.common.Log.maxKeyWidth;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Italic;
 
 /**
  * The {@code info} command.
@@ -65,7 +68,7 @@ public final class InfoCommand extends BaseCommand {
     }
 
     @Override
-    protected void invoke(CommandContext context) throws Exception {
+    protected void invoke(CommandContext context) {
 
         // User config
 
@@ -111,7 +114,7 @@ public final class InfoCommand extends BaseCommand {
                 metaProps.put("cache.dir", meta.rootDir());
 
                 FileTime lastUpdateTime = meta.lastUpdateTime();
-                String formattedTime = TimeUtils.toDateTime(lastUpdateTime);
+                String formattedTime = Time.toDateTime(lastUpdateTime);
                 metaProps.put("last.update.time", formattedTime);
 
                 MavenVersion latestVersion = meta.latestVersion(true);
@@ -153,7 +156,7 @@ public final class InfoCommand extends BaseCommand {
 
         // Log them all
 
-        int maxWidth = Math.max(Log.maxKeyWidth(userConfigProps, buildProps, systemProps, envVars, projectProps), MIN_WIDTH);
+        int maxWidth = Math.max(maxKeyWidth(userConfigProps, buildProps, systemProps, envVars, projectProps), MIN_WIDTH);
         log("User Config", userConfigProps, maxWidth);
         log("Project Config", projectProps, maxWidth);
         log("General", buildProps, maxWidth);
@@ -197,7 +200,7 @@ public final class InfoCommand extends BaseCommand {
     private static void log(String header, Map<Object, Object> map, int maxKeyWidth) {
         if (!map.isEmpty()) {
             logHeader(header);
-            Log.info(map, maxKeyWidth);
+            Log.log(Level.INFO, map, maxKeyWidth, Italic, BoldBlue);
         }
     }
 }

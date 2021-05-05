@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,21 +25,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import io.helidon.build.cli.harness.UserConfig;
-import io.helidon.build.util.ProjectConfig;
-import io.helidon.build.util.SubstitutionVariables;
+import io.helidon.build.cli.common.ProjectConfig;
+import io.helidon.build.common.SubstitutionVariables;
 
-import org.apache.maven.model.Model;
+import io.helidon.build.common.maven.MavenModel;
 
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_ARCHETYPE_NAME;
-import static io.helidon.build.cli.impl.InitCommand.DEFAULT_FLAVOR;
+import static io.helidon.build.cli.common.ProjectConfig.DOT_HELIDON;
+import static io.helidon.build.cli.impl.InitOptions.DEFAULT_ARCHETYPE_NAME;
+import static io.helidon.build.cli.impl.InitOptions.DEFAULT_FLAVOR;
 import static io.helidon.build.cli.impl.TestUtils.exec;
-import static io.helidon.build.util.FileUtils.assertDir;
-import static io.helidon.build.util.FileUtils.assertFile;
-import static io.helidon.build.util.PomUtils.readPomModel;
-import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
-import static io.helidon.build.util.SubstitutionVariables.systemPropertyOrEnvVarSource;
-import static io.helidon.build.util.TestUtils.uniqueDir;
+import static io.helidon.build.common.FileUtils.requireDirectory;
+import static io.helidon.build.common.FileUtils.requireFile;
+import static io.helidon.build.common.FileUtils.unique;
+import static io.helidon.build.common.SubstitutionVariables.systemPropertyOrEnvVarSource;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -287,7 +285,7 @@ public interface CommandInvoker {
             packageName = builder.packageName == null ? config.defaultPackageName(substitutions) : builder.packageName;
             try {
                 workDir = builder.workDir == null ? Files.createTempDirectory("helidon-init") : builder.workDir;
-                projectDir = uniqueDir(workDir, projectName);
+                projectDir = unique(workDir, projectName);
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }
@@ -417,21 +415,21 @@ public interface CommandInvoker {
 
         @Override
         public CommandInvoker assertJarExists() {
-            assertFile(projectDir.resolve("target").resolve(artifactId + ".jar"));
+            requireFile(projectDir.resolve("target").resolve(artifactId + ".jar"));
             return this;
         }
 
         @Override
         public CommandInvoker assertProjectExists() {
-            assertDir(projectDir);
+            requireDirectory(projectDir);
             return this;
         }
 
         @Override
         public CommandInvoker assertExpectedPom() {
             // Check pom and read model
-            Path pomFile = assertFile(projectDir().resolve("pom.xml"));
-            Model model = readPomModel(pomFile.toFile());
+            Path pomFile = requireFile(projectDir().resolve("pom.xml"));
+            MavenModel model = MavenModel.read(pomFile);
 
             // Flavor
             String parentArtifact = model.getParent().getArtifactId();
@@ -757,8 +755,8 @@ public interface CommandInvoker {
         /**
          * Set the user config.
          *
-         * @param config
-         * @return
+         * @param config user config
+         * @return this builder
          */
         public Builder userConfig(UserConfig config) {
             this.config = config;

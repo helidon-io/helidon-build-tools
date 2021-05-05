@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,16 @@
 package io.helidon.build.stager;
 
 import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.helidon.build.util.MustacheHelper.renderMustacheTemplate;
+import com.github.mustachejava.DefaultMustacheFactory;
 
 /**
  * Render a mustache template.
@@ -41,7 +44,7 @@ final class TemplateTask extends StagingTask {
         }
         this.source = source;
         this.templateVariables = variables.stream()
-                .collect(Collectors.toMap(Variable::name, v -> v.value().unwrap()));
+                                          .collect(Collectors.toMap(Variable::name, v -> v.value().unwrap()));
     }
 
     /**
@@ -76,7 +79,14 @@ final class TemplateTask extends StagingTask {
             throw new IllegalStateException(sourceFile + " does not exist");
         }
         Path targetFile = dir.resolve(resolvedTarget);
-        renderMustacheTemplate(sourceFile.toFile(), resolvedSource, targetFile, templateVariables);
+        Files.createDirectories(targetFile.getParent());
+        try (Reader reader = Files.newBufferedReader(sourceFile);
+             Writer writer = Files.newBufferedWriter(targetFile,
+                     StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+            new DefaultMustacheFactory().compile(reader, resolvedSource)
+                                        .execute(writer, templateVariables)
+                                        .flush();
+        }
     }
 
     @Override

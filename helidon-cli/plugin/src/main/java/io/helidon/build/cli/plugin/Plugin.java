@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,14 +27,24 @@ public abstract class Plugin {
      */
     public static void main(String[] args) {
         try {
-            if (args.length > 0) {
-                final Plugin plugin = Plugin.newInstance(args[0]);
-                plugin.parse(args).execute();
-            }
+            execute(args);
         } catch (IllegalArgumentException | Failed e) {
             fail(e.getMessage());
         } catch (Throwable e) {
             fail(e.toString());
+        }
+    }
+
+    /**
+     * Execute the plugin without the system exit.
+     *
+     * @param args The arguments
+     * @throws Exception if an error occurs
+     */
+    public static void execute(String[] args) throws Exception {
+        if (args.length > 0) {
+            final Plugin plugin = Plugin.newInstance(args[0]);
+            plugin.parse(args).execute();
         }
     }
 
@@ -67,7 +77,7 @@ public abstract class Plugin {
      * @return The instance.
      * @throws Exception If an error occurs.
      */
-    public static Plugin newInstance(String simpleClassName) throws Exception {
+    static Plugin newInstance(String simpleClassName) throws Exception {
         final String className = Plugin.class.getPackageName() + "." + simpleClassName;
         return (Plugin) Class.forName(className).getDeclaredConstructor().newInstance();
     }
@@ -86,7 +96,7 @@ public abstract class Plugin {
      * Returns the argument after the current index or fails if missing.
      *
      * @param currentIndex The current index.
-     * @param allArgs All arguments.
+     * @param allArgs      All arguments.
      * @return The next argument.
      */
     static String nextArg(int currentIndex, String[] allArgs) {
@@ -101,7 +111,7 @@ public abstract class Plugin {
     /**
      * Assert that the given argument is valid.
      *
-     * @param argName The argument name.
+     * @param argName  The argument name.
      * @param argument The argument.
      * @throws IllegalArgumentException If argument is {@code null}
      */
@@ -149,9 +159,9 @@ public abstract class Plugin {
     /**
      * Parse an argument.
      *
-     * @param arg The argument.
+     * @param arg      The argument.
      * @param argIndex The argument index.
-     * @param allArgs All arguments.
+     * @param allArgs  All arguments.
      * @return The new index, or -1 if an unknown argument.
      * @throws Exception if an error occurs.
      */

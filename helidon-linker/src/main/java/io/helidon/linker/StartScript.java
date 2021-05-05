@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.linker;
 
 import java.io.ByteArrayInputStream;
@@ -34,14 +33,15 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import io.helidon.build.util.FileUtils;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.OSType;
-import io.helidon.build.util.ProcessMonitor;
-import io.helidon.build.util.StreamUtils;
+import io.helidon.build.common.InputStreams;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.OSType;
+import io.helidon.build.common.ProcessMonitor;
 
-import static io.helidon.build.util.FileUtils.assertDir;
-import static io.helidon.build.util.OSType.Unknown;
+import static io.helidon.build.common.FileUtils.lastModifiedSeconds;
+import static io.helidon.build.common.FileUtils.requireDirectory;
+import static io.helidon.build.common.FileUtils.requireFile;
+import static io.helidon.build.common.OSType.Unknown;
 import static io.helidon.linker.util.Constants.CDS_REQUIRES_UNLOCK_OPTION;
 import static io.helidon.linker.util.Constants.CDS_SUPPORTS_IMAGE_COPY;
 import static io.helidon.linker.util.Constants.CDS_UNLOCK_OPTIONS;
@@ -463,7 +463,7 @@ public class StartScript {
          * @return The last modified time.
          */
         protected static String lastModifiedTime(Path file) {
-            return Long.toString(FileUtils.lastModifiedSeconds(file));
+            return Long.toString(lastModifiedSeconds(file));
         }
 
         @Override
@@ -481,7 +481,7 @@ public class StartScript {
                 throw new IllegalStateException(resourcePath + " not found");
             } else {
                 try {
-                    return StreamUtils.toLines(content);
+                    return InputStreams.toLines(content);
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
@@ -525,8 +525,8 @@ public class StartScript {
          * @return The builder.
          */
         public Builder installHomeDirectory(Path installHomeDirectory) {
-            this.installHomeDirectory = assertDir(installHomeDirectory);
-            this.scriptInstallDirectory = assertDir(installHomeDirectory).resolve("bin");
+            this.installHomeDirectory = requireDirectory(installHomeDirectory);
+            this.scriptInstallDirectory = requireDirectory(installHomeDirectory).resolve("bin");
             return this;
         }
 
@@ -537,7 +537,7 @@ public class StartScript {
          * @return The builder.
          */
         public Builder mainJar(Path mainJar) {
-            this.mainJar = FileUtils.assertFile(mainJar);
+            this.mainJar = requireFile(mainJar);
             return this;
         }
 

@@ -13,20 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.linker;
 
 import java.nio.file.Path;
 
 import io.helidon.build.test.TestFiles;
 import io.helidon.linker.util.JavaRuntime;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * Unit test for class {@link Application}.

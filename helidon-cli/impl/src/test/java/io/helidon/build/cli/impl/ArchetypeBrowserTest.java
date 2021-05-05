@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,26 +17,22 @@ package io.helidon.build.cli.impl;
 
 import java.nio.file.Files;
 
-import io.helidon.build.archetype.engine.ArchetypeCatalog.ArchetypeEntry;
-import io.helidon.build.cli.impl.InitCommand.Flavor;
+import io.helidon.build.archetype.engine.v1.ArchetypeCatalog.ArchetypeEntry;
+import io.helidon.build.cli.impl.InitOptions.Flavor;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
+import static io.helidon.build.cli.impl.TestUtils.helidonTestVersion;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Class AppTypeBrowserTest.
+ * Tests {@link ArchetypeBrowser}.
  */
 public class ArchetypeBrowserTest extends MetadataAccessTestBase {
 
-    private ArchetypeBrowser newBrowser(Flavor flavor) throws Exception {
-        return new ArchetypeBrowser(metadata(), flavor, helidonTestVersion());
-    }
-
     @Test
-    public void testMpBrowser() throws Exception {
+    public void testMpBrowser() {
         ArchetypeBrowser browser = newBrowser(Flavor.MP);
         ArchetypeEntry entry = findEntry("bare", browser);
         assertThat(entry.name(), is("bare"));
@@ -45,12 +41,16 @@ public class ArchetypeBrowserTest extends MetadataAccessTestBase {
     }
 
     @Test
-    public void testSeBrowser() throws Exception {
+    public void testSeBrowser() {
         ArchetypeBrowser browser = newBrowser(Flavor.SE);
         ArchetypeEntry entry = findEntry("bare", browser);
         assertThat(entry.name(), is("bare"));
         assertThat(entry.artifactId(), is("helidon-bare-se"));
         assertThat(Files.exists(browser.archetypeJar(entry)), is(true));
+    }
+
+    private ArchetypeBrowser newBrowser(Flavor flavor) {
+        return new ArchetypeBrowser(metadata(), flavor, helidonTestVersion());
     }
 
     private static ArchetypeEntry findEntry(String name, ArchetypeBrowser browser) {

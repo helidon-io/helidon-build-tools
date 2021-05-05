@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@ package io.helidon.build.cli.harness;
 
 import java.util.Objects;
 
+import io.helidon.build.cli.harness.CommandContext.ExitAction;
 import io.helidon.build.cli.harness.CommandParser.CommandParserException;
-import io.helidon.build.util.AnsiConsoleInstaller;
-import io.helidon.build.util.Proxies;
+import io.helidon.build.common.Proxies;
+import io.helidon.build.common.ansi.AnsiConsoleInstaller;
 
 /**
  * Command runner.
@@ -29,7 +30,13 @@ public final class CommandRunner {
     private final CommandParser parser;
     private final CommandContext context;
 
-    private CommandRunner(CommandContext context, String[] args) {
+    /**
+     * Create a new instance.
+     *
+     * @param context command context
+     * @param args    raw arguments
+     */
+    CommandRunner(CommandContext context, String[] args) {
         this.context = Objects.requireNonNull(context, "context is null");
         this.parser = CommandParser.create(args == null ? new String[0] : args);
         this.context.parser(parser);
@@ -37,10 +44,23 @@ public final class CommandRunner {
     }
 
     /**
-     * Execute the command.
+     * Initialize the proxy configuration.
+     *
+     * @return this runner
      */
-    public void execute() {
+    public CommandRunner initProxy() {
+        Proxies.setProxyPropertiesFromEnv();
+        return this;
+    }
+
+    /**
+     * Execute the command.
+     *
+     * @return this runner
+     */
+    public ExitAction execute() {
         parser.error().ifPresentOrElse(context::error, this::doExecute);
+        return context.exitAction();
     }
 
     /**
@@ -57,7 +77,7 @@ public final class CommandRunner {
      */
     private void doExecuteCommandName(String command) {
         context.command(command).map(this::mapHelp)
-                .ifPresentOrElse(this::doExecuteCommand, () -> context.commandNotFoundError(command));
+               .ifPresentOrElse(this::doExecuteCommand, () -> context.commandNotFoundError(command));
     }
 
     /**
@@ -67,7 +87,7 @@ public final class CommandRunner {
      */
     private void doExecuteCommand(CommandModel command) {
         CommandParser.Resolver globalResolver = parser.globalResolver();
-        if (globalResolver.resolve(GlobalOptions.PLAIN_FLAG_INFO) || Config.userConfig().richTextDisabled()) {
+        if (globalResolver.resolve(GlobalOptions.PLAIN_FLAG_INFO) || context.internalOptions().richTextDisabled()) {
             AnsiConsoleInstaller.disable();
         } else {
             AnsiConsoleInstaller.install();
@@ -85,7 +105,7 @@ public final class CommandRunner {
             context.properties().forEach((key, value) -> System.setProperty((String) key, (String) value));
             command.createExecution(resolver).execute(context);
         } catch (CommandParserException ex) {
-            context.error("%s%nSee '%s %s --help'", ex.getMessage(), context.cli().name(), command.command().name());
+            context.error("%s%nSee '%s %s --help'", ex.getMessage(), context.cliName(), command.command().name());
         } catch (Throwable t) {
             context.error(t);
         }
@@ -114,22 +134,44 @@ public final class CommandRunner {
      * @param context command context
      * @param args    raw command line arguments
      */
-    static void execute(CommandContext context, String... args) {
+    static void execute2(CommandContext context, String... args) {
         new CommandRunner(context, args).execute();
     }
 
     /**
-     * Execute a command.
+     * Create a new builder.
      *
-     * @param cli   CLI definition
-     * @param clazz class used to derive the package of the sub-commands
-     * @param args  raw command line arguments
+     * @return Builder
      */
-    public static void execute(CLIDefinition cli, Class<?> clazz, String... args) {
-        Proxies.setProxyPropertiesFromEnv();
-        CommandRegistry registry = CommandRegistry.load(clazz);
-        CommandContext context = CommandContext.create(registry, cli);
-        CommandRunner.execute(context, args);
-        context.exitAction().run();
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * CommandRunner builder.
+     */
+    public static final class Builder extends CommandContext.Builder<Builder> {
+
+        private String[] args;
+
+        /**
+         * Set the raw command line arguments.
+         *
+         * @param args raw arguments
+         * @return this builder
+         */
+        public Builder args(String... args) {
+            this.args = args;
+            return this;
+        }
+
+        /**
+         * Build the command runner instance.
+         *
+         * @return CommandRunner
+         */
+        public CommandRunner build() {
+            return new CommandRunner(buildContext(), args);
+        }
     }
 }

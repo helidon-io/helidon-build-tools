@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2020,2021 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@
     <name>Helidon Command Line Interface Impl</name>
 
     <properties>
-        <mainClass>io.helidon.build.cli.impl.Main</mainClass>
+        <mainClass>io.helidon.build.cli.impl.Helidon</mainClass>
     </properties>
 
     <dependencies>
@@ -38,13 +38,18 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.helidon.build-tools</groupId>
-            <artifactId>helidon-utils</artifactId>
+            <groupId>io.helidon.build-tools.common</groupId>
+            <artifactId>helidon-build-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools.common</groupId>
+            <artifactId>helidon-build-common-ansi</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.build-tools.archetype</groupId>
-            <artifactId>helidon-archetype-engine</artifactId>
+            <artifactId>helidon-archetype-engine-v1</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -52,6 +57,31 @@
             <artifactId>helidon-cli-codegen</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools.cli</groupId>
+            <artifactId>helidon-cli-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools.common</groupId>
+            <artifactId>helidon-build-common-maven</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools.devloop</groupId>
+            <artifactId>helidon-build-devloop-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>graal-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools.cli</groupId>
+            <artifactId>helidon-cli-plugin</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -69,19 +99,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.build-tools</groupId>
-            <artifactId>helidon-utils</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.build-tools.cli</groupId>
-            <artifactId>helidon-cli-plugin</artifactId>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>org.mock-server</groupId>
             <artifactId>mockserver-netty</artifactId>
             <scope>test</scope>
@@ -94,6 +111,12 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools.common</groupId>
+            <artifactId>helidon-build-common-test-utils</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -110,6 +133,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
+                <configuration>
+                    <overWriteReleases>false</overWriteReleases>
+                    <overWriteSnapshots>false</overWriteSnapshots>
+                    <overWriteIfNewer>true</overWriteIfNewer>
+                    <overWriteIfNewer>true</overWriteIfNewer>
+                </configuration>
                 <executions>
                     <execution>
                         <id>copy-libs</id>
@@ -119,36 +148,8 @@
                         </goals>
                         <configuration>
                             <outputDirectory>${project.build.directory}/libs</outputDirectory>
-                            <overWriteReleases>false</overWriteReleases>
-                            <overWriteSnapshots>false</overWriteSnapshots>
-                            <overWriteIfNewer>true</overWriteIfNewer>
-                            <overWriteIfNewer>true</overWriteIfNewer>
                             <includeScope>runtime</includeScope>
                             <excludeScope>test</excludeScope>
-                            <excludeArtifactIds>helidon-cli-plugin</excludeArtifactIds>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-plugin</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>io.helidon.build-tools.cli</groupId>
-                                    <artifactId>helidon-cli-plugin</artifactId>
-                                    <version>${project.version}</version>
-                                    <type>jar</type>
-                                    <destFileName>cli-plugins-${buildNumber}.jar</destFileName>
-                                </artifactItem>
-                            </artifactItems>
-                            <outputDirectory>${project.build.outputDirectory}/plugins</outputDirectory>
-                            <overWriteReleases>false</overWriteReleases>
-                            <overWriteSnapshots>false</overWriteSnapshots>
-                            <overWriteIfNewer>true</overWriteIfNewer>
-                            <overWriteIfNewer>true</overWriteIfNewer>
                         </configuration>
                     </execution>
                 </executions>
@@ -178,11 +179,19 @@
                             <version>${project.version}</version>
                         </path>
                     </annotationProcessorPaths>
+                    <compilerArgs>
+                        <arg>-Xplugin:file-header</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemProperties>
+                        <helidon.test.version>2.2.2</helidon.test.version>
+                    </systemProperties>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -190,8 +199,37 @@
     <profiles>
         <profile>
             <id>native-image</id>
+            <properties>
+                <build.dir>${project.build.directory}</build.dir>
+                <finalName>${project.build.finalName}</finalName>
+            </properties>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-plugin</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>io.helidon.build-tools.cli</groupId>
+                                            <artifactId>helidon-cli-plugin</artifactId>
+                                            <version>${project.version}</version>
+                                            <type>jar</type>
+                                            <destFileName>cli-plugins-${buildNumber}.jar</destFileName>
+                                        </artifactItem>
+                                    </artifactItems>
+                                    <outputDirectory>${build.dir}/native/plugins</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
@@ -205,15 +243,13 @@
                                 <configuration>
                                     <executable>native-image</executable>
                                     <arguments>
-                                        <argument>-H:Path=${project.build.directory}</argument>
-                                        <argument>-H:Name=${project.build.finalName}</argument>
+                                        <argument>-H:Path=${build.dir}</argument>
+                                        <argument>-H:Name=${finalName}</argument>
                                         <argument>-H:+PrintAnalysisCallTree</argument>
-                                        <argument>-H:+ReportExceptionStackTraces</argument>
-                                        <argument>-H:-ParseRuntimeOptions</argument>
-                                        <argument>--no-server</argument>
                                         <argument>--no-fallback</argument>
-                                        <argument>-jar</argument>
-                                        <argument>${project.build.directory}/${project.build.finalName}.jar</argument>
+                                        <argument>-cp</argument>
+                                        <argument>${build.dir}${file.separator}${finalName}.jar${path.separator}${build.dir}${file.separator}libs${file.separator}*${path.separator}${build.dir}${file.separator}native</argument>
+                                        <argument>${mainClass}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
