@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import java.util.List;
 
 import io.helidon.linker.StartScript.TemplateConfig;
 
-import static io.helidon.build.util.FileUtils.fileName;
-import static io.helidon.build.util.OSType.Windows;
+import static io.helidon.build.common.FileUtils.fileName;
+import static io.helidon.build.common.OSType.Windows;
 import static io.helidon.linker.util.Constants.CDS_UNLOCK_OPTIONS;
 import static io.helidon.linker.util.Constants.OS;
 import static java.util.Collections.emptyList;

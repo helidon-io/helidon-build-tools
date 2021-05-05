@@ -32,21 +32,21 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import io.helidon.build.cli.plugin.Plugin;
-import io.helidon.build.util.JavaProcessBuilder;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.ProcessMonitor;
-import io.helidon.build.util.Proxies;
+import io.helidon.build.common.JavaProcessBuilder;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.ProcessMonitor;
+import io.helidon.build.common.Proxies;
 
 import org.graalvm.nativeimage.ImageInfo;
 
 import static io.helidon.build.cli.impl.CommandRequirements.unsupportedJavaVersion;
-import static io.helidon.build.util.Constants.EOL;
 import static java.util.Objects.requireNonNull;
 
 /**
  * Utility to execute plugins.
  */
 public class Plugins {
+    private static final String EOL = System.lineSeparator();
     private static final AtomicReference<Path> PLUGINS_JAR = new AtomicReference<>();
     private static final String JAR_NAME_PREFIX = "cli-plugins-";
     private static final String JAR_NAME_SUFFIX = ".jar";

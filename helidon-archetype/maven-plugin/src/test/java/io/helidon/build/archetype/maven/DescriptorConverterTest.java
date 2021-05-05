@@ -23,8 +23,8 @@ import java.util.Properties;
 import java.util.Base64;
 
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor;
-import io.helidon.build.util.Strings;
 
+import io.helidon.build.common.Strings;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;

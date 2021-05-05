@@ -45,9 +45,9 @@ import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.ArtifactResult;
 
+import static io.helidon.build.archetype.engine.v1.MustacheHelper.MUSTACHE_EXT;
+import static io.helidon.build.archetype.engine.v1.MustacheHelper.renderMustacheTemplate;
 import static io.helidon.build.archetype.maven.MojoHelper.templateProperties;
-import static io.helidon.build.util.MustacheHelper.MUSTACHE_EXT;
-import static io.helidon.build.util.MustacheHelper.renderMustacheTemplate;
 
 /**
  * {@code archetype:catalog} mojo.

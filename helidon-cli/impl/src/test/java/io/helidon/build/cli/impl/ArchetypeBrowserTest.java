@@ -22,7 +22,7 @@ import io.helidon.build.cli.impl.InitOptions.Flavor;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
+import static io.helidon.build.cli.impl.TestUtils.helidonTestVersion;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -32,7 +32,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class ArchetypeBrowserTest extends MetadataAccessTestBase {
 
     @Test
-    public void testMpBrowser() throws Exception {
+    public void testMpBrowser() {
         ArchetypeBrowser browser = newBrowser(Flavor.MP);
         ArchetypeEntry entry = findEntry("bare", browser);
         assertThat(entry.name(), is("bare"));
@@ -41,7 +41,7 @@ public class ArchetypeBrowserTest extends MetadataAccessTestBase {
     }
 
     @Test
-    public void testSeBrowser() throws Exception {
+    public void testSeBrowser() {
         ArchetypeBrowser browser = newBrowser(Flavor.SE);
         ArchetypeEntry entry = findEntry("bare", browser);
         assertThat(entry.name(), is("bare"));
@@ -49,7 +49,7 @@ public class ArchetypeBrowserTest extends MetadataAccessTestBase {
         assertThat(Files.exists(browser.archetypeJar(entry)), is(true));
     }
 
-    private ArchetypeBrowser newBrowser(Flavor flavor) throws Exception {
+    private ArchetypeBrowser newBrowser(Flavor flavor) {
         return new ArchetypeBrowser(metadata(), flavor, helidonTestVersion());
     }
 

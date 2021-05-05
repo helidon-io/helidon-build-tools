@@ -14,54 +14,15 @@
  * limitations under the License.
  */
 
-def actualIndex = 0
-def actualLines = new File(basedir, "build.log").readLines()
+import io.helidon.build.common.test.utils.JUnitLauncher
+import io.helidon.build.cache.ProjectsTestIT
 
-// skip the first two invocations
-def buildSuccess = 0
-for (; actualIndex < actualLines.size() && buildSuccess < 1; actualIndex++ ) {
-    if (actualLines[actualIndex].contains("BUILD SUCCESS")) {
-        buildSuccess++
-    }
-}
-if (buildSuccess != 1) {
-    throw new AssertionError("Unable to skip the first two invocations")
-}
-
-def findLines(actualIndex, actualLines, fname) {
-    def expectedLines = new File(basedir, fname).readLines()
-    def found = false
-    def errors = ["build.log does not contain ${fname}"]
-    while (!found && actualIndex < actualLines.size() - 1) {
-        // seek
-        for (; actualIndex < actualLines.size(); actualIndex++) {
-            if (actualLines[actualIndex].endsWith(expectedLines[0])) {
-                break
-            }
-        }
-        for (def expectedIndex = 1; expectedIndex < expectedLines.size() && actualIndex < actualLines.size() - 1; expectedIndex++) {
-            def expected = expectedLines[expectedIndex]
-            def actual = actualLines[++actualIndex]
-            if (!actual.endsWith(expected)) {
-                errors.add("line: ${('' + actualIndex).padRight(5)} >>${expected}<< != >>${actual}<<")
-                break;
-            }
-            if (expectedIndex == expectedLines.size() - 1) {
-                found = true
-            }
-        }
-    }
-    if (!found) {
-        throw new AssertionError("""
-
-------------------------------------------------------------------------
-${errors.join('\n')}
-------------------------------------------------------------------------
-
-""")
-    }
-}
-
-findLines(actualIndex, actualLines, "expected1.log")
-findLines(actualIndex, actualLines, "expected2.log")
-
+JUnitLauncher.builder()
+        .select(ProjectsTestIT.class, "test2", String.class)
+        .parameter("basedir", basedir.getAbsolutePath())
+        .reportsDir(basedir)
+        .outputFile(new File(basedir, "test.log"))
+        .suiteId("build-cache-it-test2")
+        .suiteDisplayName("Build Cache Integration Test 2")
+        .build()
+        .launch()

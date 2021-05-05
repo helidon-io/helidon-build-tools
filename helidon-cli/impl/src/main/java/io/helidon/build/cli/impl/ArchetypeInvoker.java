@@ -22,7 +22,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
@@ -34,10 +34,10 @@ import io.helidon.build.archetype.engine.v1.FlowNodeControllers;
 import io.helidon.build.archetype.engine.v1.FlowNodeControllers.FlowNodeController;
 import io.helidon.build.archetype.engine.v1.Maps;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
-import io.helidon.build.util.MavenVersion;
+import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
-import static io.helidon.build.util.Requirements.require;
+import static io.helidon.build.common.Requirements.require;
 
 /**
  * Class ArchetypeInvoker.
@@ -60,7 +60,7 @@ abstract class ArchetypeInvoker {
     private final Metadata metadata;
     private final boolean batch;
     private final InitOptions initOptions;
-    private final Supplier<Path> projectDirSupplier;
+    private final Function<String, Path> projectDirSupplier;
 
     private ArchetypeInvoker(Builder builder) {
         metadata = builder.metadata;
@@ -101,7 +101,7 @@ abstract class ArchetypeInvoker {
      *
      * @return Supplier of Path
      */
-    protected Supplier<Path> projectDirSupplier() {
+    protected Function<String, Path> projectDirSupplier() {
         return projectDirSupplier;
     }
 
@@ -137,7 +137,7 @@ abstract class ArchetypeInvoker {
         private Metadata metadata;
         private boolean batch;
         private InitOptions initOptions;
-        private Supplier<Path> projectDirSupplier;
+        private Function<String, Path> projectDirSupplier;
 
         private Builder() {
         }
@@ -178,10 +178,13 @@ abstract class ArchetypeInvoker {
         /**
          * Set the project directory supplier.
          *
+         * The project directory supplier takes a project name and returns
+         * a Path to the project directory.
+         *
          * @param projectDirSupplier project directory supplier
          * @return this builder
          */
-        Builder projectDir(Supplier<Path> projectDirSupplier) {
+        Builder projectDir(Function<String, Path> projectDirSupplier) {
             this.projectDirSupplier = projectDirSupplier;
             return this;
         }
@@ -262,7 +265,7 @@ abstract class ArchetypeInvoker {
                          .forEach(FlowNodeController::execute);
             }
 
-            Path projectDir = projectDirSupplier().get();
+            Path projectDir = projectDirSupplier().apply(initProperties.get("name"));
             engine.generate(projectDir.toFile());
             return projectDir;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,13 @@ import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
-import io.helidon.build.util.MavenCommand;
+import io.helidon.build.common.maven.MavenCommand;
 
+import static io.helidon.build.cli.common.CliProperties.HELIDON_CLI_PLUGIN_VERSION_PROPERTY;
+import static io.helidon.build.cli.common.CliProperties.HELIDON_PLUGIN_VERSION_PROPERTY;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.cli.impl.CommandRequirements.requireValidMavenProjectConfig;
-import static io.helidon.build.util.Constants.ENABLE_HELIDON_CLI;
 
 /**
  * The {@code build} command.
@@ -34,6 +35,8 @@ import static io.helidon.build.util.Constants.ENABLE_HELIDON_CLI;
 @Command(name = "build", description = "Build the application")
 public final class BuildCommand extends BaseCommand {
 
+    private static final String HELIDON_CLI_PROPERTY = "helidon.cli";
+    private static final String ENABLE_HELIDON_CLI = "-D" + HELIDON_CLI_PROPERTY + "=true";
     private static final String JLINK_OPTION = "-Pjlink-image";
     private static final String NATIVE_OPTION = "-Pnative-image";
 
@@ -75,10 +78,13 @@ public final class BuildCommand extends BaseCommand {
     @Override
     protected void invoke(CommandContext context) throws Exception {
         String version = defaultHelidonPluginVersion(pluginVersion, useCurrentPluginVersion);
-        String pluginVersionProperty = version == null ? null : HELIDON_PLUGIN_VERSION_PROPERTY_PREFIX + version;
+        String pluginVersionProperty = version == null ? null : String.format("-D%s=%s",
+                HELIDON_PLUGIN_VERSION_PROPERTY,
+                version);
         String cliVersion = cliPluginVersion(version);
-        String cliPluginVersionProperty = cliVersion == null ? null : HELIDON_CLI_PLUGIN_VERSION_PROPERTY_PREFIX + cliVersion;
-
+        String cliPluginVersionProperty = cliVersion == null ? null : String.format("-D%s=%s",
+                HELIDON_CLI_PLUGIN_VERSION_PROPERTY,
+                cliVersion);
         MavenCommand.Builder builder = MavenCommand.builder()
                                                    .addArgument(ENABLE_HELIDON_CLI)
                                                    .addOptionalArgument(pluginVersionProperty)
@@ -103,7 +109,6 @@ public final class BuildCommand extends BaseCommand {
             builder.addArgument("clean");
         }
         builder.addArgument("package");
-
         builder.build().execute();
     }
 }

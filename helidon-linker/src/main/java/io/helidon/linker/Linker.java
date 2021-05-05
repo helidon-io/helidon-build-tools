@@ -25,17 +25,17 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.spi.ToolProvider;
 
-import io.helidon.build.util.Log;
-import io.helidon.build.util.ProcessMonitor;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.ProcessMonitor;
 import io.helidon.linker.util.JavaRuntime;
 
-import static io.helidon.build.util.FileUtils.fileName;
-import static io.helidon.build.util.FileUtils.fromWorking;
-import static io.helidon.build.util.FileUtils.sizeOf;
-import static io.helidon.build.util.StyleFunction.BoldBlue;
-import static io.helidon.build.util.StyleFunction.BoldBrightGreen;
-import static io.helidon.build.util.StyleFunction.BoldYellow;
-import static io.helidon.build.util.StyleFunction.Cyan;
+import static io.helidon.build.common.FileUtils.fileName;
+import static io.helidon.build.common.FileUtils.fromWorking;
+import static io.helidon.build.common.FileUtils.sizeOf;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightGreen;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldYellow;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Cyan;
 import static io.helidon.linker.Application.APP_DIR;
 import static io.helidon.linker.util.Constants.CDS_REQUIRES_UNLOCK_OPTION;
 import static io.helidon.linker.util.Constants.DEBUGGER_MODULE;

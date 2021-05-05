@@ -29,10 +29,10 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.build.common.SourcePath;
 import io.helidon.build.sitegen.asciidoctor.AsciidocPageRenderer;
 import io.helidon.build.sitegen.freemarker.FreemarkerEngine;
 import io.helidon.build.sitegen.freemarker.TemplateSession;
-import io.helidon.build.util.SourcePath;
 import io.helidon.config.Config;
 
 import static io.helidon.build.sitegen.Helper.checkNonNullNonEmpty;

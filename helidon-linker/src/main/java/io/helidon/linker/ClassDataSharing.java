@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,16 +27,15 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import io.helidon.build.util.FileUtils;
-import io.helidon.build.util.Log;
-import io.helidon.build.util.OSType;
-import io.helidon.build.util.ProcessMonitor;
+import io.helidon.build.common.Log;
+import io.helidon.build.common.OSType;
+import io.helidon.build.common.ProcessMonitor;
 import io.helidon.linker.util.Constants;
 import io.helidon.linker.util.JavaRuntime;
 
-import static io.helidon.build.util.FileUtils.assertDir;
-import static io.helidon.build.util.FileUtils.assertFile;
-import static io.helidon.build.util.FileUtils.fileName;
+import static io.helidon.build.common.FileUtils.fileName;
+import static io.helidon.build.common.FileUtils.requireDirectory;
+import static io.helidon.build.common.FileUtils.requireFile;
 import static io.helidon.linker.Configuration.Builder.DEFAULT_MAX_APP_START_SECONDS;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
@@ -286,7 +285,7 @@ public final class ClassDataSharing {
          * @return The builder.
          */
         public Builder classListFile(Path classListFile) {
-            this.classListFile = assertFile(classListFile);
+            this.classListFile = requireFile(classListFile);
             return this;
         }
 
@@ -335,7 +334,7 @@ public final class ClassDataSharing {
 
             if (createArchive) {
                 if (archiveFile == null) {
-                    archiveFile = assertDir(jri.resolve(archiveDir)).resolve(ARCHIVE_NAME);
+                    archiveFile = requireDirectory(jri.resolve(archiveDir)).resolve(ARCHIVE_NAME);
                 }
                 buildCdsArchive();
             }
@@ -415,7 +414,7 @@ public final class ClassDataSharing {
         }
 
         private static Path assertJar(Path path) {
-            final String fileName = FileUtils.fileName(assertFile(path));
+            final String fileName = fileName(requireFile(path));
             if (!fileName.endsWith(JAR_SUFFIX)) {
                 throw new IllegalArgumentException(path + " is not a jar");
             }

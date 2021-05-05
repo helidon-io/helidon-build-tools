@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
 import io.helidon.build.archetype.engine.v1.ArchetypeCatalog.ArchetypeEntry;
-import io.helidon.build.util.ConfigProperties;
+import io.helidon.build.common.ConfigProperties;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,7 +60,7 @@ public class MetadataIT extends MetadataTestBase {
     }
 
     @Test
-    void smokeTestRc2() throws Exception {
+    void smokeTestRc2() {
 
         // Do the initial catalog request for RC2
 

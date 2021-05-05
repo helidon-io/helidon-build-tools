@@ -26,3 +26,9 @@ cli-data.zip
 .hola
 .hello
 HELIDON_THIRD_PARTY_LICENSES.xml
+/MANIFEST.MF
+/META-INF/services/
+.vscodeignore
+/node_modules/
+/node/
+/dist/

@@ -37,7 +37,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import io.helidon.build.util.SourcePath;
+import io.helidon.build.common.SourcePath;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.MavenProject;

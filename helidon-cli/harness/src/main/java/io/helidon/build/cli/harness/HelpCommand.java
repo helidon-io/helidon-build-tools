@@ -19,7 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.build.util.Log;
+import io.helidon.build.common.Log;
 
 /**
  * The {@code help} command.
