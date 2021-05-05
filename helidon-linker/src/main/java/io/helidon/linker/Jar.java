@@ -160,7 +160,7 @@ public final class Jar implements ResourceContainer {
     }
 
     private Jar(Path path, Runtime.Version version) {
-        this.path = assertFile(path); // Absolute and normalized
+        this.path = requireFile(path); // Absolute and normalized
         this.version = Objects.requireNonNull(version);
         this.path = requireFile(path); // Absolute and normalized
         this.isJmod = fileName(path).endsWith(JMOD_SUFFIX);
