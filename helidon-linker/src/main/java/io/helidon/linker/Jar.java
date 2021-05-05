@@ -147,6 +147,17 @@ public final class Jar implements ResourceContainer {
      * Returns the given jar path as a {@link Jar}.
      *
      * @param jarPath The jar path.
+     * @return The {@link Jar}.
+     * @throws IllegalArgumentException if the path is not treatable as a jar.
+     */
+    public static Jar open(Path jarPath) {
+        return open(jarPath, Runtime.version());
+    }
+
+    /**
+     * Returns the given jar path as a {@link Jar}.
+     *
+     * @param jarPath The jar path.
      * @param version The Java version used to find versioned entries if this is
      * a {@link #isMultiRelease() multi-release JAR}.
      * @return The {@link Jar}.
@@ -162,7 +173,6 @@ public final class Jar implements ResourceContainer {
     private Jar(Path path, Runtime.Version version) {
         this.path = requireFile(path); // Absolute and normalized
         this.version = Objects.requireNonNull(version);
-        this.path = requireFile(path); // Absolute and normalized
         this.isJmod = fileName(path).endsWith(JMOD_SUFFIX);
         try {
             this.jar = new JarFile(path.toFile());

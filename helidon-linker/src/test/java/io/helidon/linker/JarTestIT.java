@@ -26,12 +26,23 @@ import org.junit.jupiter.params.ParameterizedTest;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * Integration test for class {@link Jar}.
  */
 @Order(3)
 class JarTestIT {
+
+    @Tag("multi-release")
+    @ParameterizedTest
+    @ConfigurationParameterSource("basedir")
+    void testMultiReleaseJar(String basedir) {
+        Path multiRelease = Path.of(basedir).resolve("target/multi-release.jar");
+        Jar jar = Jar.open(multiRelease, Runtime.Version.parse("11"));
+        assertThat(jar.isMultiRelease(), is(true));
+        assertThat(jar.moduleDescriptor(), notNullValue());
+    }
 
     @Tag("mp")
     @ParameterizedTest

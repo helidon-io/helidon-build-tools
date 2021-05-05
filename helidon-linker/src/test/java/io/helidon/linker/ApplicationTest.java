@@ -15,10 +15,6 @@
  */
 package io.helidon.linker;
 
-import java.nio.file.Path;
-
-import io.helidon.build.test.TestFiles;
-import io.helidon.linker.util.JavaRuntime;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -28,15 +24,6 @@ import static org.hamcrest.Matchers.is;
  * Unit test for class {@link Application}.
  */
 class ApplicationTest {
-
-    @Test
-    void testHelidonVersion() {
-        Path mainJar = TestFiles.helidonMpJar();
-        Application app = Application.create(JavaRuntime.current(true), mainJar);
-        String version = app.helidonVersion();
-        assertThat(version, is(notNullValue()));
-        assertThat(version, is(not("0.0.0")));
-    }
 
     @Test
     void testExitOnStartedValue() {

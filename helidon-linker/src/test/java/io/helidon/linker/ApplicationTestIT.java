@@ -18,6 +18,7 @@ package io.helidon.linker;
 import java.nio.file.Path;
 
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
+import io.helidon.linker.util.JavaRuntime;
 
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -39,7 +40,7 @@ class ApplicationTestIT {
     @ConfigurationParameterSource("basedir")
     void testHelidonVersion(String basedir) {
         Path mainJar = Path.of(basedir).resolve("target/quickstart-mp.jar");
-        Application app = Application.create(mainJar);
+        Application app = Application.create(JavaRuntime.current(true), mainJar);
         String version = app.helidonVersion();
         assertThat(version, is(notNullValue()));
         assertThat(version, is(not("0.0.0")));
