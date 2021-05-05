@@ -143,7 +143,7 @@ public final class Linker {
     }
 
     private void buildApplication() {
-        this.application = Application.create(config.mainJar());
+        this.application = Application.create(config.jdk(), config.mainJar());
         this.exitOnStarted = application.exitOnStartedValue();
         final String version = application.helidonVersion();
         Log.info("Creating Java Runtime Image %s from %s and %s, built with Helidon %s",
@@ -155,7 +155,7 @@ public final class Linker {
 
     private void collectJavaDependencies() {
         Log.info("Collecting Java module dependencies");
-        this.javaDependencies = application.javaDependencies(config.jdk());
+        this.javaDependencies = application.javaDependencies();
         this.javaDependencies.addAll(config.additionalModules());
         final List<String> sorted = new ArrayList<>(javaDependencies);
         sorted.sort(null);

@@ -230,7 +230,7 @@ public final class JavaRuntime implements ResourceContainer {
             this.version = isCurrent() ? Runtime.version() : findVersion();
             this.modules = jmodFiles.stream()
                                     .filter(file -> !Constants.EXCLUDED_MODULES.contains(moduleNameOf(file)))
-                                    .collect(Collectors.toMap(JavaRuntime::moduleNameOf, Jar::open));
+                                    .collect(Collectors.toMap(JavaRuntime::moduleNameOf, jmod -> Jar.open(jmod, this.version)));
         } else if (version == null) {
             throw new IllegalArgumentException("Version required in a Java Runtime without 'jmods' dir: " + javaHome);
         } else {

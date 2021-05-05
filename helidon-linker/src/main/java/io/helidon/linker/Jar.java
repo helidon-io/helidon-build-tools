@@ -29,8 +29,10 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Spliterator;
@@ -70,14 +72,17 @@ import static java.util.Objects.requireNonNull;
 public final class Jar implements ResourceContainer {
     private static final String JMOD_SUFFIX = ".jmod";
     private static final Set<String> SUPPORTED_SUFFIXES = Set.of(".jar", ".zip", JMOD_SUFFIX);
-    private static final String BEANS_RESOURCE_PATH = "META-INF/beans.xml";
-    private static final String JANDEX_INDEX_RESOURCE_PATH = "META-INF/jandex.idx";
+    private static final String META_INF = "META-INF/";
+    private static final String META_INF_VERSIONS = META_INF + "versions/";
+    private static final String BEANS_RESOURCE_PATH = META_INF + "beans.xml";
+    private static final String JANDEX_INDEX_RESOURCE_PATH = META_INF + "jandex.idx";
     private static final String CLASS_FILE_SUFFIX = ".class";
     private static final String JMOD_CLASSES_PREFIX = "classes/";
     private static final String MODULE_INFO_CLASS = "module-info.class";
-    private static final String SIGNATURE_PREFIX = "META-INF/";
+    private static final String SIGNATURE_PREFIX = META_INF;
     private static final String SIGNATURE_SUFFIX = ".SF";
     private final Path path;
+    private final Runtime.Version version;
     private final boolean isJmod;
     private final JarFile jar;
     private final Manifest manifest;
@@ -146,14 +151,28 @@ public final class Jar implements ResourceContainer {
      * @throws IllegalArgumentException if the path is not treatable as a jar.
      */
     public static Jar open(Path jarPath) {
+        return open(jarPath, Runtime.version());
+    }
+
+    /**
+     * Returns the given jar path as a {@link Jar}.
+     *
+     * @param jarPath The jar path.
+     * @param version The Java version used to find versioned entries if this is
+     * a {@link #isMultiRelease() multi-release JAR}.
+     * @return The {@link Jar}.
+     * @throws IllegalArgumentException if the path is not treatable as a jar.
+     */
+    public static Jar open(Path jarPath, Runtime.Version version) {
         if (!isJar(jarPath)) {
             throw new IllegalArgumentException("Not a jar: " + jarPath);
         }
-        return new Jar(jarPath);
+        return new Jar(jarPath, version);
     }
 
-    private Jar(Path path) {
+    private Jar(Path path, Runtime.Version version) {
         this.path = requireFile(path); // Absolute and normalized
+        this.version = Objects.requireNonNull(version);
         this.isJmod = fileName(path).endsWith(JMOD_SUFFIX);
         try {
             this.jar = new JarFile(path.toFile());
@@ -161,7 +180,14 @@ public final class Jar implements ResourceContainer {
             this.isMultiRelease = !isJmod && isMultiRelease(manifest);
             this.isSigned = !isJmod && hasSignatureFile();
             this.isBeansArchive = !isJmod && hasEntry(BEANS_RESOURCE_PATH);
-            final Entry moduleInfo = findEntry(isJmod ? JMOD_CLASSES_PREFIX + MODULE_INFO_CLASS : MODULE_INFO_CLASS);
+            final Entry moduleInfo;
+            if (isJmod) {
+                moduleInfo = findEntry(JMOD_CLASSES_PREFIX + MODULE_INFO_CLASS);
+            } else if (isMultiRelease) {
+                moduleInfo = findVersionedEntry(MODULE_INFO_CLASS);
+            } else {
+                moduleInfo = findEntry(MODULE_INFO_CLASS);
+            }
             if (moduleInfo != null) {
                 this.descriptor = ModuleDescriptor.read(moduleInfo.data());
             } else {
@@ -189,6 +215,16 @@ public final class Jar implements ResourceContainer {
      */
     public Path path() {
         return path;
+    }
+
+    /**
+     * Returns the Java version used to find versioned entries if this is
+     * a {@link #isMultiRelease() multi-release JAR}.
+     *
+     * @return The version.
+     */
+    public Runtime.Version version() {
+        return version;
     }
 
     /**
@@ -424,6 +460,30 @@ public final class Jar implements ResourceContainer {
     private Entry findEntry(String path) {
         return entries().filter(entry -> entry.path().equals(path))
                         .findFirst().orElse(null);
+    }
+
+    private Entry findVersionedEntry(String path) {
+        if (path.startsWith(META_INF)) {
+            return findEntry(path);
+        }
+
+        Map<String, Integer> featureLookup = new HashMap<>();
+        for (int feature = version().feature(); feature > 8; feature--) {
+            featureLookup.put(META_INF_VERSIONS + feature + "/" + path, feature);
+        }
+        int featureFound = -1;
+        Entry entryFound = null;
+        for (Entry entry : (Iterable<Entry>) entries()::iterator) {
+            String entryPath = entry.path();
+            Integer feature = featureLookup.get(entryPath);
+            if (feature != null && feature > featureFound) {
+                featureFound = feature;
+                entryFound = entry;
+            } else if (entryFound == null && entryPath.equals(path)) {
+                entryFound = entry;
+            }
+        }
+        return entryFound;
     }
 
     private Entry getEntry(String path) {

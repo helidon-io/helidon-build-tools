@@ -483,16 +483,17 @@ public final class Configuration {
                 throw new IllegalArgumentException("applicationJar required");
             }
             jdk = JavaRuntime.current(true);
-            if (jdk.version().major() < MINIMUM_JDK_VERSION) {
+            if (jdk.version().feature() < MINIMUM_JDK_VERSION) {
                 throw new IllegalArgumentException(jdk + " is an unsupported version,"
                                                    + MINIMUM_JDK_VERSION + " or higher required");
             }
             if (cds
                 && DOCKER_BUILD
-                && jdk.version().major() < MINIMUM_DOCKER_JDK_VERSION) {
-                throw new IllegalArgumentException("Class Data Sharing cannot be used in Docker with JDK " + jdk.version().major()
-                                                   + ". Use JDK " + MINIMUM_DOCKER_JDK_VERSION + "+ or disable CDS by setting "
-                                                   + "addClassDataSharingArchive to false in the plugin configuration.");
+                && jdk.version().feature() < MINIMUM_DOCKER_JDK_VERSION) {
+                throw new IllegalArgumentException("Class Data Sharing cannot be used in Docker with JDK "
+                                                   + jdk.version().feature() + ". Use JDK " + MINIMUM_DOCKER_JDK_VERSION
+                                                   + "+ or disable CDS by setting addClassDataSharingArchive to false "
+                                                   + "in the plugin configuration.");
             }
             jriDirectory = JavaRuntime.prepareJriDirectory(jriDirectory, mainJar, replace);
             if (logWriter == null) {
