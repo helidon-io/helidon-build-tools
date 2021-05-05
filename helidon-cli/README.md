@@ -46,6 +46,5 @@ It now has access to the archetype catalog from the local disk.
 
 ## CLI Configuration
 
-Configuration fort he cli is stored in `~/.helidon/config`.
-
+Configuration for the cli is stored in `~/.helidon/config`.
 
