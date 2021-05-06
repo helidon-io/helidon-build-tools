@@ -27,7 +27,7 @@
     <groupId>io.helidon.build-tools.common</groupId>
     <artifactId>helidon-build-common-project</artifactId>
     <packaging>pom</packaging>
-    <name>Helidon Build Common Project</name>
+    <name>Helidon Build Tools Common Project</name>
 
     <modules>
         <module>common</module>
