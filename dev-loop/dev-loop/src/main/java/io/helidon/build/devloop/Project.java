@@ -279,6 +279,7 @@ public class Project {
 
         if (newerThan(latestSource, latestBinary)) {
 
+            System.out.println("### newerThan ###");
             // Yes, so we are not up to date.
 
             return false;
@@ -290,6 +291,8 @@ public class Project {
             final Optional<FileTime> changed = file.changedTimeIfOlderThan(latestBinary);
             if (changed.isPresent() && newerThan(changed.get(), latestSource)) {
 
+
+                System.out.println("### dependencies newerThan ###");
                 // Yes, so we are not up to date.
 
                 return false;
