@@ -291,8 +291,7 @@ public class Project {
             final Optional<FileTime> changed = file.changedTimeIfOlderThan(latestBinary);
             if (changed.isPresent() && newerThan(changed.get(), latestSource)) {
 
-
-                System.out.println("### dependencies newerThan ###");
+                System.out.println("### dependencies newerThan ###" + file.path());
                 // Yes, so we are not up to date.
 
                 return false;
