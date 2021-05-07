@@ -275,25 +275,13 @@ public class Project {
             }
         }
 
-        // Are any sources more recent than the most recent binary?
+        // Is the most recent source newer than the most recent binary?
 
         if (newerThan(latestSource, latestBinary)) {
 
             // Yes, so we are not up to date.
 
             return false;
-        }
-
-        // Are any dependencies newer than the most recent source?
-
-        for (final BuildFile file : dependencies()) {
-            final Optional<FileTime> changed = file.changedTimeIfOlderThan(latestBinary);
-            if (changed.isPresent() && newerThan(changed.get(), latestSource)) {
-
-                // Yes, so we are not up to date.
-
-                return false;
-            }
         }
 
         // We're up to date.

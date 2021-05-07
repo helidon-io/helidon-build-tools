@@ -16,7 +16,8 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
@@ -201,19 +202,12 @@
 
     <modules>
         <module>common</module>
-        <module>sitegen-maven-plugin</module>
-        <module>helidon-maven-plugin</module>
-        <module>helidon-cli-maven-plugin</module>
-        <module>helidon-cli</module>
-        <module>helidon-archetype</module>
-        <module>helidon-linker</module>
-        <module>snakeyaml-codegen-maven-plugin</module>
+        <module>maven-plugins</module>
+        <module>cli</module>
+        <module>archetype</module>
+        <module>linker</module>
         <module>licensing</module>
         <module>dev-loop</module>
-        <module>stager-maven-plugin</module>
-        <module>build-cache-maven-plugin</module>
-        <module>enforcer-maven-plugin</module>
-        <module>services-maven-plugin</module>
     </modules>
 
     <build>
@@ -1032,7 +1026,7 @@
                         <artifactId>maven-invoker-plugin</artifactId>
                         <configuration>
                             <environmentVariables>
-                                <MAVEN_DEBUG_OPTS>-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:8001</MAVEN_DEBUG_OPTS>
+                                <MAVEN_DEBUG_OPTS>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8001</MAVEN_DEBUG_OPTS>
                             </environmentVariables>
                         </configuration>
                     </plugin>

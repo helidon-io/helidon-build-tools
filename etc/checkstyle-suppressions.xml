@@ -23,11 +23,11 @@
 
 <suppressions>
     <suppress checks="FileLength"
-            files="helidon-cli/codegen/src/main/java/io/helidon/build/cli/codegen/AST.java"
+            files="cli/codegen/src/main/java/io/helidon/build/cli/codegen/AST.java"
             lines="1"/>
     <suppress checks="LineLength"
-            files="helidon-archetype/engine-v1/src/test/resources/META-INF/test.properties" />
+            files="archetype/engine-v1/src/test/resources/META-INF/test.properties" />
     <suppress checks="LineLength"
-            files="helidon-archetype/maven-plugin/src/test/resources/io/helidon/build/archetype/maven/test.properties" />
+            files="maven-plugins/helidon-archetype-maven-plugin/src/test/resources/io/helidon/build/maven/archetype/test.properties" />
 </suppressions>
 

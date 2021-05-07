@@ -25,7 +25,7 @@
         <version>3.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-build-common-maven-plugin</artifactId>
-    <name>Helidon Build Common Maven Plugin</name>
+    <name>Helidon Build Tools Common Maven Plugin</name>
 
     <dependencies>
         <dependency>
