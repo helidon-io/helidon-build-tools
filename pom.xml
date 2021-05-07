@@ -1026,7 +1026,7 @@
                         <artifactId>maven-invoker-plugin</artifactId>
                         <configuration>
                             <environmentVariables>
-                                <MAVEN_DEBUG_OPTS>-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:8001</MAVEN_DEBUG_OPTS>
+                                <MAVEN_DEBUG_OPTS>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8001</MAVEN_DEBUG_OPTS>
                             </environmentVariables>
                         </configuration>
                     </plugin>
