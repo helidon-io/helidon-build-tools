@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -28,8 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
-
-import io.helidon.build.archetype.engine.ArchetypeEngine;
 
 import org.apache.maven.archetype.ArchetypeGenerationRequest;
 import org.apache.maven.artifact.repository.ArtifactRepository;
@@ -98,7 +97,7 @@ public final class EngineFacade {
         ProjectBuildingRequest mavenRequest = request.getProjectBuildingRequest();
         File localRepo = mavenRequest.getRepositorySession().getLocalRepository().getBasedir();
         List<ArtifactRepository> remoteRepos = mavenRequest.getRemoteRepositories();
-        Aether aether = new Aether(localRepo, remoteRepos);
+        Aether aether = new Aether(localRepo, remoteRepos, mavenRequest.getActiveProfileIds());
 
         // resolve the helidon engine libs from remote repository
 
@@ -124,12 +123,17 @@ public final class EngineFacade {
         File archetypeFile = aether.resolveArtifact(request.getArchetypeGroupId(), request.getArchetypeArtifactId(),
                 "jar", request.getArchetypeVersion());
 
-        // instantiate the engine
-        ArchetypeEngine engine;
+        File projectDir = new File(request.getOutputDirectory() + "/" + request.getArtifactId());
+
+        // delete place place-holder pom
+        new File(projectDir, "pom.xml").delete();
+
         try {
             Class<?> engineClass = ecl.loadClass("io.helidon.build.archetype.engine.ArchetypeEngine");
             Constructor<?> engineConstructor = engineClass.getConstructor(File.class, Map.class);
-            engine = (ArchetypeEngine) engineConstructor.newInstance(archetypeFile, props);
+            Object engine = engineConstructor.newInstance(archetypeFile, props);
+            Method method = engineClass.getDeclaredMethod("generate", File.class);
+            method.invoke(engine, projectDir);
         } catch (InstantiationException
                 | IllegalAccessException
                 | NoSuchMethodException
@@ -142,12 +146,5 @@ public final class EngineFacade {
             }
             throw new RuntimeException(e.getCause());
         }
-
-        File projectDir = new File(request.getOutputDirectory() + "/" + request.getArtifactId());
-
-        // delete place place-holder pom
-        new File(projectDir, "pom.xml").delete();
-
-        engine.generate(projectDir);
     }
 }
