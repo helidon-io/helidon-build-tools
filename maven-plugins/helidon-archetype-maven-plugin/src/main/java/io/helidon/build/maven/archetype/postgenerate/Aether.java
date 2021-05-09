@@ -77,9 +77,10 @@ final class Aether {
      *
      * @param localRepoDir        local repository directory
      * @param remoteArtifactRepos remote artifacts repositories
+     * @param activeProfiles      list of profile ids to activate
      */
     @SuppressWarnings("unchecked")
-    Aether(File localRepoDir, List<ArtifactRepository> remoteArtifactRepos) {
+    Aether(File localRepoDir, List<ArtifactRepository> remoteArtifactRepos, List<String> activeProfiles) {
         try {
             PlexusContainer container = new DefaultPlexusContainer();
             container.addComponentDescriptor(plexusDesc(Wagon.class, "http", HttpWagon.class));
@@ -91,6 +92,9 @@ final class Aether {
                     .addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class)
                     .getService(RepositorySystem.class);
             settings = settings();
+            if (activeProfiles != null) {
+                settings.setActiveProfiles(activeProfiles);
+            }
             repoSession = MavenRepositorySystemUtils.newSession();
             repoSession.setProxySelector(proxySelector());
             repoSession.setMirrorSelector(mirrorSelector());
