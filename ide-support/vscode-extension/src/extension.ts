@@ -84,10 +84,12 @@ function startLangServer(context: vscode.ExtensionContext) {
         // Options to control the language client
         let clientOptions: LanguageClientOptions = {
             // Register the server for plain text documents
-            documentSelector: [{scheme: 'file', language: 'quarkus-properties'}, {
-                scheme: 'file',
-                language: 'helidon-properties'
-            }]
+            documentSelector: [
+                {
+                    scheme: 'file',
+                    language: 'helidon-properties'
+                }
+            ]
         };
 
         // Create the language client and start the client.
