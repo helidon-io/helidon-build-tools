@@ -17,10 +17,10 @@ package io.helidon.build.archetype.maven.postgenerate;
 
 import java.io.File;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.repository.ArtifactRepositoryPolicy;
+import org.apache.maven.cli.transfer.Slf4jMavenTransferListener;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.apache.maven.settings.Mirror;
 import org.apache.maven.settings.Settings;
@@ -62,6 +62,8 @@ import org.eclipse.aether.util.repository.AuthenticationBuilder;
 import org.eclipse.aether.util.repository.DefaultMirrorSelector;
 import org.eclipse.aether.util.repository.DefaultProxySelector;
 
+import static java.util.stream.Collectors.toList;
+
 /**
  * Standalone aether utility.
  */
@@ -96,11 +98,12 @@ final class Aether {
                 settings.setActiveProfiles(activeProfiles);
             }
             repoSession = MavenRepositorySystemUtils.newSession();
+            repoSession.setTransferListener(new Slf4jMavenTransferListener());
             repoSession.setProxySelector(proxySelector());
             repoSession.setMirrorSelector(mirrorSelector());
             repoSession.setLocalRepositoryManager(repoSystem
                     .newLocalRepositoryManager(repoSession, new LocalRepository(localRepoDir)));
-            remoteRepos = remoteArtifactRepos.stream().map(Aether::remoteRepo).collect(Collectors.toList());
+            remoteRepos = remoteArtifactRepos.stream().map(this::remoteRepo).collect(toList());
         } catch (CycleDetectedInComponentGraphException | PlexusContainerException ex) {
             throw new IllegalStateException(ex);
         }
@@ -164,7 +167,7 @@ final class Aether {
         return null;
     }
 
-    private static RemoteRepository remoteRepo(ArtifactRepository aRepo) {
+    private RemoteRepository remoteRepo(ArtifactRepository aRepo) {
         RemoteRepository.Builder builder = new RemoteRepository.Builder(aRepo.getId(), aRepo.getLayout().getId(),
                 aRepo.getUrl());
         ArtifactRepositoryPolicy releases = aRepo.getReleases();
@@ -179,7 +182,10 @@ final class Aether {
                     snapshots.getChecksumPolicy());
             builder.setSnapshotPolicy(snapshotPolicy);
         }
-        return builder.build();
+        RemoteRepository repository = builder.build();
+        return new RemoteRepository.Builder(repository)
+                .setProxy(repoSession.getProxySelector().getProxy(repository))
+                .build();
     }
 
     /**
@@ -220,7 +226,7 @@ final class Aether {
                     .getArtifactResults()
                     .stream()
                     .map(ar -> ar.getArtifact().getFile())
-                    .collect(Collectors.toList());
+                    .collect(toList());
         } catch (DependencyResolutionException ex) {
             throw new RuntimeException(ex);
         }
