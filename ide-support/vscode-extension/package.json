@@ -40,34 +40,19 @@
     "onLanguage:microprofile-properties",
     "onLanguage:helidon-properties"
   ],
-  "extensionDependencies": [
-    "redhat.vscode-microprofile",
-    "redhat.java"
-  ],
-  "main": "./target/dist/extension.js",
+  "main": "./out/extension.js",
   "contributes": {
-    "javaExtensions": [
-      "./target/jars/io.helidon.jdt.extension.core.jar"
-    ],
-    "microprofile": {
-      "jarExtensions": [
-        "./target/jars/io.helidon.ls4mp.extension.jar"
-      ],
-      "documentSelector": [
-        {
-          "scheme": "file",
-          "language": "helidon-properties"
-        }
-      ]
-    },
     "languages": [
       {
         "id": "helidon-properties",
         "aliases": [
           "Helidon properties"
         ],
-        "filenames": [
-          "application.properties"
+        "extensions": [
+          ".properties",
+          ".yaml",
+          ".yml",
+          ".conf"
         ],
         "configuration": "./lang-configs/properties-config/language-configuration.json"
       }
@@ -108,7 +93,8 @@
     "package": "vsce package -o target/vscode-helidon.vsix",
     "webpack": "webpack --mode development",
     "webpack-dev": "webpack --mode development --watch",
-    "test-compile": "tsc -p ./"
+    "test-compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
   },
   "devDependencies": {
     "@types/chai": "^4.2.14",
@@ -140,6 +126,7 @@
     "command-exists": "^1.2.9",
     "strip-ansi": "^6.0.0",
     "tree-kill": "^1.2.2",
+    "vscode-languageclient": "^5.1.1",
     "vscode-uri": "^3.0.1"
   }
 }
