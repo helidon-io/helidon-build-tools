@@ -69,7 +69,7 @@ function startLangServer(context: vscode.ExtensionContext) {
         let excecutable: string = path.join(JAVA_HOME, 'bin', 'java');
 
         // path to the launcher.jar
-        let classPath = path.join(__dirname, '..', 'target', 'server', 'io.helidon.lsp.server.jar');
+        let classPath = path.join(__dirname, '..', 'server', 'io.helidon.lsp.server.jar');
         const args: string[] = ['-cp', classPath];
 
         // Set the server options
