@@ -1,6 +1,6 @@
 <!--
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@
         <artifactId>parent</artifactId>
         <version>@project.version@</version>
     </parent>
-    <artifactId>test-catalog2</artifactId>
-    <name>Test Archetype Catalog 2</name>
+    <artifactId>test-catalog1</artifactId>
+    <name>Test Archetype Catalog 1</name>
     <packaging>helidon-archetype-catalog</packaging>
 
     <dependencies>

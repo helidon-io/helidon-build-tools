@@ -1,6 +1,6 @@
 <!--
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,12 +24,20 @@
         <artifactId>parent</artifactId>
         <version>@project.version@</version>
     </parent>
-    <artifactId>test-archetype1</artifactId>
-    <name>Test Archetype 1</name>
-    <packaging>helidon-archetype</packaging>
+    <artifactId>test-catalog2</artifactId>
+    <name>Test Archetype Catalog 2</name>
+    <packaging>helidon-archetype-catalog</packaging>
 
-    <properties>
-        <foo>pre-processed-foo</foo>
-        <bar>pre-processed-bar</bar>
-    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.build-tools.archetype.tests</groupId>
+            <artifactId>test-archetype1</artifactId>
+            <version>@project.version@</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools.archetype.tests</groupId>
+            <artifactId>test-archetype2</artifactId>
+            <version>@project.version@</version>
+        </dependency>
+    </dependencies>
 </project>
