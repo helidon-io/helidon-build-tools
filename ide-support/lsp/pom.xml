@@ -24,15 +24,22 @@
         <artifactId>helidon-ide-support-project</artifactId>
         <version>3.0.0-SNAPSHOT</version>
     </parent>
+
     <groupId>io.helidon.ide-support.lsp</groupId>
     <artifactId>helidon-ide-support-lsp-project</artifactId>
     <packaging>pom</packaging>
     <name>Helidon LSP Project</name>
     <description>Helidon IDE Support Language Server Protocol Project</description>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.eclipse.lsp4j</groupId>
+            <artifactId>org.eclipse.lsp4j</artifactId>
+        </dependency>
+    </dependencies>
+
     <modules>
         <module>io.helidon.lsp.server</module>
-        <module>io.helidon.lsp.launcher</module>
     </modules>
 
 </project>

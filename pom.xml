@@ -135,12 +135,9 @@
         <version.lib.jaxb-api>2.3.3</version.lib.jaxb-api>
         <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
         <version.lib.jaxb-impl>2.3.3</version.lib.jaxb-impl>
-        <version.lib.jdt.ls>0.52.1.20200318153300</version.lib.jdt.ls>
-        <version.lib.jdt.ext>0.0.0</version.lib.jdt.ext>
         <version.lib.junit>5.6.0</version.lib.junit>
         <version.lib.junit4>4.13.1</version.lib.junit4>
-        <version.lib.lsp4j>0.9.0</version.lib.lsp4j>
-        <version.lib.lsp4mp>0.2.0</version.lib.lsp4mp>
+        <version.lib.lsp4j>0.12.0</version.lib.lsp4j>
         <version.lib.maven>3.6.2</version.lib.maven>
         <version.lib.maven-annotations>3.5</version.lib.maven-annotations>
         <version.lib.maven-archiver>3.5.0</version.lib.maven-archiver>
@@ -193,7 +190,7 @@
         <version.plugin.surefire.provider.junit>1.0.3</version.plugin.surefire.provider.junit>
         <version.plugin.surefire>3.0.0-M4</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
-        <version.plugin.tycho>2.2.0</version.plugin.tycho>
+        <version.plugin.shade>3.2.4</version.plugin.shade>
     </properties>
 
     <modules>
@@ -460,39 +457,14 @@
                     <version>${version.plugin.jacoco}</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.eclipse.tycho</groupId>
-                    <artifactId>tycho-maven-plugin</artifactId>
-                    <version>${version.plugin.tycho}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.eclipse.tycho</groupId>
-                    <artifactId>target-platform-configuration</artifactId>
-                    <version>${version.plugin.tycho}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.eclipse.tycho</groupId>
-                    <artifactId>tycho-compiler-plugin</artifactId>
-                    <version>${version.plugin.tycho}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.eclipse.tycho</groupId>
-                    <artifactId>tycho-source-plugin</artifactId>
-                    <version>${version.plugin.tycho}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.eclipse.tycho</groupId>
-                    <artifactId>tycho-surefire-plugin</artifactId>
-                    <version>${version.plugin.tycho}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.eclipse.tycho</groupId>
-                    <artifactId>tycho-packaging-plugin</artifactId>
-                    <version>${version.plugin.tycho}</version>
-                </plugin>
-                <plugin>
                     <groupId>com.github.eirslett</groupId>
                     <artifactId>frontend-maven-plugin</artifactId>
                     <version>${version.plugin.frontend}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${version.plugin.shade}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -805,17 +777,6 @@
                 <groupId>org.eclipse.lsp4j</groupId>
                 <artifactId>org.eclipse.lsp4j.jsonrpc</artifactId>
                 <version>${version.lib.lsp4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.lsp4mp</groupId>
-                <artifactId>org.eclipse.lsp4mp.ls</artifactId>
-                <version>${version.lib.lsp4mp}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.lsp4mp</groupId>
-                <artifactId>org.eclipse.lsp4mp.ls</artifactId>
-                <classifier>tests</classifier>
-                <version>${version.lib.lsp4mp}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.gson</groupId>

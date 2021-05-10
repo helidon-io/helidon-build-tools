@@ -15,13 +15,14 @@
  */
 
 import * as vscode from 'vscode';
-import { showHelidonGenerator } from './generator';
-import { startHelidonDev } from "./helidonDev";
-import { stopHelidonDev } from "./helidonDev";
-import { VSCodeHelidonCommands } from "./common";
-import { openStartPage } from "./startPage";
-import { updateWorkspaceDocuments } from "./propertiesSupport";
-import { commands, WorkspaceFoldersChangeEvent } from 'vscode';
+import {showHelidonGenerator} from './generator';
+import {startHelidonDev} from "./helidonDev";
+import {stopHelidonDev} from "./helidonDev";
+import {VSCodeHelidonCommands} from "./common";
+import {openStartPage} from "./startPage";
+import {commands, WorkspaceFoldersChangeEvent} from 'vscode';
+import * as path from 'path';
+import {LanguageClient, LanguageClientOptions, ServerOptions, StreamInfo} from 'vscode-languageclient';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -52,8 +53,47 @@ export function activate(context: vscode.ExtensionContext) {
         stopHelidonDev();
     }));
 
-    updateWorkspaceDocuments(context);
+    startLangServer(context);
 }
 
 export function deactivate() {
+}
+
+function startLangServer(context: vscode.ExtensionContext) {
+    // Get the java home from the process environment.
+    const {JAVA_HOME} = process.env;
+
+    // If java home is available continue.
+    if (JAVA_HOME) {
+        // Java execution path.
+        let excecutable: string = path.join(JAVA_HOME, 'bin', 'java');
+
+        // path to the launcher.jar
+        let classPath = path.join(__dirname, '..', 'target', 'server', 'io.helidon.lsp.server.jar');
+        const args: string[] = ['-cp', classPath];
+
+        // Set the server options
+        // -- java execution path
+        // -- argument to be pass when executing the java command
+        let serverOptions: ServerOptions = {
+            command: excecutable,
+            args: [...args, 'io.helidon.lsp.server.HelidonLanguageServerLauncher'],
+            options: {}
+        };
+
+        // Options to control the language client
+        let clientOptions: LanguageClientOptions = {
+            // Register the server for plain text documents
+            documentSelector: [{scheme: 'file', language: 'quarkus-properties'}, {
+                scheme: 'file',
+                language: 'helidon-properties'
+            }]
+        };
+
+        // Create the language client and start the client.
+        let disposable = new LanguageClient('helidonLS', 'Helidon Language Server', serverOptions, clientOptions).start();
+
+        // Disposables to remove on deactivation.
+        context.subscriptions.push(disposable);
+    }
 }
