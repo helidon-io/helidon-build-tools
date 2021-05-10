@@ -449,6 +449,7 @@
                         <addTestClassPath>true</addTestClassPath>
                         <settingsFile>src/it/settings.xml</settingsFile>
                         <mergeUserSettings>true</mergeUserSettings>
+                        <localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>
                         <!--suppress MavenModelInspection -->
                         <ignoreFailures>${maven.test.failure.ignore}</ignoreFailures>
                         <showErrors>true</showErrors>
@@ -458,6 +459,10 @@
                             <pomInclude>projects/*/pom.xml</pomInclude>
                         </pomIncludes>
                         <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+                        <goals>
+                            <goal>clean</goal>
+                            <goal>install</goal>
+                        </goals>
                     </configuration>
                     <dependencies>
                         <dependency>
