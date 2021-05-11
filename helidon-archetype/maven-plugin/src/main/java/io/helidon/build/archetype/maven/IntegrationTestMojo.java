@@ -46,9 +46,7 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.DefaultProjectBuildingRequest;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.apache.maven.shared.invoker.InvocationRequest;
@@ -193,7 +191,6 @@ public class IntegrationTestMojo extends AbstractMojo {
                  .map(Path::toFile)
                  .forEach(File::delete);
         }
-        Files.createDirectories(outputDir);
 
         if (mavenArchetypeCompatible) {
             mavenCompatGenerate(
@@ -204,6 +201,7 @@ public class IntegrationTestMojo extends AbstractMojo {
                     props,
                     outputDir.getParent());
         } else {
+            Files.createDirectories(outputDir);
             props.put("maven", "true");
             new ArchetypeEngine(archetypeFile, Maps.fromProperties(props)).generate(outputDir.toFile());
         }
@@ -232,7 +230,6 @@ public class IntegrationTestMojo extends AbstractMojo {
             throw new MojoExecutionException("Unable to pre-install archetype artifact", ex);
         }
 
-        ProjectBuildingRequest buildRequest = session.getProjectBuildingRequest();
         ArchetypeGenerationRequest request = new ArchetypeGenerationRequest()
                 .setArchetypeGroupId(archetypeGroupId)
                 .setArchetypeArtifactId(archetypeArtifactId)
@@ -243,9 +240,7 @@ public class IntegrationTestMojo extends AbstractMojo {
                 .setPackage(properties.getProperty("package"))
                 .setOutputDirectory(basedir.toString())
                 .setProperties(properties)
-                .setProjectBuildingRequest(new DefaultProjectBuildingRequest()
-                        .setRepositorySession(buildRequest.getRepositorySession())
-                        .setRemoteRepositories(buildRequest.getRemoteRepositories()));
+                .setProjectBuildingRequest(session.getProjectBuildingRequest());
 
         ArchetypeGenerationResult result = new ArchetypeGenerationResult();
         archetypeGenerator.generateArchetype(request, archetypeFile, result);

@@ -147,6 +147,7 @@
         <version.lib.jansi>1.18</version.lib.jansi>
         <version.lib.picocli.jansi>1.1.0</version.lib.picocli.jansi>
         <version.lib.asm>7.2</version.lib.asm>
+        <version.lib.maven-embedder>3.6.2</version.lib.maven-embedder>
         <version.lib.maven-resolver>1.4.1</version.lib.maven-resolver>
         <version.lib.plexus.archiver>4.1.0</version.lib.plexus.archiver>
         <version.lib.plexus.component>2.0.0</version.lib.plexus.component>
@@ -782,6 +783,11 @@
                 <groupId>org.apache.maven.resolver</groupId>
                 <artifactId>maven-resolver-connector-basic</artifactId>
                 <version>${version.lib.maven-resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-embedder</artifactId>
+                <version>${version.lib.maven-embedder}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
