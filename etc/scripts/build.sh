@@ -40,7 +40,7 @@ readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
-    clean install -debug -X \
+    clean install \
     --fail-at-end \
     -Dmaven.test.failure.ignore=true \
     -Pide-support
