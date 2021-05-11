@@ -1,0 +1,95 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Admonitions
+:description: demonstrating admonitions
+:keywords: keyword1, keyword2, keyword3
+
+== Admonitions
+
+Here is a important admonition paragraph:
+
+IMPORTANT: Wolpertingers are known to nest in server racks.
+Enter at your own risk.
+
+Here is an important admonition block:
+
+[IMPORTANT,caption="Important!"]
+.Feeding the Werewolves
+==== 
+While werewolves are hardy community members, keep in mind the following dietary
+ concerns
+
+. They are allergic to cinnamon.
+. More than two glasses of orange juice in 24 hours makes them howl in harmony
+ with alarms and sirens.
+. Celery makes them sad.
+====
+
+Here is a note admonition paragraph:
+
+NOTE: Something to be noted, like hey what should you put here?
+
+Here is a note admonition block:
+
+[NOTE,caption="Remember!"]
+====
+In order for your application to work properly, you must wrap it in a `v-app`
+ component.  This component is used for dynamically managing your content area and
+ is the mounting point for many components.
+====
+
+Here is a tip admonition paragraph:
+
+TIP: With this trick, you can have the best pony tail ever, trust me.
+
+Here is a tip admonition block:
+
+[TIP,caption="What does the wizard have to say?"]
+====
+What tip would you like to know ? Maybe someone knows better like Gandalf, right?
+
+The dude with a white hat has the knowledge and the experience, unlike the rest of
+ us. We are missing out on that and that's why he is here to give us tips...
+====
+
+Here is a caution admonition paragraph:
+
+CAUTION: Hey be careful, this is really hot stuff here!
+
+Here is a caution admonition block:
+
+[CAUTION,caption="HOT HOT HOT!"]
+====
+When you use a motorcycle you should wear a helmet as the consequences of a road
+ accident can be terrible. When you do free fall you should wear a parachute,
+ the gravity does not forgive, so you are better with one.
+====
+
+Here is a warning admonition paragraph:
+
+WARNING: This is bleeding edge and not supported at the moment.
+
+Here is a warning admonition block:
+
+[WARNING,caption="Do not mess-up with the Zohan!"]
+====
+By reading this statement, you understand that you will be liable for every action
+ the author of these lines will be taking for now on. In other words, you are in
+ trouble starting right now.
+====

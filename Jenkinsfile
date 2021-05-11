@@ -30,8 +30,8 @@ pipeline {
               try {
                 sh './etc/scripts/build.sh'
               } finally {
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,**/target/it/**/*.log"
-                junit testResults: '**/target/surefire-reports/*.xml,**/target/invoker-reports/*.xml'
+                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,**/target/it/**/*.log,**/target/*.vsix"
+                junit testResults: '**/target/surefire-reports/*.xml,**/target/invoker-reports/*.xml,**/target/it/projects/*/TEST-*.xml'
               }
             }
           }
@@ -45,18 +45,24 @@ pipeline {
               try {
                 bat './etc/scripts/build.bat'
               } finally {
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,helidon-cli/target/reports/*.txt,helidon-cli/impl/target/helidon.exe"
-                junit testResults: '**/target/surefire-reports/*.xml'
+                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,**/target/it/**/*.log,helidon-cli/target/reports/*.txt,helidon-cli/impl/target/helidon.exe"
+                junit testResults: '**/target/surefire-reports/*.xml,**/target/invoker-reports/*.xml,**/target/it/projects/*/TEST-*.xml'
               }
             }
           }
         }
         stage('copyright'){
+          agent {
+            label "linux"
+          }
           steps {
             sh './etc/scripts/copyright.sh'
           }
         }
         stage('checkstyle'){
+          agent {
+            label "linux"
+          }
           steps {
             sh './etc/scripts/checkstyle.sh'
           }

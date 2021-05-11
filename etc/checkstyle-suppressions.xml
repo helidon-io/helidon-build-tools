@@ -1,7 +1,7 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2016, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2016, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,11 +23,11 @@
 
 <suppressions>
     <suppress checks="FileLength"
-            files="config/config/src/main/java/io/helidon/config/Config.java"
+            files="cli/codegen/src/main/java/io/helidon/build/cli/codegen/AST.java"
             lines="1"/>
     <suppress checks="LineLength"
-            files="helidon-archetype/engine/src/test/resources/META-INF/test.properties" />
+            files="archetype/engine-v1/src/test/resources/META-INF/test.properties" />
     <suppress checks="LineLength"
-            files="helidon-archetype/maven-plugin/src/test/resources/io/helidon/build/archetype/maven/test.properties" />
+            files="maven-plugins/helidon-archetype-maven-plugin/src/test/resources/io/helidon/build/maven/archetype/test.properties" />
 </suppressions>
 
