@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -127,7 +127,7 @@ update_version(){
         -DprocessAllModules="true"
 
     # Hacks to hard-coded versions
-    local file="helidon-archetype/maven-plugin/src/it/projects/catalog2/catalog.xml"
+    local file="helidon-archetype/maven-plugin/src/it/projects/test1/catalog2/catalog.xml"
     cat ${file} | sed s@'^\([ \t]*\)version=".*"'@"\1version=\"${FULL_VERSION}\""@g > ${file}.tmp
     mv ${file}.tmp ${file}
 }
