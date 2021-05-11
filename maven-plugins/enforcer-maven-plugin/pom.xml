@@ -106,41 +106,6 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-invoker-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>invoker-install</id>
-                        <goals>
-                            <goal>install</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>invoker-it</id>
-                        <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
-                        </goals>
-                        <phase>pre-integration-test</phase>
-                        <configuration>
-                            <ignoreFailures>false</ignoreFailures>
-                            <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
-                            <pomIncludes>
-                                <pomInclude>projects/*/pom.xml</pomInclude>
-                            </pomIncludes>
-                            <goals>
-                                <goal>clean</goal>
-                                <goal>verify</goal>
-                            </goals>
-                            <streamLogs>true</streamLogs>
-                            <showErrors>true</showErrors>
-                            <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
-                            <skipInvocation>${skipTests}</skipInvocation>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.codehaus.plexus</groupId>
                 <artifactId>plexus-component-metadata</artifactId>
                 <executions>
