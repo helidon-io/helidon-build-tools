@@ -19,7 +19,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Helidon archetype engine main class.
+ * Helidon archetype engine v1 main class.
  */
 public final class Main {
 

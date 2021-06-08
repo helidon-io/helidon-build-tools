@@ -169,7 +169,7 @@
         -->
 
         <!-- maven plugin versions -->
-        <version.plugin.build-helper>3.0.0</version.plugin.build-helper>
+        <version.plugin.build-helper>3.2.0</version.plugin.build-helper>
         <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
         <version.plugin.checkstyle>3.1.0</version.plugin.checkstyle>
         <version.plugin.clean>3.1.0</version.plugin.clean>
