@@ -19,6 +19,14 @@ package io.helidon.build.archetype.engine.v2;
  * Helidon archetype engine v2 main class.
  */
 public class Main {
+
+    private Main(){
+    }
+
+    /**
+     * Helidon archetype engine main method.
+     * @param args command line arguments
+     */
     public static void main(String[] args) {
         throw new UnsupportedOperationException("Not implemented yet.");
     }
