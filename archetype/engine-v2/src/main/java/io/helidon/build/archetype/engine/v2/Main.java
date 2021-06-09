@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.build.archetype.engine.v2;
 
 /**
- * Helidon archetype engine v1.
+ * Helidon archetype engine v2 main class.
  */
-package io.helidon.build.archetype.engine.v1;
+public class Main {
+
+    private Main(){
+    }
+
+    /**
+     * Helidon archetype engine main method.
+     * @param args command line arguments
+     */
+    public static void main(String[] args) {
+        throw new UnsupportedOperationException("Not implemented yet.");
+    }
+}

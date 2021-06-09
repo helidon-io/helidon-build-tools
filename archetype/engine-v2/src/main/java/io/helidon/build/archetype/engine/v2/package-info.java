@@ -15,6 +15,6 @@
  */
 
 /**
- * Helidon archetype engine v1.
+ * Helidon archetype engine v2.
  */
-package io.helidon.build.archetype.engine.v1;
+package io.helidon.build.archetype.engine.v2;
