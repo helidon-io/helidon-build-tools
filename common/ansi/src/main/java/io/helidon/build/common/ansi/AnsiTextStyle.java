@@ -198,7 +198,7 @@ public class AnsiTextStyle implements RichTextStyle {
                 return NONE;
             }
         }
-        return ANSI_ENABLED ? style : NONE;
+        return ANSI_ENABLED.instance() ? style : NONE;
     }
 
     /**

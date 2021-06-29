@@ -89,15 +89,16 @@ public class ServicesMojo extends AbstractMojo {
     private boolean failOnMissingModuleInfo;
 
     /**
-     * Merge mode.
-     * Possible options:
+     * Plugin modes:
      * <ul>
-     *  <li>overwrite - use only values from module-info.java, delete any existing files in output</li>
-     *  <li>ignore - use module-info.java, unless there are existing META-INF/services, in that case ignore module-info.java</li>
-     *  <li>fail - fail if there is any existing META-INF/services record (default)</li>
-     *  <li>clean - delete existing META-INF/services in source directory if they are in module-info, fail otherwise
-     *          only works with the default resource directory in {@code src/main/resources}</li>
-     *  <li>validate - validate that module-info.java and META-INF/services contain the same records</li>
+     *  <li>fail - fail if META-INF/services in source; otherwise generate and overwrite
+     *  META-INF/services in target from module-info.java (default).</li>
+     *  <li>overwrite - generate and overwrite META-INF/services files in target from module-info.java</li>
+     *  <li>ignore - if META-INF/services in source, ignore module-info.java and just let Maven copy
+     *  files. If META-INF/services not in source, same as overwrite mode.</li>
+     *  <li>validate - validate that module-info.java and services files in target contain the same
+     *  records.</li>
+     *  <li>clean - delete existing META-INF/services in source if they are in module-info, fail otherwise.</li>
      * </ul>
      */
     @Parameter(property = "mode", defaultValue = "fail")
@@ -151,36 +152,55 @@ public class ServicesMojo extends AbstractMojo {
             return;
         }
 
+        Log.info("Mode is $(YELLOW " + mode + ")");
+
         // now we have module info, let's validate existing files
-        Path metaInfServices = targetPath.resolve("META-INF/services");
+        Path targetServices = targetPath.resolve("META-INF/services");
 
         if ("validate".equals(mode)) {
-            validate(moduleInfo, existing(metaInfServices));
+            validate(moduleInfo, existing(targetServices));
             return;
         }
 
-        if (Files.exists(metaInfServices)) {
-            if ("overwrite".equals(mode)) {
-                deleteExisting(metaInfServices);
-            } else {
-                List<Path> existing = existing(metaInfServices);
-                if ("ignore".equals(mode) && !existing.isEmpty()) {
-                    Log.info("Ignoring module-info.java, as there are existing META-INF/services");
-                    Log.verbose("Existing files: " + existing);
-                    return;
-                } else if ("clean".equals(mode) && !existing.isEmpty()) {
-                    clean(metaInfServices, moduleInfo, existing);
-                } else if (!existing.isEmpty()) {
-                    throw new MojoExecutionException("There are existing META-INF/services files: " + existing);
-                }
+        // source services files
+        Path sourceServices = resourceDirectory.toPath().resolve("META-INF/services");
+        List<Path> existing = existing(sourceServices);
+
+        if ("fail".equals(mode)) {
+            if (!existing.isEmpty()) {
+                throw new MojoExecutionException("Project must not contain META-INF/services in source folder");
             }
+            mode = "overwrite";     // fall back
         }
 
-        try {
-            createServices(metaInfServices, moduleInfo);
-        } catch (IOException e) {
-            throw new MojoFailureException("Failed to create META-INF/services records for " + moduleInfo, e);
+        if ("ignore".equals(mode)) {
+            if (!existing.isEmpty()) {
+                Log.info("Ignoring module-info.java, existing META-INF/services in source folder");
+                Log.verbose("Existing files: " + existing);
+                return;
+            }
+            mode = "overwrite";     // fall back
         }
+
+        if ("overwrite".equals(mode)) {
+            deleteExisting(targetServices);
+            try {
+                createServices(targetServices, moduleInfo);
+            } catch (IOException e) {
+                throw new MojoFailureException("Failed to create META-INF/services in target folder for "
+                        + moduleInfo, e);
+            }
+            return;
+        }
+
+        if ("clean".equals(mode)) {
+            if (!existing.isEmpty()) {
+                clean(sourceServices, moduleInfo, existing);
+            }
+            return;
+        }
+
+        throw new MojoExecutionException("Invalid plugin mode '" + mode + "'");
     }
 
     private void validate(Path moduleInfo, List<Path> existing)

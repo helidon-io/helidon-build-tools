@@ -281,7 +281,7 @@ class AnsiTextStyleTest {
 
     @Test
     void testStrip() {
-        Assumptions.assumeTrue(AnsiTextProvider.ANSI_ENABLED);
+        Assumptions.assumeTrue(AnsiTextProvider.ANSI_ENABLED.instance());
         String sample = "sample";
         RichTextStyle style = RichTextStyle.of("RED!");
         String styled = style.apply(sample);

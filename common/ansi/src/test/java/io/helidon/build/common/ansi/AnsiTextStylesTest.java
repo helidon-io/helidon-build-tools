@@ -30,7 +30,7 @@ class AnsiTextStylesTest {
 
     @Test
     void testAll() {
-        boolean enabled = AnsiTextProvider.ANSI_ENABLED;
+        boolean enabled = AnsiTextProvider.ANSI_ENABLED.instance();
         Ansi.setEnabled(enabled);
         for (AnsiTextStyles function : AnsiTextStyles.values()) {
             String example = function.apply("example");
