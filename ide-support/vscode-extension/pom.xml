@@ -37,21 +37,6 @@
         <npm.proxy.auto>false</npm.proxy.auto>
     </properties>
 
-    <dependencies>
-        <dependency>
-            <groupId>io.helidon.ide-support.jdt</groupId>
-            <artifactId>io.helidon.jdt.extension.core</artifactId>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.ide-support.lsp</groupId>
-            <artifactId>io.helidon.lsp4mp.extension</artifactId>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
-    </dependencies>
-
     <build>
         <plugins>
             <plugin>
