@@ -16,6 +16,7 @@ vuex-router-sync.js
 .txt
 .mustache
 .json
+.md
 .bat
 javax.annotation.processing.Processor
 com.sun.source.util.Plugin

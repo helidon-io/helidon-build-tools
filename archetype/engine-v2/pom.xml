@@ -25,11 +25,11 @@
         <artifactId>helidon-archetype-project</artifactId>
         <version>3.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>helidon-archetype-engine-v1</artifactId>
+    <artifactId>helidon-archetype-engine-v2</artifactId>
     <name>Helidon Archetype Engine</name>
 
     <properties>
-        <mainClass>io.helidon.build.archetype.engine.v1.Main</mainClass>
+        <mainClass>io.helidon.build.archetype.engine.v2.Main</mainClass>
     </properties>
 
     <dependencies>
@@ -69,4 +69,31 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-artifacts</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attach-artifact</goal>
+                        </goals>
+                        <configuration>
+                            <artifacts>
+                                <artifact>
+                                    <file>src/main/schema/archetype.xsd</file>
+                                    <type>xsd</type>
+                                    <classifier>schema</classifier>
+                                </artifact>
+                            </artifacts>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
