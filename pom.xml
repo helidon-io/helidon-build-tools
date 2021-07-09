@@ -152,6 +152,7 @@
         <version.lib.maven-settings>3.6.2</version.lib.maven-settings>
         <version.lib.mock-server>5.10.0</version.lib.mock-server>
         <version.lib.mustache>0.9.6</version.lib.mustache>
+        <version.lib.mockito>3.10.0</version.lib.mockito>
         <version.lib.picocli-jansi>1.1.0</version.lib.picocli-jansi>
         <version.lib.plexus-archiver>4.1.0</version.lib.plexus-archiver>
         <version.lib.plexus-build-api>0.0.7</version.lib.plexus-build-api>
@@ -734,6 +735,16 @@
                 <version>${version.lib.hamcrest}</version>
             </dependency>
             <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-junit-jupiter</artifactId>
+                <version>${version.lib.mockito}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${version.lib.mockito}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.github.wumpz</groupId>
                 <artifactId>diffutils</artifactId>
                 <version>${version.lib.diffutils}</version>
@@ -804,6 +815,16 @@
                 <version>${version.lib.jackson}</version>
             </dependency>
             <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-properties</artifactId>
+                <version>${version.lib.jackson}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>${version.lib.jackson}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${version.lib.apache-commons}</version>
@@ -867,6 +888,11 @@
                 <groupId>org.apache.maven.resolver</groupId>
                 <artifactId>maven-resolver-connector-basic</artifactId>
                 <version>${version.lib.maven-resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.security.providers</groupId>
+                <artifactId>helidon-security-providers-common</artifactId>
+                <version>${version.lib.helidon}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

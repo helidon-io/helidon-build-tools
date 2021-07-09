@@ -1,14 +1,20 @@
-package io.helidon.lsp.server.management;
+/*
+ * Copyright (c) 2021 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import io.helidon.lsp.server.utils.ShellCommandHelper;
-import org.apache.maven.shared.invoker.DefaultInvocationRequest;
-import org.apache.maven.shared.invoker.DefaultInvoker;
-import org.apache.maven.shared.invoker.InvocationOutputHandler;
-import org.apache.maven.shared.invoker.InvocationRequest;
-import org.apache.maven.shared.invoker.InvocationResult;
-import org.apache.maven.shared.invoker.Invoker;
-import org.apache.maven.shared.invoker.MavenInvocationException;
-import org.apache.maven.shared.utils.cli.CommandLineException;
+package io.helidon.lsp.server.management;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,13 +24,19 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.build.common.maven.MavenCommand;
+
+/**
+ * Support operations with maven.
+ */
 public class MavenSupport {
 
     private static final Logger LOGGER = Logger.getLogger(MavenSupport.class.getName());
     private static final String POM_FILE_NAME = "pom.xml";
-    private static MavenSupport INSTANCE;
+    private static MavenSupport instance;
 
     private boolean isMavenInstalled = false;
 
@@ -32,37 +44,61 @@ public class MavenSupport {
         initialize();
     }
 
-    private void initialize() {
-        List<String> mvnCommandResult = ShellCommandHelper.execute("mvn -version");
-        for (String line : mvnCommandResult) {
-            if (line.contains("Maven home")) {
-                String[] split = line.split("Maven home:");
-                for (String s : split) {
-                    String part = s.trim();
-                    if (part.length() > 0) {
-                        System.setProperty("maven.home", part);
-                        isMavenInstalled = true;
-                    }
-                }
-            }
+    /**
+     * Return instance of the MavenSupport class (singleton pattern).
+     *
+     * @return Instance of the MavenSupport class.
+     */
+    public static MavenSupport getInstance() {
+        if (instance == null) {
+            instance = new MavenSupport();
         }
-
+        return instance;
     }
 
+    private void initialize() {
+        Path mavenPath = null;
+        try {
+            mavenPath = MavenCommand.mavenExecutable();
+        } catch (IllegalStateException e) {
+            LOGGER.log(Level.SEVERE, "Maven is not installed in the system", e);
+            return;
+        }
+        if (mavenPath != null) {
+            isMavenInstalled = true;
+        }
+    }
+
+    /**
+     * Get paths for the dependency jars for the given pom file.
+     *
+     * @param pomPath Path to the pom file.
+     * @return List that contains paths for the dependency jars.
+     */
     public List<String> getDependencies(final String pomPath) {
         if (!isMavenInstalled) {
             return null;
         }
-        List<String> result = new ArrayList<>();
 
+        List<String> output = new ArrayList<>();
+        List<String> result = new ArrayList<>();
+        String mvnCommand = "dependency:build-classpath";
         String dependencyMarker = "Dependencies classpath:";
-        List<String> execute = ShellCommandHelper.execute(
-                "mvn dependency:build-classpath",
-                new File(pomPath).getParentFile()
-        );
-        for (int x = 0; x < execute.size(); x++) {
-            if (execute.get(x).contains(dependencyMarker)) {
-                String dependencies = execute.get(x + 1);
+
+        try {
+            MavenCommand.builder()
+                    .addArgument(mvnCommand)
+                    .stdOut(output::add)
+                    .directory(new File(pomPath).getParentFile())
+                    .verbose(false)
+                    .build().execute();
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error when executing the maven command - " + mvnCommand, e);
+            return Collections.emptyList();
+        }
+        for (int x = 0; x < output.size(); x++) {
+            if (output.get(x).contains(dependencyMarker)) {
+                String dependencies = output.get(x + 1);
                 result.addAll(Arrays.asList(dependencies.split(File.pathSeparator)));
                 break;
             }
@@ -71,19 +107,13 @@ public class MavenSupport {
         return result;
     }
 
-    public CommandResult executeCommand(final String command, final String pomFilePath)
-            throws MavenInvocationException {
-        InvocationRequest request = new DefaultInvocationRequest();
-        request.setPomFile(new File(pomFilePath));
-        request.setGoals(Collections.singletonList(command));
-        Invoker invoker = new DefaultInvoker();
-        final List<String> output = new ArrayList<>();
-        InvocationOutputHandler handler = output::add;
-        invoker.setOutputHandler(handler);
-        InvocationResult execute = invoker.execute(request);
-        return new CommandResult(execute.getExitCode(), output, execute.getExecutionException());
-    }
-
+    /**
+     * Get pom file for the file from the maven project.
+     *
+     * @param fileName File name.
+     * @return Get pom file for the given file or null if pom.xml is not found.
+     * @throws IOException IOException
+     */
     public String getPomForFile(final String fileName) throws IOException {
         final Path currentPath = Paths.get(fileName);
         Path currentDirPath;
@@ -115,39 +145,4 @@ public class MavenSupport {
                 .map(File::getAbsolutePath).orElse(null);
     }
 
-    public static MavenSupport getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new MavenSupport();
-        }
-        return INSTANCE;
-    }
-
-    public boolean isMavenInstalled() {
-        return isMavenInstalled;
-    }
-
-    public static class CommandResult {
-
-        private final int code;
-        private final List<String> output;
-        private final CommandLineException commandLineException;
-
-        public CommandResult(int code, List<String> output, CommandLineException commandLineException) {
-            this.code = code;
-            this.output = output;
-            this.commandLineException = commandLineException;
-        }
-
-        public int getCode() {
-            return code;
-        }
-
-        public List<String> getOutput() {
-            return output;
-        }
-
-        public CommandLineException getCommandLineException() {
-            return commandLineException;
-        }
-    }
 }

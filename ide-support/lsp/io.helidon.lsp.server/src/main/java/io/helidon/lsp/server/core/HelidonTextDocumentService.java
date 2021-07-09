@@ -1,7 +1,33 @@
+/*
+ * Copyright (c) 2021 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.lsp.server.core;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.helidon.lsp.server.service.TextDocumentHandler;
 import io.helidon.lsp.server.service.TextDocumentHandlerFactory;
+import io.helidon.lsp.server.service.config.ConfigurationPropertiesService;
+
 import org.eclipse.lsp4j.CallHierarchyIncomingCall;
 import org.eclipse.lsp4j.CallHierarchyIncomingCallsParams;
 import org.eclipse.lsp4j.CallHierarchyItem;
@@ -71,15 +97,28 @@ import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
+/**
+ * Helidon TextDocumentService.
+ */
 public class HelidonTextDocumentService implements TextDocumentService {
 
-    private LanguageServerContext languageServerContext;
+    private static final Logger LOGGER = Logger.getLogger(HelidonTextDocumentService.class.getName());
+    private static final List<String> PROPS_FILE_PATTERN = Arrays.asList(
+            "meta-config.yaml", "meta-config.conf", "meta-config.json", "meta-config.properties",
+            "application.yaml", "application.conf", "application.json", "application.properties"
+    );
+    private final LanguageServerContext languageServerContext;
+    private final ConfigurationPropertiesService configurationPropertiesService;
 
+    /**
+     * Create a new instance.
+     *
+     * @param languageServerContext languageServerContext.
+     */
     public HelidonTextDocumentService(LanguageServerContext languageServerContext) {
         this.languageServerContext = languageServerContext;
+        configurationPropertiesService =
+                (ConfigurationPropertiesService) languageServerContext.getBean(ConfigurationPropertiesService.class);
     }
 
     @Override
@@ -108,7 +147,9 @@ public class HelidonTextDocumentService implements TextDocumentService {
     }
 
     @Override
-    public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> declaration(DeclarationParams params) {
+    public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> declaration(
+            DeclarationParams params
+    ) {
         return null;
     }
 
@@ -118,12 +159,16 @@ public class HelidonTextDocumentService implements TextDocumentService {
     }
 
     @Override
-    public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> typeDefinition(TypeDefinitionParams params) {
+    public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> typeDefinition(
+            TypeDefinitionParams params
+    ) {
         return null;
     }
 
     @Override
-    public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> implementation(ImplementationParams params) {
+    public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> implementation(
+            ImplementationParams params
+    ) {
         return null;
     }
 
@@ -189,12 +234,25 @@ public class HelidonTextDocumentService implements TextDocumentService {
 
     @Override
     public void didOpen(DidOpenTextDocumentParams didOpenTextDocumentParams) {
+        String docUri = didOpenTextDocumentParams.getTextDocument().getUri();
+        LOGGER.log(Level.FINEST, () -> "opening the file " + docUri);
 
+        if (PROPS_FILE_PATTERN.stream().anyMatch(docUri::endsWith)) {
+            try {
+                //fill the cache
+                configurationPropertiesService.getConfigMetadataForFile(docUri);
+            } catch (URISyntaxException | IOException e) {
+                LOGGER.log(Level.SEVERE, "exception while opening the file " + docUri, e);
+            }
+        }
     }
 
     @Override
     public void didChange(DidChangeTextDocumentParams didChangeTextDocumentParams) {
-
+        LOGGER.log(
+                Level.FINEST,
+                () -> "change the file " + didChangeTextDocumentParams.getTextDocument().getUri()
+        );
     }
 
     @Override
@@ -263,12 +321,16 @@ public class HelidonTextDocumentService implements TextDocumentService {
     }
 
     @Override
-    public CompletableFuture<List<CallHierarchyIncomingCall>> callHierarchyIncomingCalls(CallHierarchyIncomingCallsParams params) {
+    public CompletableFuture<List<CallHierarchyIncomingCall>> callHierarchyIncomingCalls(
+            CallHierarchyIncomingCallsParams params
+    ) {
         return null;
     }
 
     @Override
-    public CompletableFuture<List<CallHierarchyOutgoingCall>> callHierarchyOutgoingCalls(CallHierarchyOutgoingCallsParams params) {
+    public CompletableFuture<List<CallHierarchyOutgoingCall>> callHierarchyOutgoingCalls(
+            CallHierarchyOutgoingCallsParams params
+    ) {
         return null;
     }
 
@@ -283,7 +345,9 @@ public class HelidonTextDocumentService implements TextDocumentService {
     }
 
     @Override
-    public CompletableFuture<Either<SemanticTokens, SemanticTokensDelta>> semanticTokensFullDelta(SemanticTokensDeltaParams params) {
+    public CompletableFuture<Either<SemanticTokens, SemanticTokensDelta>> semanticTokensFullDelta(
+            SemanticTokensDeltaParams params
+    ) {
         return null;
     }
 

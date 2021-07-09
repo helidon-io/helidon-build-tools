@@ -1,4 +1,25 @@
+/*
+ * Copyright (c) 2021 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.lsp.server.core;
+
+import java.util.concurrent.CompletableFuture;
+
+import io.helidon.lsp.server.service.config.ConfigurationPropertiesService;
+import io.helidon.lsp.server.utils.FileUtils;
 
 import org.eclipse.lsp4j.CompletionOptions;
 import org.eclipse.lsp4j.InitializeParams;
@@ -11,19 +32,31 @@ import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
-import java.util.concurrent.CompletableFuture;
-
+/**
+ * Helidon Language Server.
+ */
 public class HelidonLanguageServer implements LanguageServer, LanguageClientAware {
-    private TextDocumentService textDocumentService;
-    private WorkspaceService workspaceService;
+    private final TextDocumentService textDocumentService;
+    private final WorkspaceService workspaceService;
     private LanguageServerContext languageServerContext;
     private LanguageClient client;
     private int errorCode = 1;
 
+    /**
+     * Create a new instance.
+     */
     public HelidonLanguageServer() {
-        languageServerContext = new LanguageServerContext();
+        initContext();
         this.textDocumentService = new HelidonTextDocumentService(languageServerContext);
-        this.workspaceService = new HelidonWorkspaceService();
+        this.workspaceService = new HelidonWorkspaceService(languageServerContext);
+    }
+
+    private void initContext() {
+        languageServerContext = new LanguageServerContext();
+        ConfigurationPropertiesService configurationPropertiesService = new ConfigurationPropertiesService();
+        FileUtils fileUtils = new FileUtils();
+        languageServerContext.setBean(ConfigurationPropertiesService.class, configurationPropertiesService);
+        languageServerContext.setBean(FileUtils.class, fileUtils);
     }
 
     @Override

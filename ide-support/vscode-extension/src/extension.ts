@@ -21,8 +21,11 @@ import {stopHelidonDev} from "./helidonDev";
 import {VSCodeHelidonCommands} from "./common";
 import {openStartPage} from "./startPage";
 import {commands, WorkspaceFoldersChangeEvent} from 'vscode';
-import * as path from 'path';
-import {LanguageClient, LanguageClientOptions, ServerOptions, StreamInfo} from 'vscode-languageclient';
+import {ChildProcess} from 'child_process';
+import {ChildProcessAPI} from './ChildProcessAPI';
+import {startSocketLangServer} from './languageServer';
+
+let langServerProcess: ChildProcess;
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -53,49 +56,15 @@ export function activate(context: vscode.ExtensionContext) {
         stopHelidonDev();
     }));
 
-    startLangServer(context);
+    startSocketLangServer(context).then(data => {
+        if (data) {
+            langServerProcess = data;
+        }
+    });
 }
 
 export function deactivate() {
-}
-
-function startLangServer(context: vscode.ExtensionContext) {
-    // Get the java home from the process environment.
-    const {JAVA_HOME} = process.env;
-
-    // If java home is available continue.
-    if (JAVA_HOME) {
-        // Java execution path.
-        let excecutable: string = path.join(JAVA_HOME, 'bin', 'java');
-
-        // path to the launcher.jar
-        let classPath = path.join(__dirname, '..', 'server', 'io.helidon.lsp.server.jar');
-        const args: string[] = ['-cp', classPath];
-
-        // Set the server options
-        // -- java execution path
-        // -- argument to be pass when executing the java command
-        let serverOptions: ServerOptions = {
-            command: excecutable,
-            args: [...args, 'io.helidon.lsp.server.HelidonLanguageServerLauncher'],
-            options: {}
-        };
-
-        // Options to control the language client
-        let clientOptions: LanguageClientOptions = {
-            // Register the server for plain text documents
-            documentSelector: [
-                {
-                    scheme: 'file',
-                    language: 'helidon-properties'
-                }
-            ]
-        };
-
-        // Create the language client and start the client.
-        let disposable = new LanguageClient('helidonLS', 'Helidon Language Server', serverOptions, clientOptions).start();
-
-        // Disposables to remove on deactivation.
-        context.subscriptions.push(disposable);
+    if (langServerProcess) {
+        ChildProcessAPI.killProcess(langServerProcess.pid);
     }
 }

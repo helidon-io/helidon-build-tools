@@ -52,17 +52,11 @@ pipeline {
           }
         }
         stage('copyright'){
-          agent {
-            label "linux"
-          }
           steps {
             sh './etc/scripts/copyright.sh'
           }
         }
         stage('checkstyle'){
-          agent {
-            label "linux"
-          }
           steps {
             sh './etc/scripts/checkstyle.sh'
           }

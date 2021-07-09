@@ -14,21 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.lsp.server.service;
-
-import java.util.Collections;
-import java.util.List;
-
-import org.eclipse.lsp4j.CompletionItem;
-import org.eclipse.lsp4j.CompletionParams;
-
 /**
- * Proposes completion for the given position in the meta configuration file if the appropriate TextDocumentHandler for this
- * type of the file is not found.
+ * Helidon Language Server.
  */
-public class EmptyTextDocumentHandler implements TextDocumentHandler {
-    @Override
-    public List<CompletionItem> completion(CompletionParams position) {
-        return Collections.emptyList();
-    }
-}
+package io.helidon.lsp.server;

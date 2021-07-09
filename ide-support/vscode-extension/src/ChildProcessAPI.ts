@@ -26,6 +26,10 @@ export class ChildProcessAPI {
         return this.childProcess.spawn(command, args, options);
     }
 
+    public static spawnSyncProcess(command: String, args: string[], options: Object): ChildProcess {
+        return this.childProcess.spawnSync(command, args, options);
+    }
+
     public static execProcess(command: String, options: Object, callback: Function): ChildProcess {
         return this.childProcess.exec(command, options, callback);
     }
