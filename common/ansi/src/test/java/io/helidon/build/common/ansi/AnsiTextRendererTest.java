@@ -39,7 +39,7 @@ class AnsiTextRendererTest {
 
     @BeforeEach
     void checkAnsi() {
-        Assumptions.assumeTrue(AnsiTextProvider.ANSI_ENABLED);
+        Assumptions.assumeTrue(AnsiTextProvider.ANSI_ENABLED.instance());
     }
 
     @Test
