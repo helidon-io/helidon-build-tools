@@ -22,29 +22,22 @@ import java.util.List;
 import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
 
 /**
- * Facade over descriptors, scripts and other files.
+ * File to store serialized object data in an optimized archive format (jimage).
  */
-public interface Archetype {
-    /**
-     * Get {@link Path} to the file.
-     *
-     * @param path path
-     * @return Path
-     */
-    Path getFile(String path);
+public class SerializedMemoryMappedArchetype implements Archetype {
 
-    /**
-     * Get ArchetypeDescriptor.
-     *
-     * @param path path to the ArchetypeDescriptor.
-     * @return ArchetypeDescriptor.
-     */
-    ArchetypeDescriptor getDescriptor(String path);
+    @Override
+    public Path getFile(String path) {
+        throw new UnsupportedOperationException("Not implemented yet.");
+    }
 
-    /**
-     * Get all the paths in the Archetype.
-     *
-     * @return List of paths.
-     */
-    List<String> getPaths();
+    @Override
+    public ArchetypeDescriptor getDescriptor(String path) {
+        throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    @Override
+    public List<String> getPaths() {
+        throw new UnsupportedOperationException("Not implemented yet.");
+    }
 }
