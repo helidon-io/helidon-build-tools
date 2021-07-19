@@ -16,35 +16,22 @@
 
 package io.helidon.build.archetype.engine.v2.archive;
 
-import java.nio.file.Path;
-import java.util.List;
-
-import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
-
-/**
- * Facade over descriptors, scripts and other files.
- */
-public interface Archetype {
+public class ArchetypeException extends RuntimeException {
     /**
-     * Get {@link Path} to the file.
+     * Create a new exception.
      *
-     * @param path path
-     * @return Path
+     * @param message error message
      */
-    Path getFile(String path);
+    ArchetypeException(String message) {
+        super(message);
+    }
 
     /**
-     * Get ArchetypeDescriptor.
+     * Create a new exception.
      *
-     * @param path path to the ArchetypeDescriptor.
-     * @return ArchetypeDescriptor.
+     * @param message error message
      */
-    ArchetypeDescriptor getDescriptor(String path);
-
-    /**
-     * Get all the paths in the Archetype.
-     *
-     * @return List of paths.
-     */
-    List<String> getPaths();
+    ArchetypeException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

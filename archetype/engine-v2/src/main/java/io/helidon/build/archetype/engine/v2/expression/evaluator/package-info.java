@@ -15,6 +15,6 @@
  */
 
 /**
- * Archetype archive.
+ * Boolean expression evaluator.
  */
-package io.helidon.build.archetype.engine.v2.archive;
+package io.helidon.build.archetype.engine.v2.expression.evaluator;

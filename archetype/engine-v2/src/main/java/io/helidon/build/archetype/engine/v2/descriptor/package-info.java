@@ -15,6 +15,6 @@
  */
 
 /**
- * Archetype archive.
+ * Helidon archetype descriptor v2.
  */
-package io.helidon.build.archetype.engine.v2.archive;
+package io.helidon.build.archetype.engine.v2.descriptor;

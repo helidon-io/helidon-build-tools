@@ -13,31 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.build.archetype.engine.v2;
 
-package io.helidon.build.archetype.engine.v2.archive;
-
-import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
-import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
+public class ContextNodeImpl implements ContextNode {
 
-/**
- * Zip file to store serialized object data.
- */
-public class SerializedZipArchetype implements Archetype {
+    private final List<ContextNode> nodes;
+    private final String name;
 
-    @Override
-    public Path getFile(String path) {
-        throw new UnsupportedOperationException("Not implemented yet.");
+    ContextNodeImpl(String name, List<ContextNode> nodes) {
+        this.name = name;
+        this.nodes = nodes;
     }
 
     @Override
-    public ArchetypeDescriptor getDescriptor(String path) {
-        throw new UnsupportedOperationException("Not implemented yet.");
+    public String name() {
+        return name;
     }
 
     @Override
-    public List<String> getPaths() {
-        throw new UnsupportedOperationException("Not implemented yet.");
+    public Optional<ContextValue> value() {
+        return Optional.empty();
+    }
+
+    @Override
+    public List<ContextNode> children() {
+        return nodes;
     }
 }

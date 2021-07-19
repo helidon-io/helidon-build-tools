@@ -14,37 +14,27 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.engine.v2.archive;
-
-import java.nio.file.Path;
-import java.util.List;
-
-import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
+package io.helidon.build.archetype.engine.v2.expression.evaluator;
 
 /**
- * Facade over descriptors, scripts and other files.
+ * Parser exception.
  */
-public interface Archetype {
+final class ParserException extends RuntimeException {
     /**
-     * Get {@link Path} to the file.
+     * Create a new exception.
      *
-     * @param path path
-     * @return Path
+     * @param message error message
      */
-    Path getFile(String path);
+    ParserException(String message) {
+        super(message);
+    }
 
     /**
-     * Get ArchetypeDescriptor.
+     * Create a new exception.
      *
-     * @param path path to the ArchetypeDescriptor.
-     * @return ArchetypeDescriptor.
+     * @param message error message
      */
-    ArchetypeDescriptor getDescriptor(String path);
-
-    /**
-     * Get all the paths in the Archetype.
-     *
-     * @return List of paths.
-     */
-    List<String> getPaths();
+    ParserException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

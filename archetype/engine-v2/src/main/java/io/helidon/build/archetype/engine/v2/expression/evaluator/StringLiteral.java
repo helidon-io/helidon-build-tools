@@ -14,7 +14,24 @@
  * limitations under the License.
  */
 
+package io.helidon.build.archetype.engine.v2.expression.evaluator;
+
 /**
- * Archetype archive.
+ * String literal.
  */
-package io.helidon.build.archetype.engine.v2.archive;
+final class StringLiteral extends Literal<String> {
+
+    /**
+     * Create a new string literal.
+     *
+     * @param rawExpr value of the literal.
+     */
+    StringLiteral(String rawExpr) {
+        super(rawExpr);
+    }
+
+    @Override
+    Type type() {
+        return Type.STRING;
+    }
+}

@@ -13,8 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.build.archetype.engine.v2;
 
-/**
- * Archetype archive.
- */
-package io.helidon.build.archetype.engine.v2.archive;
+public interface ContextValue {
+
+    /**
+     * Flags this value as declared externally prior to any flow invocation.
+     *  E.g. passed-in with query parameter or CLI option.
+     *
+     * @return external
+     */
+    boolean external();
+
+    /**
+     * Flags this value as set by a <context> directive.
+     *
+     * @return read-only
+     */
+    boolean readOnly();
+}

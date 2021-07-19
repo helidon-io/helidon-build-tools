@@ -14,7 +14,25 @@
  * limitations under the License.
  */
 
+package io.helidon.build.archetype.engine.v2.expression.evaluator;
+
 /**
- * Archetype archive.
+ * Boolean literal.
  */
-package io.helidon.build.archetype.engine.v2.archive;
+final class BooleanLiteral extends Literal<Boolean> {
+
+    /**
+     * Create a new boolean literal.
+     *
+     * @param rawExpr Value for the instance.
+     */
+    BooleanLiteral(Boolean rawExpr) {
+        super(rawExpr);
+    }
+
+    @Override
+    Type type() {
+        return Type.BOOLEAN;
+    }
+
+}

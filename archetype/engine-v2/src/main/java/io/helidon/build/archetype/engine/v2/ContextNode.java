@@ -13,38 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.build.archetype.engine.v2;
 
-package io.helidon.build.archetype.engine.v2.archive;
-
-import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
-import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
-
-/**
- * Facade over descriptors, scripts and other files.
- */
-public interface Archetype {
-    /**
-     * Get {@link Path} to the file.
-     *
-     * @param path path
-     * @return Path
-     */
-    Path getFile(String path);
+public interface ContextNode {
 
     /**
-     * Get ArchetypeDescriptor.
+     * Context node name.
      *
-     * @param path path to the ArchetypeDescriptor.
-     * @return ArchetypeDescriptor.
+     * @return name
      */
-    ArchetypeDescriptor getDescriptor(String path);
+    String name();
 
     /**
-     * Get all the paths in the Archetype.
+     * Context node value.
      *
-     * @return List of paths.
+     * @return value
      */
-    List<String> getPaths();
+    Optional<ContextValue> value();
+
+    /**
+     * Context node children.
+     *
+     * @return children node
+     */
+    List<ContextNode> children();
 }
