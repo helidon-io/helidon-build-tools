@@ -31,8 +31,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
     private final LinkedList<String> stack;
     private final LinkedList<Object> objectTracking;
 
-    private Context currentContext;
-    private Input currentInput;
     private Option currentOption;
     private Model currentModel;
     private ListType currentList;
@@ -107,13 +105,11 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                             break;
                         case "context":
                             context.add(new Context());
-                            currentContext = context.getLast();
                             objectTracking.add(context.getLast());
                             stack.push(qName);
                             break;
                         case "input":
                             inputs.add(new Input());
-                            currentInput = inputs.getLast();
                             objectTracking.add(inputs.getLast());
                             stack.push(qName);
                             break;
@@ -143,7 +139,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                     switch (qName) {
                         case "context":
                             currentStep.contexts().add(new Context());
-                            currentContext = currentStep.contexts().getLast();
                             objectTracking.add(currentStep.contexts().getLast());
                             stack.push("context");
                             break;
@@ -159,7 +154,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                             break;
                         case "input":
                             currentStep.inputs().add(new Input());
-                            currentInput = currentStep.inputs().getLast();
                             objectTracking.add(currentStep.inputs().getLast());
                             stack.push("input");
                             break;
@@ -174,16 +168,16 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                 case "context":
                     switch (qName) {
                         case "boolean":
-                            currentContext.nodes().add(new ContextBoolean(attributes.get("path")));
+                            ((Context) objectTracking.getLast()).nodes().add(new ContextBoolean(attributes.get("path")));
                             break;
                         case "list":
-                            currentContext.nodes().add(new ContextList(attributes.get("path")));
+                            ((Context) objectTracking.getLast()).nodes().add(new ContextList(attributes.get("path")));
                             break;
                         case "enum":
-                            currentContext.nodes().add(new ContextEnum(attributes.get("path")));
+                            ((Context) objectTracking.getLast()).nodes().add(new ContextEnum(attributes.get("path")));
                             break;
                         case "text":
-                            currentContext.nodes().add(new ContextText(attributes.get("path")));
+                            ((Context) objectTracking.getLast()).nodes().add(new ContextText(attributes.get("path")));
                             break;
                         default:
                             throw new IllegalStateException("Invalid Context child element: " +  qName);
@@ -197,7 +191,7 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                     if (!(objectTracking.getLast() instanceof Input)) {
                         throw new IllegalStateException("Invalid object stack element for Input");
                     }
-                    currentInput = (Input) objectTracking.getLast();
+                    Input currentInput = (Input) objectTracking.getLast();
                     switch (qName) {
                         case "text":
                             addInputText(currentInput, attributes);
@@ -248,7 +242,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                             break;
                         case "context":
                             currentInput.contexts().add(new Context());
-                            currentContext = currentInput.contexts().getLast();
                             objectTracking.add(currentInput.contexts().getLast());
                             stack.push("context");
                             break;
@@ -286,7 +279,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                     switch (qName) {
                         case "context":
                             tempBool.contexts().add(new Context());
-                            currentContext = tempBool.contexts().getLast();
                             objectTracking.add(tempBool.contexts().getLast());
                             stack.push("context");
                             break;
@@ -303,7 +295,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                         case "input":
                             Input input = new Input();
                             tempBool.inputs().add(input);
-                            currentInput = input;
                             objectTracking.add(input);
                             stack.push("input");
                             break;
@@ -320,7 +311,7 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                             stack.push("output");
                             break;
                         case "help":
-                            objectTracking.add("help");
+                            objectTracking.add(objectTracking.getLast());
                             stack.push("input/boolean/help");
                             break;
                         default:
@@ -335,7 +326,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                     switch (qName) {
                         case "context":
                             tempEnum.contexts().add(new Context());
-                            currentContext = tempEnum.contexts().getLast();
                             objectTracking.add(tempEnum.contexts().getLast());
                             stack.push("context");
                             break;
@@ -351,7 +341,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                             break;
                         case "input":
                             tempEnum.inputs().add(new Input());
-                            currentInput = tempEnum.inputs().getLast();
                             objectTracking.add(tempEnum.inputs().getLast());
                             stack.push("input");
                             break;
@@ -389,7 +378,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                     switch (qName) {
                         case "context":
                             tempList.contexts().add(new Context());
-                            currentContext = tempList.contexts().getLast();
                             objectTracking.add(tempList.contexts().getLast());
                             stack.push("context");
                             break;
@@ -405,7 +393,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                             break;
                         case "input":
                             tempList.inputs().add(new Input());
-                            currentInput = tempList.inputs().getLast();
                             objectTracking.add(tempList.inputs().getLast());
                             stack.push("input");
                             break;
@@ -422,7 +409,7 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                             stack.push("output");
                             break;
                         case "help":
-                            objectTracking.add("help");
+                            objectTracking.add(objectTracking.getLast());
                             stack.push("input/list/help");
                             break;
                         case "option":
@@ -439,7 +426,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                     switch (qName) {
                         case "context":
                             currentOption.contexts().add(new Context());
-                            currentContext = currentOption.contexts().getLast();
                             objectTracking.add(currentOption.contexts().getLast());
                             stack.push("context");
                             break;
@@ -455,7 +441,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                             break;
                         case "input":
                             currentOption.inputs().add(new Input());
-                            currentInput = currentOption.inputs().getLast();
                             objectTracking.add(currentOption.inputs().getLast());
                             stack.push("input");
                             break;
@@ -472,7 +457,7 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                             stack.push("output");
                             break;
                         case "help":
-                            objectTracking.add("help");
+                            objectTracking.add(objectTracking.getLast());
                             stack.push("input/option/help");
                             break;
                         default:
@@ -592,7 +577,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                     stack.push(parent + "/" + qName);
                     break;
                 case "model":
-                    validateChilds(qName, parent, "value", "map", "list");
                     if (!(objectTracking.getLast() instanceof  Model)) {
                         throw new IllegalStateException("Invalid object stack element for Model");
                     }
@@ -854,25 +838,22 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                 currentStep.help(value);
                 break;
             case "input/boolean/help":
-                InputNode inputNode = currentInput.nodes().getLast();
-                if (!(inputNode instanceof InputBoolean)) {
+                if (!(objectTracking.getLast() instanceof InputBoolean)) {
                     throw new IllegalStateException("Unable to add 'value' to input boolean node");
                 }
-                ((InputBoolean) inputNode).help(value);
+                ((InputBoolean) objectTracking.getLast()).help(value);
                 break;
             case "input/enum/help":
-                inputNode = currentInput.nodes().getLast();
-                if (!(inputNode instanceof InputEnum)) {
+                if (!(objectTracking.getLast() instanceof InputEnum)) {
                     throw new IllegalStateException("Unable to add 'value' to input enum node");
                 }
-                ((InputEnum) inputNode).help(value);
+                ((InputEnum) objectTracking.getLast()).help(value);
                 break;
             case "input/list/help":
-                inputNode = currentInput.nodes().getLast();
-                if (!(inputNode instanceof InputList)) {
+                if (!(objectTracking.getLast() instanceof InputList)) {
                     throw new IllegalStateException("Unable to add 'value' to input list node");
                 }
-                ((InputList) inputNode).help(value);
+                ((InputList) objectTracking.getLast()).help(value);
                 break;
             case "output/files/includes/include":
                 currentOutput.filesList().getLast().includes().add(value);
