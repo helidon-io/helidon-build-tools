@@ -18,6 +18,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
+/**
+ * Archetype file in {@link Output} archetype.
+ */
 public class FileSet extends Conditional {
 
     private final String source;
@@ -29,10 +32,20 @@ public class FileSet extends Conditional {
         this.target = target;
     }
 
+    /**
+     * Get the source.
+     *
+     * @return source
+     */
     public String source() {
         return source;
     }
 
+    /**
+     * Get the target.
+     *
+     * @return target
+     */
     public String target() {
         return target;
     }

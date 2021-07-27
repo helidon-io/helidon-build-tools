@@ -18,6 +18,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
+/**
+ * Archetype exec.
+ */
 public class Exec {
 
     private final String url;
@@ -28,10 +31,20 @@ public class Exec {
         this.src = src;
     }
 
+    /**
+     * Get the url.
+     *
+     * @return url as a String
+     */
     public String url() {
         return url;
     }
 
+    /**
+     * Get the source.
+     *
+     * @return source as a String
+     */
     public String src() {
         return src;
     }

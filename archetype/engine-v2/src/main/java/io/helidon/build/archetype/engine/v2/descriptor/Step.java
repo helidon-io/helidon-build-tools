@@ -19,6 +19,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 import java.util.LinkedList;
 import java.util.Objects;
 
+/**
+ * Archetype step.
+ */
 public class Step extends Conditional {
 
     private final String label;
@@ -34,30 +37,65 @@ public class Step extends Conditional {
         this.label = label;
     }
 
+    /**
+     * Get the label.
+     *
+     * @return label
+     */
     public String label() {
         return label;
     }
 
+    /**
+     * Get the help.
+     *
+     * @return help
+     */
     public String help() {
         return help;
     }
 
+    /**
+     * Get the contexts.
+     *
+     * @return list of contexts
+     */
     public LinkedList<Context> contexts() {
         return contexts;
     }
 
+    /**
+     * Get the execs.
+     *
+     * @return list of execs
+     */
     public LinkedList<Exec> execs() {
         return execs;
     }
 
+    /**
+     * Get the sources.
+     *
+     * @return list of sources
+     */
     public LinkedList<Source> sources() {
         return sources;
     }
 
+    /**
+     * Get the inputs.
+     *
+     * @return list of input
+     */
     public LinkedList<Input> inputs() {
         return inputs;
     }
 
+    /**
+     * Set the help content.
+     *
+     * @param help help content
+     */
     public void help(String help) {
         this.help = help;
     }

@@ -18,6 +18,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
+/**
+ * Archetype boolean in {@link Context} nodes.
+ */
 public class ContextBoolean extends ContextNode {
 
     private boolean bool;
@@ -26,10 +29,20 @@ public class ContextBoolean extends ContextNode {
         super(path);
     }
 
+    /**
+     * Get the boolean value.
+     *
+     * @return boolean
+     */
     public boolean bool() {
         return bool;
     }
 
+    /**
+     * Set the boolean value.
+     *
+     * @param bool boolean to be set
+     */
     void bool(boolean bool) {
         this.bool = bool;
     }

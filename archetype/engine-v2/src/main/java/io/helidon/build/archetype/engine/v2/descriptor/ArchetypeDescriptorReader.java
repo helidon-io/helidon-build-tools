@@ -16,8 +16,6 @@
 
 package io.helidon.build.archetype.engine.v2.descriptor;
 
-import io.helidon.build.common.xml.SimpleXMLParser;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -26,6 +24,11 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import io.helidon.build.common.xml.SimpleXMLParser;
+
+/**
+ * {@link ArchetypeDescriptor} reader.
+ */
 public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
 
     private final LinkedList<String> stack;
@@ -56,6 +59,11 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
         objectTracking = new LinkedList<>();
     }
 
+    /**
+     * Read the descriptor from the given input stream.
+     * @param is input stream
+     * @return descriptor, never {@code null}
+     */
     static ArchetypeDescriptor read(InputStream is) {
         try {
             ArchetypeDescriptorReader reader = new ArchetypeDescriptorReader();
@@ -135,7 +143,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                     stack.push(parent + "/value");
                     break;
                 case "step":
-                    validateChilds(qName, parent, "context", "exec", "source", "input", "help");
                     switch (qName) {
                         case "context":
                             currentStep.contexts().add(new Context());
@@ -145,12 +152,12 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                         case "exec":
                             currentStep.execs().add(new Exec(attributes.get("url"), attributes.get("src")));
                             objectTracking.add(currentStep.execs().getLast());
-                            stack.push("step/"+qName);
+                            stack.push("step/" + qName);
                             break;
                         case "source":
                             currentStep.sources().add(new Source(attributes.get("url"), attributes.get("src")));
                             objectTracking.add(currentStep.sources().getLast());
-                            stack.push("step/"+qName);
+                            stack.push("step/" + qName);
                             break;
                         case "input":
                             currentStep.inputs().add(new Input());
@@ -182,12 +189,10 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                         default:
                             throw new IllegalStateException("Invalid Context child element: " +  qName);
                     }
-                    objectTracking.add("context/"+qName);
-                    stack.push("context/"+qName);
+                    objectTracking.add("context/" + qName);
+                    stack.push("context/" + qName);
                     break;
                 case "input":
-                    validateChilds(qName, parent,
-                            "text", "boolean", "enum", "list", "output", "context", "exec", "source", "input","step");
                     if (!(objectTracking.getLast() instanceof Input)) {
                         throw new IllegalStateException("Invalid object stack element for Input");
                     }
@@ -465,8 +470,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                     }
                     break;
                 case "output":
-                    validateChilds(qName, parent,
-                            "transformation", "file", "files", "template", "templates", "model");
                     switch (qName) {
                         case "transformation":
                             currentOutput.transformations().add(new Transformation(attributes.get("id")));
@@ -520,17 +523,17 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                 case "output/files":
                     validateChilds(qName, parent, "directory", "excludes", "includes");
                     objectTracking.add(currentOutput.filesList().getLast());
-                    stack.push("output/files/"+qName);
+                    stack.push("output/files/" + qName);
                     break;
                 case "output/files/includes":
                     validateChild("include", parent, qName);
-                    objectTracking.add("output/files/includes/"+qName);
-                    stack.push("output/files/includes/"+qName);
+                    objectTracking.add("output/files/includes/" + qName);
+                    stack.push("output/files/includes/" + qName);
                     break;
                 case "output/files/excludes":
                     validateChild("exclude", parent, qName);
-                    objectTracking.add("output/files/excludes/"+qName);
-                    stack.push("output/files/excludes/"+qName);
+                    objectTracking.add("output/files/excludes/" + qName);
+                    stack.push("output/files/excludes/" + qName);
                     break;
                 case "output/transformation":
                     validateChild("replace", parent, qName);
@@ -548,7 +551,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                     stack.push("model");
                     break;
                 case "output/templates":
-                    validateChilds(qName, parent, "directory", "model", "includes", "excludes");
                     switch (qName) {
                         case "model":
                             currentOutput.templates().getLast().model(new Model(attributes.get("if")));
@@ -603,10 +605,9 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                             throw new IllegalStateException("Invalid element: " + qName + "with parent: " + parent);
                     }
                     objectTracking.add("model/" + qName);
-                    stack.push("model/"+qName);
+                    stack.push("model/" + qName);
                     break;
                 case "model/list":
-                    validateChilds(qName, parent, "value", "list", "map");
                     currentList = currentModel.keyLists().getLast();
                     switch (qName) {
                         case "value":
@@ -636,10 +637,9 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                             throw new IllegalStateException("Invalid element: " + qName + "with parent: " + parent);
                     }
                     objectTracking.add("model/list/" + qName);
-                    stack.push("model/list/"+qName);
+                    stack.push("model/list/" + qName);
                     break;
                 case "model/list/list":
-                    validateChilds(qName, parent, "value", "list", "map");
                     switch (qName) {
                         case "value":
                             currentList.values().add(new ValueType(
@@ -673,7 +673,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                     }
                     break;
                 case "model/list/map":
-                    validateChilds(qName, parent, "value", "list", "map");
                     switch (qName) {
                         case "value":
                             currentMap.keyValues().add(new ModelKeyValue(
@@ -710,7 +709,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                     }
                     break;
                 case "model/map":
-                    validateChilds(qName, parent, "value", "list", "map");
                     currentKeyMap = currentModel.keyMaps().getLast();
                     switch (qName) {
                         case "value":
@@ -741,10 +739,9 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                             throw new IllegalStateException("Invalid element: " + qName + " with parent: " + parent);
                     }
                     objectTracking.add("model/map" + qName);
-                    stack.push("model/map/"+qName);
+                    stack.push("model/map/" + qName);
                     break;
                 case "model/map/list":
-                    validateChilds(qName, parent, "value", "list", "map");
                     currentKeyList = currentKeyMap.keyLists().getLast();
                     switch (qName) {
                         case "value":
@@ -761,12 +758,12 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                         case "list":
                             currentList = currentKeyList.lists().getLast();
                             objectTracking.add("model/list/" + qName);
-                            stack.push("model/list/"+qName);
+                            stack.push("model/list/" + qName);
                             break;
                         case "map":
                             currentMap = currentKeyList.maps().getLast();
                             objectTracking.add("model/list/" + qName);
-                            stack.push("model/list/"+qName);
+                            stack.push("model/list/" + qName);
                             break;
                         default:
                             throw new IllegalStateException("Invalid element: " + qName + " with parent: " + parent);
@@ -779,8 +776,8 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                             parseOrder(attributes.get("order")),
                             attributes.get("if")
                     ));
-                    objectTracking.add("model/map" + qName);
-                    stack.push("mode/map/"+qName);
+                    objectTracking.add(currentKeyMap.keyMaps().getLast());
+                    stack.push("mode/map/" + qName);
                     break;
                 default:
                     throw new IllegalStateException("Invalid element: " + qName + " with parent: " + parent);
@@ -806,6 +803,7 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
         switch (stack.peek()) {
             case "help":
                 help = value;
+                break;
             case "context/list/value":
                 ContextNode node = context.getLast().nodes().getLast();
                 if (!(node instanceof ContextList)) {

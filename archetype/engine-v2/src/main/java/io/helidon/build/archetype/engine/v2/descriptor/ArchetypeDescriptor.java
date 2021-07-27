@@ -21,6 +21,9 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Helidon archetype V2 descriptor.
+ */
 public class ArchetypeDescriptor {
 
     private final Map<String, String> archetypeAttributes;
@@ -32,7 +35,7 @@ public class ArchetypeDescriptor {
     private final Output output;
     private String help;
 
-    public ArchetypeDescriptor(Map<String, String> archetypeAttributes,
+    ArchetypeDescriptor(Map<String, String> archetypeAttributes,
                                LinkedList<Context> context,
                                LinkedList<Step> step,
                                LinkedList<Input> inputs,
@@ -60,38 +63,83 @@ public class ArchetypeDescriptor {
         return ArchetypeDescriptorReader.read(is);
     }
 
+    /**
+     * Get the list of context archetype from main archetype-script xml element.
+     *
+     * @return List of Context
+     */
     public LinkedList<Context> contexts() {
         return contexts;
     }
 
+    /**
+     * Get the list of step archetype from main archetype-script xml element.
+     *
+     * @return List of Step
+     */
     public LinkedList<Step> steps() {
         return steps;
     }
 
+    /**
+     * Get a list of input archetype from main archetype-script xml element.
+     *
+     * @return List of Input
+     */
     public LinkedList<Input> inputs() {
         return inputs;
     }
 
+    /**
+     * Get the list of source archetype from main archetype-script xml element.
+     *
+     * @return List of Source
+     */
     public LinkedList<Source> sources() {
         return sources;
     }
 
+    /**
+     * Get the list of exec archetype from main archetype-script xml element.
+     *
+     * @return List of Exec
+     */
     public LinkedList<Exec> execs() {
         return execs;
     }
 
+    /**
+     * Get the output archetype from main archetype-script xml element.
+     *
+     * @return Output
+     */
     public Output output() {
         return output;
     }
 
+    /**
+     * Get the help archetype from main archetype-script xml element.
+     *
+     * @return help as a String
+     */
     public String help() {
         return help;
     }
 
+    /**
+     * Get the main archetype-script xml element attributes.
+     *
+     * @return Map of attributes
+     */
     public Map<String, String> archetypeAttributes() {
         return archetypeAttributes;
     }
 
+    /**
+     * Set the help archetype from main archetype-script xml element.
+     *
+     * @param help String contained into help element
+     */
     public void help(String help) {
         this.help = help;
     }

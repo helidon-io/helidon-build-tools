@@ -18,6 +18,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
+/**
+ * Archetype text in {@link Context} nodes.
+ */
 public class ContextText extends ContextNode {
 
     private String text;
@@ -26,10 +29,20 @@ public class ContextText extends ContextNode {
         super(path);
     }
 
+    /**
+     * Get text string from text element.
+     *
+     * @return text
+     */
     public String text() {
         return text;
     }
 
+    /**
+     * Set text string from text element.
+     *
+     * @param text content
+     */
     public void text(String text) {
         this.text = text;
     }

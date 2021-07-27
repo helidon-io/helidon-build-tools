@@ -19,6 +19,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 import java.util.LinkedList;
 import java.util.Objects;
 
+/**
+ * Archetype option used in {@link InputList} and {@link InputEnum}.
+ */
 public class Option {
 
     private final String label;
@@ -36,46 +39,101 @@ public class Option {
         this.value = value;
     }
 
+    /**
+     * Get the label.
+     *
+     * @return label
+     */
     public String label() {
         return label;
     }
 
+    /**
+     * Get the value.
+     *
+     * @return value
+     */
     public String value() {
         return value;
     }
 
+    /**
+     * Get the help element content.
+     *
+     * @return help
+     */
     public String help() {
         return help;
     }
 
+    /**
+     * Set the help element content.
+     *
+     * @param help content
+     */
     public void help(String help) {
         this.help = help;
     }
 
+    /**
+     * Get the contexts.
+     *
+     * @return contexts
+     */
     public LinkedList<Context> contexts() {
         return contexts;
     }
 
+    /**
+     * Get the steps.
+     *
+     * @return steps
+     */
     public LinkedList<Step> steps() {
         return steps;
     }
 
+    /**
+     * Get the inputs.
+     *
+     * @return inputs
+     */
     public LinkedList<Input> inputs() {
         return inputs;
     }
 
+    /**
+     * Get the sources.
+     *
+     * @return sources
+     */
     public LinkedList<Source> sources() {
         return sources;
     }
 
+    /**
+     * Get the execs.
+     *
+     * @return execs
+     */
     public LinkedList<Exec> execs() {
         return execs;
     }
 
+    /**
+     * Get the output.
+     *
+     * @return output
+     */
     public Output output() {
         return output;
     }
 
+    /**
+     * Set the output.
+     *
+     * @param output output
+     */
     public void output(Output output) {
         this.output = output;
     }

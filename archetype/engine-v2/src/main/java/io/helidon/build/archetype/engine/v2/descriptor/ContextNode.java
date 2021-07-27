@@ -18,6 +18,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
+/**
+ * Base class for context nodes.
+ */
 public abstract class ContextNode {
 
     private final String path;
@@ -27,9 +30,9 @@ public abstract class ContextNode {
     }
 
     /**
-     * Get the context path for this select.
+     * Get the context path for this node.
      *
-     * @return input text, never {@code null}
+     * @return path
      */
     public String path() {
         return path;

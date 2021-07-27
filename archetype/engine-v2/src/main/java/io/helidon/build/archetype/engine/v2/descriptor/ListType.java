@@ -19,6 +19,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 import java.util.LinkedList;
 import java.util.Objects;
 
+/**
+ * Archetype list without key used in {@link Model}.
+ */
 public class ListType extends Conditional {
 
     private final LinkedList<ValueType> values = new LinkedList<>();
@@ -31,18 +34,38 @@ public class ListType extends Conditional {
         this.order = order;
     }
 
+    /**
+     * Get the values element from list element.
+     *
+     * @return values
+     */
     public LinkedList<ValueType> values() {
         return this.values;
     }
 
+    /**
+     * Get the maps element from list element.
+     *
+     * @return maps
+     */
     public LinkedList<MapType> maps() {
         return this.maps;
     }
 
+    /**
+     * Get the lists element from list element.
+     *
+     * @return lists
+     */
     public LinkedList<ListType> lists() {
         return this.lists;
     }
 
+    /**
+     * Get the list order.
+     *
+     * @return order
+     */
     public int order() {
         return order;
     }

@@ -18,6 +18,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
+/**
+ * Archetype replace in {@link Transformation}.
+ */
 public class Replacement {
 
     private final String regex;

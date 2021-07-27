@@ -18,6 +18,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
+/**
+ * Base class for {@link Input} nodes.
+ */
 public abstract class InputNode {
 
     private final String label;
@@ -34,22 +37,47 @@ public abstract class InputNode {
         this.optional = optional;
     }
 
+    /**
+     * Get the label.
+     *
+     * @return label
+     */
     public String label() {
         return label;
     }
 
+    /**
+     * Get the name.
+     *
+     * @return name
+     */
     public String name() {
         return name;
     }
 
+    /**
+     * Get the default value.
+     *
+     * @return default value
+     */
     public String def() {
         return def;
     }
 
+    /**
+     * Get the prompt.
+     *
+     * @return prompt
+     */
     public String prompt() {
         return prompt;
     }
 
+    /**
+     * Get the optional attribute.
+     *
+     * @return boolean
+     */
     public boolean isOptional() {
         return optional;
     }

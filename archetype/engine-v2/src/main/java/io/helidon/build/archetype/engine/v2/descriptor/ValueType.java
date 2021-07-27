@@ -18,7 +18,10 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
-public class ValueType extends Conditional{
+/**
+ * Archetype value used in {@link ListType}.
+ */
+public class ValueType extends Conditional {
 
     private String value;
     private final String url;
@@ -38,30 +41,65 @@ public class ValueType extends Conditional{
         this.order = order;
     }
 
+    /**
+     * Get the value.
+     *
+     * @return value
+     */
     public String value() {
         return value;
     }
 
+    /**
+     * Get the url.
+     *
+     * @return url
+     */
     public String url() {
         return url;
     }
 
+    /**
+     * Get the file.
+     *
+     * @return file
+     */
     public String file() {
         return file;
     }
 
+    /**
+     * Get the template.
+     *
+     * @return template
+     */
     public String template() {
         return template;
     }
 
+    /**
+     * Get the order.
+     *
+     * @return oprder
+     */
     public int order() {
         return order;
     }
 
+    /**
+     * Set the order.
+     *
+     * @param order order value
+     */
     public void order(int order) {
         this.order = order;
     }
 
+    /**
+     * Set the value.
+     *
+     * @param value value
+     */
     public void value(String value) {
         this.value = value;
     }

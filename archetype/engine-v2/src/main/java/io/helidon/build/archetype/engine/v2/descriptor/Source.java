@@ -18,6 +18,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
+/**
+ * Archetype source.
+ */
 public class Source {
 
     private final String src;
@@ -28,10 +31,20 @@ public class Source {
         this.url = url;
     }
 
+    /**
+     * Get the source attribute.
+     *
+     * @return source
+     */
     public String source() {
         return src;
     }
 
+    /**
+     * Get the url attribute.
+     *
+     * @return url
+     */
     public String url() {
         return url;
     }

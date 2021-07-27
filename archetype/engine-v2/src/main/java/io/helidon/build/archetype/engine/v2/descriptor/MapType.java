@@ -19,6 +19,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 import java.util.LinkedList;
 import java.util.Objects;
 
+/**
+ * Archetype map without key used in {@link ListType}.
+ */
 public class MapType extends Conditional {
 
     private final LinkedList<ModelKeyValue> keyValues = new LinkedList<>();
@@ -31,18 +34,38 @@ public class MapType extends Conditional {
         this.order = order;
     }
 
+    /**
+     * Get the model values with key element from map element.
+     *
+     * @return values
+     */
     public LinkedList<ModelKeyValue> keyValues() {
         return keyValues;
     }
 
+    /**
+     * Get the model lists with key element from map element.
+     *
+     * @return lists
+     */
     public LinkedList<ModelKeyList> keyLists() {
         return keyLists;
     }
 
+    /**
+     * Get the model maps with key element from map element.
+     *
+     * @return maps
+     */
     public LinkedList<ModelKeyMap> keyMaps() {
         return keyMaps;
     }
 
+    /**
+     * Get the map order.
+     *
+     * @return order
+     */
     public int order() {
         return order;
     }

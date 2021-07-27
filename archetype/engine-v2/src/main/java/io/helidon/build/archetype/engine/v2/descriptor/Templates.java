@@ -19,6 +19,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 import java.util.LinkedList;
 import java.util.Objects;
 
+/**
+ * Archetype templates in {@link Output}.
+ */
 public class Templates extends Conditional {
 
     private Model model;
@@ -34,34 +37,74 @@ public class Templates extends Conditional {
         this.transformation = transformation;
     }
 
+    /**
+     * Get the model.
+     *
+     * @return model
+     */
     public Model model() {
         return model;
     }
 
+    /**
+     * Get the engine.
+     *
+     * @return engine
+     */
     public String engine() {
         return engine;
     }
 
+    /**
+     * Get the directory.
+     *
+     * @return directory
+     */
     public String directory() {
         return directory;
     }
 
+    /**
+     * Get the transformation.
+     *
+     * @return transformation
+     */
     public String transformation() {
         return transformation;
     }
 
+    /**
+     * Get the include filters.
+     *
+     * @return list of include filter, never {@code null}
+     */
     public LinkedList<String> includes() {
         return includes;
     }
 
+    /**
+     * Get the exclude filters.
+     *
+     * @return list of exclude filter, never {@code null}
+     */
     public LinkedList<String> excludes() {
         return excludes;
     }
 
+    /**
+     * Set the directory.
+     *
+     * @param directory directory
+     */
     public void directory(String directory) {
         this.directory = directory;
     }
 
+    /**
+     * Set the model.
+     *
+     * @param model model
+     */
     public void model(Model model) {
         this.model = model;
     }

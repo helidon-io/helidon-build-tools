@@ -18,6 +18,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
+/**
+ * Archetype text in {@link Input} nodes.
+ */
 public class InputText extends InputNode {
 
     private final String placeHolder;
@@ -33,14 +36,29 @@ public class InputText extends InputNode {
         this.placeHolder = placeHolder;
     }
 
+    /**
+     * Get the placeholder.
+     *
+     * @return placeholder
+     */
     public String placeHolder() {
         return placeHolder;
     }
 
+    /**
+     * Get the help element content.
+     *
+     * @return help
+     */
     public String help() {
         return help;
     }
 
+    /**
+     * Set the help element content.
+     *
+     * @param help help content
+     */
     public void help(String help) {
         this.help = help;
     }

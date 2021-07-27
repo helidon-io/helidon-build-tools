@@ -18,6 +18,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
+/**
+ * Archetype template in {@link Output}.
+ */
 public class Template extends Conditional {
 
     private Model model;
@@ -32,22 +35,47 @@ public class Template extends Conditional {
         this.target = target;
     }
 
+    /**
+     * Get the engine.
+     *
+     * @return engine
+     */
     public String engine() {
         return engine;
     }
 
+    /**
+     * Get the source.
+     *
+     * @return source
+     */
     public String source() {
         return source;
     }
 
+    /**
+     * Get the target.
+     *
+     * @return target
+     */
     public String target() {
         return target;
     }
 
+    /**
+     * Get the model.
+     *
+     * @return model
+     */
     public Model model() {
         return model;
     }
 
+    /**
+     * Set the model.
+     *
+     * @param model model
+     */
     public void model(Model model) {
         this.model = model;
     }

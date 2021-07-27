@@ -21,6 +21,9 @@ import java.util.LinkedList;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * Archetype files in {@link Output} archetype.
+ */
 public class FileSets extends Conditional {
 
     private final LinkedList<String> transformations;

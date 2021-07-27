@@ -19,6 +19,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 import java.util.LinkedList;
 import java.util.Objects;
 
+/**
+ * Archetype output.
+ */
 public class Output extends Conditional {
 
     private Model model;
@@ -32,30 +35,65 @@ public class Output extends Conditional {
         super(ifProperties);
     }
 
+    /**
+     * Get the applied transformations.
+     *
+     * @return list of transformation, never {@code null}
+     */
     public LinkedList<Transformation> transformations() {
         return transformations;
     }
 
+    /**
+     * Get the files elements.
+     *
+     * @return list of files, never {@code null}
+     */
     public LinkedList<FileSets> filesList() {
         return filesList;
     }
 
+    /**
+     * Get the file elements.
+     *
+     * @return list of file, never {@code null}
+     */
     public LinkedList<FileSet> fileList() {
         return fileList;
     }
 
+    /**
+     * Get the template elements.
+     *
+     * @return list of template, never {@code null}
+     */
     public LinkedList<Template> template() {
         return template;
     }
 
+    /**
+     * Get the templates elements.
+     *
+     * @return list of templates, never {@code null}
+     */
     public LinkedList<Templates> templates() {
         return templates;
     }
 
+    /**
+     * Get the model element.
+     *
+     * @return model
+     */
     public Model model() {
         return model;
     }
 
+    /**
+     * Set the model element.
+     *
+     * @param model model
+     */
     public void model(Model model) {
         this.model = model;
     }

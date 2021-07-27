@@ -18,6 +18,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
+/**
+ * Archetype map with key attribute used in {@link Model} and {@link MapType}.
+ */
 public class ModelKeyMap extends MapType {
 
     private final String key;
@@ -27,6 +30,11 @@ public class ModelKeyMap extends MapType {
         this.key = key;
     }
 
+    /**
+     * Get the key of the map.
+     *
+     * @return key
+     */
     public String key() {
         return key;
     }

@@ -19,6 +19,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 import java.util.LinkedList;
 import java.util.Objects;
 
+/**
+ * Archetype list in {@link Context} nodes.
+ */
 public class ContextList extends ContextNode {
 
     private final LinkedList<String> values;
@@ -28,6 +31,11 @@ public class ContextList extends ContextNode {
         values = new LinkedList<>();
     }
 
+    /**
+     * Get the list values.
+     *
+     * @return values
+     */
     public LinkedList<String> values() {
         return values;
     }

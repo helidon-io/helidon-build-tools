@@ -19,6 +19,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 import java.util.LinkedList;
 import java.util.Objects;
 
+/**
+ * Archetype model.
+ */
 public class Model extends Conditional {
 
     private final LinkedList<ModelKeyValue> keyValues = new LinkedList<>();
@@ -29,14 +32,29 @@ public class Model extends Conditional {
         super(ifProperties);
     }
 
+    /**
+     * Get the model values with key.
+     *
+     * @return values
+     */
     public LinkedList<ModelKeyValue> keyValues() {
         return keyValues;
     }
 
+    /**
+     * Get the model lists with key.
+     *
+     * @return lists
+     */
     public LinkedList<ModelKeyList> keyLists() {
         return keyLists;
     }
 
+    /**
+     * Get the model maps with key.
+     *
+     * @return maps
+     */
     public LinkedList<ModelKeyMap> keyMaps() {
         return keyMaps;
     }

@@ -18,7 +18,10 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
-public class Conditional {
+/**
+ * Base class for conditional nodes.
+ */
+public abstract class Conditional {
 
     private final String ifProperties;
 

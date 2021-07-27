@@ -19,6 +19,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 import java.util.LinkedList;
 import java.util.Objects;
 
+/**
+ * Archetype list in {@link Input} archetype.
+ */
 public class InputList extends InputNode {
 
     private final String min;
@@ -46,50 +49,110 @@ public class InputList extends InputNode {
         this.help = help;
     }
 
+    /**
+     * Get the minimum.
+     *
+     * @return minimum
+     */
     public String min() {
         return min;
     }
 
+    /**
+     * Get the maximum.
+     *
+     * @return maximum
+     */
     public String max() {
         return max;
     }
 
+    /**
+     * Get the help content.
+     *
+     * @return help content
+     */
     public String help() {
         return help;
     }
 
+    /**
+     * Set the help content.
+     *
+     * @param help help
+     */
     public void help(String help) {
         this.help = help;
     }
 
+    /**
+     * Get the options.
+     *
+     * @return options
+     */
     public LinkedList<Option> options() {
         return options;
     }
 
+    /**
+     * Get the contexts.
+     *
+     * @return contexts
+     */
     public LinkedList<Context> contexts() {
         return contexts;
     }
 
+    /**
+     * Get the steps.
+     *
+     * @return steps
+     */
     public LinkedList<Step> steps() {
         return steps;
     }
 
+    /**
+     * Get the inputs.
+     *
+     * @return inputs
+     */
     public LinkedList<Input> inputs() {
         return inputs;
     }
 
+    /**
+     * Get the sources.
+     *
+     * @return sources
+     */
     public LinkedList<Source> sources() {
         return sources;
     }
 
+    /**
+     * Get the execs.
+     *
+     * @return execs
+     */
     public LinkedList<Exec> execs() {
         return execs;
     }
 
+    /**
+     * Get the output.
+     *
+     * @return output
+     */
     public Output output() {
         return output;
     }
 
+    /**
+     * Set the output.
+     *
+     * @param output output
+     */
     public void output(Output output) {
         this.output = output;
     }

@@ -19,6 +19,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 import java.util.LinkedList;
 import java.util.Objects;
 
+/**
+ * Archetype Input.
+ */
 public class Input {
 
     private final LinkedList<InputNode> nodes = new LinkedList<>();
@@ -32,34 +35,74 @@ public class Input {
     protected Input() {
     }
 
+    /**
+     * Get the Input nodes: {@link InputText}, {@link InputBoolean}, {@link InputEnum}, {@link InputList}.
+     *
+     * @return nodes
+     */
     public LinkedList<InputNode> nodes() {
         return nodes;
     }
 
+    /**
+     * Get input contexts.
+     *
+     * @return contexts
+     */
     public LinkedList<Context> contexts() {
         return contexts;
     }
 
+    /**
+     * Get input steps.
+     *
+     * @return steps
+     */
     public LinkedList<Step> steps() {
         return steps;
     }
 
+    /**
+     * Get input inputs.
+     *
+     * @return inputs
+     */
     public LinkedList<Input> inputs() {
         return inputs;
     }
 
+    /**
+     * Get input sources.
+     *
+     * @return sources
+     */
     public LinkedList<Source> sources() {
         return sources;
     }
 
+    /**
+     * Get input execs.
+     *
+     * @return execs
+     */
     public LinkedList<Exec> execs() {
         return execs;
     }
 
+    /**
+     * Get input output.
+     *
+     * @return output
+     */
     public Output output() {
         return output;
     }
 
+    /**
+     * Set input output.
+     *
+     * @param  output output
+     */
     public void output(Output output) {
         this.output = output;
     }

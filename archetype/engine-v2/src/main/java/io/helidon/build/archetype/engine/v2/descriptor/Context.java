@@ -19,6 +19,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 import java.util.LinkedList;
 import java.util.Objects;
 
+/**
+ * Archetype Context.
+ */
 public class Context {
 
     private final LinkedList<ContextNode> nodes = new LinkedList<>();

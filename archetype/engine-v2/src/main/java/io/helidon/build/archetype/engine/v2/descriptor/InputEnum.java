@@ -19,6 +19,9 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 import java.util.LinkedList;
 import java.util.Objects;
 
+/**
+ * Archetype enum in {@link Input}.
+ */
 public class InputEnum extends InputNode {
 
     private String help;
@@ -38,43 +41,92 @@ public class InputEnum extends InputNode {
         super(label, name, def, prompt, optional);
     }
 
+    /**
+     * Get the help element content.
+     *
+     * @return help
+     */
     public String help() {
         return help;
     }
 
+    /**
+     * Set the help element content.
+     *
+     * @param help content
+     */
     public void help(String help) {
         this.help = help;
     }
 
+    /**
+     * Get the options.
+     *
+     * @return options
+     */
     public LinkedList<Option> options() {
         return options;
     }
 
+    /**
+     * Get the contexts.
+     *
+     * @return contexts
+     */
     public LinkedList<Context> contexts() {
         return contexts;
     }
 
+    /**
+     * Get the steps.
+     *
+     * @return steps
+     */
     public LinkedList<Step> steps() {
         return steps;
     }
 
+    /**
+     * Get the inputs.
+     *
+     * @return inputs
+     */
     public LinkedList<Input> inputs() {
         return inputs;
     }
 
+    /**
+     * Get the sources.
+     *
+     * @return sources
+     */
     public LinkedList<Source> sources() {
         return sources;
     }
 
-
+    /**
+     * Get the execs.
+     *
+     * @return execs
+     */
     public LinkedList<Exec> execs() {
         return execs;
     }
 
+    /**
+     * Get the output.
+     *
+     * @return output
+     */
     public Output output() {
         return output;
     }
 
+    /**
+     * Set the Output.
+     *
+     * @param output element
+     */
     public void output(Output output) {
         this.output = output;
     }
