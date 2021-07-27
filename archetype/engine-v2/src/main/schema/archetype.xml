@@ -26,10 +26,10 @@
             <value>hello</value>
         </list>
         <enum path="test.enum1">
-            <value>bob</value> <!-- error, this is not one of the enum values -->
+            <value>foo</value>
         </enum>
         <enum path="test.array1">
-            <value>bob</value> <!-- error, this is declared as an array -->
+            <value>foo</value>
         </enum>
     </context>
     <step label="A Step Title">
