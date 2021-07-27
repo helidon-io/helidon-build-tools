@@ -58,7 +58,9 @@ public class Model extends Conditional {
     @Override
     public String toString() {
         return "Model{"
-                + "values=" + keyValues()
+                + "keyValues=" + keyValues()
+                + "keyLists=" + keyLists()
+                + "keyMaps=" + keyMaps()
                 + "if=" + ifProperties()
                 + '}';
     }

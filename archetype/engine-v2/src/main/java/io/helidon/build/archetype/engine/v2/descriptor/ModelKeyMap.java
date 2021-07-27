@@ -49,6 +49,11 @@ public class ModelKeyMap extends MapType {
     public String toString() {
         return "ModelKeyMap{"
                 + ", key=" + key()
+                + "keyValues=" + keyValues()
+                + "keyLists=" + keyLists()
+                + "keyMaps=" + keyMaps()
+                + "order=" + order()
+                + ", if=" + ifProperties()
                 + '}';
     }
 }

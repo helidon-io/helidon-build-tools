@@ -22,11 +22,6 @@ public class ContextBoolean extends ContextNode {
 
     private boolean bool;
 
-    protected ContextBoolean(String path, boolean bool) {
-        super(path);
-        this.bool = bool;
-    }
-
     protected ContextBoolean(String path) {
         super(path);
     }
@@ -56,7 +51,8 @@ public class ContextBoolean extends ContextNode {
     @Override
     public String toString() {
         return "ContextBoolean{"
-                + "bool=" + bool()
+                + "path=" + path()
+                + ", bool=" + bool()
                 + '}';
     }
 }

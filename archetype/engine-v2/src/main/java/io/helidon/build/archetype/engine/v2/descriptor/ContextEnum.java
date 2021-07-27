@@ -49,7 +49,8 @@ public class ContextEnum extends ContextNode {
     @Override
     public String toString() {
         return "ContextEnum{"
-                + "values=" + values()
+                + "path=" + path()
+                + ", values=" + values()
                 + '}';
     }
 }

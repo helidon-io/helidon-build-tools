@@ -24,13 +24,15 @@ import java.util.Optional;
 public class FileSets extends Conditional {
 
     private final LinkedList<String> transformations;
-    private final LinkedList<String> includes = new LinkedList<>();
-    private final LinkedList<String> excludes = new LinkedList<>();
+    private final LinkedList<String> includes;
+    private final LinkedList<String> excludes;
     private String directory;
 
     FileSets(String transformations, String ifProperties) {
         super(ifProperties);
         this.transformations = parseTransformation(transformations);
+        this.includes = new LinkedList<>();
+        this.excludes = new LinkedList<>();
     }
 
     private LinkedList<String> parseTransformation(String transformations) {
@@ -108,6 +110,7 @@ public class FileSets extends Conditional {
                 + ", includes=" + includes
                 + ", excludes=" + excludes
                 + ", directory='" + directory + '\''
+                + ", if=" + ifProperties()
                 + '}';
     }
 }

@@ -42,13 +42,17 @@ public class ModelKeyList extends ListType {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(),key);
+        return Objects.hash(super.hashCode(), key);
     }
 
     @Override
     public String toString() {
         return "ValueType{"
                 + ", key=" + key()
+                + "values=" + values()
+                + "maps=" + maps()
+                + "lists=" + lists()
+                + ", if=" + ifProperties()
                 + '}';
     }
 

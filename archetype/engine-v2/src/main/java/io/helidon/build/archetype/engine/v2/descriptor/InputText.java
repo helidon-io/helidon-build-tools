@@ -65,6 +65,11 @@ public class InputText extends InputNode {
         return "Text{"
                 + "placeholder=" + placeHolder()
                 + ", help=" + help()
+                + ", label=" + label()
+                + ", name=" + name()
+                + ", default=" + def()
+                + ", prompt=" + prompt()
+                + ", optional=" + isOptional()
                 + '}';
     }
 }

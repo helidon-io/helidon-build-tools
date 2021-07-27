@@ -41,9 +41,9 @@ public class ArchetypeDescriptorTest {
         assertThat(desc.archetypeAttributes(), is(notNullValue()));
         assertThat(desc.archetypeAttributes().get("xmlns"), is("https://helidon.io/archetype/2.0"));
 
-        assertThat(desc.context().size(), is(1));
+        assertThat(desc.contexts().size(), is(1));
 
-        Context context = desc.context().getLast();
+        Context context = desc.contexts().getLast();
 
         assertThat(context.nodes().size(), is(4));
         assertThat(context.nodes().getFirst().path(), is("test.option1"));
@@ -53,7 +53,7 @@ public class ArchetypeDescriptorTest {
         assertThat(list.values().size(), is(1));
         assertThat(list.values().getFirst(), is("hello"));
 
-        Step step = desc.step().getLast();
+        Step step = desc.steps().getLast();
 
         assertThat(step.label(), is("A Step Title"));
         assertThat(step.help(), is("help message"));
@@ -81,7 +81,7 @@ public class ArchetypeDescriptorTest {
         assertThat(option.label(), is("Foo"));
         assertThat(option.value(), is("foo"));
 
-        Source source = desc.source().getFirst();
+        Source source = desc.sources().getFirst();
 
         assertThat(source.source(), is("dir1/dir2/file.xml"));
 

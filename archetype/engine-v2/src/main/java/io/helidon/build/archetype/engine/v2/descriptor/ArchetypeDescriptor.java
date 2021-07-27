@@ -25,7 +25,7 @@ public class ArchetypeDescriptor {
 
     private final Map<String, String> archetypeAttributes;
     private final LinkedList<Context> contexts;
-    private final LinkedList<Step> step;
+    private final LinkedList<Step> steps;
     private final LinkedList<Input> inputs;
     private final LinkedList<Source> sources;
     private final LinkedList<Exec> execs;
@@ -42,7 +42,7 @@ public class ArchetypeDescriptor {
                                String help) {
         this.archetypeAttributes = archetypeAttributes;
         this.contexts = context;
-        this.step = step;
+        this.steps = step;
         this.inputs = inputs;
         this.sources = source;
         this.execs = exec;
@@ -60,23 +60,23 @@ public class ArchetypeDescriptor {
         return ArchetypeDescriptorReader.read(is);
     }
 
-    public LinkedList<Context> context() {
+    public LinkedList<Context> contexts() {
         return contexts;
     }
 
-    public LinkedList<Step> step() {
-        return step;
+    public LinkedList<Step> steps() {
+        return steps;
     }
 
     public LinkedList<Input> inputs() {
         return inputs;
     }
 
-    public LinkedList<Source> source() {
+    public LinkedList<Source> sources() {
         return sources;
     }
 
-    public LinkedList<Exec> exec() {
+    public LinkedList<Exec> execs() {
         return execs;
     }
 
@@ -103,7 +103,7 @@ public class ArchetypeDescriptor {
         if (!super.equals(o)) return false;
         ArchetypeDescriptor a = (ArchetypeDescriptor) o;
         return contexts.equals(a.contexts)
-                && step.equals(a.step)
+                && steps.equals(a.steps)
                 && inputs.equals(a.inputs)
                 && sources.equals(a.sources)
                 && execs.equals(a.execs)
@@ -112,13 +112,19 @@ public class ArchetypeDescriptor {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), contexts, step, inputs, sources, execs, output);
+        return Objects.hash(super.hashCode(), archetypeAttributes, contexts, steps, inputs, sources, execs, output);
     }
 
     @Override
     public String toString() {
         return "ArchetypeDescriptor{"
-                + "output=" + output()
+                + "archetypeAttributes=" + archetypeAttributes()
+                + ", contexts=" + contexts()
+                + ", steps=" + steps()
+                + ", inputs=" + inputs()
+                + ", sources=" + sources()
+                + ", execs=" + execs()
+                + ", output=" + output()
                 + ", help=" + help()
                 + '}';
     }

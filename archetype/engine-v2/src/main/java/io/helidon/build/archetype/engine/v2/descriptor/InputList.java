@@ -82,7 +82,6 @@ public class InputList extends InputNode {
         return sources;
     }
 
-
     public LinkedList<Exec> execs() {
         return execs;
     }
@@ -107,7 +106,7 @@ public class InputList extends InputNode {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), min, max, help);
+        return Objects.hash(super.hashCode(), min, max, help, options, contexts, steps, inputs, sources, execs, output);
     }
 
     @Override
@@ -115,6 +114,19 @@ public class InputList extends InputNode {
         return "InputList{"
                 + "min=" + min()
                 + ", max=" + max()
+                + ", help=" + help()
+                + ", options=" + options()
+                + ", contexts=" + contexts()
+                + ", steps=" + steps()
+                + ", inputs=" + inputs()
+                + ", sources=" + sources()
+                + ", execs=" + execs()
+                + ", output=" + output()
+                + ", label=" + label()
+                + ", name=" + name()
+                + ", default=" + def()
+                + ", prompt=" + prompt()
+                + ", optional=" + isOptional()
                 + '}';
     }
 }

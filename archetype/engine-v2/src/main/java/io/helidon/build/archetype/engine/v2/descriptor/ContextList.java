@@ -49,7 +49,8 @@ public class ContextList extends ContextNode {
     @Override
     public String toString() {
         return "ContextList{"
-                + "values=" + values()
+                + "path=" + path()
+                + ", values=" + values()
                 + '}';
     }
 }

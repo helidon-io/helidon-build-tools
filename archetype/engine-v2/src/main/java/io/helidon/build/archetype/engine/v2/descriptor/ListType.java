@@ -65,7 +65,9 @@ public class ListType extends Conditional {
     public String toString() {
         return "ListType{"
                 + "values=" + values()
-                + "if=" + ifProperties()
+                + "maps=" + maps()
+                + "lists=" + lists()
+                + ", if=" + ifProperties()
                 + '}';
     }
 }

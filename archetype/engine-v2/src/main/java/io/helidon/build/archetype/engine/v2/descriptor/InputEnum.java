@@ -104,6 +104,18 @@ public class InputEnum extends InputNode {
     public String toString() {
         return "InputEnum{"
                 + "help=" + help()
+                + ", options=" + options()
+                + ", contexts=" + contexts()
+                + ", steps=" + steps()
+                + ", inputs=" + inputs()
+                + ", sources=" + sources()
+                + ", execs=" + execs()
+                + ", output=" + output()
+                + ", label=" + label()
+                + ", name=" + name()
+                + ", default=" + def()
+                + ", prompt=" + prompt()
+                + ", optional=" + isOptional()
                 + '}';
     }
 

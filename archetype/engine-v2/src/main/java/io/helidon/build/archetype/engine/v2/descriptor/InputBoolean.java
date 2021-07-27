@@ -22,7 +22,6 @@ import java.util.Objects;
 public class InputBoolean extends InputNode {
 
     private String help;
-    //Directive group
     private final LinkedList<Context> contexts = new LinkedList<>();
     private final LinkedList<Step> steps = new LinkedList<>();
     private final LinkedList<Input> inputs = new LinkedList<>();
@@ -85,13 +84,24 @@ public class InputBoolean extends InputNode {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), help);
+        return Objects.hash(super.hashCode(), help, contexts, steps, inputs, sources, execs, output);
     }
 
     @Override
     public String toString() {
         return "InputBoolean{"
                 + "help=" + help()
+                + ", contexts=" + contexts()
+                + ", steps=" + steps()
+                + ", inputs=" + inputs()
+                + ", sources=" + sources()
+                + ", execs=" + execs()
+                + ", output=" + output()
+                + ", label=" + label()
+                + ", name=" + name()
+                + ", default=" + def()
+                + ", prompt=" + prompt()
+                + ", optional=" + isOptional()
                 + '}';
     }
 }

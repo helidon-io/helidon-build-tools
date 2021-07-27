@@ -92,7 +92,7 @@ public class Option {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), label, value);
+        return Objects.hash(super.hashCode(), label, value, help, contexts, steps, inputs, sources, execs, output);
     }
 
     @Override
@@ -100,6 +100,13 @@ public class Option {
         return "Option{"
                 + "label=" + label()
                 + ", value=" + value()
+                + ", help=" + help()
+                + ", contexts=" + contexts()
+                + ", steps=" + steps()
+                + ", inputs=" + inputs()
+                + ", sources=" + sources()
+                + ", execs=" + execs()
+                + ", output=" + output()
                 + '}';
     }
 }

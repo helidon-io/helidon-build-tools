@@ -20,16 +20,16 @@ import java.util.Objects;
 
 public class Source {
 
-    private final String source;
+    private final String src;
     private final String url;
 
     Source(String url, String source) {
-        this.source = source;
+        this.src = source;
         this.url = url;
     }
 
     public String source() {
-        return source;
+        return src;
     }
 
     public String url() {
@@ -42,12 +42,13 @@ public class Source {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         Source s = (Source) o;
-        return source.equals(s.source);
+        return src.equals(s.src)
+                && url.equals(s.url);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), source);
+        return Objects.hash(super.hashCode(), src, url);
     }
 
     @Override

@@ -51,7 +51,8 @@ public class ContextText extends ContextNode {
     @Override
     public String toString() {
         return "ContextText{"
-                + "text=" + text()
+                + "path=" + path()
+                + ", text=" + text()
                 + '}';
     }
 }

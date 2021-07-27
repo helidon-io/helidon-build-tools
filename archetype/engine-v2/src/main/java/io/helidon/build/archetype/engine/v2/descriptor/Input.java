@@ -52,7 +52,6 @@ public class Input {
         return sources;
     }
 
-
     public LinkedList<Exec> execs() {
         return execs;
     }
@@ -71,18 +70,29 @@ public class Input {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         Input input = (Input) o;
-        return nodes.equals(input.nodes);
+        return nodes.equals(input.nodes)
+                && contexts.equals(input.contexts)
+                && steps.equals(input.steps)
+                && inputs.equals(input.inputs)
+                && sources.equals(input.sources)
+                && execs.equals(input.execs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), nodes);
+        return Objects.hash(super.hashCode(), nodes, contexts, steps, inputs, sources, execs, output);
     }
 
     @Override
     public String toString() {
         return "Input{"
                 + "nodes=" + nodes()
+                + ", contexts=" + contexts()
+                + ", steps=" + steps()
+                + ", inputs=" + inputs()
+                + ", sources=" + sources()
+                + ", execs=" + execs()
+                + ", output=" + output()
                 + '}';
     }
 }

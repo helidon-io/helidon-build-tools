@@ -64,8 +64,11 @@ public class MapType extends Conditional {
     @Override
     public String toString() {
         return "ListType{"
-                + "values=" + keyValues()
-                + "if=" + ifProperties()
+                + "keyValues=" + keyValues()
+                + "keyLists=" + keyLists()
+                + "keyMaps=" + keyMaps()
+                + "order=" + order()
+                + ", if=" + ifProperties()
                 + '}';
     }
 }

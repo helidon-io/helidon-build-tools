@@ -57,6 +57,7 @@ public class FileSet extends Conditional {
         return "File{"
                 + "source=" + source()
                 + ", target=" + target()
+                + ", if=" + ifProperties()
                 + '}';
     }
 
