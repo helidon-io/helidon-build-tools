@@ -492,7 +492,8 @@ public final class SimpleXMLParser {
         if (position + len > limit) {
             int offset = limit - position;
             System.arraycopy(buf, position, buf, 0, offset);
-            limit = offset + isr.read(buf, offset, buf.length - offset) + 1;
+            int read = isr.read(buf, offset, buf.length - offset);
+            limit = offset + (read == -1  ? 0 : read);
             position = 0;
         }
         return String.valueOf(buf, position, expected.length()).contentEquals(expected);
