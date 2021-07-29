@@ -147,6 +147,7 @@ public final class SimpleXMLParser {
         START,
         PROLOG,
         COMMENT,
+        CDATA,
         ELEMENT,
         END_ELEMENT,
         NAME,
@@ -163,6 +164,8 @@ public final class SimpleXMLParser {
     private static final String COMMENT_END = "-->";
     private static final String ELEMENT_SELF_CLOSE = "/>";
     private static final String CLOSE_MARKUP_START = "</";
+    private static final String CDATA_START = "<![CDATA[";
+    private static final String CDATA_END = "]]>";
     private static final char MARKUP_START = '<';
     private static final char MARKUP_END = '>';
     private static final char ATTRIBUTE_VALUE = '=';
@@ -225,7 +228,14 @@ public final class SimpleXMLParser {
     }
 
     private void processElement() throws IOException {
-        if (hasToken(COMMENT_START)) {
+        if (hasToken(CDATA_START)) {
+            state = STATE.CDATA;
+            resumeState = STATE.ELEMENT;
+            position += CDATA_START.length();
+        } else if (hasToken(CDATA_END)) {
+            state = STATE.END_ELEMENT;
+            position +=  CDATA_END.length();
+        } else if (hasToken(COMMENT_START)) {
             state = STATE.COMMENT;
             resumeState = STATE.ELEMENT;
             position += COMMENT_START.length();
@@ -384,6 +394,16 @@ public final class SimpleXMLParser {
         }
     }
 
+    private void processCdata() throws IOException {
+        if (hasToken(CDATA_END)) {
+            state = resumeState;
+            position += CDATA_END.length();
+        } else {
+            textBuilder.append(buf[position]);
+            position++;
+        }
+    }
+
     private void doParse() throws IOException {
         while (limit >= 0) {
             position = 0;
@@ -429,6 +449,9 @@ public final class SimpleXMLParser {
                     case COMMENT:
                         processComment();
                         break;
+                    case CDATA:
+                        processCdata();
+                        break;
                     default:
                         throw new IllegalStateException(String.format(
                                 "Unknown state: %s, line: %d, char: %d", state, lineNo, charNo));
@@ -469,7 +492,7 @@ public final class SimpleXMLParser {
         if (position + len > limit) {
             int offset = limit - position;
             System.arraycopy(buf, position, buf, 0, offset);
-            limit = offset + isr.read(buf, offset, buf.length - offset);
+            limit = offset + isr.read(buf, offset, buf.length - offset) + 1;
             position = 0;
         }
         return String.valueOf(buf, position, expected.length()).contentEquals(expected);
