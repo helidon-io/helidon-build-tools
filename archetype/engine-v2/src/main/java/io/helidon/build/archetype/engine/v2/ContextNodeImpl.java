@@ -5,8 +5,8 @@ import java.util.Optional;
 
 public class ContextNodeImpl implements ContextNode {
 
-    List<ContextNode> nodes;
-    String name;
+    private final List<ContextNode> nodes;
+    private final String name;
 
     ContextNodeImpl(String name, List<ContextNode> nodes) {
         this.name = name;
