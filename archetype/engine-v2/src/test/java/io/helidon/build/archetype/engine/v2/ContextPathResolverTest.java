@@ -30,42 +30,42 @@ public class ContextPathResolverTest {
     private static final String ROOT = "flavor.base";
 
     @Test
-    public void testResolveAbsolutePath() {
+    public void testPathFromPrefix() {
         String path = "favor";
         assertThat(ContextPathResolver.resolvePathWithPrefix(ROOT, path),
                 is("flavor.base.favor"));
     }
 
     @Test
-    public void testResolveAbsolutePath1() {
+    public void testPrefixPath() {
         String path = "flavor";
         assertThat(ContextPathResolver.resolvePathWithPrefix(ROOT, path),
                 is("flavor"));
     }
 
     @Test
-    public void testResolveAbsolutePath2() {
+    public void testPathEqualsPrefix() {
         String path = "flavor.base";
         assertThat(ContextPathResolver.resolvePathWithPrefix(ROOT, path),
                 is("flavor.base"));
     }
 
     @Test
-    public void testResolveAbsolutePath3() {
+    public void testPathContainsPrefix() {
         String path = "flavor.base.media-type.provider";
         assertThat(ContextPathResolver.resolvePathWithPrefix(ROOT, path),
                 is("flavor.base.media-type.provider"));
     }
 
     @Test
-    public void testResolveAbsolutePath4() {
+    public void testMergePrefixAndPath() {
         String path = "security.authentication.provider";
         assertThat(ContextPathResolver.resolvePathWithPrefix(ROOT, path),
                 is("flavor.base.security.authentication.provider"));
     }
 
     @Test
-    public void testResolveAbsolutePath5() {
+    public void testWrongPath() {
         String path = "flavor.foo";
         try {
             ContextPathResolver.resolvePathWithPrefix(ROOT, path);

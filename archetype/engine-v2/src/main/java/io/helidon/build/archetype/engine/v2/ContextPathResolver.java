@@ -170,7 +170,6 @@ public class ContextPathResolver {
         return path;
     }
 
-    //Return path from root to parent.
     private static String[] lookForParent(String[] array) {
         if (!array[0].equals("PARENT")) {
             return null;
