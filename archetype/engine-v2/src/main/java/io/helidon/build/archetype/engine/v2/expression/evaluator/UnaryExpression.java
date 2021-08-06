@@ -19,9 +19,9 @@ package io.helidon.build.archetype.engine.v2.expression.evaluator;
 /**
  * Expression for a unary logical operation.
  */
-public class UnaryLogicalExpression implements AbstractSyntaxTree, ExpressionHandler<Boolean> {
+final class UnaryExpression implements AbstractSyntaxTree, ExpressionHandler<Boolean> {
 
-    private final LogicalOperator operator;
+    private final Operator operator;
     private final AbstractSyntaxTree left;
 
     /**
@@ -29,14 +29,13 @@ public class UnaryLogicalExpression implements AbstractSyntaxTree, ExpressionHan
      *
      * @param operator operator
      * @param left     operand
-     * @throws ParserException if a parsing error occurs
      */
-    public UnaryLogicalExpression(LogicalOperator operator, AbstractSyntaxTree left) throws ParserException {
+    UnaryExpression(Operator operator, AbstractSyntaxTree left) {
         this.operator = operator;
-        if (left.isBinaryLogicalExpression() && !left.asBinaryLogicalExpression().isIsolated()) {
+        if (left.isBinaryExpression() && !left.asBinaryExpression().isolated()) {
             throw new ParserException("Incorrect operand type for the unary logical expression");
         }
-        if (left.isLiteral() && !left.asLiteral().getType().isPermittedForUnaryLogicalExpression()) {
+        if (left.isLiteral() && !left.asLiteral().type().permittedForUnaryLogicalExpression()) {
             throw new ParserException("Incorrect operand type for the unary logical expression");
         }
         this.left = left;
@@ -47,7 +46,7 @@ public class UnaryLogicalExpression implements AbstractSyntaxTree, ExpressionHan
      *
      * @return LogicalOperator
      */
-    public LogicalOperator getOperator() {
+    public Operator operator() {
         return operator;
     }
 
@@ -56,13 +55,13 @@ public class UnaryLogicalExpression implements AbstractSyntaxTree, ExpressionHan
      *
      * @return AbstractSyntaxTree
      */
-    public AbstractSyntaxTree getLeft() {
+    public AbstractSyntaxTree left() {
         return left;
     }
 
     @Override
-    public Literal<Boolean> evaluate() throws ParserException {
-        var leftLiteral = left.isExpressionHandler() ? left.asExpressionHandler().evaluate() : asLiteral(left);
+    public Literal<Boolean> evaluate() {
+        Literal<?> leftLiteral = left.isExpressionHandler() ? left.asExpressionHandler().evaluate() : asLiteral(left);
         return new BooleanLiteral(operator.evaluate(leftLiteral));
     }
 }

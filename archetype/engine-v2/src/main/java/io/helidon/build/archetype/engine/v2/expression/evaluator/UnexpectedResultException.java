@@ -17,22 +17,24 @@
 package io.helidon.build.archetype.engine.v2.expression.evaluator;
 
 /**
- * Boolean literal.
+ * An exception that should be thrown if an expression cannot be evaluated.
  */
-final class BooleanLiteral extends Literal<Boolean> {
+public class UnexpectedResultException extends RuntimeException {
+    /**
+     * Create a new exception.
+     *
+     * @param message error message
+     */
+    UnexpectedResultException(String message) {
+        super(message);
+    }
 
     /**
-     * Create a new boolean literal.
+     * Create a new exception.
      *
-     * @param rawExpr Value for the instance.
+     * @param message error message
      */
-    BooleanLiteral(Boolean rawExpr) {
-        super(rawExpr);
+    UnexpectedResultException(String message, Throwable cause) {
+        super(message, cause);
     }
-
-    @Override
-    Type type() {
-        return Type.BOOLEAN;
-    }
-
 }

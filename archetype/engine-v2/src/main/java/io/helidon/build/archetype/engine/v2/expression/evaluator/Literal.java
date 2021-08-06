@@ -21,20 +21,19 @@ package io.helidon.build.archetype.engine.v2.expression.evaluator;
  *
  * @param <T> actual type of the value.
  */
-public abstract class Literal<T> implements AbstractSyntaxTree {
+abstract class Literal<T> implements AbstractSyntaxTree {
 
     /**
      * Value of the literal.
      */
-    @SuppressWarnings("checkstyle:VisibilityModifier")
-    protected T value;
+    private final T value;
 
     /**
      * Create a new literal.
      *
      * @param rawExpr Value of the literal
      */
-    public Literal(T rawExpr) {
+    Literal(T rawExpr) {
         value = rawExpr;
     }
 
@@ -43,7 +42,7 @@ public abstract class Literal<T> implements AbstractSyntaxTree {
      *
      * @return Value
      */
-    public T getValue() {
+    public T value() {
         return value;
     }
 
@@ -52,7 +51,7 @@ public abstract class Literal<T> implements AbstractSyntaxTree {
      *
      * @return Type
      */
-    abstract Type getType();
+    abstract Type type();
 
     /**
      * Supported types of the literals.
@@ -67,30 +66,21 @@ public abstract class Literal<T> implements AbstractSyntaxTree {
          */
         BOOLEAN {
             @Override
-            boolean isPermittedForUnaryLogicalExpression() {
+            boolean permittedForUnaryLogicalExpression() {
                 return true;
             }
         },
         /**
          * Array.
          */
-        ARRAY,
-        /**
-         * Variable.
-         */
-        VARIABLE {
-            @Override
-            boolean isPermittedForUnaryLogicalExpression() {
-                return true;
-            }
-        };
+        ARRAY;
 
         /**
          * Test if a literal of this type can be used in an unary logical expression.
          *
          * @return {@code true} if the literal can be used in an unary logical expression, {@code false} otherwise.
          */
-        boolean isPermittedForUnaryLogicalExpression() {
+        boolean permittedForUnaryLogicalExpression() {
             return false;
         }
     }
@@ -99,7 +89,7 @@ public abstract class Literal<T> implements AbstractSyntaxTree {
     public String toString() {
         return "Literal{"
                 + "value=" + value + "; "
-                + "type=" + getType()
+                + "type=" + type()
                 + '}';
     }
 }

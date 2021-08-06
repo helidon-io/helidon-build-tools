@@ -36,42 +36,42 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class ExpressionTest {
 
     @Test
-    public void testEvaluateWithVariables() throws ParserException {
+    public void testEvaluateWithVariables() {
         String value = "${var1} contains ${var2}";
-        Expression expression = new Expression(value);
+        Expression expression = Expression.builder().expression(value).build();
         Map<String, String> varInitializerMap = new HashMap<>();
         varInitializerMap.put("var1", "['a','b','c']");
         varInitializerMap.put("var2", "'b'");
         Object evaluate = expression.evaluate(varInitializerMap);
-        assertThat((Boolean) evaluate, is(true));
+        assertThat(evaluate, is(true));
 
         value = "!(${array} contains 'basic-auth' == false && ${var})";
-        expression = new Expression(value);
+        expression = Expression.builder().expression(value).build();
         varInitializerMap = new HashMap<>();
         varInitializerMap.put("var", "true");
         varInitializerMap.put("array", "['a','b','c']");
         evaluate = expression.evaluate(varInitializerMap);
-        assertThat((Boolean) evaluate, is(false));
+        assertThat(evaluate, is(false));
 
         value = "!${var}";
-        expression = new Expression(value);
+        expression = Expression.builder().expression(value).build();
         varInitializerMap = new HashMap<>();
         varInitializerMap.put("var", "true");
         evaluate = expression.evaluate(varInitializerMap);
-        assertThat((Boolean) evaluate, is(false));
+        assertThat(evaluate, is(false));
 
         value = "['', 'adc', 'def'] contains ${var1} == ${var4} && ${var2} || !${var3}";
-        expression = new Expression(value);
+        expression = Expression.builder().expression(value).build();
         varInitializerMap = new HashMap<>();
         varInitializerMap.put("var1", "'abc'");
         varInitializerMap.put("var4", "true");
         varInitializerMap.put("var2", "false");
         varInitializerMap.put("var3", "true");
         evaluate = expression.evaluate(varInitializerMap);
-        assertThat((Boolean) evaluate, is(false));
+        assertThat(evaluate, is(false));
 
         value = "${var1} contains ${var2} == ${var3} && ${var4} || ${var5}";
-        expression = new Expression(value);
+        expression = Expression.builder().expression(value).build();
         varInitializerMap = new HashMap<>();
         varInitializerMap.put("var1", "['a','b','c']");
         varInitializerMap.put("var2", "'d'");
@@ -79,42 +79,42 @@ class ExpressionTest {
         varInitializerMap.put("var4", "true");
         varInitializerMap.put("var5", "false");
         evaluate = expression.evaluate(varInitializerMap);
-        assertThat((Boolean) evaluate, is(false));
+        assertThat(evaluate, is(false));
 
         value = " ${var1} == ${var1} && ${var2} contains ''";
-        expression = new Expression(value);
+        expression = Expression.builder().expression(value).build();
         varInitializerMap = new HashMap<>();
         varInitializerMap.put("var1", "'foo'");
         varInitializerMap.put("var2", "['d','']");
         evaluate = expression.evaluate(varInitializerMap);
-        assertThat((Boolean) evaluate, is(true));
+        assertThat(evaluate, is(true));
     }
 
     @Test
-    public void testVariable() throws ParserException {
+    public void testVariable() {
         String value = "${variable}";
-        Expression expression = new Expression(value);
+        Expression expression = Expression.builder().expression(value).build();
         assertThat(expression.tree().isVariable(), is(true));
-        assertThat(expression.tree().asVariable().getName(), is("variable"));
+        assertThat(expression.tree().asVariable().name(), is("variable"));
 
         value = "${variable} == 'some string'";
-        expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().asVariable().getName(), is("variable"));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().asLiteral().getValue(), is("'some string'"));
-        assertThat(expression.tree().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.EQUAL));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression().left().asVariable().name(), is("variable"));
+        assertThat(expression.tree().asBinaryExpression().right().asLiteral().value(), is("'some string'"));
+        assertThat(expression.tree().asBinaryExpression().operator(), Matchers.is(Operator.EQUAL));
 
         value = "'some string' != ${variable}";
-        expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().asVariable().getName(), is("variable"));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().asLiteral().getValue(), is("'some string'"));
-        assertThat(expression.tree().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.NOT_EQUAL));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression().right().asVariable().name(), is("variable"));
+        assertThat(expression.tree().asBinaryExpression().left().asLiteral().value(), is("'some string'"));
+        assertThat(expression.tree().asBinaryExpression().operator(), Matchers.is(Operator.NOT_EQUAL));
 
         //incorrect variable name
         Exception e = assertThrows(ParserException.class, () -> {
-            var stringValue = "${varia!ble}";
-            Expression expr = new Expression(stringValue);
+            String stringValue = "${varia!ble}";
+            Expression expr = Expression.builder().expression(stringValue).build();
             expr.evaluate();
         });
         assertThat(e.getMessage(), containsString(
@@ -122,7 +122,7 @@ class ExpressionTest {
     }
 
     @Test
-    public void testEvaluate() throws ParserException {
+    public void testEvaluate() {
         String value = "['', 'adc', 'def'] contains 'basic-auth'";
         evaluateAndTestLogicalExpression(value, false);
 
@@ -200,8 +200,8 @@ class ExpressionTest {
 
         //not equal types of the operands
         Exception e = assertThrows(ParserException.class, () -> {
-            var stringValue = "true == 'def'";
-            Expression expr = new Expression(stringValue);
+            String stringValue = "true == 'def'";
+            Expression expr = Expression.builder().expression(stringValue).build();
             expr.evaluate();
         });
         assertThat(e.getMessage(), containsString(
@@ -209,16 +209,16 @@ class ExpressionTest {
 
         //incorrect type of the operands
         e = assertThrows(ParserException.class, () -> {
-            var stringValue = "'true' || 'def'";
-            Expression expr = new Expression(stringValue);
+            String stringValue = "'true' || 'def'";
+            Expression expr = Expression.builder().expression(stringValue).build();
             expr.evaluate();
         });
         assertThat(e.getMessage(), containsString(
                 "Operation '||' cannot be performed on literals. The literal "));
 
         e = assertThrows(ParserException.class, () -> {
-            var stringValue = "['', 'adc', 'def'] contains ['', 'adc', 'def']";
-            Expression expr = new Expression(stringValue);
+            String stringValue = "['', 'adc', 'def'] contains ['', 'adc', 'def']";
+            Expression expr = Expression.builder().expression(stringValue).build();
             expr.evaluate();
         });
         assertThat(e.getMessage(), containsString(
@@ -226,345 +226,345 @@ class ExpressionTest {
 
         //not initialized variable
         e = assertThrows(IllegalArgumentException.class, () -> {
-            var stringValue = "true == ${def}";
-            Expression expr = new Expression(stringValue);
+            String stringValue = "true == ${def}";
+            Expression expr = Expression.builder().expression(stringValue).build();
             expr.evaluate();
         });
         assertThat(e.getMessage(), containsString(
                 "Variable def must be initialized"));
     }
 
-    private void evaluateAndTestLogicalExpression(String value, boolean expectedResult) throws ParserException {
-        Expression expression = new Expression(value);
+    private void evaluateAndTestLogicalExpression(String value, boolean expectedResult) {
+        Expression expression = Expression.builder().expression(value).build();
         Object evaluate = expression.evaluate();
-        assertThat((Boolean) evaluate, is(expectedResult));
+        assertThat(evaluate, is(expectedResult));
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testContainsOperator() throws ParserException {
+    public void testContainsOperator() {
         String value = "['', 'adc', 'def'] contains 'basic-auth'";
-        Expression expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().isLiteral(), is(true));
-        assertThat((List<String>) expression.tree().asBinaryLogicalExpression().getLeft().asLiteral().getValue(),
+        Expression expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression().left().isLiteral(), is(true));
+        assertThat((List<String>) expression.tree().asBinaryExpression().left().asLiteral().value(),
                 contains("''", "'adc'", "'def'"));
-        assertThat(expression.tree().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.CONTAINS));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().asLiteral().getValue(), is("'basic-auth'"));
+        assertThat(expression.tree().asBinaryExpression().operator(), Matchers.is(Operator.CONTAINS));
+        assertThat(expression.tree().asBinaryExpression().right().asLiteral().value(), is("'basic-auth'"));
 
         Exception e = assertThrows(ParserException.class, () -> {
-            var expr = "['', 'adc', 'def'] contains != 'basic-auth'";
-            new Expression(expr);
+            String expr = "['', 'adc', 'def'] contains != 'basic-auth'";
+            Expression.builder().expression(expr).build();
         });
         assertThat(e.getMessage(), containsString("Unexpected token - !="));
 
         value = "!(['', 'adc', 'def'] contains 'basic-auth')";
-        expression = new Expression(value);
-        assertThat(expression.tree().isUnaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asUnaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.NOT));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isUnaryExpression(), is(true));
+        assertThat(expression.tree().asUnaryExpression().operator(), Matchers.is(Operator.NOT));
         assertThat((List<String>) expression.tree()
-                        .asUnaryLogicalExpression()
-                        .getLeft().asBinaryLogicalExpression().getLeft().asLiteral().getValue(),
+                        .asUnaryExpression()
+                        .left().asBinaryExpression().left().asLiteral().value(),
                 contains("''", "'adc'", "'def'"));
         assertThat(expression.tree()
-                        .asUnaryLogicalExpression()
-                        .getLeft().asBinaryLogicalExpression().getRight().asLiteral().getValue(),
+                        .asUnaryExpression()
+                        .left().asBinaryExpression().right().asLiteral().value(),
                 is("'basic-auth'"));
         assertThat(expression.tree()
-                        .asUnaryLogicalExpression()
-                        .getLeft().asBinaryLogicalExpression().getOperator(),
-                Matchers.is(LogicalOperator.CONTAINS));
+                        .asUnaryExpression()
+                        .left().asBinaryExpression().operator(),
+                Matchers.is(Operator.CONTAINS));
 
         e = assertThrows(ParserException.class, () -> {
-            var expr = "!['', 'adc', 'def'] contains 'basic-auth'";
-            new Expression(expr);
+            String expr = "!['', 'adc', 'def'] contains 'basic-auth'";
+            Expression.builder().expression(expr).build();
         });
         assertThat(e.getMessage(), containsString("Incorrect operand type for the unary logical expression"));
 
         value = "['', 'adc', 'def'] contains 'basic-auth' == true && false";
-        expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat((List<String>) expression.tree().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getLeft().asLiteral().getValue(), contains("''", "'adc'", "'def'"));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getRight().asLiteral().getValue(), is("'basic-auth'"));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getOperator(), Matchers.is(LogicalOperator.CONTAINS));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getRight().asLiteral().getValue(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getOperator(), Matchers.is(LogicalOperator.EQUAL));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getRight().asLiteral().getValue(), is(false));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getOperator(), Matchers.is(LogicalOperator.AND));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat((List<String>) expression.tree().asBinaryExpression()
+                .left().asBinaryExpression()
+                .left().asBinaryExpression()
+                .left().asLiteral().value(), contains("''", "'adc'", "'def'"));
+        assertThat(expression.tree().asBinaryExpression()
+                .left().asBinaryExpression()
+                .left().asBinaryExpression()
+                .right().asLiteral().value(), is("'basic-auth'"));
+        assertThat(expression.tree().asBinaryExpression()
+                .left().asBinaryExpression()
+                .left().asBinaryExpression()
+                .operator(), Matchers.is(Operator.CONTAINS));
+        assertThat(expression.tree().asBinaryExpression()
+                .left().asBinaryExpression()
+                .right().asLiteral().value(), is(true));
+        assertThat(expression.tree().asBinaryExpression()
+                .left().asBinaryExpression()
+                .operator(), Matchers.is(Operator.EQUAL));
+        assertThat(expression.tree().asBinaryExpression()
+                .right().asLiteral().value(), is(false));
+        assertThat(expression.tree().asBinaryExpression()
+                .operator(), Matchers.is(Operator.AND));
 
         value = "(['', 'adc', 'def'] contains 'basic-auth') == true && false";
-        expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat((List<String>) expression.tree().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getLeft().asLiteral().getValue(), contains("''", "'adc'", "'def'"));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getRight().asLiteral().getValue(), is("'basic-auth'"));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getOperator(), Matchers.is(LogicalOperator.CONTAINS));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression().isIsolated(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getRight().asLiteral().getValue(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getOperator(), Matchers.is(LogicalOperator.EQUAL));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getRight().asLiteral().getValue(), is(false));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getOperator(), Matchers.is(LogicalOperator.AND));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat((List<String>) expression.tree().asBinaryExpression()
+                .left().asBinaryExpression()
+                .left().asBinaryExpression()
+                .left().asLiteral().value(), contains("''", "'adc'", "'def'"));
+        assertThat(expression.tree().asBinaryExpression()
+                .left().asBinaryExpression()
+                .left().asBinaryExpression()
+                .right().asLiteral().value(), is("'basic-auth'"));
+        assertThat(expression.tree().asBinaryExpression()
+                .left().asBinaryExpression()
+                .left().asBinaryExpression()
+                .operator(), Matchers.is(Operator.CONTAINS));
+        assertThat(expression.tree().asBinaryExpression()
+                .left().asBinaryExpression()
+                .left().asBinaryExpression().isolated(), is(true));
+        assertThat(expression.tree().asBinaryExpression()
+                .left().asBinaryExpression()
+                .right().asLiteral().value(), is(true));
+        assertThat(expression.tree().asBinaryExpression()
+                .left().asBinaryExpression()
+                .operator(), Matchers.is(Operator.EQUAL));
+        assertThat(expression.tree().asBinaryExpression()
+                .right().asLiteral().value(), is(false));
+        assertThat(expression.tree().asBinaryExpression()
+                .operator(), Matchers.is(Operator.AND));
 
 
         value = " 'aaa' == 'bbb' && ['', 'adc', 'def'] contains ${basic-auth}";
-        expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getLeft().asLiteral().getValue(), is("'aaa'"));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getRight().asLiteral().getValue(), is("'bbb'"));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getOperator(), Matchers.is(LogicalOperator.EQUAL));
-        assertThat((List<String>) expression.tree().asBinaryLogicalExpression()
-                .getRight().asBinaryLogicalExpression()
-                .getLeft().asLiteral().getValue(), contains("''", "'adc'", "'def'"));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getRight().asBinaryLogicalExpression()
-                .getRight().asVariable().getName(), is("basic-auth"));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getRight().asBinaryLogicalExpression()
-                .getOperator(), Matchers.is(LogicalOperator.CONTAINS));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getOperator(), Matchers.is(LogicalOperator.AND));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression()
+                .left().asBinaryExpression()
+                .left().asLiteral().value(), is("'aaa'"));
+        assertThat(expression.tree().asBinaryExpression()
+                .left().asBinaryExpression()
+                .right().asLiteral().value(), is("'bbb'"));
+        assertThat(expression.tree().asBinaryExpression()
+                .left().asBinaryExpression()
+                .operator(), Matchers.is(Operator.EQUAL));
+        assertThat((List<String>) expression.tree().asBinaryExpression()
+                .right().asBinaryExpression()
+                .left().asLiteral().value(), contains("''", "'adc'", "'def'"));
+        assertThat(expression.tree().asBinaryExpression()
+                .right().asBinaryExpression()
+                .right().asVariable().name(), is("basic-auth"));
+        assertThat(expression.tree().asBinaryExpression()
+                .right().asBinaryExpression()
+                .operator(), Matchers.is(Operator.CONTAINS));
+        assertThat(expression.tree().asBinaryExpression()
+                .operator(), Matchers.is(Operator.AND));
 
         value = " 'aaa' == ${bbb} && (['', 'adc', 'def'] contains 'basic-auth')";
-        expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getLeft().asLiteral().getValue(), is("'aaa'"));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getRight().asVariable().getName(), is("bbb"));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getLeft().asBinaryLogicalExpression()
-                .getOperator(), Matchers.is(LogicalOperator.EQUAL));
-        assertThat((List<String>) expression.tree().asBinaryLogicalExpression()
-                .getRight().asBinaryLogicalExpression()
-                .getLeft().asLiteral().getValue(), contains("''", "'adc'", "'def'"));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getRight().asBinaryLogicalExpression()
-                .getRight().asLiteral().getValue(), is("'basic-auth'"));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getRight().asBinaryLogicalExpression()
-                .getOperator(), Matchers.is(LogicalOperator.CONTAINS));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getRight().asBinaryLogicalExpression()
-                .isIsolated(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression()
-                .getOperator(), Matchers.is(LogicalOperator.AND));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression()
+                .left().asBinaryExpression()
+                .left().asLiteral().value(), is("'aaa'"));
+        assertThat(expression.tree().asBinaryExpression()
+                .left().asBinaryExpression()
+                .right().asVariable().name(), is("bbb"));
+        assertThat(expression.tree().asBinaryExpression()
+                .left().asBinaryExpression()
+                .operator(), Matchers.is(Operator.EQUAL));
+        assertThat((List<String>) expression.tree().asBinaryExpression()
+                .right().asBinaryExpression()
+                .left().asLiteral().value(), contains("''", "'adc'", "'def'"));
+        assertThat(expression.tree().asBinaryExpression()
+                .right().asBinaryExpression()
+                .right().asLiteral().value(), is("'basic-auth'"));
+        assertThat(expression.tree().asBinaryExpression()
+                .right().asBinaryExpression()
+                .operator(), Matchers.is(Operator.CONTAINS));
+        assertThat(expression.tree().asBinaryExpression()
+                .right().asBinaryExpression()
+                .isolated(), is(true));
+        assertThat(expression.tree().asBinaryExpression()
+                .operator(), Matchers.is(Operator.AND));
     }
 
     @Test
-    public void testUnaryExpression() throws ParserException {
+    public void testUnaryExpression() {
         String value = "!true";
-        Expression expression = new Expression(value);
-        assertThat(expression.tree().isUnaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asUnaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.NOT));
-        assertThat(expression.tree().asUnaryLogicalExpression().getLeft().isLiteral(), is(true));
-        assertThat(expression.tree().asUnaryLogicalExpression().getLeft().asLiteral().getType(),
+        Expression expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isUnaryExpression(), is(true));
+        assertThat(expression.tree().asUnaryExpression().operator(), Matchers.is(Operator.NOT));
+        assertThat(expression.tree().asUnaryExpression().left().isLiteral(), is(true));
+        assertThat(expression.tree().asUnaryExpression().left().asLiteral().type(),
                 Matchers.is(Literal.Type.BOOLEAN));
-        assertThat(expression.tree().asUnaryLogicalExpression().getLeft().asLiteral().getValue(), is(true));
+        assertThat(expression.tree().asUnaryExpression().left().asLiteral().value(), is(true));
 
         value = "!('foo' != 'bar')";
-        expression = new Expression(value);
-        assertThat(expression.tree().isUnaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asUnaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.NOT));
-        assertThat(expression.tree().asUnaryLogicalExpression().getLeft().isBinaryLogicalExpression(), is(true));
-        var left = expression.tree().asUnaryLogicalExpression().getLeft().asBinaryLogicalExpression();
-        assertThat(left.getLeft().isLiteral(), is(true));
-        assertThat(left.getLeft().asLiteral().getValue(), is("'foo'"));
-        assertThat(left.getRight().asLiteral().getValue(), is("'bar'"));
-        assertThat(left.getOperator(), Matchers.is(LogicalOperator.NOT_EQUAL));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isUnaryExpression(), is(true));
+        assertThat(expression.tree().asUnaryExpression().operator(), Matchers.is(Operator.NOT));
+        assertThat(expression.tree().asUnaryExpression().left().isBinaryExpression(), is(true));
+        BinaryExpression left = expression.tree().asUnaryExpression().left().asBinaryExpression();
+        assertThat(left.left().isLiteral(), is(true));
+        assertThat(left.left().asLiteral().value(), is("'foo'"));
+        assertThat(left.right().asLiteral().value(), is("'bar'"));
+        assertThat(left.operator(), Matchers.is(Operator.NOT_EQUAL));
 
         value = "'foo1' == 'bar' && !('foo' != ${bar})";
-        expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.AND));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().isBinaryLogicalExpression(), is(true));
-        left = expression.tree().asBinaryLogicalExpression().getLeft().asBinaryLogicalExpression();
-        assertThat(left.getLeft().isLiteral(), is(true));
-        assertThat(left.getLeft().asLiteral().getValue(), is("'foo1'"));
-        assertThat(left.getRight().isLiteral(), is(true));
-        assertThat(left.getRight().asLiteral().getValue(), is("'bar'"));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().isUnaryLogicalExpression(), is(true));
-        var right = expression.tree().asBinaryLogicalExpression().getRight().asUnaryLogicalExpression();
-        assertThat(right.getOperator(), Matchers.is(LogicalOperator.NOT));
-        assertThat(right.getLeft().isBinaryLogicalExpression(), is(true));
-        assertThat(right.getLeft().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.NOT_EQUAL));
-        assertThat(right.getLeft().asBinaryLogicalExpression().getLeft().asLiteral().getValue(), is("'foo'"));
-        assertThat(right.getLeft().asBinaryLogicalExpression().getRight().asVariable().getName(), is("bar"));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression().operator(), Matchers.is(Operator.AND));
+        assertThat(expression.tree().asBinaryExpression().left().isBinaryExpression(), is(true));
+        left = expression.tree().asBinaryExpression().left().asBinaryExpression();
+        assertThat(left.left().isLiteral(), is(true));
+        assertThat(left.left().asLiteral().value(), is("'foo1'"));
+        assertThat(left.right().isLiteral(), is(true));
+        assertThat(left.right().asLiteral().value(), is("'bar'"));
+        assertThat(expression.tree().asBinaryExpression().right().isUnaryExpression(), is(true));
+        UnaryExpression right = expression.tree().asBinaryExpression().right().asUnaryExpression();
+        assertThat(right.operator(), Matchers.is(Operator.NOT));
+        assertThat(right.left().isBinaryExpression(), is(true));
+        assertThat(right.left().asBinaryExpression().operator(), Matchers.is(Operator.NOT_EQUAL));
+        assertThat(right.left().asBinaryExpression().left().asLiteral().value(), is("'foo'"));
+        assertThat(right.left().asBinaryExpression().right().asVariable().name(), is("bar"));
 
 
         //incorrect operand type
         Exception e = assertThrows(ParserException.class, () -> {
-            var expr = "!'string type'";
-            new Expression(expr);
+            String expr = "!'string type'";
+            Expression.builder().expression(expr).build();
         });
         assertThat(e.getMessage(), containsString("Incorrect operand type for the unary logical expression"));
     }
 
     @Test
-    public void testExpressionWithParenthesis() throws ParserException {
+    public void testExpressionWithParenthesis() {
         String value = "(\"foo\") != \"bar\"";
-        Expression expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().isLiteral(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().isLiteral(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.NOT_EQUAL));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().asLiteral().getValue(), is("\"foo\""));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().asLiteral().getValue(), is("\"bar\""));
+        Expression expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression().left().isLiteral(), is(true));
+        assertThat(expression.tree().asBinaryExpression().right().isLiteral(), is(true));
+        assertThat(expression.tree().asBinaryExpression().operator(), Matchers.is(Operator.NOT_EQUAL));
+        assertThat(expression.tree().asBinaryExpression().left().asLiteral().value(), is("\"foo\""));
+        assertThat(expression.tree().asBinaryExpression().right().asLiteral().value(), is("\"bar\""));
 
         value = "((\"foo\")) != \"bar\"";
-        expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().isLiteral(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().isLiteral(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.NOT_EQUAL));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().asLiteral().getValue(), is("\"foo\""));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().asLiteral().getValue(), is("\"bar\""));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression().left().isLiteral(), is(true));
+        assertThat(expression.tree().asBinaryExpression().right().isLiteral(), is(true));
+        assertThat(expression.tree().asBinaryExpression().operator(), Matchers.is(Operator.NOT_EQUAL));
+        assertThat(expression.tree().asBinaryExpression().left().asLiteral().value(), is("\"foo\""));
+        assertThat(expression.tree().asBinaryExpression().right().asLiteral().value(), is("\"bar\""));
 
         value = "((\"foo\") != \"bar\")";
-        expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().isLiteral(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().isLiteral(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.NOT_EQUAL));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().asLiteral().getValue(), is("\"foo\""));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().asLiteral().getValue(), is("\"bar\""));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression().left().isLiteral(), is(true));
+        assertThat(expression.tree().asBinaryExpression().right().isLiteral(), is(true));
+        assertThat(expression.tree().asBinaryExpression().operator(), Matchers.is(Operator.NOT_EQUAL));
+        assertThat(expression.tree().asBinaryExpression().left().asLiteral().value(), is("\"foo\""));
+        assertThat(expression.tree().asBinaryExpression().right().asLiteral().value(), is("\"bar\""));
 
         value = "\"foo\" != (\"bar\")";
-        expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().isLiteral(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().isLiteral(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.NOT_EQUAL));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().asLiteral().getValue(), is("\"foo\""));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().asLiteral().getValue(), is("\"bar\""));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression().left().isLiteral(), is(true));
+        assertThat(expression.tree().asBinaryExpression().right().isLiteral(), is(true));
+        assertThat(expression.tree().asBinaryExpression().operator(), Matchers.is(Operator.NOT_EQUAL));
+        assertThat(expression.tree().asBinaryExpression().left().asLiteral().value(), is("\"foo\""));
+        assertThat(expression.tree().asBinaryExpression().right().asLiteral().value(), is("\"bar\""));
 
         //first operator has higher precedence
         value = "(\"foo\"==\"bar\")|| ${foo1}";
-        expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().isBinaryLogicalExpression(), is(true));
-        var left = expression.tree().asBinaryLogicalExpression().getLeft().asBinaryLogicalExpression();
-        assertThat(left.getLeft().isLiteral(), is(true));
-        assertThat(left.getLeft().asLiteral().getValue(), is("\"foo\""));
-        assertThat(left.getRight().isLiteral(), is(true));
-        assertThat(left.getRight().asLiteral().getValue(), is("\"bar\""));
-        assertThat(left.getOperator(), Matchers.is(LogicalOperator.EQUAL));
-        assertThat(expression.tree().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.OR));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().isVariable(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().asVariable().getName(), is("foo1"));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression().left().isBinaryExpression(), is(true));
+        BinaryExpression left = expression.tree().asBinaryExpression().left().asBinaryExpression();
+        assertThat(left.left().isLiteral(), is(true));
+        assertThat(left.left().asLiteral().value(), is("\"foo\""));
+        assertThat(left.right().isLiteral(), is(true));
+        assertThat(left.right().asLiteral().value(), is("\"bar\""));
+        assertThat(left.operator(), Matchers.is(Operator.EQUAL));
+        assertThat(expression.tree().asBinaryExpression().operator(), Matchers.is(Operator.OR));
+        assertThat(expression.tree().asBinaryExpression().right().isVariable(), is(true));
+        assertThat(expression.tree().asBinaryExpression().right().asVariable().name(), is("foo1"));
 
         //first operator has higher precedence
         value = "(\"foo\"==\"bar\"|| true)";
-        expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().isBinaryLogicalExpression(), is(true));
-        left = expression.tree().asBinaryLogicalExpression().getLeft().asBinaryLogicalExpression();
-        assertThat(left.getLeft().isLiteral(), is(true));
-        assertThat(left.getLeft().asLiteral().getValue(), is("\"foo\""));
-        assertThat(left.getRight().isLiteral(), is(true));
-        assertThat(left.getRight().asLiteral().getValue(), is("\"bar\""));
-        assertThat(left.getOperator(), Matchers.is(LogicalOperator.EQUAL));
-        assertThat(expression.tree().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.OR));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().isLiteral(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().asLiteral().getValue(), is(true));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression().left().isBinaryExpression(), is(true));
+        left = expression.tree().asBinaryExpression().left().asBinaryExpression();
+        assertThat(left.left().isLiteral(), is(true));
+        assertThat(left.left().asLiteral().value(), is("\"foo\""));
+        assertThat(left.right().isLiteral(), is(true));
+        assertThat(left.right().asLiteral().value(), is("\"bar\""));
+        assertThat(left.operator(), Matchers.is(Operator.EQUAL));
+        assertThat(expression.tree().asBinaryExpression().operator(), Matchers.is(Operator.OR));
+        assertThat(expression.tree().asBinaryExpression().right().isLiteral(), is(true));
+        assertThat(expression.tree().asBinaryExpression().right().asLiteral().value(), is(true));
 
         //first operator has higher precedence
         value = "${foo}==(true|| false)";
-        expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().isVariable(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().asVariable().getName(), is("foo"));
-        assertThat(expression.tree().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.EQUAL));
-        var right = expression.tree().asBinaryLogicalExpression().getRight().asBinaryLogicalExpression();
-        assertThat(right.isBinaryLogicalExpression(), is(true));
-        assertThat(right.getLeft().isLiteral(), is(true));
-        assertThat(right.getLeft().asLiteral().getValue(), is(true));
-        assertThat(right.getOperator(), Matchers.is(LogicalOperator.OR));
-        assertThat(right.getRight().isLiteral(), is(true));
-        assertThat(right.getRight().asLiteral().getValue(), is(false));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression().left().isVariable(), is(true));
+        assertThat(expression.tree().asBinaryExpression().left().asVariable().name(), is("foo"));
+        assertThat(expression.tree().asBinaryExpression().operator(), Matchers.is(Operator.EQUAL));
+        BinaryExpression right = expression.tree().asBinaryExpression().right().asBinaryExpression();
+        assertThat(right.isBinaryExpression(), is(true));
+        assertThat(right.left().isLiteral(), is(true));
+        assertThat(right.left().asLiteral().value(), is(true));
+        assertThat(right.operator(), Matchers.is(Operator.OR));
+        assertThat(right.right().isLiteral(), is(true));
+        assertThat(right.right().asLiteral().value(), is(false));
 
         //first operator has higher precedence
         value = "true==((${var}|| false)&&true)";
-        expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().isLiteral(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().asLiteral().getValue(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.EQUAL));
-        assertThat(right.isBinaryLogicalExpression(), is(true));
-        right = expression.tree().asBinaryLogicalExpression().getRight().asBinaryLogicalExpression();
-        assertThat(right.getOperator(), Matchers.is(LogicalOperator.AND));
-        assertThat(right.getLeft().isBinaryLogicalExpression(), is(true));
-        assertThat(right.getLeft().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.OR));
-        assertThat(right.getLeft().asBinaryLogicalExpression().getLeft().isVariable(), is(true));
-        assertThat(right.getLeft().asBinaryLogicalExpression().getRight().isLiteral(), is(true));
-        assertThat(right.getLeft().asBinaryLogicalExpression().getLeft().asVariable().getName(), is("var"));
-        assertThat(right.getLeft().asBinaryLogicalExpression().getRight().asLiteral().getValue(), is(false));
-        assertThat(right.getRight().isLiteral(), is(true));
-        assertThat(right.getRight().asLiteral().getValue(), is(true));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression().left().isLiteral(), is(true));
+        assertThat(expression.tree().asBinaryExpression().left().asLiteral().value(), is(true));
+        assertThat(expression.tree().asBinaryExpression().operator(), Matchers.is(Operator.EQUAL));
+        assertThat(right.isBinaryExpression(), is(true));
+        right = expression.tree().asBinaryExpression().right().asBinaryExpression();
+        assertThat(right.operator(), Matchers.is(Operator.AND));
+        assertThat(right.left().isBinaryExpression(), is(true));
+        assertThat(right.left().asBinaryExpression().operator(), Matchers.is(Operator.OR));
+        assertThat(right.left().asBinaryExpression().left().isVariable(), is(true));
+        assertThat(right.left().asBinaryExpression().right().isLiteral(), is(true));
+        assertThat(right.left().asBinaryExpression().left().asVariable().name(), is("var"));
+        assertThat(right.left().asBinaryExpression().right().asLiteral().value(), is(false));
+        assertThat(right.right().isLiteral(), is(true));
+        assertThat(right.right().asLiteral().value(), is(true));
 
         //incorrect parenthesis
         Exception e = assertThrows(ParserException.class, () -> {
-            var expr = "\"foo\"==((\"bar\"|| 'foo1')&&true))";
-            new Expression(expr);
+            String expr = "\"foo\"==((\"bar\"|| 'foo1')&&true))";
+            Expression.builder().expression(expr).build();
         });
         assertThat(e.getMessage(), containsString("Unmatched parenthesis found"));
 
         //incorrect parenthesis
         e = assertThrows(ParserException.class, () -> {
-            var expr = "\"foo\")==((\"bar\"|| 'foo1')&&true))";
-            new Expression(expr);
+            String expr = "\"foo\")==((\"bar\"|| 'foo1')&&true))";
+            Expression.builder().expression(expr).build();
         });
         assertThat(e.getMessage(), containsString("Unmatched parenthesis found"));
 
         //incorrect parenthesis
         e = assertThrows(ParserException.class, () -> {
-            var expr = "\"foo\"(==((\"bar\"|| 'foo1')&&true))";
-            new Expression(expr);
+            String expr = "\"foo\"(==((\"bar\"|| 'foo1')&&true))";
+            Expression.builder().expression(expr).build();
         });
         assertThat(e.getMessage(), containsString("Unknown AbstractSyntaxTree type"));
 
         //incorrect parenthesis
         e = assertThrows(ParserException.class, () -> {
-            var expr = ")\"foo\"(==((\"bar\"|| 'foo1')&&true))";
-            new Expression(expr);
+            String expr = ")\"foo\"(==((\"bar\"|| 'foo1')&&true))";
+            Expression.builder().expression(expr).build();
         });
         assertThat(e.getMessage(), containsString("Unknown AbstractSyntaxTree type"));
     }
@@ -574,145 +574,145 @@ class ExpressionTest {
     public void testLiteralWithParenthesis() throws Exception {
         //boolean literal
         String value = "(true)";
-        Expression expression = new Expression(value);
+        Expression expression = Expression.builder().expression(value).build();
         assertThat(expression.tree().isLiteral(), is(true));
-        assertThat(expression.tree().asLiteral().getValue(), is(true));
+        assertThat(expression.tree().asLiteral().value(), is(true));
 
         //boolean literal and nested parenthesis
         value = "((true))";
-        expression = new Expression(value);
+        expression = Expression.builder().expression(value).build();
         assertThat(expression.tree().isLiteral(), is(true));
-        assertThat(expression.tree().asLiteral().getValue(), is(true));
+        assertThat(expression.tree().asLiteral().value(), is(true));
 
         //variable
         value = "(${var})";
-        expression = new Expression(value);
+        expression = Expression.builder().expression(value).build();
         assertThat(expression.tree().isVariable(), is(true));
-        assertThat(expression.tree().asVariable().getName(), is("var"));
+        assertThat(expression.tree().asVariable().name(), is("var"));
 
         //string literal
         value = "(\"value\")";
-        expression = new Expression(value);
+        expression = Expression.builder().expression(value).build();
         assertThat(expression.tree().isLiteral(), is(true));
-        assertThat(expression.tree().asLiteral().getValue(), is("\"value\""));
+        assertThat(expression.tree().asLiteral().value(), is("\"value\""));
 
         //string literal and nested parenthesis
         value = "((\"value\"))";
-        expression = new Expression(value);
+        expression = Expression.builder().expression(value).build();
         assertThat(expression.tree().isLiteral(), is(true));
-        assertThat(expression.tree().asLiteral().getValue(), is("\"value\""));
+        assertThat(expression.tree().asLiteral().value(), is("\"value\""));
 
         //string literal with incorrect parenthesis
         Exception e = assertThrows(ParserException.class, () -> {
-            var expr = "((((\"value\"))";
-            new Expression(expr);
+            String expr = "((((\"value\"))";
+            Expression.builder().expression(expr).build();
         });
         assertThat(e.getMessage(), containsString("Unmatched parenthesis found"));
 
         //string literal with incorrect parenthesis
         e = assertThrows(ParserException.class, () -> {
-            var expr = ")\"value\"(";
-            new Expression(expr);
+            String expr = ")\"value\"(";
+            Expression.builder().expression(expr).build();
         });
         assertThat(e.getMessage(), containsString("Unknown AbstractSyntaxTree type"));
 
         //string literal with incorrect parenthesis
         e = assertThrows(ParserException.class, () -> {
-            var expr = "(\"value\"()";
-            new Expression(expr);
+            String expr = "(\"value\"()";
+            Expression.builder().expression(expr).build();
         });
         assertThat(e.getMessage(), containsString("Unknown AbstractSyntaxTree type"));
 
         //empty array
         value = "([])";
-        expression = new Expression(value);
+        expression = Expression.builder().expression(value).build();
         assertThat(expression.tree().isLiteral(), is(true));
-        assertThat(((ArrayList<String>) expression.tree().asLiteral().getValue()).isEmpty(), is(true));
+        assertThat(((ArrayList<String>) expression.tree().asLiteral().value()).isEmpty(), is(true));
 
         //empty array and nested parenthesis
         value = "(([]))";
-        expression = new Expression(value);
+        expression = Expression.builder().expression(value).build();
         assertThat(expression.tree().isLiteral(), is(true));
-        assertThat(((ArrayList<String>) expression.tree().asLiteral().getValue()).isEmpty(), is(true));
+        assertThat(((ArrayList<String>) expression.tree().asLiteral().value()).isEmpty(), is(true));
 
         //array with 1 element
         value = "([''])";
-        expression = new Expression(value);
+        expression = Expression.builder().expression(value).build();
         assertThat(expression.tree().isLiteral(), is(true));
-        assertThat((ArrayList<String>) expression.tree().asLiteral().getValue(), contains("''"));
+        assertThat((ArrayList<String>) expression.tree().asLiteral().value(), contains("''"));
 
         //array with 1 element and nested parenthesis
         value = "((['']))";
-        expression = new Expression(value);
+        expression = Expression.builder().expression(value).build();
         assertThat(expression.tree().isLiteral(), is(true));
-        assertThat((ArrayList<String>) expression.tree().asLiteral().getValue(), contains("''"));
+        assertThat((ArrayList<String>) expression.tree().asLiteral().value(), contains("''"));
 
         //array with many elements
         value = "(['', 'adc', 'def'])";
-        expression = new Expression(value);
+        expression = Expression.builder().expression(value).build();
         assertThat(expression.tree().isLiteral(), is(true));
-        assertThat((ArrayList<String>) expression.tree().asLiteral().getValue(), contains("''", "'adc'", "'def'"));
+        assertThat((ArrayList<String>) expression.tree().asLiteral().value(), contains("''", "'adc'", "'def'"));
 
         //array with many elements and nested parenthesis
         value = "((['', 'adc', 'def']))";
-        expression = new Expression(value);
+        expression = Expression.builder().expression(value).build();
         assertThat(expression.tree().isLiteral(), is(true));
-        assertThat((ArrayList<String>) expression.tree().asLiteral().getValue(), contains("''", "'adc'", "'def'"));
+        assertThat((ArrayList<String>) expression.tree().asLiteral().value(), contains("''", "'adc'", "'def'"));
 
         //array with many elements and incorrect parenthesis
         e = assertThrows(ParserException.class, () -> {
-            var expr = "((['', 'adc', 'def'])))";
-            new Expression(expr);
+            String expr = "((['', 'adc', 'def'])))";
+            Expression.builder().expression(expr).build();
         });
         assertThat(e.getMessage(), containsString("Unmatched parenthesis found"));
 
         //array with many elements and incorrect parenthesis
         e = assertThrows(ParserException.class, () -> {
-            var expr = "(((['', 'adc', 'def']))";
-            new Expression(expr);
+            String expr = "(((['', 'adc', 'def']))";
+            Expression.builder().expression(expr).build();
         });
         assertThat(e.getMessage(), containsString("Unmatched parenthesis found"));
 
     }
 
     @Test
-    public void testFewOperatorsWithDifferentPrecedenceInOneExpression() throws ParserException {
+    public void testFewOperatorsWithDifferentPrecedenceInOneExpression() {
         /*
          * first operator has higher precedence
          */
         //first case - 3 string literals
         String value = "\"foo\"==\"bar\"|| 'foo1'";
-        Expression expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().isBinaryLogicalExpression(), is(true));
-        var left = expression.tree().asBinaryLogicalExpression().getLeft().asBinaryLogicalExpression();
-        assertThat(left.getLeft().isLiteral(), is(true));
-        assertThat(left.getLeft().asLiteral().getValue(), is("\"foo\""));
-        assertThat(left.getRight().isLiteral(), is(true));
-        assertThat(left.getRight().asLiteral().getValue(), is("\"bar\""));
-        assertThat(left.getOperator(), Matchers.is(LogicalOperator.EQUAL));
-        assertThat(expression.tree().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.OR));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().isLiteral(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().asLiteral().getValue(), is("'foo1'"));
+        Expression expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression().left().isBinaryExpression(), is(true));
+        BinaryExpression left = expression.tree().asBinaryExpression().left().asBinaryExpression();
+        assertThat(left.left().isLiteral(), is(true));
+        assertThat(left.left().asLiteral().value(), is("\"foo\""));
+        assertThat(left.right().isLiteral(), is(true));
+        assertThat(left.right().asLiteral().value(), is("\"bar\""));
+        assertThat(left.operator(), Matchers.is(Operator.EQUAL));
+        assertThat(expression.tree().asBinaryExpression().operator(), Matchers.is(Operator.OR));
+        assertThat(expression.tree().asBinaryExpression().right().isLiteral(), is(true));
+        assertThat(expression.tree().asBinaryExpression().right().asLiteral().value(), is("'foo1'"));
 
         //first case - 4 string literals
         value = "\"foo\"==\"bar\" && 'foo1' || 'bar1'";
-        expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().isBinaryLogicalExpression(), is(true));
-        left = expression.tree().asBinaryLogicalExpression().getLeft().asBinaryLogicalExpression();
-        assertThat(left.getLeft().isBinaryLogicalExpression(), is(true));
-        assertThat(left.getLeft().asBinaryLogicalExpression().getLeft().isLiteral(), is(true));
-        assertThat(left.getLeft().asBinaryLogicalExpression().getLeft().asLiteral().getValue(), is("\"foo\""));
-        assertThat(left.getLeft().asBinaryLogicalExpression().getRight().isLiteral(), is(true));
-        assertThat(left.getLeft().asBinaryLogicalExpression().getRight().asLiteral().getValue(), is("\"bar\""));
-        assertThat(left.getLeft().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.EQUAL));
-        assertThat(left.getRight().isLiteral(), is(true));
-        assertThat(left.getRight().asLiteral().getValue(), is("'foo1'"));
-        assertThat(left.getOperator(), Matchers.is(LogicalOperator.AND));
-        assertThat(expression.tree().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.OR));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().isLiteral(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().asLiteral().getValue(), is("'bar1'"));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression().left().isBinaryExpression(), is(true));
+        left = expression.tree().asBinaryExpression().left().asBinaryExpression();
+        assertThat(left.left().isBinaryExpression(), is(true));
+        assertThat(left.left().asBinaryExpression().left().isLiteral(), is(true));
+        assertThat(left.left().asBinaryExpression().left().asLiteral().value(), is("\"foo\""));
+        assertThat(left.left().asBinaryExpression().right().isLiteral(), is(true));
+        assertThat(left.left().asBinaryExpression().right().asLiteral().value(), is("\"bar\""));
+        assertThat(left.left().asBinaryExpression().operator(), Matchers.is(Operator.EQUAL));
+        assertThat(left.right().isLiteral(), is(true));
+        assertThat(left.right().asLiteral().value(), is("'foo1'"));
+        assertThat(left.operator(), Matchers.is(Operator.AND));
+        assertThat(expression.tree().asBinaryExpression().operator(), Matchers.is(Operator.OR));
+        assertThat(expression.tree().asBinaryExpression().right().isLiteral(), is(true));
+        assertThat(expression.tree().asBinaryExpression().right().asLiteral().value(), is("'bar1'"));
 
         /*
          *  second operator has higher precedence
@@ -720,71 +720,71 @@ class ExpressionTest {
 
         //first case - 3 literals
         value = "\"foo\" && \"bar\" == 'foo1'";
-        expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().isLiteral(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().asLiteral().getValue(), is("\"foo\""));
-        assertThat(expression.tree().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.AND));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().isBinaryLogicalExpression(), is(true));
-        var right = expression.tree().asBinaryLogicalExpression().getRight().asBinaryLogicalExpression();
-        assertThat(right.getLeft().isLiteral(), is(true));
-        assertThat(right.getLeft().asLiteral().getValue(), is("\"bar\""));
-        assertThat(right.getRight().isLiteral(), is(true));
-        assertThat(right.getRight().asLiteral().getValue(), is("'foo1'"));
-        assertThat(right.getOperator(), Matchers.is(LogicalOperator.EQUAL));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression().left().isLiteral(), is(true));
+        assertThat(expression.tree().asBinaryExpression().left().asLiteral().value(), is("\"foo\""));
+        assertThat(expression.tree().asBinaryExpression().operator(), Matchers.is(Operator.AND));
+        assertThat(expression.tree().asBinaryExpression().right().isBinaryExpression(), is(true));
+        BinaryExpression right = expression.tree().asBinaryExpression().right().asBinaryExpression();
+        assertThat(right.left().isLiteral(), is(true));
+        assertThat(right.left().asLiteral().value(), is("\"bar\""));
+        assertThat(right.right().isLiteral(), is(true));
+        assertThat(right.right().asLiteral().value(), is("'foo1'"));
+        assertThat(right.operator(), Matchers.is(Operator.EQUAL));
 
         //first case - 4 literals
         value = "true && ${bar} == 'foo1' || false";
-        expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.OR));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().isBinaryLogicalExpression(), is(true));
-        left = expression.tree().asBinaryLogicalExpression().getLeft().asBinaryLogicalExpression();
-        assertThat(left.getLeft().isLiteral(), is(true));
-        assertThat(left.getLeft().asLiteral().getValue(), is(true));
-        assertThat(left.getOperator(), Matchers.is(LogicalOperator.AND));
-        assertThat(left.getRight().isBinaryLogicalExpression(), is(true));
-        assertThat(left.getRight().asBinaryLogicalExpression().getLeft().isVariable(), is(true));
-        assertThat(left.getRight().asBinaryLogicalExpression().getLeft().asVariable().getName(), is("bar"));
-        assertThat(left.getRight().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.EQUAL));
-        assertThat(left.getRight().asBinaryLogicalExpression().getRight().isLiteral(), is(true));
-        assertThat(left.getRight().asBinaryLogicalExpression().getRight().asLiteral().getValue(), is("'foo1'"));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().isLiteral(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().asLiteral().getValue(), is(false));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression().operator(), Matchers.is(Operator.OR));
+        assertThat(expression.tree().asBinaryExpression().left().isBinaryExpression(), is(true));
+        left = expression.tree().asBinaryExpression().left().asBinaryExpression();
+        assertThat(left.left().isLiteral(), is(true));
+        assertThat(left.left().asLiteral().value(), is(true));
+        assertThat(left.operator(), Matchers.is(Operator.AND));
+        assertThat(left.right().isBinaryExpression(), is(true));
+        assertThat(left.right().asBinaryExpression().left().isVariable(), is(true));
+        assertThat(left.right().asBinaryExpression().left().asVariable().name(), is("bar"));
+        assertThat(left.right().asBinaryExpression().operator(), Matchers.is(Operator.EQUAL));
+        assertThat(left.right().asBinaryExpression().right().isLiteral(), is(true));
+        assertThat(left.right().asBinaryExpression().right().asLiteral().value(), is("'foo1'"));
+        assertThat(expression.tree().asBinaryExpression().right().isLiteral(), is(true));
+        assertThat(expression.tree().asBinaryExpression().right().asLiteral().value(), is(false));
 
     }
 
     @Test
-    public void testFewOperatorsWithEqualPrecedenceInOneExpression() throws ParserException {
+    public void testFewOperatorsWithEqualPrecedenceInOneExpression() {
         //first case - string literals
         String value = "\"foo\"!=\"bar\"=='foo1'";
-        Expression expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().isBinaryLogicalExpression(), is(true));
-        var left = expression.tree().asBinaryLogicalExpression().getLeft().asBinaryLogicalExpression();
-        assertThat(left.getLeft().isLiteral(), is(true));
-        assertThat(left.getLeft().asLiteral().getValue(), is("\"foo\""));
-        assertThat(left.getRight().isLiteral(), is(true));
-        assertThat(left.getRight().asLiteral().getValue(), is("\"bar\""));
-        assertThat(left.getOperator(), Matchers.is(LogicalOperator.NOT_EQUAL));
-        assertThat(expression.tree().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.EQUAL));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().isLiteral(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().asLiteral().getValue(), is("'foo1'"));
+        Expression expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression().left().isBinaryExpression(), is(true));
+        BinaryExpression left = expression.tree().asBinaryExpression().left().asBinaryExpression();
+        assertThat(left.left().isLiteral(), is(true));
+        assertThat(left.left().asLiteral().value(), is("\"foo\""));
+        assertThat(left.right().isLiteral(), is(true));
+        assertThat(left.right().asLiteral().value(), is("\"bar\""));
+        assertThat(left.operator(), Matchers.is(Operator.NOT_EQUAL));
+        assertThat(expression.tree().asBinaryExpression().operator(), Matchers.is(Operator.EQUAL));
+        assertThat(expression.tree().asBinaryExpression().right().isLiteral(), is(true));
+        assertThat(expression.tree().asBinaryExpression().right().asLiteral().value(), is("'foo1'"));
 
         //second case - different types of the literals
         value = "'foo'!=${var}==true";
-        expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().isBinaryLogicalExpression(), is(true));
-        left = expression.tree().asBinaryLogicalExpression().getLeft().asBinaryLogicalExpression();
-        assertThat(left.getLeft().isLiteral(), is(true));
-        assertThat(left.getLeft().asLiteral().getValue(), is("'foo'"));
-        assertThat(left.getRight().isVariable(), is(true));
-        assertThat(left.getRight().asVariable().getName(), is("var"));
-        assertThat(left.getOperator(), Matchers.is(LogicalOperator.NOT_EQUAL));
-        assertThat(expression.tree().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.EQUAL));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().isLiteral(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().asLiteral().getValue(), is(true));
+        expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression().left().isBinaryExpression(), is(true));
+        left = expression.tree().asBinaryExpression().left().asBinaryExpression();
+        assertThat(left.left().isLiteral(), is(true));
+        assertThat(left.left().asLiteral().value(), is("'foo'"));
+        assertThat(left.right().isVariable(), is(true));
+        assertThat(left.right().asVariable().name(), is("var"));
+        assertThat(left.operator(), Matchers.is(Operator.NOT_EQUAL));
+        assertThat(expression.tree().asBinaryExpression().operator(), Matchers.is(Operator.EQUAL));
+        assertThat(expression.tree().asBinaryExpression().right().isLiteral(), is(true));
+        assertThat(expression.tree().asBinaryExpression().right().asLiteral().value(), is(true));
 
     }
 
@@ -792,7 +792,7 @@ class ExpressionTest {
     public void testIncorrectOperator() {
         final Exception e = assertThrows(ParserException.class, () -> {
             String value = "\"foo\" !== \"bar\"";
-            new Expression(value);
+            Expression.builder().expression(value).build();
         });
         assertThat(e.getMessage(), containsString("unexpected token - = \"bar\""));
     }
@@ -800,77 +800,77 @@ class ExpressionTest {
     @Test
     public void simpleNotEqualStringLiterals() throws Exception {
         String value = "\"foo\" != \"bar\"";
-        Expression expression = new Expression(value);
-        assertThat(expression.tree().isBinaryLogicalExpression(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().isLiteral(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().isLiteral(), is(true));
-        assertThat(expression.tree().asBinaryLogicalExpression().getOperator(), Matchers.is(LogicalOperator.NOT_EQUAL));
-        assertThat(expression.tree().asBinaryLogicalExpression().getLeft().asLiteral().getValue(), is("\"foo\""));
-        assertThat(expression.tree().asBinaryLogicalExpression().getRight().asLiteral().getValue(), is("\"bar\""));
+        Expression expression = Expression.builder().expression(value).build();
+        assertThat(expression.tree().isBinaryExpression(), is(true));
+        assertThat(expression.tree().asBinaryExpression().left().isLiteral(), is(true));
+        assertThat(expression.tree().asBinaryExpression().right().isLiteral(), is(true));
+        assertThat(expression.tree().asBinaryExpression().operator(), Matchers.is(Operator.NOT_EQUAL));
+        assertThat(expression.tree().asBinaryExpression().left().asLiteral().value(), is("\"foo\""));
+        assertThat(expression.tree().asBinaryExpression().right().asLiteral().value(), is("\"bar\""));
     }
 
     @Test
     public void testStringLiteralWithDoubleQuotes() throws Exception {
         String value = "\"value\"";
-        Expression expression = new Expression(value);
+        Expression expression = Expression.builder().expression(value).build();
         assertThat(expression.tree().isLiteral(), is(true));
-        assertThat(expression.tree().asLiteral().getValue(), is(value));
+        assertThat(expression.tree().asLiteral().value(), is(value));
     }
 
     @Test
     public void testStringLiteralWithSingleQuotes() throws Exception {
         String value = "'value'";
-        Expression expression = new Expression(value);
+        Expression expression = Expression.builder().expression(value).build();
         assertThat(expression.tree().isLiteral(), is(true));
-        assertThat(expression.tree().asLiteral().getValue(), is(value));
+        assertThat(expression.tree().asLiteral().value(), is(value));
     }
 
     @Test
     public void testStringLiteralWithWhitespaces() throws Exception {
         String value = "'value'";
-        Expression expression = new Expression(" " + value + "   ");
+        Expression expression = Expression.builder().expression(" " + value + "   ").build();
         assertThat(expression.tree().isLiteral(), is(true));
-        assertThat(expression.tree().asLiteral().getValue(), is(value));
+        assertThat(expression.tree().asLiteral().value(), is(value));
     }
 
     @Test
     public void testBooleanLiteral() throws Exception {
         String value = "true";
-        Expression expression = new Expression(value);
+        Expression expression = Expression.builder().expression(value).build();
         assertThat(expression.tree().isLiteral(), is(true));
-        assertThat(expression.tree().asLiteral().getValue(), is(true));
+        assertThat(expression.tree().asLiteral().value(), is(true));
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void testEmptyStringArrayLiteral() throws Exception {
         String value = "[]";
-        Expression expression = new Expression(value);
+        Expression expression = Expression.builder().expression(value).build();
         assertThat(expression.tree().isLiteral(), is(true));
-        assertThat(((List<String>) expression.tree().asLiteral().getValue()).isEmpty(), is(true));
+        assertThat(((List<String>) expression.tree().asLiteral().value()).isEmpty(), is(true));
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void testArrayWithEmptyLiteral() throws Exception {
         String value = "['']";
-        Expression expression = new Expression(value);
+        Expression expression = Expression.builder().expression(value).build();
         assertThat(expression.tree().isLiteral(), is(true));
-        assertThat((List<String>) expression.tree().asLiteral().getValue(), contains("''"));
+        assertThat((List<String>) expression.tree().asLiteral().value(), contains("''"));
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void testArrayWithStringLiterals() throws Exception {
         String value = "['', 'adc', 'def']";
-        Expression expression = new Expression(value);
+        Expression expression = Expression.builder().expression(value).build();
         assertThat(expression.tree().isLiteral(), is(true));
-        assertThat((List<String>) expression.tree().asLiteral().getValue(), contains("''", "'adc'", "'def'"));
+        assertThat((List<String>) expression.tree().asLiteral().value(), contains("''", "'adc'", "'def'"));
 
         value = "['','adc','def']";
-        expression = new Expression(value);
+        expression = Expression.builder().expression(value).build();
         assertThat(expression.tree().isLiteral(), is(true));
-        assertThat((List<String>) expression.tree().asLiteral().getValue(), contains("''", "'adc'", "'def'"));
+        assertThat((List<String>) expression.tree().asLiteral().value(), contains("''", "'adc'", "'def'"));
     }
 
 }

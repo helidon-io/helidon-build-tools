@@ -19,27 +19,26 @@ package io.helidon.build.archetype.engine.v2.expression.evaluator;
 /**
  * Factory for the creation of the new instances of the {@link AbstractSyntaxTree} .
  */
-public abstract class ASTFactory {
+abstract class ASTFactory {
 
     /**
      * Create the new instances of the {@link AbstractSyntaxTree} from the parsed token.
      *
      * @param token Parsed token.
      * @return AbstractSyntaxTree
-     * @throws ParserException
      */
-    public static AbstractSyntaxTree create(Token token) throws ParserException {
-        if (token.getType() == Token.Type.BOOLEAN) {
-            return new BooleanLiteral(Boolean.valueOf(token.getValue()));
+    public static AbstractSyntaxTree create(Token token) {
+        if (token.type() == Token.Type.BOOLEAN) {
+            return new BooleanLiteral(Boolean.valueOf(token.value()));
         }
-        if (token.getType() == Token.Type.STRING) {
-            return new StringLiteral(token.getValue());
+        if (token.type() == Token.Type.STRING) {
+            return new StringLiteral(token.value());
         }
-        if (token.getType() == Token.Type.ARRAY) {
-            return new StringArrayLiteral(token.getValue());
+        if (token.type() == Token.Type.ARRAY) {
+            return new StringArrayLiteral(token.value());
         }
-        if (token.getType() == Token.Type.VARIABLE) {
-            return new Variable(token.getValue());
+        if (token.type() == Token.Type.VARIABLE) {
+            return new Variable(token.value());
         }
 
         throw new ParserException("Unknown AbstractSyntaxTree type");

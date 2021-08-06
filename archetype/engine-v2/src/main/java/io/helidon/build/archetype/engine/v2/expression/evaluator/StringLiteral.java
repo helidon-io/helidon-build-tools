@@ -19,19 +19,19 @@ package io.helidon.build.archetype.engine.v2.expression.evaluator;
 /**
  * String literal.
  */
-public class StringLiteral extends Literal<String> {
+final class StringLiteral extends Literal<String> {
 
     /**
      * Create a new string literal.
      *
      * @param rawExpr value of the literal.
      */
-    public StringLiteral(String rawExpr) {
+    StringLiteral(String rawExpr) {
         super(rawExpr);
     }
 
     @Override
-    Type getType() {
+    Type type() {
         return Type.STRING;
     }
 }

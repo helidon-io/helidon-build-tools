@@ -25,20 +25,30 @@ import java.util.Map;
  * the precedence. Parenthesis must be used to express a different order.
  * The expression is parsed into a syntax tree that can be accessed using {@link #tree()}.
  */
-public class Expression {
+public final class Expression {
 
+    private final String rawExpression;
     private final AbstractSyntaxTree tree;
     private final Tokenizer tokenizer;
     private Token lastToken;
     private int countOpenParentheses = 0;
 
     /**
+     * Create a new builder.
+     *
+     * @return a new builder
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
      * Create a new expression.
      *
      * @param rawExpr string that contains an expression.
-     * @throws ParserException if a parsing error occurs.
      */
-    public Expression(String rawExpr) throws ParserException {
+    private Expression(String rawExpr) {
+        rawExpression = rawExpr;
         tokenizer = new Tokenizer();
         tokenizer.init(rawExpr);
         if (tokenizer.hasMoreTokens()) {
@@ -47,29 +57,28 @@ public class Expression {
         this.tree = parse();
     }
 
-    private Expression(Tokenizer tokenizer, Token lastToken, int countOpenParentheses) throws ParserException {
+    private Expression(Tokenizer tokenizer, Token lastToken, int countOpenParentheses, String rawExpression) {
         this.tokenizer = tokenizer;
         this.lastToken = lastToken;
         this.countOpenParentheses = countOpenParentheses;
         this.tree = parse();
+        this.rawExpression = rawExpression;
     }
 
     /**
      * Evaluate the current expression. If current expression contains variables {@link Expression#evaluate(java.util.Map)}
      * must be used.
      *
-     * @return Object that represents the result of the evaluated expression (for example {@link Boolean} for the logical
-     * expression).
-     * @throws ParserException if a parsing error occurs.
+     * @return the result of the evaluated expression.
      */
-    public Object evaluate() throws ParserException {
+    public boolean evaluate() {
         if (tree.isLiteral()) {
-            return tree.asLiteral().getValue();
+            return (boolean) tree.asLiteral().value();
         }
         if (tree().isExpressionHandler()) {
-            return tree.asExpressionHandler().evaluate().getValue();
+            return (boolean) tree.asExpressionHandler().evaluate().value();
         }
-        return null;
+        throw new UnexpectedResultException(String.format("Expression %s cannot be evaluated", rawExpression));
     }
 
     /**
@@ -77,29 +86,27 @@ public class Expression {
      *
      * @param varInitializerMap Map that contains names of the variables as the keys and their values in the string
      *                          representation as the values.
-     * @return Object that represents the result of the evaluated expression (for example {@link Boolean} for the logical
-     * expression).
-     * @throws ParserException if a parsing error occurs.
+     * @return the result of the evaluated expression.
      */
-    public Object evaluate(Map<String, String> varInitializerMap) throws ParserException {
+    public boolean evaluate(Map<String, String> varInitializerMap) {
         initializeVariables(varInitializerMap);
         return evaluate();
     }
 
-    private void initializeVariables(Map<String, String> varInitializerMap) throws ParserException {
+    private void initializeVariables(Map<String, String> varInitializerMap) {
         List<AbstractSyntaxTree> literals = getLiterals(tree);
         for (AbstractSyntaxTree literal : literals) {
             if (literal.isVariable()) {
-                String varValue = varInitializerMap.get(literal.asVariable().getName());
+                String varValue = varInitializerMap.get(literal.asVariable().name());
                 if (varValue == null) {
                     throw new IllegalArgumentException(
-                            String.format("Variable %s must be initialized", literal.asVariable().getName()));
+                            String.format("Variable %s must be initialized", literal.asVariable().name()));
                 }
                 Expression expression = new Expression(varValue);
                 if (!expression.tree().isLiteral()) {
                     throw new IllegalArgumentException("varInitializerMap must not contain expressions");
                 }
-                literal.asVariable().setValue(expression.tree().asLiteral());
+                literal.asVariable().value(expression.tree().asLiteral());
             }
         }
     }
@@ -107,12 +114,12 @@ public class Expression {
     private List<AbstractSyntaxTree> getLiterals(AbstractSyntaxTree tree) {
         List<AbstractSyntaxTree> result = new ArrayList<>();
         if (tree.isExpressionHandler()) {
-            if (tree.isBinaryLogicalExpression()) {
-                fillLiteralList(result, tree.asBinaryLogicalExpression().getLeft());
-                fillLiteralList(result, tree.asBinaryLogicalExpression().getRight());
+            if (tree.isBinaryExpression()) {
+                fillLiteralList(result, tree.asBinaryExpression().left());
+                fillLiteralList(result, tree.asBinaryExpression().right());
             }
-            if (tree.isUnaryLogicalExpression()) {
-                fillLiteralList(result, tree.asUnaryLogicalExpression().getLeft());
+            if (tree.isUnaryExpression()) {
+                fillLiteralList(result, tree.asUnaryExpression().left());
             }
         } else {
             result.add(tree);
@@ -128,43 +135,43 @@ public class Expression {
         }
     }
 
-    private AbstractSyntaxTree parse() throws ParserException {
+    private AbstractSyntaxTree parse() {
 
         AbstractSyntaxTree initialAST = getInitialAST();
 
         while (tokenizer.hasMoreTokens()) {
             AbstractSyntaxTree nested = null;
-            var token = tokenizer.getNextToken();
+            Token token = tokenizer.getNextToken();
 
             if (token == null) {
                 continue;
             }
 
-            if (token.getType().isBinaryOperator()) {
-                if (lastToken.getType().isBinaryOperator()) {
-                    throw new ParserException("Unexpected token - " + token.getValue());
+            if (token.type().binaryOperator()) {
+                if (lastToken.type().binaryOperator()) {
+                    throw new ParserException("Unexpected token - " + token.value());
                 }
                 lastToken = token;
                 continue;
             }
 
-            if (token.getType().equals(Token.Type.PARENTHESIS) && token.getValue().equals("(")) {
+            if (token.type().equals(Token.Type.PARENTHESIS) && token.value().equals("(")) {
                 token = getLastTokenSafely(token);
                 nested = generateAST(tokenizer, token, 1);
                 markExpressionAsIsolated(nested);
             }
 
-            if (token.getType().equals(Token.Type.PARENTHESIS) && token.getValue().equals(")")) {
+            if (token.type().equals(Token.Type.PARENTHESIS) && token.value().equals(")")) {
                 countOpenParentheses--;
                 checkOpenParentheses();
                 return initialAST;
             }
 
-            if (token.getType().equals(Token.Type.UNARY_LOGICAL_OPERATOR)) {
+            if (token.type().equals(Token.Type.UNARY_LOGICAL_OPERATOR)) {
                 nested = generateAST(tokenizer, token, 0);
             }
 
-            if (lastToken.getType().isBinaryOperator()) {
+            if (lastToken.type().binaryOperator()) {
                 initialAST = getBinaryExpression(initialAST, nested != null ? nested : ASTFactory.create(token));
                 lastToken = token;
             }
@@ -175,26 +182,26 @@ public class Expression {
 
     }
 
-    private Token getLastTokenSafely(Token tokenByDefault) throws ParserException {
+    private Token getLastTokenSafely(Token tokenByDefault) {
         if (tokenizer.hasMoreTokens()) {
             return tokenizer.getNextToken();
         }
         return tokenByDefault;
     }
 
-    private AbstractSyntaxTree getInitialAST() throws ParserException {
+    private AbstractSyntaxTree getInitialAST() {
         AbstractSyntaxTree initialAST;
 
-        if (lastToken.getType().equals(Token.Type.PARENTHESIS)
-                && lastToken.getValue().equals("(")) {
+        if (lastToken.type().equals(Token.Type.PARENTHESIS)
+                && lastToken.value().equals("(")) {
             lastToken = getLastTokenSafely(lastToken);
             initialAST = generateAST(tokenizer, lastToken, 1);
             markExpressionAsIsolated(initialAST);
-        } else if (lastToken.getType().equals(Token.Type.UNARY_LOGICAL_OPERATOR)) {
-            LogicalOperator logicalOperator = LogicalOperator.find(lastToken.getValue());
+        } else if (lastToken.type().equals(Token.Type.UNARY_LOGICAL_OPERATOR)) {
+            Operator operator = Operator.find(lastToken.value());
             lastToken = getLastTokenSafely(lastToken);
-            initialAST = new UnaryLogicalExpression(
-                    logicalOperator,
+            initialAST = new UnaryExpression(
+                    operator,
                     generateAST(tokenizer, lastToken, 0)
             );
         } else {
@@ -204,55 +211,55 @@ public class Expression {
         return initialAST;
     }
 
-    private AbstractSyntaxTree generateAST(Tokenizer tokenizer, Token token, int countOpenParentheses) throws ParserException {
-        Expression expression = new Expression(tokenizer, token, countOpenParentheses);
+    private AbstractSyntaxTree generateAST(Tokenizer tokenizer, Token token, int countOpenParentheses) {
+        Expression expression = new Expression(tokenizer, token, countOpenParentheses, rawExpression);
         return expression.tree();
     }
 
-    private void checkOpenParentheses() throws ParserException {
+    private void checkOpenParentheses() {
         if (countOpenParentheses != 0) {
             throw new ParserException("Unmatched parenthesis found");
         }
     }
 
     private void markExpressionAsIsolated(AbstractSyntaxTree ast) {
-        if (ast.isBinaryLogicalExpression()) {
-            ast.asBinaryLogicalExpression().setIsolated(true);
+        if (ast.isBinaryExpression()) {
+            ast.asBinaryExpression().isolated(true);
         }
     }
 
     private AbstractSyntaxTree getBinaryExpression(
             AbstractSyntaxTree initial, AbstractSyntaxTree current
-    ) throws ParserException {
-        var logicalOperator = LogicalOperator.find(lastToken.getValue());
+    ) {
+        Operator logicalOperator = Operator.find(lastToken.value());
         AbstractSyntaxTree result = null;
 
-        if (initial.isBinaryLogicalExpression() && !initial.asBinaryLogicalExpression().isIsolated()) {
-            int leftPrecedence = initial.asBinaryLogicalExpression().getOperator().getPrecedence();
-            int currentPrecedence = logicalOperator.getPrecedence();
+        if (initial.isBinaryExpression() && !initial.asBinaryExpression().isolated()) {
+            int leftPrecedence = initial.asBinaryExpression().operator().priority();
+            int currentPrecedence = logicalOperator.priority();
 
             if (currentPrecedence > leftPrecedence) {
                 //change existing left AST (create new expression and set it as value for the right operand)
-                result = new BinaryLogicalExpression(
-                        initial.asBinaryLogicalExpression().getLeft(),
-                        new BinaryLogicalExpression(
-                                initial.asBinaryLogicalExpression().getRight(),
+                result = new BinaryExpression(
+                        initial.asBinaryExpression().left(),
+                        new BinaryExpression(
+                                initial.asBinaryExpression().right(),
                                 current,
                                 logicalOperator
                         ),
-                        initial.asBinaryLogicalExpression().getOperator()
+                        initial.asBinaryExpression().operator()
                 );
             } else {
                 //create new AST that will be the new var left
                 // (old var left will be as value for the left operand in this new AST)
-                result = new BinaryLogicalExpression(
+                result = new BinaryExpression(
                         initial,
                         current,
                         logicalOperator
                 );
             }
         } else {
-            result = new BinaryLogicalExpression(
+            result = new BinaryExpression(
                     initial,
                     current,
                     logicalOperator
@@ -269,5 +276,35 @@ public class Expression {
      */
     public AbstractSyntaxTree tree() {
         return tree;
+    }
+
+    /**
+     * {@code Expression} builder static inner class.
+     */
+    public static final class Builder {
+        private String expression;
+
+        private Builder() {
+        }
+
+        /**
+         * Sets the {@code expression} and returns a reference to this Builder so that the methods can be chained together.
+         *
+         * @param expression the {@code expression} to set
+         * @return a reference to this Builder
+         */
+        public Builder expression(String expression) {
+            this.expression = expression;
+            return this;
+        }
+
+        /**
+         * Returns a {@code Expression} built from the parameters previously set.
+         *
+         * @return a {@code Expression} built with parameters of this {@code Expression.Builder}
+         */
+        public Expression build() {
+            return new Expression(expression);
+        }
     }
 }

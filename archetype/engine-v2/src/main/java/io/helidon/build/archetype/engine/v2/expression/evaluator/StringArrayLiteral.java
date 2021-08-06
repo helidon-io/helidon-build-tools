@@ -25,31 +25,22 @@ import java.util.regex.Pattern;
 /**
  * String array.
  */
-public class StringArrayLiteral extends Literal<List<String>> {
+final class StringArrayLiteral extends Literal<List<String>> {
 
     private static final Pattern ELEMENT_PATTERN = Pattern.compile("(?<element>'[^']*')((\\s*,\\s*)|(\\s*]))");
 
     /**
      * Create a new literal that represents a string array.
      *
-     * @param content value of the literal.
-     */
-    public StringArrayLiteral(List<String> content) {
-        super(content);
-    }
-
-    /**
-     * Create a new literal that represents a string array.
-     *
      * @param content the raw literal value.
      */
-    public StringArrayLiteral(String content) {
+    StringArrayLiteral(String content) {
         super(new ArrayList<>());
         fillArray(content);
     }
 
     private void fillArray(String content) {
-        List<String> value = getValue();
+        List<String> value = value();
         Matcher matcher = ELEMENT_PATTERN.matcher(content);
         while (matcher.find()) {
             Optional.ofNullable(matcher.group("element")).ifPresent(value::add);
@@ -57,7 +48,7 @@ public class StringArrayLiteral extends Literal<List<String>> {
     }
 
     @Override
-    Type getType() {
+    Type type() {
         return Type.ARRAY;
     }
 }

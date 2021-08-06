@@ -19,7 +19,7 @@ package io.helidon.build.archetype.engine.v2.expression.evaluator;
 /**
  * Parser exception.
  */
-public class ParserException extends Exception {
+final class ParserException extends RuntimeException {
     /**
      * Create a new exception.
      *

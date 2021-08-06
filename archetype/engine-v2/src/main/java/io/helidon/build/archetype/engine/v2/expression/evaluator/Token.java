@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  * Part of an income string representation of the expression that can be transformed in the part of the {@code
  * AbstractSyntaxTree}.
  */
-public class Token {
+final class Token {
 
     private final Type type;
     private final String value;
@@ -34,7 +34,7 @@ public class Token {
      * @param type  Type of the token.
      * @param value Value of the token.
      */
-    public Token(Type type, String value) {
+    Token(Type type, String value) {
         this.type = type;
         this.value = value;
     }
@@ -44,7 +44,7 @@ public class Token {
      *
      * @return Type
      */
-    public Type getType() {
+    public Type type() {
         return type;
     }
 
@@ -53,7 +53,7 @@ public class Token {
      *
      * @return String value.
      */
-    public String getValue() {
+    public String value() {
         return value;
     }
 
@@ -66,7 +66,7 @@ public class Token {
          */
         SKIP {
             @Override
-            Pattern getPattern() {
+            Pattern pattern() {
                 return Pattern.compile("^\\s+");
             }
         },
@@ -75,7 +75,7 @@ public class Token {
          */
         ARRAY {
             @Override
-            Pattern getPattern() {
+            Pattern pattern() {
                 return Pattern.compile("^\\[[^]\\[]*]");
             }
         },
@@ -84,7 +84,7 @@ public class Token {
          */
         BOOLEAN {
             @Override
-            Pattern getPattern() {
+            Pattern pattern() {
                 return Pattern.compile("^(true|false)");
             }
         },
@@ -93,7 +93,7 @@ public class Token {
          */
         STRING {
             @Override
-            Pattern getPattern() {
+            Pattern pattern() {
                 return Pattern.compile("^['\"][^'\"]*['\"]");
             }
         },
@@ -102,7 +102,7 @@ public class Token {
          */
         VARIABLE {
             @Override
-            Pattern getPattern() {
+            Pattern pattern() {
                 return Pattern.compile("^\\$\\{(?<varName>[\\w.-]+)}");
             }
         },
@@ -111,12 +111,12 @@ public class Token {
          */
         EQUALITY_OPERATOR {
             @Override
-            Pattern getPattern() {
+            Pattern pattern() {
                 return Pattern.compile("^(!=|==)");
             }
 
             @Override
-            boolean isBinaryOperator() {
+            boolean binaryOperator() {
                 return true;
             }
         },
@@ -125,12 +125,12 @@ public class Token {
          */
         BINARY_LOGICAL_OPERATOR {
             @Override
-            Pattern getPattern() {
+            Pattern pattern() {
                 return Pattern.compile("^(\\|\\||&&)");
             }
 
             @Override
-            boolean isBinaryOperator() {
+            boolean binaryOperator() {
                 return true;
             }
         },
@@ -139,7 +139,7 @@ public class Token {
          */
         UNARY_LOGICAL_OPERATOR {
             @Override
-            Pattern getPattern() {
+            Pattern pattern() {
                 return Pattern.compile("^[!]");
             }
         },
@@ -148,12 +148,12 @@ public class Token {
          */
         CONTAINS_OPERATOR {
             @Override
-            Pattern getPattern() {
+            Pattern pattern() {
                 return Pattern.compile("^contains");
             }
 
             @Override
-            boolean isBinaryOperator() {
+            boolean binaryOperator() {
                 return true;
             }
         },
@@ -162,7 +162,7 @@ public class Token {
          */
         PARENTHESIS {
             @Override
-            Pattern getPattern() {
+            Pattern pattern() {
                 return Pattern.compile("^[()]");
             }
         };
@@ -172,14 +172,14 @@ public class Token {
          *
          * @return Pattern
          */
-        abstract Pattern getPattern();
+        abstract Pattern pattern();
 
         /**
          * Test if this token represents a binary operator.
          *
          * @return {@code true} if this token represents a binary operator, {@code false} otherwise.
          */
-        boolean isBinaryOperator() {
+        boolean binaryOperator() {
             return false;
         }
 
@@ -191,7 +191,7 @@ public class Token {
          */
         public static Type getByValue(String tokenValue) {
             return Arrays.stream(Type.values())
-                    .filter(type -> type.getPattern().matcher(tokenValue).find()).findFirst().orElse(null);
+                    .filter(type -> type.pattern().matcher(tokenValue).find()).findFirst().orElse(null);
         }
     }
 }

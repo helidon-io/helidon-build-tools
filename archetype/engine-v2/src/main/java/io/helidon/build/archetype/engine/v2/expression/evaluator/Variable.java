@@ -22,19 +22,18 @@ import java.util.regex.Pattern;
 /**
  * Variable.
  */
-public class Variable extends Literal<Literal<?>> {
+final class Variable implements AbstractSyntaxTree {
 
     private static final Pattern VAR_PATTERN = Pattern.compile("^\\$\\{(?<varName>[\\w.-]+)}");
-    private String name;
+    private final String name;
+    private Literal<?> value;
 
     /**
      * Create a new variable.
      *
      * @param name a raw name of the variable.
-     * @throws ParserException if a parsing error occurs
      */
-    public Variable(String name) throws ParserException {
-        super(null);
+    Variable(String name) {
         Matcher matcher = VAR_PATTERN.matcher(name);
         if (matcher.find()) {
             this.name = matcher.group("varName");
@@ -44,22 +43,11 @@ public class Variable extends Literal<Literal<?>> {
     }
 
     /**
-     * Create a new variable.
-     *
-     * @param name    a name of the variable.
-     * @param rawExpr value of the variable.
-     */
-    public Variable(String name, Literal<?> rawExpr) throws ParserException {
-        super(rawExpr);
-        this.name = name;
-    }
-
-    /**
      * Get name of the variable.
      *
      * @return name of the variable.
      */
-    public String getName() {
+    public String name() {
         return name;
     }
 
@@ -68,13 +56,17 @@ public class Variable extends Literal<Literal<?>> {
      *
      * @param value Literal that represents value of the variable.
      */
-    public void setValue(Literal<?> value) {
+    public void value(Literal<?> value) {
         this.value = value;
     }
 
-    @Override
-    Type getType() {
-        return Type.VARIABLE;
+    /**
+     * Get value.
+     *
+     * @return Value
+     */
+    public Literal<?> value() {
+        return value;
     }
 
     @Override

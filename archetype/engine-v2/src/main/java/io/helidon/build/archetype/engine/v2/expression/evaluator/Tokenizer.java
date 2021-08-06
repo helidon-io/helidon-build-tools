@@ -21,7 +21,7 @@ import java.util.regex.Matcher;
 /**
  * Parse the string representation of the expression and extract tokens from it.
  */
-public class Tokenizer {
+final class Tokenizer {
 
     private String line;
     private int cursor;
@@ -40,19 +40,18 @@ public class Tokenizer {
      * Extract next token from the string representation of the expression if possible or {@code null} otherwise.
      *
      * @return next {@code Token} or {@code null}.
-     * @throws ParserException if a parsing error occurs.
      */
-    public Token getNextToken() throws ParserException {
+    public Token getNextToken() {
         if (!hasMoreTokens()) {
             return null;
         }
 
-        var current = line.substring(cursor);
+        String current = line.substring(cursor);
 
         for (Token.Type type : Token.Type.values()) {
-            Matcher matcher = type.getPattern().matcher(current);
+            Matcher matcher = type.pattern().matcher(current);
             if (matcher.find()) {
-                var value = matcher.group();
+                String value = matcher.group();
                 cursor += value.length();
 
                 if (type == Token.Type.SKIP) {

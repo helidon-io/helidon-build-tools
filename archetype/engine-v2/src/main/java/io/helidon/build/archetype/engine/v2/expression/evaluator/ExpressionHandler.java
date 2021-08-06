@@ -21,13 +21,12 @@ package io.helidon.build.archetype.engine.v2.expression.evaluator;
  *
  * @param <T> Result type.
  */
-public interface ExpressionHandler<T> {
+interface ExpressionHandler<T> {
 
     /**
      * Evaluate an expression and return the {@code Literal} as a result.
      *
      * @return Literal.
-     * @throws ParserException if a parsing error occurs.
      */
     Literal<T> evaluate() throws ParserException;
 
@@ -38,14 +37,14 @@ public interface ExpressionHandler<T> {
      * @return Literal
      */
     default Literal<?> asLiteral(AbstractSyntaxTree ast) {
-        if (ast.isLiteral()) {
-            if (ast.isVariable()) {
-                if (ast.asVariable().getValue() == null) {
-                    throw new IllegalArgumentException(
-                            String.format("Variable %s must be initialized", ast.asVariable().getName()));
-                }
-                return ast.asVariable().getValue();
+        if (ast.isVariable()) {
+            if (ast.asVariable().value() == null) {
+                throw new IllegalArgumentException(
+                        String.format("Variable %s must be initialized", ast.asVariable().name()));
             }
+            return ast.asVariable().value();
+        }
+        if (ast.isLiteral()) {
             return ast.asLiteral();
         }
         throw new IllegalArgumentException("Unexpected type of the AbstractSyntaxTree. "

@@ -21,11 +21,11 @@ import java.util.Objects;
 /**
  * Expression for a binary logical operation.
  */
-public class BinaryLogicalExpression implements AbstractSyntaxTree, ExpressionHandler<Boolean> {
+final class BinaryExpression implements AbstractSyntaxTree, ExpressionHandler<Boolean> {
 
     private final AbstractSyntaxTree left;
     private final AbstractSyntaxTree right;
-    private final LogicalOperator operator;
+    private final Operator operator;
     private boolean isIsolated = false;
 
     /**
@@ -34,14 +34,13 @@ public class BinaryLogicalExpression implements AbstractSyntaxTree, ExpressionHa
      * @param left     left operand.
      * @param right    right operand.
      * @param operator logical operator.
-     * @throws ParserException if a parsing error occurs.
      */
-    public BinaryLogicalExpression(
-            AbstractSyntaxTree left, AbstractSyntaxTree right, LogicalOperator operator
-    ) throws ParserException {
+    BinaryExpression(
+            AbstractSyntaxTree left, AbstractSyntaxTree right, Operator operator
+    ) {
         this.left = left;
         this.right = right;
-        Token.Type operatorTokenType = Token.Type.getByValue(operator.getOperator());
+        Token.Type operatorTokenType = Token.Type.getByValue(operator.operator());
         if (Objects.equals(operatorTokenType, Token.Type.UNARY_LOGICAL_OPERATOR)) {
             throw new ParserException("Unary logical operator cannot be used in binary logical expression");
         }
@@ -54,7 +53,7 @@ public class BinaryLogicalExpression implements AbstractSyntaxTree, ExpressionHa
      *
      * @return AbstractSyntaxTree.
      */
-    public AbstractSyntaxTree getLeft() {
+    public AbstractSyntaxTree left() {
         return left;
     }
 
@@ -63,7 +62,7 @@ public class BinaryLogicalExpression implements AbstractSyntaxTree, ExpressionHa
      *
      * @return AbstractSyntaxTree.
      */
-    public AbstractSyntaxTree getRight() {
+    public AbstractSyntaxTree right() {
         return right;
     }
 
@@ -72,7 +71,7 @@ public class BinaryLogicalExpression implements AbstractSyntaxTree, ExpressionHa
      *
      * @return LogicalOperator.
      */
-    public LogicalOperator getOperator() {
+    public Operator operator() {
         return operator;
     }
 
@@ -81,7 +80,7 @@ public class BinaryLogicalExpression implements AbstractSyntaxTree, ExpressionHa
      *
      * @return {@code true} if this expression is surrounded by the parentheses, {@code false} otherwise.
      */
-    public boolean isIsolated() {
+    public boolean isolated() {
         return isIsolated;
     }
 
@@ -90,14 +89,14 @@ public class BinaryLogicalExpression implements AbstractSyntaxTree, ExpressionHa
      *
      * @param isolated @code true} if this expression is surrounded by the parentheses, {@code false} otherwise.
      */
-    public void setIsolated(boolean isolated) {
+    public void isolated(boolean isolated) {
         isIsolated = isolated;
     }
 
     @Override
-    public Literal<Boolean> evaluate() throws ParserException {
-        var leftLiteral = left.isExpressionHandler() ? left.asExpressionHandler().evaluate() : asLiteral(left);
-        var rightLiteral = right.isExpressionHandler() ? right.asExpressionHandler().evaluate() : asLiteral(right);
+    public Literal<Boolean> evaluate() {
+        Literal<?> leftLiteral = left.isExpressionHandler() ? left.asExpressionHandler().evaluate() : asLiteral(left);
+        Literal<?> rightLiteral = right.isExpressionHandler() ? right.asExpressionHandler().evaluate() : asLiteral(right);
 
         return new BooleanLiteral(operator.evaluate(leftLiteral, rightLiteral));
     }

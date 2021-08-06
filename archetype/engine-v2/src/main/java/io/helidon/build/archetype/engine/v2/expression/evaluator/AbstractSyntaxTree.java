@@ -19,7 +19,7 @@ package io.helidon.build.archetype.engine.v2.expression.evaluator;
 /**
  * Abstract syntax tree for an expression.
  */
-public interface AbstractSyntaxTree {
+interface AbstractSyntaxTree {
 
     /**
      * Test if this instance is a literal.
@@ -44,17 +44,17 @@ public interface AbstractSyntaxTree {
      *
      * @return {@code true} if a binary logical expression, {@code false} otherwise
      */
-    default boolean isBinaryLogicalExpression() {
-        return this instanceof BinaryLogicalExpression;
+    default boolean isBinaryExpression() {
+        return this instanceof BinaryExpression;
     }
 
     /**
-     * Get this instance as a {@link BinaryLogicalExpression}.
+     * Get this instance as a {@link BinaryExpression}.
      *
      * @return BinaryLogicalExpression
      */
-    default BinaryLogicalExpression asBinaryLogicalExpression() {
-        return (BinaryLogicalExpression) this;
+    default BinaryExpression asBinaryExpression() {
+        return (BinaryExpression) this;
     }
 
     /**
@@ -62,17 +62,17 @@ public interface AbstractSyntaxTree {
      *
      * @return {@code true} if an unary logical expression, {@code false} otherwise
      */
-    default boolean isUnaryLogicalExpression() {
-        return this instanceof UnaryLogicalExpression;
+    default boolean isUnaryExpression() {
+        return this instanceof UnaryExpression;
     }
 
     /**
-     * Get this instance as an {@link UnaryLogicalExpression}.
+     * Get this instance as an {@link UnaryExpression}.
      *
      * @return UnaryLogicalExpression
      */
-    default UnaryLogicalExpression asUnaryLogicalExpression() {
-        return (UnaryLogicalExpression) this;
+    default UnaryExpression asUnaryExpression() {
+        return (UnaryExpression) this;
     }
 
     /**
