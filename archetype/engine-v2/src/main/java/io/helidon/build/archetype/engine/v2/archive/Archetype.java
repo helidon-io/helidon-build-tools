@@ -16,6 +16,8 @@
 
 package io.helidon.build.archetype.engine.v2.archive;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -24,7 +26,7 @@ import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
 /**
  * Facade over descriptors, scripts and other files.
  */
-public interface Archetype {
+public interface Archetype extends Closeable {
     /**
      * Get {@link Path} to the file.
      *
@@ -47,4 +49,8 @@ public interface Archetype {
      * @return List of paths.
      */
     List<String> getPaths();
+
+    @Override
+    default void close() throws IOException {
+    }
 }

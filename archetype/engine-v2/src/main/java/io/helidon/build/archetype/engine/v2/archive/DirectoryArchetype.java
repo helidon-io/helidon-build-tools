@@ -64,8 +64,9 @@ class DirectoryArchetype implements Archetype {
         Objects.requireNonNull(path);
         Path descriptorPath = getFile(path);
         try {
-            InputStream inputStream = Files.newInputStream(descriptorPath);
-            return ArchetypeDescriptor.read(inputStream);
+            try (InputStream inputStream = Files.newInputStream(descriptorPath)) {
+                return ArchetypeDescriptor.read(inputStream);
+            }
         } catch (IOException e) {
             throw new ArchetypeException("An I/O error occurs during opening the file " + path, e);
         }

@@ -38,6 +38,7 @@ public class ZipArchetype implements Archetype, Closeable {
 
     private final Path zipPath;
     private final FileSystem fileSystem;
+    private final ZipFile zipFile;
 
     /**
      * Create a new instance.
@@ -47,7 +48,7 @@ public class ZipArchetype implements Archetype, Closeable {
     public ZipArchetype(File file) {
         try {
             //check if the file has a ZIP format
-            new ZipFile(file);
+            zipFile = new ZipFile(file);
             zipPath = file.toPath();
             fileSystem = FileSystems.newFileSystem(zipPath, null);
         } catch (IOException e) {
@@ -70,8 +71,9 @@ public class ZipArchetype implements Archetype, Closeable {
         Objects.requireNonNull(path);
         Path descriptorPath = getFile(path);
         try {
-            InputStream inputStream = Files.newInputStream(descriptorPath);
-            return ArchetypeDescriptor.read(inputStream);
+            try (InputStream inputStream = Files.newInputStream(descriptorPath)) {
+                return ArchetypeDescriptor.read(inputStream);
+            }
         } catch (IOException e) {
             throw new ArchetypeException("An I/O error occurs during opening the file " + path, e);
         }
@@ -103,5 +105,6 @@ public class ZipArchetype implements Archetype, Closeable {
     @Override
     public void close() throws IOException {
         fileSystem.close();
+        zipFile.close();
     }
 }

@@ -34,6 +34,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -55,6 +56,13 @@ class ZipArchetypeTest {
     private Path archDir;
     private String zipFileName;
     private FileSystem fileSystem;
+    private ZipArchetype archetype;
+
+    @AfterEach
+    public void cleanUp() throws IOException {
+        fileSystem.close();
+        archetype.close();
+    }
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -63,11 +71,11 @@ class ZipArchetypeTest {
         createContentForZip();
         zipFolder(archDir);
         fileSystem = FileSystems.newFileSystem(zipPath, null);
+        archetype = new ZipArchetype(new File(zipFileName));
     }
 
     @Test
     void testGetFile() {
-        Archetype archetype = new ZipArchetype(new File(zipFileName));
         String expectedPath = "dir0" + fileSystem.getSeparator() + "file0";
 
         //relative path
@@ -89,7 +97,6 @@ class ZipArchetypeTest {
 
     @Test
     void testGetDescriptor() {
-        Archetype archetype = new ZipArchetype(new File(zipFileName));
         String expectedPath = "schema" + fileSystem.getSeparator() + "archetype.xml";
 
         //relative path
@@ -111,8 +118,6 @@ class ZipArchetypeTest {
 
     @Test
     void testGetPaths() {
-        Archetype archetype = new ZipArchetype(new File(zipFileName));
-
         List<String> paths = archetype.getPaths();
 
         assertThat(paths.size(), is(101));
@@ -141,7 +146,7 @@ class ZipArchetypeTest {
                 ) {
                     try (FileInputStream fis = new FileInputStream(file.toFile())) {
                         Path targetFile = workDir.relativize(file);
-                        zos.putNextEntry(new ZipEntry(targetFile.toString()));
+                        zos.putNextEntry(new ZipEntry(targetFile.toString().replace(File.separator.charAt(0), '/')));
                         byte[] buffer = new byte[1024];
                         int len;
                         while ((len = fis.read(buffer)) > 0) {
@@ -162,8 +167,9 @@ class ZipArchetypeTest {
         archDir.resolve("schema").toFile().mkdir();
         Path destination = archDir.resolve(descriptorFileName);
 
-        InputStream is = ZipArchetypeTest.class.getClassLoader()
-                .getResourceAsStream("schema" + workDir.getFileSystem().getSeparator() + DESCRIPTOR_RESOURCE_NAME);
-        Files.copy(is, destination, StandardCopyOption.REPLACE_EXISTING);
+        try (InputStream is = ZipArchetypeTest.class.getClassLoader()
+                .getResourceAsStream("schema" + workDir.getFileSystem().getSeparator() + DESCRIPTOR_RESOURCE_NAME)) {
+            Files.copy(is, destination, StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 }

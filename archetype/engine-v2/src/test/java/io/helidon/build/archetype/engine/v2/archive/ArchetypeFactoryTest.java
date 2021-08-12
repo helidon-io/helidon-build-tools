@@ -41,6 +41,7 @@ class ArchetypeFactoryTest {
 
     private Path archDir;
     private String zipFileName;
+    private Archetype archetype;
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -52,12 +53,14 @@ class ArchetypeFactoryTest {
     }
 
     @Test
-    void testCreateStringArg() {
-        Archetype archetype = ArchetypeFactory.create(zipFileName);
+    void testCreateStringArg() throws IOException {
+        archetype = ArchetypeFactory.create(zipFileName);
         assertThat(archetype instanceof ZipArchetype, is(true));
+        archetype.close();
 
         archetype = ArchetypeFactory.create(archDir.toString());
         assertThat(archetype instanceof DirectoryArchetype, is(true));
+        archetype.close();
 
         // not a zip file
         Exception e = assertThrows(ArchetypeException.class, () -> {
@@ -76,12 +79,14 @@ class ArchetypeFactoryTest {
     }
 
     @Test
-    void testCreateFileArg() {
+    void testCreateFileArg() throws IOException {
         Archetype archetype = ArchetypeFactory.create(new File(zipFileName));
         assertThat(archetype instanceof ZipArchetype, is(true));
+        archetype.close();
 
         archetype = ArchetypeFactory.create(new File(archDir.toString()));
         assertThat(archetype instanceof DirectoryArchetype, is(true));
+        archetype.close();
 
         // not a zip file
         Exception e = assertThrows(ArchetypeException.class, () -> {
