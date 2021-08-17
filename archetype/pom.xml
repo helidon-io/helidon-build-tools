@@ -33,7 +33,5 @@
     <modules>
         <module>engine-v1</module>
         <module>engine-v2</module>
-        <module>mustache-template-engine</module>
-        <module>engine-spi</module>
     </modules>
 </project>

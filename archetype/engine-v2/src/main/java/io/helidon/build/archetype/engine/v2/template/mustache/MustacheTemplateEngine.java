@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.mustache.template.engine;
+package io.helidon.build.archetype.engine.v2.template.mustache;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.charset.Charset;
 
-import io.helidon.build.archetype.engine.spi.TemplateEngine;
+import io.helidon.build.archetype.engine.v2.spi.TemplateEngine;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
@@ -37,17 +36,17 @@ import com.github.mustachejava.MustacheFactory;
 public class MustacheTemplateEngine implements TemplateEngine {
 
     @Override
-    public String getName() {
+    public String name() {
         return "mustache";
     }
 
     @Override
-    public void render(File templateFile, String templateName, Path target, Object scope) throws IOException {
+    public void render(
+            InputStream template, String templateName, Charset charset, OutputStream target, Object scope
+    ) throws IOException {
         MustacheFactory factory = new DefaultMustacheFactory();
-        Mustache mustache = factory.compile(new InputStreamReader(new FileInputStream(templateFile)), templateName);
-        Files.createDirectories(target.getParent());
-        try (Writer writer = Files.newBufferedWriter(target, StandardOpenOption.CREATE,
-                StandardOpenOption.TRUNCATE_EXISTING)) {
+        Mustache mustache = factory.compile(new InputStreamReader(template), templateName);
+        try (Writer writer = new OutputStreamWriter(target, charset)) {
             mustache.execute(writer, scope).flush();
         }
     }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.engine.spi;
+package io.helidon.build.archetype.engine.v2.spi;
 
 import java.util.List;
 

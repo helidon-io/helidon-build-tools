@@ -14,14 +14,7 @@
  * limitations under the License.
  */
 
-import io.helidon.build.archetype.mustache.template.engine.MustacheTemplateEngine;
-
 /**
- * Mustache template engine provider.
+ * SPI for Helidon archetype engine.
  */
-module mustache.template.engine {
-    requires io.helidon.build.archetype.engine.spi;
-    requires com.github.mustachejava;
-    provides io.helidon.build.archetype.engine.spi.TemplateEngine with MustacheTemplateEngine;
-
-}
+package io.helidon.build.archetype.engine.v2.spi;

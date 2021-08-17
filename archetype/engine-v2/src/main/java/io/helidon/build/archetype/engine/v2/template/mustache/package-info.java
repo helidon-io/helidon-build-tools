@@ -17,4 +17,4 @@
 /**
  * Mustache template engine provider.
  */
-package io.helidon.build.archetype.mustache.template.engine;
+package io.helidon.build.archetype.engine.v2.template.mustache;

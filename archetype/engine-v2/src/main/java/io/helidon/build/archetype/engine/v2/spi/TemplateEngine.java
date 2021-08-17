@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.engine.spi;
+package io.helidon.build.archetype.engine.v2.spi;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -34,18 +35,19 @@ public interface TemplateEngine {
      *
      * @return name
      */
-    String getName();
+    String name();
 
     /**
      * Render a template.
      *
-     * @param templateFile template to render
+     * @param template     template to render
      * @param templateName name of the template
+     * @param charset      charset for the written characters
      * @param target       path to target file to create
      * @param scope        the scope for the template
      * @throws IOException if an IO error occurs
      */
-    void render(File templateFile, String templateName, Path target, Object scope) throws IOException;
+    void render(InputStream template, String templateName, Charset charset, OutputStream target, Object scope) throws IOException;
 
     /**
      * Get all found template engines.
@@ -66,6 +68,6 @@ public interface TemplateEngine {
      * @return Optional
      */
     static Optional<TemplateEngine> getEngineByName(String name) {
-        return allEngines().stream().filter(engine -> engine.getName().equals(name)).findFirst();
+        return allEngines().stream().filter(engine -> engine.name().equals(name)).findFirst();
     }
 }
