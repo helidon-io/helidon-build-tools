@@ -24,7 +24,6 @@ module io.helidon.build.archetype.engine.v2 {
     requires io.helidon.build.common.ansi;
     requires com.github.mustachejava;
     requires io.helidon.build.common.xml;
-    requires io.helidon.build.archetype.engine.spi;
     exports io.helidon.build.archetype.engine.v2;
     exports io.helidon.build.archetype.engine.v2.spi;
     uses io.helidon.build.archetype.engine.v2.spi.TemplateEngine;
