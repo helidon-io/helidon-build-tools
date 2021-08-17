@@ -49,16 +49,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.helidon.build-tools.archetype</groupId>
-            <artifactId>engine-spi</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.build-tools.archetype</groupId>
-            <artifactId>mustache-template-engine</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>com.github.spullara.mustache.java</groupId>
             <artifactId>compiler</artifactId>
         </dependency>
