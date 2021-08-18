@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.engine.v2.template.mustache;
+package io.helidon.build.archetype.engine.v2;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,8 +23,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
-
-import io.helidon.build.archetype.engine.v2.spi.TemplateEngine;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;

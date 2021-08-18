@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.engine.v2.spi;
+package io.helidon.build.archetype.engine.v2;
 
 import java.io.IOException;
 import java.io.InputStream;

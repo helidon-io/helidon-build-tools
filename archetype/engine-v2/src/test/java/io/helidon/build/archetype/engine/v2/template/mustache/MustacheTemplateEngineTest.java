@@ -27,7 +27,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.build.archetype.engine.v2.spi.TemplateEngine;
+import io.helidon.build.archetype.engine.v2.MustacheTemplateEngine;
+import io.helidon.build.archetype.engine.v2.TemplateEngine;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
