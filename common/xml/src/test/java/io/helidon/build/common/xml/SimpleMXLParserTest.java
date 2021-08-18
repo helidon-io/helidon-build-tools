@@ -85,6 +85,32 @@ class SimpleMXLParserTest {
         }
     }
 
+    @Test
+    void testCdataParsing() throws IOException {
+        try {
+            SimpleXMLParser.parse(new ByteArrayInputStream("<help><![CDATA[ some help ]]></help>".getBytes(UTF_8)), new Reader() {
+
+                @Override
+                public void startElement(String name, Map<String, String> attributes) {
+                    assertThat("help", is(name));
+                }
+
+                @Override
+                public void elementText(String data) {
+                    assertThat(" some help ", is(data));
+                }
+
+                @Override
+                public void endElement(String name) {
+                    assertThat("help", is(name));
+                }
+
+            });
+        } catch (IllegalStateException ex) {
+            fail("Should not be thrown", ex);
+        }
+    }
+
     private static final class Test1Reader implements Reader {
 
         final LinkedList<String> stack = new LinkedList<>();

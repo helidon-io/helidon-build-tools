@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2021 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.build.archetype.engine.v2.descriptor;
+
+import java.util.LinkedList;
+import java.util.Objects;
+
+/**
+ * Archetype list without key used in {@link Model}.
+ */
+public class ListType extends Conditional {
+
+    private final LinkedList<ValueType> values = new LinkedList<>();
+    private final LinkedList<MapType> maps = new LinkedList<>();
+    private final LinkedList<ListType> lists = new LinkedList<>();
+    private int order = 100;
+
+    ListType(int order, String ifProperties) {
+        super(ifProperties);
+        this.order = order;
+    }
+
+    /**
+     * Get the values element from list element.
+     *
+     * @return values
+     */
+    public LinkedList<ValueType> values() {
+        return this.values;
+    }
+
+    /**
+     * Get the maps element from list element.
+     *
+     * @return maps
+     */
+    public LinkedList<MapType> maps() {
+        return this.maps;
+    }
+
+    /**
+     * Get the lists element from list element.
+     *
+     * @return lists
+     */
+    public LinkedList<ListType> lists() {
+        return this.lists;
+    }
+
+    /**
+     * Get the list order.
+     *
+     * @return order
+     */
+    public int order() {
+        return order;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ListType m = (ListType) o;
+        return values.equals(m.values);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), values, maps, lists);
+    }
+
+    @Override
+    public String toString() {
+        return "ListType{"
+                + "values=" + values()
+                + "maps=" + maps()
+                + "lists=" + lists()
+                + ", if=" + ifProperties()
+                + '}';
+    }
+}
