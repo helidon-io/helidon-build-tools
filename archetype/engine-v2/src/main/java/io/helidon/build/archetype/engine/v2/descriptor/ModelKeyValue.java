@@ -18,19 +18,24 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
+import io.helidon.build.archetype.engine.v2.interpreter.Visitable;
+import io.helidon.build.archetype.engine.v2.interpreter.Visitor;
+
 /**
  * Archetype value with key attribute used in {@link Model} and {@link MapType}.
  */
-public class ModelKeyValue extends ValueType {
+public class ModelKeyValue extends ValueType implements Visitable {
 
     private final String key;
 
-    ModelKeyValue(String key,
-                  String url,
-                  String file,
-                  String template,
-                  int order,
-                  String ifProperties) {
+    ModelKeyValue(
+            String key,
+            String url,
+            String file,
+            String template,
+            int order,
+            String ifProperties
+    ) {
         super(url, file, template, order, ifProperties);
         this.key = key;
     }
@@ -67,5 +72,10 @@ public class ModelKeyValue extends ValueType {
                 + ", template=" + template()
                 + ", order=" + order()
                 + '}';
+    }
+
+    @Override
+    public <A> void accept(Visitor<A> visitor, A arg) {
+        visitor.visit(this, arg);
     }
 }

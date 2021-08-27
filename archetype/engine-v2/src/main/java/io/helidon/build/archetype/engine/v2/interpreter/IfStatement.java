@@ -16,46 +16,31 @@
 
 package io.helidon.build.archetype.engine.v2.interpreter;
 
-import io.helidon.build.archetype.engine.v2.descriptor.Source;
+import io.helidon.build.archetype.engine.v2.expression.evaluator.Expression;
 
 /**
- * Archetype source AST node.
+ * {@code If} statement AST node.
  */
-public class SourceAST extends ASTNode {
+public class IfStatement extends ASTNode {
 
-    private final String src;
-    private final String url;
+    private final Expression expression;
 
-    SourceAST(String src, String url, String currentDirectory) {
+    IfStatement(String ifExpression, String currentDirectory) {
         super(currentDirectory);
-        this.src = src;
-        this.url = url;
+        expression = Expression.builder().expression(ifExpression).build();
     }
 
     /**
-     * Get the source attribute.
+     * Return logical expression.
      *
-     * @return source
+     * @return Expression
      */
-    public String source() {
-        return src;
-    }
-
-    /**
-     * Get the url attribute.
-     *
-     * @return url
-     */
-    public String url() {
-        return url;
+    public Expression expression() {
+        return expression;
     }
 
     @Override
     public <A> void accept(Visitor<A> visitor, A arg) {
         visitor.visit(this, arg);
-    }
-
-    static SourceAST from(Source source, String currentDirectory) {
-        return new SourceAST(source.source(), source.url(), currentDirectory);
     }
 }

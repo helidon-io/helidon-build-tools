@@ -18,10 +18,13 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
+import io.helidon.build.archetype.engine.v2.interpreter.Visitable;
+import io.helidon.build.archetype.engine.v2.interpreter.Visitor;
+
 /**
  * Archetype template in {@link Output}.
  */
-public class Template extends Conditional {
+public class Template extends Conditional implements Visitable {
 
     private Model model;
     private final String engine;
@@ -107,4 +110,8 @@ public class Template extends Conditional {
                 + '}';
     }
 
+    @Override
+    public <A> void accept(Visitor<A> visitor, A arg) {
+        visitor.visit(this, arg);
+    }
 }

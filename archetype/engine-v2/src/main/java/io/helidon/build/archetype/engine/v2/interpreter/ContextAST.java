@@ -16,46 +16,25 @@
 
 package io.helidon.build.archetype.engine.v2.interpreter;
 
-import io.helidon.build.archetype.engine.v2.descriptor.Source;
+import io.helidon.build.archetype.engine.v2.descriptor.Context;
 
 /**
- * Archetype source AST node.
+ * Archetype Context AST node.
  */
-public class SourceAST extends ASTNode {
+public class ContextAST extends ASTNode {
 
-    private final String src;
-    private final String url;
-
-    SourceAST(String src, String url, String currentDirectory) {
+    ContextAST(String currentDirectory) {
         super(currentDirectory);
-        this.src = src;
-        this.url = url;
     }
 
-    /**
-     * Get the source attribute.
-     *
-     * @return source
-     */
-    public String source() {
-        return src;
-    }
-
-    /**
-     * Get the url attribute.
-     *
-     * @return url
-     */
-    public String url() {
-        return url;
+    static ContextAST from(Context context, String currentDirectory) {
+        ContextAST result = new ContextAST(currentDirectory);
+        result.children().addAll(context.nodes());
+        return result;
     }
 
     @Override
     public <A> void accept(Visitor<A> visitor, A arg) {
         visitor.visit(this, arg);
-    }
-
-    static SourceAST from(Source source, String currentDirectory) {
-        return new SourceAST(source.source(), source.url(), currentDirectory);
     }
 }

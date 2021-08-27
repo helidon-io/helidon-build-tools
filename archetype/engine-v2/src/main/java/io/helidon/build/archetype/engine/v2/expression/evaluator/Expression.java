@@ -34,6 +34,15 @@ public final class Expression {
     private int countOpenParentheses = 0;
 
     /**
+     * Get string representation of the current {@code Expression} instance.
+     *
+     * @return expression
+     */
+    public String expression() {
+        return rawExpression;
+    }
+
+    /**
      * Create a new builder.
      *
      * @return a new builder

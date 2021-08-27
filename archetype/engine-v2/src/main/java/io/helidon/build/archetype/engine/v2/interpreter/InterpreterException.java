@@ -16,19 +16,26 @@
 
 package io.helidon.build.archetype.engine.v2.interpreter;
 
-import java.util.LinkedList;
-
 /**
- * Prompter for the user input.
+ * Script interpreter exception.
  */
-public interface Prompter {
+public class InterpreterException extends RuntimeException {
 
     /**
-     * Send inputs to the user, wait for the answer and return the filled result.
-     * Inputs in the result list must be in the same order as in the input list.
+     * Create a new exception.
      *
-     * @param inputs inputs for the user
-     * @return resolved inputs
+     * @param message error message
      */
-    LinkedList<InputAST> resolve(LinkedList<InputAST> inputs);
+    InterpreterException(String message) {
+        super(message);
+    }
+
+    /**
+     * Create a new exception.
+     *
+     * @param message error message
+     */
+    InterpreterException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

@@ -16,15 +16,49 @@
 
 package io.helidon.build.archetype.engine.v2.interpreter;
 
-import io.helidon.build.archetype.engine.v2.descriptor.InputBoolean;
+import io.helidon.build.archetype.engine.v2.descriptor.Option;
 
 /**
- * Boolean AST node in {@link InputAST}.
+ * Archetype option AST node used in {@link InputListAST} and {@link InputEnumAST}.
  */
-public class InputBooleanAST extends InputNodeAST {
+public class OptionAST extends ASTNode implements HelpNode {
 
-    InputBooleanAST(String label, String name, String def, String prompt, String currentDirectory) {
-        super(label, name, def, prompt, currentDirectory);
+    private final String label;
+    private final String value;
+    private final StringBuilder help = new StringBuilder();
+
+    OptionAST(String label, String value, String currentDirectory) {
+        super(currentDirectory);
+        this.label = label;
+        this.value = value;
+    }
+
+    /**
+     * Get the label.
+     *
+     * @return label
+     */
+    public String label() {
+        return label;
+    }
+
+    /**
+     * Get the value.
+     *
+     * @return value
+     */
+    public String value() {
+        return value;
+    }
+
+    @Override
+    public String help() {
+        return help.toString();
+    }
+
+    @Override
+    public void addHelp(String help) {
+        this.help.append(help);
     }
 
     @Override
@@ -32,9 +66,8 @@ public class InputBooleanAST extends InputNodeAST {
         visitor.visit(this, arg);
     }
 
-    static InputBooleanAST from(InputBoolean input, String currentDirectory) {
-        InputBooleanAST result =
-                new InputBooleanAST(input.label(), input.name(), input.def(), input.prompt(), currentDirectory);
+    static OptionAST from(Option input, String currentDirectory) {
+        OptionAST result = new OptionAST(input.label(), input.value(), currentDirectory);
         result.addHelp(input.help());
         result.children().addAll(transformList(input.contexts(), c -> ContextAST.from(c, currentDirectory)));
         result.children().addAll(transformList(input.steps(), s -> StepAST.from(s, currentDirectory)));

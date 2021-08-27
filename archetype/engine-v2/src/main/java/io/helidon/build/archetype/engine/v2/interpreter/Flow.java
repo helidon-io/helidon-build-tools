@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2021 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.build.archetype.engine.v2.interpreter;
 
 import java.util.LinkedList;
@@ -19,10 +35,11 @@ public class Flow extends ASTNode {
     private final LinkedList<Step> unresolvedSteps = new LinkedList<>();
 
     Flow(Archetype archetype, Prompter prompter) {
+        super("/");
         this.prompter = prompter;
         this.archetype = archetype;
         //todo maybe the path to the entry point can be different
-        entryPoint = archetype.getDescriptor("helidon-archetype.xml");
+        entryPoint = archetype.getDescriptor("flavor.xml");
         interpreter = new Interpreter(prompter, archetype);
     }
 
@@ -42,7 +59,7 @@ public class Flow extends ASTNode {
         unresolvedSteps.addAll(getSteps(entryPoint));
         while (!unresolvedSteps.isEmpty()) {
             Step step = unresolvedSteps.pop();
-            StepAST stepAST = StepAST.from(step);
+            StepAST stepAST = StepAST.from(step, "/");
             interpreter.visit(stepAST, this);
             resolvedSteps.add(stepAST);
         }
@@ -105,6 +122,12 @@ public class Flow extends ASTNode {
          * @return a {@code Flow} built with parameters of this {@code Flow.Builder}
          */
         public Flow build() {
+            if (archetype == null) {
+                throw new InterpreterException("Archetype must be specified.");
+            }
+            if (prompter == null) {
+                throw new InterpreterException("Prompter must be specified.");
+            }
             return new Flow(archetype, prompter);
         }
     }

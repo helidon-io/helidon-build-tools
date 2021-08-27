@@ -16,19 +16,22 @@
 
 package io.helidon.build.archetype.engine.v2.interpreter;
 
-import java.util.LinkedList;
-
 /**
- * Prompter for the user input.
+ * Help interface for AST nodes.
  */
-public interface Prompter {
+public interface HelpNode {
 
     /**
-     * Send inputs to the user, wait for the answer and return the filled result.
-     * Inputs in the result list must be in the same order as in the input list.
+     * Get help for the current node.
      *
-     * @param inputs inputs for the user
-     * @return resolved inputs
+     * @return help
      */
-    LinkedList<InputAST> resolve(LinkedList<InputAST> inputs);
+    String help();
+
+    /**
+     * Add text with help information to the current node.
+     *
+     * @param help
+     */
+    void addHelp(String help);
 }
