@@ -40,4 +40,20 @@ public interface ContextNode {
      * @return children node
      */
     List<ContextNode> children();
+
+    /**
+     * Reference to the parent node.
+     * If {@code null}, it means this ContextNode is the Root.
+     *
+     * @return the parent node
+     */
+    ContextNode parent();
+
+    /**
+     * Set the parent node.
+     * If parent is {@code null}, it means this ContextNode is the Root.
+     *
+     * @param parent the parent node
+     */
+    void parent(ContextNode parent);
 }
