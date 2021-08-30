@@ -22,10 +22,16 @@ public class ContextNodeImpl implements ContextNode {
 
     private final List<ContextNode> nodes;
     private final String name;
+    private ContextNode parent;
 
     ContextNodeImpl(String name, List<ContextNode> nodes) {
         this.name = name;
         this.nodes = nodes;
+        if (nodes != null && !nodes.isEmpty()) {
+            for (ContextNode node : nodes) {
+                node.parent(this);
+            }
+        }
     }
 
     @Override
@@ -41,5 +47,15 @@ public class ContextNodeImpl implements ContextNode {
     @Override
     public List<ContextNode> children() {
         return nodes;
+    }
+
+    @Override
+    public ContextNode parent(){
+        return parent;
+    }
+
+    @Override
+    public void parent(ContextNode parent) {
+        this.parent = parent;
     }
 }

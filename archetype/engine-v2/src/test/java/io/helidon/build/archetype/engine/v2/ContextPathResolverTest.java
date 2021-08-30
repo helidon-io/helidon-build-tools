@@ -27,40 +27,41 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class ContextPathResolverTest {
 
-    private static final String ROOT = "flavor.base";
+    private static final String PREFIX = "flavor.base";
+    private final ContextPathResolver resolver = new ContextPathResolver();
 
     @Test
     public void testPathFromPrefix() {
         String path = "favor";
-        assertThat(ContextPathResolver.resolvePathWithPrefix(ROOT, path),
+        assertThat(ContextPathResolver.resolvePathWithPrefix(PREFIX, path),
                 is("flavor.base.favor"));
     }
 
     @Test
     public void testPrefixPath() {
         String path = "flavor";
-        assertThat(ContextPathResolver.resolvePathWithPrefix(ROOT, path),
+        assertThat(ContextPathResolver.resolvePathWithPrefix(PREFIX, path),
                 is("flavor"));
     }
 
     @Test
     public void testPathEqualsPrefix() {
         String path = "flavor.base";
-        assertThat(ContextPathResolver.resolvePathWithPrefix(ROOT, path),
+        assertThat(ContextPathResolver.resolvePathWithPrefix(PREFIX, path),
                 is("flavor.base"));
     }
 
     @Test
     public void testPathContainsPrefix() {
         String path = "flavor.base.media-type.provider";
-        assertThat(ContextPathResolver.resolvePathWithPrefix(ROOT, path),
+        assertThat(ContextPathResolver.resolvePathWithPrefix(PREFIX, path),
                 is("flavor.base.media-type.provider"));
     }
 
     @Test
     public void testMergePrefixAndPath() {
         String path = "security.authentication.provider";
-        assertThat(ContextPathResolver.resolvePathWithPrefix(ROOT, path),
+        assertThat(ContextPathResolver.resolvePathWithPrefix(PREFIX, path),
                 is("flavor.base.security.authentication.provider"));
     }
 
@@ -68,7 +69,7 @@ public class ContextPathResolverTest {
     public void testWrongPath() {
         String path = "flavor.foo";
         try {
-            ContextPathResolver.resolvePathWithPrefix(ROOT, path);
+            ContextPathResolver.resolvePathWithPrefix(PREFIX, path);
             fail();
         } catch (InvalidPathException e) {
              assertThat("Invalid path: flavor.foo", is(e.getMessage()));
@@ -89,20 +90,20 @@ public class ContextPathResolverTest {
         list.add(node0);
         ContextNode rootNode = new ContextNodeImpl("flavor", list);
 
-        ContextNode node = ContextPathResolver.resolvePath(rootNode, "flavor");
+        ContextNode node = resolver.resolvePath(rootNode, "flavor");
         assertThat(node.name(), is("flavor"));
 
-        node = ContextPathResolver.resolvePath(rootNode, "flavor.base");
+        node = resolver.resolvePath(rootNode, "flavor.base");
         assertThat(node.name(), is("base"));
 
-        node = ContextPathResolver.resolvePath(rootNode, "flavor.base.node1");
+        node = resolver.resolvePath(rootNode, "flavor.base.node1");
         assertThat(node.name(), is("node1"));
 
-        node = ContextPathResolver.resolvePath(rootNode, "flavor.base.node1.node2");
+        node = resolver.resolvePath(rootNode, "flavor.base.node1.node2");
         assertThat(node.name(), is("node2"));
 
         try {
-            ContextPathResolver.resolvePath(rootNode, "flavor.base.wrongPath");
+            resolver.resolvePath(rootNode, "flavor.base.wrongPath");
             fail();
         } catch (InvalidPathException e) {
             assertThat("Invalid path, cannot find children: flavor.base.wrongPath", is(e.getMessage()));
@@ -121,10 +122,10 @@ public class ContextPathResolverTest {
         ContextNode node4 = new ContextNodeImpl("authentication", list);
         list = new LinkedList<>();
         list.add(node4);
-        list.add(node6);
         ContextNode node3 = new ContextNodeImpl("security", list);
         list = new LinkedList<>();
         list.add(node3);
+        list.add(node6);
         ContextNode node2 = new ContextNodeImpl("base", list);
         list = new LinkedList<>();
         list.add(node2);
@@ -132,10 +133,52 @@ public class ContextPathResolverTest {
         list = new LinkedList<>();
         list.add(root);
 
-        ContextNode node = ContextPathResolver.resolvePath(root, "ROOT.flavor.base.security.authentication.provider");
+        ContextNode node = resolver.resolvePath(root, "ROOT.flavor.base.security.authentication.provider");
         assertThat(node.name(), is("provider"));
 
-        node = ContextPathResolver.resolvePath(root, "PARENT.security.authentication.provider");
+        node = resolver.resolvePath(node3, "ROOT.security.authentication.provider");
         assertThat(node.name(), is("provider"));
+
+        node = resolver.resolvePath(node6, "PARENT.security.authentication.provider");
+        assertThat(node.name(), is("provider"));
+    }
+
+    @Test
+    public void testInvalidPath() {
+        //flavor -> base -> node1 -> node2
+        ContextNode node2 = new ContextNodeImpl("node2", null);
+        List<ContextNode> list = new LinkedList<>();
+        list.add(node2);
+        ContextNode node1 = new ContextNodeImpl("node1", list);
+        list = new LinkedList<>();
+        list.add(node1);
+        ContextNode base = new ContextNodeImpl("base", list);
+        list = new LinkedList<>();
+        list.add(base);
+        ContextNode root = new ContextNodeImpl("flavor", list);
+
+        try {
+            resolver.resolvePath(root, "PARENT.flavor");
+            fail();
+        } catch (NullPointerException ignore) {
+        }
+
+        try {
+            resolver.resolvePath(root, "ROOT.dummy.path");
+            fail();
+        } catch (InvalidPathException ignore) {
+        }
+
+        try {
+            resolver.resolvePath(base, "ROOT.base.path");
+            fail();
+        } catch (InvalidPathException ignore) {
+        }
+
+        try {
+            new ContextPathResolver().resolvePath(node1, "PARENT.base.node1.node2");
+            fail();
+        } catch (InvalidPathException ignore) {
+        }
     }
 }

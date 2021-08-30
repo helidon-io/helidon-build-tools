@@ -16,7 +16,10 @@
 package io.helidon.build.archetype.engine.v2;
 
 import java.nio.file.InvalidPathException;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Utility class for resolving Context Path.
@@ -24,11 +27,12 @@ import java.util.LinkedList;
 public class ContextPathResolver {
 
     private static String[] prefix;
-    private static ContextNode root;
-    private static final LinkedList<NodeWrapper> STACK_NODE = new LinkedList<>();
-    private static final StringBuilder PATH_BUILDER = new StringBuilder();
+    private ContextNode currentNode;
 
-    private ContextPathResolver() {
+    /**
+     * Default constructor.
+     */
+    public ContextPathResolver() {
     }
 
     /**
@@ -43,7 +47,7 @@ public class ContextPathResolver {
             throw new InvalidPathException("", "path is null or empty");
         }
         setPrefixPath(prefix);
-        String[] rootPath = buildAbsolutePath(path.split("\\."));
+        String[] rootPath = buildAbsolutePathWithPrefix(path.split("\\."));
         return convertArrayToStringPath(rootPath);
     }
 
@@ -55,7 +59,7 @@ public class ContextPathResolver {
      * @param path      Path to desired node
      * @return          The desired node
      */
-    public static ContextNode resolvePath(ContextNode rootNode, String prefix, String path) {
+    public ContextNode resolvePath(ContextNode rootNode, String prefix, String path) {
         if (rootNode == null || path == null) {
             throw new InvalidPathException("", "context node or path is null");
         }
@@ -71,7 +75,7 @@ public class ContextPathResolver {
      * @param path      Path to desired node.
      * @return          The desired node.
      */
-    public static ContextNode resolvePath(ContextNode rootNode, String path) {
+    public ContextNode resolvePath(ContextNode rootNode, String path) {
         return resolvePath(rootNode, null, path);
     }
 
@@ -81,25 +85,24 @@ public class ContextPathResolver {
      * @param path  path to the node
      * @return      the context node pointed by the path
      */
-    private static ContextNode resolvePath(String path) {
+    private ContextNode resolvePath(String path) {
         if (path == null || path.isEmpty())  {
             throw new InvalidPathException("", "path is null or empty");
         }
-        String[] rootPath = buildAbsolutePath(path.split("\\."));
-        return seekContextNode(rootPath, root);
+        if (currentNode == null) {
+            throw new NullPointerException("The root node is not set.");
+        }
+        String[] rootPath = buildRelativePath(path.split("\\."));
+        return seekContextNode(rootPath, currentNode);
     }
 
     private static ContextNode seekContextNode(String[] path, ContextNode node) {
-        if (path == null || path.length == 0) {
-            throw new InvalidPathException("", "path is null or empty");
-        }
-
         int pathIx = 0;
         int childrenIx = 0;
         boolean found = false;
 
         if (!path[pathIx++].equals(node.name())) {
-            throw new InvalidPathException(path[pathIx], "Invalid path");
+            throw new InvalidPathException(path[pathIx - 1], "Invalid path from root : " + node.name());
         }
 
         while (pathIx < path.length) {
@@ -122,8 +125,10 @@ public class ContextPathResolver {
         return node;
     }
 
-    private static String[] buildAbsolutePath(String[] path) {
-        path = parsePath(path);
+    private static String[] buildAbsolutePathWithPrefix(String[] path) {
+        if (path[0].equals("ROOT") || path[0].equals("PARENT")) {
+            throw new InvalidPathException(path[0], "Cannot resolve these keyword: ");
+        }
 
         if (prefix == null) {
             return path;
@@ -135,7 +140,7 @@ public class ContextPathResolver {
         int limitPath = path.length;
 
         if (!prefix[0].equals(path[0])) {
-            return mergeArray(path, prefix);
+            return mergeArray(prefix, path);
         }
 
         while (prefixIx < limitPrefix && pathIx < limitPath) {
@@ -148,56 +153,56 @@ public class ContextPathResolver {
         return path;
     }
 
-    private static String[] parsePath(String[] path) {
-        if (path == null || path.length == 0) {
-            return null;
-        }
+    private String[] buildRelativePath(String[] path) {
         if (path[0].equals("ROOT")) {
-            String[] result = new String[path.length - 1];
-            System.arraycopy(path, 1,  result, 0, path.length - 1);
-            return result;
-        }
-        if (path[0].equals("PARENT")) {
-            String[] rootPath = lookForParent(path);
+            path = Arrays.copyOfRange(path, 1, path.length);
+            String[] rootPath = lookForRoot();
             if (rootPath == null) {
-                throw new InvalidPathException(convertArrayToStringPath(path), "Cannot find parent :");
+                return path;
             }
-            String[] result = new String[path.length - 2 + rootPath.length];
-            System.arraycopy(rootPath, 0, result, 0, rootPath.length);
-            System.arraycopy(path, 2, result, rootPath.length, path.length - 2);
-            return result;
+            return mergeArray(rootPath, path);
+        }
+
+        if (path[0].equals("PARENT")) {
+            path = Arrays.copyOfRange(path, 1, path.length);
+            String[] parentPath = lookForParent();
+            currentNode = currentNode.parent();
+            return mergeArray(parentPath, path);
         }
         return path;
     }
 
-    private static String[] lookForParent(String[] array) {
-        if (!array[0].equals("PARENT")) {
+    /**
+     * Look for root from current node and return its path.
+     *
+     * @return path from root to current node
+     */
+    private String[] lookForRoot() {
+        if (currentNode.parent() == null) {
             return null;
         }
-        String[] path = new String[array.length - 1];
-        System.arraycopy(array, 1,  path, 0, array.length - 1);
 
-        NodeWrapper wrapper = new NodeWrapper(root);
-        PATH_BUILDER.append(wrapper.name()).append(".");
-        STACK_NODE.add(wrapper);
-
-        while (true) {
-            if (wrapper.name().equals(path[0])) {
-                try {
-                    seekContextNode(path, wrapper.node);
-                    return PATH_BUILDER.toString().split("\\.");
-                } catch (InvalidPathException ignored) {
-                }
-                break;
-            }
-
-            wrapper = STACK_NODE.getLast().nextNode();
-
-            if (wrapper == null) {
-                break;
-            }
+        ContextNode node = currentNode;
+        List<String> path = new ArrayList<>();
+        while (node.parent() != null) {
+            path.add(node.parent().name());
+            node = node.parent();
         }
-        return null;
+        currentNode = node;
+        Collections.reverse(path);
+        return path.toArray(new String[0]);
+    }
+
+    /**
+     * Return parent name.
+     *
+     * @return Path as String array
+     */
+    private String[] lookForParent() {
+        if (currentNode.parent() == null)  {
+            throw new NullPointerException("Current node has no parent, wrong path");
+        }
+        return new String[]{currentNode.parent().name()};
     }
 
     private static String convertArrayToStringPath(String[] array, int limit) {
@@ -227,10 +232,9 @@ public class ContextPathResolver {
      * @param path prefix path
      */
     private static void setPrefixPath(String path) {
-        if (path == null) {
-            return;
+        if (path != null) {
+            prefix = path.split("\\.");
         }
-        prefix = path.split("\\.");
     }
 
     /**
@@ -238,48 +242,14 @@ public class ContextPathResolver {
      *
      * @param node node to be considered as root
      */
-    private static void setRoot(ContextNode node) {
-        if (node != null) {
-            root = node;
-        }
+    private void setRoot(ContextNode node) {
+        this.currentNode = node;
     }
 
     private static String[] mergeArray(String[] first, String[] second) {
         String[] result = new String[first.length + second.length];
-        System.arraycopy(second, 0, result, 0, second.length);
-        System.arraycopy(first, 0, result, second.length, first.length);
+        System.arraycopy(first, 0, result, 0, first.length);
+        System.arraycopy(second, 0, result, first.length, second.length);
         return result;
     }
-
-    /**
-     * ContextNode wrapper used to reach ContextNode tree.
-     * branchIx is a counter to keep track of the next branch to be read.
-     * NodeWrapper is currently used to resolve parent paths.
-     */
-    static class NodeWrapper {
-
-        private int branchIx;
-        private final ContextNode node;
-
-        NodeWrapper(ContextNode node) {
-            this.branchIx = 0;
-            this.node = node;
-        }
-
-        private NodeWrapper nextNode() {
-            if (node.children() == null || node.children().size() <= branchIx) {
-                PATH_BUILDER.delete(PATH_BUILDER.length() - STACK_NODE.getLast().name().length(), PATH_BUILDER.length());
-                STACK_NODE.pop();
-                return STACK_NODE.getLast().nextNode();
-            }
-            STACK_NODE.add(new NodeWrapper(node.children().get(branchIx++)));
-            PATH_BUILDER.append(STACK_NODE.getLast().name()).append(".");
-            return STACK_NODE.getLast();
-        }
-
-        private String name() {
-            return node.name();
-        }
-    }
-
 }
