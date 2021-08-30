@@ -18,10 +18,13 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
+import io.helidon.build.archetype.engine.v2.interpreter.Visitable;
+import io.helidon.build.archetype.engine.v2.interpreter.Visitor;
+
 /**
  * Archetype file in {@link Output} archetype.
  */
-public class FileSet extends Conditional {
+public class FileSet extends Conditional implements Visitable {
 
     private final String source;
     private final String target;
@@ -74,4 +77,8 @@ public class FileSet extends Conditional {
                 + '}';
     }
 
+    @Override
+    public <A> void accept(Visitor<A> visitor, A arg) {
+        visitor.visit(this, arg);
+    }
 }

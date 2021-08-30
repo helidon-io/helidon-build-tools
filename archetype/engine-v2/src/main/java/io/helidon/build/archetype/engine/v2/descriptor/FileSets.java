@@ -21,10 +21,13 @@ import java.util.LinkedList;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.build.archetype.engine.v2.interpreter.Visitable;
+import io.helidon.build.archetype.engine.v2.interpreter.Visitor;
+
 /**
  * Archetype files in {@link Output} archetype.
  */
-public class FileSets extends Conditional {
+public class FileSets extends Conditional implements Visitable {
 
     private final LinkedList<String> transformations;
     private final LinkedList<String> includes;
@@ -56,6 +59,7 @@ public class FileSets extends Conditional {
 
     /**
      * Set the directory.
+     *
      * @param directory directory
      */
     void directory(String directory) {
@@ -115,5 +119,10 @@ public class FileSets extends Conditional {
                 + ", directory='" + directory + '\''
                 + ", if=" + ifProperties()
                 + '}';
+    }
+
+    @Override
+    public <A> void accept(Visitor<A> visitor, A arg) {
+        visitor.visit(this, arg);
     }
 }

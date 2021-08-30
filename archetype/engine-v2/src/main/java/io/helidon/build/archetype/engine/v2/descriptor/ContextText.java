@@ -18,6 +18,8 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
+import io.helidon.build.archetype.engine.v2.interpreter.Visitor;
+
 /**
  * Archetype text in {@link Context} nodes.
  */
@@ -67,5 +69,10 @@ public class ContextText extends ContextNode {
                 + "path=" + path()
                 + ", text=" + text()
                 + '}';
+    }
+
+    @Override
+    public <A> void accept(Visitor<A> visitor, A arg) {
+        visitor.visit(this, arg);
     }
 }

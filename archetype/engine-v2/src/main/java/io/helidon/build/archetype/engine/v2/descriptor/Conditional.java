@@ -32,7 +32,7 @@ public abstract class Conditional {
     /**
      * Get the if properties.
      *
-     * @return list of properties, never {@code null}
+     * @return list of properties
      */
     public String ifProperties() {
         return ifProperties;

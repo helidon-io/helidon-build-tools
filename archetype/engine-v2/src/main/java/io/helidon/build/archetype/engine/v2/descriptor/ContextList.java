@@ -19,6 +19,8 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 import java.util.LinkedList;
 import java.util.Objects;
 
+import io.helidon.build.archetype.engine.v2.interpreter.Visitor;
+
 /**
  * Archetype list in {@link Context} nodes.
  */
@@ -60,5 +62,10 @@ public class ContextList extends ContextNode {
                 + "path=" + path()
                 + ", values=" + values()
                 + '}';
+    }
+
+    @Override
+    public <A> void accept(Visitor<A> visitor, A arg) {
+        visitor.visit(this, arg);
     }
 }
