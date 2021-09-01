@@ -202,7 +202,7 @@ public class AnsiConsoleInstaller {
         if (systemOutClassName.startsWith(JANSI_PACKAGE_PREFIX)) {
             if (systemOutClassName.equals(JANSI_STRIP_STREAM_CLASS_NAME)) {
                 try {
-                    // jansi 2.x always use AnsiPrintStream, but have a mode flag
+                    // jansi 2.x always use AnsiPrintStream, but has a mode flag
                     String mode = systemOutclass.getMethod("getMode").invoke(systemOut).toString();
                     if (mode.equalsIgnoreCase("strip")) {
                         installedType = ConsoleType.STRIP_ANSI;
