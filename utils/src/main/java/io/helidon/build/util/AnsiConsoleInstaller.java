@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -222,7 +222,7 @@ public class AnsiConsoleInstaller {
             installedType = ConsoleType.DEFAULT;
         }
         if (desiredType != installedType) {
-            switch(installedType){
+            switch (installedType) {
                 case STRIP_ANSI:
                     Log.preInitDebug("Desired = %s, but Ansi escapes will be stripped by system streams.", desiredType);
                     break;
@@ -233,6 +233,8 @@ public class AnsiConsoleInstaller {
                     Log.preInitDebug("Desired = %s, but System.out not a Jansi type (%s) ao Ansi escapes should not be stripped",
                             desiredType, systemOutClassName);
                     break;
+                default:
+                    // do nothing
             }
         }
         return installedType;
