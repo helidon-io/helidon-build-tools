@@ -70,12 +70,13 @@ public final class EngineFacade {
 
     private static void checkJavaVersion() {
         try {
-            if (Runtime.class.getMethod("version") != null
-                    && Runtime.Version.class.getMethod("feature") != null
-                    && Runtime.getRuntime().version().feature() < 11) {
+            Class<?> runtimeClass = Class.forName("java.lang.Runtime");
+            Object runtime = runtimeClass.getMethod("getRuntime").invoke(null);
+            Object version = runtimeClass.getMethod("version").invoke(runtime);
+            if ((int) Class.forName("java.lang.Runtime$Version").getMethod("feature").invoke(version) < 11) {
                 throw new IllegalStateException();
             }
-        } catch (NoSuchMethodException | IllegalStateException ex) {
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalStateException ex) {
             throw new IllegalStateException("Requires Java >= 11");
         } catch (Throwable ex) {
             throw new IllegalStateException("Unable to verify Java version", ex);
