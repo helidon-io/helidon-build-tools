@@ -45,7 +45,7 @@ import static io.helidon.build.util.MavenVersion.toMavenVersion;
  */
 @CommandFragment
 final class CommonOptions {
-    private static final String UPDATE_URL = "https://github.com/oracle/helidon-build-tools/blob/master/helidon-cli/CHANGELOG.md";
+    private static final String UPDATE_URL = "https://github.com/oracle/helidon-build-tools/blob/master/cli/CHANGELOG.md";
 
     private final boolean verbose;
     private final boolean debug;
