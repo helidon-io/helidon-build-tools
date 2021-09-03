@@ -55,12 +55,12 @@ public final class Constants {
     /**
      * Whether or not JDEPS requires the missing deps option.
      */
-    public static final boolean JDEPS_REQUIRES_MISSING_DEPS_OPTION = Runtime.version().feature() > 11;
+    public static final boolean JDEPS_REQUIRES_MISSING_DEPS_OPTION;
 
     /**
      * Whether or not CDS requires the unlock option.
      */
-    public static final boolean CDS_REQUIRES_UNLOCK_OPTION = Runtime.version().feature() <= 10;
+    public static final boolean CDS_REQUIRES_UNLOCK_OPTION;
 
     /**
      * The CDS unlock diagnostic options.
@@ -70,7 +70,7 @@ public final class Constants {
     /**
      * Whether or not CDS supports image copy (with preserved timestamps).
      */
-    public static final boolean CDS_SUPPORTS_IMAGE_COPY = Runtime.version().feature() >= 10;
+    public static final boolean CDS_SUPPORTS_IMAGE_COPY;
 
     /**
      * End of line string.
@@ -128,6 +128,15 @@ public final class Constants {
             + EOL
             + EOL
             + Bold.apply("and answer 'Y' if prompted.");
+
+    static {
+        Runtime.Version version = Runtime.version();
+        int feature = version.feature();
+        int update = version.update();
+        JDEPS_REQUIRES_MISSING_DEPS_OPTION = feature > 11 || (feature == 11 && update >= 11);
+        CDS_REQUIRES_UNLOCK_OPTION = feature <= 10;
+        CDS_SUPPORTS_IMAGE_COPY = feature >= 10;
+    }
 
     private Constants() {
     }
