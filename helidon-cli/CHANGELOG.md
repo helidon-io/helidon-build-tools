@@ -7,6 +7,12 @@ All notable changes to the Helidon CLI will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.3]
+
+### Fixes
+
+- Update the changelog URL displayed for updates [458](https://github.com/oracle/helidon-build-tools/pull/468)
+
 ## [2.2.2]
 
 ### Fixes
@@ -112,6 +118,7 @@ This release of helidon-build-tools does not contain changes related to the Heli
 
 Initial release of the Helidon CLI.
 
+[2.2.3]: https://github.com/oracle/helidon-build-tools/compare/2.2.2...2.2.3
 [2.2.2]: https://github.com/oracle/helidon-build-tools/compare/2.2.0...2.2.2
 [2.2.0]: https://github.com/oracle/helidon-build-tools/compare/2.1.3...2.2.0
 [2.1.3]: https://github.com/oracle/helidon-build-tools/compare/2.1.2...2.1.3
