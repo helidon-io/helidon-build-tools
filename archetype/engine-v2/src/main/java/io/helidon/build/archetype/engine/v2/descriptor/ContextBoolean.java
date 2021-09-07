@@ -18,8 +18,6 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
-import io.helidon.build.archetype.engine.v2.interpreter.Visitor;
-
 /**
  * Archetype boolean in {@link Context} nodes.
  */
@@ -69,10 +67,5 @@ public class ContextBoolean extends ContextNode {
                 + "path=" + path()
                 + ", bool=" + bool()
                 + '}';
-    }
-
-    @Override
-    public <A> void accept(Visitor<A> visitor, A arg) {
-        visitor.visit(this, arg);
     }
 }

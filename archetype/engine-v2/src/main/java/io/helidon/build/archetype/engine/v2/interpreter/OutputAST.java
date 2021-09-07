@@ -26,8 +26,8 @@ import io.helidon.build.archetype.engine.v2.descriptor.Output;
  */
 public class OutputAST extends ASTNode implements ConditionalNode {
 
-    OutputAST(String currentDirectory) {
-        super(currentDirectory);
+    OutputAST(ASTNode parent, String currentDirectory) {
+        super(parent, currentDirectory);
     }
 
     @Override
@@ -35,30 +35,32 @@ public class OutputAST extends ASTNode implements ConditionalNode {
         visitor.visit(this, arg);
     }
 
-    static OutputAST from(Output output, String currentDirectory) {
-        OutputAST result = new OutputAST(currentDirectory);
+    static OutputAST create(Output outputFrom, ASTNode parent, String currentDirectory) {
+        OutputAST result = new OutputAST(parent, currentDirectory);
 
-        LinkedList<Visitable> children = getChildren(output, currentDirectory);
-        ConditionalNode.addChildren(output, result, children, currentDirectory);
+        LinkedList<Visitable> children = getChildren(outputFrom, result, currentDirectory);
+        ConditionalNode.addChildren(outputFrom, result, children, currentDirectory);
 
         return result;
     }
 
-    private static LinkedList<Visitable> getChildren(Output output, String currentDirectory) {
+    private static LinkedList<Visitable> getChildren(Output output, ASTNode parent, String currentDirectory) {
         LinkedList<Visitable> result = new LinkedList<>();
-        result.add(ModelAST.from(output.model(), currentDirectory));
+        if (output.model() != null) {
+            result.add(ModelAST.create(output.model(), parent, currentDirectory));
+        }
         result.addAll(output.transformations());
         result.addAll(output.filesList().stream()
-                .map(fs -> ConditionalNode.mapConditional(fs, fs, currentDirectory))
+                .map(fs -> ConditionalNode.mapConditional(fs, fs, parent, currentDirectory))
                 .collect(Collectors.toCollection(LinkedList::new)));
         result.addAll(output.fileList().stream()
-                .map(fl -> ConditionalNode.mapConditional(fl, fl, currentDirectory))
+                .map(fl -> ConditionalNode.mapConditional(fl, fl, parent, currentDirectory))
                 .collect(Collectors.toCollection(LinkedList::new)));
         result.addAll(output.template().stream()
-                .map(t -> ConditionalNode.mapConditional(t, t, currentDirectory))
+                .map(t -> ConditionalNode.mapConditional(t, t, parent, currentDirectory))
                 .collect(Collectors.toCollection(LinkedList::new)));
         result.addAll(output.templates().stream()
-                .map(t -> ConditionalNode.mapConditional(t, t, currentDirectory))
+                .map(t -> ConditionalNode.mapConditional(t, t, parent, currentDirectory))
                 .collect(Collectors.toCollection(LinkedList::new)));
         return result;
     }

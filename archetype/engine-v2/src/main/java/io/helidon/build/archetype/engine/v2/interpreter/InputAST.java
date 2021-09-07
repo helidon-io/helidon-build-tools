@@ -23,8 +23,8 @@ import io.helidon.build.archetype.engine.v2.descriptor.Input;
  */
 public class InputAST extends ASTNode {
 
-    InputAST(String currentDirectory) {
-        super(currentDirectory);
+    InputAST(ASTNode parent, String currentDirectory) {
+        super(parent, currentDirectory);
     }
 
     @Override
@@ -32,16 +32,18 @@ public class InputAST extends ASTNode {
         visitor.visit(this, arg);
     }
 
-    static InputAST from(Input input, String currentDirectory) {
-        InputAST result = new InputAST(currentDirectory);
+    static InputAST create(Input inputFrom, ASTNode parent, String currentDirectory) {
+        InputAST result = new InputAST(parent, currentDirectory);
 
-        result.children().addAll(transformList(input.nodes(), i -> InputNodeASTFactory.from(i, currentDirectory)));
-        result.children().addAll(transformList(input.contexts(), c -> ContextAST.from(c, currentDirectory)));
-        result.children().addAll(transformList(input.steps(), s -> StepAST.from(s, currentDirectory)));
-        result.children().addAll(transformList(input.inputs(), i -> InputAST.from(i, currentDirectory)));
-        result.children().addAll(transformList(input.sources(), s -> SourceAST.from(s, currentDirectory)));
-        result.children().addAll(transformList(input.execs(), ExecAST::from));
-        result.children().add(OutputAST.from(input.output(), currentDirectory));
+        result.children().addAll(transformList(inputFrom.contexts(), c -> ContextAST.create(c, result, currentDirectory)));
+        result.children().addAll(transformList(inputFrom.nodes(), i -> InputNodeASTFactory.create(i, result, currentDirectory)));
+        result.children().addAll(transformList(inputFrom.steps(), s -> StepAST.create(s, result, currentDirectory)));
+        result.children().addAll(transformList(inputFrom.inputs(), i -> InputAST.create(i, result, currentDirectory)));
+        result.children().addAll(transformList(inputFrom.sources(), s -> SourceAST.create(s, result, currentDirectory)));
+        result.children().addAll(transformList(inputFrom.execs(), e -> ExecAST.create(e, result, currentDirectory)));
+        if (inputFrom.output() != null) {
+            result.children().add(OutputAST.create(inputFrom.output(), result, currentDirectory));
+        }
 
         return result;
     }

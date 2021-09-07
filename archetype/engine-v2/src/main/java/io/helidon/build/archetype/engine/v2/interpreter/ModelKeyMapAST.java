@@ -27,8 +27,8 @@ public class ModelKeyMapAST extends MapTypeAST {
 
     private final String key;
 
-    ModelKeyMapAST(String key, int order, String currentDirectory) {
-        super(order, currentDirectory);
+    ModelKeyMapAST(String key, int order, ASTNode parent, String currentDirectory) {
+        super(order, parent, currentDirectory);
         this.key = key;
     }
 
@@ -46,20 +46,20 @@ public class ModelKeyMapAST extends MapTypeAST {
         return key;
     }
 
-    static ModelKeyMapAST from(ModelKeyMap map, String currentDirectory) {
-        ModelKeyMapAST result = new ModelKeyMapAST(map.key(), map.order(), currentDirectory);
+    static ModelKeyMapAST create(ModelKeyMap mapFrom, ASTNode parent, String currentDirectory) {
+        ModelKeyMapAST result = new ModelKeyMapAST(mapFrom.key(), mapFrom.order(), parent, currentDirectory);
 
-        LinkedList<Visitable> children = getChildren(map, currentDirectory);
-        ConditionalNode.addChildren(map, result, children, currentDirectory);
+        LinkedList<Visitable> children = getChildren(mapFrom, result, currentDirectory);
+        ConditionalNode.addChildren(mapFrom, result, children, currentDirectory);
 
         return result;
     }
 
-    private static LinkedList<Visitable> getChildren(ModelKeyMap map, String currentDirectory) {
+    private static LinkedList<Visitable> getChildren(ModelKeyMap map, ASTNode parent, String currentDirectory) {
         LinkedList<Visitable> result = new LinkedList<>();
         result.addAll(map.keyValues());
-        result.addAll(transformList(map.keyLists(), l -> ModelKeyListAST.from(l, currentDirectory)));
-        result.addAll(transformList(map.keyMaps(), m -> ModelKeyMapAST.from(m, currentDirectory)));
+        result.addAll(transformList(map.keyLists(), l -> ModelKeyListAST.create(l, parent, currentDirectory)));
+        result.addAll(transformList(map.keyMaps(), m -> ModelKeyMapAST.create(m, parent, currentDirectory)));
         return result;
     }
 

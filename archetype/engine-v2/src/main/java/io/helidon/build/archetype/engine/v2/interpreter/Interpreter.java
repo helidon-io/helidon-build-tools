@@ -16,15 +16,18 @@
 
 package io.helidon.build.archetype.engine.v2.interpreter;
 
+import java.nio.file.Paths;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.archive.Archetype;
 import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
-import io.helidon.build.archetype.engine.v2.descriptor.ContextBoolean;
-import io.helidon.build.archetype.engine.v2.descriptor.ContextEnum;
-import io.helidon.build.archetype.engine.v2.descriptor.ContextList;
-import io.helidon.build.archetype.engine.v2.descriptor.ContextText;
 import io.helidon.build.archetype.engine.v2.descriptor.FileSet;
 import io.helidon.build.archetype.engine.v2.descriptor.FileSets;
 import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyValue;
@@ -40,21 +43,42 @@ public class Interpreter implements Visitor<ASTNode> {
 
     private final Prompter prompter;
     private final Archetype archetype;
+    private final Deque<StepAST> stepStack = new ArrayDeque<>();
+    private final Map<String, ContextNodeAST> pathToContextNodeMap;
+    private final InputResolverVisitor inputResolverVisitor = new InputResolverVisitor();
+    private final UserInputVisitor userInputVisitor = new UserInputVisitor();
+    private final List<UserInputAST> unresolvedInputs = new ArrayList<>();
 
     Interpreter(Prompter prompter, Archetype archetype) {
         this.prompter = prompter;
         this.archetype = archetype;
+        pathToContextNodeMap = new HashMap<>();
     }
 
     @Override
-    public void visit(Visitable v, ASTNode parent) {
-        v.accept(this, parent);
+    public void visit(Visitable v, ASTNode parent) {//Visitable
+        //todo change
+//        v.accept(this, parent);
+    }
+
+    @Override
+    public void visit(Flow v, ASTNode parent) {//Visitable
+        //todo change
+//        v.accept(this, parent);
+    }
+
+    @Override
+    public void visit(XmlDescriptor v, ASTNode parent) {//Visitable
+        //todo change
+//        v.accept(this, parent);
     }
 
     @Override
     public void visit(StepAST step, ASTNode parent) {
+        stepStack.push(step);
         resolveInputs(step);
         acceptAll(step.children(), step);
+        stepStack.pop();
     }
 
     @Override
@@ -72,7 +96,23 @@ public class Interpreter implements Visitor<ASTNode> {
     @Override
     public void visit(InputEnumAST input, ASTNode parent) {
         resolveInputs(input);
+        boolean result = resolve(input);
+        if (!result) {
+            InputNodeAST unresolvedUserInputNode = userInputVisitor.visit(input, parent);
+            UserInputAST unresolvedInput = UserInputAST.create(input, stepStack.peek());
+            unresolvedInput.children().add(unresolvedUserInputNode);
+            unresolvedInputs.add(unresolvedInput);
+            //TODO throw Break or something like this
+        }
         acceptAll(input.children(), input);
+    }
+
+    private boolean resolve(InputNodeAST input) {
+        ContextNodeAST contextNodeAST = pathToContextNodeMap.get(input.path());
+        if (contextNodeAST != null) {
+            input.accept(inputResolverVisitor, contextNodeAST);
+        }
+        return contextNodeAST != null;
     }
 
     @Override
@@ -88,54 +128,62 @@ public class Interpreter implements Visitor<ASTNode> {
 
     @Override
     public void visit(ExecAST exec, ASTNode parent) {
-        ArchetypeDescriptor descriptor = archetype.getDescriptor(exec.src());
-        XmlDescriptor xmlDescriptor = XmlDescriptor.from(descriptor, exec.currentDirectory());
-        acceptAll(xmlDescriptor.children(), parent);
-        if (parent instanceof HelpNode) {
-            ((HelpNode) parent).addHelp(xmlDescriptor.help());
-        }
-        parent.children().addAll(xmlDescriptor.children());
+        ArchetypeDescriptor descriptor = archetype.getDescriptor(resolveScriptPath(exec.currentDirectory(), exec.src()));
+        //todo maybe need to change dir
+        XmlDescriptor xmlDescriptor = XmlDescriptor.create(descriptor, exec, exec.currentDirectory());//exec.currentDirectory()
+        resolveInputs(xmlDescriptor);
+        acceptAll(xmlDescriptor.children(), exec);
+        exec.help(xmlDescriptor.help());
+        exec.children().addAll(xmlDescriptor.children());
     }
 
     @Override
     public void visit(SourceAST source, ASTNode parent) {
-        ArchetypeDescriptor descriptor = archetype.getDescriptor(source.source());
-        XmlDescriptor xmlDescriptor = XmlDescriptor.from(descriptor, source.currentDirectory());
-        acceptAll(xmlDescriptor.children(), parent);
-        if (parent instanceof HelpNode) {
-            ((HelpNode) parent).addHelp(xmlDescriptor.help());
-        }
-        parent.children().addAll(xmlDescriptor.children());
+//        String descriptorPath = Paths.get(source.currentDirectory(), source.source()).toString();
+        ArchetypeDescriptor descriptor = archetype.getDescriptor(resolveScriptPath(source.currentDirectory(), source.source()));
+        //todo maybe need to change dir
+//        String currentDir = Paths.get(source.currentDirectory(), source.source()).getParent().toString();
+        String currentDir = Paths.get(resolveScriptPath(source.currentDirectory(), source.source())).getParent().toString();
+        XmlDescriptor xmlDescriptor = XmlDescriptor.create(descriptor, source, currentDir);//source.currentDirectory()
+        resolveInputs(xmlDescriptor);
+        acceptAll(xmlDescriptor.children(), source);
+        source.help(xmlDescriptor.help());
+        source.children().addAll(xmlDescriptor.children());
+    }
+
+    private String resolveScriptPath(String currentDirectory, String scriptSrc) {
+        return Paths.get(currentDirectory).resolve(scriptSrc).normalize().toString();
     }
 
     @Override
     public void visit(ContextAST context, ASTNode parent) {
-
+        acceptAll(context.children(), context);
     }
 
     @Override
-    public void visit(ContextBoolean contextBoolean, ASTNode parent) {
-
+    public void visit(ContextBooleanAST contextBoolean, ASTNode parent) {
+        pathToContextNodeMap.putIfAbsent(contextBoolean.path(), contextBoolean);
     }
 
     @Override
-    public void visit(ContextEnum contextEnum, ASTNode parent) {
-
+    public void visit(ContextEnumAST contextEnum, ASTNode parent) {
+        pathToContextNodeMap.putIfAbsent(contextEnum.path(), contextEnum);
     }
 
     @Override
-    public void visit(ContextList contextList, ASTNode parent) {
-
+    public void visit(ContextListAST contextList, ASTNode parent) {
+        pathToContextNodeMap.putIfAbsent(contextList.path(), contextList);
     }
 
     @Override
-    public void visit(ContextText contextText, ASTNode parent) {
-
+    public void visit(ContextTextAST contextText, ASTNode parent) {
+        pathToContextNodeMap.putIfAbsent(contextText.path(), contextText);
     }
 
     @Override
     public void visit(OptionAST option, ASTNode parent) {
-
+        resolveInputs(option);
+        acceptAll(option.children(), option);
     }
 
     @Override
@@ -175,7 +223,8 @@ public class Interpreter implements Visitor<ASTNode> {
 
     @Override
     public void visit(IfStatement statement, ASTNode parent) {
-
+        resolveInputs(statement);
+        acceptAll(statement.children(), statement);
     }
 
     @Override
@@ -211,7 +260,8 @@ public class Interpreter implements Visitor<ASTNode> {
     private void acceptAll(LinkedList<Visitable> nodes, ASTNode parent) {
         LinkedList<Visitable> list = new LinkedList<>(nodes);
         while (!list.isEmpty()) {
-            list.pop().accept(this, parent);
+            Visitable visitable = list.pop();
+            visitable.accept(this, parent);
         }
     }
 
@@ -222,7 +272,15 @@ public class Interpreter implements Visitor<ASTNode> {
                 .map(node -> (InputAST) node)
                 .collect(Collectors.toCollection(LinkedList::new));
         if (!unresolvedInputs.isEmpty()) {
+            //todo REMOVE
+            for (InputAST inputAST : unresolvedInputs) {
+                inputAST.children().stream().filter(i -> i instanceof InputNodeAST).forEach(i -> System.out.println(((InputNodeAST) i).label()));
+            }
             LinkedList<InputAST> resolvedInputs = prompter.resolve(unresolvedInputs);
+            //todo REMOVE
+            for (InputAST inputAST : resolvedInputs) {
+                inputAST.children().stream().filter(i -> i instanceof InputNodeAST).forEach(i -> System.out.println("===" + ((InputNodeAST) i).label()));
+            }
             result.addAll(resolvedInputs);
             //replace inputs in the parent node
             parent.children().removeIf(node -> node instanceof InputAST);

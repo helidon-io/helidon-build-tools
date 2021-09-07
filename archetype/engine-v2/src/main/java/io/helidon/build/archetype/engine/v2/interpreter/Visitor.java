@@ -43,6 +43,10 @@ public interface Visitor<A> {
      */
     void visit(Visitable v, A arg);
 
+    void visit(Flow v, A arg);
+
+    void visit(XmlDescriptor v, A arg);
+
     /**
      * Process {@code StepAST} element.
      *
@@ -116,36 +120,36 @@ public interface Visitor<A> {
     void visit(ContextAST context, A arg);
 
     /**
-     * Process {@code ContextBoolean} element.
+     * Process {@code ContextBooleanAST} element.
      *
-     * @param contextBoolean ContextBoolean
+     * @param contextBoolean ContextBooleanAST
      * @param arg            argument
      */
-    void visit(ContextBoolean contextBoolean, A arg);
+    void visit(ContextBooleanAST contextBoolean, A arg);
 
     /**
-     * Process {@code ContextEnum} element.
+     * Process {@code ContextEnumAST} element.
      *
-     * @param contextEnum ContextEnum
+     * @param contextEnum ContextEnumAST
      * @param arg         argument
      */
-    void visit(ContextEnum contextEnum, A arg);
+    void visit(ContextEnumAST contextEnum, A arg);
 
     /**
-     * Process {@code ContextList} element.
+     * Process {@code ContextListAST} element.
      *
-     * @param contextList ContextList
+     * @param contextList ContextListAST
      * @param arg         argument
      */
-    void visit(ContextList contextList, A arg);
+    void visit(ContextListAST contextList, A arg);
 
     /**
-     * Process {@code ContextText} element.
+     * Process {@code ContextTextAST} element.
      *
-     * @param contextText ContextText
+     * @param contextText ContextTextAST
      * @param arg         argument
      */
-    void visit(ContextText contextText, A arg);
+    void visit(ContextTextAST contextText, A arg);
 
     /**
      * Process {@code OptionAST} element.

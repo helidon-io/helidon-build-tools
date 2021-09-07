@@ -18,10 +18,7 @@ package io.helidon.build.archetype.engine.v2.interpreter;
 
 import java.util.LinkedList;
 
-import io.helidon.build.archetype.engine.v2.descriptor.ListType;
-import io.helidon.build.archetype.engine.v2.descriptor.MapType;
 import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyList;
-import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
 
 /**
  * Archetype list AST node with key attribute used in {@link ModelAST} and {@link MapTypeAST}.
@@ -31,8 +28,8 @@ public class ModelKeyListAST extends ASTNode implements ConditionalNode {
     private int order = 100;
     private final String key;
 
-    ModelKeyListAST(String key, int order, String currentDirectory) {
-        super(currentDirectory);
+    ModelKeyListAST(String key, int order, ASTNode parent, String currentDirectory) {
+        super(parent, currentDirectory);
         this.key = key;
         this.order = order;
     }
@@ -60,24 +57,20 @@ public class ModelKeyListAST extends ASTNode implements ConditionalNode {
         visitor.visit(this, arg);
     }
 
-    private final LinkedList<ValueType> values = new LinkedList<>();
-    private final LinkedList<MapType> maps = new LinkedList<>();
-    private final LinkedList<ListType> lists = new LinkedList<>();
+    static ModelKeyListAST create(ModelKeyList listFrom, ASTNode parent, String currentDirectory) {
+        ModelKeyListAST result = new ModelKeyListAST(listFrom.key(), listFrom.order(), parent, currentDirectory);
 
-    static ModelKeyListAST from(ModelKeyList list, String currentDirectory) {
-        ModelKeyListAST result = new ModelKeyListAST(list.key(), list.order(), currentDirectory);
-
-        LinkedList<Visitable> children = getChildren(list, currentDirectory);
-        ConditionalNode.addChildren(list, result, children, currentDirectory);
+        LinkedList<Visitable> children = getChildren(listFrom, result, currentDirectory);
+        ConditionalNode.addChildren(listFrom, result, children, currentDirectory);
 
         return result;
     }
 
-    private static LinkedList<Visitable> getChildren(ModelKeyList list, String currentDirectory) {
+    private static LinkedList<Visitable> getChildren(ModelKeyList list, ASTNode parent, String currentDirectory) {
         LinkedList<Visitable> result = new LinkedList<>();
         result.addAll(list.values());
-        result.addAll(transformList(list.maps(), m -> MapTypeAST.from(m, currentDirectory)));
-        result.addAll(transformList(list.lists(), l -> ListTypeAST.from(l, currentDirectory)));
+        result.addAll(transformList(list.maps(), m -> MapTypeAST.create(m, parent, currentDirectory)));
+        result.addAll(transformList(list.lists(), l -> ListTypeAST.create(l, parent, currentDirectory)));
         return result;
     }
 }

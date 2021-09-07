@@ -27,8 +27,8 @@ public class MapTypeAST extends ASTNode implements ConditionalNode {
 
     private int order = 100;
 
-    MapTypeAST(int order, String currentDirectory) {
-        super(currentDirectory);
+    MapTypeAST(int order, ASTNode parent, String currentDirectory) {
+        super(parent, currentDirectory);
         this.order = order;
     }
 
@@ -46,20 +46,20 @@ public class MapTypeAST extends ASTNode implements ConditionalNode {
         visitor.visit(this, arg);
     }
 
-    static MapTypeAST from(MapType map, String currentDirectory) {
-        MapTypeAST result = new MapTypeAST(map.order(), currentDirectory);
+    static MapTypeAST create(MapType mapFrom, ASTNode parent, String currentDirectory) {
+        MapTypeAST result = new MapTypeAST(mapFrom.order(), parent, currentDirectory);
 
-        LinkedList<Visitable> children = getChildren(map, currentDirectory);
-        ConditionalNode.addChildren(map, result, children, currentDirectory);
+        LinkedList<Visitable> children = getChildren(mapFrom, result, currentDirectory);
+        ConditionalNode.addChildren(mapFrom, result, children, currentDirectory);
 
         return result;
     }
 
-    private static LinkedList<Visitable> getChildren(MapType map, String currentDirectory) {
+    private static LinkedList<Visitable> getChildren(MapType map, ASTNode parent, String currentDirectory) {
         LinkedList<Visitable> result = new LinkedList<>();
         result.addAll(map.keyValues());
-        result.addAll(transformList(map.keyLists(), l -> ModelKeyListAST.from(l, currentDirectory)));
-        result.addAll(transformList(map.keyMaps(), m -> ModelKeyMapAST.from(m, currentDirectory)));
+        result.addAll(transformList(map.keyLists(), l -> ModelKeyListAST.create(l, parent, currentDirectory)));
+        result.addAll(transformList(map.keyMaps(), m -> ModelKeyMapAST.create(m, parent, currentDirectory)));
         return result;
     }
 }

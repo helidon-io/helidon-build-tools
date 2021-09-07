@@ -27,8 +27,8 @@ public class ListTypeAST extends ASTNode implements ConditionalNode {
 
     private int order = 100;
 
-    ListTypeAST(int order, String currentDirectory) {
-        super(currentDirectory);
+    ListTypeAST(int order, ASTNode parent, String currentDirectory) {
+        super(parent, currentDirectory);
         this.order = order;
     }
 
@@ -46,20 +46,20 @@ public class ListTypeAST extends ASTNode implements ConditionalNode {
         visitor.visit(this, arg);
     }
 
-    static ListTypeAST from(ListType list, String currentDirectory) {
-        ListTypeAST result = new ListTypeAST(list.order(), currentDirectory);
+    static ListTypeAST create(ListType listFrom, ASTNode parent, String currentDirectory) {
+        ListTypeAST result = new ListTypeAST(listFrom.order(), parent, currentDirectory);
 
-        LinkedList<Visitable> children = getChildren(list, currentDirectory);
-        ConditionalNode.addChildren(list, result, children, currentDirectory);
+        LinkedList<Visitable> children = getChildren(listFrom, result, currentDirectory);
+        ConditionalNode.addChildren(listFrom, result, children, currentDirectory);
 
         return result;
     }
 
-    private static LinkedList<Visitable> getChildren(ListType list, String currentDirectory) {
+    private static LinkedList<Visitable> getChildren(ListType list, ASTNode parent, String currentDirectory) {
         LinkedList<Visitable> result = new LinkedList<>();
         result.addAll(list.values());
-        result.addAll(transformList(list.maps(), m -> MapTypeAST.from(m, currentDirectory)));
-        result.addAll(transformList(list.lists(), l -> ListTypeAST.from(l, currentDirectory)));
+        result.addAll(transformList(list.maps(), m -> MapTypeAST.create(m, parent, currentDirectory)));
+        result.addAll(transformList(list.lists(), l -> ListTypeAST.create(l, parent, currentDirectory)));
         return result;
     }
 

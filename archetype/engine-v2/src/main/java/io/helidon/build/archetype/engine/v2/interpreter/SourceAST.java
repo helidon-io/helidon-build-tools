@@ -25,11 +25,30 @@ public class SourceAST extends ASTNode {
 
     private final String src;
     private final String url;
+    private String help;
 
-    SourceAST(String src, String url, String currentDirectory) {
-        super(currentDirectory);
+    SourceAST(String src, String url, ASTNode parent, String currentDirectory) {
+        super(parent, currentDirectory);
         this.src = src;
         this.url = url;
+    }
+
+    /**
+     * Get the help.
+     *
+     * @return help
+     */
+    public String help() {
+        return help;
+    }
+
+    /**
+     * Set the help content.
+     *
+     * @param help help content
+     */
+    public void help(String help) {
+        this.help = help;
     }
 
     /**
@@ -55,7 +74,7 @@ public class SourceAST extends ASTNode {
         visitor.visit(this, arg);
     }
 
-    static SourceAST from(Source source, String currentDirectory) {
-        return new SourceAST(source.source(), source.url(), currentDirectory);
+    static SourceAST create(Source sourceFrom, ASTNode parent, String currentDirectory) {
+        return new SourceAST(sourceFrom.source(), sourceFrom.url(), parent, currentDirectory);
     }
 }

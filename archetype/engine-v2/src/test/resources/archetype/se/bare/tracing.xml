@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
+
+    <step optional="true" label="Tracing">
+        <input>
+            <boolean name="tracing"
+                     label="Tracing support"
+                     prompt="Do you want tracing support">
+                <input>
+                    <enum name="provider"
+                          label="Select a tracing provider">
+
+                        <option value="zipkin" label="Zipkin"/>
+                        <option value="jaeger" label="Jaeger"/>
+                    </enum>
+                    <text name="service-name"
+                          label="Service name"
+                          prompt="Provide a service name"
+                          placeholder="myservice"/>
+                    <output>
+                        <files if="${tracing} == jaeger">
+                            <directory>src/main/resources/META-INF/services</directory>
+                            <includes>
+                                <include>io.jaeger.ServiceProvider</include>
+                            </includes>
+                        </files>
+                        <model>
+                            <list id="dependencies">
+                                <item if="${provider} == zipkin">
+                                    <map>
+                                        <entry key="groupId">io.helidon.tracing</entry>
+                                        <entry key="artifactId">helidon-tracing-zipkin</entry>
+                                    </map>
+                                </item>
+                                <item if="${provider} == jaeger">
+                                    <map>
+                                        <entry key="groupId">io.helidon.tracing</entry>
+                                        <entry key="artifactId">helidon-tracing-jaeger</entry>
+                                    </map>
+                                </item>
+                            </list>
+                            <list id="helidon-imports">
+                                <item>io.helidon.tracing.TracerBuilder</item>
+                            </list>
+                            <item id="tracer-build" template="mustache">
+                                <![CDATA[
+                .tracer(TracerBuilder.create(config.get("tracing"))
+                                .serviceName("{{service-name}}")
+                                .registerGlobal(false)
+                                .build())
+]]>
+                            </item>
+                        </model>
+                    </output>
+                </input>
+            </boolean>
+        </input>
+    </step>
+</archetype-script>

@@ -23,8 +23,8 @@ import io.helidon.build.archetype.engine.v2.descriptor.InputEnum;
  */
 public class InputEnumAST extends InputNodeAST {
 
-    InputEnumAST(String label, String name, String def, String prompt, String currentDirectory) {
-        super(label, name, def, prompt, currentDirectory);
+    InputEnumAST(String label, String name, String def, String prompt, ASTNode parent, String currentDirectory) {
+        super(label, name, def, prompt, parent, currentDirectory);
     }
 
     @Override
@@ -32,17 +32,20 @@ public class InputEnumAST extends InputNodeAST {
         visitor.visit(this, arg);
     }
 
-    static InputEnumAST from(InputEnum input, String currentDirectory) {
+    static InputEnumAST create(InputEnum inputFrom, ASTNode parent, String currentDirectory) {
         InputEnumAST result =
-                new InputEnumAST(input.label(), input.name(), input.def(), input.prompt(), currentDirectory);
-        result.addHelp(input.help());
-        result.children().addAll(transformList(input.contexts(), c -> ContextAST.from(c, currentDirectory)));
-        result.children().addAll(transformList(input.steps(), s -> StepAST.from(s, currentDirectory)));
-        result.children().addAll(transformList(input.inputs(), i -> InputAST.from(i, currentDirectory)));
-        result.children().addAll(transformList(input.sources(), s -> SourceAST.from(s, currentDirectory)));
-        result.children().addAll(transformList(input.execs(), ExecAST::from));
-        result.children().add(OutputAST.from(input.output(), currentDirectory));
-        result.children().addAll(transformList(input.options(), o -> OptionAST.from(o, currentDirectory)));
+                new InputEnumAST(inputFrom.label(), inputFrom.name(), inputFrom.def(), inputFrom.prompt(), parent,
+                        currentDirectory);
+        result.help(inputFrom.help());
+        result.children().addAll(transformList(inputFrom.contexts(), c -> ContextAST.create(c, result, currentDirectory)));
+        result.children().addAll(transformList(inputFrom.steps(), s -> StepAST.create(s, result, currentDirectory)));
+        result.children().addAll(transformList(inputFrom.inputs(), i -> InputAST.create(i, result, currentDirectory)));
+        result.children().addAll(transformList(inputFrom.sources(), s -> SourceAST.create(s, result, currentDirectory)));
+        result.children().addAll(transformList(inputFrom.execs(), e -> ExecAST.create(e, result, currentDirectory)));
+        if (inputFrom.output() != null) {
+            result.children().add(OutputAST.create(inputFrom.output(), result, currentDirectory));
+        }
+        result.children().addAll(transformList(inputFrom.options(), o -> OptionAST.create(o, result, currentDirectory)));
         return result;
     }
 }

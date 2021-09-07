@@ -28,9 +28,11 @@ public abstract class ASTNode implements Visitable, Serializable {
 
     private final LinkedList<Visitable> children = new LinkedList<>();
     private final String currentDirectory;
+    private ASTNode parent;
 
-    ASTNode(String currentDirectory) {
+    ASTNode(ASTNode parent, String currentDirectory) {
         this.currentDirectory = currentDirectory;
+        this.parent = parent;
     }
 
     /**
@@ -53,5 +55,18 @@ public abstract class ASTNode implements Visitable, Serializable {
 
     protected static <T, R> LinkedList<R> transformList(LinkedList<T> list, Function<T, R> mapper) {
         return list.stream().map(mapper).collect(Collectors.toCollection(LinkedList::new));
+    }
+
+    /**
+     * Parent AST node for the current node.
+     *
+     * @return parent ASTNode
+     */
+    public ASTNode parent() {
+        return parent;
+    }
+
+    void parent(ASTNode parent) {
+        this.parent = parent;
     }
 }

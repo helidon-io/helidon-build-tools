@@ -34,12 +34,11 @@ public class Flow extends ASTNode {
     private final LinkedList<StepAST> resolvedSteps = new LinkedList<>();
     private final LinkedList<Step> unresolvedSteps = new LinkedList<>();
 
-    Flow(Archetype archetype, Prompter prompter) {
-        super("/");
+    Flow(Archetype archetype, String startDescriptorPath, Prompter prompter) {
+        super(null, "");
         this.prompter = prompter;
         this.archetype = archetype;
-        //todo maybe the path to the entry point can be different
-        entryPoint = archetype.getDescriptor("flavor.xml");
+        entryPoint = archetype.getDescriptor(startDescriptorPath);
         interpreter = new Interpreter(prompter, archetype);
     }
 
@@ -59,7 +58,7 @@ public class Flow extends ASTNode {
         unresolvedSteps.addAll(getSteps(entryPoint));
         while (!unresolvedSteps.isEmpty()) {
             Step step = unresolvedSteps.pop();
-            StepAST stepAST = StepAST.from(step, "/");
+            StepAST stepAST = StepAST.create(step, null, "");
             interpreter.visit(stepAST, this);
             resolvedSteps.add(stepAST);
         }
@@ -90,6 +89,7 @@ public class Flow extends ASTNode {
 
         private Prompter prompter;
         private Archetype archetype;
+        private String startDescriptorPath = "flavor.xml";
 
         private Builder() {
         }
@@ -117,6 +117,18 @@ public class Flow extends ASTNode {
         }
 
         /**
+         * Sets a path to the start descriptor and returns a reference to this Builder so that the methods can be chained
+         * together.
+         *
+         * @param startDescriptorPath the {@code startDescriptorPath} to set
+         * @return a reference to this Builder
+         */
+        public Builder startDescriptorPath(String startDescriptorPath) {
+            this.prompter = prompter;
+            return this;
+        }
+
+        /**
          * Returns a {@code Flow} built from the parameters previously set.
          *
          * @return a {@code Flow} built with parameters of this {@code Flow.Builder}
@@ -128,7 +140,7 @@ public class Flow extends ASTNode {
             if (prompter == null) {
                 throw new InterpreterException("Prompter must be specified.");
             }
-            return new Flow(archetype, prompter);
+            return new Flow(archetype, startDescriptorPath, prompter);
         }
     }
 }

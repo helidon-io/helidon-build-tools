@@ -36,10 +36,20 @@ public interface ConditionalNode {
      */
     static void addChildren(Conditional initial, ASTNode result, LinkedList<Visitable> children, String currentDirectory) {
         if (initial.ifProperties() != null) {
-            IfStatement ifStatement = new IfStatement(initial.ifProperties(), currentDirectory);
+            IfStatement ifStatement = new IfStatement(initial.ifProperties(), result, currentDirectory);
+            children.forEach(child -> {
+                if (child instanceof ASTNode) {
+                    ((ASTNode) child).parent(ifStatement);
+                }
+            });
             ifStatement.children().addAll(children);
             result.children().add(ifStatement);
         } else {
+            children.forEach(child -> {
+                if (child instanceof ASTNode) {
+                    ((ASTNode) child).parent(result);
+                }
+            });
             result.children().addAll(children);
         }
     }
@@ -50,12 +60,16 @@ public interface ConditionalNode {
      *
      * @param initial          initial
      * @param visitable        visitable
+     * @param parent           parent AST node for the visitable
      * @param currentDirectory current directory
      * @return visitable
      */
-    static Visitable mapConditional(Conditional initial, Visitable visitable, String currentDirectory) {
+    static Visitable mapConditional(Conditional initial, Visitable visitable, ASTNode parent, String currentDirectory) {
         if (initial.ifProperties() != null) {
-            IfStatement result = new IfStatement(initial.ifProperties(), currentDirectory);
+            IfStatement result = new IfStatement(initial.ifProperties(), parent, currentDirectory);
+            if (visitable instanceof ASTNode) {
+                ((ASTNode) visitable).parent(result);
+            }
             result.children().add(visitable);
             return result;
         }

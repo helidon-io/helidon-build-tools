@@ -19,8 +19,6 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 import java.util.LinkedList;
 import java.util.Objects;
 
-import io.helidon.build.archetype.engine.v2.interpreter.Visitor;
-
 /**
  * Archetype enum in {@link Context} nodes.
  */
@@ -62,10 +60,5 @@ public class ContextEnum extends ContextNode {
                 + "path=" + path()
                 + ", values=" + values()
                 + '}';
-    }
-
-    @Override
-    public <A> void accept(Visitor<A> visitor, A arg) {
-        visitor.visit(this, arg);
     }
 }

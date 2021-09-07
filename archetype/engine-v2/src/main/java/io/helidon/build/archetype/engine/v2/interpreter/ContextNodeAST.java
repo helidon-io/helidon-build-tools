@@ -16,22 +16,26 @@
 
 package io.helidon.build.archetype.engine.v2.interpreter;
 
+import java.util.Objects;
+
 /**
- * Help interface for AST nodes.
+ * Base class for context AST nodes.
  */
-public interface HelpNode {
+public abstract class ContextNodeAST extends ASTNode {
+
+    private final String path;
+
+    ContextNodeAST(String path, ASTNode parent, String currentDirectory) {
+        super(parent, currentDirectory);
+        this.path = Objects.requireNonNull(path, "path is null");
+    }
 
     /**
-     * Get help for the current node.
+     * Get the context path for this node.
      *
-     * @return help
+     * @return path
      */
-    String help();
-
-    /**
-     * Add text with help information to the current node.
-     *
-     * @param help
-     */
-    void addHelp(String help);
+    public String path() {
+        return path;
+    }
 }

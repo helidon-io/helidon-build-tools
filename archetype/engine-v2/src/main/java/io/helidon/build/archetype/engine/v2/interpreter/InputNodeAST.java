@@ -19,31 +19,39 @@ package io.helidon.build.archetype.engine.v2.interpreter;
 /**
  * Base class for {@link InputAST} nodes.
  */
-public abstract class InputNodeAST extends ASTNode implements HelpNode {
+public abstract class InputNodeAST extends ASTNode {
 
     private final String label;
     private final String name;
     private final String def;
     private final String prompt;
-    private final StringBuilder help = new StringBuilder();
+    private String help;
     private boolean optional = false;
 
-    InputNodeAST(String label, String name, String def, String prompt, String currentDirectory) {
-        super(currentDirectory);
+    InputNodeAST(String label, String name, String def, String prompt, ASTNode parent, String currentDirectory) {
+        super(parent, currentDirectory);
         this.label = label;
         this.name = name;
         this.def = def;
         this.prompt = prompt;
     }
 
-    @Override
+    /**
+     * Get the help.
+     *
+     * @return help
+     */
     public String help() {
-        return help.toString();
+        return help;
     }
 
-    @Override
-    public void addHelp(String help) {
-        this.help.append(help);
+    /**
+     * Set the help content.
+     *
+     * @param help help content
+     */
+    public void help(String help) {
+        this.help = help;
     }
 
     /**
@@ -89,5 +97,22 @@ public abstract class InputNodeAST extends ASTNode implements HelpNode {
      */
     public boolean isOptional() {
         return optional;
+    }
+
+    public String path() {
+        StringBuilder path = new StringBuilder(name);
+        if (parent() != null) {
+            calculatePath(parent(), path);
+        }
+        return path.toString();
+    }
+
+    private void calculatePath(ASTNode parent, StringBuilder path) {
+        if (parent.parent() != null) {
+            if (parent.parent() instanceof InputNodeAST) {
+                path.insert(0, ((InputNodeAST) parent.parent()).name() + ".");
+            }
+            calculatePath(parent.parent(), path);
+        }
     }
 }

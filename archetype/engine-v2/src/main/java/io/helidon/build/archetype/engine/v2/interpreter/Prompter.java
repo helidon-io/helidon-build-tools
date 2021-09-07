@@ -17,6 +17,7 @@
 package io.helidon.build.archetype.engine.v2.interpreter;
 
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Prompter for the user input.
@@ -31,4 +32,8 @@ public interface Prompter {
      * @return resolved inputs
      */
     LinkedList<InputAST> resolve(LinkedList<InputAST> inputs);
+
+    default List<ContextNodeAST> resolve(UserInputAST userInput) {
+        return null;
+    }
 }

@@ -21,14 +21,14 @@ import io.helidon.build.archetype.engine.v2.descriptor.Option;
 /**
  * Archetype option AST node used in {@link InputListAST} and {@link InputEnumAST}.
  */
-public class OptionAST extends ASTNode implements HelpNode {
+public class OptionAST extends ASTNode {
 
     private final String label;
     private final String value;
-    private final StringBuilder help = new StringBuilder();
+    private String help;
 
-    OptionAST(String label, String value, String currentDirectory) {
-        super(currentDirectory);
+    OptionAST(String label, String value, ASTNode parent, String currentDirectory) {
+        super(parent, currentDirectory);
         this.label = label;
         this.value = value;
     }
@@ -51,14 +51,22 @@ public class OptionAST extends ASTNode implements HelpNode {
         return value;
     }
 
-    @Override
+    /**
+     * Get the help.
+     *
+     * @return help
+     */
     public String help() {
-        return help.toString();
+        return help;
     }
 
-    @Override
-    public void addHelp(String help) {
-        this.help.append(help);
+    /**
+     * Set the help content.
+     *
+     * @param help help content
+     */
+    public void help(String help) {
+        this.help = help;
     }
 
     @Override
@@ -66,15 +74,17 @@ public class OptionAST extends ASTNode implements HelpNode {
         visitor.visit(this, arg);
     }
 
-    static OptionAST from(Option input, String currentDirectory) {
-        OptionAST result = new OptionAST(input.label(), input.value(), currentDirectory);
-        result.addHelp(input.help());
-        result.children().addAll(transformList(input.contexts(), c -> ContextAST.from(c, currentDirectory)));
-        result.children().addAll(transformList(input.steps(), s -> StepAST.from(s, currentDirectory)));
-        result.children().addAll(transformList(input.inputs(), i -> InputAST.from(i, currentDirectory)));
-        result.children().addAll(transformList(input.sources(), s -> SourceAST.from(s, currentDirectory)));
-        result.children().addAll(transformList(input.execs(), ExecAST::from));
-        result.children().add(OutputAST.from(input.output(), currentDirectory));
+    static OptionAST create(Option inputFrom, ASTNode parent, String currentDirectory) {
+        OptionAST result = new OptionAST(inputFrom.label(), inputFrom.value(), parent, currentDirectory);
+        result.help(inputFrom.help());
+        result.children().addAll(transformList(inputFrom.contexts(), c -> ContextAST.create(c, result, currentDirectory)));
+        result.children().addAll(transformList(inputFrom.steps(), s -> StepAST.create(s, result, currentDirectory)));
+        result.children().addAll(transformList(inputFrom.inputs(), i -> InputAST.create(i, result, currentDirectory)));
+        result.children().addAll(transformList(inputFrom.sources(), s -> SourceAST.create(s, result, currentDirectory)));
+        result.children().addAll(transformList(inputFrom.execs(), e -> ExecAST.create(e, result, currentDirectory)));
+        if (inputFrom.output() != null) {
+            result.children().add(OutputAST.create(inputFrom.output(), result, currentDirectory));
+        }
         return result;
     }
 }
