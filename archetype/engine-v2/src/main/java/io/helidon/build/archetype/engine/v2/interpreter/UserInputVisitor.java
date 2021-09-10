@@ -12,7 +12,9 @@ public class UserInputVisitor implements GenericVisitor<InputNodeAST, ASTNode> {
         InputEnumAST result = new InputEnumAST(input.label(), input.name(), input.def(), input.prompt(), null, "");
         result.help(input.help());
         result.children().addAll(input.children().stream()
-                .filter(c -> c instanceof OptionAST).collect(Collectors.toCollection(LinkedList::new)));
+                .filter(c -> c instanceof OptionAST)
+                .map(o -> copyOption((OptionAST) o))
+                .collect(Collectors.toCollection(LinkedList::new)));
         return result;
     }
 
@@ -22,7 +24,9 @@ public class UserInputVisitor implements GenericVisitor<InputNodeAST, ASTNode> {
                 input.max(), null, "");
         result.help(input.help());
         result.children().addAll(input.children().stream()
-                .filter(c -> c instanceof OptionAST).collect(Collectors.toCollection(LinkedList::new)));
+                .filter(c -> c instanceof OptionAST)
+                .map(o -> copyOption((OptionAST) o))
+                .collect(Collectors.toCollection(LinkedList::new)));
         return result;
     }
 
@@ -31,5 +35,9 @@ public class UserInputVisitor implements GenericVisitor<InputNodeAST, ASTNode> {
         InputBooleanAST result = new InputBooleanAST(input.label(), input.name(), input.def(), input.prompt(), null, "");
         result.help(input.help());
         return result;
+    }
+
+    private OptionAST copyOption(OptionAST optionFrom) {
+        return new OptionAST(optionFrom.label(), optionFrom.value(), optionFrom.help(), null, "");
     }
 }

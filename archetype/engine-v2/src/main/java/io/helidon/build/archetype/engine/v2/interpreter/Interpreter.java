@@ -123,6 +123,13 @@ public class Interpreter implements Visitor<ASTNode> {
         stack.pop();
     }
 
+    /**
+     * Create unresolvedInput, add it to the {@code unresolvedInputs} and throw {@link WaitForUserInput} to stop the
+     * interpreting process.
+     *
+     * @param input                   initial unresolved {@code InputNodeAST} from the AST tree.
+     * @param unresolvedUserInputNode unresolvedUserInputNode that will be send to the user
+     */
     private void processUnresolvedInput(InputNodeAST input, InputNodeAST unresolvedUserInputNode) {
         UserInputAST unresolvedInput = UserInputAST.create(input, getParentStep(input));
         unresolvedInput.children().add(unresolvedUserInputNode);

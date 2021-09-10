@@ -58,8 +58,8 @@ class XmlDescriptor extends ASTNode {
     static XmlDescriptor create(ArchetypeDescriptor descriptor, ASTNode parent, String currentDirectory) {
         XmlDescriptor result = new XmlDescriptor(currentDirectory);
         descriptor.archetypeAttributes().forEach((key, value) -> result.archetypeAttributes().putIfAbsent(key, value));
-        result.help(descriptor.help());
         result.children().addAll(transformList(descriptor.contexts(), c -> ContextAST.create(c, parent, currentDirectory)));
+        result.help(descriptor.help());
         result.children().addAll(transformList(descriptor.steps(), s -> StepAST.create(s, parent, currentDirectory)));
         result.children().addAll(transformList(descriptor.inputs(), i -> InputAST.create(i, parent, currentDirectory)));
         result.children().addAll(transformList(descriptor.sources(), s -> SourceAST.create(s, parent, currentDirectory)));

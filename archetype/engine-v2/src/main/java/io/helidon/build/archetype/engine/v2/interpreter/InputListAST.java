@@ -61,8 +61,8 @@ public class InputListAST extends InputNodeAST {
                 new InputListAST(input.label(), input.name(), input.def(), input.prompt(),
                         input.min(), input.max(),
                         parent, currentDirectory);
-        result.help(input.help());
         result.children().addAll(transformList(input.contexts(), c -> ContextAST.create(c, result, currentDirectory)));
+        result.help(input.help());
         result.children().addAll(transformList(input.steps(), s -> StepAST.create(s, result, currentDirectory)));
         result.children().addAll(transformList(input.inputs(), i -> InputAST.create(i, result, currentDirectory)));
         result.children().addAll(transformList(input.sources(), s -> SourceAST.create(s, result, currentDirectory)));

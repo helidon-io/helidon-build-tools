@@ -36,8 +36,8 @@ public class InputEnumAST extends InputNodeAST {
         InputEnumAST result =
                 new InputEnumAST(inputFrom.label(), inputFrom.name(), inputFrom.def(), inputFrom.prompt(), parent,
                         currentDirectory);
-        result.help(inputFrom.help());
         result.children().addAll(transformList(inputFrom.contexts(), c -> ContextAST.create(c, result, currentDirectory)));
+        result.help(inputFrom.help());
         result.children().addAll(transformList(inputFrom.steps(), s -> StepAST.create(s, result, currentDirectory)));
         result.children().addAll(transformList(inputFrom.inputs(), i -> InputAST.create(i, result, currentDirectory)));
         result.children().addAll(transformList(inputFrom.sources(), s -> SourceAST.create(s, result, currentDirectory)));

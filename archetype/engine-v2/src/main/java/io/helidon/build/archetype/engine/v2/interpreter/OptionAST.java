@@ -33,6 +33,13 @@ public class OptionAST extends ASTNode {
         this.value = value;
     }
 
+    OptionAST(String label, String value, String help, ASTNode parent, String currentDirectory) {
+        super(parent, currentDirectory);
+        this.label = label;
+        this.value = value;
+        this.help = help;
+    }
+
     /**
      * Get the label.
      *
@@ -76,8 +83,8 @@ public class OptionAST extends ASTNode {
 
     static OptionAST create(Option inputFrom, ASTNode parent, String currentDirectory) {
         OptionAST result = new OptionAST(inputFrom.label(), inputFrom.value(), parent, currentDirectory);
-        result.help(inputFrom.help());
         result.children().addAll(transformList(inputFrom.contexts(), c -> ContextAST.create(c, result, currentDirectory)));
+        result.help(inputFrom.help());
         result.children().addAll(transformList(inputFrom.steps(), s -> StepAST.create(s, result, currentDirectory)));
         result.children().addAll(transformList(inputFrom.inputs(), i -> InputAST.create(i, result, currentDirectory)));
         result.children().addAll(transformList(inputFrom.sources(), s -> SourceAST.create(s, result, currentDirectory)));
