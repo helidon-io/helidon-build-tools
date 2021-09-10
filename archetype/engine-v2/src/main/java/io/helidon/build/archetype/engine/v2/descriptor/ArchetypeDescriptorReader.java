@@ -35,11 +35,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
     private final LinkedList<Object> objectTracking;
 
     private Option currentOption;
-    private Model currentModel;
-    private ListType currentList;
-    private MapType currentMap;
-    private ModelKeyMap currentKeyMap;
-    private ModelKeyList currentKeyList;
     private Step currentStep;
     private Output currentOutput;
 
@@ -512,7 +507,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                             break;
                         case "model":
                             currentOutput.model(new Model(attributes.get("if")));
-                            currentModel = currentOutput.model();
                             objectTracking.add(currentOutput.model());
                             stack.push("model");
                             break;
@@ -546,7 +540,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                 case "output/template":
                     validateChild("model", parent, qName);
                     currentOutput.template().getLast().model(new Model(attributes.get("if")));
-                    currentModel = currentOutput.template().getLast().model();
                     objectTracking.add(currentOutput.template().getLast().model());
                     stack.push("model");
                     break;
@@ -554,7 +547,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                     switch (qName) {
                         case "model":
                             currentOutput.templates().getLast().model(new Model(attributes.get("if")));
-                            currentModel = currentOutput.templates().getLast().model();
                             objectTracking.add(currentOutput.templates().getLast().model());
                             stack.push("model");
                             break;
@@ -582,90 +574,103 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                     if (!(objectTracking.getLast() instanceof  Model)) {
                         throw new IllegalStateException("Invalid object stack element for Model");
                     }
-                    currentModel = (Model) objectTracking.getLast();
+                    Model model = (Model) objectTracking.getLast();
                     switch (qName) {
                         case "value":
-                            addModelKeyValue(currentModel, parent, attributes);
+                            addModelKeyValue(model, parent, attributes);
+                            objectTracking.add(model.keyValues().getLast());
+                            stack.push(qName);
                             break;
                         case "list":
-                            currentModel.keyLists().add(new ModelKeyList(
+                            model.keyLists().add(new ModelKeyList(
                                     readRequiredAttribute("key", qName, attributes),
                                     parseOrder(attributes.get("order")),
                                     attributes.get("if")
                             ));
+                            objectTracking.add(model.keyLists().getLast());
+                            stack.push("model/" + qName);
                             break;
                         case "map":
-                            currentModel.keyMaps().add(new ModelKeyMap(
+                            model.keyMaps().add(new ModelKeyMap(
                                     readRequiredAttribute("key", qName, attributes),
                                     parseOrder(attributes.get("order")),
                                     attributes.get("if")
                             ));
+                            objectTracking.add(model.keyMaps().getLast());
+                            stack.push("model/" + qName);
                             break;
                         default:
                             throw new IllegalStateException("Invalid element: " + qName + "with parent: " + parent);
                     }
-                    objectTracking.add("model/" + qName);
-                    stack.push("model/" + qName);
                     break;
                 case "model/list":
-                    currentList = currentModel.keyLists().getLast();
+                    if (!(objectTracking.getLast() instanceof ModelKeyList)) {
+                        throw new ClassCastException("wrong object in stack");
+                    }
+                    ModelKeyList keyListML = (ModelKeyList) objectTracking.getLast();
                     switch (qName) {
                         case "value":
-                            currentList.values().add(new ValueType(
+                            keyListML.values().add(new ValueType(
                                     attributes.get("url"),
                                     attributes.get("file"),
                                     attributes.get("template"),
                                     parseOrder(attributes.get("order")),
                                     attributes.get("if")
                             ));
+                            objectTracking.add(keyListML.values().getLast());
+                            stack.push(qName);
                             break;
                         case "list":
-                            currentList.lists().add(new ListType(
+                            keyListML.lists().add(new ListType(
                                     parseOrder(attributes.get("order")),
                                     attributes.get("if")
                             ));
-                            currentList = currentList.lists().getLast();
+                            objectTracking.add(keyListML.lists().getLast());
+                            stack.push("model/list/" + qName);
                             break;
                         case "map":
-                            currentList.maps().add(new MapType(
+                            keyListML.maps().add(new MapType(
                                     parseOrder(attributes.get("order")),
                                     attributes.get("if")
                             ));
-                            currentMap = currentList.maps().getLast();
+                            objectTracking.add(keyListML.maps().getLast());
+                            stack.push("model/list/" + qName);
                             break;
                         default:
                             throw new IllegalStateException("Invalid element: " + qName + "with parent: " + parent);
                     }
-                    objectTracking.add("model/list/" + qName);
-                    stack.push("model/list/" + qName);
                     break;
                 case "model/list/list":
+                    if (!(objectTracking.getLast() instanceof ListType)) {
+                        throw new ClassCastException("wrong object in stack");
+                    }
+                    ListType listLL = (ListType) objectTracking.getLast();
                     switch (qName) {
                         case "value":
-                            currentList.values().add(new ValueType(
+                            listLL.values().add(new ValueType(
                                     attributes.get("url"),
                                     attributes.get("file"),
                                     attributes.get("template"),
                                     parseOrder(attributes.get("order")),
                                     attributes.get("if")
                             ));
-                            objectTracking.add("model/list/list/value");
-                            stack.push("model/list/list/value");
+                            objectTracking.add(listLL.values().getLast());
+                            stack.push(qName);
                             break;
                         case "list":
-                            currentList.lists().add(new ListType(
+                            listLL.lists().add(new ListType(
                                     parseOrder(attributes.get("order")),
                                     attributes.get("if")
                             ));
-                            objectTracking.add("model/list/list");
+                            objectTracking.add(listLL.lists().getLast());
                             stack.push("model/list/list");
                             break;
                         case "map":
-                            currentList.maps().add(new MapType(
+                            listLL.maps().add(new MapType(
                                     parseOrder(attributes.get("order")),
                                     attributes.get("if")
                             ));
-                            objectTracking.add("model/list/map");
+                            objectTracking.add(listLL.maps().getLast());
                             stack.push("model/list/map");
                             break;
                         default:
@@ -673,9 +678,13 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                     }
                     break;
                 case "model/list/map":
+                    if (!(objectTracking.getLast() instanceof MapType)) {
+                        throw new ClassCastException("wrong object in stack");
+                    }
+                    MapType mapLM = (MapType) objectTracking.getLast();
                     switch (qName) {
                         case "value":
-                            currentMap.keyValues().add(new ModelKeyValue(
+                            mapLM.keyValues().add(new ModelKeyValue(
                                     attributes.get("key"),
                                     attributes.get("url"),
                                     attributes.get("file"),
@@ -683,101 +692,107 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                                     parseOrder(attributes.get("order")),
                                     attributes.get("if")
                             ));
-                            objectTracking.add("model/list/map/value");
-                            stack.push("model/list/map/value");
+                            objectTracking.add(mapLM.keyValues().getLast());
+                            stack.push(qName);
                             break;
                         case "list":
-                            currentMap.keyLists().add(new ModelKeyList(
+                            mapLM.keyLists().add(new ModelKeyList(
                                     attributes.get("key"),
                                     parseOrder(attributes.get("order")),
                                     attributes.get("if")
                             ));
-                            objectTracking.add("model/map/list");
+                            objectTracking.add(mapLM.keyLists().getLast());
                             stack.push("model/map/list");
                             break;
                         case "map":
-                            currentMap.keyMaps().add(new ModelKeyMap(
+                            mapLM.keyMaps().add(new ModelKeyMap(
                                     attributes.get("key"),
                                     parseOrder(attributes.get("order")),
                                     attributes.get("if")
                             ));
-                            objectTracking.add("model/map");
+                            objectTracking.add(mapLM.keyMaps().getLast());
                             stack.push("model/map");
                             break;
                         default:
                             throw new IllegalStateException("Invalid element: " + qName + "with parent: " + parent);
                     }
                     break;
-                case "model/map":
-                    currentKeyMap = currentModel.keyMaps().getLast();
-                    switch (qName) {
-                        case "value":
-                            currentKeyMap.keyValues().add(new ModelKeyValue(
-                                    attributes.get("key"),
-                                    attributes.get("url"),
-                                    attributes.get("file"),
-                                    attributes.get("template"),
-                                    parseOrder(attributes.get("order")),
-                                    attributes.get("if")
-                            ));
-                            break;
-                        case "list":
-                            currentKeyMap.keyLists().add(new ModelKeyList(
-                                    attributes.get("key"),
-                                    parseOrder(attributes.get("order")),
-                                    attributes.get("if")
-                            ));
-                            break;
-                        case "map":
-                            currentKeyMap.keyMaps().add(new ModelKeyMap(
-                                    attributes.get("key"),
-                                    parseOrder(attributes.get("order")),
-                                    attributes.get("if")
-                            ));
-                            break;
-                        default:
-                            throw new IllegalStateException("Invalid element: " + qName + " with parent: " + parent);
-                    }
-                    objectTracking.add("model/map" + qName);
-                    stack.push("model/map/" + qName);
-                    break;
                 case "model/map/list":
-                    currentKeyList = currentKeyMap.keyLists().getLast();
+                    if (!(objectTracking.getLast() instanceof ModelKeyList)) {
+                        throw new ClassCastException("Wrong object in the stack");
+                    }
+                    ModelKeyList keyListMML = (ModelKeyList) objectTracking.getLast();
                     switch (qName) {
                         case "value":
-                            currentKeyList.values().add(new ValueType(
+                            keyListMML.values().add(new ValueType(
                                     attributes.get("url"),
                                     attributes.get("file"),
                                     attributes.get("template"),
                                     parseOrder(attributes.get("order")),
                                     attributes.get("if"))
                             );
-                            objectTracking.add("model/map/list/value");
-                            stack.push("model/map/list/value");
+                            objectTracking.add(keyListMML.values().getLast());
+                            stack.push(qName);
                             break;
                         case "list":
-                            currentList = currentKeyList.lists().getLast();
-                            objectTracking.add("model/list/" + qName);
+                            keyListMML.lists().add(new ListType(
+                                    parseOrder(attributes.get("order")),
+                                    attributes.get("if")
+                            ));
+                            objectTracking.add(keyListMML.lists().getLast());
                             stack.push("model/list/" + qName);
                             break;
                         case "map":
-                            currentMap = currentKeyList.maps().getLast();
-                            objectTracking.add("model/list/" + qName);
+                            keyListMML.maps().add(new MapType(
+                                    parseOrder(attributes.get("order")),
+                                    attributes.get("if")
+                            ));
+                            objectTracking.add(keyListMML.maps().getLast());
                             stack.push("model/list/" + qName);
                             break;
                         default:
                             throw new IllegalStateException("Invalid element: " + qName + " with parent: " + parent);
                     }
                     break;
-                case "model/map/map":
-                    validateChilds(qName, parent, "value", "list", "map");
-                    currentKeyMap.keyMaps().add(new ModelKeyMap(
-                            readRequiredAttribute("key", qName, attributes),
-                            parseOrder(attributes.get("order")),
-                            attributes.get("if")
-                    ));
-                    objectTracking.add(currentKeyMap.keyMaps().getLast());
-                    stack.push("mode/map/" + qName);
+                case "model/map":
+                    if (!(objectTracking.getLast() instanceof ModelKeyMap)) {
+                        throw new ClassCastException("Wrong object in the stack");
+                    }
+                    ModelKeyMap map = (ModelKeyMap) objectTracking.getLast();
+                    switch (qName) {
+                        case "value":
+                            map.keyValues().add(new ModelKeyValue(
+                                    attributes.get("key"),
+                                    attributes.get("url"),
+                                    attributes.get("file"),
+                                    attributes.get("template"),
+                                    parseOrder(attributes.get("order")),
+                                    attributes.get("if")
+                            ));
+                            stack.push(qName);
+                            objectTracking.add(map.keyValues().getLast());
+                            break;
+                        case "list":
+                            map.keyLists().add(new ModelKeyList(
+                                    attributes.get("key"),
+                                    parseOrder(attributes.get("order")),
+                                    attributes.get("if")
+                            ));
+                            objectTracking.add(map.keyLists().getLast());
+                            stack.push("model/map/" + qName);
+                            break;
+                        case "map":
+                            map.keyMaps().add(new ModelKeyMap(
+                                    attributes.get("key"),
+                                    parseOrder(attributes.get("order")),
+                                    attributes.get("if")
+                            ));
+                            objectTracking.add(map.keyMaps().getLast());
+                            stack.push("model/" + qName);
+                            break;
+                        default:
+                            throw new IllegalStateException("Invalid element: " + qName + " with parent: " + parent);
+                    }
                     break;
                 default:
                     throw new IllegalStateException("Invalid element: " + qName + " with parent: " + parent);
@@ -871,21 +886,11 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
             case "output/templates/excludes/exclude":
                 currentOutput.templates().getLast().excludes().add(value);
                 break;
-            case "model/value":
-                currentModel.keyValues().getLast().value(value);
-                break;
-            case "model/list/value":
-            case "model/list/list/value":
-                currentList.values().getLast().value(value);
-                break;
-            case "model/list/map/value":
-                currentMap.keyValues().getLast().value(value);
-                break;
-            case "model/map/value":
-                currentKeyMap.keyValues().getLast().value(value);
-                break;
-            case "model/map/list/value":
-                currentKeyList.values().getLast().value(value);
+            case "value":
+                if (!(objectTracking.getLast() instanceof ValueType)) {
+                    throw new ClassCastException("No value at top of stack");
+                }
+                ((ValueType) objectTracking.getLast()).value(value);
                 break;
             default:
         }
@@ -921,10 +926,6 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
 
     private int parseOrder(String order) {
         return Integer.parseInt(order == null ? "100" : order);
-    }
-
-    private int parseOrder(String order, int defaultValue) {
-        return order == null ? defaultValue : Integer.parseInt(order);
     }
 
     private boolean parseBoolean(String value) {
