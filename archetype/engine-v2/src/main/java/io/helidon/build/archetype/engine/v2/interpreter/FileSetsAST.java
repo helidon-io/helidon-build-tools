@@ -31,8 +31,8 @@ public class FileSetsAST extends ASTNode {
     private final String directory;
 
     FileSetsAST(LinkedList<String> transformations, LinkedList<String> includes, LinkedList<String> excludes, String directory,
-                ASTNode parent, String currentDirectory) {
-        super(parent, currentDirectory);
+                ASTNode parent, Location location) {
+        super(parent, location);
         this.directory = directory;
         this.transformations = transformations;
         this.includes = includes;
@@ -80,13 +80,13 @@ public class FileSetsAST extends ASTNode {
         visitor.visit(this, arg);
     }
 
-    static FileSetsAST create(FileSets fileSetsFrom, ASTNode parent, String currentDirectory) {
+    static FileSetsAST create(FileSets fileSetsFrom, ASTNode parent, Location location) {
         return new FileSetsAST(
                 fileSetsFrom.transformations(),
                 fileSetsFrom.includes(),
                 fileSetsFrom.excludes(),
                 fileSetsFrom.directory().get(),
                 parent,
-                currentDirectory);
+                location);
     }
 }

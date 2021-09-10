@@ -27,8 +27,8 @@ public class InputListAST extends InputNodeAST {
     private final String max;
 
     InputListAST(String label, String name, String def, String prompt, String min, String max, ASTNode parent,
-                 String currentDirectory) {
-        super(label, name, def, prompt, parent, currentDirectory);
+                 Location location) {
+        super(label, name, def, prompt, parent, location);
         this.min = min;
         this.max = max;
     }
@@ -56,21 +56,21 @@ public class InputListAST extends InputNodeAST {
         visitor.visit(this, arg);
     }
 
-    static InputListAST from(InputList input, ASTNode parent, String currentDirectory) {
+    static InputListAST from(InputList input, ASTNode parent, Location location) {
         InputListAST result =
                 new InputListAST(input.label(), input.name(), input.def(), input.prompt(),
                         input.min(), input.max(),
-                        parent, currentDirectory);
-        result.children().addAll(transformList(input.contexts(), c -> ContextAST.create(c, result, currentDirectory)));
+                        parent, location);
+        result.children().addAll(transformList(input.contexts(), c -> ContextAST.create(c, result, location)));
         result.help(input.help());
-        result.children().addAll(transformList(input.steps(), s -> StepAST.create(s, result, currentDirectory)));
-        result.children().addAll(transformList(input.inputs(), i -> InputAST.create(i, result, currentDirectory)));
-        result.children().addAll(transformList(input.sources(), s -> SourceAST.create(s, result, currentDirectory)));
-        result.children().addAll(transformList(input.execs(), e -> ExecAST.create(e, result, currentDirectory)));
+        result.children().addAll(transformList(input.steps(), s -> StepAST.create(s, result, location)));
+        result.children().addAll(transformList(input.inputs(), i -> InputAST.create(i, result, location)));
+        result.children().addAll(transformList(input.sources(), s -> SourceAST.create(s, result, location)));
+        result.children().addAll(transformList(input.execs(), e -> ExecAST.create(e, result, location)));
         if (input.output() != null) {
-            result.children().add(OutputAST.create(input.output(), result, currentDirectory));
+            result.children().add(OutputAST.create(input.output(), result, location));
         }
-        result.children().addAll(transformList(input.options(), o -> OptionAST.create(o, result, currentDirectory)));
+        result.children().addAll(transformList(input.options(), o -> OptionAST.create(o, result, location)));
         return result;
     }
 }

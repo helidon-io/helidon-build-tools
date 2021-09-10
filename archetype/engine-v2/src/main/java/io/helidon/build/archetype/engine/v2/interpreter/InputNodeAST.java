@@ -28,8 +28,8 @@ public abstract class InputNodeAST extends ASTNode {
     private String help;
     private boolean optional = false;
 
-    InputNodeAST(String label, String name, String def, String prompt, ASTNode parent, String currentDirectory) {
-        super(parent, currentDirectory);
+    InputNodeAST(String label, String name, String def, String prompt, ASTNode parent, Location location) {
+        super(parent, location);
         this.label = label;
         this.name = name;
         this.def = def;

@@ -30,12 +30,12 @@ import io.helidon.build.archetype.engine.v2.archive.Archetype;
 public abstract class ASTNode implements Visitable, Serializable {
 
     private final LinkedList<Visitable> children = new LinkedList<>();
-    private final String currentDirectory;
     private ASTNode parent;
+    private final Location location;
     private Iterator<Visitable> iterator;
 
-    ASTNode(ASTNode parent, String currentDirectory) {
-        this.currentDirectory = currentDirectory;
+    ASTNode(ASTNode parent, Location location) {
+        this.location = location;
         this.parent = parent;
     }
 
@@ -54,12 +54,12 @@ public abstract class ASTNode implements Visitable, Serializable {
     }
 
     /**
-     * Path associated with the current node (resolved relative to the archetype root directory).
+     * Location associated with the current node.
      *
-     * @return currentDirectory
+     * @return location
      */
-    public String currentDirectory() {
-        return currentDirectory;
+    public Location location() {
+        return location;
     }
 
     /**
@@ -102,14 +102,15 @@ public abstract class ASTNode implements Visitable, Serializable {
         }
 
         /**
-         * Path to the directory used for resolving paths in the {@code OutputAST}.
+         * Path to the directory used for resolving paths in the {@code OutputAST} (resolved relative to the archetype root
+         * directory).
          */
         public String currentDirectory() {
             return currentDirectory;
         }
 
         /**
-         * Path to the directory of the current descriptor script.
+         * Path to the directory of the current descriptor script (resolved relative to the archetype root directory).
          */
         public String scriptDirectory() {
             return scriptDirectory;

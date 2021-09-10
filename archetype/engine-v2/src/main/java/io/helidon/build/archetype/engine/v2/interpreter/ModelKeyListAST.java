@@ -29,8 +29,8 @@ public class ModelKeyListAST extends ASTNode implements ConditionalNode {
     private int order = 100;
     private final String key;
 
-    ModelKeyListAST(String key, int order, ASTNode parent, String currentDirectory) {
-        super(parent, currentDirectory);
+    ModelKeyListAST(String key, int order, ASTNode parent, Location location) {
+        super(parent, location);
         this.key = key;
         this.order = order;
     }
@@ -58,28 +58,28 @@ public class ModelKeyListAST extends ASTNode implements ConditionalNode {
         visitor.visit(this, arg);
     }
 
-    static ModelKeyListAST create(ModelKeyList listFrom, ASTNode parent, String currentDirectory) {
-        ModelKeyListAST result = new ModelKeyListAST(listFrom.key(), listFrom.order(), parent, currentDirectory);
+    static ModelKeyListAST create(ModelKeyList listFrom, ASTNode parent, Location location) {
+        ModelKeyListAST result = new ModelKeyListAST(listFrom.key(), listFrom.order(), parent, location);
 
-        LinkedList<Visitable> children = getChildren(listFrom, result, currentDirectory);
-        ConditionalNode.addChildren(listFrom, result, children, currentDirectory);
+        LinkedList<Visitable> children = getChildren(listFrom, result, location);
+        ConditionalNode.addChildren(listFrom, result, children, location);
 
         return result;
     }
 
-    private static LinkedList<Visitable> getChildren(ModelKeyList list, ASTNode parent, String currentDirectory) {
+    private static LinkedList<Visitable> getChildren(ModelKeyList list, ASTNode parent, Location location) {
         LinkedList<Visitable> result = new LinkedList<>();
         result.addAll(list.values().stream()
                 .map(v -> ConditionalNode.mapConditional(
-                        v, ValueTypeAST.create(v, parent, currentDirectory), parent, currentDirectory))
+                        v, ValueTypeAST.create(v, parent, location), parent, location))
                 .collect(Collectors.toCollection(LinkedList::new)));
         result.addAll(list.maps().stream()
                 .map(m -> ConditionalNode.mapConditional(
-                        m, MapTypeAST.create(m, parent, currentDirectory), parent, currentDirectory))
+                        m, MapTypeAST.create(m, parent, location), parent, location))
                 .collect(Collectors.toCollection(LinkedList::new)));
         result.addAll(list.lists().stream()
                 .map(l -> ConditionalNode.mapConditional(
-                        l, ListTypeAST.create(l, parent, currentDirectory), parent, currentDirectory))
+                        l, ListTypeAST.create(l, parent, location), parent, location))
                 .collect(Collectors.toCollection(LinkedList::new)));
         return result;
     }

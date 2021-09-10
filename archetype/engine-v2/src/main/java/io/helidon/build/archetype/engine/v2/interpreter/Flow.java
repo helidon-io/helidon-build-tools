@@ -53,7 +53,7 @@ public class Flow extends ASTNode {
     }
 
     Flow(Archetype archetype, String startDescriptorPath) {
-        super(null, "");
+        super(null, Location.builder().build());
         this.archetype = archetype;
         entryPoint = archetype.getDescriptor(startDescriptorPath);
         interpreter = new Interpreter(archetype);

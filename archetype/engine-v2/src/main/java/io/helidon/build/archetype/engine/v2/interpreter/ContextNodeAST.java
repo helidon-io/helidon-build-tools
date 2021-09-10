@@ -25,8 +25,8 @@ public abstract class ContextNodeAST extends ASTNode {
 
     private final String path;
 
-    ContextNodeAST(String path, ASTNode parent, String currentDirectory) {
-        super(parent, currentDirectory);
+    ContextNodeAST(String path, ASTNode parent, Location location) {
+        super(parent, location);
         this.path = Objects.requireNonNull(path, "path is null");
     }
 

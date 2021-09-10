@@ -26,8 +26,8 @@ public class ModelKeyValueAST extends ValueTypeAST {
     private final String key;
 
     ModelKeyValueAST(String key, String url, String file, String template, int order, String value,
-                     ASTNode parent, String currentDirectory) {
-        super(url, file, template, order, value, parent, currentDirectory);
+                     ASTNode parent, Location location) {
+        super(url, file, template, order, value, parent, location);
         this.key = key;
     }
 
@@ -45,8 +45,8 @@ public class ModelKeyValueAST extends ValueTypeAST {
         visitor.visit(this, arg);
     }
 
-    static ModelKeyValueAST create(ModelKeyValue valueFrom, ASTNode parent, String currentDirectory) {
+    static ModelKeyValueAST create(ModelKeyValue valueFrom, ASTNode parent, Location location) {
         return new ModelKeyValueAST(valueFrom.key(), valueFrom.url(), valueFrom.file(), valueFrom.template(),
-                valueFrom.order(), valueFrom.value(), parent, currentDirectory);
+                valueFrom.order(), valueFrom.value(), parent, location);
     }
 }

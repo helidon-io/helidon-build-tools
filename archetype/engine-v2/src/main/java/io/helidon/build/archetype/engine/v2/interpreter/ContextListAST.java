@@ -27,12 +27,12 @@ public class ContextListAST extends ContextNodeAST {
 
     private final LinkedList<String> values = new LinkedList<>();
 
-    ContextListAST(String path, ASTNode parent, String currentDirectory) {
-        super(path, parent, currentDirectory);
+    ContextListAST(String path, ASTNode parent, Location location) {
+        super(path, parent, location);
     }
 
     public ContextListAST(String path) {
-        super(path, null, "");
+        super(path, null, Location.builder().build());
     }
 
     /**
@@ -49,8 +49,8 @@ public class ContextListAST extends ContextNodeAST {
         visitor.visit(this, arg);
     }
 
-    static ContextListAST create(ContextList listFrom, ASTNode parent, String currentDirectory) {
-        ContextListAST result = new ContextListAST(listFrom.path(), parent, currentDirectory);
+    static ContextListAST create(ContextList listFrom, ASTNode parent, Location location) {
+        ContextListAST result = new ContextListAST(listFrom.path(), parent, location);
         result.values.addAll(listFrom.values());
         return result;
     }

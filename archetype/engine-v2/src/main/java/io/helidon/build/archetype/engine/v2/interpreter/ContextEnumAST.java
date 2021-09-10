@@ -25,12 +25,12 @@ public class ContextEnumAST extends ContextNodeAST {
 
     private String value;
 
-    ContextEnumAST(String path, ASTNode parent, String currentDirectory) {
-        super(path, parent, currentDirectory);
+    ContextEnumAST(String path, ASTNode parent, Location location) {
+        super(path, parent, location);
     }
 
     public ContextEnumAST(String path) {
-        super(path, null, "");
+        super(path, null, Location.builder().build());
     }
 
     /**
@@ -54,8 +54,8 @@ public class ContextEnumAST extends ContextNodeAST {
         visitor.visit(this, arg);
     }
 
-    static ContextEnumAST create(ContextEnum enumFrom, ASTNode parent, String currentDirectory) {
-        ContextEnumAST result = new ContextEnumAST(enumFrom.path(), parent, currentDirectory);
+    static ContextEnumAST create(ContextEnum enumFrom, ASTNode parent, Location location) {
+        ContextEnumAST result = new ContextEnumAST(enumFrom.path(), parent, location);
         result.value(enumFrom.values().peek());
         return result;
     }

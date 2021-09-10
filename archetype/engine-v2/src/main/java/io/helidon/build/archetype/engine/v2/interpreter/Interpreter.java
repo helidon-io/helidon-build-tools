@@ -154,9 +154,17 @@ public class Interpreter implements Visitor<ASTNode> {
 
     @Override
     public void visit(ExecAST exec, ASTNode parent) {
-        ArchetypeDescriptor descriptor = archetype.getDescriptor(resolveScriptPath(exec.currentDirectory(), exec.src()));
+        ArchetypeDescriptor descriptor = archetype
+                .getDescriptor(resolveScriptPath(exec.location().scriptDirectory(), exec.src()));
         //todo maybe need to change dir
-        XmlDescriptor xmlDescriptor = XmlDescriptor.create(descriptor, exec, exec.currentDirectory());//exec.currentDirectory()
+        String currentDir = Paths
+                .get(resolveScriptPath(exec.location().scriptDirectory(), exec.src()))
+                .getParent().toString();
+        ASTNode.Location newLocation = ASTNode.Location.builder()
+                .scriptDirectory(currentDir)
+                .currentDirectory(currentDir)
+                .build();
+        XmlDescriptor xmlDescriptor = XmlDescriptor.create(descriptor, exec, newLocation);
         pushToStack(exec);
         xmlDescriptor.accept(this, exec);
         exec.help(xmlDescriptor.help());
@@ -166,10 +174,17 @@ public class Interpreter implements Visitor<ASTNode> {
 
     @Override
     public void visit(SourceAST source, ASTNode parent) {
-        ArchetypeDescriptor descriptor = archetype.getDescriptor(resolveScriptPath(source.currentDirectory(), source.source()));
+        ArchetypeDescriptor descriptor = archetype
+                .getDescriptor(resolveScriptPath(source.location().scriptDirectory(), source.source()));
         //todo maybe need to change dir
-        String currentDir = Paths.get(resolveScriptPath(source.currentDirectory(), source.source())).getParent().toString();
-        XmlDescriptor xmlDescriptor = XmlDescriptor.create(descriptor, source, currentDir);//source.currentDirectory()
+        String currentDir = Paths
+                .get(resolveScriptPath(source.location().scriptDirectory(), source.source()))
+                .getParent().toString();
+        ASTNode.Location newLocation = ASTNode.Location.builder()
+                .scriptDirectory(currentDir)
+                .currentDirectory(source.location().currentDirectory())
+                .build();
+        XmlDescriptor xmlDescriptor = XmlDescriptor.create(descriptor, source, newLocation);
         pushToStack(source);
         xmlDescriptor.accept(this, source);
         source.help(xmlDescriptor.help());

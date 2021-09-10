@@ -23,19 +23,19 @@ import io.helidon.build.archetype.engine.v2.descriptor.Context;
  */
 public class ContextAST extends ASTNode {
 
-    ContextAST(ASTNode parent, String currentDirectory) {
-        super(parent, currentDirectory);
+    ContextAST(ASTNode parent, Location location) {
+        super(parent, location);
     }
 
     public ContextAST() {
-        super(null, "");
+        super(null, Location.builder().build());
     }
 
-    static ContextAST create(Context contextFrom, ASTNode parent, String currentDirectory) {
-        ContextAST result = new ContextAST(parent, currentDirectory);
+    static ContextAST create(Context contextFrom, ASTNode parent, Location location) {
+        ContextAST result = new ContextAST(parent, location);
         result.children().addAll(transformList(
                 contextFrom.nodes(),
-                n -> ContextNodeASTFactory.create(n, result, currentDirectory)));
+                n -> ContextNodeASTFactory.create(n, result, location)));
         return result;
     }
 

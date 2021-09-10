@@ -17,8 +17,8 @@ public class TemplatesAST extends ASTNode implements ConditionalNode {
 
     TemplatesAST(String engine, String transformation, String directory,
                  LinkedList<String> includes, LinkedList<String> excludes,
-                 ASTNode parent, String currentDirectory) {
-        super(parent, currentDirectory);
+                 ASTNode parent, Location location) {
+        super(parent, location);
         this.directory = directory;
         this.includes = includes;
         this.excludes = excludes;
@@ -76,7 +76,7 @@ public class TemplatesAST extends ASTNode implements ConditionalNode {
         visitor.visit(this, arg);
     }
 
-    static TemplatesAST create(Templates templatesFrom, ASTNode parent, String currentDirectory) {
+    static TemplatesAST create(Templates templatesFrom, ASTNode parent, Location location) {
         TemplatesAST result = new TemplatesAST(
                 templatesFrom.engine(),
                 templatesFrom.transformation(),
@@ -84,11 +84,11 @@ public class TemplatesAST extends ASTNode implements ConditionalNode {
                 templatesFrom.includes(),
                 templatesFrom.excludes(),
                 parent,
-                currentDirectory
+                location
         );
         if (templatesFrom.model() != null) {
-            ModelAST model = ModelAST.create(templatesFrom.model(), result, currentDirectory);
-            result.children().add(ConditionalNode.mapConditional(templatesFrom.model(), model, result, currentDirectory));
+            ModelAST model = ModelAST.create(templatesFrom.model(), result, location);
+            result.children().add(ConditionalNode.mapConditional(templatesFrom.model(), model, result, location));
         }
 
         return result;

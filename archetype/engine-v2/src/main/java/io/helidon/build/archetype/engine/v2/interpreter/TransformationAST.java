@@ -29,8 +29,8 @@ public class TransformationAST extends ASTNode {
     private final String id;
     private final LinkedList<Replacement> replacements;
 
-    TransformationAST(String id, LinkedList<Replacement> replacements, ASTNode parent, String currentDirectory) {
-        super(parent, currentDirectory);
+    TransformationAST(String id, LinkedList<Replacement> replacements, ASTNode parent, Location location) {
+        super(parent, location);
         this.id = id;
         this.replacements = replacements;
     }
@@ -58,7 +58,7 @@ public class TransformationAST extends ASTNode {
         visitor.visit(this, arg);
     }
 
-    static TransformationAST create(Transformation transformationFrom, ASTNode parent, String currentDirectory) {
-        return new TransformationAST(transformationFrom.id(), transformationFrom.replacements(), parent, currentDirectory);
+    static TransformationAST create(Transformation transformationFrom, ASTNode parent, Location location) {
+        return new TransformationAST(transformationFrom.id(), transformationFrom.replacements(), parent, location);
     }
 }

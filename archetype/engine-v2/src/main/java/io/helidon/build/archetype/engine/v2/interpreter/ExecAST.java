@@ -27,8 +27,8 @@ public class ExecAST extends ASTNode {
     private final String src;
     private String help;
 
-    ExecAST(String url, String src, ASTNode parent, String currentDirectory) {
-        super(parent, currentDirectory);
+    ExecAST(String url, String src, ASTNode parent, Location location) {
+        super(parent, location);
         this.url = url;
         this.src = src;
     }
@@ -74,12 +74,12 @@ public class ExecAST extends ASTNode {
         visitor.visit(this, arg);
     }
 
-    static ExecAST create(Exec execFrom, ASTNode parent, String currentDirectory) {
+    static ExecAST create(Exec execFrom, ASTNode parent, Location location) {
         return new ExecAST(
                 execFrom.url(),
                 execFrom.src(),
                 parent,
-                currentDirectory
+                location
         );
     }
 }

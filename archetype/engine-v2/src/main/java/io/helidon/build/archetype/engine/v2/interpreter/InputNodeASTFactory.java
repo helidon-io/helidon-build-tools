@@ -27,18 +27,18 @@ import io.helidon.build.archetype.engine.v2.descriptor.InputText;
  */
 abstract class InputNodeASTFactory {
 
-    static InputNodeAST create(InputNode input, ASTNode parent, String currentDirectory) {
+    static InputNodeAST create(InputNode input, ASTNode parent, ASTNode.Location location) {
         if (input instanceof InputBoolean) {
-            return InputBooleanAST.from((InputBoolean) input, parent, currentDirectory);
+            return InputBooleanAST.from((InputBoolean) input, parent, location);
         }
         if (input instanceof InputEnum) {
-            return InputEnumAST.create((InputEnum) input, parent, currentDirectory);
+            return InputEnumAST.create((InputEnum) input, parent, location);
         }
         if (input instanceof InputList) {
-            return InputListAST.from((InputList) input, parent, currentDirectory);
+            return InputListAST.from((InputList) input, parent, location);
         }
         if (input instanceof InputText) {
-            return InputTextAST.create((InputText) input, parent, currentDirectory);
+            return InputTextAST.create((InputText) input, parent, location);
         }
         throw new InterpreterException(String.format("Unsupported type of the InputNode with name %s and type %s",
                 input.name(),

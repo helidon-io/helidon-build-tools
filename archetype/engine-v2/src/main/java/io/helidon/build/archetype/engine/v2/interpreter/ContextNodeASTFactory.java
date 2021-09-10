@@ -27,18 +27,18 @@ import io.helidon.build.archetype.engine.v2.descriptor.ContextText;
  */
 abstract class ContextNodeASTFactory {
 
-    static ContextNodeAST create(ContextNode node, ASTNode parent, String currentDirectory) {
+    static ContextNodeAST create(ContextNode node, ASTNode parent, ASTNode.Location location) {
         if (node instanceof ContextBoolean) {
-            return ContextBooleanAST.create((ContextBoolean) node, parent, currentDirectory);
+            return ContextBooleanAST.create((ContextBoolean) node, parent, location);
         }
         if (node instanceof ContextEnum) {
-            return ContextEnumAST.create((ContextEnum) node, parent, currentDirectory);
+            return ContextEnumAST.create((ContextEnum) node, parent, location);
         }
         if (node instanceof ContextList) {
-            return ContextListAST.create((ContextList) node, parent, currentDirectory);
+            return ContextListAST.create((ContextList) node, parent, location);
         }
         if (node instanceof ContextText) {
-            return ContextTextAST.create((ContextText) node, parent, currentDirectory);
+            return ContextTextAST.create((ContextText) node, parent, location);
         }
         throw new InterpreterException(String.format("Unsupported type of the ContextNode with path %s and type %s",
                 node.path(),

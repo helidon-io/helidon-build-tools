@@ -5,8 +5,8 @@ public class UserInputAST extends ASTNode {
     private final String label;
     private final String help;
 
-    UserInputAST(String label, String help, String currentDirectory) {
-        super(null, currentDirectory);
+    UserInputAST(String label, String help, Location location) {
+        super(null, location);
         this.label = label;
         this.help = help;
     }
@@ -35,7 +35,6 @@ public class UserInputAST extends ASTNode {
     }
 
     static UserInputAST create(InputNodeAST input, StepAST step) {
-        UserInputAST result = new UserInputAST(step.label(), step.help(), input.currentDirectory());
-        return result;
+        return new UserInputAST(step.label(), step.help(), input.location());
     }
 }

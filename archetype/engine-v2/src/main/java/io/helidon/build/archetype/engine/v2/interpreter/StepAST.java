@@ -28,8 +28,8 @@ public class StepAST extends ASTNode implements ConditionalNode {
     private final String label;
     private String help;
 
-    StepAST(String label, ASTNode parent, String currentDirectory) {
-        super(parent, currentDirectory);
+    StepAST(String label, ASTNode parent, Location location) {
+        super(parent, location);
         this.label = label;
     }
 
@@ -60,19 +60,19 @@ public class StepAST extends ASTNode implements ConditionalNode {
         this.help = help;
     }
 
-    static StepAST create(Step stepFrom, ASTNode parent, String currentDirectory) {
-        StepAST result = new StepAST(stepFrom.label(), parent, currentDirectory);
-        LinkedList<Visitable> children = getChildren(stepFrom, result, currentDirectory);
-        ConditionalNode.addChildren(stepFrom, result, children, currentDirectory);
+    static StepAST create(Step stepFrom, ASTNode parent, Location location) {
+        StepAST result = new StepAST(stepFrom.label(), parent, location);
+        LinkedList<Visitable> children = getChildren(stepFrom, result, location);
+        ConditionalNode.addChildren(stepFrom, result, children, location);
         return result;
     }
 
-    private static LinkedList<Visitable> getChildren(Step step, ASTNode parent, String currentDirectory) {
+    private static LinkedList<Visitable> getChildren(Step step, ASTNode parent, Location location) {
         LinkedList<Visitable> result = new LinkedList<>();
-        result.addAll(transformList(step.contexts(), c -> ContextAST.create(c, parent, currentDirectory)));
-        result.addAll(transformList(step.execs(), e -> ExecAST.create(e, parent, currentDirectory)));
-        result.addAll(transformList(step.sources(), s -> SourceAST.create(s, parent, currentDirectory)));
-        result.addAll(transformList(step.inputs(), i -> InputAST.create(i, parent, currentDirectory)));
+        result.addAll(transformList(step.contexts(), c -> ContextAST.create(c, parent, location)));
+        result.addAll(transformList(step.execs(), e -> ExecAST.create(e, parent, location)));
+        result.addAll(transformList(step.sources(), s -> SourceAST.create(s, parent, location)));
+        result.addAll(transformList(step.inputs(), i -> InputAST.create(i, parent, location)));
         return result;
     }
 

@@ -26,8 +26,8 @@ public class InputTextAST extends InputNodeAST {
     private final String placeHolder;
 
     InputTextAST(String label, String name, String def, String prompt, String placeHolder, ASTNode parent,
-                 String currentDirectory) {
-        super(label, name, def, prompt, parent, currentDirectory);
+                 Location location) {
+        super(label, name, def, prompt, parent, location);
         this.placeHolder = placeHolder;
     }
 
@@ -45,12 +45,12 @@ public class InputTextAST extends InputNodeAST {
         visitor.visit(this, arg);
     }
 
-    static InputTextAST create(InputText input, ASTNode parent, String currentDirectory) {
+    static InputTextAST create(InputText input, ASTNode parent, Location location) {
         InputTextAST result =
                 new InputTextAST(input.label(), input.name(), input.def(), input.prompt(),
                         input.placeHolder(),
                         parent,
-                        currentDirectory);
+                        location);
         result.help(input.help());
         return result;
     }

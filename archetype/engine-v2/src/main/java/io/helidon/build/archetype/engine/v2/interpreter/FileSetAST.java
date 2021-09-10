@@ -26,8 +26,8 @@ public class FileSetAST extends ASTNode {
     private final String source;
     private final String target;
 
-    FileSetAST(String source, String target, ASTNode parent, String currentDirectory) {
-        super(parent, currentDirectory);
+    FileSetAST(String source, String target, ASTNode parent, Location location) {
+        super(parent, location);
         this.source = source;
         this.target = target;
     }
@@ -55,7 +55,7 @@ public class FileSetAST extends ASTNode {
         visitor.visit(this, arg);
     }
 
-    static FileSetAST create(FileSet fileSetFrom, ASTNode parent, String currentDirectory) {
-        return new FileSetAST(fileSetFrom.source(), fileSetFrom.target(), parent, currentDirectory);
+    static FileSetAST create(FileSet fileSetFrom, ASTNode parent, Location location) {
+        return new FileSetAST(fileSetFrom.source(), fileSetFrom.target(), parent, location);
     }
 }

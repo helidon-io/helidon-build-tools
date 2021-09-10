@@ -25,12 +25,12 @@ public class ContextTextAST extends ContextNodeAST {
 
     private String text;
 
-    ContextTextAST(String path, ASTNode parent, String currentDirectory) {
-        super(path, parent, currentDirectory);
+    ContextTextAST(String path, ASTNode parent, Location location) {
+        super(path, parent, location);
     }
 
     public ContextTextAST(String path) {
-        super(path, null, "");
+        super(path, null, Location.builder().build());
     }
 
     /**
@@ -56,8 +56,8 @@ public class ContextTextAST extends ContextNodeAST {
         visitor.visit(this, arg);
     }
 
-    static ContextTextAST create(ContextText textFrom, ASTNode parent, String currentDirectory) {
-        ContextTextAST result = new ContextTextAST(textFrom.path(), parent, currentDirectory);
+    static ContextTextAST create(ContextText textFrom, ASTNode parent, Location location) {
+        ContextTextAST result = new ContextTextAST(textFrom.path(), parent, location);
         result.text(textFrom.text());
         return result;
     }

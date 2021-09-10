@@ -59,7 +59,7 @@ public class InitialFlowState extends FlowState {
             throw new InterpreterException("Archetype descriptor does not contain steps");
         }
         return steps.stream()
-                .map(step -> StepAST.create(step, null, ""))
+                .map(step -> StepAST.create(step, null, ASTNode.Location.builder().build()))
                 .collect(Collectors.toCollection(LinkedList::new));
     }
 

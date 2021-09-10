@@ -9,7 +9,9 @@ public class UserInputVisitor implements GenericVisitor<InputNodeAST, ASTNode> {
 
     @Override
     public InputNodeAST visit(InputEnumAST input, ASTNode arg) {
-        InputEnumAST result = new InputEnumAST(input.label(), input.name(), input.def(), input.prompt(), null, "");
+        InputEnumAST result = new InputEnumAST(
+                input.label(), input.name(), input.def(), input.prompt(), null,
+                ASTNode.Location.builder().build());
         result.help(input.help());
         result.children().addAll(input.children().stream()
                 .filter(c -> c instanceof OptionAST)
@@ -20,8 +22,9 @@ public class UserInputVisitor implements GenericVisitor<InputNodeAST, ASTNode> {
 
     @Override
     public InputNodeAST visit(InputListAST input, ASTNode arg) {
-        InputListAST result = new InputListAST(input.label(), input.name(), input.def(), input.prompt(), input.min(),
-                input.max(), null, "");
+        InputListAST result = new InputListAST(
+                input.label(), input.name(), input.def(), input.prompt(), input.min(),
+                input.max(), null, ASTNode.Location.builder().build());
         result.help(input.help());
         result.children().addAll(input.children().stream()
                 .filter(c -> c instanceof OptionAST)
@@ -32,12 +35,14 @@ public class UserInputVisitor implements GenericVisitor<InputNodeAST, ASTNode> {
 
     @Override
     public InputNodeAST visit(InputBooleanAST input, ASTNode arg) {
-        InputBooleanAST result = new InputBooleanAST(input.label(), input.name(), input.def(), input.prompt(), null, "");
+        InputBooleanAST result = new InputBooleanAST(
+                input.label(), input.name(), input.def(), input.prompt(), null,
+                ASTNode.Location.builder().build());
         result.help(input.help());
         return result;
     }
 
     private OptionAST copyOption(OptionAST optionFrom) {
-        return new OptionAST(optionFrom.label(), optionFrom.value(), optionFrom.help(), null, "");
+        return new OptionAST(optionFrom.label(), optionFrom.value(), optionFrom.help(), null, ASTNode.Location.builder().build());
     }
 }

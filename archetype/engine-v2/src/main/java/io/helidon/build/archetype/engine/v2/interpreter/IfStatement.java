@@ -25,8 +25,8 @@ public class IfStatement extends ASTNode {
 
     private final Expression expression;
 
-    IfStatement(String ifExpression, ASTNode parent, String currentDirectory) {
-        super(parent, currentDirectory);
+    IfStatement(String ifExpression, ASTNode parent, Location location) {
+        super(parent, location);
         expression = Expression.builder().expression(ifExpression).build();
     }
 

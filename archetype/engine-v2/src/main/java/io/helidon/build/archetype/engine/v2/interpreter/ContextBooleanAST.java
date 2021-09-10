@@ -25,12 +25,12 @@ public class ContextBooleanAST extends ContextNodeAST {
 
     private boolean bool;
 
-    ContextBooleanAST(String path, ASTNode parent, String currentDirectory) {
-        super(path, parent, currentDirectory);
+    ContextBooleanAST(String path, ASTNode parent, Location location) {
+        super(path, parent, location);
     }
 
     public ContextBooleanAST(String path) {
-        super(path, null, "");
+        super(path, null, Location.builder().build());
     }
 
     /**
@@ -56,8 +56,8 @@ public class ContextBooleanAST extends ContextNodeAST {
         visitor.visit(this, arg);
     }
 
-    static ContextBooleanAST create(ContextBoolean boolFrom, ASTNode parent, String currentDirectory) {
-        ContextBooleanAST result = new ContextBooleanAST(boolFrom.path(), parent, currentDirectory);
+    static ContextBooleanAST create(ContextBoolean boolFrom, ASTNode parent, Location location) {
+        ContextBooleanAST result = new ContextBooleanAST(boolFrom.path(), parent, location);
         result.bool(boolFrom.bool());
         return result;
     }

@@ -14,8 +14,8 @@ public class ValueTypeAST extends ASTNode implements ConditionalNode {
     private int order = 100;
 
 
-    ValueTypeAST(String url, String file, String template, int order, String value, ASTNode parent, String currentDirectory) {
-        super(parent, currentDirectory);
+    ValueTypeAST(String url, String file, String template, int order, String value, ASTNode parent, Location location) {
+        super(parent, location);
         this.url = url;
         this.file = file;
         this.template = template;
@@ -73,7 +73,7 @@ public class ValueTypeAST extends ASTNode implements ConditionalNode {
         visitor.visit(this, arg);
     }
 
-    static ValueTypeAST create(ValueType valueFrom, ASTNode parent, String currentDirectory) {
+    static ValueTypeAST create(ValueType valueFrom, ASTNode parent, Location location) {
         return new ValueTypeAST(
                 valueFrom.url(),
                 valueFrom.file(),
@@ -81,7 +81,7 @@ public class ValueTypeAST extends ASTNode implements ConditionalNode {
                 valueFrom.order(),
                 valueFrom.value(),
                 parent,
-                currentDirectory
+                location
         );
     }
 }

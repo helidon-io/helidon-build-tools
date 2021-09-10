@@ -27,8 +27,8 @@ public class TemplateAST extends ASTNode {
     private final String source;
     private final String target;
 
-    TemplateAST(String engine, String source, String target, ASTNode parent, String currentDirectory) {
-        super(parent, currentDirectory);
+    TemplateAST(String engine, String source, String target, ASTNode parent, Location location) {
+        super(parent, location);
         this.engine = engine;
         this.source = source;
         this.target = target;
@@ -66,12 +66,12 @@ public class TemplateAST extends ASTNode {
         visitor.visit(this, arg);
     }
 
-    static TemplateAST create(Template templateFrom, ASTNode parent, String currentDirectory) {
+    static TemplateAST create(Template templateFrom, ASTNode parent, Location location) {
         TemplateAST result = new TemplateAST(templateFrom.engine(), templateFrom.source(), templateFrom.target(), parent,
-                currentDirectory);
+                location);
         if (templateFrom.model() != null) {
-            ModelAST model = ModelAST.create(templateFrom.model(), result, currentDirectory);
-            result.children().add(ConditionalNode.mapConditional(templateFrom.model(), model, result, currentDirectory));
+            ModelAST model = ModelAST.create(templateFrom.model(), result, location);
+            result.children().add(ConditionalNode.mapConditional(templateFrom.model(), model, result, location));
         }
         return result;
     }

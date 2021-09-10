@@ -29,8 +29,8 @@ class XmlDescriptor extends ASTNode {
     private final Map<String, String> archetypeAttributes = new LinkedHashMap<>();
     private String help;
 
-    XmlDescriptor(String currentDirectory) {
-        super(null, currentDirectory);
+    XmlDescriptor(Location location) {
+        super(null, location);
     }
 
     Map<String, String> archetypeAttributes() {
@@ -55,17 +55,17 @@ class XmlDescriptor extends ASTNode {
         this.help = help;
     }
 
-    static XmlDescriptor create(ArchetypeDescriptor descriptor, ASTNode parent, String currentDirectory) {
-        XmlDescriptor result = new XmlDescriptor(currentDirectory);
+    static XmlDescriptor create(ArchetypeDescriptor descriptor, ASTNode parent, Location location) {
+        XmlDescriptor result = new XmlDescriptor(location);
         descriptor.archetypeAttributes().forEach((key, value) -> result.archetypeAttributes().putIfAbsent(key, value));
-        result.children().addAll(transformList(descriptor.contexts(), c -> ContextAST.create(c, parent, currentDirectory)));
+        result.children().addAll(transformList(descriptor.contexts(), c -> ContextAST.create(c, parent, location)));
         result.help(descriptor.help());
-        result.children().addAll(transformList(descriptor.steps(), s -> StepAST.create(s, parent, currentDirectory)));
-        result.children().addAll(transformList(descriptor.inputs(), i -> InputAST.create(i, parent, currentDirectory)));
-        result.children().addAll(transformList(descriptor.sources(), s -> SourceAST.create(s, parent, currentDirectory)));
-        result.children().addAll(transformList(descriptor.execs(), e -> ExecAST.create(e, parent, currentDirectory)));
+        result.children().addAll(transformList(descriptor.steps(), s -> StepAST.create(s, parent, location)));
+        result.children().addAll(transformList(descriptor.inputs(), i -> InputAST.create(i, parent, location)));
+        result.children().addAll(transformList(descriptor.sources(), s -> SourceAST.create(s, parent, location)));
+        result.children().addAll(transformList(descriptor.execs(), e -> ExecAST.create(e, parent, location)));
         if (descriptor.output() != null) {
-            result.children().add(OutputAST.create(descriptor.output(), parent, currentDirectory));
+            result.children().add(OutputAST.create(descriptor.output(), parent, location));
         }
         return result;
     }
