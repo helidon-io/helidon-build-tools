@@ -27,6 +27,10 @@ public class ContextAST extends ASTNode {
         super(parent, currentDirectory);
     }
 
+    public ContextAST() {
+        super(null, "");
+    }
+
     static ContextAST create(Context contextFrom, ASTNode parent, String currentDirectory) {
         ContextAST result = new ContextAST(parent, currentDirectory);
         result.children().addAll(transformList(

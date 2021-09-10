@@ -19,13 +19,10 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 import java.util.LinkedList;
 import java.util.Objects;
 
-import io.helidon.build.archetype.engine.v2.interpreter.Visitable;
-import io.helidon.build.archetype.engine.v2.interpreter.Visitor;
-
 /**
  * Archetype templates in {@link Output}.
  */
-public class Templates extends Conditional implements Visitable {
+public class Templates extends Conditional {
 
     private Model model;
     private String directory;
@@ -141,10 +138,5 @@ public class Templates extends Conditional implements Visitable {
                 + ", excludes=" + excludes()
                 + ", model=" + model()
                 + '}';
-    }
-
-    @Override
-    public <A> void accept(Visitor<A> visitor, A arg) {
-        visitor.visit(this, arg);
     }
 }

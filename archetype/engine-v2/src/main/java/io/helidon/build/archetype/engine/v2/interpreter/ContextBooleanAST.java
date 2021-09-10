@@ -29,6 +29,10 @@ public class ContextBooleanAST extends ContextNodeAST {
         super(path, parent, currentDirectory);
     }
 
+    public ContextBooleanAST(String path) {
+        super(path, null, "");
+    }
+
     /**
      * Get the boolean value.
      *

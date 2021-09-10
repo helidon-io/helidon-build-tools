@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.engine.v2.descriptor;
+package io.helidon.build.archetype.engine.v2.interpreter;
 
-import java.util.Objects;
+import io.helidon.build.archetype.engine.v2.descriptor.FileSet;
 
 /**
- * Archetype file in {@link Output} archetype.
+ * Archetype file AST node in {@link OutputAST} node.
  */
-public class FileSet extends Conditional {
+public class FileSetAST extends ASTNode {
 
     private final String source;
     private final String target;
 
-    FileSet(String source, String target, String ifProperties) {
-        super(ifProperties);
+    FileSetAST(String source, String target, ASTNode parent, String currentDirectory) {
+        super(parent, currentDirectory);
         this.source = source;
         this.target = target;
     }
@@ -51,27 +51,11 @@ public class FileSet extends Conditional {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-        FileSet that = (FileSet) o;
-        return source.equals(that.source)
-                && target.equals(that.target);
+    public <A> void accept(Visitor<A> visitor, A arg) {
+        visitor.visit(this, arg);
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), source, target);
+    static FileSetAST create(FileSet fileSetFrom, ASTNode parent, String currentDirectory) {
+        return new FileSetAST(fileSetFrom.source(), fileSetFrom.target(), parent, currentDirectory);
     }
-
-    @Override
-    public String toString() {
-        return "File{"
-                + "source=" + source()
-                + ", target=" + target()
-                + ", if=" + ifProperties()
-                + '}';
-    }
-
 }

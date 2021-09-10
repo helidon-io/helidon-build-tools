@@ -20,52 +20,59 @@ import java.util.LinkedList;
 
 import io.helidon.build.archetype.engine.v2.archive.Archetype;
 import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
-import io.helidon.build.archetype.engine.v2.descriptor.Step;
 
 /**
- * Input graph.
+ * Resolver for the archetype output files.
  */
 public class Flow extends ASTNode {
 
-    private final Prompter prompter;
     private final Interpreter interpreter;
     private final Archetype archetype;
     private final ArchetypeDescriptor entryPoint;
-    private final LinkedList<StepAST> resolvedSteps = new LinkedList<>();
-    private final LinkedList<Step> unresolvedSteps = new LinkedList<>();
+    private final LinkedList<StepAST> tree = new LinkedList<>();
+    private FlowState state;
 
-    Flow(Archetype archetype, String startDescriptorPath, Prompter prompter) {
-        super(null, "");
-        this.prompter = prompter;
-        this.archetype = archetype;
-        entryPoint = archetype.getDescriptor(startDescriptorPath);
-        interpreter = new Interpreter(prompter, archetype);
+    public Interpreter interpreter() {
+        return interpreter;
     }
 
-    /**
-     * Get the steps to build a new Helidon project.
-     *
-     * @return generated steps.
-     */
-    public LinkedList<StepAST> steps() {
-        return resolvedSteps;
+    public FlowState state() {
+        return state;
+    }
+
+    public void state(FlowState state) {
+        this.state = state;
+    }
+
+    public Archetype archetype() {
+        return archetype;
+    }
+
+    public ArchetypeDescriptor entryPoint() {
+        return entryPoint;
+    }
+
+    Flow(Archetype archetype, String startDescriptorPath) {
+        super(null, "");
+        this.archetype = archetype;
+        entryPoint = archetype.getDescriptor(startDescriptorPath);
+        interpreter = new Interpreter(archetype);
+        state = new InitialFlowState(this);
+    }
+
+    LinkedList<StepAST> tree() {
+        return tree;
     }
 
     /**
      * Build the flow, that can be used to create a new Helidon project.
+     *
+     * @param context initial context
+     * @return current state of the flow.
      */
-    public void build() {
-        unresolvedSteps.addAll(getSteps(entryPoint));
-        while (!unresolvedSteps.isEmpty()) {
-            Step step = unresolvedSteps.pop();
-            StepAST stepAST = StepAST.create(step, null, "");
-            interpreter.visit(stepAST, this);
-            resolvedSteps.add(stepAST);
-        }
-    }
-
-    private LinkedList<Step> getSteps(ArchetypeDescriptor entryPoint) {
-        return entryPoint.steps() != null ? entryPoint.steps() : new LinkedList<>();
+    public FlowState build(ContextAST context) {
+        state.build(context);
+        return state;
     }
 
     @Override
@@ -87,7 +94,6 @@ public class Flow extends ASTNode {
      */
     public static final class Builder {
 
-        private Prompter prompter;
         private Archetype archetype;
         private String startDescriptorPath = "flavor.xml";
 
@@ -106,17 +112,6 @@ public class Flow extends ASTNode {
         }
 
         /**
-         * Sets the {@code prompter} and returns a reference to this Builder so that the methods can be chained together.
-         *
-         * @param prompter the {@code prompter} to set
-         * @return a reference to this Builder
-         */
-        public Builder prompter(Prompter prompter) {
-            this.prompter = prompter;
-            return this;
-        }
-
-        /**
          * Sets a path to the start descriptor and returns a reference to this Builder so that the methods can be chained
          * together.
          *
@@ -124,7 +119,7 @@ public class Flow extends ASTNode {
          * @return a reference to this Builder
          */
         public Builder startDescriptorPath(String startDescriptorPath) {
-            this.prompter = prompter;
+            this.startDescriptorPath = startDescriptorPath;
             return this;
         }
 
@@ -137,10 +132,7 @@ public class Flow extends ASTNode {
             if (archetype == null) {
                 throw new InterpreterException("Archetype must be specified.");
             }
-            if (prompter == null) {
-                throw new InterpreterException("Prompter must be specified.");
-            }
-            return new Flow(archetype, startDescriptorPath, prompter);
+            return new Flow(archetype, startDescriptorPath);
         }
     }
 }

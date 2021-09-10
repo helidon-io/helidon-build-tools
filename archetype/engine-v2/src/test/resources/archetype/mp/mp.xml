@@ -20,16 +20,6 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
 
-    <context>
-        <enum path="flavor.base">
-            <value>bare</value>
-        </enum>
-        <list path="tracing.provider">
-            <value>jaeger</value>
-        </list>
-        <boolean path="my-opt-out">true</boolean>
-        <text path="my-input-text">foo</text>
-    </context>
     <step label="Application Type">
         <input>
             <enum name="base"

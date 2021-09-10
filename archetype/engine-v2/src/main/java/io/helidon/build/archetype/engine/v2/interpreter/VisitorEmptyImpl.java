@@ -100,27 +100,27 @@ abstract class VisitorEmptyImpl<T> implements Visitor<T> {
     }
 
     @Override
-    public void visit(Transformation transformation, T arg) {
+    public void visit(TransformationAST transformation, T arg) {
 
     }
 
     @Override
-    public void visit(FileSets fileSets, T arg) {
+    public void visit(FileSetsAST fileSets, T arg) {
 
     }
 
     @Override
-    public void visit(FileSet fileSet, T arg) {
+    public void visit(FileSetAST fileSet, T arg) {
 
     }
 
     @Override
-    public void visit(Template template, T arg) {
+    public void visit(TemplateAST template, T arg) {
 
     }
 
     @Override
-    public void visit(Templates templates, T arg) {
+    public void visit(TemplatesAST templates, T arg) {
 
     }
 
@@ -135,12 +135,12 @@ abstract class VisitorEmptyImpl<T> implements Visitor<T> {
     }
 
     @Override
-    public void visit(ModelKeyValue value, T arg) {
+    public void visit(ModelKeyValueAST value, T arg) {
 
     }
 
     @Override
-    public void visit(ValueType value, T arg) {
+    public void visit(ValueTypeAST value, T arg) {
 
     }
 

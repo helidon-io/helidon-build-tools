@@ -29,6 +29,10 @@ public class ContextEnumAST extends ContextNodeAST {
         super(path, parent, currentDirectory);
     }
 
+    public ContextEnumAST(String path) {
+        super(path, null, "");
+    }
+
     /**
      * Get the enum value.
      *

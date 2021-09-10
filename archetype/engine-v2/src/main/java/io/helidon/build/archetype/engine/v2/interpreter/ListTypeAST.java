@@ -17,6 +17,7 @@
 package io.helidon.build.archetype.engine.v2.interpreter;
 
 import java.util.LinkedList;
+import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.descriptor.ListType;
 
@@ -57,9 +58,18 @@ public class ListTypeAST extends ASTNode implements ConditionalNode {
 
     private static LinkedList<Visitable> getChildren(ListType list, ASTNode parent, String currentDirectory) {
         LinkedList<Visitable> result = new LinkedList<>();
-        result.addAll(list.values());
-        result.addAll(transformList(list.maps(), m -> MapTypeAST.create(m, parent, currentDirectory)));
-        result.addAll(transformList(list.lists(), l -> ListTypeAST.create(l, parent, currentDirectory)));
+        result.addAll(list.values().stream()
+                .map(v -> ConditionalNode.mapConditional(
+                        v, ValueTypeAST.create(v, parent, currentDirectory), parent, currentDirectory))
+                .collect(Collectors.toCollection(LinkedList::new)));
+        result.addAll(list.maps().stream()
+                .map(m -> ConditionalNode.mapConditional(
+                        m, MapTypeAST.create(m, parent, currentDirectory), parent, currentDirectory))
+                .collect(Collectors.toCollection(LinkedList::new)));
+        result.addAll(list.lists().stream()
+                .map(l -> ConditionalNode.mapConditional(
+                        l, ListTypeAST.create(l, parent, currentDirectory), parent, currentDirectory))
+                .collect(Collectors.toCollection(LinkedList::new)));
         return result;
     }
 

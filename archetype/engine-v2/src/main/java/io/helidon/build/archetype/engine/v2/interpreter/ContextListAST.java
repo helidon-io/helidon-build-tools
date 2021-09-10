@@ -25,11 +25,14 @@ import io.helidon.build.archetype.engine.v2.descriptor.ContextList;
  */
 public class ContextListAST extends ContextNodeAST {
 
-    private final LinkedList<String> values;
+    private final LinkedList<String> values = new LinkedList<>();
 
     ContextListAST(String path, ASTNode parent, String currentDirectory) {
         super(path, parent, currentDirectory);
-        values = new LinkedList<>();
+    }
+
+    public ContextListAST(String path) {
+        super(path, null, "");
     }
 
     /**

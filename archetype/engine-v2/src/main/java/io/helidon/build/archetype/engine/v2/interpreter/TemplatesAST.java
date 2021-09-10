@@ -1,0 +1,96 @@
+package io.helidon.build.archetype.engine.v2.interpreter;
+
+import java.util.LinkedList;
+
+import io.helidon.build.archetype.engine.v2.descriptor.Templates;
+
+/**
+ * Archetype templates AST node in {@link OutputAST}.
+ */
+public class TemplatesAST extends ASTNode implements ConditionalNode {
+
+    private final String directory;
+    private final LinkedList<String> includes;
+    private final LinkedList<String> excludes;
+    private final String engine;
+    private final String transformation;
+
+    TemplatesAST(String engine, String transformation, String directory,
+                 LinkedList<String> includes, LinkedList<String> excludes,
+                 ASTNode parent, String currentDirectory) {
+        super(parent, currentDirectory);
+        this.directory = directory;
+        this.includes = includes;
+        this.excludes = excludes;
+        this.engine = engine;
+        this.transformation = transformation;
+    }
+
+    /**
+     * Get the engine.
+     *
+     * @return engine
+     */
+    public String engine() {
+        return engine;
+    }
+
+    /**
+     * Get the directory.
+     *
+     * @return directory
+     */
+    public String directory() {
+        return directory;
+    }
+
+    /**
+     * Get the transformation.
+     *
+     * @return transformation
+     */
+    public String transformation() {
+        return transformation;
+    }
+
+    /**
+     * Get the include filters.
+     *
+     * @return list of include filter, never {@code null}
+     */
+    public LinkedList<String> includes() {
+        return includes;
+    }
+
+    /**
+     * Get the exclude filters.
+     *
+     * @return list of exclude filter, never {@code null}
+     */
+    public LinkedList<String> excludes() {
+        return excludes;
+    }
+
+    @Override
+    public <A> void accept(Visitor<A> visitor, A arg) {
+        visitor.visit(this, arg);
+    }
+
+    static TemplatesAST create(Templates templatesFrom, ASTNode parent, String currentDirectory) {
+        TemplatesAST result = new TemplatesAST(
+                templatesFrom.engine(),
+                templatesFrom.transformation(),
+                templatesFrom.directory(),
+                templatesFrom.includes(),
+                templatesFrom.excludes(),
+                parent,
+                currentDirectory
+        );
+        if (templatesFrom.model() != null) {
+            ModelAST model = ModelAST.create(templatesFrom.model(), result, currentDirectory);
+            result.children().add(ConditionalNode.mapConditional(templatesFrom.model(), model, result, currentDirectory));
+        }
+
+        return result;
+    }
+}

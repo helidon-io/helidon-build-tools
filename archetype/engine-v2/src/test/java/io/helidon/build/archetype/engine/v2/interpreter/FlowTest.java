@@ -2,116 +2,89 @@ package io.helidon.build.archetype.engine.v2.interpreter;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 
 import io.helidon.build.archetype.engine.v2.archive.Archetype;
 import io.helidon.build.archetype.engine.v2.archive.ArchetypeFactory;
 import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@ExtendWith(MockitoExtension.class)
 class FlowTest {
 
     @Test
-    void testBuild() {
+    void testBuildFlowMp() {
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("archetype").getFile());
         Archetype archetype = ArchetypeFactory.create(file);
         ArchetypeDescriptor descriptor = archetype.getDescriptor("flavor.xml");
         descriptor.archetypeAttributes();
+        List<String> labels = new ArrayList<>();
+        labels.add("Helidon MP");
+        labels.add("Bare Helidon MP project suitable to start from scratch");
+        labels.add("Apache Maven");
+        labels.add("Docker support");
+        labels.add("Do you want a native-image Dockerfile");
+        labels.add("Do you want a jlink Dockerfile");
+        labels.add("Kubernetes Support");
 
-        TestPrompter prompter = new TestPrompter();
-        List<String> requestedLabels = new ArrayList<>();
-        requestedLabels.add("Helidon MP");
-        requestedLabels.add("Bare Helidon MP project suitable to start from scratch");
-        requestedLabels.add("Apache Maven");
-        requestedLabels.add("Docker support");
-        requestedLabels.add("Do you want a native-image Dockerfile");
-        requestedLabels.add("Kubernetes Support");
-        prompter.requestedLabels(requestedLabels);
-        Flow flow = new Flow(archetype, "flavor.xml", prompter);
-        flow.build();
-        LinkedList<StepAST> steps = flow.steps();
-        String expectedLabel = "Select a flavor";
-        Pair parentWithChild = getParentWithChild(expectedLabel, steps);
-        ASTNode child = (ASTNode) parentWithChild.children.get(0);
-        assertThat(((InputEnumAST) parentWithChild.parent).label(), is(expectedLabel));
-        assertThat(((OptionAST) child).label(), is("Helidon MP"));
-        assertThat(((SourceAST) child.children().get(0)).source(), is("mp/mp.xml"));
-
-        expectedLabel = "Select archetype";
-        parentWithChild = getParentWithChild(expectedLabel, steps);
-        child = (ASTNode) parentWithChild.children.get(0);
-        assertThat(((InputEnumAST) parentWithChild.parent).label(), is(expectedLabel));
-        assertThat(((OptionAST) child).label(), is("Bare Helidon MP project suitable to start from scratch"));
-        assertThat(((SourceAST) child.children().get(0)).source(), is("bare/bare-mp.xml"));
-
-        expectedLabel = "Docker";
-        parentWithChild = getParentWithChild(expectedLabel, steps);
-        child = (ASTNode) ((InputAST) parentWithChild.children.get(0)).children().get(0);
-        assertThat(((StepAST) parentWithChild.parent).label(), is(expectedLabel));
-        assertThat(((InputBooleanAST) child).label(), is("Docker support"));
-
-        expectedLabel = "Docker support";
-        parentWithChild = getParentWithChild(expectedLabel, steps);
-        assertThat(((InputBooleanAST) parentWithChild.parent).label(), is(expectedLabel));
-        assertThat(parentWithChild.children.get(0) instanceof OutputAST, is(true));
-        child = (ASTNode) ((InputAST) parentWithChild.children.get(1)).children().get(0);
-        assertThat(((InputBooleanAST) child).label(), is("Do you want a native-image Dockerfile"));
-
-        expectedLabel = "Kubernetes Support";
-        parentWithChild = getParentWithChild(expectedLabel, steps);
-        assertThat(((InputBooleanAST) parentWithChild.parent).label(), is(expectedLabel));
-        assertThat(parentWithChild.children.get(0) instanceof OutputAST, is(true));
+        Flow flow = new Flow(archetype, "flavor.xml");
+        FlowState state = flow.build(new ContextAST());
+        for (String label : labels) {
+            state = flow.build(getUserInput(label));
+        }
+        assertThat(state.state(), is(FlowStateEnum.READY));
     }
 
-    private Pair getParentWithChild(String parentLabel, LinkedList<StepAST> steps) {
-        for (StepAST step : steps) {
-            Pair result = getParentWithChildFromStep(parentLabel, step);
-            if (result != null) {
-                return result;
-            }
-        }
-        return null;
+    private static ContextAST getUserInput(String label) {
+        Map<String, ContextAST> userInputs = new HashMap<>();
+
+        ContextAST context = new ContextAST();
+        ContextEnumAST contextEnum = new ContextEnumAST("flavor");
+        contextEnum.value("mp");
+        context.children().add(contextEnum);
+        userInputs.put("Helidon MP", context);
+
+        context = new ContextAST();
+        contextEnum = new ContextEnumAST("flavor.base");
+        contextEnum.value("bare");
+        context.children().add(contextEnum);
+        userInputs.put("Bare Helidon MP project suitable to start from scratch", context);
+
+        context = new ContextAST();
+        ContextListAST contextList = new ContextListAST("flavor.base.build-system");
+        contextList.values().add("maven");
+        context.children().add(contextList);
+        userInputs.put("Apache Maven", context);
+
+        context = new ContextAST();
+        ContextBooleanAST contextBool = new ContextBooleanAST("flavor.base.docker");
+        contextBool.bool(true);
+        context.children().add(contextBool);
+        userInputs.put("Docker support", context);
+
+        context = new ContextAST();
+        contextBool = new ContextBooleanAST("flavor.base.docker.native-image");
+        contextBool.bool(true);
+        context.children().add(contextBool);
+        userInputs.put("Do you want a native-image Dockerfile", context);
+
+        context = new ContextAST();
+        contextBool = new ContextBooleanAST("flavor.base.docker.jlink");
+        contextBool.bool(false);
+        context.children().add(contextBool);
+        userInputs.put("Do you want a jlink Dockerfile", context);
+
+        context = new ContextAST();
+        contextBool = new ContextBooleanAST("flavor.base.kubernetes");
+        contextBool.bool(true);
+        context.children().add(contextBool);
+        userInputs.put("Kubernetes Support", context);
+
+        return userInputs.get(label);
     }
-
-    private Pair getParentWithChildFromStep(String parentLabel, Visitable parent) {
-        if (parent instanceof InputNodeAST) {
-            if (Objects.equals(((InputNodeAST) parent).label(), parentLabel)) {
-                return new Pair(parent, ((InputNodeAST) parent).children());
-            }
-        }
-        if (parent instanceof StepAST) {
-            if (Objects.equals(((StepAST) parent).label(), parentLabel)) {
-                return new Pair(parent, ((StepAST) parent).children());
-            }
-        }
-        if (parent instanceof ASTNode && !((ASTNode) parent).children().isEmpty()) {
-            for (Visitable child : ((ASTNode) parent).children()) {
-                Pair pair = getParentWithChildFromStep(parentLabel, child);
-                if (pair != null) {
-                    return pair;
-                }
-            }
-        }
-        return null;
-    }
-
-    private class Pair {
-        Visitable parent;
-        List<Visitable> children;
-
-        Pair(Visitable parent, List<Visitable> children) {
-            this.parent = parent;
-            this.children = children;
-        }
-    }
-
 }

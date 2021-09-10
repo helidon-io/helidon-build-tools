@@ -49,21 +49,23 @@ public class OutputAST extends ASTNode implements ConditionalNode {
         if (output.model() != null) {
             result.add(ModelAST.create(output.model(), parent, currentDirectory));
         }
-        result.addAll(output.transformations());
+        result.addAll(transformList(output.transformations(), t -> TransformationAST.create(t, parent, currentDirectory)));
         result.addAll(output.filesList().stream()
-                .map(fs -> ConditionalNode.mapConditional(fs, fs, parent, currentDirectory))
+                .map(fs -> ConditionalNode.mapConditional(
+                        fs, FileSetsAST.create(fs, parent, currentDirectory), parent, currentDirectory))
                 .collect(Collectors.toCollection(LinkedList::new)));
         result.addAll(output.fileList().stream()
-                .map(fl -> ConditionalNode.mapConditional(fl, fl, parent, currentDirectory))
+                .map(fl -> ConditionalNode.mapConditional(
+                        fl, FileSetAST.create(fl, parent, currentDirectory), parent, currentDirectory))
                 .collect(Collectors.toCollection(LinkedList::new)));
         result.addAll(output.template().stream()
-                .map(t -> ConditionalNode.mapConditional(t, t, parent, currentDirectory))
+                .map(t -> ConditionalNode.mapConditional(
+                        t, TemplateAST.create(t, parent, currentDirectory), parent, currentDirectory))
                 .collect(Collectors.toCollection(LinkedList::new)));
         result.addAll(output.templates().stream()
-                .map(t -> ConditionalNode.mapConditional(t, t, parent, currentDirectory))
+                .map(t -> ConditionalNode.mapConditional(
+                        t, TemplatesAST.create(t, parent, currentDirectory), parent, currentDirectory))
                 .collect(Collectors.toCollection(LinkedList::new)));
         return result;
     }
-
-
 }

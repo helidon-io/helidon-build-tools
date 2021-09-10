@@ -168,44 +168,44 @@ public interface Visitor<A> {
     void visit(OutputAST output, A arg);
 
     /**
-     * Process {@code Transformation} element.
+     * Process {@code TransformationAST} element.
      *
-     * @param transformation Transformation
+     * @param transformation TransformationAST
      * @param arg            argument
      */
-    void visit(Transformation transformation, A arg);
+    void visit(TransformationAST transformation, A arg);
 
     /**
-     * Process {@code FileSets} element.
+     * Process {@code FileSetsAST} element.
      *
-     * @param fileSets FileSets
+     * @param fileSets FileSetsAST
      * @param arg      argument
      */
-    void visit(FileSets fileSets, A arg);
+    void visit(FileSetsAST fileSets, A arg);
 
     /**
-     * Process {@code FileSet} element.
+     * Process {@code FileSetAST} element.
      *
-     * @param fileSet FileSet
+     * @param fileSet FileSetAST
      * @param arg     argument
      */
-    void visit(FileSet fileSet, A arg);
+    void visit(FileSetAST fileSet, A arg);
 
     /**
-     * Process {@code Template} element.
+     * Process {@code TemplateAST} element.
      *
-     * @param template Template
+     * @param template TemplateAST
      * @param arg      argument
      */
-    void visit(Template template, A arg);
+    void visit(TemplateAST template, A arg);
 
     /**
-     * Process {@code Templates} element.
+     * Process {@code TemplatesAST} element.
      *
-     * @param templates Templates
+     * @param templates TemplatesAST
      * @param arg       argument
      */
-    void visit(Templates templates, A arg);
+    void visit(TemplatesAST templates, A arg);
 
     /**
      * Process {@code ModelAST} element.
@@ -224,20 +224,20 @@ public interface Visitor<A> {
     void visit(IfStatement statement, A arg);
 
     /**
-     * Process {@code ModelKeyValue} element.
+     * Process {@code ModelKeyValueAST} element.
      *
-     * @param value ModelKeyValue
+     * @param value ModelKeyValueAST
      * @param arg   argument
      */
-    void visit(ModelKeyValue value, A arg);
+    void visit(ModelKeyValueAST value, A arg);
 
     /**
-     * Process {@code ValueType} element.
+     * Process {@code ValueTypeAST} element.
      *
-     * @param value ValueType
+     * @param value ValueTypeAST
      * @param arg   argument
      */
-    void visit(ValueType value, A arg);
+    void visit(ValueTypeAST value, A arg);
 
     /**
      * Process {@code ModelKeyListAST} element.

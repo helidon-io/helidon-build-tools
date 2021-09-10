@@ -14,22 +14,25 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.engine.v2.descriptor;
+package io.helidon.build.archetype.engine.v2.interpreter;
 
 import java.util.LinkedList;
-import java.util.Objects;
+
+import io.helidon.build.archetype.engine.v2.descriptor.Replacement;
+import io.helidon.build.archetype.engine.v2.descriptor.Transformation;
 
 /**
- * Archetype transformation in {@link Output}.
+ * Archetype transformation AST node in {@link OutputAST}.
  */
-public class Transformation {
+public class TransformationAST extends ASTNode {
 
     private final String id;
     private final LinkedList<Replacement> replacements;
 
-    Transformation(String id) {
-        this.id = Objects.requireNonNull(id, "id is null");
-        this.replacements = new LinkedList<>();
+    TransformationAST(String id, LinkedList<Replacement> replacements, ASTNode parent, String currentDirectory) {
+        super(parent, currentDirectory);
+        this.id = id;
+        this.replacements = replacements;
     }
 
     /**
@@ -51,24 +54,11 @@ public class Transformation {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Transformation that = (Transformation) o;
-        return id.equals(that.id)
-                && replacements.equals(that.replacements);
+    public <A> void accept(Visitor<A> visitor, A arg) {
+        visitor.visit(this, arg);
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, replacements);
-    }
-
-    @Override
-    public String toString() {
-        return "Transformation{"
-                + "id='" + id + '\''
-                + ", replacements=" + replacements
-                + '}';
+    static TransformationAST create(Transformation transformationFrom, ASTNode parent, String currentDirectory) {
+        return new TransformationAST(transformationFrom.id(), transformationFrom.replacements(), parent, currentDirectory);
     }
 }

@@ -10,6 +10,7 @@ public class UserInputVisitor implements GenericVisitor<InputNodeAST, ASTNode> {
     @Override
     public InputNodeAST visit(InputEnumAST input, ASTNode arg) {
         InputEnumAST result = new InputEnumAST(input.label(), input.name(), input.def(), input.prompt(), null, "");
+        result.help(input.help());
         result.children().addAll(input.children().stream()
                 .filter(c -> c instanceof OptionAST).collect(Collectors.toCollection(LinkedList::new)));
         return result;
@@ -17,6 +18,18 @@ public class UserInputVisitor implements GenericVisitor<InputNodeAST, ASTNode> {
 
     @Override
     public InputNodeAST visit(InputListAST input, ASTNode arg) {
-        return null;
+        InputListAST result = new InputListAST(input.label(), input.name(), input.def(), input.prompt(), input.min(),
+                input.max(), null, "");
+        result.help(input.help());
+        result.children().addAll(input.children().stream()
+                .filter(c -> c instanceof OptionAST).collect(Collectors.toCollection(LinkedList::new)));
+        return result;
+    }
+
+    @Override
+    public InputNodeAST visit(InputBooleanAST input, ASTNode arg) {
+        InputBooleanAST result = new InputBooleanAST(input.label(), input.name(), input.def(), input.prompt(), null, "");
+        result.help(input.help());
+        return result;
     }
 }

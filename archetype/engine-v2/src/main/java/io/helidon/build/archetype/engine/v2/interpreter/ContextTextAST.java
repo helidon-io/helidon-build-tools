@@ -29,6 +29,10 @@ public class ContextTextAST extends ContextNodeAST {
         super(path, parent, currentDirectory);
     }
 
+    public ContextTextAST(String path) {
+        super(path, null, "");
+    }
+
     /**
      * Get text string from text element.
      *

@@ -17,6 +17,7 @@
 package io.helidon.build.archetype.engine.v2.interpreter;
 
 import java.io.Serializable;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -29,10 +30,25 @@ public abstract class ASTNode implements Visitable, Serializable {
     private final LinkedList<Visitable> children = new LinkedList<>();
     private final String currentDirectory;
     private ASTNode parent;
+    private Iterator<Visitable> iterator;
 
     ASTNode(ASTNode parent, String currentDirectory) {
         this.currentDirectory = currentDirectory;
         this.parent = parent;
+    }
+
+    public boolean hasNext() {
+        if (iterator == null) {
+            iterator = children.iterator();
+        }
+        return iterator.hasNext();
+    }
+
+    public Visitable next() {
+        if (iterator == null) {
+            iterator = children.iterator();
+        }
+        return iterator.next();
     }
 
     /**
