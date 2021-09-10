@@ -95,6 +95,13 @@ public class ArchetypeDescriptorTest {
         assertThat(model.keyMaps().getFirst().key(), is("foo"));
         assertThat(model.keyMaps().getFirst().keyValues().getFirst().key(), is("first"));
         assertThat(model.keyMaps().getFirst().keyLists().getFirst().key(), is("second"));
+        assertThat(model.keyMaps().getLast().keyMaps().getLast().keyLists().getLast().maps().getLast().keyValues().getFirst().value(),
+                is("io.helidon.build-tools"));
+
+        ModelKeyValue execution = model.keyMaps().getLast().keyMaps().getLast().keyLists().getLast().maps().getLast()
+                .keyMaps().getLast().keyMaps().getLast().keyValues().getLast();
+        assertThat(execution.key(), is("id"));
+        assertThat(execution.value(), is("third-party-license-report"));
 
         Transformation transformation = output.transformations().getFirst();
 
