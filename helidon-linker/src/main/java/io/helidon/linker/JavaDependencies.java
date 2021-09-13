@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,15 @@
 package io.helidon.linker;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.module.ModuleDescriptor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.spi.ToolProvider;
@@ -83,9 +86,17 @@ public final class JavaDependencies {
     private Set<String> collect(Stream<Jar> jars) {
         jars.forEach(jar -> {
             if (jar.hasModuleDescriptor()) {
-                addModule(jar);
+                addModule(jar.moduleDescriptor());
             } else {
-                addJar(jar);
+                Optional<Jar.Entry> moduleInfo = jar.entries()
+                        .filter(it -> it.getName().endsWith("/module-info.class"))
+                        .findFirst();
+
+                if (moduleInfo.isPresent()) {
+                    addModule(moduleInfo.get());
+                } else {
+                    addJar(jar);
+                }
             }
         });
 
@@ -102,8 +113,15 @@ public final class JavaDependencies {
         }
     }
 
-    private void addModule(Jar module) {
-        final ModuleDescriptor descriptor = module.moduleDescriptor();
+    private void addModule(Jar.Entry entry) {
+        try {
+            addModule(ModuleDescriptor.read(entry.data()));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private void addModule(ModuleDescriptor descriptor) {
         Log.info("  checking module %s", descriptor.name());
         descriptor.requires()
                   .stream()
