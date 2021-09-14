@@ -16,18 +16,15 @@
 
 package io.helidon.build.archetype.engine.v2.template;
 
-
-import io.helidon.build.archetype.engine.v2.descriptor.Model;
-import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyList;
-import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyMap;
-import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyValue;
-import io.helidon.build.archetype.engine.v2.expression.evaluator.Expression;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.Map;
+
+import io.helidon.build.archetype.engine.v2.descriptor.ListType;
+import io.helidon.build.archetype.engine.v2.descriptor.MapType;
+import io.helidon.build.archetype.engine.v2.descriptor.Model;
+import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
+import io.helidon.build.archetype.engine.v2.expression.evaluator.Expression;
 
 /**
  * Template Model Archetype.
@@ -35,15 +32,16 @@ import java.util.Map;
 public class TemplateModel {
 
     private Model model;
-    private final MergingMap<String, TemplateValue> templateValues = new MergingMap<>();
-    private final MergingMap<String, TemplateList> templateLists = new MergingMap<>();
-    private final MergingMap<String, TemplateMap> templateMaps = new MergingMap<>();
-    private final Map<String, Object> scope = new NonNullMap<>();
 
     TemplateModel() {
         this.model = null;
     }
 
+    /**
+     * Merge a new model to the unique model.
+     *
+     * @param model model to be merged
+     */
     public void mergeModel(Model model) {
         if (model == null) {
             return;
@@ -60,89 +58,32 @@ public class TemplateModel {
         }
     }
 
-    public Map<String, Object> createScope() {
-        try {
-            resolveModel();
-        } catch (IOException ignored) {
-        }
-        scope.putAll(valuesToMap(templateValues));
-        scope.putAll(listToMap(templateLists));
-        scope.putAll(mapsToMap(templateMaps));
-
-        return scope;
+    private void sortModel() {
+        sortValues(model.keyValues());
+        sortLists(model.keyLists());
+        sortMaps(model.keyMaps());
     }
 
-    private void resolveModel() throws IOException {
-        for (ModelKeyValue value : model.keyValues()) {
-            templateValues.put(value.key(), new TemplateValue(value));
-        }
-        for (ModelKeyList list : model.keyLists()) {
-            templateLists.put(list.key(), new TemplateList(list));
-        }
-        for (ModelKeyMap map : model.keyMaps()) {
-            templateMaps.put(map.key(), new TemplateMap(map));
+    private void sortMaps(LinkedList<? extends MapType> maps) {
+        maps.sort(Comparator.comparingInt(MapType::order));
+        for (MapType map : maps) {
+            sortValues(map.keyValues());
+            sortLists(map.keyLists());
+            sortMaps(map.keyMaps());
         }
     }
 
-    private Map<String, Object> valuesToMap(MergingMap<String, TemplateValue> templateValues) {
-        Map<String, Object> resolved = new NonNullMap<>();
-        for (String key : templateValues.keySet()) {
-            resolved.put(key, templateValues.get(key).value());
+    private void sortLists(LinkedList<? extends ListType> lists) {
+        lists.sort(Comparator.comparingInt(ListType::order));
+        for (ListType list : lists) {
+            sortValues(list.values());
+            sortLists(list.lists());
+            sortMaps(list.maps());
         }
-        return resolved;
     }
 
-    private Map<String, Object> mapsToMap(MergingMap<String, TemplateMap> templateMaps) {
-        Map<String, Object> resolved = new NonNullMap<>();
-        for (String key : templateMaps.keySet()) {
-            Map<String, Object> m = new NonNullMap<>();
-            m.putAll(valuesToMap(templateMaps.get(key).values()));
-            m.putAll(listToMap(templateMaps.get(key).lists()));
-            m.putAll(mapsToMap(templateMaps.get(key).maps()));
-            resolved.put(key, m);
-        }
-        return resolved;
-    }
-
-    private Map<String, Object> listToMap(MergingMap<String, TemplateList> templateLists) {
-        Map<String, Object> resolved = new NonNullMap<>();
-        for (String key : templateLists.keySet()) {
-            List<Object> list = mapsToList(templateLists.get(key).maps());
-            list.add(valuesToList(templateLists.get(key).values()));
-            list.add(listsToList(templateLists.get(key).lists()));
-            resolved.put(key, list);
-        }
-        return resolved;
-    }
-
-    private List<Object> listsToList(List<TemplateList> templateLists) {
-        List<Object> resolved = new NonNullList<>();
-        for (TemplateList list : templateLists) {
-            resolved.add(valuesToList(list.values()));
-            resolved.add(listsToList(list.lists()));
-            resolved.add(mapsToList(list.maps()));
-        }
-        return resolved;
-    }
-
-    private List<Object> mapsToList(List<TemplateMap> maps) {
-        List<Object> resolved = new NonNullList<>();
-        for (TemplateMap map : maps) {
-            Map<String, Object> m = new NonNullMap<>();
-            m.putAll(valuesToMap(map.values()));
-            m.putAll(listToMap(map.lists()));
-            m.putAll(mapsToMap(map.maps()));
-            resolved.add(m);
-        }
-        return resolved;
-    }
-
-    private List<String> valuesToList(List<TemplateValue> values) {
-        List<String> resolved = new NonNullList<>();
-        for (TemplateValue value : values) {
-            resolved.add(value.value());
-        }
-        return resolved;
+    private void sortValues(LinkedList<? extends ValueType> values) {
+        values.sort(Comparator.comparingInt(ValueType::order));
     }
 
     private boolean evaluateCondition(String condition, Map<String, String> variables) {
@@ -150,47 +91,14 @@ public class TemplateModel {
                 || Expression.builder().expression(condition).build().evaluate(variables);
     }
 
+    /**
+     * Get the unique model descriptor.
+     *
+     * @return model descriptor
+     */
     public Model model() {
+        sortModel();
         return model;
-    }
-
-    static class NonNullList<Object> extends ArrayList<Object> {
-
-        @Override
-        public boolean add(Object object) {
-            if (object == null) {
-                return false;
-            }
-            if (object instanceof Map) {
-                if (((Map<?, ?>) object).isEmpty()) {
-                    return false;
-                }
-            }
-            if (object instanceof List) {
-                if (((List<?>) object).isEmpty()) {
-                    return false;
-                }
-            }
-            return super.add(object);
-        }
-    }
-
-    static class NonNullMap<String, Object> extends HashMap<String, Object> {
-
-        @Override
-        public Object put(String key, Object object) {
-            if (object instanceof Map) {
-                if (((Map<?, ?>) object).isEmpty()) {
-                    return null;
-                }
-            }
-            if (object instanceof List) {
-                if (((List<?>) object).isEmpty()) {
-                    return null;
-                }
-            }
-            return super.put(key, object);
-        }
     }
 
 }

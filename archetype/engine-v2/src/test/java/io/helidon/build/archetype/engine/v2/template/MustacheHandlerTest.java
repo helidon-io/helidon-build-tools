@@ -18,44 +18,89 @@ package io.helidon.build.archetype.engine.v2.template;
 
 import io.helidon.build.archetype.engine.v2.MustacheHandler;
 import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Path;
+import java.io.OutputStream;
+import java.util.Arrays;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.core.IsNull.notNullValue;
 
 public class MustacheHandlerTest {
 
-    public static final String DESCRIPTOR_NAME = "template/customArchetype.xml";
-    public static final String DESCRIPTOR_NAME_1 = "template/customArchetype1.xml";
-    public static final String TEMPLATE_RESOURCE_NAME = "template/test.xml.mustache";
+    public static final String DESCRIPTOR         = "template/hardCodedValues.xml";
+    public static final String DESCRIPTOR_SIBLING = "template/hardCodedValuesSibling.xml";
+    public static final String DESCRIPTOR_PPV     = "template/preProcessedValueArch.xml";
+    public static final String DESCRIPTOR_O       = "template/orderArch.xml";
+    public static final String TEMPLATE_RESOURCE  = "template/test.xml.mustache";
+    public static final String EXPECTED_RESOURCE  = "template/expected.xml";
+
+    public static String expected;
+
+    @BeforeAll
+    static void bootstrap() throws IOException {
+        InputStream expectedStream = MustacheHandlerTest.class.getClassLoader()
+                .getResourceAsStream(EXPECTED_RESOURCE);
+        assert expectedStream != null;
+        expected = new String(expectedStream.readAllBytes());
+        expectedStream.close();
+    }
 
     @Test
-    public void parseModel() throws IOException {
-        InputStream is = MustacheHandlerTest.class.getClassLoader()
-                .getResourceAsStream(DESCRIPTOR_NAME);
-        InputStream is1 = MustacheHandlerTest.class.getClassLoader()
-                .getResourceAsStream(DESCRIPTOR_NAME_1);
+    public void parseModelHardCodedValues() throws IOException {
+        InputStream descStream = MustacheHandlerTest.class.getClassLoader()
+                .getResourceAsStream(DESCRIPTOR);
+        InputStream descSiblingStream = MustacheHandlerTest.class.getClassLoader()
+                .getResourceAsStream(DESCRIPTOR_SIBLING);
+        testDescriptor(descStream, descSiblingStream);
+    }
 
-        InputStream templateStream = MustacheHandlerTest.class.getClassLoader()
-                .getResourceAsStream(TEMPLATE_RESOURCE_NAME);
+    @Test
+    public void parseModelWithPreProcessedValues() throws IOException {
+        InputStream stream = MustacheHandlerTest.class.getClassLoader()
+                .getResourceAsStream(DESCRIPTOR_PPV);
+        testDescriptor(stream);
+    }
 
-        assertThat(is, is(notNullValue()));
-        assertThat(is1, is(notNullValue()));
-        assertThat(templateStream, is(notNullValue()));
+    @Test
+    public void testOrder() throws IOException {
+        InputStream stream = MustacheHandlerTest.class.getClassLoader()
+                .getResourceAsStream(DESCRIPTOR_O);
+        testDescriptor(stream);
+    }
 
-        ArchetypeDescriptor desc = ArchetypeDescriptor.read(is);
-        ArchetypeDescriptor desc1 = ArchetypeDescriptor.read(is1);
-
+    private void testDescriptor(InputStream ... descriptors) throws IOException {
+        OutputStream stream = new ByteArrayOutputStream();
         TemplateModel model = new TemplateModel();
-        model.mergeModel(desc.output().model());
-        model.mergeModel(desc1.output().model());
+        InputStream template = MustacheHandlerTest.class.getClassLoader()
+                .getResourceAsStream(TEMPLATE_RESOURCE);
+        assertThat(template, is(notNullValue()));
 
-        MustacheHandler.renderMustacheTemplate(templateStream, "test.xml", Path.of("src/test/resources/template/output.xml"), model.createScope());
+        for (InputStream is : descriptors) {
+            assertThat(is, is(notNullValue()));
+            model.mergeModel(
+                    ArchetypeDescriptor.read(is)
+                            .output().model());
+        }
+
+        MustacheHandler.renderMustacheTemplate(template, TEMPLATE_RESOURCE, stream, model);
+
+        assertThat(stream.toString(), containsString(expected));
+
+        Arrays.stream(descriptors).forEach(desc -> {
+            try {
+                desc.close();
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+        });
+        template.close();
     }
 
 }

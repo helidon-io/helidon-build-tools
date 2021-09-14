@@ -18,7 +18,7 @@ import java.util.Map;
  * @param <K>   key
  * @param <V>   Template Object
  */
-public class MergingMap<K,V> extends HashMap<K,V> {
+public class MergingMap<K, V> extends HashMap<K, V> {
 
     @Override
     public V put(K key, V value) {
@@ -99,7 +99,7 @@ public class MergingMap<K,V> extends HashMap<K,V> {
         File mergedFile = Files.createTempFile("temp", "txt").toFile();
         OutputStream os = new FileOutputStream(mergedFile);
         InputStream is = new FileInputStream(first.file());
-        while(read != -1) {
+        while (read != -1) {
             read = is.read();
             os.write(read);
         }

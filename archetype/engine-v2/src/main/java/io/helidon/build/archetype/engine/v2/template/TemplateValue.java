@@ -16,8 +16,6 @@
 
 package io.helidon.build.archetype.engine.v2.template;
 
-import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -25,21 +23,33 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 
-class TemplateValue {
+import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
 
-    private final String value;
+/**
+ * Template value used in {@link TemplateModel}.
+ */
+public class TemplateValue {
+
+    private String value;
     private URL url = null;
     private final File file;
     private final String template;
     private final int order;
 
-    TemplateValue(ValueType keyValue) throws IOException {
-        this.value = keyValue.value();
-        this.file = resolveFile(keyValue);
-        this.template = keyValue.template();
-        this.order = keyValue.order();
+    /**
+     * TemplateValue constructor.
+     *
+     * @param value Value containing xml descriptor data
+     *
+     * @throws IOException if file attribute has I/O issues
+     */
+    public TemplateValue(ValueType value) throws IOException {
+        this.value = value.value();
+        this.file = resolveFile(value);
+        this.template = value.template();
+        this.order = value.order();
         try {
-            this.url = new URL(keyValue.url());
+            this.url = new URL(value.url());
         } catch (MalformedURLException ignored) {
         }
     }
@@ -63,22 +73,56 @@ class TemplateValue {
         return filepath.toFile();
     }
 
+    /**
+     * Get its value.
+     *
+     * @return value
+     */
     public String value() {
         return value;
     }
 
+    /**
+     * Set its value.
+     *
+     * @param value value
+     */
+    public void value(String value) {
+        this.value = value;
+    }
+
+    /**
+     * Get its URL.
+     *
+     * @return {@link URL} URL attribute
+     */
     public URL url() {
         return url;
     }
 
+    /**
+     * Get its resolved file.
+     *
+     * @return {@link File} file attribute
+     */
     public File file() {
         return file;
     }
 
+    /**
+     * Get its template.
+     *
+     * @return template name attribute
+     */
     public String template() {
         return template;
     }
 
+    /**
+     * Get its order.
+     *
+     * @return  order attribute
+     */
     public int order() {
         return order;
     }
