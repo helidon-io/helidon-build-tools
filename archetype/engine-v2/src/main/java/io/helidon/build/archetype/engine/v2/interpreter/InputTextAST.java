@@ -32,7 +32,7 @@ public class InputTextAST extends InputNodeAST {
     }
 
     /**
-     * Get the placeholder.
+     * Get the placeholder (default value).
      *
      * @return placeholder
      */

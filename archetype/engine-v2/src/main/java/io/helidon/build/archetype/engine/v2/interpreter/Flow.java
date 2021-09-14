@@ -16,7 +16,11 @@
 
 package io.helidon.build.archetype.engine.v2.interpreter;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import io.helidon.build.archetype.engine.v2.archive.Archetype;
 import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
@@ -31,6 +35,19 @@ public class Flow extends ASTNode {
     private final ArchetypeDescriptor entryPoint;
     private final LinkedList<StepAST> tree = new LinkedList<>();
     private FlowState state;
+    private final List<Visitor<ASTNode>> additionalVisitors;
+
+    public Optional<ASTNode> result() {
+        return state.result();
+    }
+
+    public List<UserInputAST> unresolvedInputs() {
+        return interpreter.unresolvedInputs();
+    }
+
+    public Map<String, ContextNodeAST> pathToContextNodeMap() {
+        return interpreter.pathToContextNodeMap();
+    }
 
     public Interpreter interpreter() {
         return interpreter;
@@ -52,11 +69,16 @@ public class Flow extends ASTNode {
         return entryPoint;
     }
 
-    Flow(Archetype archetype, String startDescriptorPath) {
+    public List<Visitor<ASTNode>> additionalVisitors() {
+        return additionalVisitors;
+    }
+
+    Flow(Archetype archetype, String startDescriptorPath, List<Visitor<ASTNode>> additionalVisitors) {
         super(null, Location.builder().build());
         this.archetype = archetype;
+        this.additionalVisitors = additionalVisitors;
         entryPoint = archetype.getDescriptor(startDescriptorPath);
-        interpreter = new Interpreter(archetype);
+        interpreter = new Interpreter(archetype, additionalVisitors);
         state = new InitialFlowState(this);
     }
 
@@ -96,6 +118,7 @@ public class Flow extends ASTNode {
 
         private Archetype archetype;
         private String startDescriptorPath = "flavor.xml";
+        private final List<Visitor<ASTNode>> additionalVisitors = new ArrayList<>();
 
         private Builder() {
         }
@@ -124,6 +147,30 @@ public class Flow extends ASTNode {
         }
 
         /**
+         * Add an additional visitor and returns a reference to this Builder so that the methods can be chained
+         * together.
+         *
+         * @param visitor the {@code visitor} to add
+         * @return a reference to this Builder
+         */
+        public Builder addAdditionalVisitor(Visitor<ASTNode> visitor) {
+            additionalVisitors.add(visitor);
+            return this;
+        }
+
+        /**
+         * Add a list of additional visitors and returns a reference to this Builder so that the methods can be chained
+         * together.
+         *
+         * @param visitors the {@code visitors} to add
+         * @return a reference to this Builder
+         */
+        public Builder addAdditionalVisitor(List<Visitor<ASTNode>> visitors) {
+            additionalVisitors.addAll(visitors);
+            return this;
+        }
+
+        /**
          * Returns a {@code Flow} built from the parameters previously set.
          *
          * @return a {@code Flow} built with parameters of this {@code Flow.Builder}
@@ -132,7 +179,7 @@ public class Flow extends ASTNode {
             if (archetype == null) {
                 throw new InterpreterException("Archetype must be specified.");
             }
-            return new Flow(archetype, startDescriptorPath);
+            return new Flow(archetype, startDescriptorPath, additionalVisitors);
         }
     }
 }

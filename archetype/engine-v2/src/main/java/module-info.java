@@ -25,6 +25,7 @@ module io.helidon.build.archetype.engine.v2 {
     requires io.helidon.build.common.ansi;
     requires com.github.mustachejava;
     requires io.helidon.build.common.xml;
+    requires java.logging;
     exports io.helidon.build.archetype.engine.v2;
     uses TemplateEngine;
     provides TemplateEngine with MustacheTemplateEngine;

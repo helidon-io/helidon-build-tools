@@ -108,10 +108,13 @@ public abstract class InputNodeAST extends ASTNode {
     }
 
     private void calculatePath(ASTNode parent, StringBuilder path) {
-        if (parent.parent() != null) {
-            if (parent.parent() instanceof InputNodeAST) {
-                path.insert(0, ((InputNodeAST) parent.parent()).name() + ".");
-            }
+        if (parent.parent() == null) {
+            return;
+        }
+        if (parent.parent() instanceof InputNodeAST) {
+            path.insert(0, ((InputNodeAST) parent.parent()).name() + ".");
+            calculatePath(parent.parent(), path);
+        } else if (parent.parent() instanceof InputAST) {
             calculatePath(parent.parent(), path);
         }
     }

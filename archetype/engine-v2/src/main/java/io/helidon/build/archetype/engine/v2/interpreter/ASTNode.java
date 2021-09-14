@@ -22,8 +22,6 @@ import java.util.LinkedList;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import io.helidon.build.archetype.engine.v2.archive.Archetype;
-
 /**
  * Base class for AST nodes.
  */
@@ -164,7 +162,7 @@ public abstract class ASTNode implements Visitable, Serializable {
             /**
              * Returns a {@code Location} built from the parameters previously set.
              *
-             * @return a {@code Location} built with parameters of this {@code Flow.Builder}
+             * @return a {@code Location} built with parameters of this {@code Builder}
              */
             public Location build() {
                 if (currentDirectory == null) {

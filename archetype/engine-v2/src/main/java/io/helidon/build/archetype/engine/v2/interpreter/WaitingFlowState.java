@@ -1,43 +1,29 @@
 package io.helidon.build.archetype.engine.v2.interpreter;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Optional;
 
 public class WaitingFlowState extends FlowState {
 
     private final Flow flow;
 
-    public WaitingFlowState(Flow flow) {
+    WaitingFlowState(Flow flow) {
         this.flow = flow;
     }
 
     @Override
-    LinkedList<StepAST> tree() {
-        return flow.tree();
-    }
-
-    @Override
-    List<StepAST> results() {
-        return List.of();
-    }
-
-    @Override
-    List<UserInputAST> unresolvedInputs() {
-        return flow.interpreter().unresolvedInputs();
-    }
-
-    @Override
-    LinkedList<StepAST> optionalSteps() {
-        //todo implement
-        return null;
+    Optional<ASTNode> result() {
+        return Optional.empty();
     }
 
     @Override
     void build(ContextAST context) {
-        flow.interpreter().visit(context, null);
+        ASTNode lastNode = flow.interpreter().stack().peek();
+//        context.parent(lastNode);
+//        context.children().forEach(ch->((ContextNodeAST)ch).parent(context));
+        flow.interpreter().visit(context, lastNode);
         try {
             while (!flow.interpreter().stack().isEmpty()) {
-                ASTNode lastNode = flow.interpreter().stack().peek();
+                lastNode = flow.interpreter().stack().peek();
                 if (lastNode != null) {
                     lastNode.accept(flow.interpreter(), lastNode.parent());
                 } else {
@@ -55,7 +41,7 @@ public class WaitingFlowState extends FlowState {
     }
 
     @Override
-    FlowStateEnum state() {
+    FlowStateEnum type() {
         return FlowStateEnum.WAITING;
     }
 }
