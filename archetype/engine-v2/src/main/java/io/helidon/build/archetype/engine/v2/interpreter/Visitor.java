@@ -16,18 +16,6 @@
 
 package io.helidon.build.archetype.engine.v2.interpreter;
 
-import io.helidon.build.archetype.engine.v2.descriptor.ContextBoolean;
-import io.helidon.build.archetype.engine.v2.descriptor.ContextEnum;
-import io.helidon.build.archetype.engine.v2.descriptor.ContextList;
-import io.helidon.build.archetype.engine.v2.descriptor.ContextText;
-import io.helidon.build.archetype.engine.v2.descriptor.FileSet;
-import io.helidon.build.archetype.engine.v2.descriptor.FileSets;
-import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyValue;
-import io.helidon.build.archetype.engine.v2.descriptor.Template;
-import io.helidon.build.archetype.engine.v2.descriptor.Templates;
-import io.helidon.build.archetype.engine.v2.descriptor.Transformation;
-import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
-
 /**
  * Visitor for the  script interpreter.
  *
@@ -42,14 +30,6 @@ public interface Visitor<A> {
      * @param arg   argument
      */
     void visit(XmlDescriptor input, A arg);
-
-    /**
-     * Process {@code UserInputAST} element.
-     *
-     * @param input UserInputAST
-     * @param arg  argument
-     */
-//    void visit(UserInputAST input, A arg);
 
     /**
      * Process {@code Visitable} element.

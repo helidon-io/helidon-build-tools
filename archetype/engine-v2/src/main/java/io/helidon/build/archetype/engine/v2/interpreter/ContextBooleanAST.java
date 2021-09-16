@@ -29,6 +29,11 @@ public class ContextBooleanAST extends ContextNodeAST {
         super(path, parent, location);
     }
 
+    /**
+     * Create a new instance.
+     *
+     * @param path path
+     */
     public ContextBooleanAST(String path) {
         super(path, null, Location.builder().build());
     }

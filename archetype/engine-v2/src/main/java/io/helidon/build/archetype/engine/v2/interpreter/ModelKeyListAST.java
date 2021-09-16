@@ -67,7 +67,6 @@ public class ModelKeyListAST extends ASTNode implements ConditionalNode {
         ModelKeyListAST result = new ModelKeyListAST(listFrom.key(), listFrom.order(), parent, location);
 
         LinkedList<Visitable> children = getChildren(listFrom, result, location);
-//        ConditionalNode.addChildren(listFrom, result, children, location);
         result.children().addAll(children);
 
         return result;

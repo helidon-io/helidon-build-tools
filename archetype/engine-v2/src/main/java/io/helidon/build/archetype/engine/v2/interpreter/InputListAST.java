@@ -26,9 +26,9 @@ public class InputListAST extends InputNodeAST {
     private final String min;
     private final String max;
 
-    InputListAST(String label, String name, String def, String prompt, String min, String max, ASTNode parent,
+    InputListAST(String label, String name, String def, String prompt, String min, String max, boolean optional, ASTNode parent,
                  Location location) {
-        super(label, name, def, prompt, parent, location);
+        super(label, name, def, prompt, optional, parent, location);
         this.min = min;
         this.max = max;
     }
@@ -64,7 +64,7 @@ public class InputListAST extends InputNodeAST {
     static InputListAST from(InputList input, ASTNode parent, Location location) {
         InputListAST result =
                 new InputListAST(input.label(), input.name(), input.def(), input.prompt(),
-                        input.min(), input.max(),
+                        input.min(), input.max(), input.isOptional(),
                         parent, location);
         result.children().addAll(transformList(input.contexts(), c -> ContextAST.create(c, result, location)));
         result.help(input.help());
@@ -73,7 +73,6 @@ public class InputListAST extends InputNodeAST {
         result.children().addAll(transformList(input.sources(), s -> SourceAST.create(s, result, location)));
         result.children().addAll(transformList(input.execs(), e -> ExecAST.create(e, result, location)));
         if (input.output() != null) {
-//            result.children().add(OutputAST.create(input.output(), result, location));
             result.children().add(
                     ConditionalNode.mapConditional(
                             input.output(),

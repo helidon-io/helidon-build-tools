@@ -67,10 +67,6 @@ public class Interpreter implements Visitor<ASTNode> {
         stack.pop();
     }
 
-//    @Override
-//    public void visit(UserInputAST input, ASTNode arg) {
-//    }
-
     @Override
     public void visit(Visitable input, ASTNode arg) {
         //class do not process other types of the nodes
@@ -158,7 +154,6 @@ public class Interpreter implements Visitor<ASTNode> {
         if (pushToStack(exec)) {
             ArchetypeDescriptor descriptor = archetype
                     .getDescriptor(resolveScriptPath(exec.location().scriptDirectory(), exec.src()));
-            //todo maybe need to change dir
             String currentDir = Paths
                     .get(resolveScriptPath(exec.location().scriptDirectory(), exec.src()))
                     .getParent().toString();
@@ -171,21 +166,6 @@ public class Interpreter implements Visitor<ASTNode> {
             exec.children().addAll(xmlDescriptor.children());
             xmlDescriptor.accept(this, exec);
         }
-//        ArchetypeDescriptor descriptor = archetype
-//                .getDescriptor(resolveScriptPath(exec.location().scriptDirectory(), exec.src()));
-//        //todo maybe need to change dir
-//        String currentDir = Paths
-//                .get(resolveScriptPath(exec.location().scriptDirectory(), exec.src()))
-//                .getParent().toString();
-//        ASTNode.Location newLocation = ASTNode.Location.builder()
-//                .scriptDirectory(currentDir)
-//                .currentDirectory(currentDir)
-//                .build();
-//        XmlDescriptor xmlDescriptor = XmlDescriptor.create(descriptor, exec, newLocation);
-//        pushToStack(exec);
-//        xmlDescriptor.accept(this, exec);
-//        exec.help(xmlDescriptor.help());
-//        exec.children().addAll(xmlDescriptor.children());
         stack.pop();
     }
 
@@ -195,7 +175,6 @@ public class Interpreter implements Visitor<ASTNode> {
         if (pushToStack((source))) {
             ArchetypeDescriptor descriptor = archetype
                     .getDescriptor(resolveScriptPath(source.location().scriptDirectory(), source.source()));
-            //todo maybe need to change dir
             String currentDir = Paths
                     .get(resolveScriptPath(source.location().scriptDirectory(), source.source()))
                     .getParent().toString();
@@ -208,21 +187,6 @@ public class Interpreter implements Visitor<ASTNode> {
             source.children().addAll(xmlDescriptor.children());
             xmlDescriptor.accept(this, source);
         }
-//        ArchetypeDescriptor descriptor = archetype
-//                .getDescriptor(resolveScriptPath(source.location().scriptDirectory(), source.source()));
-//        //todo maybe need to change dir
-//        String currentDir = Paths
-//                .get(resolveScriptPath(source.location().scriptDirectory(), source.source()))
-//                .getParent().toString();
-//        ASTNode.Location newLocation = ASTNode.Location.builder()
-//                .scriptDirectory(currentDir)
-//                .currentDirectory(source.location().currentDirectory())
-//                .build();
-//        XmlDescriptor xmlDescriptor = XmlDescriptor.create(descriptor, source, newLocation);
-//        pushToStack(source);
-//        xmlDescriptor.accept(this, source);
-//        source.help(xmlDescriptor.help());
-//        source.children().addAll(xmlDescriptor.children());
         stack.pop();
     }
 
@@ -232,9 +196,6 @@ public class Interpreter implements Visitor<ASTNode> {
             context.parent(parent);
         }
         applyAdditionalVisitors(context);
-//        if (context == null) {
-//            return;
-//        }
         cleanUnresolvedInputs(context);
         acceptAll(context);
     }
@@ -469,7 +430,7 @@ public class Interpreter implements Visitor<ASTNode> {
     }
 
     private void validate(InputNodeAST input) {
-        if (input.isOptional() && input.def() == null) {
+        if (input.isOptional() && input.defaultValue() == null) {
             throw new InterpreterException(
                     String.format("Input node %s is optional but it does not have a default value", input.path()));
         }

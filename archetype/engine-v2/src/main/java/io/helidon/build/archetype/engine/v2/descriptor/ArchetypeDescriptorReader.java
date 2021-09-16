@@ -209,7 +209,7 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                                     attributes.get("name"),
                                     attributes.get("default"),
                                     attributes.get("prompt"),
-                                    parseBoolean(attributes.get("optional"))
+                                    parseBoolean(attributes.get("optional") == null ? "false" : attributes.get("optional"))
                             ));
                             objectTracking.add(currentInput.nodes().getLast());
                             stack.push("input/boolean");
@@ -220,7 +220,7 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                                     attributes.get("name"),
                                     attributes.get("default"),
                                     attributes.get("prompt"),
-                                    parseBoolean(attributes.get("optional"))
+                                    parseBoolean(attributes.get("optional") == null ? "false" : attributes.get("optional"))
                             ));
                             objectTracking.add(currentInput.nodes().getLast());
                             stack.push("input/enum");
@@ -231,7 +231,7 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
                                     attributes.get("name"),
                                     attributes.get("default"),
                                     attributes.get("prompt"),
-                                    parseBoolean(attributes.get("optional")),
+                                    parseBoolean(attributes.get("optional") == null ? "false" : attributes.get("optional")),
                                     attributes.get("min"),
                                     attributes.get("max"),
                                     attributes.get("help")
@@ -903,13 +903,13 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
 
     private void addInputText(Input input, Map<String, String> attributes) {
         input.nodes().add(new InputText(
-                        attributes.get("label"),
-                        attributes.get("name"),
-                        attributes.get("default"),
-                        attributes.get("prompt"),
-                        parseBoolean(attributes.get("optional")),
-                        attributes.get("placeholder")
-                ));
+                attributes.get("label"),
+                attributes.get("name"),
+                attributes.get("default"),
+                attributes.get("prompt"),
+                parseBoolean(attributes.get("optional") == null ? "false" : attributes.get("optional")),
+                attributes.get("placeholder")
+        ));
     }
 
     private void validateChilds(String child, String parent, String... validChilds) {

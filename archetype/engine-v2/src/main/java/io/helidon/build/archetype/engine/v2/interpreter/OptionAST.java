@@ -95,7 +95,6 @@ public class OptionAST extends ASTNode {
         result.children().addAll(transformList(inputFrom.sources(), s -> SourceAST.create(s, result, location)));
         result.children().addAll(transformList(inputFrom.execs(), e -> ExecAST.create(e, result, location)));
         if (inputFrom.output() != null) {
-//            result.children().add(OutputAST.create(inputFrom.output(), result, location));
             result.children().add(
                     ConditionalNode.mapConditional(
                             inputFrom.output(),

@@ -29,6 +29,11 @@ public class ContextTextAST extends ContextNodeAST {
         super(path, parent, location);
     }
 
+    /**
+     * Create a new instance.
+     *
+     * @param path path
+     */
     public ContextTextAST(String path) {
         super(path, null, Location.builder().build());
     }

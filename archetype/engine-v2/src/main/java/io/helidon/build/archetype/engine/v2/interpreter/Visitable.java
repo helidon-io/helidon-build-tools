@@ -37,7 +37,7 @@ public interface Visitable {
      * @param arg     additional argument
      * @param <T>     generic type of the result
      * @param <A>     generic type of the arguments
-     * @return
+     * @return result
      */
     <T, A> T accept(GenericVisitor<T, A> visitor, A arg);
 }

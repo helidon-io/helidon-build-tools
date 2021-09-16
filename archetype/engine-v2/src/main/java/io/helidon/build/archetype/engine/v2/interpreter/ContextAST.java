@@ -27,6 +27,9 @@ public class ContextAST extends ASTNode {
         super(parent, location);
     }
 
+    /**
+     * Create a new instance.
+     */
     public ContextAST() {
         super(null, Location.builder().build());
     }

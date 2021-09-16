@@ -31,6 +31,11 @@ public class ContextListAST extends ContextNodeAST {
         super(path, parent, location);
     }
 
+    /**
+     * Create a new instance.
+     *
+     * @param path path
+     */
     public ContextListAST(String path) {
         super(path, null, Location.builder().build());
     }

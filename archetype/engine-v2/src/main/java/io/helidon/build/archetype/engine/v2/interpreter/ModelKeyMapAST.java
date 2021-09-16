@@ -56,7 +56,6 @@ public class ModelKeyMapAST extends MapTypeAST {
         ModelKeyMapAST result = new ModelKeyMapAST(mapFrom.key(), mapFrom.order(), parent, location);
 
         LinkedList<Visitable> children = getChildren(mapFrom, result, location);
-//        ConditionalNode.addChildren(mapFrom, result, children, location);
         result.children().addAll(children);
 
         return result;

@@ -17,7 +17,6 @@
 package io.helidon.build.archetype.engine.v2.interpreter;
 
 import java.util.LinkedList;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.descriptor.Model;
@@ -45,7 +44,6 @@ public class ModelAST extends ASTNode implements ConditionalNode {
         ModelAST result = new ModelAST(parent, location);
 
         LinkedList<Visitable> children = getChildren(model, result, location);
-//        ConditionalNode.addChildren(model, result, children, location);
         result.children().addAll(children);
 
         return result;

@@ -27,7 +27,7 @@ public class UserInputVisitor extends GenericVisitorEmptyImpl<InputNodeAST, ASTN
     @Override
     public InputNodeAST visit(InputEnumAST input, ASTNode arg) {
         InputEnumAST result = new InputEnumAST(
-                input.label(), input.name(), input.def(), input.prompt(), null,
+                input.label(), input.name(), input.defaultValue(), input.prompt(), input.isOptional(), null,
                 ASTNode.Location.builder().build());
         result.help(input.help());
         result.children().addAll(input.children().stream()
@@ -40,8 +40,8 @@ public class UserInputVisitor extends GenericVisitorEmptyImpl<InputNodeAST, ASTN
     @Override
     public InputNodeAST visit(InputListAST input, ASTNode arg) {
         InputListAST result = new InputListAST(
-                input.label(), input.name(), input.def(), input.prompt(), input.min(),
-                input.max(), null, ASTNode.Location.builder().build());
+                input.label(), input.name(), input.defaultValue(), input.prompt(), input.min(),
+                input.max(), input.isOptional(), null, ASTNode.Location.builder().build());
         result.help(input.help());
         result.children().addAll(input.children().stream()
                 .filter(c -> c instanceof OptionAST)
@@ -53,7 +53,7 @@ public class UserInputVisitor extends GenericVisitorEmptyImpl<InputNodeAST, ASTN
     @Override
     public InputNodeAST visit(InputBooleanAST input, ASTNode arg) {
         InputBooleanAST result = new InputBooleanAST(
-                input.label(), input.name(), input.def(), input.prompt(), null,
+                input.label(), input.name(), input.defaultValue(), input.prompt(), input.isOptional(), null,
                 ASTNode.Location.builder().build());
         result.help(input.help());
         return result;
@@ -64,9 +64,10 @@ public class UserInputVisitor extends GenericVisitorEmptyImpl<InputNodeAST, ASTN
         return new InputTextAST(
                 input.label(),
                 input.name(),
-                input.def(),
+                input.defaultValue(),
                 input.prompt(),
                 input.placeHolder(),
+                input.isOptional(),
                 null,
                 ASTNode.Location.builder().build());
     }

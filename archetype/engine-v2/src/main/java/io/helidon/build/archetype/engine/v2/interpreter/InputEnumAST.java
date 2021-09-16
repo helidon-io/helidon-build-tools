@@ -23,8 +23,8 @@ import io.helidon.build.archetype.engine.v2.descriptor.InputEnum;
  */
 public class InputEnumAST extends InputNodeAST {
 
-    InputEnumAST(String label, String name, String def, String prompt, ASTNode parent, Location location) {
-        super(label, name, def, prompt, parent, location);
+    InputEnumAST(String label, String name, String def, String prompt, boolean optional, ASTNode parent, Location location) {
+        super(label, name, def, prompt, optional, parent, location);
     }
 
     @Override
@@ -39,7 +39,8 @@ public class InputEnumAST extends InputNodeAST {
 
     static InputEnumAST create(InputEnum inputFrom, ASTNode parent, Location location) {
         InputEnumAST result =
-                new InputEnumAST(inputFrom.label(), inputFrom.name(), inputFrom.def(), inputFrom.prompt(), parent, location);
+                new InputEnumAST(inputFrom.label(), inputFrom.name(), inputFrom.def(), inputFrom.prompt(),
+                        inputFrom.isOptional(), parent, location);
         result.children().addAll(transformList(inputFrom.contexts(), c -> ContextAST.create(c, result, location)));
         result.help(inputFrom.help());
         result.children().addAll(transformList(inputFrom.steps(), s -> StepAST.create(s, result, location)));
@@ -47,7 +48,6 @@ public class InputEnumAST extends InputNodeAST {
         result.children().addAll(transformList(inputFrom.sources(), s -> SourceAST.create(s, result, location)));
         result.children().addAll(transformList(inputFrom.execs(), e -> ExecAST.create(e, result, location)));
         if (inputFrom.output() != null) {
-//            result.children().add(OutputAST.create(inputFrom.output(), result, location));
             result.children().add(
                     ConditionalNode.mapConditional(
                             inputFrom.output(),

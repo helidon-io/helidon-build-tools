@@ -56,7 +56,6 @@ public class ListTypeAST extends ASTNode implements ConditionalNode {
         ListTypeAST result = new ListTypeAST(listFrom.order(), parent, location);
 
         LinkedList<Visitable> children = getChildren(listFrom, result, location);
-//        ConditionalNode.addChildren(listFrom, result, children, location);
         result.children().addAll(children);
         return result;
     }

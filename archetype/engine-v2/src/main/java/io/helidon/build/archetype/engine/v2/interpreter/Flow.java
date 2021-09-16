@@ -38,38 +38,73 @@ public class Flow {
     private FlowState state;
     private final List<Visitor<ASTNode>> additionalVisitors;
 
+    /**
+     * Returns result.
+     *
+     * @return Flow.Result
+     */
     public Optional<Flow.Result> result() {
         return state.result();
     }
 
+    /**
+     * Returns unresolved inputs.
+     *
+     * @return List of the unresolved inputs
+     */
     public List<UserInputAST> unresolvedInputs() {
         return interpreter.unresolvedInputs();
     }
 
+    /**
+     * Returns Map that contains path to the context node and corresponding context node.
+     *
+     * @return Map
+     */
     public Map<String, ContextNodeAST> pathToContextNodeMap() {
         return interpreter.pathToContextNodeMap();
     }
 
-    public Interpreter interpreter() {
+    Interpreter interpreter() {
         return interpreter;
     }
 
+    /**
+     * Returns current state of the Flow.
+     *
+     * @return FlowState
+     */
     public FlowState state() {
         return state;
     }
 
-    public void state(FlowState state) {
+    void state(FlowState state) {
         this.state = state;
     }
 
+    /**
+     * Returns archetype.
+     *
+     * @return archetype
+     */
     public Archetype archetype() {
         return archetype;
     }
 
+    /**
+     * Returns {@code ArchetypeDescriptor} that represents the entry point script.
+     *
+     * @return ArchetypeDescriptor
+     */
     public ArchetypeDescriptor entryPoint() {
         return entryPoint;
     }
 
+    /**
+     * Returns additional visitors used to process nodes in the archetype descriptors.
+     *
+     * @return list of the additional visitors
+     */
     public List<Visitor<ASTNode>> additionalVisitors() {
         return additionalVisitors;
     }
@@ -178,15 +213,28 @@ public class Flow {
         }
     }
 
+    /**
+     * Final result of the script interpreter work.
+     */
     public static class Result {
 
-        Map<String, ContextNodeAST> context = new HashMap<>();
-        List<ASTNode> outputs = new ArrayList<>();
+        private final Map<String, ContextNodeAST> context = new HashMap<>();
+        private final List<ASTNode> outputs = new ArrayList<>();
 
+        /**
+         * Returns Map that contains path to the context node and corresponding context node.
+         *
+         * @return map
+         */
         public Map<String, ContextNodeAST> context() {
             return context;
         }
 
+        /**
+         * Returns list of the {@code ContextNodeAST} nodes.
+         *
+         * @return list
+         */
         public List<ASTNode> outputs() {
             return outputs;
         }

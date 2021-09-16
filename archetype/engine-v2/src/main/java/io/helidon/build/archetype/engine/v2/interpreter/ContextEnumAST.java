@@ -29,6 +29,11 @@ public class ContextEnumAST extends ContextNodeAST {
         super(path, parent, location);
     }
 
+    /**
+     * Create a new instance.
+     *
+     * @param path path
+     */
     public ContextEnumAST(String path) {
         super(path, null, Location.builder().build());
     }
@@ -44,6 +49,8 @@ public class ContextEnumAST extends ContextNodeAST {
 
     /**
      * Set the enum value.
+     *
+     * @param value enum value
      */
     public void value(String value) {
         this.value = value;

@@ -37,6 +37,11 @@ public abstract class ASTNode implements Visitable, Serializable {
         this.parent = parent;
     }
 
+    /**
+     * Returns true if the node has more children.
+     *
+     * @return true if the node has more children, false otherwise
+     */
     public boolean hasNext() {
         if (iterator == null) {
             iterator = children.iterator();
@@ -44,6 +49,11 @@ public abstract class ASTNode implements Visitable, Serializable {
         return iterator.hasNext();
     }
 
+    /**
+     * Returns the next child.
+     *
+     * @return next child
+     */
     public Visitable next() {
         if (iterator == null) {
             iterator = children.iterator();
@@ -102,6 +112,8 @@ public abstract class ASTNode implements Visitable, Serializable {
         /**
          * Path to the directory used for resolving paths in the {@code OutputAST} (resolved relative to the archetype root
          * directory).
+         *
+         * @return current directory
          */
         public String currentDirectory() {
             return currentDirectory;
@@ -109,6 +121,8 @@ public abstract class ASTNode implements Visitable, Serializable {
 
         /**
          * Path to the directory of the current descriptor script (resolved relative to the archetype root directory).
+         *
+         * @return script directory
          */
         public String scriptDirectory() {
             return scriptDirectory;

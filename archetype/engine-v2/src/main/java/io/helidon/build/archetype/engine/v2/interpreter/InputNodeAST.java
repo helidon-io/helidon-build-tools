@@ -28,12 +28,13 @@ public abstract class InputNodeAST extends ASTNode {
     private String help;
     private boolean optional = false;
 
-    InputNodeAST(String label, String name, String def, String prompt, ASTNode parent, Location location) {
+    InputNodeAST(String label, String name, String def, String prompt, boolean optional, ASTNode parent, Location location) {
         super(parent, location);
         this.label = label;
         this.name = name;
         this.def = def;
         this.prompt = prompt;
+        this.optional = optional;
     }
 
     /**
@@ -77,7 +78,7 @@ public abstract class InputNodeAST extends ASTNode {
      *
      * @return default value
      */
-    public String def() {
+    public String defaultValue() {
         return def;
     }
 
@@ -99,6 +100,11 @@ public abstract class InputNodeAST extends ASTNode {
         return optional;
     }
 
+    /**
+     * Flow context path to the current element bounded by the cuurent {@code InputAST} node.
+     *
+     * @return path
+     */
     public String path() {
         StringBuilder path = new StringBuilder(name);
         if (parent() != null) {
