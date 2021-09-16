@@ -11,7 +11,7 @@ public class WaitingFlowState extends FlowState {
     }
 
     @Override
-    Optional<ASTNode> result() {
+    Optional<Flow.Result> result() {
         return Optional.empty();
     }
 

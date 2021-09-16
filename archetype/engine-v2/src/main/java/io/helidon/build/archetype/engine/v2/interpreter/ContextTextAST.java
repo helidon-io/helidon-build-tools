@@ -56,6 +56,11 @@ public class ContextTextAST extends ContextNodeAST {
         visitor.visit(this, arg);
     }
 
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
     static ContextTextAST create(ContextText textFrom, ASTNode parent, Location location) {
         ContextTextAST result = new ContextTextAST(textFrom.path(), parent, location);
         result.text(textFrom.text());

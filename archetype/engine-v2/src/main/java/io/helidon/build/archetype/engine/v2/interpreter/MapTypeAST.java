@@ -47,11 +47,17 @@ public class MapTypeAST extends ASTNode implements ConditionalNode {
         visitor.visit(this, arg);
     }
 
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
     static MapTypeAST create(MapType mapFrom, ASTNode parent, Location location) {
         MapTypeAST result = new MapTypeAST(mapFrom.order(), parent, location);
 
         LinkedList<Visitable> children = getChildren(mapFrom, result, location);
-        ConditionalNode.addChildren(mapFrom, result, children, location);
+//        ConditionalNode.addChildren(mapFrom, result, children, location);
+        result.children().addAll(children);
 
         return result;
     }

@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 /**
  * Visitor to prepare user input AST node.
  */
-public class UserInputVisitor implements GenericVisitor<InputNodeAST, ASTNode> {
+public class UserInputVisitor extends GenericVisitorEmptyImpl<InputNodeAST, ASTNode> {
 
     @Override
     public InputNodeAST visit(InputEnumAST input, ASTNode arg) {

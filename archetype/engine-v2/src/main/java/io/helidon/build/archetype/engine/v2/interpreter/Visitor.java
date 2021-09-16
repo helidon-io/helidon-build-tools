@@ -36,16 +36,28 @@ import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
 public interface Visitor<A> {
 
     /**
+     * Process {@code XmlDescriptor} element.
+     *
+     * @param input XmlDescriptor
+     * @param arg   argument
+     */
+    void visit(XmlDescriptor input, A arg);
+
+    /**
+     * Process {@code UserInputAST} element.
+     *
+     * @param input UserInputAST
+     * @param arg  argument
+     */
+//    void visit(UserInputAST input, A arg);
+
+    /**
      * Process {@code Visitable} element.
      *
-     * @param v   Visitable
-     * @param arg argument
+     * @param input Visitable
+     * @param arg   argument
      */
-    void visit(Visitable v, A arg);
-
-    void visit(Flow v, A arg);
-
-    void visit(XmlDescriptor v, A arg);
+    void visit(Visitable input, A arg);
 
     /**
      * Process {@code StepAST} element.

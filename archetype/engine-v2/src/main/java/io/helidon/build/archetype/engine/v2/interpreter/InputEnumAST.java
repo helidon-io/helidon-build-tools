@@ -32,6 +32,11 @@ public class InputEnumAST extends InputNodeAST {
         visitor.visit(this, arg);
     }
 
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
     static InputEnumAST create(InputEnum inputFrom, ASTNode parent, Location location) {
         InputEnumAST result =
                 new InputEnumAST(inputFrom.label(), inputFrom.name(), inputFrom.def(), inputFrom.prompt(), parent, location);
@@ -42,7 +47,14 @@ public class InputEnumAST extends InputNodeAST {
         result.children().addAll(transformList(inputFrom.sources(), s -> SourceAST.create(s, result, location)));
         result.children().addAll(transformList(inputFrom.execs(), e -> ExecAST.create(e, result, location)));
         if (inputFrom.output() != null) {
-            result.children().add(OutputAST.create(inputFrom.output(), result, location));
+//            result.children().add(OutputAST.create(inputFrom.output(), result, location));
+            result.children().add(
+                    ConditionalNode.mapConditional(
+                            inputFrom.output(),
+                            OutputAST.create(inputFrom.output(), result, location),
+                            result,
+                            location
+                    ));
         }
         result.children().addAll(transformList(inputFrom.options(), o -> OptionAST.create(o, result, location)));
         return result;

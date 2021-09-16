@@ -29,6 +29,7 @@
             <value>list value 2</value>
         </list>
         <boolean path="bool_input_context">true</boolean>
+        <boolean path="bool_input_context1">false</boolean>
         <text path="user_text_input_context">text input from context</text>
     </context>
 
@@ -55,6 +56,18 @@
                         <directory>files1</directory>
                         <includes>
                             <include>included1.file</include>
+                        </includes>
+                    </templates>
+                </output>
+            </boolean>
+
+            <boolean name="bool_input_context1"
+                     label="User boolean input context label 1">
+                <output>
+                    <templates>
+                        <directory>files1_1</directory>
+                        <includes>
+                            <include>included1_1.file</include>
                         </includes>
                     </templates>
                 </output>

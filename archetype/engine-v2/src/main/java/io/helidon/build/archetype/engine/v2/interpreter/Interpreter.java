@@ -37,6 +37,7 @@ public class Interpreter implements Visitor<ASTNode> {
     private final Map<String, ContextNodeAST> pathToContextNodeMap;
     private final InputResolverVisitor inputResolverVisitor = new InputResolverVisitor();
     private final UserInputVisitor userInputVisitor = new UserInputVisitor();
+    private final ContextConvertorVisitor contextConvertorVisitor = new ContextConvertorVisitor();
     private final List<UserInputAST> unresolvedInputs = new ArrayList<>();
     private final Deque<ASTNode> stack = new ArrayDeque<>();
     private final List<Visitor<ASTNode>> additionalVisitors;
@@ -60,22 +61,19 @@ public class Interpreter implements Visitor<ASTNode> {
     }
 
     @Override
-    public void visit(Visitable v, ASTNode parent) {
-        //todo change
-//        v.accept(this, parent);
-    }
-
-    @Override
-    public void visit(Flow v, ASTNode parent) {
-        //todo change
-//        v.accept(this, parent);
-    }
-
-    @Override
     public void visit(XmlDescriptor xmlDescriptor, ASTNode parent) {
         pushToStack(xmlDescriptor);
         acceptAll(xmlDescriptor, parent);
         stack.pop();
+    }
+
+//    @Override
+//    public void visit(UserInputAST input, ASTNode arg) {
+//    }
+
+    @Override
+    public void visit(Visitable input, ASTNode arg) {
+        //class do not process other types of the nodes
     }
 
     @Override
@@ -103,8 +101,13 @@ public class Interpreter implements Visitor<ASTNode> {
         if (!result) {
             InputNodeAST unresolvedUserInputNode = userInputVisitor.visit(input, parent);
             processUnresolvedInput(input, unresolvedUserInputNode);
+        } else {
+            if (((ContextBooleanAST) getContextNode(input)).bool()) {
+                acceptAll(input);
+            } else {
+                input.children().clear();
+            }
         }
-        acceptAll(input);
         stack.pop();
     }
 
@@ -290,59 +293,104 @@ public class Interpreter implements Visitor<ASTNode> {
 
     @Override
     public void visit(TransformationAST transformation, ASTNode parent) {
+        applyAdditionalVisitors(transformation);
     }
 
     @Override
     public void visit(FileSetsAST fileSets, ASTNode parent) {
+        applyAdditionalVisitors(fileSets);
+        fileSets.directory(resolveDirectory(fileSets.directory(), fileSets.location()));
     }
 
     @Override
     public void visit(FileSetAST fileSet, ASTNode parent) {
+        applyAdditionalVisitors(fileSet);
     }
 
     @Override
     public void visit(TemplateAST template, ASTNode parent) {
+        applyAdditionalVisitors(template);
+        pushToStack(template);
+        acceptAll(template);
+        stack.pop();
     }
 
     @Override
     public void visit(TemplatesAST templates, ASTNode parent) {
+        applyAdditionalVisitors(templates);
+        pushToStack(templates);
+        templates.directory(resolveDirectory(templates.directory(), templates.location()));
+        acceptAll(templates);
+        stack.pop();
     }
 
     @Override
     public void visit(ModelAST model, ASTNode parent) {
+        applyAdditionalVisitors(model);
+        pushToStack(model);
+        acceptAll(model);
+        stack.pop();
     }
 
     @Override
     public void visit(IfStatement input, ASTNode parent) {
-        if (input != stack.peek()) {
-            stack.push(input);
+        applyAdditionalVisitors(input);
+        pushToStack(input);
+        Map<String, String> contextValuesMap = convertContext();
+        if (input.expression().evaluate(contextValuesMap)) {
+            acceptAll(input);
+        } else {
+            input.children().clear();
         }
-        acceptAll(input);
         stack.pop();
     }
 
     @Override
     public void visit(ModelKeyValueAST value, ASTNode parent) {
+        applyAdditionalVisitors(value);
+        pushToStack(value);
+        acceptAll(value);
+        stack.pop();
     }
 
     @Override
     public void visit(ValueTypeAST value, ASTNode parent) {
+        applyAdditionalVisitors(value);
+        pushToStack(value);
+        acceptAll(value);
+        stack.pop();
     }
 
     @Override
     public void visit(ModelKeyListAST list, ASTNode parent) {
+        applyAdditionalVisitors(list);
+        pushToStack(list);
+        acceptAll(list);
+        stack.pop();
     }
 
     @Override
     public void visit(MapTypeAST map, ASTNode parent) {
+        applyAdditionalVisitors(map);
+        pushToStack(map);
+        acceptAll(map);
+        stack.pop();
     }
 
     @Override
     public void visit(ListTypeAST list, ASTNode parent) {
+        applyAdditionalVisitors(list);
+        pushToStack(list);
+        acceptAll(list);
+        stack.pop();
     }
 
     @Override
     public void visit(ModelKeyMapAST map, ASTNode parent) {
+        applyAdditionalVisitors(map);
+        pushToStack(map);
+        acceptAll(map);
+        stack.pop();
     }
 
     private void acceptAll(ASTNode node) {
@@ -373,6 +421,10 @@ public class Interpreter implements Visitor<ASTNode> {
             input.accept(inputResolverVisitor, contextNodeAST);
         }
         return contextNodeAST != null;
+    }
+
+    private ContextNodeAST getContextNode(InputNodeAST input) {
+        return pathToContextNodeMap.get(input.path());
     }
 
     /**
@@ -409,6 +461,13 @@ public class Interpreter implements Visitor<ASTNode> {
         return Paths.get(currentDirectory).resolve(scriptSrc).normalize().toString();
     }
 
+    private String resolveDirectory(String currentValue, ASTNode.Location location) {
+        if (currentValue.startsWith("/")) {
+            return currentValue;
+        }
+        return Paths.get(location.currentDirectory()).resolve(currentValue).normalize().toString();
+    }
+
     private void validate(InputNodeAST input) {
         if (input.isOptional() && input.def() == null) {
             throw new InterpreterException(
@@ -420,4 +479,11 @@ public class Interpreter implements Visitor<ASTNode> {
         additionalVisitors.forEach(visitor -> node.accept(visitor, null));
     }
 
+    private Map<String, String> convertContext() {
+        Map<String, String> result = new HashMap<>();
+        pathToContextNodeMap.forEach((key, value) -> {
+            result.putIfAbsent(key, value.accept(contextConvertorVisitor, null));
+        });
+        return result;
+    }
 }

@@ -4,14 +4,14 @@ import java.util.Optional;
 
 public class DoneFlowState extends FlowState {
 
-    private final ASTNode result;
+    private final Flow.Result result;
 
-    DoneFlowState(ASTNode result) {
+    DoneFlowState(Flow.Result result) {
         this.result = result;
     }
 
     @Override
-    Optional<ASTNode> result() {
+    Optional<Flow.Result> result() {
         return Optional.ofNullable(result);
     }
 

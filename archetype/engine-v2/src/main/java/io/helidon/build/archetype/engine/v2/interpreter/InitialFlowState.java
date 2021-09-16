@@ -18,7 +18,7 @@ public class InitialFlowState extends FlowState {
     }
 
     @Override
-    Optional<ASTNode> result() {
+    Optional<Flow.Result> result() {
         return Optional.empty();
     }
 
@@ -31,7 +31,7 @@ public class InitialFlowState extends FlowState {
         flow.tree().addAll(steps);
         try {
             while (!steps.isEmpty()) {
-                flow.interpreter().visit(steps.pop(), flow);
+                flow.interpreter().visit(steps.pop(), null);
             }
         } catch (WaitForUserInput waitForUserInput) {
             flow.state(new WaitingFlowState(flow));

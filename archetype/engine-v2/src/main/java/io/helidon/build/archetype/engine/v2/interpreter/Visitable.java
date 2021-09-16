@@ -29,4 +29,15 @@ public interface Visitable {
      * @param <A>     generic type of the arguments
      */
     <A> void accept(Visitor<A> visitor, A arg);
+
+    /**
+     * Process visitor and return result of {@code T} type.
+     *
+     * @param visitor Visitor
+     * @param arg     additional argument
+     * @param <T>     generic type of the result
+     * @param <A>     generic type of the arguments
+     * @return
+     */
+    <T, A> T accept(GenericVisitor<T, A> visitor, A arg);
 }

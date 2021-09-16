@@ -74,6 +74,11 @@ public class SourceAST extends ASTNode {
         visitor.visit(this, arg);
     }
 
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
     static SourceAST create(Source sourceFrom, ASTNode parent, Location location) {
         return new SourceAST(sourceFrom.source(), sourceFrom.url(), parent, location);
     }

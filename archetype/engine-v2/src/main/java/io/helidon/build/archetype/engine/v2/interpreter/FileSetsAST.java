@@ -23,12 +23,12 @@ import io.helidon.build.archetype.engine.v2.descriptor.FileSets;
 /**
  * Archetype files AST node in {@link OutputAST} node.
  */
-public class FileSetsAST extends ASTNode {
+public class FileSetsAST extends ASTNode implements ConditionalNode {
 
     private final LinkedList<String> transformations;
     private final LinkedList<String> includes;
     private final LinkedList<String> excludes;
-    private final String directory;
+    private String directory;
 
     FileSetsAST(LinkedList<String> transformations, LinkedList<String> includes, LinkedList<String> excludes, String directory,
                 ASTNode parent, Location location) {
@@ -75,9 +75,23 @@ public class FileSetsAST extends ASTNode {
         return directory;
     }
 
+    /**
+     * Set the directory of this file set.
+     *
+     * @param directory new directory
+     */
+    public void directory(String directory) {
+        this.directory = directory;
+    }
+
     @Override
     public <A> void accept(Visitor<A> visitor, A arg) {
         visitor.visit(this, arg);
+    }
+
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
     }
 
     static FileSetsAST create(FileSets fileSetsFrom, ASTNode parent, Location location) {
@@ -85,7 +99,7 @@ public class FileSetsAST extends ASTNode {
                 fileSetsFrom.transformations(),
                 fileSetsFrom.includes(),
                 fileSetsFrom.excludes(),
-                fileSetsFrom.directory().get(),
+                fileSetsFrom.directory().orElse(null),
                 parent,
                 location);
     }

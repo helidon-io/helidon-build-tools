@@ -32,6 +32,11 @@ public class InputBooleanAST extends InputNodeAST {
         visitor.visit(this, arg);
     }
 
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
     static InputBooleanAST from(InputBoolean input, ASTNode parent, Location location) {
         InputBooleanAST result =
                 new InputBooleanAST(input.label(), input.name(), input.def(), input.prompt(), parent, location);
@@ -43,7 +48,14 @@ public class InputBooleanAST extends InputNodeAST {
         result.children().addAll(transformList(input.sources(), s -> SourceAST.create(s, result, location)));
         result.children().addAll(transformList(input.execs(), e -> ExecAST.create(e, result, location)));
         if (input.output() != null) {
-            result.children().add(OutputAST.create(input.output(), result, location));
+//            result.children().add(OutputAST.create(input.output(), result, location));
+            result.children().add(
+                    ConditionalNode.mapConditional(
+                            input.output(),
+                            OutputAST.create(input.output(), result, location),
+                            result,
+                            location
+                    ));
         }
         return result;
     }

@@ -9,7 +9,7 @@ import io.helidon.build.archetype.engine.v2.descriptor.Templates;
  */
 public class TemplatesAST extends ASTNode implements ConditionalNode {
 
-    private final String directory;
+    private String directory;
     private final LinkedList<String> includes;
     private final LinkedList<String> excludes;
     private final String engine;
@@ -45,6 +45,15 @@ public class TemplatesAST extends ASTNode implements ConditionalNode {
     }
 
     /**
+     * Set the directory.
+     *
+     * @param directory new directory
+     */
+    public void directory(String directory) {
+        this.directory = directory;
+    }
+
+    /**
      * Get the transformation.
      *
      * @return transformation
@@ -74,6 +83,11 @@ public class TemplatesAST extends ASTNode implements ConditionalNode {
     @Override
     public <A> void accept(Visitor<A> visitor, A arg) {
         visitor.visit(this, arg);
+    }
+
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
     }
 
     static TemplatesAST create(Templates templatesFrom, ASTNode parent, Location location) {

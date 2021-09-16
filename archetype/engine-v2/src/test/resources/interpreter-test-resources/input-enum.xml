@@ -48,6 +48,14 @@
                     </output>
                 </option>
                 <option value="option2" label="Enum option 2">
+                    <output>
+                        <templates>
+                            <directory>not_selected_files</directory>
+                            <includes>
+                                <include>not_selected_included.file</include>
+                            </includes>
+                        </templates>
+                    </output>
                 </option>
             </enum>
 

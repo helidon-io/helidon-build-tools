@@ -81,6 +81,11 @@ public class OptionAST extends ASTNode {
         visitor.visit(this, arg);
     }
 
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
     static OptionAST create(Option inputFrom, ASTNode parent, Location location) {
         OptionAST result = new OptionAST(inputFrom.label(), inputFrom.value(), parent, location);
         result.children().addAll(transformList(inputFrom.contexts(), c -> ContextAST.create(c, result, location)));
@@ -90,7 +95,14 @@ public class OptionAST extends ASTNode {
         result.children().addAll(transformList(inputFrom.sources(), s -> SourceAST.create(s, result, location)));
         result.children().addAll(transformList(inputFrom.execs(), e -> ExecAST.create(e, result, location)));
         if (inputFrom.output() != null) {
-            result.children().add(OutputAST.create(inputFrom.output(), result, location));
+//            result.children().add(OutputAST.create(inputFrom.output(), result, location));
+            result.children().add(
+                    ConditionalNode.mapConditional(
+                            inputFrom.output(),
+                            OutputAST.create(inputFrom.output(), result, location),
+                            result,
+                            location
+                    ));
         }
         return result;
     }

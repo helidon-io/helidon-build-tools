@@ -55,6 +55,11 @@ public class FileSetAST extends ASTNode {
         visitor.visit(this, arg);
     }
 
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
     static FileSetAST create(FileSet fileSetFrom, ASTNode parent, Location location) {
         return new FileSetAST(fileSetFrom.source(), fileSetFrom.target(), parent, location);
     }

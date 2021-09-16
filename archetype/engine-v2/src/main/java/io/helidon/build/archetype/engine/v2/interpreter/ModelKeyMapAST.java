@@ -38,6 +38,11 @@ public class ModelKeyMapAST extends MapTypeAST {
         visitor.visit(this, arg);
     }
 
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
     /**
      * Get the key of the map.
      *
@@ -51,7 +56,8 @@ public class ModelKeyMapAST extends MapTypeAST {
         ModelKeyMapAST result = new ModelKeyMapAST(mapFrom.key(), mapFrom.order(), parent, location);
 
         LinkedList<Visitable> children = getChildren(mapFrom, result, location);
-        ConditionalNode.addChildren(mapFrom, result, children, location);
+//        ConditionalNode.addChildren(mapFrom, result, children, location);
+        result.children().addAll(children);
 
         return result;
     }

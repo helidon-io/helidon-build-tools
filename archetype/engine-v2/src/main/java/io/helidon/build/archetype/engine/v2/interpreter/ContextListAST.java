@@ -49,6 +49,11 @@ public class ContextListAST extends ContextNodeAST {
         visitor.visit(this, arg);
     }
 
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
     static ContextListAST create(ContextList listFrom, ASTNode parent, Location location) {
         ContextListAST result = new ContextListAST(listFrom.path(), parent, location);
         result.values.addAll(listFrom.values());

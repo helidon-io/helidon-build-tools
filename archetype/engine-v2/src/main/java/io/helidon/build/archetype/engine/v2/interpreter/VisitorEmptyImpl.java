@@ -9,18 +9,19 @@ import io.helidon.build.archetype.engine.v2.descriptor.Transformation;
 import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
 
 abstract class VisitorEmptyImpl<T> implements Visitor<T> {
-    @Override
-    public void visit(Visitable v, T arg) {
-
-    }
-
-    @Override
-    public void visit(Flow v, T arg) {
-
-    }
 
     @Override
     public void visit(XmlDescriptor v, T arg) {
+
+    }
+
+//    @Override
+//    public void visit(UserInputAST v, T arg) {
+//
+//    }
+
+    @Override
+    public void visit(Visitable input, T arg) {
 
     }
 

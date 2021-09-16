@@ -58,6 +58,14 @@
                     </output>
                 </option>
                 <option value="option3" label="List option 3">
+                    <output>
+                        <templates>
+                            <directory>not_selected_files</directory>
+                            <includes>
+                                <include>not_selected_included.file</include>
+                            </includes>
+                        </templates>
+                    </output>
                 </option>
             </list>
 
@@ -73,6 +81,14 @@
                     </output>
                 </option>
                 <option value="List context value 1" label="List context value label 1">
+                    <output>
+                        <templates>
+                            <directory>not_selected_files</directory>
+                            <includes>
+                                <include>not_selected_included.file</include>
+                            </includes>
+                        </templates>
+                    </output>
                 </option>
                 <option value="List context value 2" label="List context value label 2">
                     <output>

@@ -56,6 +56,11 @@ public class InputListAST extends InputNodeAST {
         visitor.visit(this, arg);
     }
 
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
     static InputListAST from(InputList input, ASTNode parent, Location location) {
         InputListAST result =
                 new InputListAST(input.label(), input.name(), input.def(), input.prompt(),
@@ -68,7 +73,14 @@ public class InputListAST extends InputNodeAST {
         result.children().addAll(transformList(input.sources(), s -> SourceAST.create(s, result, location)));
         result.children().addAll(transformList(input.execs(), e -> ExecAST.create(e, result, location)));
         if (input.output() != null) {
-            result.children().add(OutputAST.create(input.output(), result, location));
+//            result.children().add(OutputAST.create(input.output(), result, location));
+            result.children().add(
+                    ConditionalNode.mapConditional(
+                            input.output(),
+                            OutputAST.create(input.output(), result, location),
+                            result,
+                            location
+                    ));
         }
         result.children().addAll(transformList(input.options(), o -> OptionAST.create(o, result, location)));
         return result;

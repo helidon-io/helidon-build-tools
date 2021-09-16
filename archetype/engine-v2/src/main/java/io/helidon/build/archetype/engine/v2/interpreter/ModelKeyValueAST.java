@@ -45,6 +45,11 @@ public class ModelKeyValueAST extends ValueTypeAST {
         visitor.visit(this, arg);
     }
 
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
     static ModelKeyValueAST create(ModelKeyValue valueFrom, ASTNode parent, Location location) {
         return new ModelKeyValueAST(valueFrom.key(), valueFrom.url(), valueFrom.file(), valueFrom.template(),
                 valueFrom.order(), valueFrom.value(), parent, location);

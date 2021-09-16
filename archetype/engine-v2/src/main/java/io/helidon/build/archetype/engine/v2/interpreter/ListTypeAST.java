@@ -47,12 +47,17 @@ public class ListTypeAST extends ASTNode implements ConditionalNode {
         visitor.visit(this, arg);
     }
 
-    static ListTypeAST create(ListType listFrom, ASTNode parent, Location location) {
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
+    static ASTNode create(ListType listFrom, ASTNode parent, Location location) {
         ListTypeAST result = new ListTypeAST(listFrom.order(), parent, location);
 
         LinkedList<Visitable> children = getChildren(listFrom, result, location);
-        ConditionalNode.addChildren(listFrom, result, children, location);
-
+//        ConditionalNode.addChildren(listFrom, result, children, location);
+        result.children().addAll(children);
         return result;
     }
 

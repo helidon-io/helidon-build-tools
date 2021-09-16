@@ -17,6 +17,7 @@
 package io.helidon.build.archetype.engine.v2.interpreter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +29,7 @@ import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
 /**
  * Resolver for the archetype output files.
  */
-public class Flow extends ASTNode {
+public class Flow {
 
     private final Interpreter interpreter;
     private final Archetype archetype;
@@ -37,7 +38,7 @@ public class Flow extends ASTNode {
     private FlowState state;
     private final List<Visitor<ASTNode>> additionalVisitors;
 
-    public Optional<ASTNode> result() {
+    public Optional<Flow.Result> result() {
         return state.result();
     }
 
@@ -74,7 +75,6 @@ public class Flow extends ASTNode {
     }
 
     Flow(Archetype archetype, String startDescriptorPath, List<Visitor<ASTNode>> additionalVisitors) {
-        super(null, Location.builder().build());
         this.archetype = archetype;
         this.additionalVisitors = additionalVisitors;
         entryPoint = archetype.getDescriptor(startDescriptorPath);
@@ -95,11 +95,6 @@ public class Flow extends ASTNode {
     public FlowState build(ContextAST context) {
         state.build(context);
         return state;
-    }
-
-    @Override
-    public <A> void accept(Visitor<A> visitor, A arg) {
-        visitor.visit(this, arg);
     }
 
     /**
@@ -180,6 +175,20 @@ public class Flow extends ASTNode {
                 throw new InterpreterException("Archetype must be specified.");
             }
             return new Flow(archetype, startDescriptorPath, additionalVisitors);
+        }
+    }
+
+    public static class Result {
+
+        Map<String, ContextNodeAST> context = new HashMap<>();
+        List<ASTNode> outputs = new ArrayList<>();
+
+        public Map<String, ContextNodeAST> context() {
+            return context;
+        }
+
+        public List<ASTNode> outputs() {
+            return outputs;
         }
     }
 }

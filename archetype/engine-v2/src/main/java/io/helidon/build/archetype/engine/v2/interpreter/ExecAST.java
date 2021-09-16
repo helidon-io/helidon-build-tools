@@ -74,6 +74,11 @@ public class ExecAST extends ASTNode {
         visitor.visit(this, arg);
     }
 
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
     static ExecAST create(Exec execFrom, ASTNode parent, Location location) {
         return new ExecAST(
                 execFrom.url(),

@@ -21,7 +21,7 @@ import io.helidon.build.archetype.engine.v2.descriptor.Template;
 /**
  * Archetype template AST node in {@link OutputAST}.
  */
-public class TemplateAST extends ASTNode {
+public class TemplateAST extends ASTNode implements ConditionalNode {
 
     private final String engine;
     private final String source;
@@ -64,6 +64,11 @@ public class TemplateAST extends ASTNode {
     @Override
     public <A> void accept(Visitor<A> visitor, A arg) {
         visitor.visit(this, arg);
+    }
+
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
     }
 
     static TemplateAST create(Template templateFrom, ASTNode parent, Location location) {

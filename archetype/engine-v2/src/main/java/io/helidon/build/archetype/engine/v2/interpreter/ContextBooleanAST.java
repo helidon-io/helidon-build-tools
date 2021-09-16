@@ -56,6 +56,11 @@ public class ContextBooleanAST extends ContextNodeAST {
         visitor.visit(this, arg);
     }
 
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
     static ContextBooleanAST create(ContextBoolean boolFrom, ASTNode parent, Location location) {
         ContextBooleanAST result = new ContextBooleanAST(boolFrom.path(), parent, location);
         result.bool(boolFrom.bool());

@@ -114,6 +114,112 @@ public class DebugVisitor extends VisitorEmptyImpl<ASTNode> {
         processMessage(input, message);
     }
 
+    @Override
+    public void visit(TransformationAST input, ASTNode parent) {
+        String message = String.format("%s TransformationAST {id=\"%s\"}", indent(input), input.id());
+        processMessage(input, message);
+    }
+
+    @Override
+    public void visit(TemplatesAST input, ASTNode parent) {
+        String message = String.format(
+                "%s TemplatesAST {transformation=\"%s\"; directory=\"%s\"; engine=\"%s\"}",
+                indent(input),
+                input.transformation(),
+                input.directory(),
+                input.engine());
+        processMessage(input, message);
+    }
+
+    @Override
+    public void visit(ModelAST input, ASTNode parent) {
+        String message = String.format("%s ModelAST", indent(input));
+        processMessage(input, message);
+    }
+
+    @Override
+    public void visit(FileSetsAST input, ASTNode parent) {
+        String message = String.format("%s FileSetsAST {directory=\"%s\"}", indent(input), input.directory());
+        processMessage(input, message);
+    }
+
+    @Override
+    public void visit(FileSetAST input, ASTNode parent) {
+        String message = String.format(
+                "%s FileSetAST {source=\"%s\"; target=\"%s\"}", indent(input), input.source(), input.target());
+        processMessage(input, message);
+    }
+
+    @Override
+    public void visit(ModelKeyValueAST input, ASTNode parent) {
+        String message = String.format(
+                "%s ModelKeyValueAST {key=\"%s\"; order=\"%s\"}", indent(input), input.key(), input.order());
+        processMessage(input, message);
+    }
+
+    @Override
+    public void visit(ModelKeyListAST input, ASTNode parent) {
+        String message = String.format(
+                "%s ModelKeyListAST {key=\"%s\"; order=\"%s\"}", indent(input), input.key(), input.order());
+        processMessage(input, message);
+    }
+
+    @Override
+    public void visit(ModelKeyMapAST input, ASTNode parent) {
+        String message = String.format(
+                "%s ModelKeyMapAST {key=\"%s\"; order=\"%s\"}", indent(input), input.key(), input.order());
+        processMessage(input, message);
+    }
+
+    @Override
+    public void visit(TemplateAST input, ASTNode parent) {
+        String message = String.format(
+                "%s TemplateAST {engine=\"%s\"; source=\"%s\"; target=\"%s\"}",
+                indent(input),
+                input.engine(),
+                input.source(),
+                input.target());
+        processMessage(input, message);
+    }
+
+    @Override
+    public void visit(ValueTypeAST input, ASTNode parent) {
+        String message = String.format(
+                "%s ValueTypeAST {file=\"%s\"; url=\"%s\"; template=\"%s\"}",
+                indent(input),
+                input.file(),
+                input.url(),
+                input.template());
+        processMessage(input, message);
+    }
+
+    @Override
+    public void visit(MapTypeAST input, ASTNode parent) {
+        String message = String.format(
+                "%s MapTypeAST {order=\"%s\"}",
+                indent(input),
+                input.order());
+        processMessage(input, message);
+    }
+
+    @Override
+    public void visit(ListTypeAST input, ASTNode parent) {
+        String message = String.format(
+                "%s ListTypeAST {order=\"%s\"}",
+                indent(input),
+                input.order());
+        processMessage(input, message);
+    }
+
+    @Override
+    public void visit(IfStatement input, ASTNode parent) {
+        String message = String.format(
+                "%s IfStatement {expression=\"%s\"}",
+                indent(input),
+                input.expression().expression());
+        processMessage(input, message);
+    }
+
     private void processMessage(ASTNode input, String message) {
         if (showVisits) {
             LOGGER.info(message);

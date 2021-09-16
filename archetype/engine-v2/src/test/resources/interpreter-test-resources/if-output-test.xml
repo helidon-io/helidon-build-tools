@@ -21,7 +21,10 @@
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
 
     <context>
-        <text path="foo">bar</text>
+        <boolean path="foo">true</boolean>
+        <boolean path="foo2">true</boolean>
+        <boolean path="bool-input">true</boolean>
+        <boolean path="bool-input2">true</boolean>
     </context>
 
     <step label="User boolean input">
@@ -30,9 +33,18 @@
 
             <boolean name="bool-input"
                      label="User boolean input label">
-                <output if="${foo} == 'bar'">
+                <output if="${foo} == true">
                     <transformation id="t1">
                         <replace replacement="token" regex="foo"></replace>
+                    </transformation>
+                </output>
+            </boolean>
+
+            <boolean name="bool-input2"
+                     label="User boolean input label 2">
+                <output if="${foo2} == false">
+                    <transformation id="t2">
+                        <replace replacement="token2" regex="foo2"></replace>
                     </transformation>
                 </output>
             </boolean>

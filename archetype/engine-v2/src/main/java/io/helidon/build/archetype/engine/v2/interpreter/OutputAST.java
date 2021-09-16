@@ -17,6 +17,7 @@
 package io.helidon.build.archetype.engine.v2.interpreter;
 
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.descriptor.Output;
@@ -35,19 +36,31 @@ public class OutputAST extends ASTNode implements ConditionalNode {
         visitor.visit(this, arg);
     }
 
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
     static OutputAST create(Output outputFrom, ASTNode parent, Location location) {
         OutputAST result = new OutputAST(parent, location);
 
         LinkedList<Visitable> children = getChildren(outputFrom, result, location);
-        ConditionalNode.addChildren(outputFrom, result, children, location);
-
+//        ConditionalNode.addChildren(outputFrom, result, children, location);
+        result.children().addAll(children);
         return result;
     }
 
     private static LinkedList<Visitable> getChildren(Output output, ASTNode parent, Location location) {
         LinkedList<Visitable> result = new LinkedList<>();
         if (output.model() != null) {
-            result.add(ModelAST.create(output.model(), parent, location));
+//            result.add(ModelAST.create(output.model(), parent, location));
+            result.add(
+                    ConditionalNode.mapConditional(
+                            output.model(),
+                            ModelAST.create(output.model(), parent, location),
+                            parent,
+                            location
+                    ));
         }
         result.addAll(transformList(output.transformations(), t -> TransformationAST.create(t, parent, location)));
         result.addAll(output.filesList().stream()

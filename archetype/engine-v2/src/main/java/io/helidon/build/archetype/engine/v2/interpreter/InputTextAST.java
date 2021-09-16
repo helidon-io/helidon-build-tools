@@ -45,6 +45,11 @@ public class InputTextAST extends InputNodeAST {
         visitor.visit(this, arg);
     }
 
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
     static InputTextAST create(InputText input, ASTNode parent, Location location) {
         InputTextAST result =
                 new InputTextAST(input.label(), input.name(), input.def(), input.prompt(),

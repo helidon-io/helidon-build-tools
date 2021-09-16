@@ -65,7 +65,14 @@ class XmlDescriptor extends ASTNode {
         result.children().addAll(transformList(descriptor.sources(), s -> SourceAST.create(s, parent, location)));
         result.children().addAll(transformList(descriptor.execs(), e -> ExecAST.create(e, parent, location)));
         if (descriptor.output() != null) {
-            result.children().add(OutputAST.create(descriptor.output(), parent, location));
+//            result.children().add(OutputAST.create(descriptor.output(), parent, location));
+            result.children().add(
+                    ConditionalNode.mapConditional(
+                            descriptor.output(),
+                            OutputAST.create(descriptor.output(), result, location),
+                            result,
+                            location
+                    ));
         }
         return result;
     }
@@ -73,5 +80,10 @@ class XmlDescriptor extends ASTNode {
     @Override
     public <A> void accept(Visitor<A> visitor, A arg) {
         visitor.visit(this, arg);
+    }
+
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
     }
 }

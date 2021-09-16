@@ -59,4 +59,247 @@ public interface GenericVisitor<T, A> {
      * @return value
      */
     T visit(InputTextAST input, A arg);
+
+    /**
+     * Process {@code ContextBooleanAST} element.
+     *
+     * @param input ContextBooleanAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(ContextBooleanAST input, A arg);
+
+    /**
+     * Process {@code ContextEnumAST} element.
+     *
+     * @param input ContextEnumAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(ContextEnumAST input, A arg);
+
+    /**
+     * Process {@code ContextListAST} element.
+     *
+     * @param input ContextListAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(ContextListAST input, A arg);
+
+    /**
+     * Process {@code ContextTextAST} element.
+     *
+     * @param input ContextTextAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(ContextTextAST input, A arg);
+
+    /**
+     * Process {@code StepAST} element.
+     *
+     * @param input StepAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(StepAST input, A arg);
+
+    /**
+     * Process {@code InputAST} element.
+     *
+     * @param input InputAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(InputAST input, A arg);
+
+    /**
+     * Process {@code ExecAST} element.
+     *
+     * @param input ExecAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(ExecAST input, A arg);
+
+    /**
+     * Process {@code SourceAST} element.
+     *
+     * @param input SourceAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(SourceAST input, A arg);
+
+    /**
+     * Process {@code ContextAST} element.
+     *
+     * @param input ContextAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(ContextAST input, A arg);
+
+    /**
+     * Process {@code OptionAST} element.
+     *
+     * @param input OptionAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(OptionAST input, A arg);
+
+    /**
+     * Process {@code OutputAST} element.
+     *
+     * @param input OutputAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(OutputAST input, A arg);
+
+    /**
+     * Process {@code TransformationAST} element.
+     *
+     * @param input TransformationAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(TransformationAST input, A arg);
+
+    /**
+     * Process {@code FileSetsAST} element.
+     *
+     * @param input FileSetsAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(FileSetsAST input, A arg);
+
+    /**
+     * Process {@code FileSetAST} element.
+     *
+     * @param input FileSetAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(FileSetAST input, A arg);
+
+    /**
+     * Process {@code TemplateAST} element.
+     *
+     * @param input TemplateAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(TemplateAST input, A arg);
+
+    /**
+     * Process {@code TemplatesAST} element.
+     *
+     * @param input TemplatesAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(TemplatesAST input, A arg);
+
+    /**
+     * Process {@code ModelAST} element.
+     *
+     * @param input ModelAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(ModelAST input, A arg);
+
+    /**
+     * Process {@code IfStatement} element.
+     *
+     * @param input IfStatement
+     * @param arg   argument
+     * @return value
+     */
+    T visit(IfStatement input, A arg);
+
+    /**
+     * Process {@code ModelKeyValueAST} element.
+     *
+     * @param input ModelKeyValueAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(ModelKeyValueAST input, A arg);
+
+    /**
+     * Process {@code ValueTypeAST} element.
+     *
+     * @param input ValueTypeAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(ValueTypeAST input, A arg);
+
+    /**
+     * Process {@code ModelKeyListAST} element.
+     *
+     * @param input ModelKeyListAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(ModelKeyListAST input, A arg);
+
+    /**
+     * Process {@code MapTypeAST} element.
+     *
+     * @param input MapTypeAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(MapTypeAST input, A arg);
+
+    /**
+     * Process {@code ListTypeAST} element.
+     *
+     * @param input ListTypeAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(ListTypeAST input, A arg);
+
+    /**
+     * Process {@code ModelKeyMapAST} element.
+     *
+     * @param input ModelKeyMapAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(ModelKeyMapAST input, A arg);
+
+    /**
+     * Process {@code XmlDescriptor} element.
+     *
+     * @param input XmlDescriptor
+     * @param arg   argument
+     * @return value
+     */
+    T visit(XmlDescriptor input, A arg);
+
+    /**
+     * Process {@code UserInputAST} element.
+     *
+     * @param input UserInputAST
+     * @param arg   argument
+     * @return value
+     */
+    T visit(UserInputAST input, A arg);
+
+    /**
+     * Process {@code Visitable} element.
+     *
+     * @param input Visitable
+     * @param arg   argument
+     * @return value
+     */
+    T visit(Visitable input, A arg);
 }

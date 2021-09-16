@@ -23,14 +23,103 @@ class FlowTest {
     private Archetype archetype;
 
     @Test
+    public void testTemplatesStatement() {
+        archetype = getArchetype("interpreter-test-resources");
+
+        Flow flow = new Flow(archetype, "inner-output-elements-test.xml", List.of(DebugVisitor.builder().build()));
+        flow.build(new ContextAST());
+        assertResult(flow, 5, 3);
+
+        OutputAST output = (OutputAST) flow.result().get().outputs().stream()
+                .filter(child -> child instanceof OutputAST)
+                .filter(o -> ((OutputAST) o).children().size() == 1)
+                .findFirst().orElse(null);
+        assertThat(output, notNullValue());
+        TemplatesAST templatesAST = (TemplatesAST) output.children().get(0);
+        assertThat(templatesAST.children().size(), is(0));
+
+        output = (OutputAST) flow.result().get().outputs().stream()
+                .filter(child -> child instanceof OutputAST)
+                .filter(o -> o.children().size() == 2)
+                .findFirst().orElse(null);
+        assertThat(output, notNullValue());
+        templatesAST = (TemplatesAST) output.children().stream()
+                .filter(ch -> ch instanceof TemplatesAST)
+                .findFirst()
+                .orElse(null);
+        assertThat(templatesAST, notNullValue());
+        assertThat(templatesAST.children().size(), is(1));
+        assertThat(templatesAST.children().get(0) instanceof ModelAST, is(true));
+
+        ModelAST modelAST = (ModelAST) templatesAST.children().get(0);
+        assertThat(modelAST.children().size(), is(3));
+        List<ModelKeyListAST> list = modelAST.children().stream()
+                .filter(c -> c instanceof ModelKeyListAST)
+                .map(c -> (ModelKeyListAST) c)
+                .collect(Collectors.toList());
+        assertThat(list.size(), is(1));
+        assertThat(list.get(0).key(), is("dependencies"));
+        assertThat(list.get(0).children().size(), is(3));
+        List<ValueTypeAST> values = list.get(0).children().stream()
+                .filter(c -> c instanceof ValueTypeAST)
+                .map(c -> (ValueTypeAST) c).
+                collect(Collectors.toList());
+        assertThat(values.size(), is(1));
+        assertThat(values.get(0).value(), is("you depend on ME"));
+        List<ListTypeAST> innerList = list.get(0).children().stream()
+                .filter(c -> c instanceof ListTypeAST)
+                .map(c -> (ListTypeAST) c).
+                collect(Collectors.toList());
+        assertThat(innerList.size(), is(1));
+        assertThat(innerList.get(0).order(), is(101));
+        assertThat(innerList.get(0).children().size(), is(2));
+        List<MapTypeAST> innerMap = list.get(0).children().stream()
+                .filter(c -> c instanceof MapTypeAST)
+                .map(c -> (MapTypeAST) c).
+                collect(Collectors.toList());
+        assertThat(innerMap.size(), is(1));
+        assertThat(innerMap.get(0).order(), is(10));
+        assertThat(innerMap.get(0).children().size(), is(2));
+        List<ModelKeyMapAST> map = modelAST.children().stream()
+                .filter(c -> c instanceof ModelKeyMapAST)
+                .map(c -> (ModelKeyMapAST) c)
+                .collect(Collectors.toList());
+        assertThat(map.size(), is(1));
+        assertThat(map.get(0).key(), is("foo"));
+        List<ModelKeyValueAST> valueList = modelAST.children().stream()
+                .filter(c -> c instanceof ModelKeyValueAST)
+                .map(c -> (ModelKeyValueAST) c)
+                .collect(Collectors.toList());
+        assertThat(valueList.size(), is(1));
+        assertThat(valueList.get(0).key(), is("key value"));
+
+        output = (OutputAST) flow.result().get().outputs().stream()
+                .filter(child -> child instanceof OutputAST)
+                .filter(o -> ((OutputAST) o).children().size() == 3)
+                .findFirst().orElse(null);
+        assertThat(output, notNullValue());
+        templatesAST = (TemplatesAST) output.children().stream()
+                .filter(ch -> ch instanceof TemplatesAST)
+                .findFirst()
+                .orElse(null);
+        assertThat(templatesAST, notNullValue());
+        assertThat(templatesAST.children().size(), is(0));
+    }
+
+    @Test
     public void testIfStatement() {
         archetype = getArchetype("interpreter-test-resources");
 
         Flow flow = new Flow(archetype, "if-output-test.xml", List.of(DebugVisitor.builder().build()));
         flow.build(new ContextAST());
-        flow.build(getUserInput("User boolean input label"));
+        assertResult(flow, 4, 1);
 
-        assertResult(flow, 2, 1);
+        OutputAST output = (OutputAST) flow.result().get().outputs().stream()
+                .filter(child -> child instanceof OutputAST)
+                .filter(o -> o.children().size() > 0)
+                .findFirst().orElse(null);
+        assertThat(output, notNullValue());
+        assertThat(((TransformationAST) output.children().get(0)).id(), is("t1"));
     }
 
     @Test
@@ -43,7 +132,7 @@ class FlowTest {
 
         assertResult(flow, 1, 1);
 
-        OutputAST output = (OutputAST) flow.result().get().children().stream()
+        OutputAST output = (OutputAST) flow.result().get().outputs().stream()
                 .filter(child -> child instanceof OutputAST)
                 .findFirst().get();
         assertThat(output.children().size(), is(4));
@@ -129,7 +218,7 @@ class FlowTest {
         contextNode = (ContextBooleanAST) flow.pathToContextNodeMap().get("bool_input_context");
         assertThat(contextNode.bool(), is(true));
 
-        assertResult(flow, 5, 2);
+        assertResult(flow, 6, 2);
     }
 
     @Test
@@ -262,18 +351,11 @@ class FlowTest {
         state = flow.build(new ContextAST());
 
         assertThat(state.type(), is(FlowStateEnum.DONE));
-        ASTNode result = flow.result().orElse(null);
+        Flow.Result result = flow.result().orElse(null);
         assertThat(result, notNullValue());
 
-        List<Visitable> context = result.children().stream()
-                .filter(child -> child instanceof ContextAST)
-                .collect(Collectors.toList());
-        assertThat(context.size(), is(1));
-        assertThat(((ContextAST) context.get(0)).children().size(), is(expectedContextValuesCount));
+        assertThat(result.context().size(), is(expectedContextValuesCount));
 
-        List<Visitable> outputs = result.children().stream()
-                .filter(child -> child instanceof OutputAST)
-                .collect(Collectors.toList());
-        assertThat(outputs.size(), is(expectedOutputCount));
+        assertThat(result.outputs.size(), is(expectedOutputCount));
     }
 }

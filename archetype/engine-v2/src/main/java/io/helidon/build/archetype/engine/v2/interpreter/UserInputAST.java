@@ -64,6 +64,11 @@ public class UserInputAST extends ASTNode {
         visitor.visit(this, arg);
     }
 
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
     static UserInputAST create(InputNodeAST input, StepAST step) {
         return new UserInputAST(step.label(), step.help(), input.path(), input.location());
     }

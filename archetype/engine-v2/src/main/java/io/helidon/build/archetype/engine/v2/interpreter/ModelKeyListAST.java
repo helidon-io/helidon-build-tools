@@ -58,11 +58,17 @@ public class ModelKeyListAST extends ASTNode implements ConditionalNode {
         visitor.visit(this, arg);
     }
 
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
     static ModelKeyListAST create(ModelKeyList listFrom, ASTNode parent, Location location) {
         ModelKeyListAST result = new ModelKeyListAST(listFrom.key(), listFrom.order(), parent, location);
 
         LinkedList<Visitable> children = getChildren(listFrom, result, location);
-        ConditionalNode.addChildren(listFrom, result, children, location);
+//        ConditionalNode.addChildren(listFrom, result, children, location);
+        result.children().addAll(children);
 
         return result;
     }

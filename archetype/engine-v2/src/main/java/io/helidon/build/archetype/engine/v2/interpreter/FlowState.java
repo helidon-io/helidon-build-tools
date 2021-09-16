@@ -7,21 +7,9 @@ import java.util.Optional;
 
 public abstract class FlowState {
 
-    abstract Optional<ASTNode> result();
+    abstract Optional<Flow.Result> result();
 
     abstract void build(ContextAST context);
 
     abstract FlowStateEnum type();
-
-    class Result extends ASTNode {
-
-        Result() {
-            super(null, Location.builder().build());
-        }
-
-        @Override
-        public <A> void accept(Visitor<A> visitor, A arg) {
-            visitor.visit(this, arg);
-        }
-    }
 }

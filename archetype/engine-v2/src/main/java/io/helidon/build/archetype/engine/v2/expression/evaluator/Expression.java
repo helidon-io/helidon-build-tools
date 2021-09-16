@@ -84,8 +84,13 @@ public final class Expression {
         if (tree.isLiteral()) {
             return (boolean) tree.asLiteral().value();
         }
-        if (tree().isExpressionHandler()) {
+        if (tree.isExpressionHandler()) {
             return (boolean) tree.asExpressionHandler().evaluate().value();
+        }
+        if (tree.isVariable()) {
+            if (tree.asVariable().value() instanceof BooleanLiteral) {
+                return (boolean) tree.asVariable().value().value();
+            }
         }
         throw new UnexpectedResultException(String.format("Expression %s cannot be evaluated", rawExpression));
     }
