@@ -16,15 +16,7 @@
 
 package io.helidon.build.archetype.engine.v2.template;
 
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.Map;
-
-import io.helidon.build.archetype.engine.v2.descriptor.ListType;
-import io.helidon.build.archetype.engine.v2.descriptor.MapType;
 import io.helidon.build.archetype.engine.v2.descriptor.Model;
-import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
-import io.helidon.build.archetype.engine.v2.expression.evaluator.Expression;
 
 /**
  * Template Model Archetype.
@@ -51,44 +43,9 @@ public class TemplateModel {
             return;
         }
 
-        if (evaluateCondition(model.ifProperties(), null)) {
-            this.model.keyValues().addAll(model.keyValues());
-            this.model.keyLists().addAll(model.keyLists());
-            this.model.keyMaps().addAll(model.keyMaps());
-        }
-    }
-
-    private void sortModel() {
-        sortValues(model.keyValues());
-        sortLists(model.keyLists());
-        sortMaps(model.keyMaps());
-    }
-
-    private void sortMaps(LinkedList<? extends MapType> maps) {
-        maps.sort(Comparator.comparingInt(MapType::order));
-        for (MapType map : maps) {
-            sortValues(map.keyValues());
-            sortLists(map.keyLists());
-            sortMaps(map.keyMaps());
-        }
-    }
-
-    private void sortLists(LinkedList<? extends ListType> lists) {
-        lists.sort(Comparator.comparingInt(ListType::order));
-        for (ListType list : lists) {
-            sortValues(list.values());
-            sortLists(list.lists());
-            sortMaps(list.maps());
-        }
-    }
-
-    private void sortValues(LinkedList<? extends ValueType> values) {
-        values.sort(Comparator.comparingInt(ValueType::order));
-    }
-
-    private boolean evaluateCondition(String condition, Map<String, String> variables) {
-        return condition == null
-                || Expression.builder().expression(condition).build().evaluate(variables);
+        this.model.keyValues().addAll(model.keyValues());
+        this.model.keyLists().addAll(model.keyLists());
+        this.model.keyMaps().addAll(model.keyMaps());
     }
 
     /**
@@ -97,7 +54,6 @@ public class TemplateModel {
      * @return model descriptor
      */
     public Model model() {
-        sortModel();
         return model;
     }
 

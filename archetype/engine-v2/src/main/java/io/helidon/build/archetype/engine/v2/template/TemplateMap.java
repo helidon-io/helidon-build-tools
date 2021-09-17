@@ -16,35 +16,31 @@
 
 package io.helidon.build.archetype.engine.v2.template;
 
-import java.io.IOException;
-
 import io.helidon.build.archetype.engine.v2.descriptor.MapType;
 import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyList;
 import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyMap;
 import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyValue;
-
-
+import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
 
 /**
  * Template map used in {@link TemplateModel}.
  */
-public class TemplateMap {
-    private final MergingMap<String, TemplateValue> templateValues = new MergingMap<>();
-    private final MergingMap<String, TemplateList> templateLists = new MergingMap<>();
-    private final MergingMap<String, TemplateMap> templateMaps = new MergingMap<>();
+public class TemplateMap implements Comparable {
+
+    private final MergingMap<String, ValueType>     templateValues  = new MergingMap<>();
+    private final MergingMap<String, TemplateList>  templateLists   = new MergingMap<>();
+    private final MergingMap<String, TemplateMap>   templateMaps    = new MergingMap<>();
     private final int order;
 
     /**
      * Template map constructor.
      *
      * @param map Map containing xml descriptor data
-     *
-     * @throws IOException if file attribute has I/O issues
      */
-    public TemplateMap(MapType map) throws IOException {
+    public TemplateMap(MapType map) {
         this.order = map.order();
         for (ModelKeyValue value : map.keyValues()) {
-            templateValues.put(value.key(), new TemplateValue(value));
+            templateValues.put(value.key(), value);
         }
         for (ModelKeyList list : map.keyLists()) {
             templateLists.put(list.key(), new TemplateList(list));
@@ -64,11 +60,11 @@ public class TemplateMap {
     }
 
     /**
-     * Get the map of {@link TemplateValue} merged by key for this {@link TemplateMap}.
+     * Get the map of {@link ValueType} merged by key for this {@link TemplateMap}.
      *
      * @return values
      */
-    public MergingMap<String, TemplateValue> values() {
+    public MergingMap<String, ValueType> values() {
         return templateValues;
     }
 
@@ -88,5 +84,13 @@ public class TemplateMap {
      */
     public MergingMap<String, TemplateMap> maps() {
         return templateMaps;
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        if (o instanceof TemplateMap) {
+            return Integer.compare(this.order, ((TemplateMap) o).order);
+        }
+        return 0;
     }
 }
