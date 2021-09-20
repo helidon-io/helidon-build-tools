@@ -24,7 +24,7 @@ import io.helidon.build.archetype.engine.v2.interpreter.Visitor;
 /**
  * Archetype value used in {@link ListType}.
  */
-public class ValueType extends Conditional implements Visitable {
+public class ValueType extends Conditional implements Visitable, Comparable {
 
     private String value;
     private final String url;
@@ -32,7 +32,16 @@ public class ValueType extends Conditional implements Visitable {
     private final String template;
     private int order = 100;
 
-    ValueType(
+    /**
+     * ValueType constructor.
+     *
+     * @param url           url attribute
+     * @param file          file attribute
+     * @param template      template attribute
+     * @param order         order attribute
+     * @param ifProperties  if attribute
+     */
+    public ValueType(
             String url,
             String file,
             String template,
@@ -136,5 +145,13 @@ public class ValueType extends Conditional implements Visitable {
     @Override
     public <A> void accept(Visitor<A> visitor, A arg) {
         visitor.visit(this, arg);
+    }
+
+    @Override
+    public int compareTo(Object value) {
+        if (value instanceof ValueType) {
+            return Integer.compare(this.order, ((ValueType) value).order);
+        }
+        return 0;
     }
 }

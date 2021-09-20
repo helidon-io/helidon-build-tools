@@ -22,24 +22,29 @@
 
     <output>
         <model>
+            <value key="id" order="0">third-party-license-report</value>
+            <map key="properties" order="1">
+                <value key="helidon-media-groupId">io.helidon.media</value>
+                <value key="helidon-media-artifactId">helidon-media-jackson</value>
+                <value key="maven-plugins-groupId">org.apache.maven.plugins</value>
+                <value key="id">copy-libs</value>
+            </map>
             <list key="dependencies">
-                <map if="${media-support.json.provider} == jackson">
-                    <value key="groupId">io.helidon.media</value>
-                    <value key="artifactId">helidon-media-jackson</value>
+                <map if="${media-support.json.provider} == jsonb" order="10">
+                    <value key="groupId" file="src/test/resources/template/helidon-media-groupId.txt" template="mustache"/>
+                    <value key="artifactId">helidon-media-jsonb</value>
                 </map>
             </list>
             <map key="build">
                 <list key="plugins">
-                    <map>
-                        <list key="plugin">
-                            <map>
-                                <value key="groupId">io.helidon.build-tools</value>
-                                <value key="artifactId">helidon-maven-plugin</value>
-                                <map key="executions">
-                                    <value key="id">third-party-license-report</value>
-                                </map>
+                    <map order="50">
+                        <map key="plugin">
+                            <value key="groupId" template="mustache">{{properties.maven-plugins-groupId}}</value>
+                            <value key="artifactId">maven-dependency-plugin</value>
+                            <map key="executions">
+                                <value key="id" template="mustache">{{properties.id}}</value>
                             </map>
-                        </list>
+                        </map>
                     </map>
                 </list>
             </map>

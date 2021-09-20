@@ -16,7 +16,6 @@
 
 package io.helidon.build.archetype.engine.v2.template;
 
-import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -27,9 +26,9 @@ import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
 /**
  * Template list used in {@link TemplateModel}.
  */
-public class TemplateList {
+public class TemplateList implements Comparable {
 
-    private final List<TemplateValue> templateValues = new LinkedList<>();
+    private final List<ValueType> templateValues = new LinkedList<>();
     private final List<TemplateList> templateLists = new LinkedList<>();
     private final List<TemplateMap> templateMaps = new LinkedList<>();
     private final int order;
@@ -38,14 +37,10 @@ public class TemplateList {
      * TemplateList constructor.
      *
      * @param list list containing xml descriptor data
-     *
-     * @throws IOException if file attribute has I/O issues
      */
-    public TemplateList(ListType list) throws IOException {
+    public TemplateList(ListType list) {
         this.order = list.order();
-        for (ValueType value : list.values()) {
-            templateValues.add(new TemplateValue(value));
-        }
+        templateValues.addAll(list.values());
         for (MapType map : list.maps()) {
             templateMaps.add(new TemplateMap(map));
         }
@@ -64,11 +59,11 @@ public class TemplateList {
     }
 
     /**
-     * Get the map of {@link TemplateValue} merged by key for this {@link TemplateList}.
+     * Get the map of {@link ValueType} merged by key for this {@link TemplateList}.
      *
      * @return values
      */
-    public List<TemplateValue> values() {
+    public List<ValueType> values() {
         return templateValues;
     }
 
@@ -90,4 +85,11 @@ public class TemplateList {
         return templateMaps;
     }
 
+    @Override
+    public int compareTo(Object o) {
+        if (o instanceof TemplateList) {
+            return Integer.compare(this.order, ((TemplateList) o).order);
+        }
+        return 0;
+    }
 }

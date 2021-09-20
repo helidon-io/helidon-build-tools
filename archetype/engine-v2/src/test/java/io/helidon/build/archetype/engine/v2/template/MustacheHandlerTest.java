@@ -34,10 +34,8 @@ import static org.hamcrest.core.IsNull.notNullValue;
 
 public class MustacheHandlerTest {
 
-    public static final String DESCRIPTOR         = "template/hardCodedValues.xml";
-    public static final String DESCRIPTOR_SIBLING = "template/hardCodedValuesSibling.xml";
-    public static final String DESCRIPTOR_PPV     = "template/preProcessedValueArch.xml";
-    public static final String DESCRIPTOR_O       = "template/orderArch.xml";
+    public static final String DESCRIPTOR         = "template/templateArchetype.xml";
+    public static final String DESCRIPTOR_SIBLING = "template/siblingArchetype.xml";
     public static final String TEMPLATE_RESOURCE  = "template/test.xml.mustache";
     public static final String EXPECTED_RESOURCE  = "template/expected.xml";
 
@@ -53,26 +51,12 @@ public class MustacheHandlerTest {
     }
 
     @Test
-    public void parseModelHardCodedValues() throws IOException {
+    public void parseModel() throws IOException {
         InputStream descStream = MustacheHandlerTest.class.getClassLoader()
                 .getResourceAsStream(DESCRIPTOR);
         InputStream descSiblingStream = MustacheHandlerTest.class.getClassLoader()
                 .getResourceAsStream(DESCRIPTOR_SIBLING);
-        testDescriptor(descStream, descSiblingStream);
-    }
-
-    @Test
-    public void parseModelWithPreProcessedValues() throws IOException {
-        InputStream stream = MustacheHandlerTest.class.getClassLoader()
-                .getResourceAsStream(DESCRIPTOR_PPV);
-        testDescriptor(stream);
-    }
-
-    @Test
-    public void testOrder() throws IOException {
-        InputStream stream = MustacheHandlerTest.class.getClassLoader()
-                .getResourceAsStream(DESCRIPTOR_O);
-        testDescriptor(stream);
+        testDescriptor(descSiblingStream, descStream);
     }
 
     private void testDescriptor(InputStream ... descriptors) throws IOException {

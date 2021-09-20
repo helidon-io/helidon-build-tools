@@ -23,38 +23,20 @@
     <output>
         <model>
             <list key="dependencies">
-                <map if="${media-support.json.provider} == jsonb">
+                <map if="${media-support.json.provider} == jackson" order="50">
                     <value key="groupId">io.helidon.media</value>
-                    <value key="artifactId">helidon-media-jsonb</value>
-                </map>
-                <map if="${media-support.json.provider} == jackson">
-                    <value key="myGroupID">io.helidon.media</value>
-                    <value key="myArtifactId">helidon-media-jackson</value>
-                    <value key="groupId"    template="mustache">{{myGroupID}}</value>
-                    <value key="artifactId" template="mustache">{{myArtifactId}}</value>
+                    <value key="artifactId">helidon-media-jackson</value>
                 </map>
             </list>
             <map key="build">
                 <list key="plugins">
                     <map>
-                        <map key="plugin">
-                            <value key="myGroupID">org.apache.maven.plugins</value>
-                            <value key="groupId" template="mustache">{{myGroupID}}</value>
-                            <value key="artifactId">maven-dependency-plugin</value>
-                            <map key="executions">
-                                <value key="myId">copy-libs</value>
-                                <value key="id" template="mustache">{{myId}}</value>
-                            </map>
-                        </map>
-                    </map>
-                    <map>
                         <list key="plugin">
-                            <map>
+                            <map order="500">
                                 <value key="groupId">io.helidon.build-tools</value>
                                 <value key="artifactId">helidon-maven-plugin</value>
                                 <map key="executions">
-                                    <value key="myId">third-party-license-report</value>
-                                    <value key="id" template="mustache">{{myId}}</value>
+                                    <value key="id" template="mustache">{{id}}</value>
                                 </map>
                             </map>
                         </list>
