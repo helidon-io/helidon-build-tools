@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -332,7 +332,7 @@ public final class ProcessMonitor {
      * @param timeout The maximum time to wait.
      * @param unit The time unit of the {@code timeout} argument.
      * @return This instance.
-     * @throws IllegalStateException If the process was not started or has already been completed.
+     * @throws IllegalStateException If the process was not started.
      * @throws ProcessTimeoutException If the process does not complete in the specified time.
      * @throws ProcessFailedException If the process fails.
      * @throws InterruptedException If the a thread is interrupted.
@@ -341,7 +341,8 @@ public final class ProcessMonitor {
     public ProcessMonitor waitForCompletion(long timeout, TimeUnit unit) throws ProcessTimeoutException,
             ProcessFailedException,
             InterruptedException {
-        assertRunning();
+        // We are interested in the result of the process, even if it already completed
+        Process process = assertStarted();
         Log.debug("Waiting for completion, pid=%d, timeout=%d, unit=%s", process.pid(), timeout, unit);
         final boolean completed = process.waitFor(timeout, unit);
         if (completed) {
