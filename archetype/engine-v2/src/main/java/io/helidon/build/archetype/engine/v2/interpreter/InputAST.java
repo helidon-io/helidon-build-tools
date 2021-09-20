@@ -23,8 +23,8 @@ import io.helidon.build.archetype.engine.v2.descriptor.Input;
  */
 public class InputAST extends ASTNode {
 
-    InputAST(String currentDirectory) {
-        super(currentDirectory);
+    InputAST(ASTNode parent, Location location) {
+        super(parent, location);
     }
 
     @Override
@@ -32,16 +32,29 @@ public class InputAST extends ASTNode {
         visitor.visit(this, arg);
     }
 
-    static InputAST from(Input input, String currentDirectory) {
-        InputAST result = new InputAST(currentDirectory);
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
 
-        result.children().addAll(transformList(input.nodes(), i -> InputNodeASTFactory.from(i, currentDirectory)));
-        result.children().addAll(transformList(input.contexts(), c -> ContextAST.from(c, currentDirectory)));
-        result.children().addAll(transformList(input.steps(), s -> StepAST.from(s, currentDirectory)));
-        result.children().addAll(transformList(input.inputs(), i -> InputAST.from(i, currentDirectory)));
-        result.children().addAll(transformList(input.sources(), s -> SourceAST.from(s, currentDirectory)));
-        result.children().addAll(transformList(input.execs(), ExecAST::from));
-        result.children().add(OutputAST.from(input.output(), currentDirectory));
+    static InputAST create(Input inputFrom, ASTNode parent, Location location) {
+        InputAST result = new InputAST(parent, location);
+
+        result.children().addAll(transformList(inputFrom.contexts(), c -> ContextAST.create(c, result, location)));
+        result.children().addAll(transformList(inputFrom.nodes(), i -> InputNodeASTFactory.create(i, result, location)));
+        result.children().addAll(transformList(inputFrom.steps(), s -> StepAST.create(s, result, location)));
+        result.children().addAll(transformList(inputFrom.inputs(), i -> InputAST.create(i, result, location)));
+        result.children().addAll(transformList(inputFrom.sources(), s -> SourceAST.create(s, result, location)));
+        result.children().addAll(transformList(inputFrom.execs(), e -> ExecAST.create(e, result, location)));
+        if (inputFrom.output() != null) {
+            result.children().add(
+                    ConditionalNode.mapConditional(
+                            inputFrom.output(),
+                            OutputAST.create(inputFrom.output(), result, location),
+                            result,
+                            location
+                    ));
+        }
 
         return result;
     }

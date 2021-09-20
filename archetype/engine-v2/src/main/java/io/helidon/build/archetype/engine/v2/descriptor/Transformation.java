@@ -19,13 +19,10 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 import java.util.LinkedList;
 import java.util.Objects;
 
-import io.helidon.build.archetype.engine.v2.interpreter.Visitable;
-import io.helidon.build.archetype.engine.v2.interpreter.Visitor;
-
 /**
  * Archetype transformation in {@link Output}.
  */
-public class Transformation implements Visitable {
+public class Transformation {
 
     private final String id;
     private final LinkedList<Replacement> replacements;
@@ -73,10 +70,5 @@ public class Transformation implements Visitable {
                 + "id='" + id + '\''
                 + ", replacements=" + replacements
                 + '}';
-    }
-
-    @Override
-    public <A> void accept(Visitor<A> visitor, A arg) {
-        visitor.visit(this, arg);
     }
 }

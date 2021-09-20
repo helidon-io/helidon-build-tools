@@ -17,11 +17,9 @@
 package io.helidon.build.archetype.engine.v2.interpreter;
 
 import java.util.LinkedList;
+import java.util.stream.Collectors;
 
-import io.helidon.build.archetype.engine.v2.descriptor.ListType;
-import io.helidon.build.archetype.engine.v2.descriptor.MapType;
 import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyList;
-import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
 
 /**
  * Archetype list AST node with key attribute used in {@link ModelAST} and {@link MapTypeAST}.
@@ -31,8 +29,8 @@ public class ModelKeyListAST extends ASTNode implements ConditionalNode {
     private int order = 100;
     private final String key;
 
-    ModelKeyListAST(String key, int order, String currentDirectory) {
-        super(currentDirectory);
+    ModelKeyListAST(String key, int order, ASTNode parent, Location location) {
+        super(parent, location);
         this.key = key;
         this.order = order;
     }
@@ -60,24 +58,34 @@ public class ModelKeyListAST extends ASTNode implements ConditionalNode {
         visitor.visit(this, arg);
     }
 
-    private final LinkedList<ValueType> values = new LinkedList<>();
-    private final LinkedList<MapType> maps = new LinkedList<>();
-    private final LinkedList<ListType> lists = new LinkedList<>();
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
 
-    static ModelKeyListAST from(ModelKeyList list, String currentDirectory) {
-        ModelKeyListAST result = new ModelKeyListAST(list.key(), list.order(), currentDirectory);
+    static ModelKeyListAST create(ModelKeyList listFrom, ASTNode parent, Location location) {
+        ModelKeyListAST result = new ModelKeyListAST(listFrom.key(), listFrom.order(), parent, location);
 
-        LinkedList<Visitable> children = getChildren(list, currentDirectory);
-        ConditionalNode.addChildren(list, result, children, currentDirectory);
+        LinkedList<Visitable> children = getChildren(listFrom, result, location);
+        result.children().addAll(children);
 
         return result;
     }
 
-    private static LinkedList<Visitable> getChildren(ModelKeyList list, String currentDirectory) {
+    private static LinkedList<Visitable> getChildren(ModelKeyList list, ASTNode parent, Location location) {
         LinkedList<Visitable> result = new LinkedList<>();
-        result.addAll(list.values());
-        result.addAll(transformList(list.maps(), m -> MapTypeAST.from(m, currentDirectory)));
-        result.addAll(transformList(list.lists(), l -> ListTypeAST.from(l, currentDirectory)));
+        result.addAll(list.values().stream()
+                .map(v -> ConditionalNode.mapConditional(
+                        v, ValueTypeAST.create(v, parent, location), parent, location))
+                .collect(Collectors.toCollection(LinkedList::new)));
+        result.addAll(list.maps().stream()
+                .map(m -> ConditionalNode.mapConditional(
+                        m, MapTypeAST.create(m, parent, location), parent, location))
+                .collect(Collectors.toCollection(LinkedList::new)));
+        result.addAll(list.lists().stream()
+                .map(l -> ConditionalNode.mapConditional(
+                        l, ListTypeAST.create(l, parent, location), parent, location))
+                .collect(Collectors.toCollection(LinkedList::new)));
         return result;
     }
 }

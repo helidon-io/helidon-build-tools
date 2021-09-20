@@ -16,19 +16,24 @@
 
 package io.helidon.build.archetype.engine.v2.interpreter;
 
-import java.util.LinkedList;
-
 /**
- * Prompter for the user input.
+ * Types of the {@link FlowState}.
  */
-public interface Prompter {
-
+public enum FlowStateEnum {
     /**
-     * Send inputs to the user, wait for the answer and return the filled result.
-     * Inputs in the result list must be in the same order as in the input list.
-     *
-     * @param inputs inputs for the user
-     * @return resolved inputs
+     * Initial state when script interpreter has not started its work yet.
      */
-    LinkedList<InputAST> resolve(LinkedList<InputAST> inputs);
+    INITIAL,
+    /**
+     * State when script interpreter cannot continue its work because unresolved input elements exist.
+     */
+    WAITING,
+    /**
+     * State when flow does not have unresolved input elements.
+     */
+    READY,
+    /**
+     * State when script interpreter have done its work and the {@link Flow.Result} is ready.
+     */
+    DONE;
 }

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
+
+    <context>
+        <boolean path="foo">true</boolean>
+        <boolean path="foo2">true</boolean>
+        <boolean path="bool-input">true</boolean>
+        <boolean path="bool-input2">true</boolean>
+        <boolean path="bool-input3">true</boolean>
+    </context>
+
+    <step label="User boolean input">
+
+        <input>
+
+            <boolean name="bool-input"
+                     label="User boolean input label">
+                <output if="${foo} == true">
+                    <templates>
+                        <directory>files</directory>
+                        <includes>
+                            <include>file.yaml.mustache</include>
+                        </includes>
+                        <model if="${foo} == false">
+                            <list key="not-readme-sections">
+                                <value order="7" template="mustache">
+                                    the value
+                                </value>
+                            </list>
+                        </model>
+                    </templates>
+                </output>
+            </boolean>
+
+            <boolean name="bool-input2"
+                     label="User boolean input label 2">
+                <output>
+                    <transformation id="t2">
+                        <replace replacement="token2" regex="foo"/>
+                    </transformation>
+                    <templates>
+                        <directory>files1</directory>
+                        <includes>
+                            <include>app.yaml.mustache</include>
+                        </includes>
+                        <model if="${foo2} == true">
+                            <list key="readme-sections" if="${foo2} == false">
+                                <value order="70" template="mustache">
+                                    some value
+                                </value>
+                            </list>
+                            <list key="dependencies">
+                                <value>you depend on ME</value>
+                                <value if="${foo2} == false">wrong value</value>
+                                <list order="101">
+                                    <value>d1</value>
+                                    <value>d2</value>
+                                </list>
+                                <list order="1" if="${foo2} == false">
+                                    <value>wrong d1</value>
+                                    <value>wrong d2</value>
+                                </list>
+                                <map order="10">
+                                    <value key="groupId">io.helidon</value>
+                                    <value key="artifactId">helidon-foo</value>
+                                </map>
+                                <map order="1" if="${foo2} == false">
+                                    <value key="groupId">wrong.io.helidon</value>
+                                    <value key="artifactId">wrong.helidon-foo</value>
+                                </map>
+                            </list>
+                            <map key="foo">
+                                <value key="first">What a foo</value>
+                                <list key="second">
+                                    <value>Oh my foo</value>
+                                    <value>How is the foo?</value>
+                                </list>
+                            </map>
+                            <map key="foo1" if="${foo2} == false">
+                                <value key="firstW">What a foo wrong</value>
+                                <list key="secondW">
+                                    <value>Oh my foo wrong</value>
+                                    <value>How is the foo wrong?</value>
+                                </list>
+                            </map>
+                            <value key="key value" order="100">some value</value>
+                            <value key="wrong key value" order="1" if="${foo2} == false">some wrong value</value>
+                        </model>
+                    </templates>
+                </output>
+            </boolean>
+
+            <boolean name="bool-input3"
+                     label="User boolean input label 3">
+                <output>
+                    <transformation id="t3">
+                        <replace replacement="token3" regex="foo3"/>
+                    </transformation>
+                    <templates>
+                        <directory>files3</directory>
+                        <includes>
+                            <include>app1.yaml.mustache</include>
+                        </includes>
+                        <model if="${foo} == false">
+                            <list key="readme-sections">
+                                <value order="10" template="mustache">
+                                    some value
+                                </value>
+                            </list>
+                        </model>
+                    </templates>
+                    <files transformations="packaged">
+                        <directory>files/src/main/java</directory>
+                        <excludes>
+                            <exclude>**/*.mustache</exclude>
+                        </excludes>
+                    </files>
+                </output>
+            </boolean>
+
+        </input>
+
+    </step>
+</archetype-script>

@@ -18,12 +18,10 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
-import io.helidon.build.archetype.engine.v2.interpreter.Visitable;
-
 /**
  * Base class for context nodes.
  */
-public abstract class ContextNode implements Visitable {
+public abstract class ContextNode {
 
     private final String path;
 

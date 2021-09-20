@@ -16,62 +16,120 @@
 
 package io.helidon.build.archetype.engine.v2.interpreter;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import io.helidon.build.archetype.engine.v2.archive.Archetype;
 import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
-import io.helidon.build.archetype.engine.v2.descriptor.Step;
 
 /**
- * Input graph.
+ * Resolver for the archetype output files.
  */
-public class Flow extends ASTNode {
+public class Flow {
 
-    private final Prompter prompter;
     private final Interpreter interpreter;
     private final Archetype archetype;
     private final ArchetypeDescriptor entryPoint;
-    private final LinkedList<StepAST> resolvedSteps = new LinkedList<>();
-    private final LinkedList<Step> unresolvedSteps = new LinkedList<>();
+    private final LinkedList<StepAST> tree = new LinkedList<>();
+    private FlowState state;
+    private final List<Visitor<ASTNode>> additionalVisitors;
 
-    Flow(Archetype archetype, Prompter prompter) {
-        super("/");
-        this.prompter = prompter;
-        this.archetype = archetype;
-        //todo maybe the path to the entry point can be different
-        entryPoint = archetype.getDescriptor("flavor.xml");
-        interpreter = new Interpreter(prompter, archetype);
+    /**
+     * Returns result.
+     *
+     * @return Flow.Result
+     */
+    public Optional<Flow.Result> result() {
+        return state.result();
     }
 
     /**
-     * Get the steps to build a new Helidon project.
+     * Returns unresolved inputs.
      *
-     * @return generated steps.
+     * @return List of the unresolved inputs
      */
-    public LinkedList<StepAST> steps() {
-        return resolvedSteps;
+    public List<UserInputAST> unresolvedInputs() {
+        return interpreter.unresolvedInputs();
+    }
+
+    /**
+     * Returns Map that contains path to the context node and corresponding context node.
+     *
+     * @return Map
+     */
+    public Map<String, ContextNodeAST> pathToContextNodeMap() {
+        return interpreter.pathToContextNodeMap();
+    }
+
+    Interpreter interpreter() {
+        return interpreter;
+    }
+
+    /**
+     * Returns current state of the Flow.
+     *
+     * @return FlowState
+     */
+    public FlowState state() {
+        return state;
+    }
+
+    void state(FlowState state) {
+        this.state = state;
+    }
+
+    /**
+     * Returns archetype.
+     *
+     * @return archetype
+     */
+    public Archetype archetype() {
+        return archetype;
+    }
+
+    /**
+     * Returns {@code ArchetypeDescriptor} that represents the entry point script.
+     *
+     * @return ArchetypeDescriptor
+     */
+    public ArchetypeDescriptor entryPoint() {
+        return entryPoint;
+    }
+
+    /**
+     * Returns additional visitors used to process nodes in the archetype descriptors.
+     *
+     * @return list of the additional visitors
+     */
+    public List<Visitor<ASTNode>> additionalVisitors() {
+        return additionalVisitors;
+    }
+
+    Flow(Archetype archetype, String startDescriptorPath, List<Visitor<ASTNode>> additionalVisitors) {
+        this.archetype = archetype;
+        this.additionalVisitors = additionalVisitors;
+        entryPoint = archetype.getDescriptor(startDescriptorPath);
+        interpreter = new Interpreter(archetype, additionalVisitors);
+        state = new InitialFlowState(this);
+    }
+
+    LinkedList<StepAST> tree() {
+        return tree;
     }
 
     /**
      * Build the flow, that can be used to create a new Helidon project.
+     *
+     * @param context initial context
+     * @return current state of the flow.
      */
-    public void build() {
-        unresolvedSteps.addAll(getSteps(entryPoint));
-        while (!unresolvedSteps.isEmpty()) {
-            Step step = unresolvedSteps.pop();
-            StepAST stepAST = StepAST.from(step, "/");
-            interpreter.visit(stepAST, this);
-            resolvedSteps.add(stepAST);
-        }
-    }
-
-    private LinkedList<Step> getSteps(ArchetypeDescriptor entryPoint) {
-        return entryPoint.steps() != null ? entryPoint.steps() : new LinkedList<>();
-    }
-
-    @Override
-    public <A> void accept(Visitor<A> visitor, A arg) {
-        visitor.visit(this, arg);
+    public FlowState build(ContextAST context) {
+        state.build(context);
+        return state;
     }
 
     /**
@@ -88,8 +146,9 @@ public class Flow extends ASTNode {
      */
     public static final class Builder {
 
-        private Prompter prompter;
         private Archetype archetype;
+        private String startDescriptorPath = "flavor.xml";
+        private final List<Visitor<ASTNode>> additionalVisitors = new ArrayList<>();
 
         private Builder() {
         }
@@ -106,13 +165,38 @@ public class Flow extends ASTNode {
         }
 
         /**
-         * Sets the {@code prompter} and returns a reference to this Builder so that the methods can be chained together.
+         * Sets a path to the start descriptor and returns a reference to this Builder so that the methods can be chained
+         * together.
          *
-         * @param prompter the {@code prompter} to set
+         * @param startDescriptorPath the {@code startDescriptorPath} to set
          * @return a reference to this Builder
          */
-        public Builder prompter(Prompter prompter) {
-            this.prompter = prompter;
+        public Builder startDescriptorPath(String startDescriptorPath) {
+            this.startDescriptorPath = startDescriptorPath;
+            return this;
+        }
+
+        /**
+         * Add an additional visitor and returns a reference to this Builder so that the methods can be chained
+         * together.
+         *
+         * @param visitor the {@code visitor} to add
+         * @return a reference to this Builder
+         */
+        public Builder addAdditionalVisitor(Visitor<ASTNode> visitor) {
+            additionalVisitors.add(visitor);
+            return this;
+        }
+
+        /**
+         * Add a list of additional visitors and returns a reference to this Builder so that the methods can be chained
+         * together.
+         *
+         * @param visitors the {@code visitors} to add
+         * @return a reference to this Builder
+         */
+        public Builder addAdditionalVisitor(List<Visitor<ASTNode>> visitors) {
+            additionalVisitors.addAll(visitors);
             return this;
         }
 
@@ -125,10 +209,34 @@ public class Flow extends ASTNode {
             if (archetype == null) {
                 throw new InterpreterException("Archetype must be specified.");
             }
-            if (prompter == null) {
-                throw new InterpreterException("Prompter must be specified.");
-            }
-            return new Flow(archetype, prompter);
+            return new Flow(archetype, startDescriptorPath, additionalVisitors);
+        }
+    }
+
+    /**
+     * Final result of the script interpreter work.
+     */
+    public static class Result {
+
+        private final Map<String, ContextNodeAST> context = new HashMap<>();
+        private final List<ASTNode> outputs = new ArrayList<>();
+
+        /**
+         * Returns Map that contains path to the context node and corresponding context node.
+         *
+         * @return map
+         */
+        public Map<String, ContextNodeAST> context() {
+            return context;
+        }
+
+        /**
+         * Returns list of the {@code ContextNodeAST} nodes.
+         *
+         * @return list
+         */
+        public List<ASTNode> outputs() {
+            return outputs;
         }
     }
 }

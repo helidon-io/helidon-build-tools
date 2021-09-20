@@ -24,44 +24,65 @@ import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
 /**
  * Archetype descriptor.
  */
-class XmlDescriptor extends ASTNode implements HelpNode {
+class XmlDescriptor extends ASTNode {
 
     private final Map<String, String> archetypeAttributes = new LinkedHashMap<>();
-    private final StringBuilder help = new StringBuilder();
+    private String help;
 
-    XmlDescriptor(String currentDirectory) {
-        super(currentDirectory);
+    XmlDescriptor(Location location) {
+        super(null, location);
     }
 
     Map<String, String> archetypeAttributes() {
         return archetypeAttributes;
     }
 
-    @Override
+    /**
+     * Get the help.
+     *
+     * @return help
+     */
     public String help() {
-        return help.toString();
+        return help;
     }
 
-    @Override
-    public void addHelp(String help) {
-        this.help.append(help);
+    /**
+     * Set the help content.
+     *
+     * @param help help content
+     */
+    public void help(String help) {
+        this.help = help;
     }
 
-    static XmlDescriptor from(ArchetypeDescriptor descriptor, String currentDirectory) {
-        XmlDescriptor result = new XmlDescriptor(currentDirectory);
+    static XmlDescriptor create(ArchetypeDescriptor descriptor, ASTNode parent, Location location) {
+        XmlDescriptor result = new XmlDescriptor(location);
         descriptor.archetypeAttributes().forEach((key, value) -> result.archetypeAttributes().putIfAbsent(key, value));
-        result.addHelp(descriptor.help());
-        result.children().addAll(transformList(descriptor.contexts(), c -> ContextAST.from(c, currentDirectory)));
-        result.children().addAll(transformList(descriptor.steps(), s -> StepAST.from(s, currentDirectory)));
-        result.children().addAll(transformList(descriptor.inputs(), i -> InputAST.from(i, currentDirectory)));
-        result.children().addAll(transformList(descriptor.sources(), s -> SourceAST.from(s, currentDirectory)));
-        result.children().addAll(transformList(descriptor.execs(), ExecAST::from));
-        result.children().add(OutputAST.from(descriptor.output(), currentDirectory));
+        result.children().addAll(transformList(descriptor.contexts(), c -> ContextAST.create(c, parent, location)));
+        result.help(descriptor.help());
+        result.children().addAll(transformList(descriptor.steps(), s -> StepAST.create(s, parent, location)));
+        result.children().addAll(transformList(descriptor.inputs(), i -> InputAST.create(i, parent, location)));
+        result.children().addAll(transformList(descriptor.sources(), s -> SourceAST.create(s, parent, location)));
+        result.children().addAll(transformList(descriptor.execs(), e -> ExecAST.create(e, parent, location)));
+        if (descriptor.output() != null) {
+            result.children().add(
+                    ConditionalNode.mapConditional(
+                            descriptor.output(),
+                            OutputAST.create(descriptor.output(), result, location),
+                            result,
+                            location
+                    ));
+        }
         return result;
     }
 
     @Override
     public <A> void accept(Visitor<A> visitor, A arg) {
         visitor.visit(this, arg);
+    }
+
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
     }
 }

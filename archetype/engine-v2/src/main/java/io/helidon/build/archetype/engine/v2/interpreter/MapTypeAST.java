@@ -17,6 +17,7 @@
 package io.helidon.build.archetype.engine.v2.interpreter;
 
 import java.util.LinkedList;
+import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.descriptor.MapType;
 
@@ -27,8 +28,8 @@ public class MapTypeAST extends ASTNode implements ConditionalNode {
 
     private int order = 100;
 
-    MapTypeAST(int order, String currentDirectory) {
-        super(currentDirectory);
+    MapTypeAST(int order, ASTNode parent, Location location) {
+        super(parent, location);
         this.order = order;
     }
 
@@ -46,20 +47,34 @@ public class MapTypeAST extends ASTNode implements ConditionalNode {
         visitor.visit(this, arg);
     }
 
-    static MapTypeAST from(MapType map, String currentDirectory) {
-        MapTypeAST result = new MapTypeAST(map.order(), currentDirectory);
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
 
-        LinkedList<Visitable> children = getChildren(map, currentDirectory);
-        ConditionalNode.addChildren(map, result, children, currentDirectory);
+    static MapTypeAST create(MapType mapFrom, ASTNode parent, Location location) {
+        MapTypeAST result = new MapTypeAST(mapFrom.order(), parent, location);
+
+        LinkedList<Visitable> children = getChildren(mapFrom, result, location);
+        result.children().addAll(children);
 
         return result;
     }
 
-    private static LinkedList<Visitable> getChildren(MapType map, String currentDirectory) {
+    private static LinkedList<Visitable> getChildren(MapType map, ASTNode parent, Location location) {
         LinkedList<Visitable> result = new LinkedList<>();
-        result.addAll(map.keyValues());
-        result.addAll(transformList(map.keyLists(), l -> ModelKeyListAST.from(l, currentDirectory)));
-        result.addAll(transformList(map.keyMaps(), m -> ModelKeyMapAST.from(m, currentDirectory)));
+        result.addAll(map.keyValues().stream()
+                .map(v -> ConditionalNode.mapConditional(
+                        v, ModelKeyValueAST.create(v, parent, location), parent, location))
+                .collect(Collectors.toCollection(LinkedList::new)));
+        result.addAll(map.keyLists().stream()
+                .map(l -> ConditionalNode.mapConditional(
+                        l, ModelKeyListAST.create(l, parent, location), parent, location))
+                .collect(Collectors.toCollection(LinkedList::new)));
+        result.addAll(map.keyMaps().stream()
+                .map(m -> ConditionalNode.mapConditional(
+                        m, ModelKeyMapAST.create(m, parent, location), parent, location))
+                .collect(Collectors.toCollection(LinkedList::new)));
         return result;
     }
 }

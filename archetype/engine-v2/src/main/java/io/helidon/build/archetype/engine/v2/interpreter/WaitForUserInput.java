@@ -16,22 +16,5 @@
 
 package io.helidon.build.archetype.engine.v2.interpreter;
 
-/**
- * Help interface for AST nodes.
- */
-public interface HelpNode {
-
-    /**
-     * Get help for the current node.
-     *
-     * @return help
-     */
-    String help();
-
-    /**
-     * Add text with help information to the current node.
-     *
-     * @param help
-     */
-    void addHelp(String help);
+public class WaitForUserInput extends RuntimeException {
 }

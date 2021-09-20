@@ -26,8 +26,8 @@ import io.helidon.build.archetype.engine.v2.descriptor.Output;
  */
 public class OutputAST extends ASTNode implements ConditionalNode {
 
-    OutputAST(String currentDirectory) {
-        super(currentDirectory);
+    OutputAST(ASTNode parent, Location location) {
+        super(parent, location);
     }
 
     @Override
@@ -35,33 +35,43 @@ public class OutputAST extends ASTNode implements ConditionalNode {
         visitor.visit(this, arg);
     }
 
-    static OutputAST from(Output output, String currentDirectory) {
-        OutputAST result = new OutputAST(currentDirectory);
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
 
-        LinkedList<Visitable> children = getChildren(output, currentDirectory);
-        ConditionalNode.addChildren(output, result, children, currentDirectory);
+    static OutputAST create(Output outputFrom, ASTNode parent, Location location) {
+        OutputAST result = new OutputAST(parent, location);
 
+        LinkedList<Visitable> children = getChildren(outputFrom, result, location);
+        result.children().addAll(children);
         return result;
     }
 
-    private static LinkedList<Visitable> getChildren(Output output, String currentDirectory) {
+    private static LinkedList<Visitable> getChildren(Output output, ASTNode parent, Location location) {
         LinkedList<Visitable> result = new LinkedList<>();
-        result.add(ModelAST.from(output.model(), currentDirectory));
-        result.addAll(output.transformations());
+        if (output.model() != null) {
+            result.add(
+                    ConditionalNode.mapConditional(
+                            output.model(),
+                            ModelAST.create(output.model(), parent, location),
+                            parent,
+                            location
+                    ));
+        }
+        result.addAll(transformList(output.transformations(), t -> TransformationAST.create(t, parent, location)));
         result.addAll(output.filesList().stream()
-                .map(fs -> ConditionalNode.mapConditional(fs, fs, currentDirectory))
+                .map(fs -> ConditionalNode.mapConditional(fs, FileSetsAST.create(fs, parent, location), parent, location))
                 .collect(Collectors.toCollection(LinkedList::new)));
         result.addAll(output.fileList().stream()
-                .map(fl -> ConditionalNode.mapConditional(fl, fl, currentDirectory))
+                .map(fl -> ConditionalNode.mapConditional(fl, FileSetAST.create(fl, parent, location), parent, location))
                 .collect(Collectors.toCollection(LinkedList::new)));
         result.addAll(output.template().stream()
-                .map(t -> ConditionalNode.mapConditional(t, t, currentDirectory))
+                .map(t -> ConditionalNode.mapConditional(t, TemplateAST.create(t, parent, location), parent, location))
                 .collect(Collectors.toCollection(LinkedList::new)));
         result.addAll(output.templates().stream()
-                .map(t -> ConditionalNode.mapConditional(t, t, currentDirectory))
+                .map(t -> ConditionalNode.mapConditional(t, TemplatesAST.create(t, parent, location), parent, location))
                 .collect(Collectors.toCollection(LinkedList::new)));
         return result;
     }
-
-
 }

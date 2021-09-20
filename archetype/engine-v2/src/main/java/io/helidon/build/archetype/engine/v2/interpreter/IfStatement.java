@@ -25,8 +25,8 @@ public class IfStatement extends ASTNode {
 
     private final Expression expression;
 
-    IfStatement(String ifExpression, String currentDirectory) {
-        super(currentDirectory);
+    IfStatement(String ifExpression, ASTNode parent, Location location) {
+        super(parent, location);
         expression = Expression.builder().expression(ifExpression).build();
     }
 
@@ -42,5 +42,10 @@ public class IfStatement extends ASTNode {
     @Override
     public <A> void accept(Visitor<A> visitor, A arg) {
         visitor.visit(this, arg);
+    }
+
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
     }
 }

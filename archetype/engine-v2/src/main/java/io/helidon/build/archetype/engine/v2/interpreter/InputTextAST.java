@@ -25,13 +25,14 @@ public class InputTextAST extends InputNodeAST {
 
     private final String placeHolder;
 
-    InputTextAST(String label, String name, String def, String prompt, String placeHolder, String currentDirectory) {
-        super(label, name, def, prompt, currentDirectory);
+    InputTextAST(String label, String name, String def, String prompt, String placeHolder, boolean optional, ASTNode parent,
+                 Location location) {
+        super(label, name, def, prompt, optional, parent, location);
         this.placeHolder = placeHolder;
     }
 
     /**
-     * Get the placeholder.
+     * Get the placeholder (default value).
      *
      * @return placeholder
      */
@@ -44,12 +45,18 @@ public class InputTextAST extends InputNodeAST {
         visitor.visit(this, arg);
     }
 
-    static InputTextAST from(InputText input, String currentDirectory) {
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
+    static InputTextAST create(InputText input, ASTNode parent, Location location) {
         InputTextAST result =
                 new InputTextAST(input.label(), input.name(), input.def(), input.prompt(),
-                        input.placeHolder(),
-                        currentDirectory);
-        result.addHelp(input.help());
+                        input.placeHolder(), input.isOptional(),
+                        parent,
+                        location);
+        result.help(input.help());
         return result;
     }
 }

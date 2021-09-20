@@ -17,6 +17,7 @@
 package io.helidon.build.archetype.engine.v2.interpreter;
 
 import java.io.Serializable;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -27,19 +28,46 @@ import java.util.stream.Collectors;
 public abstract class ASTNode implements Visitable, Serializable {
 
     private final LinkedList<Visitable> children = new LinkedList<>();
-    private final String currentDirectory;
+    private ASTNode parent;
+    private final Location location;
+    private Iterator<Visitable> iterator;
 
-    ASTNode(String currentDirectory) {
-        this.currentDirectory = currentDirectory;
+    ASTNode(ASTNode parent, Location location) {
+        this.location = location;
+        this.parent = parent;
     }
 
     /**
-     * Path associated with the current node (resolved relative to the archetype root directory).
+     * Returns true if the node has more children.
      *
-     * @return currentDirectory
+     * @return true if the node has more children, false otherwise
      */
-    public String currentDirectory() {
-        return currentDirectory;
+    public boolean hasNext() {
+        if (iterator == null) {
+            iterator = children.iterator();
+        }
+        return iterator.hasNext();
+    }
+
+    /**
+     * Returns the next child.
+     *
+     * @return next child
+     */
+    public Visitable next() {
+        if (iterator == null) {
+            iterator = children.iterator();
+        }
+        return iterator.next();
+    }
+
+    /**
+     * Location associated with the current node.
+     *
+     * @return location
+     */
+    public Location location() {
+        return location;
     }
 
     /**
@@ -53,5 +81,112 @@ public abstract class ASTNode implements Visitable, Serializable {
 
     protected static <T, R> LinkedList<R> transformList(LinkedList<T> list, Function<T, R> mapper) {
         return list.stream().map(mapper).collect(Collectors.toCollection(LinkedList::new));
+    }
+
+    /**
+     * Parent AST node for the current node.
+     *
+     * @return parent ASTNode
+     */
+    public ASTNode parent() {
+        return parent;
+    }
+
+    void parent(ASTNode parent) {
+        this.parent = parent;
+    }
+
+    /**
+     * Location of the elements in the AST.
+     */
+    public static class Location {
+
+        private final String currentDirectory;
+        private final String scriptDirectory;
+
+        private Location(String currentDirectory, String scriptDirectory) {
+            this.currentDirectory = currentDirectory;
+            this.scriptDirectory = scriptDirectory;
+        }
+
+        /**
+         * Path to the directory used for resolving paths in the {@code OutputAST} (resolved relative to the archetype root
+         * directory).
+         *
+         * @return current directory
+         */
+        public String currentDirectory() {
+            return currentDirectory;
+        }
+
+        /**
+         * Path to the directory of the current descriptor script (resolved relative to the archetype root directory).
+         *
+         * @return script directory
+         */
+        public String scriptDirectory() {
+            return scriptDirectory;
+        }
+
+        /**
+         * Create a new builder.
+         *
+         * @return a new builder
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /**
+         * {@code Location} builder static inner class.
+         */
+        public static final class Builder {
+
+            private String currentDirectory;
+            private String scriptDirectory;
+
+            private Builder() {
+            }
+
+            /**
+             * Sets the path to the directory used for resolving paths in the {@code OutputAST} and returns a reference to this
+             * Builder so that the methods can be chained together.
+             *
+             * @param currentDirectory the {@code currentDirectory} to set
+             * @return a reference to this Builder
+             */
+            public Builder currentDirectory(String currentDirectory) {
+                this.currentDirectory = currentDirectory;
+                return this;
+            }
+
+            /**
+             * Sets the path to the directory of the current descriptor script and returns a reference to this Builder so that
+             * the methods can be chained
+             * together.
+             *
+             * @param scriptDirectory the {@code scriptDirectory} to set
+             * @return a reference to this Builder
+             */
+            public Builder scriptDirectory(String scriptDirectory) {
+                this.scriptDirectory = scriptDirectory;
+                return this;
+            }
+
+            /**
+             * Returns a {@code Location} built from the parameters previously set.
+             *
+             * @return a {@code Location} built with parameters of this {@code Builder}
+             */
+            public Location build() {
+                if (currentDirectory == null) {
+                    currentDirectory = "";
+                }
+                if (scriptDirectory == null) {
+                    scriptDirectory = "";
+                }
+                return new Location(currentDirectory, scriptDirectory);
+            }
+        }
     }
 }

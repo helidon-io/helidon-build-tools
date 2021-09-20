@@ -23,13 +23,13 @@ import io.helidon.build.archetype.engine.v2.descriptor.Step;
 /**
  * Archetype step AST node.
  */
-public class StepAST extends ASTNode implements ConditionalNode, HelpNode {
+public class StepAST extends ASTNode implements ConditionalNode {
 
     private final String label;
-    private final StringBuilder help = new StringBuilder();
+    private String help;
 
-    StepAST(String label, String currentDirectory) {
-        super(currentDirectory);
+    StepAST(String label, ASTNode parent, Location location) {
+        super(parent, location);
         this.label = label;
     }
 
@@ -42,35 +42,48 @@ public class StepAST extends ASTNode implements ConditionalNode, HelpNode {
         return label;
     }
 
-    @Override
+    /**
+     * Get the help.
+     *
+     * @return help
+     */
     public String help() {
-        return help.toString();
+        return help;
     }
 
-    @Override
-    public void addHelp(String help) {
-        this.help.append(help);
+    /**
+     * Set the help content.
+     *
+     * @param help help content
+     */
+    public void help(String help) {
+        this.help = help;
     }
 
-    static StepAST from(Step step, String currentDirectory) {
-        StepAST result = new StepAST(step.label(), currentDirectory);
-        LinkedList<Visitable> children = getChildren(step, currentDirectory);
-        ConditionalNode.addChildren(step, result, children, currentDirectory);
+    static StepAST create(Step stepFrom, ASTNode parent, Location location) {
+        StepAST result = new StepAST(stepFrom.label(), parent, location);
+        LinkedList<Visitable> children = getChildren(stepFrom, result, location);
+        ConditionalNode.addChildren(stepFrom, result, children, location);
         return result;
     }
 
-    private static LinkedList<Visitable> getChildren(Step step, String currentDirectory) {
+    private static LinkedList<Visitable> getChildren(Step step, ASTNode parent, Location location) {
         LinkedList<Visitable> result = new LinkedList<>();
-        result.addAll(transformList(step.contexts(), c -> ContextAST.from(c, currentDirectory)));
-        result.addAll(transformList(step.execs(), ExecAST::from));
-        result.addAll(transformList(step.sources(), s -> SourceAST.from(s, currentDirectory)));
-        result.addAll(transformList(step.inputs(), i -> InputAST.from(i, currentDirectory)));
+        result.addAll(transformList(step.contexts(), c -> ContextAST.create(c, parent, location)));
+        result.addAll(transformList(step.execs(), e -> ExecAST.create(e, parent, location)));
+        result.addAll(transformList(step.sources(), s -> SourceAST.create(s, parent, location)));
+        result.addAll(transformList(step.inputs(), i -> InputAST.create(i, parent, location)));
         return result;
     }
 
     @Override
     public <A> void accept(Visitor<A> visitor, A arg) {
         visitor.visit(this, arg);
+    }
+
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
     }
 
 }

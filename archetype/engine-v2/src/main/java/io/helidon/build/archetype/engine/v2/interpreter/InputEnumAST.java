@@ -23,8 +23,8 @@ import io.helidon.build.archetype.engine.v2.descriptor.InputEnum;
  */
 public class InputEnumAST extends InputNodeAST {
 
-    InputEnumAST(String label, String name, String def, String prompt, String currentDirectory) {
-        super(label, name, def, prompt, currentDirectory);
+    InputEnumAST(String label, String name, String def, String prompt, boolean optional, ASTNode parent, Location location) {
+        super(label, name, def, prompt, optional, parent, location);
     }
 
     @Override
@@ -32,17 +32,31 @@ public class InputEnumAST extends InputNodeAST {
         visitor.visit(this, arg);
     }
 
-    static InputEnumAST from(InputEnum input, String currentDirectory) {
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
+    static InputEnumAST create(InputEnum inputFrom, ASTNode parent, Location location) {
         InputEnumAST result =
-                new InputEnumAST(input.label(), input.name(), input.def(), input.prompt(), currentDirectory);
-        result.addHelp(input.help());
-        result.children().addAll(transformList(input.contexts(), c -> ContextAST.from(c, currentDirectory)));
-        result.children().addAll(transformList(input.steps(), s -> StepAST.from(s, currentDirectory)));
-        result.children().addAll(transformList(input.inputs(), i -> InputAST.from(i, currentDirectory)));
-        result.children().addAll(transformList(input.sources(), s -> SourceAST.from(s, currentDirectory)));
-        result.children().addAll(transformList(input.execs(), ExecAST::from));
-        result.children().add(OutputAST.from(input.output(), currentDirectory));
-        result.children().addAll(transformList(input.options(), o -> OptionAST.from(o, currentDirectory)));
+                new InputEnumAST(inputFrom.label(), inputFrom.name(), inputFrom.def(), inputFrom.prompt(),
+                        inputFrom.isOptional(), parent, location);
+        result.children().addAll(transformList(inputFrom.contexts(), c -> ContextAST.create(c, result, location)));
+        result.help(inputFrom.help());
+        result.children().addAll(transformList(inputFrom.steps(), s -> StepAST.create(s, result, location)));
+        result.children().addAll(transformList(inputFrom.inputs(), i -> InputAST.create(i, result, location)));
+        result.children().addAll(transformList(inputFrom.sources(), s -> SourceAST.create(s, result, location)));
+        result.children().addAll(transformList(inputFrom.execs(), e -> ExecAST.create(e, result, location)));
+        if (inputFrom.output() != null) {
+            result.children().add(
+                    ConditionalNode.mapConditional(
+                            inputFrom.output(),
+                            OutputAST.create(inputFrom.output(), result, location),
+                            result,
+                            location
+                    ));
+        }
+        result.children().addAll(transformList(inputFrom.options(), o -> OptionAST.create(o, result, location)));
         return result;
     }
 }

@@ -16,8 +16,6 @@
 
 package io.helidon.build.archetype.engine.v2.interpreter;
 
-import java.nio.file.Paths;
-
 import io.helidon.build.archetype.engine.v2.descriptor.Exec;
 
 /**
@@ -27,11 +25,30 @@ public class ExecAST extends ASTNode {
 
     private final String url;
     private final String src;
+    private String help;
 
-    ExecAST(String url, String src, String currentDirectory) {
-        super(currentDirectory);
+    ExecAST(String url, String src, ASTNode parent, Location location) {
+        super(parent, location);
         this.url = url;
         this.src = src;
+    }
+
+    /**
+     * Get the help.
+     *
+     * @return help
+     */
+    public String help() {
+        return help;
+    }
+
+    /**
+     * Set the help content.
+     *
+     * @param help help content
+     */
+    public void help(String help) {
+        this.help = help;
     }
 
     /**
@@ -57,17 +74,17 @@ public class ExecAST extends ASTNode {
         visitor.visit(this, arg);
     }
 
-    /**
-     * Create a new instance of the {@code ExecAST} from the {@code Exec} instance.
-     *
-     * @param exec Exec instance
-     * @return a new instance of the {@code ExecAST}
-     */
-    static ExecAST from(Exec exec) {
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
+
+    static ExecAST create(Exec execFrom, ASTNode parent, Location location) {
         return new ExecAST(
-                exec.url(),
-                exec.src(),
-                Paths.get(exec.src()).getParent().toString()
+                execFrom.url(),
+                execFrom.src(),
+                parent,
+                location
         );
     }
 }

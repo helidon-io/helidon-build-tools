@@ -23,18 +23,32 @@ import io.helidon.build.archetype.engine.v2.descriptor.Context;
  */
 public class ContextAST extends ASTNode {
 
-    ContextAST(String currentDirectory) {
-        super(currentDirectory);
+    ContextAST(ASTNode parent, Location location) {
+        super(parent, location);
     }
 
-    static ContextAST from(Context context, String currentDirectory) {
-        ContextAST result = new ContextAST(currentDirectory);
-        result.children().addAll(context.nodes());
+    /**
+     * Create a new instance.
+     */
+    public ContextAST() {
+        super(null, Location.builder().build());
+    }
+
+    static ContextAST create(Context contextFrom, ASTNode parent, Location location) {
+        ContextAST result = new ContextAST(parent, location);
+        result.children().addAll(transformList(
+                contextFrom.nodes(),
+                n -> ContextNodeASTFactory.create(n, result, location)));
         return result;
     }
 
     @Override
     public <A> void accept(Visitor<A> visitor, A arg) {
         visitor.visit(this, arg);
+    }
+
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
     }
 }

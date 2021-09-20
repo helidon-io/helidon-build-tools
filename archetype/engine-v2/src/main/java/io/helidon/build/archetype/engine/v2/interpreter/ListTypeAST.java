@@ -17,6 +17,7 @@
 package io.helidon.build.archetype.engine.v2.interpreter;
 
 import java.util.LinkedList;
+import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.descriptor.ListType;
 
@@ -27,8 +28,8 @@ public class ListTypeAST extends ASTNode implements ConditionalNode {
 
     private int order = 100;
 
-    ListTypeAST(int order, String currentDirectory) {
-        super(currentDirectory);
+    ListTypeAST(int order, ASTNode parent, Location location) {
+        super(parent, location);
         this.order = order;
     }
 
@@ -46,20 +47,33 @@ public class ListTypeAST extends ASTNode implements ConditionalNode {
         visitor.visit(this, arg);
     }
 
-    static ListTypeAST from(ListType list, String currentDirectory) {
-        ListTypeAST result = new ListTypeAST(list.order(), currentDirectory);
+    @Override
+    public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
+        return visitor.visit(this, arg);
+    }
 
-        LinkedList<Visitable> children = getChildren(list, currentDirectory);
-        ConditionalNode.addChildren(list, result, children, currentDirectory);
+    static ASTNode create(ListType listFrom, ASTNode parent, Location location) {
+        ListTypeAST result = new ListTypeAST(listFrom.order(), parent, location);
 
+        LinkedList<Visitable> children = getChildren(listFrom, result, location);
+        result.children().addAll(children);
         return result;
     }
 
-    private static LinkedList<Visitable> getChildren(ListType list, String currentDirectory) {
+    private static LinkedList<Visitable> getChildren(ListType list, ASTNode parent, Location location) {
         LinkedList<Visitable> result = new LinkedList<>();
-        result.addAll(list.values());
-        result.addAll(transformList(list.maps(), m -> MapTypeAST.from(m, currentDirectory)));
-        result.addAll(transformList(list.lists(), l -> ListTypeAST.from(l, currentDirectory)));
+        result.addAll(list.values().stream()
+                .map(v -> ConditionalNode.mapConditional(
+                        v, ValueTypeAST.create(v, parent, location), parent, location))
+                .collect(Collectors.toCollection(LinkedList::new)));
+        result.addAll(list.maps().stream()
+                .map(m -> ConditionalNode.mapConditional(
+                        m, MapTypeAST.create(m, parent, location), parent, location))
+                .collect(Collectors.toCollection(LinkedList::new)));
+        result.addAll(list.lists().stream()
+                .map(l -> ConditionalNode.mapConditional(
+                        l, ListTypeAST.create(l, parent, location), parent, location))
+                .collect(Collectors.toCollection(LinkedList::new)));
         return result;
     }
 

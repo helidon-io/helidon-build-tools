@@ -18,13 +18,10 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.util.Objects;
 
-import io.helidon.build.archetype.engine.v2.interpreter.Visitable;
-import io.helidon.build.archetype.engine.v2.interpreter.Visitor;
-
 /**
  * Archetype value used in {@link ListType}.
  */
-public class ValueType extends Conditional implements Visitable, Comparable {
+public class ValueType extends Conditional implements Comparable {
 
     private String value;
     private final String url;
@@ -140,11 +137,6 @@ public class ValueType extends Conditional implements Visitable, Comparable {
                 + ", template=" + template()
                 + ", order=" + order()
                 + '}';
-    }
-
-    @Override
-    public <A> void accept(Visitor<A> visitor, A arg) {
-        visitor.visit(this, arg);
     }
 
     @Override

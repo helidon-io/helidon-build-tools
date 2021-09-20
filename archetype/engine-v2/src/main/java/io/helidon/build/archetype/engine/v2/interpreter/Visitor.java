@@ -16,18 +16,6 @@
 
 package io.helidon.build.archetype.engine.v2.interpreter;
 
-import io.helidon.build.archetype.engine.v2.descriptor.ContextBoolean;
-import io.helidon.build.archetype.engine.v2.descriptor.ContextEnum;
-import io.helidon.build.archetype.engine.v2.descriptor.ContextList;
-import io.helidon.build.archetype.engine.v2.descriptor.ContextText;
-import io.helidon.build.archetype.engine.v2.descriptor.FileSet;
-import io.helidon.build.archetype.engine.v2.descriptor.FileSets;
-import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyValue;
-import io.helidon.build.archetype.engine.v2.descriptor.Template;
-import io.helidon.build.archetype.engine.v2.descriptor.Templates;
-import io.helidon.build.archetype.engine.v2.descriptor.Transformation;
-import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
-
 /**
  * Visitor for the  script interpreter.
  *
@@ -36,12 +24,20 @@ import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
 public interface Visitor<A> {
 
     /**
+     * Process {@code XmlDescriptor} element.
+     *
+     * @param input XmlDescriptor
+     * @param arg   argument
+     */
+    void visit(XmlDescriptor input, A arg);
+
+    /**
      * Process {@code Visitable} element.
      *
-     * @param v   Visitable
-     * @param arg argument
+     * @param input Visitable
+     * @param arg   argument
      */
-    void visit(Visitable v, A arg);
+    void visit(Visitable input, A arg);
 
     /**
      * Process {@code StepAST} element.
@@ -116,36 +112,36 @@ public interface Visitor<A> {
     void visit(ContextAST context, A arg);
 
     /**
-     * Process {@code ContextBoolean} element.
+     * Process {@code ContextBooleanAST} element.
      *
-     * @param contextBoolean ContextBoolean
+     * @param contextBoolean ContextBooleanAST
      * @param arg            argument
      */
-    void visit(ContextBoolean contextBoolean, A arg);
+    void visit(ContextBooleanAST contextBoolean, A arg);
 
     /**
-     * Process {@code ContextEnum} element.
+     * Process {@code ContextEnumAST} element.
      *
-     * @param contextEnum ContextEnum
+     * @param contextEnum ContextEnumAST
      * @param arg         argument
      */
-    void visit(ContextEnum contextEnum, A arg);
+    void visit(ContextEnumAST contextEnum, A arg);
 
     /**
-     * Process {@code ContextList} element.
+     * Process {@code ContextListAST} element.
      *
-     * @param contextList ContextList
+     * @param contextList ContextListAST
      * @param arg         argument
      */
-    void visit(ContextList contextList, A arg);
+    void visit(ContextListAST contextList, A arg);
 
     /**
-     * Process {@code ContextText} element.
+     * Process {@code ContextTextAST} element.
      *
-     * @param contextText ContextText
+     * @param contextText ContextTextAST
      * @param arg         argument
      */
-    void visit(ContextText contextText, A arg);
+    void visit(ContextTextAST contextText, A arg);
 
     /**
      * Process {@code OptionAST} element.
@@ -164,44 +160,44 @@ public interface Visitor<A> {
     void visit(OutputAST output, A arg);
 
     /**
-     * Process {@code Transformation} element.
+     * Process {@code TransformationAST} element.
      *
-     * @param transformation Transformation
+     * @param transformation TransformationAST
      * @param arg            argument
      */
-    void visit(Transformation transformation, A arg);
+    void visit(TransformationAST transformation, A arg);
 
     /**
-     * Process {@code FileSets} element.
+     * Process {@code FileSetsAST} element.
      *
-     * @param fileSets FileSets
+     * @param fileSets FileSetsAST
      * @param arg      argument
      */
-    void visit(FileSets fileSets, A arg);
+    void visit(FileSetsAST fileSets, A arg);
 
     /**
-     * Process {@code FileSet} element.
+     * Process {@code FileSetAST} element.
      *
-     * @param fileSet FileSet
+     * @param fileSet FileSetAST
      * @param arg     argument
      */
-    void visit(FileSet fileSet, A arg);
+    void visit(FileSetAST fileSet, A arg);
 
     /**
-     * Process {@code Template} element.
+     * Process {@code TemplateAST} element.
      *
-     * @param template Template
+     * @param template TemplateAST
      * @param arg      argument
      */
-    void visit(Template template, A arg);
+    void visit(TemplateAST template, A arg);
 
     /**
-     * Process {@code Templates} element.
+     * Process {@code TemplatesAST} element.
      *
-     * @param templates Templates
+     * @param templates TemplatesAST
      * @param arg       argument
      */
-    void visit(Templates templates, A arg);
+    void visit(TemplatesAST templates, A arg);
 
     /**
      * Process {@code ModelAST} element.
@@ -220,20 +216,20 @@ public interface Visitor<A> {
     void visit(IfStatement statement, A arg);
 
     /**
-     * Process {@code ModelKeyValue} element.
+     * Process {@code ModelKeyValueAST} element.
      *
-     * @param value ModelKeyValue
+     * @param value ModelKeyValueAST
      * @param arg   argument
      */
-    void visit(ModelKeyValue value, A arg);
+    void visit(ModelKeyValueAST value, A arg);
 
     /**
-     * Process {@code ValueType} element.
+     * Process {@code ValueTypeAST} element.
      *
-     * @param value ValueType
+     * @param value ValueTypeAST
      * @param arg   argument
      */
-    void visit(ValueType value, A arg);
+    void visit(ValueTypeAST value, A arg);
 
     /**
      * Process {@code ModelKeyListAST} element.
