@@ -21,7 +21,7 @@ import java.util.Objects;
 /**
  * Archetype value used in {@link ListType}.
  */
-public class ValueType extends Conditional {
+public class ValueType extends Conditional implements Comparable {
 
     private String value;
     private final String url;
@@ -29,9 +29,19 @@ public class ValueType extends Conditional {
     private final String template;
     private int order = 100;
 
-    ValueType(String url,
-              String file,
-              String template,
+    /**
+     * ValueType constructor.
+     *
+     * @param url           url attribute
+     * @param file          file attribute
+     * @param template      template attribute
+     * @param order         order attribute
+     * @param ifProperties  if attribute
+     */
+    public ValueType(
+            String url,
+            String file,
+            String template,
               int order,
               String ifProperties) {
         super(ifProperties);
@@ -127,5 +137,13 @@ public class ValueType extends Conditional {
                 + ", template=" + template()
                 + ", order=" + order()
                 + '}';
+    }
+
+    @Override
+    public int compareTo(Object value) {
+        if (value instanceof ValueType) {
+            return Integer.compare(this.order, ((ValueType) value).order);
+        }
+        return 0;
     }
 }

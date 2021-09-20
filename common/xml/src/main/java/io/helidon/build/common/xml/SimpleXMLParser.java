@@ -361,10 +361,6 @@ public final class SimpleXMLParser {
             attributes.put(attrNameBuilder.toString(), decode(attrValueBuilder.toString()));
             attrNameBuilder = new StringBuilder();
             attrValueBuilder = new StringBuilder();
-        } else if (hasToken(SINGLE_QUOTE)) {
-            throw new IllegalStateException(String.format(
-                    "Invalid single quote, attribute=%s, name=%s, line: %d, char: %d",
-                    attrNameBuilder, nameBuilder, lineNo, charNo));
         } else {
             validateAttrValueChar(c);
             position++;

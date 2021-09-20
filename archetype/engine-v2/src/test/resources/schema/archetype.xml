@@ -136,6 +136,21 @@
                     <value key="artifactId">helidon-foo</value>
                 </map>
             </list>
+            <map key="build">
+                <map key="plugins">
+                    <list key="plugin">
+                        <map>
+                            <value key="groupId">io.helidon.build-tools</value>
+                            <value key="artifactId">helidon-maven-plugin</value>
+                            <map key="executions">
+                                <map key="execution">
+                                    <value key="id">third-party-license-report</value>
+                                </map>
+                            </map>
+                        </map>
+                    </list>
+                </map>
+            </map>
         </model>
     </output>
 </archetype-script>
