@@ -56,7 +56,7 @@ public class MavenResolver {
      * @return                  targeted file
      * @throws IOException      throw IOException if not present or wrong path
      */
-    public File resolve(String url) throws IOException {
+    private File resolve(String url) throws IOException {
         if (!url.startsWith(PROTOCOL + ":")) {
             throw new IllegalArgumentException("url should be a mvn based url");
         }

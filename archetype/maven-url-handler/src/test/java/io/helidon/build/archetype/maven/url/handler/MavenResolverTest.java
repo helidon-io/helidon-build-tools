@@ -54,13 +54,6 @@ public class MavenResolverTest {
     }
 
     @Test
-    public void testFile() throws IOException {
-        File file = RESOLVER.resolve("mvn://io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT/archetype/helidon-archetype.xml");
-        assertThat(file, is(notNullValue()));
-        assertThat(file.getName(), is(("helidon-archetype.xml")));
-    }
-
-    @Test
     public void testInputStream() throws IOException {
         InputStream is = RESOLVER.getInputStream("mvn://io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT/archetype/helidon-archetype.xml");
         assertThat(is, is(notNullValue()));
