@@ -25,8 +25,16 @@ public class InputTextAST extends InputNodeAST {
 
     private final String placeHolder;
 
-    InputTextAST(String label, String name, String def, String prompt, String placeHolder, boolean optional, ASTNode parent,
-                 Location location) {
+    InputTextAST(
+            String label,
+            String name,
+            String def,
+            String prompt,
+            String placeHolder,
+            boolean optional,
+            ASTNode parent,
+            Location location
+    ) {
         super(label, name, def, prompt, optional, parent, location);
         this.placeHolder = placeHolder;
     }
