@@ -17,9 +17,7 @@
 package io.helidon.build.archetype.maven.url.handler;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * MavenResolve is used to resolve maven url to local repository.
@@ -37,32 +35,17 @@ public class MavenResolver {
     /**
      * Resolve maven artifact as file in local repository.
      *
-     * @param url   url pointing at target file
-     * @return      target file as InputStream or null if not present
-     */
-    public InputStream getInputStream(String url) {
-        try {
-            return new FileInputStream(resolve(url));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    /**
-     * Resolve maven artifact as file in local repository.
-     *
      * @param url               url pointing at target file
      * @return                  targeted file
      * @throws IOException      throw IOException if not present or wrong path
      */
-    private File resolve(String url) throws IOException {
+    File resolve(String url) throws IOException {
         if (!url.startsWith(PROTOCOL + ":")) {
             throw new IllegalArgumentException("url should be a mvn based url");
         }
         url = url.substring((PROTOCOL + "://").length());
         Parser parser = new Parser(url);
-        return resolve(parser.fullPath());
+        return resolve(parser.getArchivePath());
     }
 
     private File resolve(String[] path) throws IOException {

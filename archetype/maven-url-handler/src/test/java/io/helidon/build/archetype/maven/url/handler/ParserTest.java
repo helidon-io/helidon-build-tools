@@ -26,14 +26,63 @@ import static org.hamcrest.Matchers.is;
 public class ParserTest {
 
     @Test
-    public void testParser() throws MalformedURLException {
+    public void testURLVersion() throws MalformedURLException {
         String mvnPath = "io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT/some/useless/directory/helidon-archetype.xml";
         Parser parser = new Parser(mvnPath);
 
         assertThat(parser.getGroupId(), is("io.helidon.archetypes"));
         assertThat(parser.getArtifactId(), is("helidon-archetype"));
         assertThat(parser.getVersion(), is("3.0.0-SNAPSHOT"));
-        assertThat(parser.filePath(), is(new String[]{"some", "useless", "directory", "helidon-archetype.xml"}));
+        assertThat(parser.getPathFromArchive(), is(new String[]{"some", "useless", "directory", "helidon-archetype.xml"}));
+    }
+
+    @Test
+    public void testURLClassifier() throws MalformedURLException {
+        String mvnPath = "io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT:classifier/some/useless/directory/helidon-archetype.xml";
+        Parser parser = new Parser(mvnPath);
+
+        assertThat(parser.getGroupId(), is("io.helidon.archetypes"));
+        assertThat(parser.getArtifactId(), is("helidon-archetype"));
+        assertThat(parser.getVersion(), is("3.0.0-SNAPSHOT"));
+        assertThat(parser.getClassifier(), is("classifier"));
+        assertThat(parser.getPathFromArchive(), is(new String[]{"some", "useless", "directory", "helidon-archetype.xml"}));
+    }
+
+    @Test
+    public void testURLTypeJar() throws MalformedURLException {
+        String mvnPath = "io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT:jar/some/useless/directory/helidon-archetype.xml";
+        Parser parser = new Parser(mvnPath);
+
+        assertThat(parser.getGroupId(), is("io.helidon.archetypes"));
+        assertThat(parser.getArtifactId(), is("helidon-archetype"));
+        assertThat(parser.getVersion(), is("3.0.0-SNAPSHOT"));
+        assertThat(parser.getType(), is("jar"));
+        assertThat(parser.getPathFromArchive(), is(new String[]{"some", "useless", "directory", "helidon-archetype.xml"}));
+    }
+
+    @Test
+    public void testURLTypeZip() throws MalformedURLException {
+        String mvnPath = "io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT:zip/some/useless/directory/helidon-archetype.xml";
+        Parser parser = new Parser(mvnPath);
+
+        assertThat(parser.getGroupId(), is("io.helidon.archetypes"));
+        assertThat(parser.getArtifactId(), is("helidon-archetype"));
+        assertThat(parser.getVersion(), is("3.0.0-SNAPSHOT"));
+        assertThat(parser.getType(), is("zip"));
+        assertThat(parser.getPathFromArchive(), is(new String[]{"some", "useless", "directory", "helidon-archetype.xml"}));
+    }
+
+    @Test
+    public void testURLComplete() throws MalformedURLException {
+        String mvnPath = "io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT:classifier:jar/some/useless/directory/helidon-archetype.xml";
+        Parser parser = new Parser(mvnPath);
+
+        assertThat(parser.getGroupId(), is("io.helidon.archetypes"));
+        assertThat(parser.getArtifactId(), is("helidon-archetype"));
+        assertThat(parser.getVersion(), is("3.0.0-SNAPSHOT"));
+        assertThat(parser.getClassifier(), is("classifier"));
+        assertThat(parser.getType(), is("jar"));
+        assertThat(parser.getPathFromArchive(), is(new String[]{"some", "useless", "directory", "helidon-archetype.xml"}));
     }
 
 }

@@ -17,6 +17,9 @@
 package io.helidon.build.archetype.maven.url.handler;
 
 import java.net.MalformedURLException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Parse the maven url.
@@ -24,19 +27,25 @@ import java.net.MalformedURLException;
 public class Parser {
 
     /**
-     * Default version if none present in the url.
-     */
-    private static final String VERSION_LATEST = "LATEST";
-
-    /**
      * Syntax for the url; to be shown on exception messages.
      */
-    private static final String SYNTAX = "mvn://groupId:artifactId:[version]/.../[file]";
+    private static final String SYNTAX =
+            "mvn://groupId:artifactId:[version]:[classifier (optional)]:[type (optional)]/.../[file]";
 
     /**
      * Final artifact path separator.
      */
     private static final String FILE_SEPARATOR = "/";
+
+    /**
+     * Default artifact type.
+     */
+    private static final String DEFAULT_TYPE = "jar";
+
+    /**
+     * List of supported artifact types.
+     */
+    private static final List<String> SUPPORTED_TYPE = Arrays.asList(DEFAULT_TYPE, "zip");
 
     /**
      * Artifact group id.
@@ -51,12 +60,22 @@ public class Parser {
     /**
      * Artifact version.
      */
-    private String version;
+    private String version = "LATEST";
+
+    /**
+     * Artifact classifier.
+     */
+    private String classifier = null;
+
+    /**
+     * Artifact type.
+     */
+    private String type = "jar";
 
     /**
      * Path from version directory to target file.
      */
-    private String[] filePath;
+    private String[] pathFromArchive;
 
     /**
      * Creates a new protocol parser.
@@ -66,9 +85,7 @@ public class Parser {
      * @throws MalformedURLException if provided path does not comply to expected syntax or an malformed repository URL
      */
     public Parser(String path) throws MalformedURLException {
-        if (path == null) {
-            throw new MalformedURLException("Path cannot be null. Syntax " + SYNTAX);
-        }
+        Objects.requireNonNull(path, "Maven url provided to Parser is null");
         parseArtifactPart(path);
     }
 
@@ -81,33 +98,92 @@ public class Parser {
      */
     private void parseArtifactPart(String part) throws MalformedURLException {
         String[] segments = part.split(":");
-        if (segments.length < 3) {
-            throw new MalformedURLException("Invalid path. Syntax " + SYNTAX);
+
+        if (segments.length > 2) {
+            groupId = segments[0];
+            checkStringHealth(groupId, "groupId");
+
+            artifactId = segments[1];
+            checkStringHealth(artifactId, "artifactId");
+        } else {
+            throw new MalformedURLException("Missing element in maven URL. Syntax " + SYNTAX);
         }
 
-        groupId = segments[0];
-        if (groupId.trim().length() == 0) {
-            throw new MalformedURLException("Invalid groupId. Syntax " + SYNTAX);
+        switch (segments.length) {
+            case 3:
+                parseNoClassifierOrType(segments);
+                break;
+            case 4:
+                parseWithClassifierOrType(segments);
+                break;
+            case 5:
+                parseCompleteUrl(segments);
+                break;
+            default:
+                throw new MalformedURLException("Invalid path. Syntax " + SYNTAX);
+        }
+    }
+
+    private void parseCompleteUrl(String[] segments) throws MalformedURLException {
+        if (segments.length != 5) {
+            throw new MalformedURLException("Invalid. Syntax " + SYNTAX);
+        }
+        version = segments[2];
+        checkStringHealth(version, "version");
+
+        classifier = segments[3];
+        checkStringHealth(classifier, "classifier");
+
+        segments = segments[4].split(FILE_SEPARATOR);
+
+        type = checkTypeHealth(segments[0]) ? segments[0] : DEFAULT_TYPE;
+        checkStringHealth(type, "type");
+
+        pathFromArchive = new String[segments.length - 1];
+        System.arraycopy(segments, 1, pathFromArchive, 0, segments.length - 1);
+    }
+
+    private void parseWithClassifierOrType(String[] segments) throws MalformedURLException {
+        if (segments.length != 4) {
+            throw new MalformedURLException("Invalid. Syntax " + SYNTAX);
         }
 
-        artifactId = segments[1];
-        if (artifactId.trim().length() == 0) {
-            throw new MalformedURLException("Invalid artifactId. Syntax " + SYNTAX);
+        version = segments[2];
+        checkStringHealth(version, "version");
+
+        segments = segments[3].split(FILE_SEPARATOR);
+
+        if (checkTypeHealth(segments[0])) {
+            type = segments[0];
+        } else {
+            classifier = segments[0];
         }
 
+        pathFromArchive = new String[segments.length - 1];
+        System.arraycopy(segments, 1, pathFromArchive, 0, segments.length - 1);
+    }
+
+    private void parseNoClassifierOrType(String[] segments) throws MalformedURLException {
+        if (segments.length != 3) {
+            throw new MalformedURLException("Invalid. Syntax " + SYNTAX);
+        }
         segments = segments[2].split(FILE_SEPARATOR);
 
-        if (segments.length < 2) {
-            throw new MalformedURLException("Invalid version. Syntax " + SYNTAX);
-        }
+        version = segments[0];
+        checkStringHealth(version, "version");
 
-        version = VERSION_LATEST;
-        if (segments[0].trim().length() > 0) {
-            version = segments[0];
-        }
+        pathFromArchive = new String[segments.length - 1];
+        System.arraycopy(segments, 1, pathFromArchive, 0, segments.length - 1);
+    }
 
-        filePath = new String[segments.length - 1];
-        System.arraycopy(segments, 1, filePath, 0, segments.length - 1);
+    private void checkStringHealth(String patient, String patientName) throws MalformedURLException {
+        if (patient.trim().length() == 0) {
+            throw new MalformedURLException("Invalid " + patientName + ". Syntax " + SYNTAX);
+        }
+    }
+
+    private boolean checkTypeHealth(String type) {
+        return type.equals(DEFAULT_TYPE) || type.equals("zip");
     }
 
     /**
@@ -138,12 +214,30 @@ public class Parser {
     }
 
     /**
+     * Returns the artifact classifier.
+     *
+     * @return classifier
+     */
+    public String getClassifier() {
+        return classifier;
+    }
+
+    /**
+     * Returns the artifact type.
+     *
+     * @return type
+     */
+    public String getType() {
+        return type;
+    }
+
+    /**
      * Return file path from version directory.
      *
      * @return file path
      */
-    public String[] filePath() {
-        return filePath;
+    public String[] getPathFromArchive() {
+        return pathFromArchive;
     }
 
     /**
@@ -151,16 +245,27 @@ public class Parser {
      *
      * @return full path
      */
-    public String[] fullPath() {
+    public String[] getArchivePath() {
         String[] groupIdPath = groupId.split("\\.");
-        String[] completePath = new String[2 + groupIdPath.length + filePath.length];
+        int completePathLength = classifier == null
+                ? 2 + groupIdPath.length + pathFromArchive.length
+                : 3 + groupIdPath.length + pathFromArchive.length;
+        int destPosition;
+        String[] completePath = new String[completePathLength];
 
         System.arraycopy(groupIdPath, 0, completePath, 0, groupIdPath.length);
 
         completePath[groupIdPath.length] = artifactId;
         completePath[groupIdPath.length + 1] = version;
 
-        System.arraycopy(filePath, 0, completePath, groupIdPath.length + 2, filePath.length);
+        if (classifier != null) {
+            completePath[groupIdPath.length + 2] = classifier;
+            destPosition = groupIdPath.length + 3;
+        } else {
+            destPosition = groupIdPath.length + 2;
+        }
+
+        System.arraycopy(pathFromArchive, 0, completePath, destPosition, pathFromArchive.length);
 
         return completePath;
     }
