@@ -20,10 +20,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
@@ -93,9 +97,16 @@ public class CLIPrompter implements Prompter {
             String question = "Enter selection (one or more numbers separated by the spaces)";
             printTitle(inputInfo);
 
+            List<Integer> defaultIndexes = new ArrayList<>();
             int defaultIndex = processOptions(inputInfo.options(), inputInfo.defaultValue());
-            String defValue = defaultIndex != -1
-                    ? BoldBlue.apply(String.format("%s", defaultIndex + 1))
+            if (defaultIndex == -1) {
+                defaultIndexes.addAll(processListDefaultValue(inputInfo));
+            } else {
+                defaultIndexes.add(defaultIndex);
+            }
+            String defValue = defaultIndexes.size() > 0
+                    ? BoldBlue.apply(String.format("%s",
+                    defaultIndexes.stream().map(i -> (i + 1) + "").collect(Collectors.joining(", "))))
                     : null;
 
             String response = request(question, defValue);
@@ -103,8 +114,8 @@ public class CLIPrompter implements Prompter {
             lastStepLabel = inputInfo.stepLabel();
 
             if (response == null || response.trim().length() == 0) {
-                if (defaultIndex != -1) {
-                    return List.of(inputInfo.options().get(defaultIndex).value());
+                if (!defaultIndexes.isEmpty()) {
+                    return getListDefaultValues(inputInfo);
                 }
                 return prompt(inputInfo);
             }
@@ -117,6 +128,24 @@ public class CLIPrompter implements Prompter {
         }
     }
 
+    private List<Integer> processListDefaultValue(ListPrompt inputInfo) {
+        if (inputInfo.defaultValue() == null) {
+            return Collections.emptyList();
+        }
+        List<Integer> result = new ArrayList<>();
+        List<String> values = getListDefaultValues(inputInfo);
+        for (int x = 0; x < inputInfo.options().size(); x++) {
+            if (values.contains(inputInfo.options().get(x).value())) {
+                result.add(x);
+            }
+        }
+        return result;
+    }
+
+    private List<String> getListDefaultValues(ListPrompt inputInfo) {
+        return Stream.of(inputInfo.defaultValue().split(",")).map(String::trim).collect(Collectors.toList());
+    }
+
     @Override
     public boolean prompt(BooleanPrompt inputInfo) {
         try {
@@ -127,7 +156,7 @@ public class CLIPrompter implements Prompter {
             String defaultValue = inputInfo.defaultValue() != null && !inputInfo.defaultValue().trim().isEmpty()
                     ? BoldBlue.apply(String.format("%s", inputInfo.defaultValue().trim().toLowerCase()))
                     : null;
-            String question = String.format("%s (yes/no)", inputInfo.label());
+            String question = String.format("%s (yes/no)", getQuestion(inputInfo));
             String response = request(question, defaultValue);
 
             lastStepLabel = inputInfo.stepLabel();
@@ -151,7 +180,11 @@ public class CLIPrompter implements Prompter {
         if (inputInfo.stepLabel() != null && !inputInfo.stepLabel().equals(lastStepLabel)) {
             System.out.println(Bold.apply(inputInfo.stepLabel()));
         }
-        System.out.println(Bold.apply(inputInfo.label()));
+        System.out.println(getQuestion(inputInfo));
+    }
+
+    private String getQuestion(Prompt inputInfo) {
+        return Bold.apply(Optional.ofNullable(inputInfo.prompt()).orElse(inputInfo.label()));
     }
 
     private int processOptions(List<Option> options, String defaultValue) {

@@ -40,4 +40,9 @@ public class DoneFlowState extends FlowState {
     FlowStateEnum type() {
         return FlowStateEnum.DONE;
     }
+
+    @Override
+    boolean canBeGenerated() {
+        return true;
+    }
 }

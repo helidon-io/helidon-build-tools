@@ -57,4 +57,9 @@ public class ReadyFlowState extends FlowState {
     FlowStateEnum type() {
         return FlowStateEnum.READY;
     }
+
+    @Override
+    boolean canBeGenerated() {
+        return true;
+    }
 }

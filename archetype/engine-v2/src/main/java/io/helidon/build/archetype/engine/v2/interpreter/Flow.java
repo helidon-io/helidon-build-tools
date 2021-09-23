@@ -37,6 +37,27 @@ public class Flow {
     private final LinkedList<StepAST> tree = new LinkedList<>();
     private FlowState state;
     private final List<Visitor<ASTNode>> additionalVisitors;
+    private boolean skipOptional;
+
+    /**
+     * Returns the flag that indicates whether the interpreter skips optional inputs and uses their default values
+     * or stops its execution and waits for user input.
+     *
+     * @return true if the interpreter skips optional inputs, false - otherwise.
+     */
+    public boolean skipOptional() {
+        return skipOptional;
+    }
+
+    /**
+     * Set the flag that indicates whether the interpreter has to skip optional inputs and uses their default values or it has
+     * to stop its execution and waits for user input.
+     *
+     * @param skipOptional true if the interpreter has to skip optional inputs, false - otherwise.
+     */
+    public void skipOptional(boolean skipOptional) {
+        this.skipOptional = skipOptional;
+    }
 
     /**
      * Returns result.
@@ -109,11 +130,12 @@ public class Flow {
         return additionalVisitors;
     }
 
-    Flow(Archetype archetype, String startDescriptorPath, List<Visitor<ASTNode>> additionalVisitors) {
+    Flow(Archetype archetype, String startDescriptorPath, boolean skipOptional, List<Visitor<ASTNode>> additionalVisitors) {
         this.archetype = archetype;
         this.additionalVisitors = additionalVisitors;
         entryPoint = archetype.getDescriptor(startDescriptorPath);
-        interpreter = new Interpreter(archetype, additionalVisitors);
+        interpreter = new Interpreter(archetype, startDescriptorPath, skipOptional, additionalVisitors);
+        this.skipOptional = skipOptional;
         state = new InitialFlowState(this);
     }
 
@@ -149,8 +171,20 @@ public class Flow {
         private Archetype archetype;
         private String startDescriptorPath = "flavor.xml";
         private final List<Visitor<ASTNode>> additionalVisitors = new ArrayList<>();
+        private boolean skipOptional = false;
 
         private Builder() {
+        }
+
+        /**
+         * Sets the {@code skipOptional} and returns a reference to this Builder so that the methods can be chained together.
+         *
+         * @param skipOptional skipOptional
+         * @return a reference to this Builder
+         */
+        public Builder skipOptional(boolean skipOptional) {
+            this.skipOptional = skipOptional;
+            return this;
         }
 
         /**
@@ -209,7 +243,7 @@ public class Flow {
             if (archetype == null) {
                 throw new InterpreterException("Archetype must be specified.");
             }
-            return new Flow(archetype, startDescriptorPath, additionalVisitors);
+            return new Flow(archetype, startDescriptorPath, skipOptional, additionalVisitors);
         }
     }
 

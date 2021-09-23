@@ -25,4 +25,6 @@ public abstract class FlowState {
     abstract void build(ContextAST context);
 
     abstract FlowStateEnum type();
+
+    abstract boolean canBeGenerated();
 }

@@ -72,6 +72,16 @@ public class CLIPrompterTest {
     }
 
     @Test
+    public void testInputListWithEmptyUserInputAndTwoDefaultValues() {
+        simulateUserInput("");
+        String defaultValue = "value 1, value 3";
+        List<String> response = prompter.prompt(getListPrompt(false, defaultValue));
+
+        assertThat(response, containsInAnyOrder("value 1", "value 3"));
+        assertThat(response.size(), is(2));
+    }
+
+    @Test
     public void testInputListWithNotEmptyUserInput() {
         simulateUserInput("1 3 ");
         String defaultValue = null;
