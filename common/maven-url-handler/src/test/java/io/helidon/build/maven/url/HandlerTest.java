@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.maven.url.mvn;
+package io.helidon.build.maven.url;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -52,8 +52,8 @@ public class HandlerTest {
 
     @BeforeAll
     static void bootstrap() throws IOException {
-        System.setProperty("io.helidon.archetype.mvn.local.repository", workDir.toString());
-        System.setProperty("java.protocol.handler.pkgs", "io.helidon.build.archetype.maven.url");
+        URL.setURLStreamHandlerFactory(new MavenURLHandlerFactory());
+        System.setProperty("io.helidon.mvn.local.repository", workDir.toString());
         generateZipAndJar();
     }
 
@@ -144,10 +144,10 @@ public class HandlerTest {
         Path destination = directory.resolve(descriptorFileName);
         Path secondDest = directory.resolve("archetype").resolve(descriptorFileName);
         try (
-                InputStream is = HandlerTest.class.getClassLoader().getResourceAsStream(descriptorFileName);
+                InputStream first = HandlerTest.class.getClassLoader().getResourceAsStream(descriptorFileName);
                 InputStream second = HandlerTest.class.getClassLoader().getResourceAsStream(descriptorFileName);
         ) {
-            Files.copy(is, destination, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(first, destination, StandardCopyOption.REPLACE_EXISTING);
             Files.copy(second, secondDest, StandardCopyOption.REPLACE_EXISTING);
         }
     }

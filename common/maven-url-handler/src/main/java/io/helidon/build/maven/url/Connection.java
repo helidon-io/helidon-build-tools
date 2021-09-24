@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.maven.url.mvn;
+package io.helidon.build.maven.url;
 
 import java.io.File;
 import java.io.FileInputStream;

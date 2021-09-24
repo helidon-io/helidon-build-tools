@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.maven.url.mvn;
+package io.helidon.build.maven.url;
 
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -27,7 +28,7 @@ import java.util.Objects;
 public class Parser {
 
     /**
-     * Syntax for the url; to be shown on exception messages.
+     * Syntax for the url to be shown on exception messages.
      */
     private static final String SYNTAX =
             "mvn://groupId:artifactId:[version]:[classifier (optional)]:[type (optional)]/.../[file]";
@@ -184,7 +185,7 @@ public class Parser {
 
     private void checkStringHealth(String patient, String patientName) throws MalformedURLException {
         if (patient.trim().length() == 0) {
-            throw new MalformedURLException("Invalid " + patientName + ". Syntax " + SYNTAX);
+            throw new MalformedURLException(String.format("Invalid %s. Syntax  %s. ", patientName, SYNTAX));
         }
     }
 
@@ -252,22 +253,14 @@ public class Parser {
      * @return full path
      */
     public String[] getArchivePath() {
-        String[] groupIdPath = groupId.split("\\.");
-        int completePathLength = classifier == null
-                ? 2 + groupIdPath.length
-                : 3 + groupIdPath.length;
-        String[] completePath = new String[completePathLength];
-
-        System.arraycopy(groupIdPath, 0, completePath, 0, groupIdPath.length);
-
-        completePath[groupIdPath.length] = artifactId;
-        completePath[groupIdPath.length + 1] = version;
-
+        ArrayList<String> path = new ArrayList<>(Arrays.asList(groupId.split("\\.")));
+        path.add(artifactId);
+        path.add(version);
         if (classifier != null) {
-            completePath[groupIdPath.length + 2] = classifier;
+            path.add(classifier);
         }
-
-        return completePath;
+        String[] pathArray = new String[path.size()];
+        return path.toArray(pathArray);
     }
 
 }
