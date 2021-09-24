@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.maven.url.handler;
+package io.helidon.build.archetype.maven.url.mvn;
 
 import java.net.MalformedURLException;
 import java.util.Arrays;
@@ -75,7 +75,7 @@ public class Parser {
     /**
      * Path from version directory to target file.
      */
-    private String[] pathFromArchive;
+    private String pathFromArchive;
 
     /**
      * Creates a new protocol parser.
@@ -139,8 +139,7 @@ public class Parser {
         type = checkTypeHealth(segments[0]) ? segments[0] : DEFAULT_TYPE;
         checkStringHealth(type, "type");
 
-        pathFromArchive = new String[segments.length - 1];
-        System.arraycopy(segments, 1, pathFromArchive, 0, segments.length - 1);
+        buildPathFromArchive(segments);
     }
 
     private void parseWithClassifierOrType(String[] segments) throws MalformedURLException {
@@ -159,8 +158,7 @@ public class Parser {
             classifier = segments[0];
         }
 
-        pathFromArchive = new String[segments.length - 1];
-        System.arraycopy(segments, 1, pathFromArchive, 0, segments.length - 1);
+        buildPathFromArchive(segments);
     }
 
     private void parseNoClassifierOrType(String[] segments) throws MalformedURLException {
@@ -172,8 +170,16 @@ public class Parser {
         version = segments[0];
         checkStringHealth(version, "version");
 
-        pathFromArchive = new String[segments.length - 1];
-        System.arraycopy(segments, 1, pathFromArchive, 0, segments.length - 1);
+        buildPathFromArchive(segments);
+    }
+
+    private void buildPathFromArchive(String[] segments) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 1; i < segments.length - 1; i++) {
+            builder.append(segments[i]).append("/");
+        }
+        builder.append(segments[segments.length - 1]);
+        pathFromArchive = builder.toString();
     }
 
     private void checkStringHealth(String patient, String patientName) throws MalformedURLException {
@@ -183,7 +189,7 @@ public class Parser {
     }
 
     private boolean checkTypeHealth(String type) {
-        return type.equals(DEFAULT_TYPE) || type.equals("zip");
+        return SUPPORTED_TYPE.contains(type);
     }
 
     /**
@@ -236,7 +242,7 @@ public class Parser {
      *
      * @return file path
      */
-    public String[] getPathFromArchive() {
+    public String getPathFromArchive() {
         return pathFromArchive;
     }
 
@@ -248,9 +254,8 @@ public class Parser {
     public String[] getArchivePath() {
         String[] groupIdPath = groupId.split("\\.");
         int completePathLength = classifier == null
-                ? 2 + groupIdPath.length + pathFromArchive.length
-                : 3 + groupIdPath.length + pathFromArchive.length;
-        int destPosition;
+                ? 2 + groupIdPath.length
+                : 3 + groupIdPath.length;
         String[] completePath = new String[completePathLength];
 
         System.arraycopy(groupIdPath, 0, completePath, 0, groupIdPath.length);
@@ -260,12 +265,7 @@ public class Parser {
 
         if (classifier != null) {
             completePath[groupIdPath.length + 2] = classifier;
-            destPosition = groupIdPath.length + 3;
-        } else {
-            destPosition = groupIdPath.length + 2;
         }
-
-        System.arraycopy(pathFromArchive, 0, completePath, destPosition, pathFromArchive.length);
 
         return completePath;
     }

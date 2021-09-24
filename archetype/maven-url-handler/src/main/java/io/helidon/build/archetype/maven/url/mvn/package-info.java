@@ -14,21 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.maven.url.handler;
-
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLStreamHandler;
-
 /**
- * Maven Url Stream Handler.
+ * Helidon Maven URL Handler.
  */
-public class MavenHandler extends URLStreamHandler {
-
-    @Override
-    protected URLConnection openConnection(URL url) throws IOException {
-        MavenResolver resolver = new MavenResolver();
-        return new Connection(url, resolver);
-    }
-}
+package io.helidon.build.archetype.maven.url.mvn;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.maven.url.handler;
+package io.helidon.build.archetype.maven.url.mvn;
 
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +33,8 @@ public class ParserTest {
         assertThat(parser.getGroupId(), is("io.helidon.archetypes"));
         assertThat(parser.getArtifactId(), is("helidon-archetype"));
         assertThat(parser.getVersion(), is("3.0.0-SNAPSHOT"));
-        assertThat(parser.getPathFromArchive(), is(new String[]{"some", "useless", "directory", "helidon-archetype.xml"}));
+        assertThat(parser.getType(), is("jar"));
+        assertThat(parser.getPathFromArchive(), is("some/useless/directory/helidon-archetype.xml"));
     }
 
     @Test
@@ -45,7 +46,7 @@ public class ParserTest {
         assertThat(parser.getArtifactId(), is("helidon-archetype"));
         assertThat(parser.getVersion(), is("3.0.0-SNAPSHOT"));
         assertThat(parser.getClassifier(), is("classifier"));
-        assertThat(parser.getPathFromArchive(), is(new String[]{"some", "useless", "directory", "helidon-archetype.xml"}));
+        assertThat(parser.getPathFromArchive(), is("some/useless/directory/helidon-archetype.xml"));
     }
 
     @Test
@@ -57,7 +58,7 @@ public class ParserTest {
         assertThat(parser.getArtifactId(), is("helidon-archetype"));
         assertThat(parser.getVersion(), is("3.0.0-SNAPSHOT"));
         assertThat(parser.getType(), is("jar"));
-        assertThat(parser.getPathFromArchive(), is(new String[]{"some", "useless", "directory", "helidon-archetype.xml"}));
+        assertThat(parser.getPathFromArchive(), is("some/useless/directory/helidon-archetype.xml"));
     }
 
     @Test
@@ -69,7 +70,7 @@ public class ParserTest {
         assertThat(parser.getArtifactId(), is("helidon-archetype"));
         assertThat(parser.getVersion(), is("3.0.0-SNAPSHOT"));
         assertThat(parser.getType(), is("zip"));
-        assertThat(parser.getPathFromArchive(), is(new String[]{"some", "useless", "directory", "helidon-archetype.xml"}));
+        assertThat(parser.getPathFromArchive(), is("some/useless/directory/helidon-archetype.xml"));
     }
 
     @Test
@@ -82,7 +83,7 @@ public class ParserTest {
         assertThat(parser.getVersion(), is("3.0.0-SNAPSHOT"));
         assertThat(parser.getClassifier(), is("classifier"));
         assertThat(parser.getType(), is("jar"));
-        assertThat(parser.getPathFromArchive(), is(new String[]{"some", "useless", "directory", "helidon-archetype.xml"}));
+        assertThat(parser.getPathFromArchive(), is("some/useless/directory/helidon-archetype.xml"));
     }
 
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.maven.url.handler;
+package io.helidon.build.archetype.maven.url.mvn;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,6 +25,7 @@ import java.io.IOException;
 public class MavenResolver {
 
     private static final String PROTOCOL = "mvn";
+    private static final String SYSTEM_PROPERTY_LOCAL_REPO = "io.helidon.archetype.mvn.local.repository";
 
     /**
      *  Default Constructor.
@@ -45,16 +46,24 @@ public class MavenResolver {
         }
         url = url.substring((PROTOCOL + "://").length());
         Parser parser = new Parser(url);
-        return resolve(parser.getArchivePath());
+
+        return resolve(parser, parser.getType());
     }
 
-    private File resolve(String[] path) throws IOException {
+    private File resolve(Parser parser, String type) throws IOException {
+        String fileName = parser.getArtifactId() + "-" + parser.getVersion() + "." + parser.getType();
         Visitor visitor = new Visitor(getLocalRepository());
-        return visitor.visit(path);
+        visitor.visit(parser.getArchivePath());
+        return type.equals("jar")
+                ? visitor.visitJar(fileName, parser.getPathFromArchive())
+                : visitor.visitZip(fileName, parser.getPathFromArchive());
     }
 
     private File getLocalRepository() {
-        return new File(System.getProperty("user.home"), ".m2/repository");
+        String local = System.getProperty(SYSTEM_PROPERTY_LOCAL_REPO);
+        return local == null
+                ? new File(System.getProperty("user.home"), ".m2/repository")
+                : new File(local);
     }
 
 }
