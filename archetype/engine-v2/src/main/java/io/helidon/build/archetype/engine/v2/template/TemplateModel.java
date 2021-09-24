@@ -25,7 +25,7 @@ public class TemplateModel {
 
     private Model model;
 
-    TemplateModel() {
+    public TemplateModel() {
         this.model = null;
     }
 

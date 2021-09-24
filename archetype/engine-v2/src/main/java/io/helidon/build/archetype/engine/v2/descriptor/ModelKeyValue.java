@@ -25,12 +25,12 @@ public class ModelKeyValue extends ValueType {
 
     private final String key;
 
-    ModelKeyValue(String key,
-                  String url,
-                  String file,
-                  String template,
-                  int order,
-                  String ifProperties) {
+    public ModelKeyValue(String key,
+                         String url,
+                         String file,
+                         String template,
+                         int order,
+                         String ifProperties) {
         super(url, file, template, order, ifProperties);
         this.key = key;
     }

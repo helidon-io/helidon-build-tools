@@ -25,7 +25,7 @@ public class ModelKeyMap extends MapType {
 
     private final String key;
 
-    ModelKeyMap(String key, int order, String ifProperties) {
+    public ModelKeyMap(String key, int order, String ifProperties) {
         super(order, ifProperties);
         this.key = key;
     }

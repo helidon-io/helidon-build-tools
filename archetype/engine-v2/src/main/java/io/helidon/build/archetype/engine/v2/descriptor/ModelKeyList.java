@@ -25,7 +25,7 @@ public class ModelKeyList extends ListType {
 
     private final String key;
 
-    ModelKeyList(String key, int order, String ifProperties) {
+    public ModelKeyList(String key, int order, String ifProperties) {
         super(order, ifProperties);
         this.key = key;
     }

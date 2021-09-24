@@ -29,7 +29,7 @@ public class MapType extends Conditional {
     private final LinkedList<ModelKeyMap> keyMaps = new LinkedList<>();
     private int order = 100;
 
-    MapType(int order, String ifProperties) {
+    public MapType(int order, String ifProperties) {
         super(ifProperties);
         this.order = order;
     }
