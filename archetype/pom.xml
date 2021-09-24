@@ -33,6 +33,5 @@
     <modules>
         <module>engine-v1</module>
         <module>engine-v2</module>
-        <module>maven-url-handler</module>
     </modules>
 </project>
