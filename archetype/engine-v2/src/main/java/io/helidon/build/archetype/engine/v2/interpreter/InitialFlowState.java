@@ -80,4 +80,9 @@ public class InitialFlowState extends FlowState {
     FlowStateEnum type() {
         return FlowStateEnum.INITIAL;
     }
+
+    @Override
+    boolean canBeGenerated() {
+        return false;
+    }
 }

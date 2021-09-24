@@ -14,17 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.engine.v2.interpreter;
-
-import java.util.Optional;
-
-public abstract class FlowState {
-
-    abstract Optional<Flow.Result> result();
-
-    abstract void build(ContextAST context);
-
-    abstract FlowStateEnum type();
-
-    abstract boolean canBeGenerated();
-}
+/**
+ * Prompter.
+ */
+package io.helidon.build.archetype.engine.v2.prompter;

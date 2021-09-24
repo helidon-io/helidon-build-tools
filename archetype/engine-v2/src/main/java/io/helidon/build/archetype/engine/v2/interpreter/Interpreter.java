@@ -19,6 +19,7 @@ package io.helidon.build.archetype.engine.v2.interpreter;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -38,14 +39,33 @@ public class Interpreter implements Visitor<ASTNode> {
     private final InputResolverVisitor inputResolverVisitor = new InputResolverVisitor();
     private final UserInputVisitor userInputVisitor = new UserInputVisitor();
     private final ContextConvertorVisitor contextConvertorVisitor = new ContextConvertorVisitor();
+    private final ContextNodeCreatorVisitor contextNodeCreatorVisitor = new ContextNodeCreatorVisitor();
     private final List<UserInputAST> unresolvedInputs = new ArrayList<>();
     private final Deque<ASTNode> stack = new ArrayDeque<>();
     private final List<Visitor<ASTNode>> additionalVisitors;
+    private boolean skipOptional;
+    private String startDescriptorPath;
+    private boolean canBeGenerated = false;
 
-    Interpreter(Archetype archetype, List<Visitor<ASTNode>> additionalVisitors) {
+    Interpreter(
+            Archetype archetype,
+            String startDescriptorPath,
+            boolean skipOptional,
+            List<Visitor<ASTNode>> additionalVisitors
+    ) {
         this.archetype = archetype;
         pathToContextNodeMap = new HashMap<>();
         this.additionalVisitors = additionalVisitors;
+        this.startDescriptorPath = startDescriptorPath;
+        this.skipOptional = skipOptional;
+    }
+
+    boolean canBeGenerated() {
+        return canBeGenerated;
+    }
+
+    void skipOptional(boolean skipOptional) {
+        this.skipOptional = skipOptional;
     }
 
     Map<String, ContextNodeAST> pathToContextNodeMap() {
@@ -378,6 +398,12 @@ public class Interpreter implements Visitor<ASTNode> {
 
     private boolean resolve(InputNodeAST input) {
         ContextNodeAST contextNodeAST = pathToContextNodeMap.get(input.path());
+        if (input.isOptional() && skipOptional && contextNodeAST == null) {
+            contextNodeAST = input.accept(contextNodeCreatorVisitor, input);
+            if (contextNodeAST != null) {
+                pathToContextNodeMap.put(contextNodeAST.path(), contextNodeAST);
+            }
+        }
         if (contextNodeAST != null) {
             input.accept(inputResolverVisitor, contextNodeAST);
         }
@@ -393,13 +419,29 @@ public class Interpreter implements Visitor<ASTNode> {
      * interpreting process.
      *
      * @param input                   initial unresolved {@code InputNodeAST} from the AST tree.
-     * @param unresolvedUserInputNode unresolvedUserInputNode that will be send to the user
+     * @param unresolvedUserInputNode unresolvedUserInputNode that will be sent to the user
      */
     private void processUnresolvedInput(InputNodeAST input, InputNodeAST unresolvedUserInputNode) {
         UserInputAST unresolvedInput = UserInputAST.create(input, getParentStep(input));
         unresolvedInput.children().add(unresolvedUserInputNode);
         unresolvedInputs.add(unresolvedInput);
+        if (input.isOptional()) {
+            updateCanBeGenerated();
+        }
         throw new WaitForUserInput();
+    }
+
+    private void updateCanBeGenerated() {
+        if (canBeGenerated) {
+            return;
+        }
+        Flow flow = new Flow(archetype, startDescriptorPath, true, Collections.emptyList());
+        ContextAST context = new ContextAST();
+        context.children().addAll(pathToContextNodeMap.values());
+        FlowState state = flow.build(context);
+        if (state.type() == FlowStateEnum.READY) {
+            canBeGenerated = true;
+        }
     }
 
     private StepAST getParentStep(ASTNode node) {

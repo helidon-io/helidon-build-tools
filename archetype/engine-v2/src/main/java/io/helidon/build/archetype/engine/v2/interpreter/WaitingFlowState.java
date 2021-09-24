@@ -59,4 +59,9 @@ public class WaitingFlowState extends FlowState {
     FlowStateEnum type() {
         return FlowStateEnum.WAITING;
     }
+
+    @Override
+    boolean canBeGenerated() {
+        return flow.interpreter().canBeGenerated();
+    }
 }
