@@ -60,22 +60,22 @@ public class HandlerTest {
     @Test
     public void testMavenUrlJar() throws IOException {
         InputStream is = new URL("mvn://io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT:jar/helidon-archetype.xml").openStream();
-        assertThat(is,  is(notNullValue()));
-        assertThat(CONTENT, is(new String(is.readNBytes(CONTENT.length()))));
+        assertThat(is, is(notNullValue()));
+        assertThat(true, is(new String(is.readNBytes(is.available())).contains(CONTENT)));
     }
 
     @Test
     public void testMavenUrlJarInsideDirectory() throws IOException {
         InputStream is = new URL("mvn://io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT:jar/archetype/helidon-archetype.xml").openStream();
         assertThat(is,  is(notNullValue()));
-        assertThat(CONTENT, is(new String(is.readNBytes(CONTENT.length()))));
+        assertThat(true, is(new String(is.readNBytes(is.available())).contains(CONTENT)));
     }
 
     @Test
     public void testMavenUrlZip() throws IOException {
         InputStream is = new URL("mvn://io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT:zip/archetype/helidon-archetype.xml").openStream();
-        assertThat(is,  is(notNullValue()));
-        assertThat(CONTENT, is(new String(is.readNBytes(CONTENT.length()))));
+        assertThat(is, is(notNullValue()));
+        assertThat(true, is(new String(is.readNBytes(is.available())).contains(CONTENT)));
     }
 
     private static void generateZipAndJar() throws IOException {
