@@ -29,7 +29,7 @@ import java.util.Objects;
  */
 public class Connection extends URLConnection {
 
-    private final MavenResolver resolver;
+    private final MavenURLHandler.MavenResolver resolver;
 
     /**
      * Constructs a URL connection to the specified URL. A connection to
@@ -38,7 +38,7 @@ public class Connection extends URLConnection {
      * @param url       the specified URL.
      * @param resolver  resolver to use to resolve url.
      */
-    protected Connection(URL url, MavenResolver resolver) {
+    protected Connection(URL url, MavenURLHandler.MavenResolver resolver) {
         super(url);
         Objects.requireNonNull(url, "URL provided is null");
         Objects.requireNonNull(resolver, "Maven resolver provided is null");

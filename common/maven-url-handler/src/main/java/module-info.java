@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-module io.helidon.build.archetype.maven.url.handler {
+module io.helidon.build.maven.url {
     requires java.base;
     requires java.logging;
+
+    exports io.helidon.build.maven.url;
 }
