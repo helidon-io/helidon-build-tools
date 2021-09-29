@@ -47,12 +47,12 @@ public class HandlerTest {
     private static final String ZIP_NAME = "helidon-archetype-3.0.0-SNAPSHOT.zip";
     private static final String JAR_NAME = "helidon-archetype-3.0.0-SNAPSHOT.jar";
 
-    @TempDir
     static Path workDir;
 
     @BeforeAll
     static void bootstrap() throws IOException {
         URL.setURLStreamHandlerFactory(new MavenURLHandlerFactory());
+        workDir = Files.createTempDirectory("archive");
         System.setProperty("io.helidon.mvn.local.repository", workDir.toString());
         generateZipAndJar();
     }
