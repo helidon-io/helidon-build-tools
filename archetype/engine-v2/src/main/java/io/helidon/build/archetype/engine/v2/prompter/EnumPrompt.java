@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import io.helidon.build.archetype.engine.v2.interpreter.ContextEnumAST;
+import io.helidon.build.archetype.engine.v2.interpreter.ContextNodeAST;
 import io.helidon.build.archetype.engine.v2.interpreter.InputEnumAST;
 import io.helidon.build.archetype.engine.v2.interpreter.OptionAST;
 import io.helidon.build.archetype.engine.v2.interpreter.UserInputAST;
@@ -27,7 +29,7 @@ import io.helidon.build.archetype.engine.v2.interpreter.UserInputAST;
 /**
  * Prompt of the one value from the enum.
  */
-public class EnumPrompt extends Prompt {
+public class EnumPrompt extends Prompt<String> {
 
     private final List<Option> options = new ArrayList<>();
 
@@ -40,9 +42,10 @@ public class EnumPrompt extends Prompt {
             String def,
             String prompt,
             List<Option> options,
-            boolean optional
+            boolean optional,
+            boolean canBeGenerated
     ) {
-        super(stepLabel, stepHelp, help, label, name, def, prompt, optional);
+        super(stepLabel, stepHelp, help, label, name, def, prompt, optional, canBeGenerated);
         if (options != null) {
             this.options.addAll(options);
         }
@@ -64,6 +67,19 @@ public class EnumPrompt extends Prompt {
      */
     public static EnumPrompt.Builder builder() {
         return new EnumPrompt.Builder();
+    }
+
+    @Override
+    public String accept(Prompter prompter) {
+        return prompter.prompt(this);
+    }
+
+    @Override
+    public ContextNodeAST acceptAndConvert(Prompter prompter, String path) {
+        String value = prompter.prompt(this);
+        ContextEnumAST result = new ContextEnumAST(path);
+        result.value(value);
+        return result;
     }
 
     public static class Builder extends Prompt.Builder<EnumPrompt, EnumPrompt.Builder> {
@@ -127,7 +143,8 @@ public class EnumPrompt extends Prompt {
                     defaultValue(),
                     prompt(),
                     options,
-                    optional()
+                    optional(),
+                    canBeGenerated()
             );
         }
     }

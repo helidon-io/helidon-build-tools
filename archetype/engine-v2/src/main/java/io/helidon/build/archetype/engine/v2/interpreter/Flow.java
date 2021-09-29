@@ -57,6 +57,16 @@ public class Flow {
      */
     public void skipOptional(boolean skipOptional) {
         this.skipOptional = skipOptional;
+        interpreter.skipOptional(skipOptional);
+    }
+
+    /**
+     * Get the mark that indicates whether the project can be generated if optional inputs will be skipped.
+     *
+     * @return true if the project can be generated if optional inputs will be skipped, false - otherwise.
+     */
+    public boolean canBeGenerated() {
+        return state().canBeGenerated();
     }
 
     /**

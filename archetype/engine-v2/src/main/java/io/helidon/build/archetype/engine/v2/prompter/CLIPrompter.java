@@ -35,9 +35,25 @@ import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
 /**
  * Prompter that uses CLI for input/output.
  */
-public class CLIPrompter implements Prompter {
+public class CLIPrompter extends DefaultPrompterImpl {
 
     private String lastStepLabel;
+
+    /**
+     * Create a new instance of the class.
+     *
+     * @param skipOptional true if the interpreter has to skip optional inputs, false - otherwise.
+     */
+    public CLIPrompter(boolean skipOptional) {
+        super(skipOptional);
+    }
+
+    /**
+     * Create a new instance of the class.
+     */
+    public CLIPrompter() {
+        super(false);
+    }
 
     @Override
     public String prompt(TextPrompt inputInfo) {

@@ -54,4 +54,11 @@ public interface Prompter {
      * @return user input (true if user chose yes, no - otherwise)
      */
     boolean prompt(BooleanPrompt inputInfo);
+
+    /**
+     * Indicates if interpreter has to skip optional inputs.
+     *
+     * @return true if interpreter has to skip optional inputs, false - otherwise.
+     */
+    boolean skipOptional();
 }

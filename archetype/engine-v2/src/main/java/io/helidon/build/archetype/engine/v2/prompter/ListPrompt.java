@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import io.helidon.build.archetype.engine.v2.interpreter.ContextListAST;
+import io.helidon.build.archetype.engine.v2.interpreter.ContextNodeAST;
 import io.helidon.build.archetype.engine.v2.interpreter.InputListAST;
 import io.helidon.build.archetype.engine.v2.interpreter.OptionAST;
 import io.helidon.build.archetype.engine.v2.interpreter.UserInputAST;
@@ -27,7 +29,7 @@ import io.helidon.build.archetype.engine.v2.interpreter.UserInputAST;
 /**
  * Prompt of the one or more values from the list.
  */
-public class ListPrompt extends Prompt {
+public class ListPrompt extends Prompt<List<String>> {
 
     private final String min;
     private final String max;
@@ -44,9 +46,10 @@ public class ListPrompt extends Prompt {
             String min,
             String max,
             List<Option> options,
-            boolean optional
+            boolean optional,
+            boolean canBeGenerated
     ) {
-        super(stepLabel, stepHelp, help, label, name, def, prompt, optional);
+        super(stepLabel, stepHelp, help, label, name, def, prompt, optional, canBeGenerated);
         this.max = max;
         this.min = min;
         if (options != null) {
@@ -88,6 +91,19 @@ public class ListPrompt extends Prompt {
      */
     public static ListPrompt.Builder builder() {
         return new ListPrompt.Builder();
+    }
+
+    @Override
+    public List<String> accept(Prompter prompter) {
+        return prompter.prompt(this);
+    }
+
+    @Override
+    public ContextNodeAST acceptAndConvert(Prompter prompter, String path) {
+        List<String> values = prompter.prompt(this);
+        ContextListAST result = new ContextListAST(path);
+        result.values().addAll(values);
+        return result;
     }
 
     public static class Builder extends Prompt.Builder<ListPrompt, ListPrompt.Builder> {
@@ -179,7 +195,8 @@ public class ListPrompt extends Prompt {
                     min,
                     max,
                     options,
-                    optional()
+                    optional(),
+                    canBeGenerated()
             );
         }
     }

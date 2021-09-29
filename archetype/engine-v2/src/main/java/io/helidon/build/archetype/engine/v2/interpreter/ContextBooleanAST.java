@@ -52,7 +52,7 @@ public class ContextBooleanAST extends ContextNodeAST {
      *
      * @param bool boolean to be set
      */
-    void bool(boolean bool) {
+    public void bool(boolean bool) {
         this.bool = bool;
     }
 

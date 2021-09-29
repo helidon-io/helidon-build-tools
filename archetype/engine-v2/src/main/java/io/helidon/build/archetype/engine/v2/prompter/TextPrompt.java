@@ -16,13 +16,15 @@
 
 package io.helidon.build.archetype.engine.v2.prompter;
 
+import io.helidon.build.archetype.engine.v2.interpreter.ContextNodeAST;
+import io.helidon.build.archetype.engine.v2.interpreter.ContextTextAST;
 import io.helidon.build.archetype.engine.v2.interpreter.InputTextAST;
 import io.helidon.build.archetype.engine.v2.interpreter.UserInputAST;
 
 /**
  * Prompt of the text value.
  */
-public class TextPrompt extends Prompt {
+public class TextPrompt extends Prompt<String> {
 
     private final String placeHolder;
 
@@ -35,9 +37,10 @@ public class TextPrompt extends Prompt {
             String def,
             String prompt,
             String placeHolder,
-            boolean optional
+            boolean optional,
+            boolean canBeGenerated
     ) {
-        super(stepLabel, stepHelp, help, label, name, def, prompt, optional);
+        super(stepLabel, stepHelp, help, label, name, def, prompt, optional, canBeGenerated);
         this.placeHolder = placeHolder;
     }
 
@@ -57,6 +60,19 @@ public class TextPrompt extends Prompt {
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    public String accept(Prompter prompter) {
+        return prompter.prompt(this);
+    }
+
+    @Override
+    public ContextNodeAST acceptAndConvert(Prompter prompter, String path) {
+        String value = prompter.prompt(this);
+        ContextTextAST result = new ContextTextAST(path);
+        result.text(value);
+        return result;
     }
 
     public static class Builder extends Prompt.Builder<TextPrompt, Builder> {
@@ -112,7 +128,8 @@ public class TextPrompt extends Prompt {
                     defaultValue(),
                     prompt(),
                     placeHolder,
-                    optional()
+                    optional(),
+                    canBeGenerated()
             );
         }
     }

@@ -37,7 +37,7 @@ public class DoneFlowState extends FlowState {
     }
 
     @Override
-    FlowStateEnum type() {
+    public FlowStateEnum type() {
         return FlowStateEnum.DONE;
     }
 
