@@ -308,6 +308,8 @@ public final class InitCommand extends BaseCommand {
             } catch (Metadata.UpdateFailed e) {
                 Log.info(e.getMessage());
                 failed("$(italic Cannot lookup version, please specify with --version option.)");
+            } catch (Plugins.PluginFailedUnchecked e) {
+                failed("$(italic Cannot lookup version, please specify with --version option.)");
             } catch (Exception e) {
                 Log.info("$(italic,red %s)", e.getMessage());
                 failed("$(italic Cannot lookup version, please specify with --version option.)");

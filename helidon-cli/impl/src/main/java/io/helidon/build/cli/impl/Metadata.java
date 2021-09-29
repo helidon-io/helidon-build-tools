@@ -532,12 +532,12 @@ public class Metadata {
     }
 
     /**
-     * Update failed exception.
+     * Update failed checked exception.
      * This is a checked exception by design to ensure a proper error handling.
      */
     public static class UpdateFailed extends Exception {
 
-        private UpdateFailed(Throwable ex) {
+        private UpdateFailed(Plugins.PluginFailed ex) {
             super(ex.getMessage(), ex);
         }
     }

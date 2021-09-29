@@ -52,7 +52,7 @@ class ArchetypeBrowser {
         ArchetypeCatalog catalog = null;
         try {
             catalog = metadata.catalogOf(requireSupportedHelidonVersion(helidonVersion));
-        } catch (Metadata.UpdateFailed e) {
+        } catch (Metadata.UpdateFailed | Plugins.PluginFailedUnchecked e) {
             Requirements.failed(HELIDON_VERSION_NOT_FOUND, helidonVersion);
         }
         this.catalog = catalog;

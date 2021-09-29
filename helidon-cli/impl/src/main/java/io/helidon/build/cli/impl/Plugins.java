@@ -223,7 +223,7 @@ public class Plugins {
             if (containsUnsupportedClassVersionError(stdErr)) {
                 unsupportedJavaVersion();
             } else {
-                throw new PluginFailed(String.join(EOL, error.monitor().output()));
+                throw new PluginFailedUnchecked(String.join(EOL, error.monitor().output()));
             }
         } catch (ProcessMonitor.ProcessTimeoutException error) {
             throw new PluginFailed(pluginName + TIMED_OUT_SUFFIX);
@@ -237,9 +237,26 @@ public class Plugins {
     }
 
     /**
-     * Plugin failure.
+     * Plugin failure unchecked exception.
+     * This is a runtime exception used when the error has already been logged.
+     *
+     * @see PluginFailed for the checked variant
+     */
+    public static class PluginFailedUnchecked extends RuntimeException {
+
+        private PluginFailedUnchecked(String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * Plugin failure checked exception.
+     * This is a checked exception by design to ensure a proper error handling.
+     *
+     * @see PluginFailedUnchecked for the unchecked variant
      */
     public static class PluginFailed extends Exception {
+
         private PluginFailed(String message) {
             super(message);
         }

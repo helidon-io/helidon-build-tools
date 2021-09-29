@@ -184,6 +184,8 @@ public abstract class BaseCommand implements CommandExecution {
                 Log.debug("unable to lookup CLI plugin version for Helidon version %s: %s", helidonVersion, e.getMessage());
             } catch (RequirementFailure e) {
                 Log.debug("CLI plugin version not specified for Helidon version %s: %s", helidonVersion);
+            } catch (Plugins.PluginFailedUnchecked e) {
+                // already logged
             } catch (Exception e) {
                 Log.debug("unable to lookup CLI plugin version for Helidon version %s: %s", helidonVersion, e.toString());
             }

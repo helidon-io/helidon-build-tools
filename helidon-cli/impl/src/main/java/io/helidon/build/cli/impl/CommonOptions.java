@@ -155,6 +155,8 @@ final class CommonOptions {
             }
         } catch (Metadata.UpdateFailed e) {
             Log.debug("check for updates failed: %s", e.getMessage());
+        } catch (Plugins.PluginFailedUnchecked e) {
+            // already logged
         } catch (Exception e) {
             Log.debug("check for updates failed: %s", e.toString());
         }
@@ -167,6 +169,8 @@ final class CommonOptions {
             return notes;
         } catch (Metadata.UpdateFailed e) {
             Log.debug("accessing release notes for %s failed: %s", latestHelidonVersion, e.getMessage());
+        } catch (Plugins.PluginFailedUnchecked e) {
+            Log.debug("accessing release notes for %s failed", latestHelidonVersion);
         } catch (Exception e) {
             Log.debug("accessing release notes for %s failed: %s", latestHelidonVersion, e.toString());
         }
