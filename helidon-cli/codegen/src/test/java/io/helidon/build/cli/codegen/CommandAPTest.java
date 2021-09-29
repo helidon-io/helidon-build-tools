@@ -25,9 +25,9 @@ import io.helidon.build.cli.codegen.CompilerHelper.JavaSourceFromString;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.cli.codegen.Unchecked.unchecked;
 import static io.helidon.build.util.Strings.normalizeNewLines;
 import static io.helidon.build.util.Strings.read;
+import static io.helidon.build.util.Unchecked.unchecked;
 import static java.nio.file.Files.list;
 import static java.nio.file.Files.readString;
 import static org.hamcrest.MatcherAssert.assertThat;

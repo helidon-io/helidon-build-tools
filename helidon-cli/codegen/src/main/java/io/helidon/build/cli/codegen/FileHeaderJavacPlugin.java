@@ -25,7 +25,7 @@ import java.util.Map.Entry;
 
 import javax.tools.JavaFileObject;
 
-import io.helidon.build.cli.codegen.Unchecked.CheckedSupplier;
+import io.helidon.build.util.Unchecked.CheckedSupplier;
 
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;

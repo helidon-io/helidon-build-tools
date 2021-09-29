@@ -124,9 +124,10 @@ final class CommonOptions {
                 Log.debug("using metadata url %s", metadataUrl);
             }
             metadata = Metadata.builder()
-                               .url(metadataUrl)
-                               .updateFrequency(config.checkForUpdatesIntervalHours())
-                               .build();
+                    .url(metadataUrl)
+                    .debugPlugin(debug)
+                    .updateFrequency(config.checkForUpdatesIntervalHours())
+                    .build();
         }
         return metadata;
     }
@@ -152,8 +153,10 @@ final class CommonOptions {
             } else {
                 Log.debug("no update available");
             }
-        } catch (Plugins.PluginFailed ignore) {
-            // message has already been logged
+        } catch (Metadata.UpdateFailed e) {
+            Log.debug("check for updates failed: %s", e.getMessage());
+        } catch (Plugins.PluginFailedUnchecked e) {
+            // already logged
         } catch (Exception e) {
             Log.debug("check for updates failed: %s", e.toString());
         }
@@ -164,8 +167,10 @@ final class CommonOptions {
             Map<Object, Object> notes = new LinkedHashMap<>();
             metadata().cliReleaseNotesOf(latestHelidonVersion, sinceCliVersion).forEach((v, m) -> notes.put("    " + v, m));
             return notes;
-        } catch (Plugins.PluginFailed e) {
+        } catch (Metadata.UpdateFailed e) {
             Log.debug("accessing release notes for %s failed: %s", latestHelidonVersion, e.getMessage());
+        } catch (Plugins.PluginFailedUnchecked e) {
+            Log.debug("accessing release notes for %s failed", latestHelidonVersion);
         } catch (Exception e) {
             Log.debug("accessing release notes for %s failed: %s", latestHelidonVersion, e.toString());
         }

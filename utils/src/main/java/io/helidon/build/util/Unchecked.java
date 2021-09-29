@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.cli.codegen;
+package io.helidon.build.util;
 
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 /**
  * Utility to deal with checked exceptions in lambdas.
  */
-interface Unchecked {
+public interface Unchecked {
 
     /**
      * Checked consumer.
