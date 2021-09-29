@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import org.apache.maven.lifecycle.DefaultLifecycles;
 import org.apache.maven.lifecycle.LifecycleMappingDelegate;
 import org.apache.maven.lifecycle.internal.DefaultLifecycleMappingDelegate;
 import org.apache.maven.lifecycle.internal.MojoDescriptorCreator;
+import org.apache.maven.lifecycle.internal.MojoExecutor;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -125,6 +126,12 @@ public class DevMojo extends AbstractMojo {
     private BuildPluginManager plugins;
 
     /**
+     * The Maven MojoExecutor component.
+     */
+    @Component
+    private MojoExecutor mojoExecutor;
+
+    /**
      * The Maven MojoDescriptorCreated component, used to resolve
      * plugin prefixes.
      */
@@ -182,8 +189,8 @@ public class DevMojo extends AbstractMojo {
         final DevLoopBuildConfig config = devLoop == null ? new DevLoopBuildConfig() : devLoop;
         config.validate();
         if (resolve) {
-            final MavenEnvironment env = new MavenEnvironment(project, session, mojoDescriptorCreator, defaultLifeCycles,
-                                                              standardDelegate, delegates, plugins);
+            final MavenEnvironment env = new MavenEnvironment(project, session, mojoDescriptorCreator,
+                    defaultLifeCycles, standardDelegate, delegates, plugins, mojoExecutor);
             final MavenGoalReferenceResolver resolver = new MavenGoalReferenceResolver(env);
             config.resolve(resolver);
         }
