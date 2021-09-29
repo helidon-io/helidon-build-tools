@@ -57,9 +57,9 @@ import io.helidon.build.cli.codegen.AST.TypeDeclaration;
 import io.helidon.build.cli.codegen.AST.Value;
 import io.helidon.build.cli.codegen.AST.ValueCast;
 import io.helidon.build.cli.codegen.AST.ValueRef;
-import io.helidon.build.cli.codegen.Unchecked.CheckedConsumer;
+import io.helidon.build.util.Unchecked.CheckedConsumer;
 
-import static io.helidon.build.cli.codegen.Unchecked.unchecked;
+import static io.helidon.build.util.Unchecked.unchecked;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;

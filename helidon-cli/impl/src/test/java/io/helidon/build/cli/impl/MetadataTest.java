@@ -52,6 +52,7 @@ import static io.helidon.build.cli.impl.TestMetadata.TestVersion.RC2;
 import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC1;
 import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC2;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
+import static io.helidon.build.util.Unchecked.unchecked;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -400,7 +401,7 @@ public class MetadataTest extends MetadataTestBase {
 
         // Make the initial catalog request and validate the result
 
-        final Runnable request = () -> catalogRequest(VERSION_RC2, true);
+        final Runnable request = unchecked(() -> catalogRequest(VERSION_RC2, true));
         assertInitialRequestPerformsUpdate(request, DEFAULT_UPDATE_FREQUENCY, HOURS, VERSION_RC2, RC2_ETAG, false);
 
         // Now request the catalog again and make sure we do no updates

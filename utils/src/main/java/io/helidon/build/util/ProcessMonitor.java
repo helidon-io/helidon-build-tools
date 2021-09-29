@@ -72,6 +72,7 @@ public final class ProcessMonitor {
      * Builder for a {@link ProcessMonitor}.
      */
     public static final class Builder {
+
         private ProcessBuilder builder;
         private String description;
         private boolean capture;

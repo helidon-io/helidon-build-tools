@@ -156,7 +156,11 @@ public final class InfoCommand extends BaseCommand {
         log("User Config", userConfigProps, maxWidth);
         log("Project Config", projectProps, maxWidth);
         log("General", buildProps, maxWidth);
-        Plugins.execute("GetInfo", pluginArgs(maxWidth), 5, Log::info);
+        try {
+            Plugins.execute("GetInfo", pluginArgs(maxWidth), 5, Log::info);
+        } catch (Plugins.PluginFailed e) {
+            Log.error(e, "Unable to get system info");
+        }
         log("Metadata", metaProps, maxWidth);
         log("System Properties", systemProps, maxWidth);
         log("Environment Variables", envVars, maxWidth);

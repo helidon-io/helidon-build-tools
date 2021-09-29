@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.cli.impl.InitCommand.Flavor;
-import io.helidon.build.cli.impl.Plugins.PluginFailed;
 import io.helidon.build.util.Requirements;
 
 import static io.helidon.build.cli.impl.CommandRequirements.requireSupportedHelidonVersion;
@@ -53,7 +52,7 @@ class ArchetypeBrowser {
         ArchetypeCatalog catalog = null;
         try {
             catalog = metadata.catalogOf(requireSupportedHelidonVersion(helidonVersion));
-        } catch (PluginFailed e) {
+        } catch (Metadata.UpdateFailed e) {
             Requirements.failed(HELIDON_VERSION_NOT_FOUND, helidonVersion);
         }
         this.catalog = catalog;

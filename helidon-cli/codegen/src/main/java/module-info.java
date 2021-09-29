@@ -22,6 +22,7 @@ import io.helidon.build.cli.codegen.FileHeaderJavacPlugin;
  */
 module io.helidon.build.cli.codegen {
     requires io.helidon.build.cli.harness;
+    requires io.helidon.build.util;
     requires java.compiler;
     provides javax.annotation.processing.Processor with CommandAP;
     provides com.sun.source.util.Plugin with FileHeaderJavacPlugin;

@@ -158,6 +158,7 @@ public final class InitCommand extends BaseCommand {
         // Need Helidon version and flavor to proceed
         if (!batch) {
             if (helidonVersion == null) {
+                //noinspection ConstantConditions
                 helidonVersion = prompt("Helidon version", helidonVersion);
             }
             String[] flavorOptions = new String[]{"SE", "MP"};
@@ -304,7 +305,7 @@ public final class InitCommand extends BaseCommand {
             try {
                 version = metadata.latestVersion(true).toString();
                 Log.debug("Latest Helidon version found: %s", version);
-            } catch (Plugins.PluginFailed e) {
+            } catch (Metadata.UpdateFailed e) {
                 Log.info(e.getMessage());
                 failed("$(italic Cannot lookup version, please specify with --version option.)");
             } catch (Exception e) {
