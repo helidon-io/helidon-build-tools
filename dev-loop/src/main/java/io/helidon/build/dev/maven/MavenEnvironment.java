@@ -15,15 +15,19 @@
  */
 package io.helidon.build.dev.maven;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import io.helidon.build.util.Strings;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.lifecycle.DefaultLifecycles;
+import org.apache.maven.lifecycle.Lifecycle;
 import org.apache.maven.lifecycle.LifecycleExecutionException;
 import org.apache.maven.lifecycle.LifecycleMappingDelegate;
+import org.apache.maven.lifecycle.LifecyclePhaseNotFoundException;
 import org.apache.maven.lifecycle.internal.MojoDescriptorCreator;
 import org.apache.maven.lifecycle.internal.MojoExecutor;
 import org.apache.maven.lifecycle.internal.ProjectIndex;
@@ -47,6 +51,7 @@ import static java.util.Objects.requireNonNull;
  * An accessor for various Maven components.
  */
 public class MavenEnvironment {
+
     private final MavenProject project;
     private final MavenSession session;
     private final MojoDescriptorCreator mojoDescriptorCreator;
@@ -77,6 +82,7 @@ public class MavenEnvironment {
                             Map<String, LifecycleMappingDelegate> lifecycleDelegates,
                             BuildPluginManager buildPluginManager,
                             MojoExecutor mojoExecutor) {
+
         this.project = project;
         this.session = session;
         this.projectIndex = new ProjectIndex(session.getProjects());
@@ -107,42 +113,6 @@ public class MavenEnvironment {
     }
 
     /**
-     * Returns the mojo descriptor creator.
-     *
-     * @return The creator.
-     */
-    public MojoDescriptorCreator mojoDescriptorCreator() {
-        return mojoDescriptorCreator;
-    }
-
-    /**
-     * Returns the default lifecycles.
-     *
-     * @return The lifecycles.
-     */
-    public DefaultLifecycles defaultLifeCycles() {
-        return defaultLifeCycles;
-    }
-
-    /**
-     * Returns the standard lifecycle delegate.
-     *
-     * @return THe delegate.
-     */
-    public LifecycleMappingDelegate standardLifecycleDelegate() {
-        return standardLifecycleDelegate;
-    }
-
-    /**
-     * Returns the lifecycle delegates, by phase.
-     *
-     * @return The delegates.
-     */
-    public Map<String, LifecycleMappingDelegate> lifecycleDelegates() {
-        return lifecycleDelegates;
-    }
-
-    /**
      * Execute a given mojo execution.
      *
      * @param execution mojo execution
@@ -162,13 +132,82 @@ public class MavenEnvironment {
      * @param goal        plugin goal
      * @param executionId execution id
      * @return MojoExecution
-     * @throws Exception if an error occurs while loading the plugin
      */
-    public MojoExecution execution(String pluginKey, String goal, String executionId) throws Exception {
+    public MojoExecution execution(String pluginKey, String goal, String executionId) {
         Plugin plugin = plugin(project, pluginKey);
-        MojoDescriptor mojoDescriptor = mojoDescriptor(plugin, goal);
+        MojoDescriptor mojoDescriptor;
+        try {
+            mojoDescriptor = mojoDescriptor(plugin, goal);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
         Xpp3Dom configuration = configuration(plugin, executionId);
         return mojoExecution(mojoDescriptor, executionId, configuration);
+    }
+
+    /**
+     * Create a new goal.
+     * @param prefix plugin prefix
+     * @param goal plugin goal
+     * @param executionId execution id
+     * @return MavenGoal
+     * @throws Exception if the plugin is not found using the prefix
+     */
+    public MavenGoal goal(String prefix, String goal, String executionId) throws Exception {
+        final Plugin plugin = mojoDescriptorCreator.findPluginForPrefix(prefix, session);
+        return MavenGoal.create(plugin.getGroupId(), plugin.getArtifactId(), goal, executionId, this);
+    }
+
+    /**
+     * Resolve the goals for the lifecycle of the given phase.
+     *
+     * @param phase maven phase
+     * @return list of MavenGoal, never {@code null}
+     * @throws LifecyclePhaseNotFoundException if the phase is unknown
+     */
+    public List<MavenGoal> phase(String phase) throws Exception {
+        LifecycleMappingDelegate delegate = standardLifecycleDelegate;
+        Lifecycle lifecycle = lifecycle(phase);
+        if (Arrays.binarySearch(DefaultLifecycles.STANDARD_LIFECYCLES, lifecycle.getId()) < 0) {
+            delegate = lifecycleDelegates.get(lifecycle.getId());
+            if (delegate == null) {
+                delegate = standardLifecycleDelegate;
+            }
+        }
+        // Collect the executions for this phase rather
+        return delegate.calculateLifecycleMappings(session, project, lifecycle, phase)
+                .entrySet()
+                .stream()
+                .filter(e -> !e.getValue().isEmpty())
+                .flatMap(e -> e.getValue().stream())
+                .map(this::goal)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get the lifecycle for the given phase.
+     *
+     * @param phase maven phase
+     * @return lifecycle, never {@code null}
+     * @throws LifecyclePhaseNotFoundException if the phase is unknown
+     */
+    public Lifecycle lifecycle(String phase) throws Exception {
+        DefaultLifecycles defaultLifecycles = defaultLifeCycles;
+        Lifecycle lifecycle = defaultLifecycles.get(phase);
+        if (lifecycle == null) {
+            throw new LifecyclePhaseNotFoundException("Unknown lifecycle phase \"" + phase
+                    + "\". You must specify a valid lifecycle phase" + " or a goal in the "
+                    + "format <plugin-prefix>:<goal> or "
+                    + "<plugin-group-id>:<plugin-artifact-id>[:<plugin-version>]:<goal>. "
+                    + "Available lifecycle phases are: "
+                    + defaultLifecycles.getLifecyclePhaseList() + ".", phase);
+        }
+        return lifecycle;
+    }
+
+    private MavenGoal goal(MojoExecution execution) {
+        return MavenGoal.create(execution.getGroupId(), execution.getArtifactId(),
+                execution.getGoal(), execution.getExecutionId(), this);
     }
 
     private static Plugin plugin(MavenProject project, String pluginKey) {

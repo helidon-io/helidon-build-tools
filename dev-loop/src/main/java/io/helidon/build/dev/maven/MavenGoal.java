@@ -29,6 +29,7 @@ import static java.util.Objects.requireNonNull;
  * An executable maven goal. Executions occur in process, in the context of the current project environment.
  */
 public class MavenGoal implements BuildStep {
+
     private static final String DEFAULT_EXECUTION_ID_PREFIX = "default-";
 
     private final String name;
@@ -40,41 +41,41 @@ public class MavenGoal implements BuildStep {
     /**
      * Returns a new instance.
      *
-     * @param pluginGroupId The plugin group id.
+     * @param pluginGroupId    The plugin group id.
      * @param pluginArtifactId The plugin artifact id.
-     * @param goalName The plugin goal to execute.
-     * @param executionId The execution id.
-     * @param environment The plugin execution environment.
+     * @param goalName         The plugin goal to execute.
+     * @param executionId      The execution id.
+     * @param environment      The plugin execution environment.
      * @return The goal.
-     * @throws Exception if an error occurs.
      */
     public static MavenGoal create(String pluginGroupId,
                                    String pluginArtifactId,
                                    String goalName,
                                    String executionId,
-                                   MavenEnvironment environment) throws Exception {
+                                   MavenEnvironment environment) {
+
         return new MavenGoal(requireNonNull(pluginGroupId),
-                             requireNonNull(pluginArtifactId),
-                             requireNonNull(goalName),
-                             executionId == null ? DEFAULT_EXECUTION_ID_PREFIX + goalName : executionId,
-                             requireNonNull(environment));
+                requireNonNull(pluginArtifactId),
+                requireNonNull(goalName),
+                executionId == null ? DEFAULT_EXECUTION_ID_PREFIX + goalName : executionId,
+                requireNonNull(environment));
     }
 
     /**
      * Constructor.
      *
-     * @param pluginGroupId The plugin group id.
+     * @param pluginGroupId    The plugin group id.
      * @param pluginArtifactId The plugin artifact id.
-     * @param goalName The plugin goal to execute.
-     * @param executionId The execution id.
-     * @param environment The plugin execution environment.
-     * @throws Exception if an error occurs.
+     * @param goalName         The plugin goal to execute.
+     * @param executionId      The execution id.
+     * @param environment      The plugin execution environment.
      */
     private MavenGoal(String pluginGroupId,
                       String pluginArtifactId,
                       String goalName,
                       String executionId,
-                      MavenEnvironment environment) throws Exception {
+                      MavenEnvironment environment) {
+
         this.name = goalName;
         this.pluginKey = pluginGroupId + ":" + pluginArtifactId;
         this.executionId = executionId;
@@ -83,7 +84,10 @@ public class MavenGoal implements BuildStep {
     }
 
     @Override
-    public void incrementalBuild(BuildRoot.Changes changes, Consumer<String> stdOut, Consumer<String> stdErr) throws Exception {
+    public void incrementalBuild(BuildRoot.Changes changes,
+                                 Consumer<String> stdOut,
+                                 Consumer<String> stdErr) throws Exception {
+
         if (!changes.isEmpty()) {
             execute();
         }
