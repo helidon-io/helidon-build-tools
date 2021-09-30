@@ -145,7 +145,7 @@ public abstract class BaseCommand implements CommandExecution {
             // that if this file was deleted and no build has occurred, a minimal project config is
             // generated in our preconditions, which will attempt to find and store the Helidon
             // version by reading the pom and checking for a Helidon parent pom. Though a Helidon
-            // parent pom will normally be present, it is not required so we may not find it in the
+            // parent pom will normally be present, it is not required, so we may not find it in the
             // config; in that case, fallback to the latest version. If we fail to get that, use our
             // build version.
 
@@ -180,10 +180,12 @@ public abstract class BaseCommand implements CommandExecution {
             try {
                 Log.debug("using Helidon version %s to find CLI plugin version", helidonVersion);
                 return meta.cliPluginVersion(helidonVersion, true).toString();
-            } catch (Plugins.PluginFailed e) {
+            } catch (Metadata.UpdateFailed e) {
                 Log.debug("unable to lookup CLI plugin version for Helidon version %s: %s", helidonVersion, e.getMessage());
             } catch (RequirementFailure e) {
                 Log.debug("CLI plugin version not specified for Helidon version %s: %s", helidonVersion);
+            } catch (Plugins.PluginFailedUnchecked e) {
+                // already logged
             } catch (Exception e) {
                 Log.debug("unable to lookup CLI plugin version for Helidon version %s: %s", helidonVersion, e.toString());
             }

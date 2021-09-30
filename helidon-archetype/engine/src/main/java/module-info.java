@@ -18,7 +18,7 @@
  * Helidon archetype engine.
  */
 module io.helidon.build.archetype.engine {
-    requires helidon.build.utils;
+    requires io.helidon.build.util;
     requires com.github.mustachejava;
     exports io.helidon.build.archetype.engine;
 }

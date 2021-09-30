@@ -34,9 +34,9 @@ import io.helidon.build.cli.codegen.AST.MethodBody;
 import io.helidon.build.cli.codegen.AST.MethodDeclaration;
 import io.helidon.build.cli.codegen.AST.MethodInvocation;
 import io.helidon.build.cli.codegen.TypeInfo.CompositeTypeInfo;
-import io.helidon.build.cli.codegen.Unchecked.CheckedConsumer;
 
 import com.acme.TestClass1;
+import io.helidon.build.util.Unchecked.CheckedConsumer;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.cli.codegen.AST.Modifier.*;

@@ -36,9 +36,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static io.helidon.build.cli.codegen.Unchecked.unchecked;
 import static io.helidon.build.util.Strings.normalizeNewLines;
 import static io.helidon.build.util.Strings.read;
+import static io.helidon.build.util.Unchecked.unchecked;
 import static java.util.stream.Collectors.toList;
 
 /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.build.dev.maven;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -78,6 +79,10 @@ public class MavenProjectSupplier implements ProjectSupplier {
     private static final String TARGET_DIR_NAME = "target";
     private static final String POM_FILE = "pom.xml";
     private static final String DOT = ".";
+    private static final List<String> FS_ROOTS = Arrays.asList(File.listRoots())
+            .stream()
+            .map(File::getPath)
+            .collect(Collectors.toList());
 
     private static final Predicate<Path> NOT_HIDDEN = file -> {
         final String name = file.getFileName().toString();
@@ -238,11 +243,25 @@ public class MavenProjectSupplier implements ProjectSupplier {
         // Add resource components
 
         for (String resourcesDirEntry : resourcesDirs) {
-            String[] dir = resourcesDirEntry.split(ProjectConfig.RESOURCE_INCLUDE_EXCLUDE_SEPARATOR);
-            String resourcesDir = dir[0];
+
+            // capture the file system root part of the entry
+            // on Windows this will be the drive (E.g. C:\), on Unix, just a slash
+            String prefix = FS_ROOTS.stream()
+                    .filter(fsRoot -> resourcesDirEntry.startsWith(fsRoot))
+                    .findFirst()
+                    .orElse("");
+
+            // split the non prefix part of the entry
+            String[] dir = resourcesDirEntry
+                    .substring(prefix.length())
+                    .split(ProjectConfig.RESOURCE_INCLUDE_EXCLUDE_SEPARATOR);
+
+            String resourcesDir = prefix + dir[0];
             List<String> includes = includeExcludeList(dir, 1);
             List<String> excludes = includeExcludeList(dir, 2);
             BiPredicate<Path, Path> filter = filter(includes, excludes);
+
+            // resourcesDirPath may not be nested inside projectDir if resourcesDir is absolute
             Path resourcesDirPath = projectDir.resolve(resourcesDir);
             if (Files.isDirectory(resourcesDirPath)) {
                 BuildRootType buildRootType = BuildRootType.create(DirectoryType.Resources, filter);
