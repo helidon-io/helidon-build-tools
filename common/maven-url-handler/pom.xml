@@ -25,7 +25,7 @@
         <artifactId>helidon-build-common-project</artifactId>
         <version>3.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>helidon-archetype-maven-url-handler</artifactId>
+    <artifactId>helidon-maven-url-handler</artifactId>
     <name>Helidon Build Tools Common Maven Url Handler</name>
 
     <dependencies>

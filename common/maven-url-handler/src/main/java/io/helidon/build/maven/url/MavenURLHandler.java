@@ -17,6 +17,7 @@
 package io.helidon.build.maven.url;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,12 +41,12 @@ import java.util.zip.ZipFile;
 /**
  * Maven Url Stream Handler.
  */
-public class MavenURLHandler extends URLStreamHandler {
+class MavenURLHandler extends URLStreamHandler {
 
     @Override
     protected URLConnection openConnection(URL url) throws IOException {
-        MavenResolver resolver = new MavenResolver();
-        return new Connection(url, resolver);
+        MavenFileResolver resolver = new MavenFileResolver();
+        return new MavenURLConnection(url, resolver);
     }
 
     @Override
@@ -53,7 +54,40 @@ public class MavenURLHandler extends URLStreamHandler {
         super.setURL(u, null, null, 0,  null, null, spec.substring(4), null, null);
     }
 
-    static class MavenResolver {
+    static class MavenURLConnection extends URLConnection {
+
+        private final MavenFileResolver resolver;
+
+        /**
+         * Constructs a URL connection to the specified URL. A connection to
+         * the object referenced by the URL is not created.
+         *
+         * @param url       the specified URL.
+         * @param resolver  resolver to use to resolve url.
+         */
+        protected MavenURLConnection(URL url, MavenFileResolver resolver) {
+            super(url);
+            Objects.requireNonNull(url, "URL provided is null");
+            Objects.requireNonNull(resolver, "Maven resolver provided is null");
+            this.resolver = resolver;
+        }
+
+        @Override
+        public void connect() throws IOException {
+        }
+
+        /**
+         * Get the file input stream targeted by the url.
+         */
+        @Override
+        public InputStream getInputStream() throws IOException {
+            connect();
+            File file = resolver.resolve(url.toExternalForm());
+            return new FileInputStream(file);
+        }
+    }
+
+    static class MavenFileResolver {
 
         private static final String PROTOCOL = "mvn";
         private static final String SYSTEM_PROPERTY_LOCAL_REPO = "io.helidon.mvn.local.repository";
@@ -61,7 +95,7 @@ public class MavenURLHandler extends URLStreamHandler {
         /**
          *  Default Constructor.
          */
-        MavenResolver() {
+        MavenFileResolver() {
         }
 
         /**
@@ -76,12 +110,12 @@ public class MavenURLHandler extends URLStreamHandler {
                 throw new IllegalArgumentException("url should be a mvn based url");
             }
             url = url.substring((PROTOCOL + "://").length());
-            Parser parser = new Parser(url);
+            MavenURLParser parser = new MavenURLParser(url);
 
             return resolve(parser, parser.getType());
         }
 
-        private File resolve(Parser parser, String type) throws IOException {
+        private File resolve(MavenURLParser parser, String type) throws IOException {
             String fileName = parser.getArtifactId() + "-" + parser.getVersion() + "." + parser.getType();
             FileVisitor visitor = new FileVisitor(getLocalRepository());
             visitor.visit(parser.getArchivePath());
@@ -221,7 +255,7 @@ public class MavenURLHandler extends URLStreamHandler {
 
     }
 
-    static class Parser {
+    static class MavenURLParser {
 
         /**
          * Syntax for the url to be shown on exception messages.
@@ -281,7 +315,7 @@ public class MavenURLHandler extends URLStreamHandler {
          *
          * @throws MalformedURLException if provided path does not comply to expected syntax or an malformed repository URL
          */
-        Parser(String path) throws MalformedURLException {
+        MavenURLParser(String path) throws MalformedURLException {
             Objects.requireNonNull(path, "Maven url provided to Parser is null");
             parseArtifactPart(path);
         }

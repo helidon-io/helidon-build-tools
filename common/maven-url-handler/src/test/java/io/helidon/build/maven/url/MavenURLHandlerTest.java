@@ -18,7 +18,6 @@ package io.helidon.build.maven.url;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -40,12 +39,12 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.notNullValue;
 
-public class HandlerTest {
+public class MavenURLHandlerTest {
 
-    private static final String CONTENT = "Archetype content";
-    private static final String ARCHIVE_DIRECTORY = "io/helidon/archetypes/helidon-archetype/3.0.0-SNAPSHOT";
-    private static final String ZIP_NAME = "helidon-archetype-3.0.0-SNAPSHOT.zip";
-    private static final String JAR_NAME = "helidon-archetype-3.0.0-SNAPSHOT.jar";
+    private static final String CONTENT = "<content>content</content>";
+    private static final String ARCHIVE_DIRECTORY = "io/helidon/handler/maven-url-handler/3.0.0-SNAPSHOT";
+    private static final String ZIP_NAME = "maven-url-handler-3.0.0-SNAPSHOT.zip";
+    private static final String JAR_NAME = "maven-url-handler-3.0.0-SNAPSHOT.jar";
 
     static Path workDir;
 
@@ -59,21 +58,21 @@ public class HandlerTest {
 
     @Test
     public void testMavenUrlJar() throws IOException {
-        InputStream is = new URL("mvn://io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT:jar/helidon-archetype.xml").openStream();
+        InputStream is = new URL("mvn://io.helidon.handler:maven-url-handler:3.0.0-SNAPSHOT:jar/test-file.xml").openStream();
         assertThat(is, is(notNullValue()));
         assertThat(true, is(new String(is.readNBytes(is.available())).contains(CONTENT)));
     }
 
     @Test
     public void testMavenUrlJarInsideDirectory() throws IOException {
-        InputStream is = new URL("mvn://io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT:jar/archetype/helidon-archetype.xml").openStream();
-        assertThat(is,  is(notNullValue()));
+        InputStream is = new URL("mvn://io.helidon.handler:maven-url-handler:3.0.0-SNAPSHOT:jar/xml/test-file.xml").openStream();
+        assertThat(is, is(notNullValue()));
         assertThat(true, is(new String(is.readNBytes(is.available())).contains(CONTENT)));
     }
 
     @Test
     public void testMavenUrlZip() throws IOException {
-        InputStream is = new URL("mvn://io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT:zip/archetype/helidon-archetype.xml").openStream();
+        InputStream is = new URL("mvn://io.helidon.handler:maven-url-handler:3.0.0-SNAPSHOT:zip/xml/test-file.xml").openStream();
         assertThat(is, is(notNullValue()));
         assertThat(true, is(new String(is.readNBytes(is.available())).contains(CONTENT)));
     }
@@ -139,13 +138,13 @@ public class HandlerTest {
     }
 
     private static void copyDescriptor(Path directory) throws IOException {
-        String descriptorFileName = "helidon-archetype.xml";
-        directory.resolve("archetype").toFile().mkdir();
+        String descriptorFileName = "test-file.xml";
+        directory.resolve("xml").toFile().mkdir();
         Path destination = directory.resolve(descriptorFileName);
-        Path secondDest = directory.resolve("archetype").resolve(descriptorFileName);
+        Path secondDest = directory.resolve("xml").resolve(descriptorFileName);
         try (
-                InputStream first = HandlerTest.class.getClassLoader().getResourceAsStream(descriptorFileName);
-                InputStream second = HandlerTest.class.getClassLoader().getResourceAsStream(descriptorFileName);
+                InputStream first = MavenURLHandlerTest.class.getClassLoader().getResourceAsStream(descriptorFileName);
+                InputStream second = MavenURLHandlerTest.class.getClassLoader().getResourceAsStream(descriptorFileName);
         ) {
             Files.copy(first, destination, StandardCopyOption.REPLACE_EXISTING);
             Files.copy(second, secondDest, StandardCopyOption.REPLACE_EXISTING);
