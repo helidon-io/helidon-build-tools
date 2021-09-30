@@ -25,6 +25,16 @@ public class ModelKeyValue extends ValueType {
 
     private final String key;
 
+    /**
+     * ModelKeyValue constructor.
+     *
+     * @param key           key attribute
+     * @param url           url attribute
+     * @param file          file attribute
+     * @param template      template attribute
+     * @param order         order attribute
+     * @param ifProperties  if attribute
+     */
     public ModelKeyValue(String key,
                          String url,
                          String file,

@@ -25,6 +25,13 @@ public class ModelKeyList extends ListType {
 
     private final String key;
 
+    /**
+     * ModelKeyList constructor.
+     *
+     * @param key           key attribute
+     * @param order         order attribute
+     * @param ifProperties  if attribute
+     */
     public ModelKeyList(String key, int order, String ifProperties) {
         super(order, ifProperties);
         this.key = key;

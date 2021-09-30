@@ -28,6 +28,11 @@ public class Model extends Conditional {
     private final LinkedList<ModelKeyList> keyLists = new LinkedList<>();
     private final LinkedList<ModelKeyMap> keyMaps = new LinkedList<>();
 
+    /**
+     * Model constructor.
+     *
+     * @param ifProperties  if attribute
+     */
     public Model(String ifProperties) {
         super(ifProperties);
     }
