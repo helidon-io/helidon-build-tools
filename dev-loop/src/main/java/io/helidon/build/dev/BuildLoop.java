@@ -218,7 +218,7 @@ public class BuildLoop {
                         try {
                             changed(ChangeType.SourceFile, changedTimeOf(sourceChanges).orElseThrow());
                             buildStarting(Incremental);
-                            project.incrementalBuild(sourceChanges, monitor.stdOutConsumer(), monitor.stdErrConsumer());
+                            project.incrementalBuild(sourceChanges, monitor.stdOutPrinter(), monitor.stdErrPrinter());
                             project.update(false);
                             buildSucceeded(Incremental);
                             ready();

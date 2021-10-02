@@ -16,7 +16,7 @@
 
 package io.helidon.build.dev;
 
-import java.util.function.Consumer;
+import io.helidon.build.util.ConsolePrinter;
 
 /**
  * A receiver of build loop messages and events.
@@ -24,21 +24,21 @@ import java.util.function.Consumer;
 public interface BuildMonitor {
 
     /**
-     * Returns a consumer for messages written to stdout.
+     * Returns a printer for messages written to stdout.
      *
      * @return The consumer.
      */
-    default Consumer<String> stdOutConsumer() {
-        return System.out::println;
+    default ConsolePrinter stdOutPrinter() {
+        return ConsolePrinter.STDOUT;
     }
 
     /**
-     * Returns a consumer for messages written to stderr.
+     * Returns a printer for messages written to stderr.
      *
      * @return The consumer.
      */
-    default Consumer<String> stdErrConsumer() {
-        return System.err::println;
+    default ConsolePrinter stdErrPrinter() {
+        return ConsolePrinter.STDERR;
     }
 
     /**

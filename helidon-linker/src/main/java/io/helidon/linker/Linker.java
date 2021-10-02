@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.spi.ToolProvider;
 
+import io.helidon.build.util.ConsolePrinter;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.ProcessMonitor;
 import io.helidon.linker.util.JavaRuntime;
@@ -310,8 +311,8 @@ public final class Linker {
                 try {
                     ProcessMonitor.builder()
                                   .processBuilder(new ProcessBuilder().command(command).directory(root))
-                                  .stdOut(Log::info)
-                                  .stdErr(Log::warn)
+                                  .stdOut(ConsolePrinter.create(Log::info))
+                                  .stdErr(ConsolePrinter.create(Log::warn))
                                   .transform(INDENT)
                                   .capture(false)
                                   .build()

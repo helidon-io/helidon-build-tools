@@ -18,17 +18,15 @@ package io.helidon.build.dev.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
-
-import com.google.common.base.Charsets;
 
 /**
  * A {@code PrintStream} that writes lines to a {@code Consumer<String>}.
  */
 public class ConsumerPrintStream extends PrintStream {
-    private static final Charset ENCODING = Charsets.UTF_8;
+    private static final Charset ENCODING = StandardCharsets.UTF_8;
     private static final int LINE_FEED = 10;
     private static final int CARRIAGE_RETURN = 13;
     private static final int NONE = -1;
@@ -43,21 +41,16 @@ public class ConsumerPrintStream extends PrintStream {
      * @return The stream.
      */
     public static ConsumerPrintStream newStream(Consumer<String> consumer) {
-        try {
-            return new ConsumerPrintStream(consumer);
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return new ConsumerPrintStream(consumer);
     }
 
     /**
      * Constructor.
      *
      * @param consumer The consumer.
-     * @throws UnsupportedEncodingException If the ISO_8859_1 encoding is not supported.
      */
-    private ConsumerPrintStream(Consumer<String> consumer) throws UnsupportedEncodingException {
-        super(new ByteArrayOutputStream(), true, ENCODING.toString());
+    private ConsumerPrintStream(Consumer<String> consumer) {
+        super(new ByteArrayOutputStream(), true, ENCODING);
         this.buffer = (ByteArrayOutputStream) super.out;
         this.consumer = consumer;
         this.last = NONE;

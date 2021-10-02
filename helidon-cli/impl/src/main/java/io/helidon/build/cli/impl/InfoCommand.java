@@ -33,6 +33,7 @@ import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.TimeUtils;
 
 import static io.helidon.build.cli.impl.VersionCommand.addProjectProperty;
+import static io.helidon.build.util.ConsolePrinter.STDOUT;
 import static io.helidon.build.util.ProjectConfig.HELIDON_VERSION;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
@@ -157,7 +158,7 @@ public final class InfoCommand extends BaseCommand {
         log("Project Config", projectProps, maxWidth);
         log("General", buildProps, maxWidth);
         try {
-            Plugins.execute("GetInfo", pluginArgs(maxWidth), 5, Log::info);
+            Plugins.execute("GetInfo", pluginArgs(maxWidth), 5, STDOUT);
         } catch (Plugins.PluginFailed e) {
             Log.error(e, "Unable to get system info");
         }

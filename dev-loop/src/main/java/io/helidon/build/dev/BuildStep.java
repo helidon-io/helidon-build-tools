@@ -16,7 +16,7 @@
 
 package io.helidon.build.dev;
 
-import java.util.function.Consumer;
+import io.helidon.build.util.ConsolePrinter;
 
 /**
  * A project build step.
@@ -41,6 +41,6 @@ public interface BuildStep {
      * @throws Exception on error.
      */
     void incrementalBuild(BuildRoot.Changes changes,
-                          Consumer<String> stdOut,
-                          Consumer<String> stdErr) throws Exception;
+                          ConsolePrinter stdOut,
+                          ConsolePrinter stdErr) throws Exception;
 }

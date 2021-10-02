@@ -25,8 +25,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
+import io.helidon.build.util.ConsolePrinter;
 import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.OSType;
@@ -34,6 +34,7 @@ import io.helidon.build.util.ProcessMonitor;
 import io.helidon.linker.util.Constants;
 import io.helidon.linker.util.JavaRuntime;
 
+import static io.helidon.build.util.ConsolePrinter.DEVNULL;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.fileName;
@@ -371,8 +372,6 @@ public final class ClassDataSharing {
 
         private void execute(String action, String... jvmArgs) throws Exception {
             final ProcessBuilder processBuilder = new ProcessBuilder();
-            final Consumer<String> stdOut = logOutput ? Log::debug : null;
-            final Consumer<String> stdErr = logOutput ? Log::warn : null;
             final List<String> command = new ArrayList<>();
 
             command.add(javaPath().toString());
@@ -389,8 +388,8 @@ public final class ClassDataSharing {
             ProcessMonitor.builder()
                           .description(action)
                           .processBuilder(processBuilder)
-                          .stdOut(stdOut)
-                          .stdErr(stdErr)
+                          .stdOut(logOutput ? ConsolePrinter.create(Log::debug) : DEVNULL)
+                          .stdErr(logOutput ? ConsolePrinter.create(Log::warn) : DEVNULL)
                           .filter(Builder::filter)
                           .build()
                           .execute(maxWaitSeconds, TimeUnit.SECONDS);

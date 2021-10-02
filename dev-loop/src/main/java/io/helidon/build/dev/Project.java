@@ -34,6 +34,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import io.helidon.build.dev.util.ConsumerPrintStream;
+import io.helidon.build.util.ConsolePrinter;
 import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.ProjectConfig;
 
@@ -321,14 +322,14 @@ public class Project {
      * @throws Exception on error.
      */
     protected void incrementalBuild(List<BuildRoot.Changes> changes,
-                                    Consumer<String> stdOut,
-                                    Consumer<String> stdErr) throws Exception {
+                                    ConsolePrinter stdOut,
+                                    ConsolePrinter stdErr) throws Exception {
         if (!changes.isEmpty()) {
             final PrintStream origOut = System.out;
             final PrintStream origErr = System.err;
             try {
-                System.setOut(ConsumerPrintStream.newStream(stdOut));
-                System.setErr(ConsumerPrintStream.newStream(stdErr));
+//                System.setOut(ConsumerPrintStream.newStream(stdOut));
+//                System.setErr(ConsumerPrintStream.newStream(stdErr));
                 for (final BuildRoot.Changes changed : changes) {
                     changed.root().component().incrementalBuild(changed, stdOut, stdErr);
                 }

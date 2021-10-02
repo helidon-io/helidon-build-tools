@@ -33,10 +33,10 @@ public class JavaProcessBuilder {
      *
      * @return The instance.
      */
-    public static ProcessBuilder newInstance() {
+    public static ProcessBuilder create() {
         final ProcessBuilder builder = new ProcessBuilder();
 
-        // If java is not in the PATH and we have a valid JAVA_HOME set, prepend it to the PATH
+        // If java is not in the PATH, and we have a valid JAVA_HOME set, prepend it to the PATH
 
         if (FileUtils.javaExecutableInPath().isEmpty()) {
             final Optional<Path> javaHomeExecutable = FileUtils.javaExecutableInJavaHome();

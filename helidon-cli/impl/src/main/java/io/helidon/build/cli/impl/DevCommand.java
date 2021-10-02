@@ -16,7 +16,6 @@
 
 package io.helidon.build.cli.impl;
 
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import io.helidon.build.cli.harness.Command;
@@ -28,8 +27,8 @@ import io.helidon.build.cli.harness.Option.KeyValue;
 import io.helidon.build.util.AnsiConsoleInstaller;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenCommand;
+import io.helidon.build.util.ConsolePrinter;
 import io.helidon.build.util.Strings;
-import io.helidon.build.util.StyleFunction;
 
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
@@ -47,6 +46,7 @@ import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_HEADER;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_MESSAGE_PREFIX;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_START;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_STYLED_MESSAGE_PREFIX;
+import static io.helidon.build.util.ConsolePrinter.*;
 import static io.helidon.build.util.StyleFunction.Bold;
 import static io.helidon.build.util.StyleFunction.BoldBlue;
 import static io.helidon.build.util.StyleFunction.BoldBrightGreen;
@@ -151,7 +151,6 @@ public final class DevCommand extends BaseCommand {
     protected void invoke(CommandContext context) throws Exception {
 
         // Dev goal
-
         String devGoal = CLI_MAVEN_PLUGIN;
         String cliPluginVersionProperty = null;
         String defaultPluginVersion = defaultHelidonPluginVersion(pluginVersion, useCurrentPluginVersion);
@@ -165,12 +164,10 @@ public final class DevCommand extends BaseCommand {
         devGoal += DEV_GOAL_SUFFIX;
 
         // Application args
-
         String jvmArgs = appJvmArgs == null ? null : APP_JVM_ARGS_PROP_PREFIX + appJvmArgs;
         String args = appArgs == null ? null : APP_ARGS_PROP_PREFIX + appArgs;
 
         // Clear terminal and print header if in terminal mode
-
         Verbosity verbosity = context.verbosity();
         boolean terminalMode = verbosity == NORMAL;
         if (terminalMode) {
@@ -179,68 +176,42 @@ public final class DevCommand extends BaseCommand {
             terminalModeOutput = new TerminalModeOutput();
         }
 
-        // Add a shutdown hook to print an exit message
-
-        Runtime.getRuntime().addShutdownHook(new Thread(DevCommand::exiting));
-
         // Execute helidon-maven-cli-plugin to enter dev loop
-
-        Consumer<String> stdOut = terminalMode
-                ? terminalModeOutput
-                : DevCommand::printStdOutLine;
-
-        Consumer<String> stdErr = DevCommand::printStdErrLine;
-
-        Predicate<String> filter = terminalMode
-                ? terminalModeOutput
-                : DevCommand::printAllLines;
-
         MavenCommand.builder()
-                    .verbose(verbosity == DEBUG)
-                    .stdOut(stdOut)
-                    .stdErr(stdErr)
-                    .filter(filter)
-                    .addArgument(devGoal)
-                    .addArgument(CLEAN_PROP_PREFIX + clean)
-                    .addArgument(FORK_PROP_PREFIX + fork)
-                    .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
-                    .addArguments(context.propertyArgs(true))
-                    .addOptionalArgument(cliPluginVersionProperty)
-                    .addOptionalArgument(jvmArgs)
-                    .addOptionalArgument(args)
-                    .directory(commonOptions.project())
-                    .build()
-                    .execute();
+                .shutdownHook(this::exiting)
+                .verbose(verbosity == DEBUG)
+                .stdOutHandler(terminalMode ? terminalModeOutput : STDOUT)
+                .stdErrHandler(RED_STDERR)
+                .filter(terminalMode ? terminalModeOutput : (s) -> true)
+                .addArgument(devGoal)
+                .addArgument(CLEAN_PROP_PREFIX + clean)
+                .addArgument(FORK_PROP_PREFIX + fork)
+                .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
+                .addArguments(context.propertyArgs(true))
+                .addOptionalArgument(cliPluginVersionProperty)
+                .addOptionalArgument(jvmArgs)
+                .addOptionalArgument(args)
+                .directory(commonOptions.project())
+                .build()
+                .execute();
     }
 
-    private static void exiting() {
+    private void exiting() {
         showCursor();
         printState(EXITING, true);
     }
 
     private static void printState(String state, boolean newline) {
-        final String header = newline ? HEADER + "%n" : HEADER;
-        System.out.printf(header, state);
-        System.out.flush();
+        final String header = newline ? HEADER + "%n%n" : HEADER;
+        STDOUT.printf(header, state);
+        STDOUT.flush();
     }
-
-    private static boolean printAllLines(String line) {
-        return true;
-    }
-
-    private static void printStdOutLine(String line) {
-        System.out.println(line);
-    }
-
-    private static void printStdErrLine(String line) {
-        System.out.println(StyleFunction.Red.apply(line));
-    }
-
 
     /**
      * A stateful filter/transform that cleans up output from {@code DevLoop}.
      */
-    private static class TerminalModeOutput implements Predicate<String>, Consumer<String> {
+    private static class TerminalModeOutput implements Predicate<String>, ConsolePrinter {
+
         private static final String DEBUGGER_LISTEN_MESSAGE_PREFIX = "Listening for transport";
         private static final String DOWNLOADING_MESSAGE_PREFIX = "Downloading from";
         private static final String BUILD_SUCCEEDED = "BUILD SUCCESS";
@@ -283,10 +254,11 @@ public final class DevCommand extends BaseCommand {
                     clearProgressIndicator();
                     if (skipHeader) {
                         skipHeader = false;
-                        System.out.println();
+                        STDOUT.println();
                     } else {
                         header(line);
                     }
+                    STDOUT.flush();
                     return false;
                 } else if (line.startsWith(DEV_LOOP_STYLED_MESSAGE_PREFIX)
                            || line.startsWith(DEV_LOOP_MESSAGE_PREFIX)) {
@@ -365,8 +337,8 @@ public final class DevCommand extends BaseCommand {
                 } else if (!skipHeader) {
                     if (line.contains(DOWNLOADING_MESSAGE_PREFIX)) {
                         header(Bold.apply(DEV_LOOP_HEADER));
-                        System.out.print(DEV_LOOP_STYLED_MESSAGE_PREFIX + BoldBlue.apply(DOWNLOADING_ARTIFACTS));
-                        System.out.flush();
+                        STDOUT.print(DEV_LOOP_STYLED_MESSAGE_PREFIX + BoldBlue.apply(DOWNLOADING_ARTIFACTS));
+                        STDOUT.flush();
                         skipHeader = true;
                         progressStarted = false;
                     }
@@ -386,8 +358,8 @@ public final class DevCommand extends BaseCommand {
                 }
             } else {
                 hideCursor();
-                System.out.print(SPINNER[progressIndex++]);
-                System.out.flush();
+                STDOUT.print(SPINNER[progressIndex++]);
+                STDOUT.flush();
                 progressStarted = true;
             }
             if (progressIndex == SPINNER.length) {
@@ -408,10 +380,10 @@ public final class DevCommand extends BaseCommand {
 
         private void header(String line) {
             if (clearScreen()) {
-                System.out.println();
-                System.out.println(line);
+                STDOUT.println();
+                STDOUT.println(line);
             }
-            System.out.println();
+            STDOUT.println();
         }
 
         private static String errorMessage(String line) {
@@ -429,29 +401,34 @@ public final class DevCommand extends BaseCommand {
         }
 
         @Override
-        public void accept(String line) {
+        public void print(String line) {
             if (!line.isBlank()) {
                 if (insertLine) {
-                    System.out.println();
+                    STDOUT.println();
                     insertLine = false;
                 }
                 if (line.startsWith(MAVEN_LOG_LEVEL_START)) {
                     String errorMessage = errorMessage(line);
                     if (Strings.isValid(errorMessage)) {
                         if (insertLineIfError) {
-                            System.out.println();
+                            STDOUT.println();
                             insertLineIfError = false;
                         }
-                        System.out.println(errorMessage);
+                        STDOUT.println(errorMessage);
                     }
                 } else {
-                    System.out.println(line);
+                    STDOUT.print(line);
                 }
                 if (appendLine) {
-                    System.out.println();
+                    STDOUT.println();
                     appendLine = false;
                 }
             }
+        }
+
+        @Override
+        public void flush() {
+            STDOUT.flush();
         }
     }
 }

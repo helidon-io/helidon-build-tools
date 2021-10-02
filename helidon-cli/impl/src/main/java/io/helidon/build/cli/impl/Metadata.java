@@ -35,12 +35,15 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.util.ConfigProperties;
+import io.helidon.build.util.ConsolePrinter;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.Requirements;
 import io.helidon.build.util.TimeUtils;
 
 import static io.helidon.build.cli.impl.CommandRequirements.requireHelidonVersionDir;
+import static io.helidon.build.util.ConsolePrinter.DEVNULL;
+import static io.helidon.build.util.ConsolePrinter.STDOUT;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.lastModifiedTime;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
@@ -505,13 +508,15 @@ public class Metadata {
         args.add(Config.buildVersion());
         args.add("--maxAttempts");
         args.add(Integer.toString(maxAttempts));
-        Consumer<String> stdOut = null;
+        ConsolePrinter printer;
         if (debugPlugin) {
             args.add("--debug");
-            stdOut = Log::info;
+            printer = STDOUT;
+        } else {
+            printer = DEVNULL;
         }
         try {
-            Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS, stdOut);
+            Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS, printer);
         } catch (Plugins.PluginFailed e) {
             throw new UpdateFailed(e);
         }

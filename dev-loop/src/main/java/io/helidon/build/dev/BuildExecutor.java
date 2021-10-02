@@ -42,7 +42,7 @@ public abstract class BuildExecutor {
     }
 
     /**
-     * Returns whether or not this executor will fork the maven process.
+     * Returns whether this executor will fork the maven process.
      *
      * @return {@code true} if will fork.
      */

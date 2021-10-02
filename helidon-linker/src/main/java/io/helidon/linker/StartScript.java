@@ -34,6 +34,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
+import io.helidon.build.util.ConsolePrinter;
 import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.OSType;
@@ -102,13 +103,13 @@ public class StartScript {
             Files.copy(new ByteArrayInputStream(script.getBytes(StandardCharsets.UTF_8)), scriptFile);
             if (OS.isPosix()) {
                 Files.setPosixFilePermissions(scriptFile, Set.of(
-                    PosixFilePermission.OWNER_READ,
-                    PosixFilePermission.OWNER_WRITE,
-                    PosixFilePermission.OWNER_EXECUTE,
-                    PosixFilePermission.GROUP_READ,
-                    PosixFilePermission.GROUP_EXECUTE,
-                    PosixFilePermission.OTHERS_READ,
-                    PosixFilePermission.OTHERS_EXECUTE
+                        PosixFilePermission.OWNER_READ,
+                        PosixFilePermission.OWNER_WRITE,
+                        PosixFilePermission.OWNER_EXECUTE,
+                        PosixFilePermission.GROUP_READ,
+                        PosixFilePermission.GROUP_EXECUTE,
+                        PosixFilePermission.OTHERS_READ,
+                        PosixFilePermission.OTHERS_EXECUTE
                 ));
             }
             return scriptFile;
@@ -121,7 +122,7 @@ public class StartScript {
      * Execute the script with the given arguments.
      *
      * @param transform the output transform.
-     * @param args The arguments.
+     * @param args      The arguments.
      * @throws RuntimeException If the process fails.
      */
     public void execute(Function<String, String> transform, String... args) {
@@ -138,8 +139,8 @@ public class StartScript {
         processBuilder.directory(root.toFile());
         final ProcessMonitor monitor = ProcessMonitor.builder()
                                                      .processBuilder(processBuilder)
-                                                     .stdOut(Log::info)
-                                                     .stdErr(Log::warn)
+                                                     .stdOut(ConsolePrinter.create(Log::info))
+                                                     .stdErr(ConsolePrinter.create(Log::warn))
                                                      .transform(transform)
                                                      .capture(true)
                                                      .build();
@@ -384,7 +385,7 @@ public class StartScript {
         /**
          * Removes any lines that contain the given substring.
          *
-         * @param substring The substring.
+         * @param substring  The substring.
          * @param ignoreCase {@code true} if substring match should ignore case.
          */
         protected void removeLines(String substring, boolean ignoreCase) {
@@ -408,7 +409,7 @@ public class StartScript {
          * Returns the index of the first line that contains the given substring.
          *
          * @param startIndex The start index.
-         * @param substring The substring.
+         * @param substring  The substring.
          * @param ignoreCase {@code true} if substring match should ignore case.
          * @return The index.
          * @throws IllegalStateException if no matching line is found.
@@ -421,7 +422,7 @@ public class StartScript {
          * Returns the index of the first line that is equals to the given str.
          *
          * @param startIndex The start index.
-         * @param str The string.
+         * @param str        The string.
          * @return The index.
          * @throws IllegalStateException if no matching line is found.
          */
@@ -433,21 +434,21 @@ public class StartScript {
          * Returns the index of the first line that matches the given predicate.
          *
          * @param startIndex The start index.
-         * @param predicate The predicate.
+         * @param predicate  The predicate.
          * @return The index.
          * @throws IllegalStateException if no matching line is found.
          */
         protected int indexOf(int startIndex, BiPredicate<Integer, String> predicate) {
             return IntStream.range(startIndex, template.size())
-                            .filter(index -> predicate.test(index, template.get(index)))
-                            .findFirst()
-                            .orElseThrow(IllegalStateException::new);
+                    .filter(index -> predicate.test(index, template.get(index)))
+                    .findFirst()
+                    .orElseThrow(IllegalStateException::new);
         }
 
         /**
          * Replaces the given substring in each line.
          *
-         * @param substring The substring.
+         * @param substring   The substring.
          * @param replacement The replacement.
          */
         protected void replace(String substring, String replacement) {

@@ -19,6 +19,7 @@ import java.util.function.Consumer;
 
 import io.helidon.build.dev.BuildRoot;
 import io.helidon.build.dev.BuildStep;
+import io.helidon.build.util.ConsolePrinter;
 import io.helidon.build.util.Log;
 
 import org.apache.maven.plugin.MojoExecution;
@@ -85,8 +86,8 @@ public class MavenGoal implements BuildStep {
 
     @Override
     public void incrementalBuild(BuildRoot.Changes changes,
-                                 Consumer<String> stdOut,
-                                 Consumer<String> stdErr) throws Exception {
+                                 ConsolePrinter stdOut,
+                                 ConsolePrinter stdErr) throws Exception {
 
         if (!changes.isEmpty()) {
             execute();
