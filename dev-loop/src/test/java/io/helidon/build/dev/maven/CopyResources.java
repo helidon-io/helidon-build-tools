@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,11 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 public class CopyResources implements BuildStep {
 
     @Override
-    public void incrementalBuild(BuildRoot.Changes changes, ConsolePrinter stdOut, ConsolePrinter stdErr) throws Exception {
+    public void incrementalBuild(BuildRoot.Changes changes,
+                                 ConsolePrinter stdOut,
+                                 ConsolePrinter stdErr)
+            throws Exception {
+
         if (!changes.isEmpty()) {
             final BuildRoot sources = changes.root();
             if (sources.buildType().directoryType() == DirectoryType.Resources) {
@@ -68,15 +72,13 @@ public class CopyResources implements BuildStep {
     }
 
     private void copy(Path srcFile, Path outFile, ConsolePrinter stdOut) throws IOException {
-        stdOut.println("Copying resource " + srcFile);
-        stdOut.flush();
+        stdOut.println2("Copying resource " + srcFile);
         Files.copy(srcFile, outFile, REPLACE_EXISTING);
     }
 
     private void remove(Path outFile, ConsolePrinter stdOut) throws IOException {
         if (Files.exists(outFile)) {
-            stdOut.println("Removing resource " + outFile);
-            stdOut.flush();
+            stdOut.println2("Removing resource " + outFile);
             Files.delete(outFile);
         }
     }

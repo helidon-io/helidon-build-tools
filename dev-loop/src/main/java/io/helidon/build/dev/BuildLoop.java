@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -308,7 +308,7 @@ public class BuildLoop {
         final Project project = project();
         if (project.sourceChangesSince(lastChangeTime.get()).isEmpty()) {
 
-            // No, so update the project so we will wait for them
+            // No, so update the project, so we will wait for them
 
             project.update(false);
 
@@ -394,7 +394,7 @@ public class BuildLoop {
         }
 
         /**
-         * Sets whether or not new {@code Project} instances should perform a clean build.
+         * Sets whether new {@code Project} instances should perform a clean build.
          *
          * @param clean {@code true} if new instances should perform a clean build.
          * @return The builder, for chaining.

@@ -52,8 +52,7 @@ public interface ConsolePrinter {
     /**
      * Console printer that ignores everything.
      */
-    ConsolePrinter DEVNULL = new FunctionalPrinter(s -> {
-    });
+    ConsolePrinter DEVNULL = new FunctionalPrinter(s -> {});
 
     /**
      * Create a new console printer from a function.
@@ -87,6 +86,24 @@ public interface ConsolePrinter {
      */
     default void println(String str) {
         print(str + EOL);
+    }
+
+    /**
+     * Print an empty line and flush.
+     */
+    default void println2() {
+        print(EOL);
+        flush();
+    }
+
+    /**
+     * Print the given line and flush.
+     *
+     * @param str line to print
+     */
+    default void println2(String str) {
+        print(str + EOL);
+        flush();
     }
 
     /**

@@ -85,10 +85,14 @@ final class ConsoleRecorder {
         if (stdOutReader == null || stdErrReader == null) {
             throw new IllegalStateException("Not started");
         }
-        if (stdOutReader.tick() || stdErrReader.tick()) {
-            return true;
+        boolean ticked = false;
+        if (stdOutReader.tick()) {
+            ticked = true;
         }
-        return false;
+        if (stdErrReader.tick()) {
+            ticked = true;
+        }
+        return ticked;
     }
 
     /**
@@ -120,7 +124,7 @@ final class ConsoleRecorder {
 
     private void print(ConsolePrinter printer, String str, StringBuilder capture) {
         String line = str + EOL;
-        if (filter.test(line)) {
+        if (filter.test(str)) {
             printer.print(transform.apply(line));
         }
         if (this.capturing) {

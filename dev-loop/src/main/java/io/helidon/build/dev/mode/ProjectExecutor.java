@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,16 +22,16 @@ import java.util.List;
 
 import io.helidon.build.dev.Project;
 import io.helidon.build.util.AnsiConsoleInstaller;
+import io.helidon.build.util.ConsolePrinter;
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.JavaProcessBuilder;
-import io.helidon.build.util.ConsolePrinter;
 import io.helidon.build.util.ProcessMonitor;
 
+import static io.helidon.build.util.ConsolePrinter.STDERR;
+import static io.helidon.build.util.ConsolePrinter.STDOUT;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_APPLICATION_STARTING;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_APPLICATION_STOPPED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_APPLICATION_STOPPING;
-import static io.helidon.build.util.ConsolePrinter.STDERR;
-import static io.helidon.build.util.ConsolePrinter.STDOUT;
 import static io.helidon.build.util.StyleFunction.BoldBrightCyan;
 import static io.helidon.build.util.StyleFunction.BoldBrightGreen;
 import static io.helidon.build.util.StyleFunction.BoldBrightRed;

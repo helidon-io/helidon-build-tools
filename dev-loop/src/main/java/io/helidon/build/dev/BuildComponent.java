@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package io.helidon.build.dev;
 
-import io.helidon.build.util.ConsolePrinter;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
+
+import io.helidon.build.util.ConsolePrinter;
 
 import static java.util.Objects.requireNonNull;
 
@@ -70,7 +69,7 @@ public class BuildComponent {
     }
 
     /**
-     * Returns the project containing this component..
+     * Returns the project containing this component.
      *
      * @return The project.
      */

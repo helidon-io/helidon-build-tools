@@ -144,7 +144,7 @@
         <version.lib.slf4j>1.7.25</version.lib.slf4j>
         <version.lib.spotbugs-annotations>3.1.12</version.lib.spotbugs-annotations>
         <version.lib.jandex>2.1.1.Final</version.lib.jandex>
-        <version.lib.jansi>2.3.4</version.lib.jansi>
+        <version.lib.jansi>1.18</version.lib.jansi>
         <version.lib.picocli.jansi>1.1.0</version.lib.picocli.jansi>
         <version.lib.asm>7.2</version.lib.asm>
         <version.lib.maven-embedder>3.6.2</version.lib.maven-embedder>

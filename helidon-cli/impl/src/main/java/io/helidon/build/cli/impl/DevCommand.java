@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,15 +25,17 @@ import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
 import io.helidon.build.util.AnsiConsoleInstaller;
+import io.helidon.build.util.ConsolePrinter;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenCommand;
-import io.helidon.build.util.ConsolePrinter;
 import io.helidon.build.util.Strings;
 
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.cli.impl.CommandRequirements.requireValidMavenProjectConfig;
+import static io.helidon.build.util.ConsolePrinter.RED_STDERR;
+import static io.helidon.build.util.ConsolePrinter.STDOUT;
 import static io.helidon.build.util.ConsoleUtils.clearScreen;
 import static io.helidon.build.util.ConsoleUtils.hideCursor;
 import static io.helidon.build.util.ConsoleUtils.rewriteLine;
@@ -46,7 +48,6 @@ import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_HEADER;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_MESSAGE_PREFIX;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_START;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_STYLED_MESSAGE_PREFIX;
-import static io.helidon.build.util.ConsolePrinter.*;
 import static io.helidon.build.util.StyleFunction.Bold;
 import static io.helidon.build.util.StyleFunction.BoldBlue;
 import static io.helidon.build.util.StyleFunction.BoldBrightGreen;
@@ -178,10 +179,10 @@ public final class DevCommand extends BaseCommand {
 
         // Execute helidon-maven-cli-plugin to enter dev loop
         MavenCommand.builder()
-                .shutdownHook(this::exiting)
+                .beforeShutdown(this::exiting)
                 .verbose(verbosity == DEBUG)
-                .stdOutHandler(terminalMode ? terminalModeOutput : STDOUT)
-                .stdErrHandler(RED_STDERR)
+                .stdOut(terminalMode ? terminalModeOutput : STDOUT)
+                .stdErr(RED_STDERR)
                 .filter(terminalMode ? terminalModeOutput : (s) -> true)
                 .addArgument(devGoal)
                 .addArgument(CLEAN_PROP_PREFIX + clean)

@@ -34,8 +34,9 @@ import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
 import static io.helidon.build.util.AnsiConsoleInstaller.isHelidonChildProcess;
-import static io.helidon.build.util.ConsolePrinter.*;
 import static io.helidon.build.util.ConsolePrinter.DEVNULL;
+import static io.helidon.build.util.ConsolePrinter.RED_STDERR;
+import static io.helidon.build.util.ConsolePrinter.STDOUT;
 import static io.helidon.build.util.Constants.EOL;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertJavaExecutable;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiPredicate;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import io.helidon.build.dev.util.ConsumerPrintStream;
 import io.helidon.build.util.ConsolePrinter;
 import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.ProjectConfig;
@@ -328,8 +326,6 @@ public class Project {
             final PrintStream origOut = System.out;
             final PrintStream origErr = System.err;
             try {
-//                System.setOut(ConsumerPrintStream.newStream(stdOut));
-//                System.setErr(ConsumerPrintStream.newStream(stdErr));
                 for (final BuildRoot.Changes changed : changes) {
                     changed.root().component().incrementalBuild(changed, stdOut, stdErr);
                 }

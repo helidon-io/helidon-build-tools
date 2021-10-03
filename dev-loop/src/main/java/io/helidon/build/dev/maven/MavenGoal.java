@@ -15,8 +15,6 @@
  */
 package io.helidon.build.dev.maven;
 
-import java.util.function.Consumer;
-
 import io.helidon.build.dev.BuildRoot;
 import io.helidon.build.dev.BuildStep;
 import io.helidon.build.util.ConsolePrinter;

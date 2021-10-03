@@ -22,6 +22,7 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -33,19 +34,15 @@ import java.util.function.Predicate;
 
 import static io.helidon.build.util.ConsolePrinter.DEVNULL;
 import static java.lang.String.join;
-import static java.util.Objects.requireNonNullElseGet;
 
 /**
  * Executes a process and waits for completion, monitoring the output.
  */
 public final class ProcessMonitor {
 
-    private static final long STOP_WAIT_SECONDS = 1L;
-    private static final int STOP_WAIT_RETRIES = 5;
-    private static final int STOP_WAIT_FORCE = 3;
-    private static final String FAILED_STOP_MSG = "Failed to stop process %d: %s";
-    private static final String TIMEOUT_EXPIRED = "timeout expired";
-    private static final MonitorThread MONITOR_TASK = new MonitorThread();
+    private static final int GRACEFUL_STOP_TIMEOUT = 3;
+    private static final int FORCEFUL_STOP_TIMEOUT = 2;
+    private static final MonitorThread MONITOR_THREAD = new MonitorThread();
 
     private final ProcessBuilder processBuilder;
     private final String description;
@@ -84,6 +81,7 @@ public final class ProcessMonitor {
      * @throws ProcessFailedException  If the process fails.
      * @throws InterruptedException    If the thread is interrupted.
      */
+    @SuppressWarnings("checkstyle:ThrowsCount")
     public ProcessMonitor execute(long timeout, TimeUnit unit)
             throws IOException, ProcessTimeoutException, ProcessFailedException, InterruptedException {
 
@@ -115,7 +113,7 @@ public final class ProcessMonitor {
         }
         recorder.start(process.getInputStream(), process.getErrorStream());
         Log.debug("Process ID: %d", process.pid());
-        MONITOR_TASK.register(this);
+        MONITOR_THREAD.register(this);
         return this;
     }
 
@@ -126,42 +124,32 @@ public final class ProcessMonitor {
      * @throws IllegalStateException If the process did not exit after all the attempts
      */
     public ProcessMonitor stop() {
-        boolean isAlive = true;
-        boolean force = false;
         long pid = process.toHandle().pid();
-        for (int step = 0; step < STOP_WAIT_RETRIES; step++) {
+        process.destroy();
+        try {
             try {
-                if (force) {
-                    process.destroyForcibly();
-                } else {
-                    process.destroy();
+                exitFuture.get(GRACEFUL_STOP_TIMEOUT, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                process.destroyForcibly();
+                try {
+                    exitFuture.get(FORCEFUL_STOP_TIMEOUT, TimeUnit.SECONDS);
+                } catch (TimeoutException ex) {
+                    throw new IllegalStateException(String.format(
+                            "Failed to stop process %d: %s", pid, "timeout expired"));
                 }
-                waitForCompletion(STOP_WAIT_SECONDS, TimeUnit.SECONDS);
-                if (!process.isAlive()) {
-                    isAlive = false;
-                    break;
-                }
-            } catch (ProcessMonitor.ProcessTimeoutException timeout) {
-                if (step == STOP_WAIT_FORCE) {
-                    force = true;
-                }
-            } catch (IllegalStateException | ProcessMonitor.ProcessFailedException done) {
-                isAlive = false;
-                break;
-            } catch (Exception e) {
-                throw new IllegalStateException(String.format(FAILED_STOP_MSG, pid, e.getMessage()));
             }
-        }
-        if (isAlive) {
-            throw new IllegalStateException(String.format(FAILED_STOP_MSG, pid, TIMEOUT_EXPIRED));
+        } catch (InterruptedException e) {
+            throw new IllegalStateException(String.format(
+                    "Failed to stop process %d: %s", pid, e.getMessage()));
+        } catch (ExecutionException e) {
+            throw new IllegalStateException(String.format(
+                    "Failed to stop process %d: %s", pid, e.getCause().getMessage()));
         }
         return this;
     }
 
     /**
      * Waits for the process to complete.
-     * If the process does not complete in the given time {@code destroy(false)} is called and a
-     * {@link ProcessTimeoutException} thrown.
      *
      * @param timeout The maximum time to wait.
      * @param unit    The time unit of the {@code timeout} argument.
@@ -239,7 +227,7 @@ public final class ProcessMonitor {
     }
 
     /**
-     * Runnable of a single thread that monitors all started processes.
+     * A thread that monitors all started processes.
      * <ul>
      *     <li>It consumes the outputs of all started processes (one thread of all processes)</li>
      *     <li>Implements the shutdown hook to stop any running forked process gracefully</li>
@@ -249,17 +237,11 @@ public final class ProcessMonitor {
      */
     private static final class MonitorThread extends Thread {
 
-        private static final long SPIN_SLEEP_MILLISECONDS = 50L;
         private final List<ProcessMonitor> processes = new ArrayList<>();
         private int backoff = 0;
         private Iterator<ProcessMonitor> iterator;
 
-        /**
-         * Create a new monitor task.
-         * Register a shutdown hook that stops all the processes registered with this task.
-         */
         private MonitorThread() {
-            super(null, null, "process-monitor");
             start();
             Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
         }
@@ -284,8 +266,8 @@ public final class ProcessMonitor {
         public void run() {
             //noinspection InfiniteLoopStatement
             while (true) {
-                // wait for processes
                 if (processes.isEmpty()) {
+                    // wait for processes
                     LockSupport.park();
                 }
 
@@ -297,13 +279,15 @@ public final class ProcessMonitor {
                     }
                 }
 
-                // sleep to avoid consuming cpu
-                backoff = ticked ? 0 : backoff < 5 ? backoff + 1 : backoff;
-                try {
-                    //noinspection BusyWait
-                    Thread.sleep(SPIN_SLEEP_MILLISECONDS * backoff);
-                } catch (InterruptedException e) {
-                    // ignore
+                if (!processes.isEmpty()) {
+                    // sleep to avoid consuming cpu
+                    backoff = ticked ? 0 : backoff < 5 ? backoff + 1 : backoff;
+                    try {
+                        //noinspection BusyWait
+                        Thread.sleep((50L / processes.size()) * backoff);
+                    } catch (InterruptedException e) {
+                        // ignore
+                    }
                 }
             }
         }
@@ -357,7 +341,11 @@ public final class ProcessMonitor {
      */
     public abstract class ProcessException extends Exception {
 
-        private ProcessException() {
+        private ProcessException(String reason) {
+            super(Optional.ofNullable(description)
+                          .orElseGet(() -> join(" ", processBuilder.command()))
+                          .concat(" ")
+                          .concat(reason));
         }
 
         /**
@@ -368,19 +356,6 @@ public final class ProcessMonitor {
         public ProcessMonitor monitor() {
             return ProcessMonitor.this;
         }
-
-        /**
-         * Format an exception message.
-         *
-         * @param reason exception reason
-         * @return formatted message
-         */
-        String formatMessage(String reason) {
-            return requireNonNullElseGet(description, () -> join(" ", processBuilder.command())) + " " + reason;
-        }
-
-        @Override
-        abstract public String getMessage();
     }
 
     /**
@@ -389,12 +364,7 @@ public final class ProcessMonitor {
     public final class ProcessTimeoutException extends ProcessException {
 
         private ProcessTimeoutException() {
-            super();
-        }
-
-        @Override
-        public String getMessage() {
-            return formatMessage("timed out");
+            super("timed out");
         }
     }
 
@@ -404,12 +374,7 @@ public final class ProcessMonitor {
     public final class ProcessFailedException extends ProcessException {
 
         private ProcessFailedException() {
-            super();
-        }
-
-        @Override
-        public String getMessage() {
-            return formatMessage("failed with exit code " + process.exitValue());
+            super("failed with exit code " + process.exitValue());
         }
     }
 
@@ -427,8 +392,10 @@ public final class ProcessMonitor {
         private ConsolePrinter stdErr = DEVNULL;
         private Predicate<String> filter = line -> true;
         private Function<String, String> transform = Function.identity();
-        private Runnable beforeShutdown = () -> {};
-        private Runnable afterShutdown = () -> {};
+        private Runnable beforeShutdown = () -> {
+        };
+        private Runnable afterShutdown = () -> {
+        };
 
         private Builder() {
         }
