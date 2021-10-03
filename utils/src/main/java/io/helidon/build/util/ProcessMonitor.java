@@ -392,10 +392,8 @@ public final class ProcessMonitor {
         private ConsolePrinter stdErr = DEVNULL;
         private Predicate<String> filter = line -> true;
         private Function<String, String> transform = Function.identity();
-        private Runnable beforeShutdown = () -> {
-        };
-        private Runnable afterShutdown = () -> {
-        };
+        private Runnable beforeShutdown = () -> {};
+        private Runnable afterShutdown = () -> {};
 
         private Builder() {
         }

@@ -23,7 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
 /**
- * Non-blocking Line reader.
+ * Non-blocking line reader.
  */
 class LineReader {
 

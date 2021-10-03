@@ -51,7 +51,7 @@ public class CopyResources implements BuildStep {
 
                 final Set<Path> changed = changes.addedOrModified();
                 if (!changed.isEmpty()) {
-                    stdOut.println("Copying " + changed.size() + " resource files");
+                    stdOut.println2("Copying " + changed.size() + " resource files");
                     for (final Path srcFile : changed) {
                         final Path outFile = toOutputFile(srcDir, srcFile, outDir);
                         copy(srcFile, outFile, stdOut);
