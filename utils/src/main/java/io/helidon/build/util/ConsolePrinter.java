@@ -30,7 +30,6 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * Console printer.
- * The contract of this interface is similar to a {@link java.io.PrintStream} with manual flushing.
  */
 public interface ConsolePrinter {
 
@@ -86,24 +85,6 @@ public interface ConsolePrinter {
      */
     default void println(String str) {
         print(str + EOL);
-    }
-
-    /**
-     * Print an empty line and flush.
-     */
-    default void println2() {
-        print(EOL);
-        flush();
-    }
-
-    /**
-     * Print the given line and flush.
-     *
-     * @param str line to print
-     */
-    default void println2(String str) {
-        print(str + EOL);
-        flush();
     }
 
     /**

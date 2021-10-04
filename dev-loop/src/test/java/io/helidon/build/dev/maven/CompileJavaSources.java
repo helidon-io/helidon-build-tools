@@ -84,7 +84,8 @@ public class CompileJavaSources implements BuildStep {
         if (!removed.isEmpty()) {
             final Path srcDir = sources.path();
             final Path outDir = component.outputRoot().path();
-            stdOut.println2("Removing class files of " + removed.size() + " removed source files");
+            stdOut.println("Removing class files of " + removed.size() + " removed source files");
+            stdOut.flush();
             for (final Path srcFile : removed) {
                 final Path relativePackageDir = srcDir.relativize(srcFile).getParent();
                 final Path outputPackageDir = outDir.resolve(relativePackageDir);
@@ -96,7 +97,8 @@ public class CompileJavaSources implements BuildStep {
                                                        .collect(Collectors.toList());
                     for (Path classFile : classFiles) {
                         if (verbose) {
-                            stdOut.println2("Removing: " + classFile);
+                            stdOut.println("Removing: " + classFile);
+                            stdOut.flush();
                         }
                         Files.delete(classFile);
                     }
@@ -108,7 +110,10 @@ public class CompileJavaSources implements BuildStep {
 
         final Set<Path> recompile = sourcesToCompile(changes);
         if (!recompile.isEmpty()) {
-            final DiagnosticListener<JavaFileObject> diagnostics = diagnostic -> stdErr.println2(format(diagnostic));
+            final DiagnosticListener<JavaFileObject> diagnostics = diagnostic -> stdErr.delegate((p,s) -> {
+                p.println(format(diagnostic));
+                p.flush();
+            });
             final List<String> compilerFlags = project.compilerFlags();
             final List<File> sourceFiles = recompile.stream().map(Path::toFile).collect(Collectors.toList());
             stdOut.println("Compiling " + sourceFiles.size() + " source file" + (sourceFiles.size() == 1 ? "" : "s"));

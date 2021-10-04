@@ -230,7 +230,7 @@ public class ProjectExecutor {
 
     private static void resetAnsi() {
         if (AnsiConsoleInstaller.areAnsiEscapesEnabled()) {
-            System.out.println(ansi().reset());
+            STDOUT.println(ansi().reset().toString());
         }
     }
 }

@@ -76,20 +76,25 @@ final class ConsoleRecorder {
     }
 
     /**
+     * Stop forwarding output.
+     */
+    void stop() {
+        stdOutReader = null;
+        stdErrReader = null;
+    }
+
+    /**
      * Process the data available in the underlying buffers.
      *
      * @return {@code true} if data was processed, {@code false} otherwise
      * @throws IOException if an IO error occurs
      */
     boolean tick() throws IOException {
-        if (stdOutReader == null || stdErrReader == null) {
-            throw new IllegalStateException("Not started");
-        }
         boolean ticked = false;
-        if (stdOutReader.tick()) {
+        if (stdOutReader != null && stdOutReader.tick()) {
             ticked = true;
         }
-        if (stdErrReader.tick()) {
+        if (stdErrReader != null && stdErrReader.tick()) {
             ticked = true;
         }
         return ticked;

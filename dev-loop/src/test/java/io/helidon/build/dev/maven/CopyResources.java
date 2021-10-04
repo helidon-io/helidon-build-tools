@@ -51,7 +51,8 @@ public class CopyResources implements BuildStep {
 
                 final Set<Path> changed = changes.addedOrModified();
                 if (!changed.isEmpty()) {
-                    stdOut.println2("Copying " + changed.size() + " resource files");
+                    stdOut.println("Copying " + changed.size() + " resource files");
+                    stdOut.flush();
                     for (final Path srcFile : changed) {
                         final Path outFile = toOutputFile(srcDir, srcFile, outDir);
                         copy(srcFile, outFile, stdOut);
@@ -72,13 +73,15 @@ public class CopyResources implements BuildStep {
     }
 
     private void copy(Path srcFile, Path outFile, ConsolePrinter stdOut) throws IOException {
-        stdOut.println2("Copying resource " + srcFile);
+        stdOut.println("Copying resource " + srcFile);
+        stdOut.flush();
         Files.copy(srcFile, outFile, REPLACE_EXISTING);
     }
 
     private void remove(Path outFile, ConsolePrinter stdOut) throws IOException {
         if (Files.exists(outFile)) {
-            stdOut.println2("Removing resource " + outFile);
+            stdOut.println("Removing resource " + outFile);
+            stdOut.flush();
             Files.delete(outFile);
         }
     }

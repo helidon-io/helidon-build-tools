@@ -299,6 +299,7 @@ public final class ProcessMonitor {
                     new ArrayList<>(processes)
                             .stream()
                             .map(p -> {
+                                p.recorder.stop();
                                 p.beforeShutdown.run();
                                 p.process.destroy();
                                 return p.exitFuture.thenRun(p.afterShutdown);
@@ -438,7 +439,10 @@ public final class ProcessMonitor {
          * @return This builder.
          */
         public Builder stdIn(File stdIn) {
-            return stdIn(ProcessBuilder.Redirect.from(stdIn));
+            if (stdIn != null) {
+                return stdIn(ProcessBuilder.Redirect.from(stdIn));
+            }
+            return this;
         }
 
         /**

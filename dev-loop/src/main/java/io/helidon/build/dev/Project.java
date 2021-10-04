@@ -17,7 +17,6 @@
 package io.helidon.build.dev;
 
 import java.io.File;
-import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -245,7 +244,7 @@ public class Project {
     }
 
     /**
-     * Returns whether or not all binaries are newer than all sources and no sources have changed.
+     * Returns whether all binaries are newer than all sources and no sources have changed.
      *
      * @return {@code true} if up to date, {@code false} if not.
      */
@@ -278,7 +277,7 @@ public class Project {
 
         if (newerThan(latestSource, latestBinary)) {
 
-            // Yes, so we are not up to date.
+            // Yes, so we are not up-to-date.
 
             return false;
         }
@@ -289,13 +288,13 @@ public class Project {
             final Optional<FileTime> changed = file.changedTimeIfOlderThan(latestBinary);
             if (changed.isPresent() && newerThan(changed.get(), latestSource)) {
 
-                // Yes, so we are not up to date.
+                // Yes, so we are not up-to-date.
 
                 return false;
             }
         }
 
-        // We're up to date.
+        // We're up-to-date.
         return true;
     }
 
@@ -315,26 +314,21 @@ public class Project {
      * Perform an incremental build for the given changes.
      *
      * @param changes The changes.
-     * @param stdOut A consumer for stdout.
-     * @param stdErr A consumer for stderr.
+     * @param stdOut A printer for stdout.
+     * @param stdErr A printer for stderr.
      * @throws Exception on error.
      */
     protected void incrementalBuild(List<BuildRoot.Changes> changes,
                                     ConsolePrinter stdOut,
-                                    ConsolePrinter stdErr) throws Exception {
+                                    ConsolePrinter stdErr)
+            throws Exception {
+
         if (!changes.isEmpty()) {
-            final PrintStream origOut = System.out;
-            final PrintStream origErr = System.err;
-            try {
-                for (final BuildRoot.Changes changed : changes) {
-                    changed.root().component().incrementalBuild(changed, stdOut, stdErr);
-                }
-                config.buildSucceeded();
-                config.store();
-            } finally {
-                System.setOut(origOut);
-                System.setErr(origErr);
+            for (final BuildRoot.Changes changed : changes) {
+                changed.root().component().incrementalBuild(changed, stdOut, stdErr);
             }
+            config.buildSucceeded();
+            config.store();
         }
     }
 
