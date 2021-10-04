@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.maven.url;
+package io.helidon.build.url.mvn;
 
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +28,7 @@ public class MavenURLParserTest {
     @Test
     public void testURLVersion() throws MalformedURLException {
         String mvnPath = "io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT/some/useless/directory/test-file.xml";
-        MavenURLHandler.MavenURLParser parser = new MavenURLHandler.MavenURLParser(mvnPath);
+        Handler.MavenURLParser parser = new Handler.MavenURLParser(mvnPath);
 
         assertThat(parser.getGroupId(), is("io.helidon.archetypes"));
         assertThat(parser.getArtifactId(), is("helidon-archetype"));
@@ -40,7 +40,7 @@ public class MavenURLParserTest {
     @Test
     public void testURLClassifier() throws MalformedURLException {
         String mvnPath = "io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT:classifier/some/useless/directory/test-file.xml";
-        MavenURLHandler.MavenURLParser parser = new MavenURLHandler.MavenURLParser(mvnPath);
+        Handler.MavenURLParser parser = new Handler.MavenURLParser(mvnPath);
 
         assertThat(parser.getGroupId(), is("io.helidon.archetypes"));
         assertThat(parser.getArtifactId(), is("helidon-archetype"));
@@ -52,7 +52,7 @@ public class MavenURLParserTest {
     @Test
     public void testURLTypeJar() throws MalformedURLException {
         String mvnPath = "io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT:jar/some/useless/directory/test-file.xml";
-        MavenURLHandler.MavenURLParser parser = new MavenURLHandler.MavenURLParser(mvnPath);
+        Handler.MavenURLParser parser = new Handler.MavenURLParser(mvnPath);
 
         assertThat(parser.getGroupId(), is("io.helidon.archetypes"));
         assertThat(parser.getArtifactId(), is("helidon-archetype"));
@@ -64,7 +64,7 @@ public class MavenURLParserTest {
     @Test
     public void testURLTypeZip() throws MalformedURLException {
         String mvnPath = "io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT:zip/some/useless/directory/test-file.xml";
-        MavenURLHandler.MavenURLParser parser = new MavenURLHandler.MavenURLParser(mvnPath);
+        Handler.MavenURLParser parser = new Handler.MavenURLParser(mvnPath);
 
         assertThat(parser.getGroupId(), is("io.helidon.archetypes"));
         assertThat(parser.getArtifactId(), is("helidon-archetype"));
@@ -76,7 +76,7 @@ public class MavenURLParserTest {
     @Test
     public void testURLComplete() throws MalformedURLException {
         String mvnPath = "io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT:classifier:jar/some/useless/directory/test-file.xml";
-        MavenURLHandler.MavenURLParser parser = new MavenURLHandler.MavenURLParser(mvnPath);
+        Handler.MavenURLParser parser = new Handler.MavenURLParser(mvnPath);
 
         assertThat(parser.getGroupId(), is("io.helidon.archetypes"));
         assertThat(parser.getArtifactId(), is("helidon-archetype"));

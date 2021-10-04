@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.maven.url;
+package io.helidon.build.url.mvn;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -41,7 +41,7 @@ import java.util.zip.ZipFile;
 /**
  * Maven Url Stream Handler.
  */
-class MavenURLHandler extends URLStreamHandler {
+public class Handler extends URLStreamHandler {
 
     @Override
     protected URLConnection openConnection(URL url) throws IOException {

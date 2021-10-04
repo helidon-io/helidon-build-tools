@@ -16,7 +16,6 @@
 
 module io.helidon.build.maven.url {
     requires java.base;
-    requires java.logging;
 
-    exports io.helidon.build.maven.url;
+    exports io.helidon.build.url.mvn;
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.maven.url;
+package io.helidon.build.url.mvn;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.notNullValue;
 
-public class MavenURLHandlerTest {
+public class HandlerTest {
 
     private static final String CONTENT = "<content>content</content>";
     private static final String ARCHIVE_DIRECTORY = "io/helidon/handler/maven-url-handler/3.0.0-SNAPSHOT";
@@ -50,9 +50,9 @@ public class MavenURLHandlerTest {
 
     @BeforeAll
     static void bootstrap() throws IOException {
-        URL.setURLStreamHandlerFactory(new MavenURLHandlerFactory());
         workDir = Files.createTempDirectory("archive");
         System.setProperty("io.helidon.mvn.local.repository", workDir.toString());
+        System.setProperty("java.protocol.handler.pkgs", "io.helidon.build.url");
         generateZipAndJar();
     }
 
@@ -143,8 +143,8 @@ public class MavenURLHandlerTest {
         Path destination = directory.resolve(descriptorFileName);
         Path secondDest = directory.resolve("xml").resolve(descriptorFileName);
         try (
-                InputStream first = MavenURLHandlerTest.class.getClassLoader().getResourceAsStream(descriptorFileName);
-                InputStream second = MavenURLHandlerTest.class.getClassLoader().getResourceAsStream(descriptorFileName);
+                InputStream first = HandlerTest.class.getClassLoader().getResourceAsStream(descriptorFileName);
+                InputStream second = HandlerTest.class.getClassLoader().getResourceAsStream(descriptorFileName);
         ) {
             Files.copy(first, destination, StandardCopyOption.REPLACE_EXISTING);
             Files.copy(second, secondDest, StandardCopyOption.REPLACE_EXISTING);

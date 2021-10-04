@@ -14,21 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.maven.url;
-
-import java.net.URLStreamHandler;
-import java.net.URLStreamHandlerFactory;
-
 /**
- * Custom URLStreamHandlerFactory for mvn protocol.
+ * Helidon Maven URL Handler.
  */
-public class MavenURLHandlerFactory implements URLStreamHandlerFactory {
-
-    @Override
-    public URLStreamHandler createURLStreamHandler(String protocol) {
-        if (protocol.equals("mvn")){
-            return new MavenURLHandler();
-        }
-        return null;
-    }
-}
+package io.helidon.build.url.mvn;
