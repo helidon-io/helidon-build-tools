@@ -22,7 +22,6 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +33,7 @@ import java.util.function.Predicate;
 
 import static io.helidon.build.util.ConsolePrinter.DEVNULL;
 import static java.lang.String.join;
+import static java.util.Objects.requireNonNullElseGet;
 
 /**
  * Executes a process and waits for completion, monitoring the output.
@@ -49,6 +49,7 @@ public final class ProcessMonitor {
     private final Consumer<String> monitorOut;
     private final ProcessBuilder.Redirect stdIn;
     private final ConsoleRecorder recorder;
+    private final boolean capturing;
     private final CompletableFuture<Void> exitFuture;
     private final Runnable beforeShutdown;
     private final Runnable afterShutdown;
@@ -59,6 +60,7 @@ public final class ProcessMonitor {
         this.description = builder.description;
         this.monitorOut = builder.monitorOut;
         this.stdIn = builder.stdIn;
+        this.capturing = builder.capture;
         this.recorder = new ConsoleRecorder(
                 builder.stdOut,
                 builder.stdErr,
@@ -342,11 +344,24 @@ public final class ProcessMonitor {
      */
     public abstract class ProcessException extends Exception {
 
+        private final String reason;
+
         private ProcessException(String reason) {
-            super(Optional.ofNullable(description)
-                          .orElseGet(() -> join(" ", processBuilder.command()))
-                          .concat(" ")
-                          .concat(reason));
+            this.reason = reason;
+        }
+
+        @Override
+        public String getMessage() {
+            final StringBuilder message = new StringBuilder();
+            message.append(requireNonNullElseGet(description, () -> join(" ", processBuilder.command())));
+            message.append(reason);
+            if (capturing) {
+                message.append(Constants.EOL);
+                for (String line : output().split("\\R")) {
+                    message.append("    ").append(line).append(Constants.EOL);
+                }
+            }
+            return message.toString();
         }
 
         /**

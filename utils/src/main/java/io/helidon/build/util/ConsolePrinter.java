@@ -150,12 +150,12 @@ public interface ConsolePrinter {
 
         @Override
         public void println(String str) {
-            delegate.println(str);
+            callback.accept(delegate, str + EOL);
         }
 
         @Override
         public void printf(String format, Object... args) {
-            delegate.printf(format, args);
+            callback.accept(delegate, String.format(format, args));
         }
 
         @Override
