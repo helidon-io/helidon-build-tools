@@ -18,7 +18,7 @@ package io.helidon.build.archetype.engine.v2.interpreter;
 
 import java.util.stream.Collectors;
 
-class ContextConvertorVisitor extends GenericVisitorEmptyImpl<String, ASTNode> {
+class ContextToStringConvertor extends GenericVisitorEmptyImpl<String, ASTNode> {
 
     @Override
     public String visit(ContextBooleanAST input, ASTNode arg) {

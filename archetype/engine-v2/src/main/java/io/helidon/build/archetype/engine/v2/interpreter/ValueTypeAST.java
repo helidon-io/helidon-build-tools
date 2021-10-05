@@ -23,7 +23,7 @@ import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
  */
 public class ValueTypeAST extends ASTNode implements ConditionalNode {
 
-    private final String value;
+    private String value;
     private final String url;
     private final String file;
     private final String template;
@@ -46,6 +46,15 @@ public class ValueTypeAST extends ASTNode implements ConditionalNode {
      */
     public String value() {
         return value;
+    }
+
+    /**
+     * Set the value.
+     *
+     * @param value value
+     */
+    public void value(String value) {
+        this.value = value;
     }
 
     /**

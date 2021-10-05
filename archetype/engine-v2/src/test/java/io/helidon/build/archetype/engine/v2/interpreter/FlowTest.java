@@ -44,7 +44,7 @@ class FlowTest {
 
         Flow flow = new Flow(archetype, "inner-output-elements-test.xml", false, List.of(DebugVisitor.builder().build()));
         flow.build(new ContextAST());
-        assertResult(flow, 5, 3);
+        assertResult(flow, 6, 3);
 
         OutputAST output = (OutputAST) flow.result().get().outputs().stream()
                 .filter(child -> child instanceof OutputAST)
@@ -69,6 +69,11 @@ class FlowTest {
 
         ModelAST modelAST = (ModelAST) templatesAST.children().get(0);
         assertThat(modelAST.children().size(), is(3));
+        ValueTypeAST valueTypeAST = modelAST.children().stream()
+                .filter(c -> c instanceof ValueTypeAST)
+                .map(c -> (ValueTypeAST) c)
+                .findFirst().get();
+        assertThat(valueTypeAST.value(), is("some value"));
         List<ModelKeyListAST> list = modelAST.children().stream()
                 .filter(c -> c instanceof ModelKeyListAST)
                 .map(c -> (ModelKeyListAST) c)

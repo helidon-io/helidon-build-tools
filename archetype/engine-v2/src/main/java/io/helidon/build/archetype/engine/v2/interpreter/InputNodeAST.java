@@ -23,7 +23,7 @@ public abstract class InputNodeAST extends ASTNode {
 
     private final String label;
     private final String name;
-    private final String def;
+    private String def;
     private final String prompt;
     private String help;
     private boolean optional = false;
@@ -80,6 +80,15 @@ public abstract class InputNodeAST extends ASTNode {
      */
     public String defaultValue() {
         return def;
+    }
+
+    /**
+     * Set the default value.
+     *
+     * @param defaultValue defaultValue
+     */
+    public void defaultValue(String defaultValue) {
+        this.def = defaultValue;
     }
 
     /**
