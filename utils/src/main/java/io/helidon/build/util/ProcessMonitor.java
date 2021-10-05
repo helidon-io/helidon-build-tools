@@ -497,7 +497,7 @@ public final class ProcessMonitor {
         private boolean tick(ProcessMonitor process) {
             try {
                 return process.recorder.tick();
-            } catch (IOException ex) {
+            } catch (Throwable ex) {
                 // pretend no work was done to maybe add a backoff
                 return false;
             } finally {

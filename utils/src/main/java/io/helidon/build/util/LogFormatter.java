@@ -52,7 +52,7 @@ public final class LogFormatter {
      * @return the function
      */
     public static Function<String, String> of(Level level) {
-        return s -> format(level, null, s);
+        return s -> formatEntry(level, s);
     }
 
     /**
@@ -65,7 +65,7 @@ public final class LogFormatter {
      * @return formatted message
      */
     public static String format(Level level, Throwable thrown, String message, Object... args) {
-        final String msg = toStyled(level, thrown, message, args);
+        final String msg = formatEntry(level, thrown, message, args);
         switch (level) {
             case DEBUG:
             case VERBOSE:
@@ -93,7 +93,11 @@ public final class LogFormatter {
         return styles;
     }
 
-    private static String toStyled(Level level, Throwable thrown, String message, Object... args) {
+    private static String formatEntry(Level level, String message) {
+        return toStyled(level, StyleRenderer.render(message));
+    }
+
+    private static String formatEntry(Level level, Throwable thrown, String message, Object... args) {
         final String rendered = StyleRenderer.render(message, args);
         final String styled = toStyled(level, rendered);
         final String trace = toStyled(level, thrown);

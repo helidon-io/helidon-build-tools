@@ -37,15 +37,18 @@ public final class PrintStreams {
         // cannot be instantiated
     }
 
+    private static final String FAST_STREAMS_PROP = "io.helidon.build.util.fast.streams";
+    private static final boolean FAST_STREAMS = Boolean.parseBoolean(System.getProperty(FAST_STREAMS_PROP, "true"));
+
     /**
      * {@code stdout}.
      */
-    public static final PrintStream STDOUT = new StandardPrintStream(FileDescriptor.out);
+    public static final PrintStream STDOUT = FAST_STREAMS ? new FastPrintStream(FileDescriptor.out) : System.out;
 
     /**
      * {@code stderr}.
      */
-    public static final PrintStream STDERR = new StandardPrintStream(FileDescriptor.err);
+    public static final PrintStream STDERR = FAST_STREAMS ? new FastPrintStream(FileDescriptor.err) : System.err;
 
     /**
      * {@code stdout} colored in red.
@@ -307,9 +310,9 @@ public final class PrintStreams {
         }
     }
 
-    private static final class StandardPrintStream extends PrintStream {
+    private static final class FastPrintStream extends PrintStream {
 
-        StandardPrintStream(FileDescriptor desc) {
+        FastPrintStream(FileDescriptor desc) {
             super(new FileOutputStream(desc), false, US_ASCII);
         }
     }
