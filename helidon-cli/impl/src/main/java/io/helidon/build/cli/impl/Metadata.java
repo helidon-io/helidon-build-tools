@@ -16,6 +16,7 @@
 package io.helidon.build.cli.impl;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,18 +35,20 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.util.ConfigProperties;
-import io.helidon.build.util.ConsolePrinter;
 import io.helidon.build.util.Log;
+import io.helidon.build.util.Log.Level;
+import io.helidon.build.util.LogFormatter;
 import io.helidon.build.util.MavenVersion;
+import io.helidon.build.util.PrintStreams;
 import io.helidon.build.util.Requirements;
 import io.helidon.build.util.TimeUtils;
 
 import static io.helidon.build.cli.impl.CommandRequirements.requireHelidonVersionDir;
-import static io.helidon.build.util.ConsolePrinter.DEVNULL;
-import static io.helidon.build.util.ConsolePrinter.STDOUT;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.lastModifiedTime;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
+import static io.helidon.build.util.PrintStreams.DEVNULL;
+import static io.helidon.build.util.PrintStreams.STDOUT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -507,15 +510,15 @@ public class Metadata {
         args.add(Config.buildVersion());
         args.add("--maxAttempts");
         args.add(Integer.toString(maxAttempts));
-        ConsolePrinter printer;
+        PrintStream stdOut;
         if (debugPlugin) {
             args.add("--debug");
-            printer = STDOUT;
+            stdOut = PrintStreams.apply(STDOUT, LogFormatter.of(Level.INFO));
         } else {
-            printer = DEVNULL;
+            stdOut = DEVNULL;
         }
         try {
-            Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS, printer);
+            Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS, stdOut);
         } catch (Plugins.PluginFailed e) {
             throw new UpdateFailed(e);
         }

@@ -17,6 +17,7 @@
 package io.helidon.build.dev.maven;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
@@ -25,7 +26,6 @@ import io.helidon.build.dev.BuildComponent;
 import io.helidon.build.dev.BuildRoot;
 import io.helidon.build.dev.BuildStep;
 import io.helidon.build.dev.DirectoryType;
-import io.helidon.build.util.ConsolePrinter;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -35,11 +35,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 public class CopyResources implements BuildStep {
 
     @Override
-    public void incrementalBuild(BuildRoot.Changes changes,
-                                 ConsolePrinter stdOut,
-                                 ConsolePrinter stdErr)
-            throws Exception {
-
+    public void incrementalBuild(BuildRoot.Changes changes, PrintStream stdOut, PrintStream stdErr) throws Exception {
         if (!changes.isEmpty()) {
             final BuildRoot sources = changes.root();
             if (sources.buildType().directoryType() == DirectoryType.Resources) {
@@ -72,13 +68,13 @@ public class CopyResources implements BuildStep {
         }
     }
 
-    private void copy(Path srcFile, Path outFile, ConsolePrinter stdOut) throws IOException {
+    private void copy(Path srcFile, Path outFile, PrintStream stdOut) throws IOException {
         stdOut.println("Copying resource " + srcFile);
         stdOut.flush();
         Files.copy(srcFile, outFile, REPLACE_EXISTING);
     }
 
-    private void remove(Path outFile, ConsolePrinter stdOut) throws IOException {
+    private void remove(Path outFile, PrintStream stdOut) throws IOException {
         if (Files.exists(outFile)) {
             stdOut.println("Removing resource " + outFile);
             stdOut.flush();

@@ -80,7 +80,7 @@ public class MetadataTestBase {
      * Cleanup after each test.
      */
     protected void cleanupEach() {
-        logged.uninstall();
+        CapturingLogWriter.uninstall();
         if (testServer != null) {
             testServer.stop();
         }

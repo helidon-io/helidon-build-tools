@@ -28,9 +28,14 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.build.util.Log;
+import io.helidon.build.util.Log.Level;
+import io.helidon.build.util.LogFormatter;
+import io.helidon.build.util.PrintStreams;
 import io.helidon.build.util.ProcessMonitor;
 
 import static io.helidon.build.cli.impl.BaseCommand.HELIDON_VERSION_PROPERTY;
+import static io.helidon.build.util.PrintStreams.STDERR;
+import static io.helidon.build.util.PrintStreams.STDOUT;
 import static io.helidon.build.util.Style.strip;
 import static io.helidon.build.util.Constants.EOL;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -115,8 +120,8 @@ class TestUtils {
         ProcessMonitor monitor = ProcessMonitor.builder()
                                                .processBuilder(pb)
                                                .stdIn(input)
-                                               .stdOut(Log::info)
-                                               .stdErr(Log::error)
+                                               .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(Level.INFO)))
+                                               .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(Level.ERROR)))
                                                .capture(true)
                                                .build()
                                                .start()

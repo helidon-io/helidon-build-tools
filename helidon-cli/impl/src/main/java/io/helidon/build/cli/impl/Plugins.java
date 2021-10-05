@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.build.cli.plugin.Plugin;
-import io.helidon.build.util.ConsolePrinter;
 import io.helidon.build.util.JavaProcessBuilder;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.ProcessMonitor;
@@ -43,6 +42,7 @@ import org.graalvm.nativeimage.ImageInfo;
 
 import static io.helidon.build.cli.impl.CommandRequirements.unsupportedJavaVersion;
 import static io.helidon.build.util.Constants.EOL;
+import static io.helidon.build.util.PrintStreams.STDOUT;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -104,6 +104,21 @@ public class Plugins {
     }
 
     /**
+     * Execute a plugin and wait for it to complete.
+     *
+     * @param pluginName     The plugin name.
+     * @param pluginArgs     The plugin args.
+     * @param maxWaitSeconds The maximum number of seconds to wait for completion.
+     * @throws PluginFailed if the execution fails
+     */
+    public static void execute(String pluginName,
+                               List<String> pluginArgs,
+                               int maxWaitSeconds) throws PluginFailed {
+
+        execute(pluginName, pluginArgs, maxWaitSeconds, STDOUT);
+    }
+
+    /**
      * Execute a plugin.
      * If executing inside a native executable, the plugin execution is done by spawning a Java process using the
      * bundled plugin JAR file. Otherwise, the execution is done in the current JVM.
@@ -111,18 +126,18 @@ public class Plugins {
      * @param pluginName     The plugin name.
      * @param pluginArgs     The plugin args.
      * @param maxWaitSeconds If spawned, the maximum number of seconds to wait for completion.
-     * @param printer        The printer to consume the output
+     * @param stdOut         The print stream to consume the output
      * @throws PluginFailed if the execution fails
      */
     public static void execute(String pluginName,
                                List<String> pluginArgs,
                                int maxWaitSeconds,
-                               ConsolePrinter printer) throws PluginFailed {
+                               PrintStream stdOut) throws PluginFailed {
 
         if (ImageInfo.inImageRuntimeCode()) {
-            spawned(pluginName, pluginArgs, maxWaitSeconds, printer);
+            spawned(pluginName, pluginArgs, maxWaitSeconds, stdOut);
         } else {
-            embedded(pluginName, pluginArgs, printer);
+            embedded(pluginName, pluginArgs, stdOut);
         }
     }
 
@@ -140,7 +155,7 @@ public class Plugins {
 
     private static void embedded(String pluginName,
                                  List<String> pluginArgs,
-                                 ConsolePrinter printer) throws PluginFailed {
+                                 PrintStream stdOut) throws PluginFailed {
 
         PrintStream origStdOut = System.out;
         ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -163,8 +178,9 @@ public class Plugins {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                printer.println(line);
+                stdOut.println(line);
             }
+            stdOut.flush();
         } catch (IOException ex) {
             throw new PluginFailed(ex);
         }
@@ -173,7 +189,7 @@ public class Plugins {
     private static void spawned(String pluginName,
                                 List<String> pluginArgs,
                                 int maxWaitSeconds,
-                                ConsolePrinter printer) throws PluginFailed {
+                                PrintStream stdOut) throws PluginFailed {
 
         // Create the command
         final List<String> command = new ArrayList<>();
@@ -188,11 +204,14 @@ public class Plugins {
         command.add(pluginJar().toString());
         command.addAll(pluginArgs(pluginName, pluginArgs));
 
+        // Create the process builder
+
+        final ProcessBuilder processBuilder = JavaProcessBuilder.newInstance().command(command);
         ProcessMonitor process = ProcessMonitor.builder()
-                .processBuilder(JavaProcessBuilder.create().command(command))
-                .stdOut(printer)
-                .capture(true)
-                .build();
+                                               .processBuilder(processBuilder)
+                                               .stdOut(stdOut)
+                                               .capture(true)
+                                               .build();
 
         try {
             Log.debug("executing %s", command);

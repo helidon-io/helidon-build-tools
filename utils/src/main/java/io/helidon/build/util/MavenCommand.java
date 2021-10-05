@@ -18,6 +18,7 @@ package io.helidon.build.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -34,13 +35,13 @@ import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
 import static io.helidon.build.util.AnsiConsoleInstaller.isHelidonChildProcess;
-import static io.helidon.build.util.ConsolePrinter.DEVNULL;
-import static io.helidon.build.util.ConsolePrinter.RED_STDERR;
-import static io.helidon.build.util.ConsolePrinter.STDOUT;
 import static io.helidon.build.util.Constants.EOL;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertJavaExecutable;
 import static io.helidon.build.util.FileUtils.listFiles;
+import static io.helidon.build.util.PrintStreams.DEVNULL;
+import static io.helidon.build.util.PrintStreams.RED_STDERR;
+import static io.helidon.build.util.PrintStreams.STDOUT;
 import static io.helidon.build.util.StyleFunction.Bold;
 import static java.io.File.pathSeparatorChar;
 import static java.util.Objects.requireNonNull;
@@ -60,16 +61,16 @@ public class MavenCommand {
     private static final AtomicReference<Path> MAVEN_HOME = new AtomicReference<>();
     private static final AtomicReference<MavenVersion> MAVEN_VERSION = new AtomicReference<>();
     private static final String VERSION_ERROR = "$(RED Found Maven version %s.)"
-            + EOL
-            + "$(bold Version) $(GREEN %s) $(bold or later is required.) "
-            + "Please update from %s and prepend your PATH or set the MAVEN_HOME or MVN_HOME "
-            + "environment variable.";
+                                                + EOL
+                                                + "$(bold Version) $(GREEN %s) $(bold or later is required.) "
+                                                + "Please update from %s and prepend your PATH or set the MAVEN_HOME or MVN_HOME "
+                                                + "environment variable.";
 
     private final String name;
     private final ProcessBuilder processBuilder;
     private final int maxWaitSeconds;
-    private final ConsolePrinter stdOut;
-    private final ConsolePrinter stdErr;
+    private final PrintStream stdOut;
+    private final PrintStream stdErr;
     private final Predicate<String> filter;
     private final Function<String, String> transform;
     private final Runnable beforeShutdown;
@@ -119,8 +120,8 @@ public class MavenCommand {
                     maven = toMavenExecutable(MVN_HOME_VAR);
                     if (maven == null) {
                         throw new IllegalStateException(MAVEN_BINARY_NAME + " not found. Please add it to "
-                                + "your PATH or set either the MAVEN_HOME or "
-                                + "MVN_HOME environment variables.");
+                                                        + "your PATH or set either the MAVEN_HOME or "
+                                                        + "MVN_HOME environment variables.");
                     }
                 }
             }
@@ -212,7 +213,8 @@ public class MavenCommand {
             // Could not determine the Maven version. The code to do so is fragile and is known
             // not to work in some environments (especially where shims are involved). So
             // don't fail if we can't determine the maven version.
-            Log.debug("Could not determine Maven version: " + ex + " Assuming version is acceptable.");
+            Log.debug("Could not determine Maven version: " + ex.toString()
+                    + " Assuming version is acceptable.");
             return;
         }
         // If we were able to determine the maven version, go ahead and make sure it is acceptable.
@@ -232,16 +234,16 @@ public class MavenCommand {
             Log.info("%s", Bold.apply(name));
         }
         return ProcessMonitor.builder()
-                .processBuilder(processBuilder)
-                .stdOut(stdOut)
-                .stdErr(stdErr)
-                .filter(filter)
-                .transform(transform)
-                .beforeShutdown(beforeShutdown)
-                .afterShutdown(afterShutdown)
-                .capture(false)
-                .build()
-                .start();
+                             .processBuilder(processBuilder)
+                             .stdOut(stdOut)
+                             .stdErr(stdErr)
+                             .filter(filter)
+                             .transform(transform)
+                             .beforeShutdown(beforeShutdown)
+                             .afterShutdown(afterShutdown)
+                             .capture(false)
+                             .build()
+                             .start();
     }
 
     /**
@@ -293,8 +295,8 @@ public class MavenCommand {
         private boolean verbose;
         private int debugPort;
         private int maxWaitSeconds;
-        private ConsolePrinter stdOut = DEVNULL;
-        private ConsolePrinter stdErr = DEVNULL;
+        private PrintStream stdOut = DEVNULL;
+        private PrintStream stdErr = DEVNULL;
         private Predicate<String> filter = line -> true;
         private Function<String, String> transform = Function.identity();
         private Runnable beforeShutdown = () -> {};
@@ -421,23 +423,23 @@ public class MavenCommand {
         }
 
         /**
-         * Sets the printer for process {@code stdout} stream.
+         * Sets the print stream for process {@code stdout}.
          *
          * @param stdOut The handler.
          * @return This builder.
          */
-        public Builder stdOut(ConsolePrinter stdOut) {
+        public Builder stdOut(PrintStream stdOut) {
             this.stdOut = stdOut;
             return this;
         }
 
         /**
-         * Sets the printer for process {@code stderr} stream.
+         * Sets the print stream for process {@code stderr}.
          *
          * @param stdErr The handler.
          * @return This builder.
          */
-        public Builder stdErr(ConsolePrinter stdErr) {
+        public Builder stdErr(PrintStream stdErr) {
             this.stdErr = stdErr;
             return this;
         }
@@ -564,8 +566,8 @@ public class MavenCommand {
             if (mavenOpts != null) {
                 if (mavenOpts.contains(DEBUG_OPT_PREFIX)) {
                     mavenOpts = Arrays.stream(mavenOpts.trim().split(" "))
-                            .filter(opt -> !opt.startsWith(DEBUG_OPT_PREFIX))
-                            .collect(Collectors.joining(" "));
+                                      .filter(opt -> !opt.startsWith(DEBUG_OPT_PREFIX))
+                                      .collect(Collectors.joining(" "));
                 }
             }
             return mavenOpts;

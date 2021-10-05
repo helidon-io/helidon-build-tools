@@ -46,7 +46,7 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyFilter;
 
-import static io.helidon.build.util.ConsolePrinter.STDOUT;
+import static io.helidon.build.util.PrintStreams.STDOUT;
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 import static io.helidon.build.util.ProjectConfig.HELIDON_VERSION;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
@@ -66,7 +66,7 @@ import static org.eclipse.aether.util.artifact.JavaScopes.RUNTIME;
 import static org.eclipse.aether.util.filter.DependencyFilterUtils.classpathFilter;
 
 /**
- * Collects settings from a maven project and stores them in a config file for later use
+ * Collects settings from a maven project and stores them in the a config file for later use
  * by {@link MavenProjectSupplier}. Must be installed as a maven extension to run.
  */
 @Component(role = AbstractMavenLifecycleParticipant.class)
@@ -114,7 +114,7 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
             try {
                 // Ensure that we support this project
                 supportedProjectDir = assertSupportedProject(session);
-                // Install our listener, so we can know if compilation occurred and succeeded
+                // Install our listener so we can know if compilation occurred and succeeded
                 final MavenExecutionRequest request = session.getRequest();
                 request.setExecutionListener(new EventListener(request.getExecutionListener()));
             } catch (IllegalStateException e) {

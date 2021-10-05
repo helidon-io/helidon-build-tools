@@ -16,15 +16,16 @@
 
 package io.helidon.build.dev;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import io.helidon.build.util.ConsolePrinter;
+import io.helidon.build.util.PrintStreams;
 
-import static io.helidon.build.util.ConsolePrinter.STDERR;
-import static io.helidon.build.util.ConsolePrinter.STDOUT;
 import static io.helidon.build.util.Constants.EOL;
+import static io.helidon.build.util.PrintStreams.STDERR;
+import static io.helidon.build.util.PrintStreams.STDOUT;
 
 /**
  * A build monitor used for testing.
@@ -33,8 +34,8 @@ public class TestMonitor implements BuildMonitor {
     private final CountDownLatch stoppedLatch;
     private final List<String> output;
     private final int stopCycle;
-    private final ConsolePrinter out;
-    private final ConsolePrinter err;
+    private final PrintStream out;
+    private final PrintStream err;
     private int lastCycle;
     private boolean started;
     private boolean[] cycleStart;
@@ -63,23 +64,23 @@ public class TestMonitor implements BuildMonitor {
         this.loopFailed = new Throwable[stopCycle + 1];
         this.ready = new boolean[stopCycle + 1];
         this.cycleEnd = new boolean[stopCycle + 1];
-        this.out = STDOUT.delegate((p, s) -> {
-            p.print(s);
+        this.out = PrintStreams.apply(STDOUT, s -> {
             output.add(s);
+            return s.charAt(0) == '[' ? "   " + s : s;
         });
-        this.err = STDERR.delegate((p, s) -> {
-            p.print(s);
+        this.err = PrintStreams.apply(STDERR, s -> {
             output.add(s);
+            return s.charAt(0) == '[' ? "   " + s : s;
         });
     }
 
     @Override
-    public ConsolePrinter stdOutPrinter() {
+    public PrintStream stdOut() {
         return out;
     }
 
     @Override
-    public ConsolePrinter stdErrPrinter() {
+    public PrintStream stdErr() {
         return err;
     }
 

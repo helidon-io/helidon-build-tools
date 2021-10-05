@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.build.util;
 
+import static io.helidon.build.util.PrintStreams.STDOUT;
 import static org.fusesource.jansi.Ansi.ansi;
 
 /**
@@ -109,6 +110,16 @@ public class ConsoleUtils {
             return true;
         } else {
             return false;
+        }
+    }
+
+    /**
+     * Reset ansi if Ansi escapes are enabled.
+     */
+    public static void reset() {
+        if (ENABLED) {
+            STDOUT.println(ansi().reset().toString());
+            STDOUT.flush();
         }
     }
 

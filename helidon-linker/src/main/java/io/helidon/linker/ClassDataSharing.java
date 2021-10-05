@@ -18,6 +18,7 @@ package io.helidon.linker;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -26,18 +27,21 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.build.util.ConsolePrinter;
 import io.helidon.build.util.FileUtils;
-import io.helidon.build.util.Log;
+import io.helidon.build.util.Log.Level;
+import io.helidon.build.util.LogFormatter;
 import io.helidon.build.util.OSType;
+import io.helidon.build.util.PrintStreams;
 import io.helidon.build.util.ProcessMonitor;
 import io.helidon.linker.util.Constants;
 import io.helidon.linker.util.JavaRuntime;
 
-import static io.helidon.build.util.ConsolePrinter.DEVNULL;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.fileName;
+import static io.helidon.build.util.PrintStreams.DEVNULL;
+import static io.helidon.build.util.PrintStreams.STDERR;
+import static io.helidon.build.util.PrintStreams.STDOUT;
 import static io.helidon.linker.Configuration.Builder.DEFAULT_MAX_APP_START_SECONDS;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
@@ -385,11 +389,20 @@ public final class ClassDataSharing {
 
             processBuilder.directory(jri.toFile());
 
+            PrintStream stdOut;
+            PrintStream stdErr;
+            if (logOutput) {
+                stdOut = PrintStreams.apply(STDOUT, LogFormatter.of(Level.DEBUG));
+                stdErr = PrintStreams.apply(STDERR, LogFormatter.of(Level.WARN));
+            } else {
+                stdOut = DEVNULL;
+                stdErr = DEVNULL;
+            }
             ProcessMonitor.builder()
                           .description(action)
                           .processBuilder(processBuilder)
-                          .stdOut(logOutput ? ConsolePrinter.create(Log::debug) : DEVNULL)
-                          .stdErr(logOutput ? ConsolePrinter.create(Log::warn) : DEVNULL)
+                          .stdOut(stdOut)
+                          .stdErr(stdErr)
                           .filter(Builder::filter)
                           .build()
                           .execute(maxWaitSeconds, TimeUnit.SECONDS);

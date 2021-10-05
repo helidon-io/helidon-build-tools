@@ -16,7 +16,7 @@
 
 package io.helidon.build.dev;
 
-import io.helidon.build.util.ConsolePrinter;
+import java.io.PrintStream;
 
 /**
  * A project build step.
@@ -36,11 +36,11 @@ public interface BuildStep {
      * Execute the build step for the given changed files only. Any component that does not match this predicate is ignored.
      *
      * @param changes The changes.
-     * @param stdOut A consumer for stdout.
-     * @param stdErr A consumer for stderr.
+     * @param stdOut A print stream for stdout.
+     * @param stdErr A print stream for stderr.
      * @throws Exception on error.
      */
     void incrementalBuild(BuildRoot.Changes changes,
-                          ConsolePrinter stdOut,
-                          ConsolePrinter stdErr) throws Exception;
+                          PrintStream stdOut,
+                          PrintStream stdErr) throws Exception;
 }

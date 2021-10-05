@@ -17,6 +17,7 @@
 package io.helidon.build.dev.maven;
 
 import java.io.File;
+import java.io.PrintStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,7 +38,7 @@ import io.helidon.build.dev.BuildFile;
 import io.helidon.build.dev.BuildRoot;
 import io.helidon.build.dev.BuildStep;
 import io.helidon.build.dev.Project;
-import io.helidon.build.util.ConsolePrinter;
+import io.helidon.build.util.PrintStreams;
 
 /**
  * A build step that compiles java sources using the ToolProvider API.
@@ -68,68 +69,64 @@ public class CompileJavaSources implements BuildStep {
 
     @Override
     public void incrementalBuild(BuildRoot.Changes changes,
-                                 ConsolePrinter stdOut,
-                                 ConsolePrinter stdErr) throws Exception {
-        if (changes.isEmpty()) {
-            return;
-        }
+                                 PrintStream stdOut,
+                                 PrintStream stdErr) throws Exception {
+        if (!changes.isEmpty()) {
+            final BuildRoot sources = changes.root();
+            final BuildComponent component = sources.component();
+            final Project project = component.project();
 
-        final BuildRoot sources = changes.root();
-        final BuildComponent component = sources.component();
-        final Project project = component.project();
+            // Delete classes for any removed sources
 
-        // Delete classes for any removed sources
-
-        final Set<Path> removed = changes.removed();
-        if (!removed.isEmpty()) {
-            final Path srcDir = sources.path();
-            final Path outDir = component.outputRoot().path();
-            stdOut.println("Removing class files of " + removed.size() + " removed source files");
-            stdOut.flush();
-            for (final Path srcFile : removed) {
-                final Path relativePackageDir = srcDir.relativize(srcFile).getParent();
-                final Path outputPackageDir = outDir.resolve(relativePackageDir);
-                if (Files.isDirectory(outputPackageDir)) { // Just in case we're in some weird state
-                    final String srcFileName = srcFile.getFileName().toString();
-                    final String className = srcFileName.substring(0, srcFileName.length() - JAVA_SUFFIX_LENGTH);
-                    final List<Path> classFiles = Files.walk(outputPackageDir)
-                                                       .filter(path -> isClassOrInnerClass(path, className))
-                                                       .collect(Collectors.toList());
-                    for (Path classFile : classFiles) {
-                        if (verbose) {
-                            stdOut.println("Removing: " + classFile);
-                            stdOut.flush();
+            final Set<Path> removed = changes.removed();
+            if (!removed.isEmpty()) {
+                final Path srcDir = sources.path();
+                final Path outDir = component.outputRoot().path();
+                stdOut.println("Removing class files of " + removed.size() + " removed source files");
+                stdOut.flush();
+                for (final Path srcFile : removed) {
+                    final Path relativePackageDir = srcDir.relativize(srcFile).getParent();
+                    final Path outputPackageDir = outDir.resolve(relativePackageDir);
+                    if (Files.isDirectory(outputPackageDir)) { // Just in case we're in some weird state
+                        final String srcFileName = srcFile.getFileName().toString();
+                        final String className = srcFileName.substring(0, srcFileName.length() - JAVA_SUFFIX_LENGTH);
+                        final List<Path> classFiles = Files.walk(outputPackageDir)
+                                                           .filter(path -> isClassOrInnerClass(path, className))
+                                                           .collect(Collectors.toList());
+                        for (Path classFile : classFiles) {
+                            if (verbose) {
+                                stdOut.println("Removing: " + classFile);
+                                stdOut.flush();
+                            }
+                            Files.delete(classFile);
                         }
-                        Files.delete(classFile);
                     }
                 }
             }
-        }
 
-        // Recompile any changed sources or all of them if any removals
+            // Recompile any changed sources or all of them if any removals
 
-        final Set<Path> recompile = sourcesToCompile(changes);
-        if (!recompile.isEmpty()) {
-            final DiagnosticListener<JavaFileObject> diagnostics = diagnostic -> stdErr.delegate((p,s) -> {
-                p.println(format(diagnostic));
-                p.flush();
-            });
-            final List<String> compilerFlags = project.compilerFlags();
-            final List<File> sourceFiles = recompile.stream().map(Path::toFile).collect(Collectors.toList());
-            stdOut.println("Compiling " + sourceFiles.size() + " source file" + (sourceFiles.size() == 1 ? "" : "s"));
-            if (verbose) {
-                stdOut.println("Classpath: " + project.classpath());
-            }
-            stdOut.flush();
+            final Set<Path> recompile = sourcesToCompile(changes);
+            if (!recompile.isEmpty()) {
+                PrintStream stdErrAutoFlush = PrintStreams.autoFlush(stdErr);
+                final DiagnosticListener<JavaFileObject> diagnostics = d -> stdErrAutoFlush.println(format(d));
+                final List<String> compilerFlags = project.compilerFlags();
+                final List<File> sourceFiles = recompile.stream().map(Path::toFile).collect(Collectors.toList());
+                stdOut.println("Compiling " + sourceFiles.size() + " source file" + (sourceFiles.size() == 1 ? "" : "s"));
+                if (verbose) {
+                    stdOut.println("Classpath: " + project.classpath());
+                }
+                stdOut.flush();
 
-            try (StandardJavaFileManager manager = compiler.getStandardFileManager(diagnostics, null, sourceEncoding)) {
-                manager.setLocation(StandardLocation.CLASS_PATH, project.classpath());
-                manager.setLocation(StandardLocation.CLASS_OUTPUT, List.of(component.outputRoot().path().toFile()));
-                Iterable<? extends JavaFileObject> javaSources = manager.getJavaFileObjectsFromFiles(sourceFiles);
-                JavaCompiler.CompilationTask task = compiler.getTask(null, manager, diagnostics, compilerFlags,
-                        null, javaSources);
-                if (!task.call()) {
-                    throw new Exception("Compilation failed");
+                try (StandardJavaFileManager manager = compiler.getStandardFileManager(diagnostics, null, sourceEncoding)) {
+                    manager.setLocation(StandardLocation.CLASS_PATH, project.classpath());
+                    manager.setLocation(StandardLocation.CLASS_OUTPUT, List.of(component.outputRoot().path().toFile()));
+                    Iterable<? extends JavaFileObject> javaSources = manager.getJavaFileObjectsFromFiles(sourceFiles);
+                    JavaCompiler.CompilationTask task = compiler.getTask(null, manager, diagnostics, compilerFlags,
+                                                                         null, javaSources);
+                    if (!task.call()) {
+                        throw new Exception("Compilation failed");
+                    }
                 }
             }
         }

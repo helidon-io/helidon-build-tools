@@ -218,7 +218,7 @@ public class BuildLoop {
                         try {
                             changed(ChangeType.SourceFile, changedTimeOf(sourceChanges).orElseThrow());
                             buildStarting(Incremental);
-                            project.incrementalBuild(sourceChanges, monitor.stdOutPrinter(), monitor.stdErrPrinter());
+                            project.incrementalBuild(sourceChanges, monitor.stdOut(), monitor.stdErr());
                             project.update(false);
                             buildSucceeded(Incremental);
                             ready();
@@ -308,7 +308,7 @@ public class BuildLoop {
         final Project project = project();
         if (project.sourceChangesSince(lastChangeTime.get()).isEmpty()) {
 
-            // No, so update the project, so we will wait for them
+            // No, so update the project so we will wait for them
 
             project.update(false);
 
@@ -394,7 +394,7 @@ public class BuildLoop {
         }
 
         /**
-         * Sets whether new {@code Project} instances should perform a clean build.
+         * Sets whether or not new {@code Project} instances should perform a clean build.
          *
          * @param clean {@code true} if new instances should perform a clean build.
          * @return The builder, for chaining.

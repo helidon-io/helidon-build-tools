@@ -15,9 +15,10 @@
  */
 package io.helidon.build.dev.maven;
 
+import java.io.PrintStream;
+
 import io.helidon.build.dev.BuildRoot;
 import io.helidon.build.dev.BuildStep;
-import io.helidon.build.util.ConsolePrinter;
 import io.helidon.build.util.Log;
 
 import org.apache.maven.plugin.MojoExecution;
@@ -83,9 +84,7 @@ public class MavenGoal implements BuildStep {
     }
 
     @Override
-    public void incrementalBuild(BuildRoot.Changes changes,
-                                 ConsolePrinter stdOut,
-                                 ConsolePrinter stdErr) throws Exception {
+    public void incrementalBuild(BuildRoot.Changes changes, PrintStream stdOut, PrintStream stdErr) throws Exception {
 
         if (!changes.isEmpty()) {
             execute();

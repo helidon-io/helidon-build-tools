@@ -17,6 +17,7 @@
 package io.helidon.build.dev;
 
 import java.io.File;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -31,7 +32,6 @@ import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
-import io.helidon.build.util.ConsolePrinter;
 import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.ProjectConfig;
 
@@ -244,7 +244,7 @@ public class Project {
     }
 
     /**
-     * Returns whether all binaries are newer than all sources and no sources have changed.
+     * Returns whether or not all binaries are newer than all sources and no sources have changed.
      *
      * @return {@code true} if up to date, {@code false} if not.
      */
@@ -277,7 +277,7 @@ public class Project {
 
         if (newerThan(latestSource, latestBinary)) {
 
-            // Yes, so we are not up-to-date.
+            // Yes, so we are not up to date.
 
             return false;
         }
@@ -288,13 +288,13 @@ public class Project {
             final Optional<FileTime> changed = file.changedTimeIfOlderThan(latestBinary);
             if (changed.isPresent() && newerThan(changed.get(), latestSource)) {
 
-                // Yes, so we are not up-to-date.
+                // Yes, so we are not up to date.
 
                 return false;
             }
         }
 
-        // We're up-to-date.
+        // We're up to date.
         return true;
     }
 
@@ -319,9 +319,8 @@ public class Project {
      * @throws Exception on error.
      */
     protected void incrementalBuild(List<BuildRoot.Changes> changes,
-                                    ConsolePrinter stdOut,
-                                    ConsolePrinter stdErr)
-            throws Exception {
+                                    PrintStream stdOut,
+                                    PrintStream stdErr) throws Exception {
 
         if (!changes.isEmpty()) {
             for (final BuildRoot.Changes changed : changes) {

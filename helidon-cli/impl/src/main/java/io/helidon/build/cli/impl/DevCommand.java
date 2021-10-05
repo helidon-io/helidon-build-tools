@@ -16,6 +16,7 @@
 
 package io.helidon.build.cli.impl;
 
+import java.io.PrintStream;
 import java.util.function.Predicate;
 
 import io.helidon.build.cli.harness.Command;
@@ -25,17 +26,15 @@ import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
 import io.helidon.build.util.AnsiConsoleInstaller;
-import io.helidon.build.util.ConsolePrinter;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenCommand;
+import io.helidon.build.util.PrintStreams.PrintStreamAdapter;
 import io.helidon.build.util.Strings;
 
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.cli.impl.CommandRequirements.requireValidMavenProjectConfig;
-import static io.helidon.build.util.ConsolePrinter.RED_STDERR;
-import static io.helidon.build.util.ConsolePrinter.STDOUT;
 import static io.helidon.build.util.ConsoleUtils.clearScreen;
 import static io.helidon.build.util.ConsoleUtils.hideCursor;
 import static io.helidon.build.util.ConsoleUtils.rewriteLine;
@@ -48,6 +47,8 @@ import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_HEADER;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_MESSAGE_PREFIX;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_START;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_STYLED_MESSAGE_PREFIX;
+import static io.helidon.build.util.PrintStreams.RED_STDERR;
+import static io.helidon.build.util.PrintStreams.STDOUT;
 import static io.helidon.build.util.StyleFunction.Bold;
 import static io.helidon.build.util.StyleFunction.BoldBlue;
 import static io.helidon.build.util.StyleFunction.BoldBrightGreen;
@@ -152,6 +153,7 @@ public final class DevCommand extends BaseCommand {
     protected void invoke(CommandContext context) throws Exception {
 
         // Dev goal
+
         String devGoal = CLI_MAVEN_PLUGIN;
         String cliPluginVersionProperty = null;
         String defaultPluginVersion = defaultHelidonPluginVersion(pluginVersion, useCurrentPluginVersion);
@@ -165,10 +167,12 @@ public final class DevCommand extends BaseCommand {
         devGoal += DEV_GOAL_SUFFIX;
 
         // Application args
+
         String jvmArgs = appJvmArgs == null ? null : APP_JVM_ARGS_PROP_PREFIX + appJvmArgs;
         String args = appArgs == null ? null : APP_ARGS_PROP_PREFIX + appArgs;
 
         // Clear terminal and print header if in terminal mode
+
         Verbosity verbosity = context.verbosity();
         boolean terminalMode = verbosity == NORMAL;
         if (terminalMode) {
@@ -178,26 +182,35 @@ public final class DevCommand extends BaseCommand {
         }
 
         // Execute helidon-maven-cli-plugin to enter dev loop
+
+        PrintStream stdOut = terminalMode
+                ? terminalModeOutput
+                : STDOUT;
+
+        Predicate<String> filter = terminalMode
+                ? terminalModeOutput
+                : DevCommand::printAllLines;
+
         MavenCommand.builder()
-                .beforeShutdown(this::exiting)
-                .verbose(verbosity == DEBUG)
-                .stdOut(terminalMode ? terminalModeOutput : STDOUT)
-                .stdErr(RED_STDERR)
-                .filter(terminalMode ? terminalModeOutput : (s) -> true)
-                .addArgument(devGoal)
-                .addArgument(CLEAN_PROP_PREFIX + clean)
-                .addArgument(FORK_PROP_PREFIX + fork)
-                .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
-                .addArguments(context.propertyArgs(true))
-                .addOptionalArgument(cliPluginVersionProperty)
-                .addOptionalArgument(jvmArgs)
-                .addOptionalArgument(args)
-                .directory(commonOptions.project())
-                .build()
-                .execute();
+                    .beforeShutdown(DevCommand::exiting)
+                    .verbose(verbosity == DEBUG)
+                    .stdOut(stdOut)
+                    .stdErr(RED_STDERR)
+                    .filter(filter)
+                    .addArgument(devGoal)
+                    .addArgument(CLEAN_PROP_PREFIX + clean)
+                    .addArgument(FORK_PROP_PREFIX + fork)
+                    .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
+                    .addArguments(context.propertyArgs(true))
+                    .addOptionalArgument(cliPluginVersionProperty)
+                    .addOptionalArgument(jvmArgs)
+                    .addOptionalArgument(args)
+                    .directory(commonOptions.project())
+                    .build()
+                    .execute();
     }
 
-    private void exiting() {
+    private static void exiting() {
         showCursor();
         printState(EXITING, true);
     }
@@ -208,10 +221,14 @@ public final class DevCommand extends BaseCommand {
         STDOUT.flush();
     }
 
+    private static boolean printAllLines(String line) {
+        return true;
+    }
+
     /**
      * A stateful filter/transform that cleans up output from {@code DevLoop}.
      */
-    private static class TerminalModeOutput implements Predicate<String>, ConsolePrinter {
+    private static class TerminalModeOutput extends PrintStreamAdapter implements Predicate<String> {
 
         private static final String DEBUGGER_LISTEN_MESSAGE_PREFIX = "Listening for transport";
         private static final String DOWNLOADING_MESSAGE_PREFIX = "Downloading from";
@@ -403,6 +420,9 @@ public final class DevCommand extends BaseCommand {
 
         @Override
         public void print(String line) {
+            if (line == null) {
+                return;
+            }
             if (!line.isBlank()) {
                 if (insertLine) {
                     STDOUT.println();

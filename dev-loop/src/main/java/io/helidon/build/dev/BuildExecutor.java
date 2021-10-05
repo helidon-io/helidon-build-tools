@@ -33,8 +33,8 @@ public abstract class BuildExecutor {
      * Constructor.
      *
      * @param projectDir The project directory.
-     * @param monitor The build monitor. All output is written to {@link BuildMonitor#stdOutPrinter()} and
-     * {@link BuildMonitor#stdErrPrinter()}.
+     * @param monitor The build monitor. All output is written to {@link BuildMonitor#stdOut()} and
+     * {@link BuildMonitor#stdErr()}.
      */
     protected BuildExecutor(Path projectDir, BuildMonitor monitor) {
         this.projectDir = assertDir(projectDir);
@@ -42,7 +42,7 @@ public abstract class BuildExecutor {
     }
 
     /**
-     * Returns whether this executor will fork the maven process.
+     * Returns whether or not this executor will fork the maven process.
      *
      * @return {@code true} if will fork.
      */

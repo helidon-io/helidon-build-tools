@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.build.dev.BuildExecutor;
 import io.helidon.build.dev.BuildMonitor;
-import io.helidon.build.util.ConsolePrinter;
 
 /**
  * A {@link BuildExecutor} that executes within the current process. Uses reflection to avoid build time
@@ -36,21 +35,21 @@ public class EmbeddedMavenExecutor extends BuildExecutor {
     private static final String MAVEN_CLI_CLASS_NAME = "org.apache.maven.cli.MavenCli";
     private static final String DO_MAIN_METHOD_NAME = "doMain";
 
-    private final ConsolePrinter out;
-    private final ConsolePrinter err;
+    private final PrintStream out;
+    private final PrintStream err;
 
     /**
      * Constructor.
      *
      * @param projectDir The project directory.
-     * @param monitor The build monitor. All output is written to {@link BuildMonitor#stdOutPrinter()} and
-     * {@link BuildMonitor#stdErrPrinter()}.
+     * @param monitor The build monitor. All output is written to {@link BuildMonitor#stdOut()} and
+     * {@link BuildMonitor#stdErr()}.
      */
     public EmbeddedMavenExecutor(Path projectDir, BuildMonitor monitor) {
         super(projectDir, monitor);
         initialize();
-        this.out = monitor.stdOutPrinter();
-        this.err = monitor.stdErrPrinter();
+        this.out = monitor.stdOut();
+        this.err = monitor.stdErr();
     }
 
     @Override

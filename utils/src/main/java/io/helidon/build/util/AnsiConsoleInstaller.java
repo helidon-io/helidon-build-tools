@@ -167,7 +167,7 @@ public class AnsiConsoleInstaller {
     }
 
     /**
-     * Returns whether Ansi escapes are enabled. Calls {@link #install()}.
+     * Returns whether or not Ansi escapes are enabled. Calls {@link #install()}.
      *
      * @return {@code true} if enabled.
      */

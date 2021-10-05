@@ -33,8 +33,8 @@ public class ForkedMavenExecutor extends BuildExecutor {
      * Constructor.
      *
      * @param projectDir The project directory.
-     * @param monitor The build monitor. All output is written to {@link BuildMonitor#stdOutPrinter()} and
-     * {@link BuildMonitor#stdErrPrinter()}.
+     * @param monitor The build monitor. All output is written to {@link BuildMonitor#stdOut()} and
+     * {@link BuildMonitor#stdErr()}.
      * @param maxBuildWaitSeconds The maximum number of seconds to wait for a build to complete.
      */
     public ForkedMavenExecutor(Path projectDir, BuildMonitor monitor, int maxBuildWaitSeconds) {
@@ -52,8 +52,8 @@ public class ForkedMavenExecutor extends BuildExecutor {
         MavenCommand.builder()
                     .directory(projectDirectory())
                     .arguments(Arrays.asList(args))
-                    .stdOut(monitor().stdOutPrinter())
-                    .stdErr(monitor().stdOutPrinter())
+                    .stdOut(monitor().stdOut())
+                    .stdErr(monitor().stdOut())
                     .maxWaitSeconds(maxBuildWaitSeconds)
                     .build()
                     .execute();

@@ -16,11 +16,10 @@
 
 package io.helidon.build.dev;
 
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-
-import io.helidon.build.util.ConsolePrinter;
 
 import static java.util.Objects.requireNonNull;
 
@@ -69,7 +68,7 @@ public class BuildComponent {
     }
 
     /**
-     * Returns the project containing this component.
+     * Returns the project containing this component..
      *
      * @return The project.
      */
@@ -104,8 +103,8 @@ public class BuildComponent {
      * @throws Exception on error.
      */
     public void incrementalBuild(BuildRoot.Changes changes,
-                                 ConsolePrinter stdOut,
-                                 ConsolePrinter stdErr) throws Exception {
+                                 PrintStream stdOut,
+                                 PrintStream stdErr) throws Exception {
         if (changes.root().component() == this) {
             for (BuildStep step : buildSteps) {
                 step.incrementalBuild(changes, stdOut, stdErr);

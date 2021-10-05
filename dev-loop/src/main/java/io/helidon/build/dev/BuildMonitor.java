@@ -16,7 +16,9 @@
 
 package io.helidon.build.dev;
 
-import io.helidon.build.util.ConsolePrinter;
+import java.io.PrintStream;
+
+import io.helidon.build.util.PrintStreams;
 
 /**
  * A receiver of build loop messages and events.
@@ -26,19 +28,19 @@ public interface BuildMonitor {
     /**
      * Returns a printer for messages written to stdout.
      *
-     * @return The consumer.
+     * @return The print stream
      */
-    default ConsolePrinter stdOutPrinter() {
-        return ConsolePrinter.STDOUT;
+    default PrintStream stdOut() {
+        return PrintStreams.STDOUT;
     }
 
     /**
-     * Returns a printer for messages written to stderr.
+     * Returns a {@link PrintStream} for messages written to stderr.
      *
-     * @return The consumer.
+     * @return The print stream
      */
-    default ConsolePrinter stdErrPrinter() {
-        return ConsolePrinter.STDERR;
+    default PrintStream stdErr() {
+        return PrintStreams.STDERR;
     }
 
     /**

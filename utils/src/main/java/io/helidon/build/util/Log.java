@@ -95,14 +95,14 @@ public class Log {
         void write(Level level, Throwable thrown, String message, Object... args);
 
         /**
-         * Returns whether debug messages will be written.
+         * Returns whether or not debug messages will be written.
          *
          * @return {@code true} if enabled.
          */
         boolean isDebug();
 
         /**
-         * Returns whether verbose messages will be written.
+         * Returns whether or not verbose messages will be written.
          *
          * @return {@code true} if enabled.
          */
@@ -342,7 +342,7 @@ public class Log {
     }
 
     /**
-     * Tests whether a writer has been set.
+     * Tests whether or not a writer has been set.
      *
      * @return {@code true} if set.
      */

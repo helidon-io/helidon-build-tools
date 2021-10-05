@@ -17,6 +17,7 @@ package io.helidon.build.util;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -33,22 +34,22 @@ final class ConsoleRecorder {
     private final Predicate<String> filter;
     private final Function<String, String> transform;
     private final boolean capturing;
-    private final ConsolePrinter stdOutPrinter;
-    private final ConsolePrinter stdErrPrinter;
+    private final PrintStream stdOut;
+    private final PrintStream stdErr;
     private LineReader stdOutReader;
     private LineReader stdErrReader;
 
     /**
      * Create a new output forwarder.
      *
-     * @param stdOutPrinter console printer for {@code stdout}
-     * @param stdErrPrinter console printer for {@code stderr}
+     * @param stdOut print stream for {@code stdout}
+     * @param stdErr print stream for {@code stderr}
      * @param filter        predicate to filter the lines to print
      * @param transform     function to transform the lines to print
      * @param recording     {@code true} if the output should be captured
      */
-    ConsoleRecorder(ConsolePrinter stdOutPrinter,
-                    ConsolePrinter stdErrPrinter,
+    ConsoleRecorder(PrintStream stdOut,
+                    PrintStream stdErr,
                     Predicate<String> filter,
                     Function<String, String> transform,
                     boolean recording) {
@@ -56,23 +57,23 @@ final class ConsoleRecorder {
         this.filter = filter;
         this.transform = transform;
         this.capturing = recording;
-        this.stdOutPrinter = stdOutPrinter.delegate((printer, str) -> print(printer, str, capturedStdOut));
-        this.stdErrPrinter = stdErrPrinter.delegate((printer, str) -> print(printer, str, capturedStdErr));
+        this.stdOut = PrintStreams.delegate(stdOut, (printer, str) -> print(printer, str, capturedStdOut));
+        this.stdErr = PrintStreams.delegate(stdErr, (printer, str) -> print(printer, str, capturedStdErr));
     }
 
     /**
      * Start forwarding output with the given streams.
      *
-     * @param stdOutStream input stream for {@code stdout}
-     * @param stdErrStream input stream for {@code stderr}
+     * @param outStream input stream for {@code stdout}
+     * @param errStream input stream for {@code stderr}
      * @throws IllegalStateException if the forwarded was already started
      */
-    void start(InputStream stdOutStream, InputStream stdErrStream) {
+    void start(InputStream outStream, InputStream errStream) {
         if (stdOutReader != null || stdErrReader != null) {
             throw new IllegalStateException("Already started");
         }
-        stdOutReader = new LineReader(stdOutStream, stdOutPrinter::print, stdOutPrinter::flush);
-        stdErrReader = new LineReader(stdErrStream, stdErrPrinter::print, stdErrPrinter::flush);
+        stdOutReader = new LineReader(outStream, stdOut::print, stdOut::flush);
+        stdErrReader = new LineReader(errStream, stdErr::print, stdErr::flush);
     }
 
     /**
@@ -91,6 +92,7 @@ final class ConsoleRecorder {
      */
     boolean tick() throws IOException {
         boolean ticked = false;
+        //noinspection RedundantIfStatement
         if (stdOutReader != null && stdOutReader.tick()) {
             ticked = true;
         }
@@ -127,7 +129,7 @@ final class ConsoleRecorder {
         return capturedStdErr.toString();
     }
 
-    private void print(ConsolePrinter printer, String str, StringBuilder capture) {
+    private void print(PrintStream printer, String str, StringBuilder capture) {
         String line = str + EOL;
         if (filter.test(str)) {
             printer.print(transform.apply(line));

@@ -15,6 +15,7 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.PrintStream;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -28,12 +29,15 @@ import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.util.ConfigProperties;
 import io.helidon.build.util.Log;
+import io.helidon.build.util.Log.Level;
+import io.helidon.build.util.LogFormatter;
 import io.helidon.build.util.MavenVersion;
+import io.helidon.build.util.PrintStreams;
 import io.helidon.build.util.ProjectConfig;
 import io.helidon.build.util.TimeUtils;
 
 import static io.helidon.build.cli.impl.VersionCommand.addProjectProperty;
-import static io.helidon.build.util.ConsolePrinter.STDOUT;
+import static io.helidon.build.util.PrintStreams.STDOUT;
 import static io.helidon.build.util.ProjectConfig.HELIDON_VERSION;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
@@ -158,7 +162,8 @@ public final class InfoCommand extends BaseCommand {
         log("Project Config", projectProps, maxWidth);
         log("General", buildProps, maxWidth);
         try {
-            Plugins.execute("GetInfo", pluginArgs(maxWidth), 5, STDOUT);
+            PrintStream stdOut = PrintStreams.apply(STDOUT, LogFormatter.of(Level.INFO));
+            Plugins.execute("GetInfo", pluginArgs(maxWidth), 5, stdOut);
         } catch (Plugins.PluginFailed e) {
             Log.error(e, "Unable to get system info");
         }

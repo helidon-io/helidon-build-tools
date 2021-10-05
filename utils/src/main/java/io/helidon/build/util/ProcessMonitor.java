@@ -18,7 +18,7 @@ package io.helidon.build.util;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -31,8 +31,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static io.helidon.build.util.ConsolePrinter.DEVNULL;
-import static java.lang.String.join;
+import static io.helidon.build.util.PrintStreams.DEVNULL;
 import static java.util.Objects.requireNonNullElseGet;
 
 /**
@@ -44,7 +43,7 @@ public final class ProcessMonitor {
     private static final int FORCEFUL_STOP_TIMEOUT = 2;
     private static final MonitorThread MONITOR_THREAD = new MonitorThread();
 
-    private final ProcessBuilder processBuilder;
+    private final ProcessBuilder builder;
     private final String description;
     private final Consumer<String> monitorOut;
     private final ProcessBuilder.Redirect stdIn;
@@ -55,12 +54,196 @@ public final class ProcessMonitor {
     private final Runnable afterShutdown;
     private volatile Process process;
 
+    /**
+     * Returns a new builder.
+     *
+     * @return The builder.
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Builder for a {@link ProcessMonitor}.
+     */
+    public static final class Builder {
+
+        private ProcessBuilder builder;
+        private String description;
+        private boolean capture;
+        private Consumer<String> monitorOut;
+        private ProcessBuilder.Redirect stdIn;
+        private PrintStream stdOut;
+        private PrintStream stdErr;
+        private Predicate<String> filter = line -> true;
+        private Function<String, String> transform = Function.identity();
+        private Runnable beforeShutdown = () -> {};
+        private Runnable afterShutdown = () -> {};
+
+        private Builder() {
+        }
+
+        /**
+         * Sets the process builder.
+         *
+         * @param processBuilder The process builder.
+         * @return This builder.
+         */
+        public Builder processBuilder(ProcessBuilder processBuilder) {
+            this.builder = processBuilder;
+            return this;
+        }
+
+        /**
+         * Sets the process description.
+         *
+         * @param description The description.
+         * @return This builder.
+         */
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        /**
+         * Sets whether to capture output.
+         *
+         * @param capture {@code true} if output should be captured.
+         * @return This builder.
+         */
+        public Builder capture(boolean capture) {
+            this.capture = capture;
+            return this;
+        }
+
+        /**
+         * Sets the input for process.
+         *
+         * @param stdIn The input.
+         * @return This builder.
+         */
+        public Builder stdIn(File stdIn) {
+            if (stdIn != null) {
+                return stdIn(ProcessBuilder.Redirect.from(stdIn));
+            } else {
+                return this;
+            }
+        }
+
+        /**
+         * Sets the input for process.
+         *
+         * @param stdIn The input.
+         * @return This builder.
+         */
+        public Builder stdIn(ProcessBuilder.Redirect stdIn) {
+            this.stdIn = stdIn;
+            return this;
+        }
+
+        /**
+         * Sets the print stream for process {@code stdout}.
+         *
+         * @param stdOut The handler.
+         * @return This builder.
+         */
+        public Builder stdOut(PrintStream stdOut) {
+            this.stdOut = stdOut;
+            this.monitorOut = stdOut::println;
+            return this;
+        }
+
+        /**
+         * Sets the print stream for process {@code stderr}.
+         *
+         * @param stdErr The handler.
+         * @return This builder.
+         */
+        public Builder stdErr(PrintStream stdErr) {
+            this.stdErr = stdErr;
+            return this;
+        }
+
+        /**
+         * Sets a filter for all process output.
+         *
+         * @param filter The filter.
+         * @return This builder.
+         */
+        public Builder filter(Predicate<String> filter) {
+            this.filter = filter;
+            return this;
+        }
+
+        /**
+         * Sets a transformer for all process output.
+         *
+         * @param transform The transformer.
+         * @return This builder.
+         */
+        public Builder transform(Function<String, String> transform) {
+            this.transform = transform;
+            return this;
+        }
+
+        /**
+         * Sets the before shutdown callback.
+         *
+         * @param beforeShutdown a callback invoked before the process is stopped by the shutdown hook
+         * @return This builder.
+         */
+        public Builder beforeShutdown(Runnable beforeShutdown) {
+            this.beforeShutdown = beforeShutdown;
+            return this;
+        }
+
+        /**
+         * Sets the after shutdown callback.
+         *
+         * @param afterShutdown a callback invoked after the process is stopped by the shutdown hook
+         * @return This builder.
+         */
+        public Builder afterShutdown(Runnable afterShutdown) {
+            this.afterShutdown = afterShutdown;
+            return this;
+        }
+
+        /**
+         * Builds the instance.
+         *
+         * @return The instance.
+         */
+        public ProcessMonitor build() {
+            if (builder == null) {
+                throw new IllegalStateException("processBuilder required");
+            }
+            if (stdOut == null) {
+                capture = true;
+                stdOut = DEVNULL;
+                monitorOut = Log::info;
+            } else {
+                monitorOut = stdOut::println;
+            }
+            if (stdErr == null) {
+                capture = true;
+                stdErr = DEVNULL;
+            }
+            if (filter == null) {
+                filter = line -> true;
+            }
+            if (transform == null) {
+                transform = Function.identity();
+            }
+            return new ProcessMonitor(this);
+        }
+    }
+
     private ProcessMonitor(Builder builder) {
-        this.processBuilder = builder.processBuilder;
+        this.builder = builder.builder;
         this.description = builder.description;
+        this.capturing = builder.capture;
         this.monitorOut = builder.monitorOut;
         this.stdIn = builder.stdIn;
-        this.capturing = builder.capture;
         this.recorder = new ConsoleRecorder(
                 builder.stdOut,
                 builder.stdErr,
@@ -76,17 +259,18 @@ public final class ProcessMonitor {
      * Starts the process and waits for completion.
      *
      * @param timeout The maximum time to wait.
-     * @param unit    The time unit of the {@code timeout} argument.
+     * @param unit The time unit of the {@code timeout} argument.
      * @return This instance.
-     * @throws IOException             If an I/O error occurs.
+     * @throws IOException If an I/O error occurs.
      * @throws ProcessTimeoutException If the process does not complete in the specified time.
-     * @throws ProcessFailedException  If the process fails.
-     * @throws InterruptedException    If the thread is interrupted.
+     * @throws ProcessFailedException If the process fails.
+     * @throws InterruptedException If the thread is interrupted.
      */
-    @SuppressWarnings("checkstyle:ThrowsCount")
-    public ProcessMonitor execute(long timeout, TimeUnit unit)
-            throws IOException, ProcessTimeoutException, ProcessFailedException, InterruptedException {
-
+    @SuppressWarnings({"checkstyle:JavadocMethod", "checkstyle:ThrowsCount"})
+    public ProcessMonitor execute(long timeout, TimeUnit unit) throws IOException,
+            ProcessTimeoutException,
+            ProcessFailedException,
+            InterruptedException {
         return start().waitForCompletion(timeout, unit);
     }
 
@@ -95,9 +279,9 @@ public final class ProcessMonitor {
      *
      * @return This instance.
      * @throws IllegalStateException If the process was already started.
-     * @throws UncheckedIOException  If an I/O error occurs.
+     * @throws IOException If an I/O error occurs.
      */
-    public ProcessMonitor start() {
+    public ProcessMonitor start() throws IOException {
         if (process != null) {
             throw new IllegalStateException("already started");
         }
@@ -105,14 +289,10 @@ public final class ProcessMonitor {
             monitorOut.accept(description);
         }
         if (stdIn != null) {
-            processBuilder.redirectInput(stdIn);
+            builder.redirectInput(stdIn);
         }
-        Log.debug("Executing command: %s", join(" ", processBuilder.command()));
-        try {
-            process = processBuilder.start();
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
+        Log.debug("Executing command: %s", String.join(" ", builder.command()));
+        process = builder.start();
         recorder.start(process.getInputStream(), process.getErrorStream());
         Log.debug("Process ID: %d", process.pid());
         MONITOR_THREAD.register(this);
@@ -188,7 +368,7 @@ public final class ProcessMonitor {
     }
 
     /**
-     * Tests if the process is alive.
+     * Tests whether the process is alive.
      *
      * @return {@code true} if the process is alive.
      */
@@ -204,7 +384,7 @@ public final class ProcessMonitor {
     /**
      * Returns the combined captured output.
      *
-     * @return The output.
+     * @return The output. Empty if capture not enabled.
      */
     public String output() {
         return recorder.capturedOutput();
@@ -213,7 +393,7 @@ public final class ProcessMonitor {
     /**
      * Returns any captured stderr output.
      *
-     * @return The output.
+     * @return The output. Empty if capture not enabled.
      */
     public String stdOut() {
         return recorder.capturedStdOut();
@@ -222,7 +402,7 @@ public final class ProcessMonitor {
     /**
      * Returns any captured stderr output.
      *
-     * @return The output.
+     * @return The output. Empty if capture not enabled.
      */
     public String stdErr() {
         return recorder.capturedStdErr();
@@ -231,8 +411,8 @@ public final class ProcessMonitor {
     /**
      * A thread that monitors all started processes.
      * <ul>
-     *     <li>It consumes the outputs of all started processes (one thread of all processes)</li>
-     *     <li>Implements the shutdown hook to stop any running forked process gracefully</li>
+     *     <li>It consumes the output of all started processes (one thread handles all processes)</li>
+     *     <li>Implements a shutdown hook to stop any running forked process gracefully</li>
      *     <li>Completes {@link #exitFuture} to ensure that the output of forked processes is drained</li>
      *     <li>Implements a backoff to avoid using too much CPU</li>
      * </ul>
@@ -331,15 +511,6 @@ public final class ProcessMonitor {
     }
 
     /**
-     * Returns a new builder.
-     *
-     * @return The builder.
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    /**
      * Process exception.
      */
     public abstract class ProcessException extends Exception {
@@ -353,7 +524,7 @@ public final class ProcessMonitor {
         @Override
         public String getMessage() {
             final StringBuilder message = new StringBuilder();
-            message.append(requireNonNullElseGet(description, () -> join(" ", processBuilder.command())));
+            message.append(requireNonNullElseGet(description, () -> String.join(" ", builder.command())));
             message.append(reason);
             if (capturing) {
                 message.append(Constants.EOL);
@@ -391,163 +562,6 @@ public final class ProcessMonitor {
 
         private ProcessFailedException() {
             super("failed with exit code " + process.exitValue());
-        }
-    }
-
-    /**
-     * Builder for a {@link ProcessMonitor}.
-     */
-    public static final class Builder {
-
-        private ProcessBuilder processBuilder;
-        private String description;
-        private boolean capture;
-        private Consumer<String> monitorOut = Log::info;
-        private ProcessBuilder.Redirect stdIn;
-        private ConsolePrinter stdOut = DEVNULL;
-        private ConsolePrinter stdErr = DEVNULL;
-        private Predicate<String> filter = line -> true;
-        private Function<String, String> transform = Function.identity();
-        private Runnable beforeShutdown = () -> {};
-        private Runnable afterShutdown = () -> {};
-
-        private Builder() {
-        }
-
-        /**
-         * Sets the process builder.
-         *
-         * @param processBuilder The process builder.
-         * @return This builder.
-         */
-        public Builder processBuilder(ProcessBuilder processBuilder) {
-            this.processBuilder = processBuilder;
-            return this;
-        }
-
-        /**
-         * Sets the process description.
-         *
-         * @param description The description.
-         * @return This builder.
-         */
-        public Builder description(String description) {
-            this.description = description;
-            return this;
-        }
-
-        /**
-         * Sets whether to capture output.
-         *
-         * @param capture {@code true} if output should be captured.
-         * @return This builder.
-         */
-        public Builder capture(boolean capture) {
-            this.capture = capture;
-            return this;
-        }
-
-        /**
-         * Sets the input for process.
-         *
-         * @param stdIn The input.
-         * @return This builder.
-         */
-        public Builder stdIn(File stdIn) {
-            if (stdIn != null) {
-                return stdIn(ProcessBuilder.Redirect.from(stdIn));
-            }
-            return this;
-        }
-
-        /**
-         * Sets the input for process.
-         *
-         * @param stdIn The input.
-         * @return This builder.
-         */
-        public Builder stdIn(ProcessBuilder.Redirect stdIn) {
-            this.stdIn = stdIn;
-            return this;
-        }
-
-        /**
-         * Sets the handler for process {@code stdout} stream.
-         *
-         * @param stdOut The handler.
-         * @return This builder.
-         */
-        public Builder stdOut(ConsolePrinter stdOut) {
-            this.stdOut = stdOut;
-            this.monitorOut = stdOut::println;
-            return this;
-        }
-
-        /**
-         * Sets the handler for process {@code stderr} stream.
-         *
-         * @param stdErr The handler.
-         * @return This builder.
-         */
-        public Builder stdErr(ConsolePrinter stdErr) {
-            this.stdErr = stdErr;
-            return this;
-        }
-
-        /**
-         * Sets a filter for all process output.
-         *
-         * @param filter The filter.
-         * @return This builder.
-         */
-        public Builder filter(Predicate<String> filter) {
-            this.filter = filter;
-            return this;
-        }
-
-        /**
-         * Sets a transformer for all process output.
-         *
-         * @param transform The transformer.
-         * @return This builder.
-         */
-        public Builder transform(Function<String, String> transform) {
-            this.transform = transform;
-            return this;
-        }
-
-        /**
-         * Sets the before shutdown callback.
-         *
-         * @param beforeShutdown a callback invoked before the process is stopped by the shutdown hook
-         * @return This builder.
-         */
-        public Builder beforeShutdown(Runnable beforeShutdown) {
-            this.beforeShutdown = beforeShutdown;
-            return this;
-        }
-
-        /**
-         * Sets the after shutdown callback.
-         *
-         * @param afterShutdown a callback invoked after the process is stopped by the shutdown hook
-         * @return This builder.
-         */
-        public Builder afterShutdown(Runnable afterShutdown) {
-            this.afterShutdown = afterShutdown;
-            return this;
-        }
-
-        /**
-         * Builds the instance.
-         *
-         * @return The instance.
-         */
-        public ProcessMonitor build() {
-            if (processBuilder == null) {
-                throw new IllegalStateException("processBuilder required");
-            }
-            return new ProcessMonitor(this);
         }
     }
 }

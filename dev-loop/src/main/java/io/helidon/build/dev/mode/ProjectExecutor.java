@@ -17,26 +17,26 @@
 package io.helidon.build.dev.mode;
 
 import java.io.File;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import io.helidon.build.dev.Project;
-import io.helidon.build.util.AnsiConsoleInstaller;
-import io.helidon.build.util.ConsolePrinter;
+import io.helidon.build.util.ConsoleUtils;
 import io.helidon.build.util.Constants;
 import io.helidon.build.util.JavaProcessBuilder;
+import io.helidon.build.util.PrintStreams;
 import io.helidon.build.util.ProcessMonitor;
 
-import static io.helidon.build.util.ConsolePrinter.STDERR;
-import static io.helidon.build.util.ConsolePrinter.STDOUT;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_APPLICATION_STARTING;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_APPLICATION_STOPPED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_APPLICATION_STOPPING;
+import static io.helidon.build.util.PrintStreams.STDERR;
+import static io.helidon.build.util.PrintStreams.STDOUT;
 import static io.helidon.build.util.StyleFunction.BoldBrightCyan;
 import static io.helidon.build.util.StyleFunction.BoldBrightGreen;
 import static io.helidon.build.util.StyleFunction.BoldBrightRed;
 import static io.helidon.build.util.StyleFunction.BoldYellow;
-import static org.fusesource.jansi.Ansi.ansi;
 
 /**
  * Project executor.
@@ -59,20 +59,20 @@ public class ProjectExecutor {
     private final Project project;
     private final String logPrefix;
     private final String name;
+    private ProcessMonitor processMonitor;
     private final List<String> appJvmArgs;
     private final List<String> appArgs;
     private final StringBuilder stdErrBuf;
-    private ProcessMonitor process;
     private boolean hasExitMessage;
     private long lastErrorMessageTime;
 
     /**
      * Create an executor from a project.
      *
-     * @param project      The project.
-     * @param logPrefix    The log prefix.
-     * @param appJvmArgs   The application JVM arguments.
-     * @param appArgs      The application arguments.
+     * @param project The project.
+     * @param logPrefix The log prefix.
+     * @param appJvmArgs The application JVM arguments.
+     * @param appArgs The application arguments.
      */
     public ProjectExecutor(Project project,
                            String logPrefix,
@@ -127,14 +127,14 @@ public class ProjectExecutor {
      * @throws IllegalStateException If process does not stop before timeout.
      */
     public void stop(boolean verbose) {
-        if (process != null) {
+        if (processMonitor != null) {
             if (verbose) {
                 stateChanged(STOPPING);
             }
             try {
-                process.stop();
+                processMonitor.stop();
             } finally {
-                process = null;
+                processMonitor = null;
             }
             if (verbose) {
                 stateChanged(STOPPED);
@@ -148,7 +148,8 @@ public class ProjectExecutor {
      * @return {@code true} if running.
      */
     public boolean isRunning() {
-        return process != null && process.isAlive();
+        return processMonitor != null
+               && processMonitor.isAlive();
     }
 
     /**
@@ -184,27 +185,27 @@ public class ProjectExecutor {
 
     private void start(List<String> command) {
         lastErrorMessageTime = 0;
-        ProcessBuilder processBuilder = JavaProcessBuilder.create()
+        ProcessBuilder processBuilder = JavaProcessBuilder.newInstance()
                                                           .directory(project.root().path().toFile())
                                                           .command(command);
         try {
             stateChanged(STARTING);
             STDOUT.println();
             STDOUT.flush();
-            this.process = ProcessMonitor.builder()
-                                         .processBuilder(processBuilder)
-                                         .afterShutdown(ProjectExecutor::resetAnsi)
-                                         .stdOut(STDOUT)
-                                         .stdErr(STDERR.delegate(this::printStdErr))
-                                         .capture(true)
-                                         .build()
-                                         .start();
+            this.processMonitor = ProcessMonitor.builder()
+                                                .processBuilder(processBuilder)
+                                                .afterShutdown(ConsoleUtils::reset)
+                                                .stdOut(STDOUT)
+                                                .stdErr(PrintStreams.delegate(STDERR, this::printStdErr))
+                                                .capture(true)
+                                                .build()
+                                                .start();
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
     }
 
-    private void printStdErr(ConsolePrinter printer, String str) {
+    private void printStdErr(PrintStream stdErr, String str) {
         if (!str.endsWith("\n") || str.endsWith("\r")) {
             stdErrBuf.append(str);
         }
@@ -217,7 +218,7 @@ public class ProjectExecutor {
                 break;
             }
         }
-        printer.print(str);
+        stdErr.print(str);
     }
 
     private String classPathString() {
@@ -226,11 +227,5 @@ public class ProjectExecutor {
                 .stream()
                 .map(File::getAbsolutePath)
                 .reduce("", (s1, s2) -> s1 + File.pathSeparator + s2);
-    }
-
-    private static void resetAnsi() {
-        if (AnsiConsoleInstaller.areAnsiEscapesEnabled()) {
-            STDOUT.println(ansi().reset().toString());
-        }
     }
 }
