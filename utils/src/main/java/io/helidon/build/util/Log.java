@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,6 +107,15 @@ public class Log {
          * @return {@code true} if enabled.
          */
         boolean isVerbose();
+
+        /**
+         * Return whether this writer prints to the system {@code stdout} and/or {@code stderr}.
+         *
+         * @return {@code true} if system.
+         */
+        default boolean isSystem() {
+            return false;
+        }
     }
 
     /**

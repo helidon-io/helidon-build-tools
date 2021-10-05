@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,22 +20,22 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.function.Consumer;
 
-import io.helidon.build.util.Log;
+import io.helidon.build.util.PrintStreams;
 
 import static io.helidon.build.util.Constants.EOL;
+import static io.helidon.build.util.PrintStreams.STDERR;
+import static io.helidon.build.util.PrintStreams.STDOUT;
 
 /**
  * A build monitor used for testing.
  */
 public class TestMonitor implements BuildMonitor {
-    // Use copies here in case we use embedded maven and they get reset.
-    private static final PrintStream OUT = System.out;
-    private static final PrintStream ERR = System.err;
     private final CountDownLatch stoppedLatch;
     private final List<String> output;
     private final int stopCycle;
+    private final PrintStream out;
+    private final PrintStream err;
     private int lastCycle;
     private boolean started;
     private boolean[] cycleStart;
@@ -64,20 +64,24 @@ public class TestMonitor implements BuildMonitor {
         this.loopFailed = new Throwable[stopCycle + 1];
         this.ready = new boolean[stopCycle + 1];
         this.cycleEnd = new boolean[stopCycle + 1];
+        this.out = PrintStreams.apply(STDOUT, s -> {
+            output.add(s);
+            return s.charAt(0) == '[' ? "   " + s : s;
+        });
+        this.err = PrintStreams.apply(STDERR, s -> {
+            output.add(s);
+            return s.charAt(0) == '[' ? "   " + s : s;
+        });
     }
 
-    public Consumer<String> stdOutConsumer() {
-        return line -> {
-            output.add(line);
-            OUT.println(line.charAt(0) == '[' ? "   " + line : line);
-        };
+    @Override
+    public PrintStream stdOut() {
+        return out;
     }
 
-    public Consumer<String> stdErrConsumer() {
-        return line -> {
-            output.add(line);
-            ERR.println(line.charAt(0) == '[' ? "   " + line : line);
-        };
+    @Override
+    public PrintStream stdErr() {
+        return err;
     }
 
     @Override
@@ -207,7 +211,7 @@ public class TestMonitor implements BuildMonitor {
     }
 
     private void log(String eventName) {
-        Log.info("loop: %s", eventName);
+        out.printf("loop: %s\n", eventName);
     }
 
     private void logCycle(String eventName, int cycleNumber) {
@@ -216,6 +220,6 @@ public class TestMonitor implements BuildMonitor {
 
     private void logCycle(String eventName, int cycleNumber, Object message) {
         lastCycle = cycleNumber;
-        Log.info("loop %d: %s %s", cycleNumber, eventName, message);
+        out.printf("loop %d: %s %s\n", cycleNumber, eventName, message);
     }
 }

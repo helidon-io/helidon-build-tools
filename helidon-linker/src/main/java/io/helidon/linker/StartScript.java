@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,12 +36,17 @@ import java.util.stream.IntStream;
 
 import io.helidon.build.util.FileUtils;
 import io.helidon.build.util.Log;
+import io.helidon.build.util.Log.Level;
+import io.helidon.build.util.LogFormatter;
 import io.helidon.build.util.OSType;
+import io.helidon.build.util.PrintStreams;
 import io.helidon.build.util.ProcessMonitor;
 import io.helidon.build.util.StreamUtils;
 
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.OSType.Unknown;
+import static io.helidon.build.util.PrintStreams.STDERR;
+import static io.helidon.build.util.PrintStreams.STDOUT;
 import static io.helidon.linker.util.Constants.CDS_REQUIRES_UNLOCK_OPTION;
 import static io.helidon.linker.util.Constants.CDS_SUPPORTS_IMAGE_COPY;
 import static io.helidon.linker.util.Constants.CDS_UNLOCK_OPTIONS;
@@ -121,7 +126,7 @@ public class StartScript {
      * Execute the script with the given arguments.
      *
      * @param transform the output transform.
-     * @param args The arguments.
+     * @param args      The arguments.
      * @throws RuntimeException If the process fails.
      */
     public void execute(Function<String, String> transform, String... args) {
@@ -138,8 +143,8 @@ public class StartScript {
         processBuilder.directory(root.toFile());
         final ProcessMonitor monitor = ProcessMonitor.builder()
                                                      .processBuilder(processBuilder)
-                                                     .stdOut(Log::info)
-                                                     .stdErr(Log::warn)
+                                                     .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(Level.INFO)))
+                                                     .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(Level.WARN)))
                                                      .transform(transform)
                                                      .capture(true)
                                                      .build();

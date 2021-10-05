@@ -26,6 +26,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import io.helidon.build.cli.harness.CommandModel.CommandInfo;
+import io.helidon.build.util.DefaultLogWriter;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.Log.Level;
 import io.helidon.build.util.Requirements;
@@ -102,7 +103,7 @@ public final class CommandContext {
         }
     }
 
-    private final AtomicReference<SystemLogWriter> logWriter = new AtomicReference<>();
+    private final AtomicReference<DefaultLogWriter> logWriter = new AtomicReference<>();
     private final CommandRegistry registry;
     private final Properties properties;
     private final InternalOptions internalOptions;
@@ -439,14 +440,22 @@ public final class CommandContext {
     }
 
     /**
-     * Lazily initialize and return the {@link SystemLogWriter}.
+     * Lazily initialize and return the log writer.
      *
      * @return The writer.
      */
-    private SystemLogWriter logWriter() {
-        SystemLogWriter writer = logWriter.get();
+    private DefaultLogWriter logWriter() {
+        DefaultLogWriter writer = logWriter.get();
         if (writer == null) {
-            writer = SystemLogWriter.install(INFO);
+            if (Log.hasWriter()) {
+                Log.Writer installed = Log.writer();
+                if (installed instanceof DefaultLogWriter) {
+                    writer = (DefaultLogWriter) installed;
+                }
+            }
+            if (writer == null) {
+                writer = SystemLogWriter.install(INFO);
+            }
             logWriter.set(writer);
         }
         return writer;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyFilter;
 
+import static io.helidon.build.util.PrintStreams.STDOUT;
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
 import static io.helidon.build.util.ProjectConfig.HELIDON_VERSION;
 import static io.helidon.build.util.ProjectConfig.PROJECT_CLASSDIRS;
@@ -243,7 +244,8 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
 
     private static void debug(String message, Object... args) {
         if (DEBUG) {
-            System.out.printf(message + "%n", args);
+            STDOUT.printf(message + "%n", args);
+            STDOUT.flush();
         }
     }
 

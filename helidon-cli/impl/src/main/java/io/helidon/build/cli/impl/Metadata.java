@@ -16,6 +16,7 @@
 package io.helidon.build.cli.impl;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,13 +31,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.ArchetypeCatalog;
 import io.helidon.build.util.ConfigProperties;
 import io.helidon.build.util.Log;
+import io.helidon.build.util.Log.Level;
+import io.helidon.build.util.LogFormatter;
 import io.helidon.build.util.MavenVersion;
+import io.helidon.build.util.PrintStreams;
 import io.helidon.build.util.Requirements;
 import io.helidon.build.util.TimeUtils;
 
@@ -44,6 +47,8 @@ import static io.helidon.build.cli.impl.CommandRequirements.requireHelidonVersio
 import static io.helidon.build.util.FileUtils.assertFile;
 import static io.helidon.build.util.FileUtils.lastModifiedTime;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
+import static io.helidon.build.util.PrintStreams.DEVNULL;
+import static io.helidon.build.util.PrintStreams.STDOUT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -90,6 +95,7 @@ public class Metadata {
     private final Path latestVersionFile;
     private final long updateFrequencyMillis;
     private final boolean debugPlugin;
+    private final PrintStream pluginStdOut;
     private final Map<Path, Long> lastChecked;
     private final AtomicReference<Throwable> latestVersionFailure;
     private final AtomicReference<MavenVersion> latestVersion;
@@ -100,6 +106,7 @@ public class Metadata {
         latestVersionFile = rootDir.resolve(LATEST_VERSION_FILE_NAME);
         updateFrequencyMillis = builder.updateFrequencyUnits.toMillis(builder.updateFrequency);
         debugPlugin = builder.debugPlugin;
+        pluginStdOut = builder.pluginStdOut;
         lastChecked = new HashMap<>();
         latestVersionFailure = new AtomicReference<>();
         latestVersion = new AtomicReference<>();
@@ -505,10 +512,14 @@ public class Metadata {
         args.add(Config.buildVersion());
         args.add("--maxAttempts");
         args.add(Integer.toString(maxAttempts));
-        Consumer<String> stdOut = null;
+        PrintStream stdOut = pluginStdOut;
         if (debugPlugin) {
             args.add("--debug");
-            stdOut = Log::info;
+            if (stdOut == null) {
+                stdOut = PrintStreams.apply(STDOUT, LogFormatter.of(Level.INFO));
+            }
+        } else if (stdOut == null){
+            stdOut = DEVNULL;
         }
         try {
             Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS, stdOut);
@@ -560,6 +571,7 @@ public class Metadata {
         private String url = DEFAULT_URL;
         private long updateFrequency = DEFAULT_UPDATE_FREQUENCY;
         private boolean debugPlugin;
+        private PrintStream pluginStdOut;
         private TimeUnit updateFrequencyUnits = DEFAULT_UPDATE_FREQUENCY_UNITS;
 
         protected Builder() {
@@ -617,6 +629,17 @@ public class Metadata {
          */
         public Builder debugPlugin(boolean debugPlugin) {
             this.debugPlugin = debugPlugin;
+            return this;
+        }
+
+        /**
+         * Sets the print stream to consume the output from the plugin.
+         *
+         * @param pluginStdOut print stream
+         * @return this builder
+         */
+        public Builder pluginStdOut(PrintStream pluginStdOut) {
+            this.pluginStdOut = pluginStdOut;
             return this;
         }
 

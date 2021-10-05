@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -218,7 +218,7 @@ public class BuildLoop {
                         try {
                             changed(ChangeType.SourceFile, changedTimeOf(sourceChanges).orElseThrow());
                             buildStarting(Incremental);
-                            project.incrementalBuild(sourceChanges, monitor.stdOutConsumer(), monitor.stdErrConsumer());
+                            project.incrementalBuild(sourceChanges, monitor.stdOut(), monitor.stdErr());
                             project.update(false);
                             buildSucceeded(Incremental);
                             ready();

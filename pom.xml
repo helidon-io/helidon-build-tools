@@ -264,6 +264,7 @@
                         <trimStackTrace>false</trimStackTrace>
                         <systemPropertyVariables>
                             <use.embedded.maven.executor>false</use.embedded.maven.executor>
+                            <io.helidon.build.util.fast.streams>false</io.helidon.build.util.fast.streams>
                             <jansi.force>true</jansi.force>
                         </systemPropertyVariables>
                         <excludes>

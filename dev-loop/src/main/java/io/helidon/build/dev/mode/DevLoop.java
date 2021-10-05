@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,6 @@ import static io.helidon.build.util.StyleFunction.Bold;
 import static io.helidon.build.util.StyleFunction.BoldBlue;
 import static io.helidon.build.util.StyleFunction.BoldRed;
 import static io.helidon.build.util.StyleFunction.BoldYellow;
-import static org.fusesource.jansi.Ansi.ansi;
 
 /**
  * A development loop that manages application lifecycle based on events from a {@link BuildLoop}.
@@ -59,7 +58,6 @@ import static org.fusesource.jansi.Ansi.ansi;
 public class DevLoop {
     private static final int MAX_BUILD_WAIT_SECONDS = 5 * 60;
     private final boolean terminalMode;
-    private final DevLoopMonitor monitor;
     private final BuildExecutor buildExecutor;
     private final ProjectSupplier projectSupplier;
     private final boolean initialClean;
@@ -85,7 +83,7 @@ public class DevLoop {
                    List<String> appArgs,
                    DevLoopBuildConfig config) {
         this.terminalMode = terminalMode;
-        this.monitor = new DevLoopMonitor(terminalMode, projectSupplier.buildFileName(), appJvmArgs, appArgs, config);
+        DevLoopMonitor monitor = new DevLoopMonitor(terminalMode, projectSupplier.buildFileName(), appJvmArgs, appArgs, config);
         this.buildExecutor = forkBuilds ? new ForkedMavenExecutor(rootDir, monitor, MAX_BUILD_WAIT_SECONDS)
                 : new EmbeddedMavenExecutor(rootDir, monitor);
         this.initialClean = initialClean;
@@ -99,7 +97,6 @@ public class DevLoop {
      * @throws Exception If a problem is found.
      */
     public void start(int maxWaitInSeconds) throws Exception {
-        Runtime.getRuntime().addShutdownHook(new Thread(monitor::shutdown));
         BuildLoop loop = newLoop(buildExecutor, initialClean, false);
         run(loop, maxWaitInSeconds);
     }
@@ -279,11 +276,6 @@ public class DevLoop {
                 projectExecutor = null;
                 executor.stop();
             }
-        }
-
-        private void shutdown() {
-            System.out.println(ansi().reset());
-            ensureStop();
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.helidon.build.dev;
 
-import java.util.function.Consumer;
+import java.io.PrintStream;
 
 /**
  * A project build step.
@@ -36,11 +36,11 @@ public interface BuildStep {
      * Execute the build step for the given changed files only. Any component that does not match this predicate is ignored.
      *
      * @param changes The changes.
-     * @param stdOut A consumer for stdout.
-     * @param stdErr A consumer for stderr.
+     * @param stdOut A print stream for stdout.
+     * @param stdErr A print stream for stderr.
      * @throws Exception on error.
      */
     void incrementalBuild(BuildRoot.Changes changes,
-                          Consumer<String> stdOut,
-                          Consumer<String> stdErr) throws Exception;
+                          PrintStream stdOut,
+                          PrintStream stdErr) throws Exception;
 }

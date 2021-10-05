@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package io.helidon.build.dev.maven;
 
 import java.io.File;
+import java.io.PrintStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import javax.tools.Diagnostic;
@@ -38,6 +38,7 @@ import io.helidon.build.dev.BuildFile;
 import io.helidon.build.dev.BuildRoot;
 import io.helidon.build.dev.BuildStep;
 import io.helidon.build.dev.Project;
+import io.helidon.build.util.PrintStreams;
 
 /**
  * A build step that compiles java sources using the ToolProvider API.
@@ -68,8 +69,8 @@ public class CompileJavaSources implements BuildStep {
 
     @Override
     public void incrementalBuild(BuildRoot.Changes changes,
-                                 Consumer<String> stdOut,
-                                 Consumer<String> stdErr) throws Exception {
+                                 PrintStream stdOut,
+                                 PrintStream stdErr) throws Exception {
         if (!changes.isEmpty()) {
             final BuildRoot sources = changes.root();
             final BuildComponent component = sources.component();
@@ -81,7 +82,8 @@ public class CompileJavaSources implements BuildStep {
             if (!removed.isEmpty()) {
                 final Path srcDir = sources.path();
                 final Path outDir = component.outputRoot().path();
-                stdOut.accept("Removing class files of " + removed.size() + " removed source files");
+                stdOut.println("Removing class files of " + removed.size() + " removed source files");
+                stdOut.flush();
                 for (final Path srcFile : removed) {
                     final Path relativePackageDir = srcDir.relativize(srcFile).getParent();
                     final Path outputPackageDir = outDir.resolve(relativePackageDir);
@@ -93,7 +95,8 @@ public class CompileJavaSources implements BuildStep {
                                                            .collect(Collectors.toList());
                         for (Path classFile : classFiles) {
                             if (verbose) {
-                                stdOut.accept("Removing: " + classFile);
+                                stdOut.println("Removing: " + classFile);
+                                stdOut.flush();
                             }
                             Files.delete(classFile);
                         }
@@ -105,13 +108,16 @@ public class CompileJavaSources implements BuildStep {
 
             final Set<Path> recompile = sourcesToCompile(changes);
             if (!recompile.isEmpty()) {
-                final DiagnosticListener<JavaFileObject> diagnostics = diagnostic -> stdErr.accept(format(diagnostic));
+                PrintStream stdErrAutoFlush = PrintStreams.autoFlush(stdErr);
+                final DiagnosticListener<JavaFileObject> diagnostics = d -> stdErrAutoFlush.println(format(d));
                 final List<String> compilerFlags = project.compilerFlags();
                 final List<File> sourceFiles = recompile.stream().map(Path::toFile).collect(Collectors.toList());
-                stdOut.accept("Compiling " + sourceFiles.size() + " source file" + (sourceFiles.size() == 1 ? "" : "s"));
+                stdOut.println("Compiling " + sourceFiles.size() + " source file" + (sourceFiles.size() == 1 ? "" : "s"));
                 if (verbose) {
-                    stdOut.accept("Classpath: " + project.classpath());
+                    stdOut.println("Classpath: " + project.classpath());
                 }
+                stdOut.flush();
+
                 try (StandardJavaFileManager manager = compiler.getStandardFileManager(diagnostics, null, sourceEncoding)) {
                     manager.setLocation(StandardLocation.CLASS_PATH, project.classpath());
                     manager.setLocation(StandardLocation.CLASS_OUTPUT, List.of(component.outputRoot().path().toFile()));
