@@ -144,6 +144,7 @@ This plugin binds to the `package` phase by default.
 | testImage | Boolean | `true` | Start the application after the image is built |
 | stripDebug | Boolean | `false` | Remove all debug support from the image, including within `.class` files |
 | skipJavaImage | Boolean | `false` | Skip this goal execution |
+| additionalJlinkArgs | List | [] | Additional arguments to use when invoking `jlink` |
 
 The above parameters are mapped to user properties of the form: `jlink.image.PROPERTY`.
 For example `-Djlink.image.addClassDataSharingArchive=false`.
