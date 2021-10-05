@@ -7,6 +7,26 @@ All notable changes to the Helidon CLI will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0]
+
+### Fixes
+
+- Metadata errors not reported [487](https://github.com/oracle/helidon-build-tools/issues/487) [506](https://github.com/oracle/helidon-build-tools/pull/506)
+- dev-loop incremental recompilation fails with maven 3.8.2 [499](https://github.com/oracle/helidon-build-tools/issues/499) [500](https://github.com/oracle/helidon-build-tools/pull/500)
+- dev-loop does not re-build for resource files on Windows [357](https://github.com/oracle/helidon-build-tools/issues/357) [483](https://github.com/oracle/helidon-build-tools/issues/483) [498](https://github.com/oracle/helidon-build-tools/pull/498)
+- dev-loop ctrl+c on Windows [511](https://github.com/oracle/helidon-build-tools/pull/511)
+
+### Changes
+
+- Consolidated dev-loop Maven integration code [504](https://github.com/oracle/helidon-build-tools/pull/504/files)
+- Improved process monitoring, reduced CPU usage, improved console printing [511](https://github.com/oracle/helidon-build-tools/pull/511)
+
+### Notes
+
+The dev-loop bug fixes and changes described above are part of the `helidon-cli-maven-plugin`. You may run into the
+described issues if you are using an older version of the plugin. You can use `helidon dev --current` to force the use
+of the plugin matching that matches the cli version.
+
 ## [2.2.3]
 
 ### Fixes
@@ -118,6 +138,7 @@ This release of helidon-build-tools does not contain changes related to the Heli
 
 Initial release of the Helidon CLI.
 
+[2.3.0]: https://github.com/oracle/helidon-build-tools/compare/2.2.3...2.3.0
 [2.2.3]: https://github.com/oracle/helidon-build-tools/compare/2.2.2...2.2.3
 [2.2.2]: https://github.com/oracle/helidon-build-tools/compare/2.2.0...2.2.2
 [2.2.0]: https://github.com/oracle/helidon-build-tools/compare/2.1.3...2.2.0
