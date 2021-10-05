@@ -84,4 +84,9 @@ public final class SystemLogWriter extends DefaultLogWriter {
     public PrintStream stdErr() {
         return stdErr;
     }
+
+    @Override
+    public boolean isSystem() {
+        return true;
+    }
 }

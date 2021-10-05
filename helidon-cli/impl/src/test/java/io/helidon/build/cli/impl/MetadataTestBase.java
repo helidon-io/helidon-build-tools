@@ -130,6 +130,7 @@ public class MetadataTestBase {
                 .updateFrequency(updateFrequency)
                 .updateFrequencyUnits(updateFrequencyUnits)
                 .debugPlugin(true)
+                .pluginStdOut(logged.stdOut())
                 .build();
     }
 

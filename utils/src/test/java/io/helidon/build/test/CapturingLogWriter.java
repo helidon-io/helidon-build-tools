@@ -63,6 +63,11 @@ public class CapturingLogWriter extends DefaultLogWriter {
         return stdErr;
     }
 
+    @Override
+    public boolean isSystem() {
+        return true;
+    }
+
     /**
      * Install this writer.
      *
@@ -103,8 +108,21 @@ public class CapturingLogWriter extends DefaultLogWriter {
                      .collect(Collectors.toList());
     }
 
-    @Override
-    public String toString() {
+    /**
+     * Get the captured raw output.
+     *
+     * @return output
+     */
+    public String output() {
+        return output.toString();
+    }
+
+    /**
+     * Indent the captured output.
+     *
+     * @return indented output
+     */
+    public String indented() {
         StringBuilder sb = new StringBuilder();
         lines().forEach(msg -> sb.append("    ").append(msg).append(EOL));
         return sb.toString();
@@ -127,7 +145,7 @@ public class CapturingLogWriter extends DefaultLogWriter {
     public void assertLinesContainingAll(String... fragments) {
         if (!atLeastOneLineContainingAll(fragments)) {
             final String msg = String.format("log should contain at least one line with all of the following: %s%n%s",
-                    Arrays.toString(fragments), this);
+                    Arrays.toString(fragments), indented());
             fail(msg);
         }
     }
@@ -140,7 +158,7 @@ public class CapturingLogWriter extends DefaultLogWriter {
     public void assertNoLinesContainingAll(String... fragments) {
         if (atLeastOneLineContainingAll(fragments)) {
             final String msg = String.format("log should not contain any lines with all of the following: %s%n%s",
-                    Arrays.toString(fragments), this);
+                    Arrays.toString(fragments), indented());
             fail(msg);
         }
     }
@@ -165,7 +183,7 @@ public class CapturingLogWriter extends DefaultLogWriter {
         final int count = countLinesContainingAll(fragments);
         if (count != expectedCount) {
             final String msg = String.format("log should contain %d lines with all of the following, found %d: %s%n%s",
-                    expectedCount, count, Arrays.toString(fragments), this);
+                    expectedCount, count, Arrays.toString(fragments), indented());
             fail(msg);
         }
     }

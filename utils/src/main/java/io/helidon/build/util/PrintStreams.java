@@ -249,7 +249,7 @@ public final class PrintStreams {
 
         @Override
         public void print(String s) {
-            if (s != null) {
+            if (s != null && !s.isEmpty()) {
                 delegate.print(s);
                 consumer.accept(s);
             }
@@ -273,7 +273,7 @@ public final class PrintStreams {
 
         @Override
         public void print(String s) {
-            if (s != null) {
+            if (s != null && !s.isEmpty()) {
                 delegate.print(function.apply(s));
             }
         }
@@ -290,14 +290,13 @@ public final class PrintStreams {
         private final BiConsumer<PrintStream, String> function;
 
         FunctionalDelegatePrintStream(PrintStream delegate, BiConsumer<PrintStream, String> function) {
-
             this.delegate = delegate;
             this.function = function;
         }
 
         @Override
         public void print(String s) {
-            if (s != null) {
+            if (s != null && !s.isEmpty()) {
                 function.accept(delegate, s);
             }
         }

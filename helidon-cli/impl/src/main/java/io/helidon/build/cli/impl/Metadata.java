@@ -95,6 +95,7 @@ public class Metadata {
     private final Path latestVersionFile;
     private final long updateFrequencyMillis;
     private final boolean debugPlugin;
+    private final PrintStream pluginStdOut;
     private final Map<Path, Long> lastChecked;
     private final AtomicReference<Throwable> latestVersionFailure;
     private final AtomicReference<MavenVersion> latestVersion;
@@ -105,6 +106,7 @@ public class Metadata {
         latestVersionFile = rootDir.resolve(LATEST_VERSION_FILE_NAME);
         updateFrequencyMillis = builder.updateFrequencyUnits.toMillis(builder.updateFrequency);
         debugPlugin = builder.debugPlugin;
+        pluginStdOut = builder.pluginStdOut;
         lastChecked = new HashMap<>();
         latestVersionFailure = new AtomicReference<>();
         latestVersion = new AtomicReference<>();
@@ -510,11 +512,13 @@ public class Metadata {
         args.add(Config.buildVersion());
         args.add("--maxAttempts");
         args.add(Integer.toString(maxAttempts));
-        PrintStream stdOut;
+        PrintStream stdOut = pluginStdOut;
         if (debugPlugin) {
             args.add("--debug");
-            stdOut = PrintStreams.apply(STDOUT, LogFormatter.of(Level.INFO));
-        } else {
+            if (stdOut == null) {
+                stdOut = PrintStreams.apply(STDOUT, LogFormatter.of(Level.INFO));
+            }
+        } else if (stdOut == null){
             stdOut = DEVNULL;
         }
         try {
@@ -567,6 +571,7 @@ public class Metadata {
         private String url = DEFAULT_URL;
         private long updateFrequency = DEFAULT_UPDATE_FREQUENCY;
         private boolean debugPlugin;
+        private PrintStream pluginStdOut;
         private TimeUnit updateFrequencyUnits = DEFAULT_UPDATE_FREQUENCY_UNITS;
 
         protected Builder() {
@@ -624,6 +629,17 @@ public class Metadata {
          */
         public Builder debugPlugin(boolean debugPlugin) {
             this.debugPlugin = debugPlugin;
+            return this;
+        }
+
+        /**
+         * Sets the print stream to consume the output from the plugin.
+         *
+         * @param pluginStdOut print stream
+         * @return this builder
+         */
+        public Builder pluginStdOut(PrintStream pluginStdOut) {
+            this.pluginStdOut = pluginStdOut;
             return this;
         }
 

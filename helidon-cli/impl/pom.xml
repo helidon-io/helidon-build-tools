@@ -128,25 +128,6 @@
                             <excludeScope>test</excludeScope>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>copy-plugin</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>io.helidon.build-tools.cli</groupId>
-                                    <artifactId>helidon-cli-plugin</artifactId>
-                                    <version>${project.version}</version>
-                                    <type>jar</type>
-                                    <destFileName>cli-plugins-${buildNumber}.jar</destFileName>
-                                </artifactItem>
-                            </artifactItems>
-                            <outputDirectory>${project.build.outputDirectory}/plugins</outputDirectory>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
             <plugin>

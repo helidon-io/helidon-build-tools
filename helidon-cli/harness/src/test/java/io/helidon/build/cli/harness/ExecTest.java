@@ -15,17 +15,14 @@
  */
 package io.helidon.build.cli.harness;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
-
 import io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
+import io.helidon.build.test.CapturingLogWriter;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.Strings;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.util.Style.strip;
@@ -43,6 +40,18 @@ public class ExecTest {
     static final String HELP_CMD_HELP = resourceAsString("help-cmd-help.txt");
     static final String SIMPLE_CMD_HELP = resourceAsString("simple-cmd-help.txt");
 
+    private CapturingLogWriter logged;
+
+    @BeforeEach
+    void prepareEach() {
+        logged = CapturingLogWriter.install();
+    }
+
+    @AfterEach
+    void cleanupEach() {
+        CapturingLogWriter.uninstall();
+    }
+
     static CommandContext context() {
         return new CommandContext(REGISTRY, null);
     }
@@ -51,20 +60,14 @@ public class ExecTest {
         return Strings.normalizeNewLines(Strings.read(ExecTest.class.getResourceAsStream(name)));
     }
 
-    static String exec(CommandContext context, String... args) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream stdout = System.out;
-        try {
-            System.setOut(new PrintStream(baos));
-            CommandRunner.execute2(context, args);
-        } finally {
-            System.setOut(stdout);
-        }
-        String out = Strings.normalizeNewLines(baos.toString(StandardCharsets.UTF_8));
+    String exec(CommandContext context, String... args) {
+        logged.clear();
+        CommandRunner.execute2(context, args);
+        String out = Strings.normalizeNewLines(logged.output());
         return strip(out);
     }
 
-    static String exec(String... args) {
+    String exec(String... args) {
         return exec(context(), args);
     }
 

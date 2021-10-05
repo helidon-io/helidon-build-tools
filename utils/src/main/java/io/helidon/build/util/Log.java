@@ -107,6 +107,15 @@ public class Log {
          * @return {@code true} if enabled.
          */
         boolean isVerbose();
+
+        /**
+         * Return whether this writer prints to the system {@code stdout} and/or {@code stderr}.
+         *
+         * @return {@code true} if system.
+         */
+        default boolean isSystem() {
+            return false;
+        }
     }
 
     /**
