@@ -47,6 +47,7 @@ public final class Configuration {
     private final List<String> defaultJvm;
     private final List<String> defaultArgs;
     private final List<String> defaultDebug;
+    private final List<String> additionalJlinkArgs;
     private final Set<String> additionalModules;
     private final Path jriDirectory;
     private final boolean verbose;
@@ -71,6 +72,7 @@ public final class Configuration {
         this.defaultArgs = builder.defaultArgs;
         this.defaultDebug = builder.defaultDebug;
         this.additionalModules = builder.additionalModules;
+        this.additionalJlinkArgs = builder.additionalJlinkArgs;
         this.jriDirectory = builder.jriDirectory;
         this.verbose = builder.verbose;
         this.stripDebug = builder.stripDebug;
@@ -131,6 +133,15 @@ public final class Configuration {
      */
     public List<String> defaultArgs() {
         return defaultArgs;
+    }
+
+    /**
+     * Returns the additional arguments to use when invoking {@code jlink}.
+     *
+     * @return The arguments.
+     */
+    public List<String> additionalJlinkArgs() {
+        return additionalJlinkArgs;
     }
 
     /**
@@ -198,6 +209,7 @@ public final class Configuration {
         private List<String> defaultJvm;
         private List<String> defaultArgs;
         private List<String> defaultDebug;
+        private List<String> additionalJlinkArgs;
         private Set<String> additionalModules;
         private Path jriDirectory;
         private boolean replace;
@@ -211,6 +223,7 @@ public final class Configuration {
         private Builder() {
             defaultJvm = emptyList();
             defaultArgs = emptyList();
+            additionalJlinkArgs = emptyList();
             defaultDebug = List.of(DEFAULT_DEBUG);
             additionalModules = emptySet();
             maxAppStartSeconds = DEFAULT_MAX_APP_START_SECONDS;
@@ -248,6 +261,8 @@ public final class Configuration {
                         defaultDebugOptions(argAt(++i, args));
                     } else if (arg.equalsIgnoreCase("--defaultArgs")) {
                         defaultArgs(argAt(++i, args));
+                    } else if (arg.equalsIgnoreCase("--additionalJlinkArgs")) {
+                        additionalJlinkArgs(argAt(++i, args));
                     } else if (arg.equalsIgnoreCase("--additionalModules")) {
                         additionalModules(argAt(++i, args));
                     } else if (arg.equalsIgnoreCase("--maxAppStartSeconds")) {
@@ -354,6 +369,30 @@ public final class Configuration {
         public Builder defaultDebugOptions(List<String> debugOptions) {
             if (isValid(debugOptions)) {
                 this.defaultDebug = split(debugOptions);
+            }
+            return this;
+        }
+
+        /**
+         * Sets additional arguments to use when invoking {@code jlink}.
+         *
+         * @param args The args.
+         * @return The builder.
+         */
+        public Builder additionalJlinkArgs(String args) {
+            additionalJlinkArgs(toList(args));
+            return this;
+        }
+
+        /**
+         * Sets additional arguments to use when invoking {@code jlink}.
+         *
+         * @param args The args.
+         * @return The builder.
+         */
+        public Builder additionalJlinkArgs(List<String> args) {
+            if (isValid(args)) {
+                this.additionalJlinkArgs = split(args);
             }
             return this;
         }
