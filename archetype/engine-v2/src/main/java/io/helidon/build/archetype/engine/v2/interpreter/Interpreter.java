@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
+import io.helidon.build.archetype.engine.v2.PropertyEvaluator;
 import io.helidon.build.archetype.engine.v2.archive.Archetype;
 import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
 
@@ -38,8 +39,9 @@ public class Interpreter implements Visitor<ASTNode> {
     private final Map<String, ContextNodeAST> pathToContextNodeMap;
     private final InputResolverVisitor inputResolverVisitor = new InputResolverVisitor();
     private final UserInputVisitor userInputVisitor = new UserInputVisitor();
-    private final ContextConvertorVisitor contextConvertorVisitor = new ContextConvertorVisitor();
-    private final ContextNodeCreatorVisitor contextNodeCreatorVisitor = new ContextNodeCreatorVisitor();
+    private final ContextToStringConvertor contextToStringConvertor = new ContextToStringConvertor();
+    private final ContextNodeFromDefaultValueCreator contextNodeFromDefaultValueCreator =
+            new ContextNodeFromDefaultValueCreator();
     private final List<UserInputAST> unresolvedInputs = new ArrayList<>();
     private final Deque<ASTNode> stack = new ArrayDeque<>();
     private final List<Visitor<ASTNode>> additionalVisitors;
@@ -111,6 +113,7 @@ public class Interpreter implements Visitor<ASTNode> {
     @Override
     public void visit(InputBooleanAST input, ASTNode parent) {
         applyAdditionalVisitors(input);
+        input.defaultValue(replaceDefaultValue(input.defaultValue()));
         validate(input);
         pushToStack(input);
         boolean result = resolve(input);
@@ -130,6 +133,7 @@ public class Interpreter implements Visitor<ASTNode> {
     @Override
     public void visit(InputEnumAST input, ASTNode parent) {
         applyAdditionalVisitors(input);
+        input.defaultValue(replaceDefaultValue(input.defaultValue()));
         validate(input);
         pushToStack(input);
         boolean result = resolve(input);
@@ -144,6 +148,7 @@ public class Interpreter implements Visitor<ASTNode> {
     @Override
     public void visit(InputListAST input, ASTNode parent) {
         applyAdditionalVisitors(input);
+        input.defaultValue(replaceDefaultValue(input.defaultValue()));
         validate(input);
         pushToStack(input);
         boolean result = resolve(input);
@@ -158,6 +163,8 @@ public class Interpreter implements Visitor<ASTNode> {
     @Override
     public void visit(InputTextAST input, ASTNode parent) {
         applyAdditionalVisitors(input);
+        input.defaultValue(replaceDefaultValue(input.defaultValue()));
+        input.placeHolder(replaceDefaultValue(input.placeHolder()));
         validate(input);
         pushToStack(input);
         boolean result = resolve(input);
@@ -399,7 +406,7 @@ public class Interpreter implements Visitor<ASTNode> {
     private boolean resolve(InputNodeAST input) {
         ContextNodeAST contextNodeAST = pathToContextNodeMap.get(input.path());
         if (input.isOptional() && skipOptional && contextNodeAST == null) {
-            contextNodeAST = input.accept(contextNodeCreatorVisitor, input);
+            contextNodeAST = input.accept(contextNodeFromDefaultValueCreator, input);
             if (contextNodeAST != null) {
                 pathToContextNodeMap.put(contextNodeAST.path(), contextNodeAST);
             }
@@ -473,6 +480,9 @@ public class Interpreter implements Visitor<ASTNode> {
 
     private void validate(InputNodeAST input) {
         if (input.isOptional() && input.defaultValue() == null) {
+            if (input instanceof InputTextAST && ((InputTextAST) input).placeHolder() != null) {
+                return;
+            }
             throw new InterpreterException(
                     String.format("Input node %s is optional but it does not have a default value", input.path()));
         }
@@ -485,8 +495,20 @@ public class Interpreter implements Visitor<ASTNode> {
     private Map<String, String> convertContext() {
         Map<String, String> result = new HashMap<>();
         pathToContextNodeMap.forEach((key, value) -> {
-            result.putIfAbsent(key, value.accept(contextConvertorVisitor, null));
+            result.putIfAbsent(key, value.accept(contextToStringConvertor, null));
         });
         return result;
+    }
+
+    private String replaceDefaultValue(String defaultValue) {
+        if (defaultValue == null) {
+            return null;
+        }
+        if (!defaultValue.contains("${")) {
+            return defaultValue;
+        }
+        Map<String, String> properties = convertContext();
+        properties.replaceAll((key, value) -> value.replaceAll("[\\['\\]]", ""));
+        return PropertyEvaluator.resolve(defaultValue, properties);
     }
 }
