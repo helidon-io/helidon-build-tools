@@ -17,6 +17,8 @@
 package io.helidon.build.archetype.engine.v2;
 
 import java.io.File;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,8 +29,8 @@ import io.helidon.build.archetype.engine.v2.interpreter.ASTNode;
 import io.helidon.build.archetype.engine.v2.interpreter.ContextAST;
 import io.helidon.build.archetype.engine.v2.interpreter.ContextNodeAST;
 import io.helidon.build.archetype.engine.v2.interpreter.ContextNodeASTFactory;
+import io.helidon.build.archetype.engine.v2.interpreter.ContextTextAST;
 import io.helidon.build.archetype.engine.v2.interpreter.Flow;
-import io.helidon.build.archetype.engine.v2.interpreter.FlowState;
 import io.helidon.build.archetype.engine.v2.interpreter.InputNodeAST;
 import io.helidon.build.archetype.engine.v2.interpreter.UserInputAST;
 import io.helidon.build.archetype.engine.v2.interpreter.Visitor;
@@ -91,7 +93,9 @@ public class ArchetypeEngineV2 {
                 .addAdditionalVisitor(additionalVisitors)
                 .build();
 
-        flow.build(new ContextAST());
+        ContextAST context = new ContextAST();
+        initContext(context, outputDirectory);
+        flow.build(context);
         while (!flow.unresolvedInputs().isEmpty()) {
             UserInputAST userInputAST = flow.unresolvedInputs().get(0);
             ContextNodeAST contextNodeAST = null;
@@ -117,5 +121,16 @@ public class ArchetypeEngineV2 {
         });
 
         //add Thibault`s Output Generator #486
+    }
+
+    private void initContext(ContextAST context, File outputDirectory) {
+        ContextTextAST currentDateNode = new ContextTextAST("current.date");
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss z yyyy");
+        ZonedDateTime now = ZonedDateTime.now();
+        currentDateNode.text(dtf.format(now));
+        context.children().add(currentDateNode);
+        ContextTextAST currentDirNode = new ContextTextAST("project.directory");
+        currentDateNode.text(outputDirectory.toString());
+        context.children().add(currentDirNode);
     }
 }
