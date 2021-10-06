@@ -26,6 +26,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -50,6 +51,7 @@ public final class ProcessMonitor {
     private final ConsoleRecorder recorder;
     private final boolean capturing;
     private final CompletableFuture<Void> exitFuture;
+    private final AtomicBoolean shutdown;
     private final Runnable beforeShutdown;
     private final Runnable afterShutdown;
     private volatile Process process;
@@ -250,6 +252,7 @@ public final class ProcessMonitor {
                 builder.filter,
                 builder.transform,
                 builder.capture);
+        this.shutdown = new AtomicBoolean();
         this.beforeShutdown = builder.beforeShutdown;
         this.afterShutdown = builder.afterShutdown;
         this.exitFuture = new CompletableFuture<>();
@@ -352,7 +355,8 @@ public final class ProcessMonitor {
             try {
                 exitFuture.get(timeout, unit);
                 try {
-                    if (process.exitValue() != 0) {
+                    // ignore exit code if this is a shutdown
+                    if (process.exitValue() != 0 && !shutdown.get()) {
                         throw new ProcessFailedException();
                     }
                 } catch (IllegalThreadStateException ex) {
@@ -483,6 +487,7 @@ public final class ProcessMonitor {
                             .map(p -> {
                                 p.recorder.stop();
                                 p.beforeShutdown.run();
+                                p.shutdown.set(true);
                                 p.process.destroy();
                                 return p.exitFuture.thenRun(p.afterShutdown);
                             })
@@ -523,9 +528,10 @@ public final class ProcessMonitor {
 
         @Override
         public String getMessage() {
-            final StringBuilder message = new StringBuilder();
-            message.append(requireNonNullElseGet(description, () -> String.join(" ", builder.command())));
-            message.append(reason);
+            final StringBuilder message = new StringBuilder()
+                    .append(requireNonNullElseGet(description, () -> String.join(" ", builder.command())))
+                    .append(" ")
+                    .append(reason);
             if (capturing) {
                 message.append(Constants.EOL);
                 for (String line : output().split("\\R")) {

@@ -15,6 +15,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - dev-loop incremental recompilation fails with maven 3.8.2 [499](https://github.com/oracle/helidon-build-tools/issues/499) [500](https://github.com/oracle/helidon-build-tools/pull/500)
 - dev-loop does not re-build for resource files on Windows [357](https://github.com/oracle/helidon-build-tools/issues/357) [483](https://github.com/oracle/helidon-build-tools/issues/483) [498](https://github.com/oracle/helidon-build-tools/pull/498)
 - dev-loop ctrl+c on Windows [511](https://github.com/oracle/helidon-build-tools/pull/511)
+- fix shutdown hooks with native image [520](https://github.com/oracle/helidon-build-tools/pull/520)
 
 ### Changes
 

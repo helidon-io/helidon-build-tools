@@ -435,7 +435,7 @@ public final class DevCommand extends BaseCommand {
                             STDOUT.println();
                             insertLineIfError = false;
                         }
-                        STDOUT.println(errorMessage);
+                        STDOUT.print(errorMessage);
                     }
                 } else {
                     STDOUT.print(line);
