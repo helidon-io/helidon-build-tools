@@ -39,7 +39,6 @@ import static io.helidon.build.util.Constants.EOL;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertJavaExecutable;
 import static io.helidon.build.util.FileUtils.listFiles;
-import static io.helidon.build.util.PrintStreams.DEVNULL;
 import static io.helidon.build.util.PrintStreams.RED_STDERR;
 import static io.helidon.build.util.PrintStreams.STDOUT;
 import static io.helidon.build.util.StyleFunction.Bold;
@@ -295,8 +294,8 @@ public class MavenCommand {
         private boolean verbose;
         private int debugPort;
         private int maxWaitSeconds;
-        private PrintStream stdOut = DEVNULL;
-        private PrintStream stdErr = DEVNULL;
+        private PrintStream stdOut;
+        private PrintStream stdErr;
         private Predicate<String> filter = line -> true;
         private Function<String, String> transform = Function.identity();
         private Runnable beforeShutdown = () -> {};
