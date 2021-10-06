@@ -61,9 +61,10 @@ public class CLIPrompter extends DefaultPrompterImpl {
             String question = "Enter text";
             printTitle(inputInfo);
 
-            String defaultValue = inputInfo.defaultValue() != null && !inputInfo.defaultValue().isEmpty()
-                    ? BoldBlue.apply(inputInfo.defaultValue())
-                    : null;
+            String defaultValue = Optional.ofNullable(inputInfo.placeHolder())
+                    .or(() -> Optional.ofNullable(inputInfo.defaultValue()))
+                    .map(BoldBlue::apply)
+                    .orElse(null);
             String response = request(question, defaultValue);
 
             lastStepLabel = inputInfo.stepLabel();

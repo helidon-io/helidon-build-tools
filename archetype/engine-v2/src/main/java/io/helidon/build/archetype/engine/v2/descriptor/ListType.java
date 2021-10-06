@@ -29,7 +29,13 @@ public class ListType extends Conditional {
     private final LinkedList<ListType> lists = new LinkedList<>();
     private int order = 100;
 
-    ListType(int order, String ifProperties) {
+    /**
+     * ListType constructor.
+     *
+     *  @param order            order attribute
+     * @param ifProperties      if attribute
+     */
+    public ListType(int order, String ifProperties) {
         super(ifProperties);
         this.order = order;
     }

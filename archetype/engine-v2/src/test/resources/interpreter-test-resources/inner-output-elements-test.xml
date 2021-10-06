@@ -26,6 +26,7 @@
         <boolean path="bool-input">true</boolean>
         <boolean path="bool-input2">true</boolean>
         <boolean path="bool-input3">true</boolean>
+        <text path="model.var.value">some value</text>
     </context>
 
     <step label="User boolean input">
@@ -102,7 +103,7 @@
                                     <value>How is the foo wrong?</value>
                                 </list>
                             </map>
-                            <value key="key value" order="100">some value</value>
+                            <value key="key value" order="100">${model.var.value}</value>
                             <value key="wrong key value" order="1" if="${foo2} == false">some wrong value</value>
                         </model>
                     </templates>

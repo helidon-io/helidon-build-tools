@@ -25,7 +25,10 @@ public class TemplateModel {
 
     private Model model;
 
-    TemplateModel() {
+    /**
+     * Template default constructor.
+     */
+    public TemplateModel() {
         this.model = null;
     }
 

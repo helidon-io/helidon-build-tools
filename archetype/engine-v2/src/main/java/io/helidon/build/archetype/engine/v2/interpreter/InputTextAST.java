@@ -23,7 +23,7 @@ import io.helidon.build.archetype.engine.v2.descriptor.InputText;
  */
 public class InputTextAST extends InputNodeAST {
 
-    private final String placeHolder;
+    private String placeHolder;
 
     InputTextAST(
             String label,
@@ -47,6 +47,16 @@ public class InputTextAST extends InputNodeAST {
     public String placeHolder() {
         return placeHolder;
     }
+
+    /**
+     * Setthe placeholder (default value).
+     *
+     * @param placeHolder placeholder
+     */
+    public void placeHolder(String placeHolder) {
+        this.placeHolder = placeHolder;
+    }
+
 
     @Override
     public <A> void accept(Visitor<A> visitor, A arg) {

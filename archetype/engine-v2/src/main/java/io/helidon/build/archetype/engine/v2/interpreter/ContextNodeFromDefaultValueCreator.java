@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 /**
  * Create {@code ContextNodeAST} instance using default values of the corresponding {@code InputNodeAST} node.
  */
-class ContextNodeCreatorVisitor extends GenericVisitorEmptyImpl<ContextNodeAST, ASTNode> {
+class ContextNodeFromDefaultValueCreator extends GenericVisitorEmptyImpl<ContextNodeAST, ASTNode> {
 
     @Override
     public ContextNodeAST visit(InputEnumAST input, ASTNode arg) {
@@ -58,11 +58,11 @@ class ContextNodeCreatorVisitor extends GenericVisitorEmptyImpl<ContextNodeAST, 
 
     @Override
     public ContextNodeAST visit(InputTextAST input, ASTNode arg) {
-        if (input.defaultValue() == null) {
+        if (input.defaultValue() == null && input.placeHolder() == null) {
             return null;
         }
         ContextTextAST result = new ContextTextAST(input.path());
-        result.text(input.defaultValue());
+        result.text(input.placeHolder() != null ? input.placeHolder() : input.defaultValue());
         return result;
     }
 }

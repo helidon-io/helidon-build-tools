@@ -16,12 +16,17 @@
 
 package io.helidon.build.archetype.engine.v2.interpreter;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+
+import io.helidon.build.archetype.engine.v2.PropertyEvaluator;
 
 public class ReadyFlowState extends FlowState {
 
     private final Flow flow;
     private final OutputConverterVisitor outputConverterVisitor = new OutputConverterVisitor();
+    private final ContextToStringConvertor contextToStringConvertor = new ContextToStringConvertor();
 
     ReadyFlowState(Flow flow) {
         this.flow = flow;
@@ -42,7 +47,28 @@ public class ReadyFlowState extends FlowState {
 
         flow.tree().forEach(step -> traverseTree(step, result));
 
+        Map<String, String> contextValuesMap = convertContext(result.context());
+        result.outputs().forEach(o -> traverseOutput(o, contextValuesMap));
         flow.state(new DoneFlowState(result));
+    }
+
+    private void traverseOutput(ASTNode node, Map<String, String> contextValuesMap) {
+        if (node instanceof ValueTypeAST) {
+            String value = ((ValueTypeAST) node).value();
+            if (value != null && value.contains("${")) {
+                value = PropertyEvaluator.resolve(value, contextValuesMap);
+                ((ValueTypeAST) node).value(value);
+            }
+        }
+        node.children().forEach(child -> traverseOutput((ASTNode) child, contextValuesMap));
+    }
+
+    private Map<String, String> convertContext(Map<String, ContextNodeAST> context) {
+        Map<String, String> result = new HashMap<>();
+        context.forEach((key, value) -> {
+            result.putIfAbsent(key, value.accept(contextToStringConvertor, null).replaceAll("[\\['\\]]", ""));
+        });
+        return result;
     }
 
     private void traverseTree(ASTNode node, Flow.Result result) {
