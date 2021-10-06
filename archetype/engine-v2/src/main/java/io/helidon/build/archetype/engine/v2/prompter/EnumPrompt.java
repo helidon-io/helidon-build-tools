@@ -109,7 +109,7 @@ public class EnumPrompt extends Prompt<String> {
             if (userInputAST.children().isEmpty()) {
                 throw new IllegalArgumentException("UserInputAST must contain a child note");
             }
-            if (userInputAST.children().get(0) instanceof EnumPrompt) {
+            if (userInputAST.children().get(0) instanceof InputEnumAST) {
                 InputEnumAST inputEnumAST = (InputEnumAST) userInputAST.children().get(0);
 
                 initFields(userInputAST);

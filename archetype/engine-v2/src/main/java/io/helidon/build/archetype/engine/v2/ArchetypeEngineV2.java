@@ -17,6 +17,7 @@
 package io.helidon.build.archetype.engine.v2;
 
 import java.io.File;
+import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -120,7 +121,12 @@ public class ArchetypeEngineV2 {
             throw new RuntimeException("No results after the Flow instance finished its work. Project cannot be generated.");
         });
 
-        //add Thibault`s Output Generator #486
+        OutputGenerator outputGenerator = new OutputGenerator(result.outputs());
+        try {
+            outputGenerator.generate(outputDirectory);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void initContext(ContextAST context, File outputDirectory) {
@@ -130,7 +136,7 @@ public class ArchetypeEngineV2 {
         currentDateNode.text(dtf.format(now));
         context.children().add(currentDateNode);
         ContextTextAST currentDirNode = new ContextTextAST("project.directory");
-        currentDateNode.text(outputDirectory.toString());
+        currentDirNode.text(outputDirectory.toString());
         context.children().add(currentDirNode);
     }
 }

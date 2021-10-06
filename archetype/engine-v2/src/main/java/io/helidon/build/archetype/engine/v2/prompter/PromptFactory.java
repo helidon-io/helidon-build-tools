@@ -39,25 +39,25 @@ public abstract class PromptFactory {
         }
         if (userInputAST.children().get(0) instanceof InputBooleanAST) {
             return BooleanPrompt.builder()
-                    .userInputAST((UserInputAST) userInputAST.children().get(0))
+                    .userInputAST(userInputAST)//(UserInputAST) userInputAST.children().get(0)
                     .canBeGenerated(canBeGenerated)
                     .build();
         }
         if (userInputAST.children().get(0) instanceof InputTextAST) {
             return TextPrompt.builder()
-                    .userInputAST((UserInputAST) userInputAST.children().get(0))
+                    .userInputAST(userInputAST)//(UserInputAST) userInputAST.children().get(0)
                     .canBeGenerated(canBeGenerated)
                     .build();
         }
         if (userInputAST.children().get(0) instanceof InputEnumAST) {
             return EnumPrompt.builder()
-                    .userInputAST((UserInputAST) userInputAST.children().get(0))
+                    .userInputAST(userInputAST)//.children().get(0)
                     .canBeGenerated(canBeGenerated)
                     .build();
         }
         if (userInputAST.children().get(0) instanceof InputListAST) {
             return ListPrompt.builder()
-                    .userInputAST((UserInputAST) userInputAST.children().get(0))
+                    .userInputAST(userInputAST)//(UserInputAST) userInputAST.children().get(0)
                     .canBeGenerated(canBeGenerated)
                     .build();
         }

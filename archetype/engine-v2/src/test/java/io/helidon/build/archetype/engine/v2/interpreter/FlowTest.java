@@ -16,7 +16,6 @@
 
 package io.helidon.build.archetype.engine.v2.interpreter;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,8 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import io.helidon.build.archetype.engine.v2.ArchetypeBaseTest;
 import io.helidon.build.archetype.engine.v2.archive.Archetype;
-import io.helidon.build.archetype.engine.v2.archive.ArchetypeFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +33,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
-class FlowTest {
+public class FlowTest extends ArchetypeBaseTest {
 
     private Archetype archetype;
 
@@ -295,13 +294,6 @@ class FlowTest {
             archetype.close();
         }
         archetype = null;
-    }
-
-    private Archetype getArchetype(String name) {
-        ClassLoader classLoader = getClass().getClassLoader();
-        File file = new File(classLoader.getResource(name).getFile());
-        archetype = ArchetypeFactory.create(file);
-        return archetype;
     }
 
     private static ContextAST getUserInput(String label) {
