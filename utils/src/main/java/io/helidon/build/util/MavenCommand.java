@@ -295,8 +295,8 @@ public class MavenCommand {
         private boolean verbose;
         private int debugPort;
         private int maxWaitSeconds;
-        private PrintStream stdOut = DEVNULL;
-        private PrintStream stdErr = DEVNULL;
+        private PrintStream stdOut;
+        private PrintStream stdErr;
         private Predicate<String> filter = line -> true;
         private Function<String, String> transform = Function.identity();
         private Runnable beforeShutdown = () -> {};
