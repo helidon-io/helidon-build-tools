@@ -39,7 +39,6 @@ import static io.helidon.build.util.Constants.EOL;
 import static io.helidon.build.util.FileUtils.assertDir;
 import static io.helidon.build.util.FileUtils.assertJavaExecutable;
 import static io.helidon.build.util.FileUtils.listFiles;
-import static io.helidon.build.util.PrintStreams.DEVNULL;
 import static io.helidon.build.util.PrintStreams.RED_STDERR;
 import static io.helidon.build.util.PrintStreams.STDOUT;
 import static io.helidon.build.util.StyleFunction.Bold;
