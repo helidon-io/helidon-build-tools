@@ -25,6 +25,9 @@
     <suppress checks="FileLength"
             files="helidon-cli/codegen/src/main/java/io/helidon/build/cli/codegen/AST.java"
             lines="1"/>
+    <suppress checks="IllegalImport"
+              files="helidon-cli/impl/src/main/java/io/helidon/build/cli/impl/Helidon.java"
+              lines="22"/>
     <suppress checks="LineLength"
             files="helidon-archetype/engine/src/test/resources/META-INF/test.properties" />
     <suppress checks="LineLength"
