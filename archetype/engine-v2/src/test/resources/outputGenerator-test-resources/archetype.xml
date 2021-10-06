@@ -33,11 +33,12 @@
                     <transformation id="t1">
                         <replace replacement="pom" regex="test"/>
                         <replace replacement="foo" regex="expected"/>
+                        <replace replacement="" regex=".mustache"/>
                     </transformation>
                     <templates transformations="t1" engine="mustache">
                         <directory>template</directory>
                         <includes>
-                            <include>test.xml.mustache</include>
+                            <include>**/*.mustache</include>
                         </includes>
                     </templates>
                     <template source="template/test.xml.mustache" target="anotherPom.xml" engine="mustache"/>

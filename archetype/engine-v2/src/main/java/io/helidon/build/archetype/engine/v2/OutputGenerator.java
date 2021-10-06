@@ -17,11 +17,15 @@
 package io.helidon.build.archetype.engine.v2;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -30,6 +34,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import io.helidon.build.archetype.engine.v2.archive.Archetype;
+import io.helidon.build.archetype.engine.v2.archive.ArchetypeFactory;
 import io.helidon.build.archetype.engine.v2.descriptor.ListType;
 import io.helidon.build.archetype.engine.v2.descriptor.MapType;
 import io.helidon.build.archetype.engine.v2.descriptor.Model;
@@ -67,6 +73,7 @@ public class OutputGenerator {
     private final List<TemplatesAST> templates;
     private final List<FileSetAST> file;
     private final List<FileSetsAST> files;
+    private Archetype archetype;
 
     /**
      * OutputGenerator constructor.
@@ -124,18 +131,41 @@ public class OutputGenerator {
             try (InputStream is = OutputGenerator.class.getClassLoader().getResourceAsStream(templateAST.source())) {
                 File outputFile = new File(outputDirectory, templateAST.target());
                 outputFile.getParentFile().mkdirs();
-                MustacheHandler.renderMustacheTemplate(is, templateAST.source(), new FileOutputStream(outputFile), model);
+                if (templateAST.engine().equals("mustache")) {
+                    MustacheHandler.renderMustacheTemplate(is, templateAST.source(), new FileOutputStream(outputFile), model);
+                } else {
+                    Files.copy(is, outputFile.toPath());
+                }
             }
         }
 
         for (TemplatesAST templatesAST : templates) {
             Path root = Path.of(templatesAST.directory());
             TemplateModel templatesModel = createTemplatesModel(templatesAST);
+            List<String> includes = new LinkedList<>(templatesAST.includes());
             for (String include : templatesAST.includes()) {
+                if (include.contains("**/*")) {
+                    String extension = include.substring(include.lastIndexOf("."));
+                    try {
+                        URL url = OutputGenerator.class.getClassLoader().getResource(root.toString());
+                        if (url != null) {
+                            List<String> includePaths = readMultipleInclude(new File(url.toURI()), extension);
+                            includes.addAll(includePaths);
+                        }
+                    } catch (URISyntaxException e) {
+                        throw new IOException("Cannot find the templates directory " + root);
+                    }
+                }
+                includes.remove(include);
+            }
+
+            for (String include : includes) {
                 String includePath = root.resolve(include).toString();
                 try (InputStream is = OutputGenerator.class.getClassLoader().getResourceAsStream(includePath)) {
+                    if (is == null) {
+                        throw new IllegalStateException(includePath + " not found.");
+                    }
                     String outPath = transform(include, templatesAST.transformation());
-                    outPath = outPath.substring(0, outPath.lastIndexOf("."));
                     File outputFile = new File(outputDirectory, outPath);
                     outputFile.getParentFile().mkdirs();
                     MustacheHandler.renderMustacheTemplate(is, outPath, new FileOutputStream(outputFile), templatesModel);
@@ -146,7 +176,7 @@ public class OutputGenerator {
         for (FileSetAST fileAST : file) {
             try (InputStream is = OutputGenerator.class.getClassLoader().getResourceAsStream(fileAST.source())) {
                 if (is == null) {
-                    throw new IllegalStateException(fileAST.source() + " not found");
+                    throw new IllegalStateException(fileAST.source() + " not found.");
                 }
                 File outputFile = new File(outputDirectory, fileAST.target());
                 outputFile.getParentFile().mkdirs();
@@ -160,7 +190,7 @@ public class OutputGenerator {
                 String includePath = root.resolve(include).toString();
                 try (InputStream is = OutputGenerator.class.getClassLoader().getResourceAsStream(includePath)) {
                     if (is == null) {
-                        throw new IllegalStateException(includePath + " not found");
+                        throw new IllegalStateException(includePath + " not found.");
                     }
                     String outPath = processTransformation(include, filesAST.transformations());
                     File outputFile = new File(outputDirectory, outPath);
@@ -169,6 +199,14 @@ public class OutputGenerator {
                 }
             }
         }
+    }
+
+    private List<String> readMultipleInclude(File directory, String extension) {
+        return Arrays.stream(directory.listFiles())
+                .filter(f -> f.getName().contains(extension))
+                .map(File::getAbsolutePath)
+                .map(s -> s.substring(directory.getAbsolutePath().length() + 1))
+                .collect(Collectors.toList());
     }
 
     private TemplateModel createTemplatesModel(TemplatesAST templatesAST) {
@@ -188,6 +226,10 @@ public class OutputGenerator {
     }
 
     private String processTransformation(String output, List<String> applicable) {
+        if (applicable.isEmpty()) {
+            return output;
+        }
+
         List<Replacement> replacements = transformations.stream()
                 .filter(t -> applicable.contains(t.id()))
                 .flatMap((t) -> t.replacements().stream())
