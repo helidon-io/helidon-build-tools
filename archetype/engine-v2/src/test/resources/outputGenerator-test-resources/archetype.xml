@@ -31,67 +31,37 @@
                      label="User boolean input label">
                 <output if="${foo} == true">
                     <transformation id="t1">
-                        <replace replacement="pom" regex="test"/>
-                        <replace replacement="foo" regex="expected"/>
+                        <replace replacement="pom2" regex="pom"/>
                         <replace replacement="" regex=".mustache"/>
                     </transformation>
                     <templates transformations="t1" engine="mustache">
-                        <directory>template</directory>
+                        <directory>archetype/common/files</directory>
                         <includes>
-                            <include>**/*.mustache</include>
+                            <include>README.md.mustache</include>
                         </includes>
                     </templates>
-                    <template source="template/test.xml.mustache" target="anotherPom.xml" engine="mustache"/>
-                    <file source="template/expected.xml" target="expected.xml"/>
+                    <template source="archetype/common/files/README.md.mustache" target="Readme2.md" engine="mustache"/>
+                    <file source="archetype/common/pom-file.xml" target="pom1.xml"/>
                     <files transformations="t1">
-                        <directory>template</directory>
+                        <directory>archetype/common</directory>
                         <includes>
-                            <include>expected.xml</include>
+                            <include>pom.xml</include>
                         </includes>
                     </files>
                     <model>
-                        <value key="id" order="0">third-party-license-report</value>
-                        <map key="properties" order="1">
-                            <value key="helidon-media-groupId">io.helidon.media</value>
-                            <value key="helidon-media-artifactId">helidon-media-jackson</value>
-                            <value key="maven-plugins-groupId">org.apache.maven.plugins</value>
-                            <value key="id">copy-libs</value>
-                        </map>
-                        <list key="dependencies">
-                            <map order="50">
-                                <value key="groupId">io.helidon.media</value>
-                                <value key="artifactId">helidon-media-jackson</value>
+                        <!--map key="readme">
+                            <value key="title">my title</value>
+                            <value key="description">my description</value>
+                            <value key="artifactId">myArtifactId</value>
+                            <map key="sections">
+                                <value key="section">my section</value>
                             </map>
-                            <map order="10">
-                                <value key="groupId" file="src/test/resources/template/helidon-media-groupId.txt" template="mustache"/>
-                                <value key="artifactId">helidon-media-jsonb</value>
-                            </map>
-                        </list>
-                        <map key="build">
-                            <list key="plugins">
-                                <map order="50">
-                                    <map key="plugin">
-                                        <value key="groupId" template="mustache">{{properties.maven-plugins-groupId}}</value>
-                                        <value key="artifactId">maven-dependency-plugin</value>
-                                        <map key="executions">
-                                            <value key="id" template="mustache">{{properties.id}}</value>
-                                        </map>
-                                    </map>
-                                </map>
-                            </list>
-                            <list key="plugins">
-                                <map>
-                                    <list key="plugin">
-                                        <map order="500">
-                                            <value key="groupId">io.helidon.build-tools</value>
-                                            <value key="artifactId">helidon-maven-plugin</value>
-                                            <map key="executions">
-                                                <value key="id" template="mustache">{{id}}</value>
-                                            </map>
-                                        </map>
-                                    </list>
-                                </map>
-                            </list>
+                        </map-->
+                        <value key="name">myName</value>
+                        <value key="readme-description">description</value>
+                        <value key="artifactId">myArtifactId</value>
+                        <map key="sections">
+                            <value key="readme-section">my section</value>
                         </map>
                     </model>
                 </output>

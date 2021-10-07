@@ -73,7 +73,6 @@ public class OutputGenerator {
     private final List<TemplatesAST> templates;
     private final List<FileSetAST> file;
     private final List<FileSetsAST> files;
-    private Archetype archetype;
 
     /**
      * OutputGenerator constructor.
@@ -124,18 +123,20 @@ public class OutputGenerator {
      *
      * @param outputDirectory   Output directory where the files will be generated
      */
-    public void generate(File outputDirectory) throws IOException {
+    public void generate(File outputDirectory, Archetype archetype) throws IOException {
         Objects.requireNonNull(outputDirectory, "output directory is null");
 
         for (TemplateAST templateAST : template) {
-            try (InputStream is = OutputGenerator.class.getClassLoader().getResourceAsStream(templateAST.source())) {
-                File outputFile = new File(outputDirectory, templateAST.target());
-                outputFile.getParentFile().mkdirs();
-                if (templateAST.engine().equals("mustache")) {
-                    MustacheHandler.renderMustacheTemplate(is, templateAST.source(), new FileOutputStream(outputFile), model);
-                } else {
-                    Files.copy(is, outputFile.toPath());
-                }
+            File outputFile = new File(outputDirectory, templateAST.target());
+            outputFile.getParentFile().mkdirs();
+            if (templateAST.engine().equals("mustache")) {
+                MustacheHandler.renderMustacheTemplate(
+                        new FileInputStream(archetype.getFile(templateAST.source()).toFile()),
+                        templateAST.source(),
+                        new FileOutputStream(outputFile),
+                        model);
+            } else {
+                Files.copy(new FileInputStream(archetype.getFile(templateAST.source()).toFile()), outputFile.toPath());
             }
         }
 
@@ -150,7 +151,10 @@ public class OutputGenerator {
                         URL url = OutputGenerator.class.getClassLoader().getResource(root.toString());
                         if (url != null) {
                             List<String> includePaths = readMultipleInclude(new File(url.toURI()), extension);
-                            includes.addAll(includePaths);
+                            includes.addAll(includePaths.stream()
+                                    .filter(e -> !templatesAST.excludes().contains(e))
+                                    .collect(Collectors.toList())
+                            );
                         }
                     } catch (URISyntaxException e) {
                         throw new IOException("Cannot find the templates directory " + root);
@@ -160,43 +164,37 @@ public class OutputGenerator {
             }
 
             for (String include : includes) {
-                String includePath = root.resolve(include).toString();
-                try (InputStream is = OutputGenerator.class.getClassLoader().getResourceAsStream(includePath)) {
-                    if (is == null) {
-                        throw new IllegalStateException(includePath + " not found.");
-                    }
-                    String outPath = transform(include, templatesAST.transformation());
-                    File outputFile = new File(outputDirectory, outPath);
-                    outputFile.getParentFile().mkdirs();
-                    MustacheHandler.renderMustacheTemplate(is, outPath, new FileOutputStream(outputFile), templatesModel);
+                if (templatesAST.excludes().contains(include)) {
+                    continue;
                 }
+                String includePath = root.resolve(include).toString();
+                String outPath = transform(include, templatesAST.transformation());
+                File outputFile = new File(outputDirectory, outPath);
+                outputFile.getParentFile().mkdirs();
+                MustacheHandler.renderMustacheTemplate(
+                        new FileInputStream(archetype.getFile(includePath).toFile()),
+                        outPath,
+                        new FileOutputStream(outputFile),
+                        templatesModel);
             }
         }
 
         for (FileSetAST fileAST : file) {
-            try (InputStream is = OutputGenerator.class.getClassLoader().getResourceAsStream(fileAST.source())) {
-                if (is == null) {
-                    throw new IllegalStateException(fileAST.source() + " not found.");
-                }
-                File outputFile = new File(outputDirectory, fileAST.target());
-                outputFile.getParentFile().mkdirs();
-                Files.copy(is, outputFile.toPath());
-            }
+            File outputFile = new File(outputDirectory, fileAST.target());
+            outputFile.getParentFile().mkdirs();
+            Files.copy(new FileInputStream(archetype.getFile(fileAST.source()).toFile()), outputFile.toPath());
         }
 
         for (FileSetsAST filesAST : files) {
             Path root = Path.of(filesAST.directory());
             for (String include : filesAST.includes()) {
-                String includePath = root.resolve(include).toString();
-                try (InputStream is = OutputGenerator.class.getClassLoader().getResourceAsStream(includePath)) {
-                    if (is == null) {
-                        throw new IllegalStateException(includePath + " not found.");
-                    }
-                    String outPath = processTransformation(include, filesAST.transformations());
-                    File outputFile = new File(outputDirectory, outPath);
-                    outputFile.getParentFile().mkdirs();
-                    Files.copy(is, outputFile.toPath());
+                if (filesAST.excludes().contains(include)) {
+                    continue;
                 }
+                String outPath = processTransformation(include, filesAST.transformations());
+                File outputFile = new File(outputDirectory, outPath);
+                outputFile.getParentFile().mkdirs();
+                Files.copy(new FileInputStream(archetype.getFile(root.resolve(include).toString()).toFile()), outputFile.toPath());
             }
         }
     }
@@ -205,7 +203,6 @@ public class OutputGenerator {
         return Arrays.stream(directory.listFiles())
                 .filter(f -> f.getName().contains(extension))
                 .map(File::getAbsolutePath)
-                .map(s -> s.substring(directory.getAbsolutePath().length() + 1))
                 .collect(Collectors.toList());
     }
 
