@@ -32,8 +32,8 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -82,8 +82,7 @@ public class Handler extends URLStreamHandler {
         @Override
         public InputStream getInputStream() throws IOException {
             connect();
-            File file = resolver.resolve(url.toExternalForm());
-            return new FileInputStream(file);
+            return new FileInputStream(resolver.resolve(url.toExternalForm()));
         }
     }
 
@@ -112,16 +111,14 @@ public class Handler extends URLStreamHandler {
             url = url.substring((PROTOCOL + "://").length());
             MavenURLParser parser = new MavenURLParser(url);
 
-            return resolve(parser, parser.getType());
+            return resolve(parser);
         }
 
-        private File resolve(MavenURLParser parser, String type) throws IOException {
-            String fileName = parser.getArtifactId() + "-" + parser.getVersion() + "." + parser.getType();
+        private File resolve(MavenURLParser parser) throws IOException {
+            String fileName = parser.artifactId() + "-" + parser.version() + "." + parser.type();
             FileVisitor visitor = new FileVisitor(getLocalRepository());
-            visitor.visit(parser.getArchivePath());
-            return type.equals("jar")
-                    ? visitor.visitJar(fileName, parser.getPathFromArchive())
-                    : visitor.visitZip(fileName, parser.getPathFromArchive());
+            visitor.visit(parser.archivePath());
+            return visitor.visitArchive(fileName, parser.pathFromArchive());
         }
 
         private File getLocalRepository() throws IOException {
@@ -151,14 +148,12 @@ public class Handler extends URLStreamHandler {
              * Visit the target file or directory.
              *
              * @param targets       path to target file to be resolved
-             * @return              target file
              * @throws IOException  if wrong path
              */
-            public File visit(String[] targets) throws IOException {
+            public void visit(String[] targets) throws IOException {
                 for (String directory : targets) {
                     visit(directory);
                 }
-                return currentFile;
             }
 
             private File visit(String target) throws IOException {
@@ -180,37 +175,14 @@ public class Handler extends URLStreamHandler {
             }
 
             /**
-             * Visit a jar file.
-             *
-             * @param jarName       Jar file name.
-             * @param path          path to a file into the jar file.
-             * @return              the file targeted by the path.
-             * @throws IOException  if file is not present.
-             */
-            public File visitJar(String jarName, String path) throws IOException {
-                File jar = visit(jarName);
-                File outDirectory = new File(jar.getParent());
-                JarFile jarFile = new JarFile(jar);
-                Enumeration<JarEntry> entries = jarFile.entries();
-                while (entries.hasMoreElements()) {
-                    JarEntry entry = entries.nextElement();
-                    File out = getFileFromArchive(path, outDirectory, jarFile, entry);
-                    if (out != null) {
-                        return out;
-                    }
-                }
-                throw new IOException(String.format("File %s was not found into jar : %s.", path, jarName));
-            }
-
-            /**
-             * Visit a zip file.
+             * Visit a archive.
              *
              * @param zipName       Jar file name.
              * @param path          path to a file into the jar file.
              * @return              the file targeted by the path.
              * @throws IOException  if file is not present.
              */
-            public File visitZip(String zipName, String path) throws IOException {
+            public File visitArchive(String zipName, String path) throws IOException {
                 File zip = visit(zipName);
                 File outDirectory = new File(zip.getParent());
                 ZipFile zipFile = new JarFile(zip);
@@ -261,7 +233,7 @@ public class Handler extends URLStreamHandler {
          * Syntax for the url to be shown on exception messages.
          */
         private static final String SYNTAX =
-                "mvn://groupId:artifactId:[version]:[classifier (optional)]:[type (optional)]/.../[file]";
+                "mvn://groupId:artifactId:version:[classifier]:[type]/filePath";
 
         /**
          * Final artifact path separator.
@@ -332,10 +304,10 @@ public class Handler extends URLStreamHandler {
 
             if (segments.length > 2) {
                 groupId = segments[0];
-                checkStringHealth(groupId, "groupId");
+                checkString(groupId, "groupId");
 
                 artifactId = segments[1];
-                checkStringHealth(artifactId, "artifactId");
+                checkString(artifactId, "artifactId");
             } else {
                 throw new MalformedURLException("Missing element in maven URL. Syntax " + SYNTAX);
             }
@@ -360,15 +332,15 @@ public class Handler extends URLStreamHandler {
                 throw new MalformedURLException("Invalid. Syntax " + SYNTAX);
             }
             version = segments[2];
-            checkStringHealth(version, "version");
+            checkString(version, "version");
 
             classifier = segments[3];
-            checkStringHealth(classifier, "classifier");
+            checkString(classifier, "classifier");
 
             segments = segments[4].split(FILE_SEPARATOR);
 
-            type = checkTypeHealth(segments[0]) ? segments[0] : DEFAULT_TYPE;
-            checkStringHealth(type, "type");
+            type = SUPPORTED_TYPE.contains(segments[0]) ? segments[0] : DEFAULT_TYPE;
+            checkString(type, "type");
 
             buildPathFromArchive(segments);
         }
@@ -379,11 +351,11 @@ public class Handler extends URLStreamHandler {
             }
 
             version = segments[2];
-            checkStringHealth(version, "version");
+            checkString(version, "version");
 
             segments = segments[3].split(FILE_SEPARATOR);
 
-            if (checkTypeHealth(segments[0])) {
+            if (SUPPORTED_TYPE.contains(segments[0])) {
                 type = segments[0];
             } else {
                 classifier = segments[0];
@@ -399,7 +371,7 @@ public class Handler extends URLStreamHandler {
             segments = segments[2].split(FILE_SEPARATOR);
 
             version = segments[0];
-            checkStringHealth(version, "version");
+            checkString(version, "version");
 
             buildPathFromArchive(segments);
         }
@@ -413,14 +385,10 @@ public class Handler extends URLStreamHandler {
             pathFromArchive = builder.toString();
         }
 
-        private void checkStringHealth(String patient, String patientName) throws MalformedURLException {
+        private void checkString(String patient, String patientName) throws MalformedURLException {
             if (patient.trim().length() == 0) {
                 throw new MalformedURLException(String.format("Invalid %s. Syntax  %s. ", patientName, SYNTAX));
             }
-        }
-
-        private boolean checkTypeHealth(String type) {
-            return SUPPORTED_TYPE.contains(type);
         }
 
         /**
@@ -428,7 +396,7 @@ public class Handler extends URLStreamHandler {
          *
          * @return group Id
          */
-        public String getGroupId() {
+        public String groupId() {
             return groupId;
         }
 
@@ -437,7 +405,7 @@ public class Handler extends URLStreamHandler {
          *
          * @return artifact id
          */
-        public String getArtifactId() {
+        public String artifactId() {
             return artifactId;
         }
 
@@ -446,7 +414,7 @@ public class Handler extends URLStreamHandler {
          *
          * @return version
          */
-        public String getVersion() {
+        public String version() {
             return version;
         }
 
@@ -455,8 +423,8 @@ public class Handler extends URLStreamHandler {
          *
          * @return classifier
          */
-        public String getClassifier() {
-            return classifier;
+        public Optional<String> classifier() {
+            return Optional.of(classifier);
         }
 
         /**
@@ -464,7 +432,7 @@ public class Handler extends URLStreamHandler {
          *
          * @return type
          */
-        public String getType() {
+        public String type() {
             return type;
         }
 
@@ -473,7 +441,7 @@ public class Handler extends URLStreamHandler {
          *
          * @return file path
          */
-        public String getPathFromArchive() {
+        public String pathFromArchive() {
             return pathFromArchive;
         }
 
@@ -482,7 +450,7 @@ public class Handler extends URLStreamHandler {
          *
          * @return full path
          */
-        public String[] getArchivePath() {
+        public String[] archivePath() {
             ArrayList<String> path = new ArrayList<>(Arrays.asList(groupId.split("\\.")));
             path.add(artifactId);
             path.add(version);

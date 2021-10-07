@@ -30,11 +30,11 @@ public class MavenURLParserTest {
         String mvnPath = "io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT/some/useless/directory/test-file.xml";
         Handler.MavenURLParser parser = new Handler.MavenURLParser(mvnPath);
 
-        assertThat(parser.getGroupId(), is("io.helidon.archetypes"));
-        assertThat(parser.getArtifactId(), is("helidon-archetype"));
-        assertThat(parser.getVersion(), is("3.0.0-SNAPSHOT"));
-        assertThat(parser.getType(), is("jar"));
-        assertThat(parser.getPathFromArchive(), is("some/useless/directory/test-file.xml"));
+        assertThat(parser.groupId(), is("io.helidon.archetypes"));
+        assertThat(parser.artifactId(), is("helidon-archetype"));
+        assertThat(parser.version(), is("3.0.0-SNAPSHOT"));
+        assertThat(parser.type(), is("jar"));
+        assertThat(parser.pathFromArchive(), is("some/useless/directory/test-file.xml"));
     }
 
     @Test
@@ -42,11 +42,11 @@ public class MavenURLParserTest {
         String mvnPath = "io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT:classifier/some/useless/directory/test-file.xml";
         Handler.MavenURLParser parser = new Handler.MavenURLParser(mvnPath);
 
-        assertThat(parser.getGroupId(), is("io.helidon.archetypes"));
-        assertThat(parser.getArtifactId(), is("helidon-archetype"));
-        assertThat(parser.getVersion(), is("3.0.0-SNAPSHOT"));
-        assertThat(parser.getClassifier(), is("classifier"));
-        assertThat(parser.getPathFromArchive(), is("some/useless/directory/test-file.xml"));
+        assertThat(parser.groupId(), is("io.helidon.archetypes"));
+        assertThat(parser.artifactId(), is("helidon-archetype"));
+        assertThat(parser.version(), is("3.0.0-SNAPSHOT"));
+        assertThat(parser.classifier().get(), is("classifier"));
+        assertThat(parser.pathFromArchive(), is("some/useless/directory/test-file.xml"));
     }
 
     @Test
@@ -54,11 +54,11 @@ public class MavenURLParserTest {
         String mvnPath = "io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT:jar/some/useless/directory/test-file.xml";
         Handler.MavenURLParser parser = new Handler.MavenURLParser(mvnPath);
 
-        assertThat(parser.getGroupId(), is("io.helidon.archetypes"));
-        assertThat(parser.getArtifactId(), is("helidon-archetype"));
-        assertThat(parser.getVersion(), is("3.0.0-SNAPSHOT"));
-        assertThat(parser.getType(), is("jar"));
-        assertThat(parser.getPathFromArchive(), is("some/useless/directory/test-file.xml"));
+        assertThat(parser.groupId(), is("io.helidon.archetypes"));
+        assertThat(parser.artifactId(), is("helidon-archetype"));
+        assertThat(parser.version(), is("3.0.0-SNAPSHOT"));
+        assertThat(parser.type(), is("jar"));
+        assertThat(parser.pathFromArchive(), is("some/useless/directory/test-file.xml"));
     }
 
     @Test
@@ -66,11 +66,11 @@ public class MavenURLParserTest {
         String mvnPath = "io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT:zip/some/useless/directory/test-file.xml";
         Handler.MavenURLParser parser = new Handler.MavenURLParser(mvnPath);
 
-        assertThat(parser.getGroupId(), is("io.helidon.archetypes"));
-        assertThat(parser.getArtifactId(), is("helidon-archetype"));
-        assertThat(parser.getVersion(), is("3.0.0-SNAPSHOT"));
-        assertThat(parser.getType(), is("zip"));
-        assertThat(parser.getPathFromArchive(), is("some/useless/directory/test-file.xml"));
+        assertThat(parser.groupId(), is("io.helidon.archetypes"));
+        assertThat(parser.artifactId(), is("helidon-archetype"));
+        assertThat(parser.version(), is("3.0.0-SNAPSHOT"));
+        assertThat(parser.type(), is("zip"));
+        assertThat(parser.pathFromArchive(), is("some/useless/directory/test-file.xml"));
     }
 
     @Test
@@ -78,12 +78,12 @@ public class MavenURLParserTest {
         String mvnPath = "io.helidon.archetypes:helidon-archetype:3.0.0-SNAPSHOT:classifier:jar/some/useless/directory/test-file.xml";
         Handler.MavenURLParser parser = new Handler.MavenURLParser(mvnPath);
 
-        assertThat(parser.getGroupId(), is("io.helidon.archetypes"));
-        assertThat(parser.getArtifactId(), is("helidon-archetype"));
-        assertThat(parser.getVersion(), is("3.0.0-SNAPSHOT"));
-        assertThat(parser.getClassifier(), is("classifier"));
-        assertThat(parser.getType(), is("jar"));
-        assertThat(parser.getPathFromArchive(), is("some/useless/directory/test-file.xml"));
+        assertThat(parser.groupId(), is("io.helidon.archetypes"));
+        assertThat(parser.artifactId(), is("helidon-archetype"));
+        assertThat(parser.version(), is("3.0.0-SNAPSHOT"));
+        assertThat(parser.classifier().get(), is("classifier"));
+        assertThat(parser.type(), is("jar"));
+        assertThat(parser.pathFromArchive(), is("some/useless/directory/test-file.xml"));
     }
 
 }
