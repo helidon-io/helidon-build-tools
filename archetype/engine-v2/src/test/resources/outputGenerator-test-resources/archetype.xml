@@ -31,37 +31,34 @@
                      label="User boolean input label">
                 <output if="${foo} == true">
                     <transformation id="t1">
-                        <replace replacement="pom2" regex="pom"/>
+                        <replace replacement="generatedDocker" regex="docker"/>
                         <replace replacement="" regex=".mustache"/>
                     </transformation>
                     <templates transformations="t1" engine="mustache">
-                        <directory>archetype/common/files</directory>
+                        <directory>template</directory>
                         <includes>
                             <include>README.md.mustache</include>
                         </includes>
                     </templates>
-                    <template source="archetype/common/files/README.md.mustache" target="Readme2.md" engine="mustache"/>
-                    <file source="archetype/common/pom-file.xml" target="pom1.xml"/>
+                    <template source="template/README.md.mustache" target="Readme2.md" engine="mustache"/>
+                    <file source="pom.xml" target="pom.xml"/>
                     <files transformations="t1">
-                        <directory>archetype/common</directory>
+                        <directory>docker</directory>
                         <includes>
-                            <include>pom.xml</include>
+                            <include>**/*.xml</include>
                         </includes>
+                        <excludes>
+                            <exclude>dummy.xml</exclude>
+                        </excludes>
                     </files>
                     <model>
-                        <!--map key="readme">
+                        <map key="readme">
                             <value key="title">my title</value>
                             <value key="description">my description</value>
                             <value key="artifactId">myArtifactId</value>
                             <map key="sections">
                                 <value key="section">my section</value>
                             </map>
-                        </map-->
-                        <value key="name">myName</value>
-                        <value key="readme-description">description</value>
-                        <value key="artifactId">myArtifactId</value>
-                        <map key="sections">
-                            <value key="readme-section">my section</value>
                         </map>
                     </model>
                 </output>

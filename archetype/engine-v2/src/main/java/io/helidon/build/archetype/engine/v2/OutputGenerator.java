@@ -47,6 +47,7 @@ import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
 import io.helidon.build.archetype.engine.v2.interpreter.ASTNode;
 import io.helidon.build.archetype.engine.v2.interpreter.FileSetAST;
 import io.helidon.build.archetype.engine.v2.interpreter.FileSetsAST;
+import io.helidon.build.archetype.engine.v2.interpreter.Flow;
 import io.helidon.build.archetype.engine.v2.interpreter.ListTypeAST;
 import io.helidon.build.archetype.engine.v2.interpreter.MapTypeAST;
 import io.helidon.build.archetype.engine.v2.interpreter.ModelAST;
@@ -73,17 +74,19 @@ public class OutputGenerator {
     private final List<TemplatesAST> templates;
     private final List<FileSetAST> file;
     private final List<FileSetsAST> files;
+    private final Archetype archetype;
 
     /**
      * OutputGenerator constructor.
      *
-     * @param outputNodes   Output node from interpreter
+     * @param result   Flow.Result from interpreter
      */
-    OutputGenerator(List<ASTNode> outputNodes) {
-        Objects.requireNonNull(outputNodes, "Output nodes are null");
+    OutputGenerator(Flow.Result result) {
+        Objects.requireNonNull(result, "Flow result is null");
 
-        this.nodes = getOutputNodes(outputNodes);
+        this.nodes = getOutputNodes(result.outputs());
         this.model = createUniqueModel();
+        this.archetype = result.archetype();
 
         this.transformations = nodes.stream()
                 .flatMap(output -> output.children().stream())
@@ -123,7 +126,7 @@ public class OutputGenerator {
      *
      * @param outputDirectory   Output directory where the files will be generated
      */
-    public void generate(File outputDirectory, Archetype archetype) throws IOException {
+    public void generate(File outputDirectory) throws IOException {
         Objects.requireNonNull(outputDirectory, "output directory is null");
 
         for (TemplateAST templateAST : template) {
@@ -136,43 +139,27 @@ public class OutputGenerator {
                         new FileOutputStream(outputFile),
                         model);
             } else {
-                Files.copy(new FileInputStream(archetype.getFile(templateAST.source()).toFile()), outputFile.toPath());
+                Files.copy(
+                        new FileInputStream(archetype.getFile(templateAST.source()).toFile()),
+                        outputFile.toPath());
             }
         }
 
         for (TemplatesAST templatesAST : templates) {
-            Path root = Path.of(templatesAST.directory());
+            Path rootDirectory = Path.of(templatesAST.directory());
             TemplateModel templatesModel = createTemplatesModel(templatesAST);
-            List<String> includes = new LinkedList<>(templatesAST.includes());
-            for (String include : templatesAST.includes()) {
-                if (include.contains("**/*")) {
-                    String extension = include.substring(include.lastIndexOf("."));
-                    try {
-                        URL url = OutputGenerator.class.getClassLoader().getResource(root.toString());
-                        if (url != null) {
-                            List<String> includePaths = readMultipleInclude(new File(url.toURI()), extension);
-                            includes.addAll(includePaths.stream()
-                                    .filter(e -> !templatesAST.excludes().contains(e))
-                                    .collect(Collectors.toList())
-                            );
-                        }
-                    } catch (URISyntaxException e) {
-                        throw new IOException("Cannot find the templates directory " + root);
-                    }
-                }
-                includes.remove(include);
-            }
 
-            for (String include : includes) {
+            for (String include : parseIncludes(templatesAST)) {
                 if (templatesAST.excludes().contains(include)) {
                     continue;
                 }
-                String includePath = root.resolve(include).toString();
+
+                Path includePath = rootDirectory.resolve(include);
                 String outPath = transform(include, templatesAST.transformation());
                 File outputFile = new File(outputDirectory, outPath);
                 outputFile.getParentFile().mkdirs();
                 MustacheHandler.renderMustacheTemplate(
-                        new FileInputStream(archetype.getFile(includePath).toFile()),
+                        new FileInputStream(archetype.getFile(includePath.toString()).toFile()),
                         outPath,
                         new FileOutputStream(outputFile),
                         templatesModel);
@@ -186,24 +173,49 @@ public class OutputGenerator {
         }
 
         for (FileSetsAST filesAST : files) {
-            Path root = Path.of(filesAST.directory());
-            for (String include : filesAST.includes()) {
-                if (filesAST.excludes().contains(include)) {
-                    continue;
-                }
+            Path rootDirectory = Path.of(filesAST.directory());
+            for (String include : parseIncludes(filesAST)) {
                 String outPath = processTransformation(include, filesAST.transformations());
                 File outputFile = new File(outputDirectory, outPath);
                 outputFile.getParentFile().mkdirs();
-                Files.copy(new FileInputStream(archetype.getFile(root.resolve(include).toString()).toFile()), outputFile.toPath());
+                Files.copy(
+                        new FileInputStream(archetype.getFile(rootDirectory.resolve(include).toString()).toFile()),
+                        outputFile.toPath()
+                );
             }
         }
     }
 
-    private List<String> readMultipleInclude(File directory, String extension) {
-        return Arrays.stream(directory.listFiles())
-                .filter(f -> f.getName().contains(extension))
-                .map(File::getAbsolutePath)
-                .collect(Collectors.toList());
+    private List<String> parseIncludes(TemplatesAST templatesAST) {
+        return parseIncludes(templatesAST.directory(), templatesAST.includes(), templatesAST.excludes());
+    }
+
+    private List<String> parseIncludes(FileSetsAST filesAST) {
+        return parseIncludes(filesAST.directory(), filesAST.includes(), filesAST.excludes());
+    }
+
+    private List<String> parseIncludes(String directory, LinkedList<String> includes, LinkedList<String> excludes) {
+        List<String> resolved = new LinkedList<>();
+
+        for (String include : includes) {
+            if (include.contains("**/*")) {
+                try {
+                    String extension = include.substring(include.lastIndexOf("."));
+                    List<String> includePaths = archetype.getPaths().stream()
+                            .map(s -> archetype.getFile(directory).relativize(Path.of(s)).toString())
+                            .filter(s -> !s.startsWith("../"))
+                            .filter(s -> s.contains(extension))
+                            .filter(s -> !excludes.contains(s))
+                            .collect(Collectors.toList());
+                    resolved.addAll(includePaths);
+                } catch (IndexOutOfBoundsException e) {
+                    resolved.addAll(archetype.getPaths());
+                }
+            } else {
+                resolved.add(include);
+            }
+        }
+        return resolved;
     }
 
     private TemplateModel createTemplatesModel(TemplatesAST templatesAST) {
@@ -260,7 +272,10 @@ public class OutputGenerator {
 
     private Model convertASTModel(ModelAST model) {
         Model modelDescriptor = new Model("true");
-        convertKeyElements(modelDescriptor.keyValues(), modelDescriptor.keyLists(), modelDescriptor.keyMaps(), model.children());
+        convertKeyElements(modelDescriptor.keyValues(),
+                modelDescriptor.keyLists(),
+                modelDescriptor.keyMaps(),
+                model.children());
         return modelDescriptor;
     }
 

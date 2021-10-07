@@ -49,7 +49,7 @@ class DirectoryArchetype implements Archetype {
     public Path getFile(String path) {
         Objects.requireNonNull(path);
         File file = directory.toPath().resolve(Path.of(path)).toFile();
-        if (file.exists() && file.isFile()) {
+        if (file.exists()) {
             if (file.getPath().startsWith(directory.getPath())) {
                 return file.toPath();
             } else {
