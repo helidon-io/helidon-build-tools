@@ -17,9 +17,9 @@
 package io.helidon.build.archetype.engine.v2;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -74,7 +74,7 @@ public class OutputGenerator {
     /**
      * OutputGenerator constructor.
      *
-     * @param result   Flow.Result from interpreter
+     * @param result Flow.Result from interpreter
      */
     OutputGenerator(Flow.Result result) {
         Objects.requireNonNull(result, "Flow result is null");
@@ -119,7 +119,7 @@ public class OutputGenerator {
     /**
      * Generate output files.
      *
-     * @param outputDirectory   Output directory where the files will be generated
+     * @param outputDirectory Output directory where the files will be generated
      */
     public void generate(File outputDirectory) throws IOException {
         Objects.requireNonNull(outputDirectory, "output directory is null");
@@ -127,16 +127,18 @@ public class OutputGenerator {
         for (TemplateAST templateAST : template) {
             File outputFile = new File(outputDirectory, templateAST.target());
             outputFile.getParentFile().mkdirs();
-            if (templateAST.engine().equals("mustache")) {
-                MustacheHandler.renderMustacheTemplate(
-                        new FileInputStream(archetype.getFile(templateAST.source()).toFile()),
-                        templateAST.source(),
-                        new FileOutputStream(outputFile),
-                        model);
-            } else {
-                Files.copy(
-                        new FileInputStream(archetype.getFile(templateAST.source()).toFile()),
-                        outputFile.toPath());
+            try (InputStream inputStream = archetype.getInputStream(templateAST.source())) {
+                if (templateAST.engine().equals("mustache")) {
+                    MustacheHandler.renderMustacheTemplate(
+                            inputStream,
+                            templateAST.source(),
+                            new FileOutputStream(outputFile),
+                            model);
+                } else {
+                    Files.copy(
+                            inputStream,
+                            outputFile.toPath());
+                }
             }
         }
 
@@ -153,18 +155,22 @@ public class OutputGenerator {
                 String outPath = transform(include, templatesAST.transformation());
                 File outputFile = new File(outputDirectory, outPath);
                 outputFile.getParentFile().mkdirs();
-                MustacheHandler.renderMustacheTemplate(
-                        new FileInputStream(archetype.getFile(includePath.toString()).toFile()),
-                        outPath,
-                        new FileOutputStream(outputFile),
-                        templatesModel);
+                try (InputStream inputStream = archetype.getInputStream(includePath.toString())) {
+                    MustacheHandler.renderMustacheTemplate(
+                            inputStream,
+                            outPath,
+                            new FileOutputStream(outputFile),
+                            templatesModel);
+                }
             }
         }
 
         for (FileSetAST fileAST : file) {
             File outputFile = new File(outputDirectory, fileAST.target());
             outputFile.getParentFile().mkdirs();
-            Files.copy(new FileInputStream(archetype.getFile(fileAST.source()).toFile()), outputFile.toPath());
+            try (InputStream inputStream = archetype.getInputStream(fileAST.source())) {
+                Files.copy(inputStream, outputFile.toPath());
+            }
         }
 
         for (FileSetsAST filesAST : files) {
@@ -173,10 +179,10 @@ public class OutputGenerator {
                 String outPath = processTransformation(include, filesAST.transformations());
                 File outputFile = new File(outputDirectory, outPath);
                 outputFile.getParentFile().mkdirs();
-                Files.copy(
-                        new FileInputStream(archetype.getFile(rootDirectory.resolve(include).toString()).toFile()),
-                        outputFile.toPath()
-                );
+                try (InputStream inputStream = archetype.getInputStream(rootDirectory.resolve(include).toString())) {
+                    Files.copy(inputStream, outputFile.toPath());
+                }
+
             }
         }
     }
@@ -197,7 +203,7 @@ public class OutputGenerator {
                 try {
                     String extension = include.substring(include.lastIndexOf("."));
                     List<String> includePaths = archetype.getPaths().stream()
-                            .map(s -> archetype.getFile(directory).relativize(Path.of(s)).toString())
+                            .map(s -> archetype.getPath(directory).relativize(Path.of(s)).toString())
                             .filter(s -> !s.startsWith("../"))
                             .filter(s -> s.contains(extension))
                             .filter(s -> !excludes.contains(s))
@@ -247,7 +253,7 @@ public class OutputGenerator {
     /**
      * Consume a list of output nodes from interpreter and create a unique template model.
      *
-     * @return              Unique template model
+     * @return Unique template model
      */
     TemplateModel createUniqueModel() {
         Objects.requireNonNull(nodes, "outputNodes is null");
@@ -361,19 +367,19 @@ public class OutputGenerator {
                                     LinkedList<Visitable> children) {
 
         modelKeyValues.addAll(convertASTKeyValues(children.stream()
-                .filter(v ->  v instanceof ModelKeyValueAST)
+                .filter(v -> v instanceof ModelKeyValueAST)
                 .map(v -> (ModelKeyValueAST) v)
                 .collect(Collectors.toList()))
         );
 
         modelKeyLists.addAll(convertASTKeyLists(children.stream()
-                .filter(v ->  v instanceof ModelKeyListAST)
+                .filter(v -> v instanceof ModelKeyListAST)
                 .map(v -> (ModelKeyListAST) v)
                 .collect(Collectors.toList()))
         );
 
         modelKeyMaps.addAll(convertASTKeyMaps(children.stream()
-                .filter(v ->  v instanceof ModelKeyMapAST)
+                .filter(v -> v instanceof ModelKeyMapAST)
                 .map(v -> (ModelKeyMapAST) v)
                 .collect(Collectors.toList()))
         );

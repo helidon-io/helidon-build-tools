@@ -16,6 +16,7 @@
 
 package io.helidon.build.archetype.engine.v2.archive;
 
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -27,7 +28,12 @@ import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
 public class SerializedMemoryMappedArchetype implements Archetype {
 
     @Override
-    public Path getFile(String path) {
+    public InputStream getInputStream(String path) {
+        throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    @Override
+    public Path getPath(String path) {
         throw new UnsupportedOperationException("Not implemented yet.");
     }
 

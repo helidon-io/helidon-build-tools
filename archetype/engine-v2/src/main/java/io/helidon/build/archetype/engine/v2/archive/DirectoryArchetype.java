@@ -17,6 +17,8 @@
 package io.helidon.build.archetype.engine.v2.archive;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -46,23 +48,35 @@ class DirectoryArchetype implements Archetype {
 
 
     @Override
-    public Path getFile(String path) {
+    public InputStream getInputStream(String path) {
+        File file = getFile(path);
+        try {
+            return new FileInputStream(file);
+        } catch (FileNotFoundException e) {
+            throw new ArchetypeException(String.format("File %s does not exist", path));
+        }
+    }
+
+    private File getFile(String path) {
         Objects.requireNonNull(path);
+        path = path.startsWith(File.separator) ? path.substring(1) : path;
         File file = directory.toPath().resolve(Path.of(path)).toFile();
         if (file.exists()) {
-            if (file.getPath().startsWith(directory.getPath())) {
-                return file.toPath();
-            } else {
-                throw new ArchetypeException(String.format("Requested file %s is not inside %s", path, directory));
-            }
+            return file;
         }
         throw new ArchetypeException(String.format("File %s does not exist", path));
     }
 
     @Override
+    public Path getPath(String path) {
+        File file = getFile(path);
+        return directory.toPath().relativize(file.toPath());
+    }
+
+    @Override
     public ArchetypeDescriptor getDescriptor(String path) {
         Objects.requireNonNull(path);
-        Path descriptorPath = getFile(path);
+        Path descriptorPath = directory.toPath().resolve(getPath(path));
         try {
             try (InputStream inputStream = Files.newInputStream(descriptorPath)) {
                 return ArchetypeDescriptor.read(inputStream);
@@ -77,7 +91,7 @@ class DirectoryArchetype implements Archetype {
         try (Stream<Path> stream = Files.walk(directory.toPath())) {
             return stream
                     .filter(file -> !Files.isDirectory(file))
-                    .map(Path::toString)
+                    .map(file -> directory.toPath().relativize(file).toString())
                     .collect(Collectors.toList());
         } catch (IOException e) {
             throw new ArchetypeException("An I/O error is thrown when accessing the directory " + directory.getPath(), e);
