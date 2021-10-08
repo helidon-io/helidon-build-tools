@@ -16,6 +16,7 @@
 
 package io.helidon.build.url.mvn;
 
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -24,7 +25,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,16 +38,14 @@ import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class HandlerTest {
 
-    private static final String CONTENT = "<content>content</content>";
-    private static final String ARCHIVE_DIRECTORY = "io/helidon/handler/maven-url-handler/3.0.0-SNAPSHOT";
-    private static final String ZIP_NAME = "maven-url-handler-3.0.0-SNAPSHOT.zip";
-    private static final String JAR_NAME = "maven-url-handler-3.0.0-SNAPSHOT.jar";
+    private static final String ARCHIVE_DIRECTORY = "io/helidon/handler/maven-url-handler/3.0.0";
+    private static final String ZIP_NAME = "maven-url-handler-3.0.0.zip";
+    private static final String JAR_NAME = "maven-url-handler-3.0.0.jar";
 
     static Path workDir;
 
@@ -58,23 +59,57 @@ public class HandlerTest {
 
     @Test
     public void testMavenUrlJar() throws IOException {
-        InputStream is = new URL("mvn://io.helidon.handler:maven-url-handler:3.0.0-SNAPSHOT:jar/test-file.xml").openStream();
-        assertThat(is, is(notNullValue()));
-        assertThat(true, is(new String(is.readNBytes(is.available())).contains(CONTENT)));
+        URLConnection urlConnection = URI.create("mvn://io.helidon.handler:maven-url-handler:3.0.0/test-file.xml")
+                .toURL()
+                .openConnection();
+        if (urlConnection instanceof Handler.MavenURLConnection) {
+            Handler.MavenURLConnection mvnCon = (Handler.MavenURLConnection) urlConnection;
+            Path path = mvnCon.artifactFile();
+            assertThat(mvnCon.groupId(), Matchers.is("io.helidon.handler"));
+            assertThat(mvnCon.artifactId(), Matchers.is("maven-url-handler"));
+            assertThat(mvnCon.version(), Matchers.is("3.0.0"));
+            assertThat(mvnCon.type(), Matchers.is("jar"));
+            assertThat(path, Matchers.is(workDir.toAbsolutePath()
+                    .resolve(ARCHIVE_DIRECTORY).resolve(JAR_NAME).resolve("test-file.xml")));
+        } else {
+            fail();
+        }
     }
 
     @Test
     public void testMavenUrlJarInsideDirectory() throws IOException {
-        InputStream is = new URL("mvn://io.helidon.handler:maven-url-handler:3.0.0-SNAPSHOT:jar/xml/test-file.xml").openStream();
-        assertThat(is, is(notNullValue()));
-        assertThat(true, is(new String(is.readNBytes(is.available())).contains(CONTENT)));
+        URLConnection urlConnection = new URL("mvn://io.helidon.handler:maven-url-handler:3.0.0:jar/xml/test-file.xml")
+                .openConnection();
+        if (urlConnection instanceof Handler.MavenURLConnection) {
+            Handler.MavenURLConnection mvnCon = (Handler.MavenURLConnection) urlConnection;
+            Path path = mvnCon.artifactFile();
+            assertThat(mvnCon.groupId(), Matchers.is("io.helidon.handler"));
+            assertThat(mvnCon.artifactId(), Matchers.is("maven-url-handler"));
+            assertThat(mvnCon.version(), Matchers.is("3.0.0"));
+            assertThat(mvnCon.type(), Matchers.is("jar"));
+            assertThat(path, Matchers.is(workDir.toAbsolutePath()
+                    .resolve(ARCHIVE_DIRECTORY).resolve(JAR_NAME).resolve("xml/test-file.xml")));
+        } else {
+            fail();
+        }
     }
 
     @Test
     public void testMavenUrlZip() throws IOException {
-        InputStream is = new URL("mvn://io.helidon.handler:maven-url-handler:3.0.0-SNAPSHOT:zip/xml/test-file.xml").openStream();
-        assertThat(is, is(notNullValue()));
-        assertThat(true, is(new String(is.readNBytes(is.available())).contains(CONTENT)));
+        URLConnection urlConnection = new URL("mvn://io.helidon.handler:maven-url-handler:3.0.0:zip/xml/test-file.xml")
+                .openConnection();
+        if (urlConnection instanceof Handler.MavenURLConnection) {
+            Handler.MavenURLConnection mvnCon = (Handler.MavenURLConnection) urlConnection;
+            Path path = mvnCon.artifactFile();
+            assertThat(mvnCon.groupId(), Matchers.is("io.helidon.handler"));
+            assertThat(mvnCon.artifactId(), Matchers.is("maven-url-handler"));
+            assertThat(mvnCon.version(), Matchers.is("3.0.0"));
+            assertThat(mvnCon.type(), Matchers.is("zip"));
+            assertThat(path, Matchers.is(workDir.toAbsolutePath()
+                    .resolve(ARCHIVE_DIRECTORY).resolve(ZIP_NAME).resolve("xml/test-file.xml")));
+        } else {
+            fail();
+        }
     }
 
     private static void generateZipAndJar() throws IOException {
