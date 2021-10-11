@@ -24,8 +24,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -41,6 +43,9 @@ import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyValue;
 import io.helidon.build.archetype.engine.v2.descriptor.Replacement;
 import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
 import io.helidon.build.archetype.engine.v2.interpreter.ASTNode;
+import io.helidon.build.archetype.engine.v2.interpreter.ContextBooleanAST;
+import io.helidon.build.archetype.engine.v2.interpreter.ContextNodeAST;
+import io.helidon.build.archetype.engine.v2.interpreter.ContextTextAST;
 import io.helidon.build.archetype.engine.v2.interpreter.FileSetAST;
 import io.helidon.build.archetype.engine.v2.interpreter.FileSetsAST;
 import io.helidon.build.archetype.engine.v2.interpreter.Flow;
@@ -64,13 +69,14 @@ import io.helidon.build.archetype.engine.v2.template.TemplateModel;
 public class OutputGenerator {
 
     private final TemplateModel model;
+    private final Archetype archetype;
+    private final Map<String, String> properties;
     private final List<OutputAST> nodes;
     private final List<TransformationAST> transformations;
     private final List<TemplateAST> template;
     private final List<TemplatesAST> templates;
     private final List<FileSetAST> file;
     private final List<FileSetsAST> files;
-    private final Archetype archetype;
 
     /**
      * OutputGenerator constructor.
@@ -83,6 +89,7 @@ public class OutputGenerator {
         this.nodes = getOutputNodes(result.outputs());
         this.model = createUniqueModel();
         this.archetype = result.archetype();
+        this.properties = parseContextProperties(result.context());
 
         this.transformations = nodes.stream()
                 .flatMap(output -> output.children().stream())
@@ -117,6 +124,24 @@ public class OutputGenerator {
                 .collect(Collectors.toList());
     }
 
+    private Map<String, String> parseContextProperties(Map<String, ContextNodeAST> context) {
+        if (context == null) {
+            return new HashMap<>();
+        }
+
+        Map<String, String> resolved = new HashMap<>();
+        for (Map.Entry<String, ContextNodeAST> entry : context.entrySet()) {
+            ContextNodeAST node = entry.getValue();
+            if (node instanceof ContextBooleanAST) {
+                resolved.put(entry.getKey(), String.valueOf(((ContextBooleanAST) node).bool()));
+            }
+            if (node instanceof ContextTextAST) {
+                resolved.put(entry.getKey(), ((ContextTextAST) node).text());
+            }
+        }
+        return resolved;
+    }
+
     /**
      * Generate output files.
      *
@@ -148,10 +173,6 @@ public class OutputGenerator {
             TemplateModel templatesModel = createTemplatesModel(templatesAST);
 
             for (String include : parseIncludes(templatesAST)) {
-                if (templatesAST.excludes().contains(include)) {
-                    continue;
-                }
-
                 Path includePath = rootDirectory.resolve(include);
                 String outPath = transform(include, templatesAST.transformation());
                 File outputFile = new File(outputDirectory, outPath);
@@ -203,14 +224,13 @@ public class OutputGenerator {
             if (include.contains("**/*")) {
                 try {
                     String extension = include.substring(include.lastIndexOf("."));
-                    List<String> includePaths = archetype.getPaths().stream()
+                    resolved.addAll(archetype.getPaths().stream()
                             .map(s -> getPath(directory, s))
                             .filter(Objects::nonNull)
                             .filter(s -> !s.startsWith("../"))
                             .filter(s -> s.contains(extension))
                             .filter(s -> !excludes.contains(s))
-                            .collect(Collectors.toList());
-                    resolved.addAll(includePaths);
+                            .collect(Collectors.toList()));
                 } catch (IndexOutOfBoundsException e) {
                     resolved.addAll(archetype.getPaths().stream()
                             .map(s -> getPath(directory, s))
@@ -261,10 +281,67 @@ public class OutputGenerator {
                 .filter(t -> applicable.contains(t.id()))
                 .flatMap((t) -> t.replacements().stream())
                 .collect(Collectors.toList());
+
         for (Replacement rep : replacements) {
-            output = output.replaceAll(rep.regex(), rep.replacement());
+            String replacement = evaluate(rep.replacement(), properties);
+            output = output.replaceAll(rep.regex(), replacement);
         }
         return output;
+    }
+
+    /**
+     * Resolve a property of the form <code>${prop}</code>.
+     *
+     * @param input input to be resolved
+     * @param properties properties values
+     * @return resolved property
+     */
+    private String evaluate(String input, Map<String, String> properties) {
+        int start = input.indexOf("${");
+        int end = input.indexOf("}", start);
+        int index = 0;
+        String resolved = null;
+        while (start >= 0 && end > 0) {
+            if (resolved == null) {
+                resolved = input.substring(index, start);
+            } else {
+                resolved += input.substring(index, start);
+            }
+            String propName = input.substring(start + 2, end);
+
+            int matchStart = 0;
+            do {
+                matchStart = propName.indexOf("/", matchStart + 1);
+            } while (matchStart > 0 && propName.charAt(matchStart - 1) == '\\');
+            int matchEnd = matchStart;
+            do {
+                matchEnd = propName.indexOf("/", matchEnd + 1);
+            } while (matchStart > 0 && propName.charAt(matchStart - 1) == '\\');
+
+            String regexp = null;
+            String replace = null;
+            if (matchStart > 0 && matchEnd > matchStart) {
+                regexp = propName.substring(matchStart + 1, matchEnd);
+                replace = propName.substring(matchEnd + 1);
+                propName = propName.substring(0, matchStart);
+            }
+
+            String propValue = properties.get(propName);
+            if (propValue == null) {
+                propValue = "";
+            } else if (regexp != null && replace != null) {
+                propValue = propValue.replaceAll(regexp, replace);
+            }
+
+            resolved += propValue;
+            index = end + 1;
+            start = input.indexOf("${", index);
+            end = input.indexOf("}", index);
+        }
+        if (resolved != null) {
+            return resolved + input.substring(index);
+        }
+        return input;
     }
 
     /**
