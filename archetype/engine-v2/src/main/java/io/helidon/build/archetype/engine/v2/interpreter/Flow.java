@@ -264,6 +264,26 @@ public class Flow {
 
         private final Map<String, ContextNodeAST> context = new HashMap<>();
         private final List<ASTNode> outputs = new ArrayList<>();
+        private final Archetype archetype;
+
+        /**
+         * Create a new instance.
+         *
+         * @param archetype archetype instance that can be used to obtain files that mentioned in {@code outputs()}
+         */
+        public Result(Archetype archetype) {
+            this.archetype = archetype;
+        }
+
+        /**
+         * Get instance of the {@code Archetype} that can be used to obtain files that mentioned in {@code outputs()}.
+         * Archetype must be closed after its using ({@code archetype.close()}).
+         *
+         * @return archetype
+         */
+        public Archetype archetype() {
+            return archetype;
+        }
 
         /**
          * Returns Map that contains path to the context node and corresponding context node.

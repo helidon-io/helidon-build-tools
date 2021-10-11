@@ -41,7 +41,7 @@ public class ReadyFlowState extends FlowState {
     void build(ContextAST context) {
         ASTNode lastNode = flow.interpreter().stack().peek();
         flow.interpreter().visit(context, lastNode);
-        Flow.Result result = new Flow.Result();
+        Flow.Result result = new Flow.Result(flow.archetype());
 
         result.context().putAll(flow.interpreter().pathToContextNodeMap());
 
