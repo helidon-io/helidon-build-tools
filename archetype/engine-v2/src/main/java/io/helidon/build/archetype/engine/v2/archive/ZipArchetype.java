@@ -98,7 +98,7 @@ public class ZipArchetype implements Archetype, Closeable {
     }
 
     /**
-     * Close underlying {@code FileSystem}.
+     * Close underlying resources.
      *
      * @throws IOException If an error occurs.
      */

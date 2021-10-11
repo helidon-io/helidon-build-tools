@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.helidon.build.archetype.engine.v2.prompter.CLIPrompter;
+import io.helidon.build.archetype.engine.v2.prompter.DefaultPrompterImpl;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -37,7 +38,7 @@ class ArchetypeEngineV2Test extends ArchetypeBaseTest {
         ArchetypeEngineV2 archetypeEngineV2 = new ArchetypeEngineV2(getArchetype(
                 "bare-se-arch"),
                 "flavor.xml",
-                new CLIPrompter(),
+                new DefaultPrompterImpl(true),//new CLIPrompter()
                 initContextValues,
                 true,
                 List.of());

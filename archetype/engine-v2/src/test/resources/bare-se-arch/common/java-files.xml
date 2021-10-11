@@ -25,37 +25,37 @@
         <transformation id="packaged">
             <replace regex="__pkg__" replacement="${package/\./\/}"/>
         </transformation>
-        <templates engine="mustache" transformations="mustache,packaged">
+        <templates engine="mustache">
             <directory>files/src/main/java</directory>
             <includes>
                 <include>**/*.mustache</include>
             </includes>
         </templates>
-        <templates engine="mustache" transformations="mustache,packaged">
+        <templates engine="mustache">
             <directory>files/src/test/java</directory>
             <includes>
                 <include>**/*.mustache</include>
             </includes>
         </templates>
-        <files transformations="packaged">
+        <files transformations="mustache,packaged">
             <directory>files/src/main/java</directory>
             <includes>
                 <include>**/*.mustache</include>
             </includes>
         </files>
-        <files transformations="packaged">
+        <files transformations="mustache">
             <directory>files/src/main/resources</directory>
             <includes>
                 <include>**/*</include>
             </includes>
         </files>
-        <files transformations="packaged">
+        <files transformations="mustache,packaged">
             <directory>files/src/test/java</directory>
             <includes>
                 <include>**/*.mustache</include>
             </includes>
         </files>
-        <files transformations="packaged">
+        <files transformations="mustache">
             <directory>files/src/test/resources</directory>
             <includes>
                 <include>**/*</include>

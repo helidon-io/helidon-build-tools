@@ -126,6 +126,8 @@ public class ArchetypeEngineV2 {
             outputGenerator.generate(outputDirectory);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } finally {
+//            result.archetype().close();
         }
     }
 

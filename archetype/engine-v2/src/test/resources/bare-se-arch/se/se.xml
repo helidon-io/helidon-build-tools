@@ -33,7 +33,7 @@
                 </option>
                 <option value="bare"
                         label="Minimal Helidon SE project suitable to start from scratch">
-                    <source src="bare/bare-se.xml"/>
+                    <exec src="bare/bare-se.xml"/>
                 </option>
             </enum>
         </input>
