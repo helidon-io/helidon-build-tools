@@ -38,7 +38,7 @@ public interface Archetype extends Closeable {
     InputStream getInputStream(String path);
 
     /**
-     * Get relative to the root directory in the archetype {@link Path} to the file.
+     * Get {@link Path} to the file relative to the root directory in the archetype.
      *
      * @param path path
      * @return Path

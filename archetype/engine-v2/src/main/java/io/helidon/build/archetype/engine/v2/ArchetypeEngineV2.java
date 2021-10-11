@@ -121,13 +121,17 @@ public class ArchetypeEngineV2 {
             throw new RuntimeException("No results after the Flow instance finished its work. Project cannot be generated.");
         });
 
-        OutputGenerator outputGenerator = new OutputGenerator(result.outputs());
+        OutputGenerator outputGenerator = new OutputGenerator(result);
         try {
             outputGenerator.generate(outputDirectory);
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
-//            result.archetype().close();
+            try {
+                result.archetype().close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

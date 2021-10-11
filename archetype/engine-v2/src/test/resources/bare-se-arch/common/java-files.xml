@@ -38,6 +38,7 @@
             </includes>
         </templates>
         <files transformations="mustache,packaged">
+<!--        <files transformations="mustache">-->
             <directory>files/src/main/java</directory>
             <includes>
                 <include>**/*.mustache</include>
@@ -46,10 +47,11 @@
         <files transformations="mustache">
             <directory>files/src/main/resources</directory>
             <includes>
-                <include>**/*</include>
+                <include>**/*.mustache</include>
             </includes>
         </files>
         <files transformations="mustache,packaged">
+            <!--        <files transformations="mustache">-->
             <directory>files/src/test/java</directory>
             <includes>
                 <include>**/*.mustache</include>
@@ -58,7 +60,7 @@
         <files transformations="mustache">
             <directory>files/src/test/resources</directory>
             <includes>
-                <include>**/*</include>
+                <include>**/*.mustache</include>
             </includes>
         </files>
     </output>

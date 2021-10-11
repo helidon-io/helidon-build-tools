@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.archive.Archetype;
+import io.helidon.build.archetype.engine.v2.archive.ArchetypeException;
 import io.helidon.build.archetype.engine.v2.descriptor.ListType;
 import io.helidon.build.archetype.engine.v2.descriptor.MapType;
 import io.helidon.build.archetype.engine.v2.descriptor.Model;
@@ -203,20 +204,36 @@ public class OutputGenerator {
                 try {
                     String extension = include.substring(include.lastIndexOf("."));
                     List<String> includePaths = archetype.getPaths().stream()
-                            .map(s -> archetype.getPath(directory).relativize(Path.of(s)).toString())
+                            .map(s -> getPath(directory, s))
+                            .filter(Objects::nonNull)
                             .filter(s -> !s.startsWith("../"))
                             .filter(s -> s.contains(extension))
                             .filter(s -> !excludes.contains(s))
                             .collect(Collectors.toList());
                     resolved.addAll(includePaths);
                 } catch (IndexOutOfBoundsException e) {
-                    resolved.addAll(archetype.getPaths());
+                    resolved.addAll(archetype.getPaths().stream()
+                            .map(s -> getPath(directory, s))
+                            .filter(Objects::nonNull)
+                            .filter(s -> !s.startsWith("../"))
+                            .filter(s -> !excludes.contains(s))
+                            .collect(Collectors.toList()));
                 }
             } else {
                 resolved.add(include);
             }
         }
         return resolved;
+    }
+
+    private String getPath(String directory, String file) {
+        String path;
+        try {
+            path = archetype.getPath(directory).relativize(Path.of(file)).toString();
+        } catch (ArchetypeException e) {
+            return null;
+        }
+        return path;
     }
 
     private TemplateModel createTemplatesModel(TemplatesAST templatesAST) {
@@ -231,8 +248,8 @@ public class OutputGenerator {
     }
 
     private String transform(String input, String transformation) {
-        List<String> applicable = Arrays.asList(transformation.split(","));
-        return processTransformation(input, applicable);
+        return transformation == null ? input
+                : processTransformation(input, Arrays.asList(transformation.split(",")));
     }
 
     private String processTransformation(String output, List<String> applicable) {
