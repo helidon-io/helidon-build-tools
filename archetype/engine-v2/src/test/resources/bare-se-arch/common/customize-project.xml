@@ -60,7 +60,7 @@
                   default="${default.project.version}"
             />
 
-            <text name="project.package"
+            <text name="package"
                   label="Java package name"
                   placeholder="${default.package.name}"
                   optional="true"
