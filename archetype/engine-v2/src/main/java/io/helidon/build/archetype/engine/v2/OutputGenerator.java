@@ -231,8 +231,8 @@ public class OutputGenerator {
     }
 
     private String transform(String input, String transformation) {
-        List<String> applicable = Arrays.asList(transformation.split(","));
-        return processTransformation(input, applicable);
+        return transformation == null ? input
+                : processTransformation(input, Arrays.asList(transformation.split(",")));
     }
 
     private String processTransformation(String output, List<String> applicable) {
