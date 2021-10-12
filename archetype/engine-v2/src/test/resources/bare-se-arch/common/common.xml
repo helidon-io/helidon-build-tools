@@ -30,11 +30,6 @@
             <option value="gradle" label="Gradle"/>
         </enum>
     </input>
-    <output>
-        <transformation id="common-file">
-            <replace regex="common/" replacement="se/bare/"/>
-        </transformation>
-    </output>
 
     <exec src="helidon-file.xml"/>
     <exec src="readme.xml"/>

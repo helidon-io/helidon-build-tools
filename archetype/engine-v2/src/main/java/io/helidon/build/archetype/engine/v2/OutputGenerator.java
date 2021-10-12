@@ -169,7 +169,7 @@ public class OutputGenerator {
         }
 
         for (TemplatesAST templatesAST : templates) {
-            Path rootDirectory = Path.of(templatesAST.directory());
+            Path rootDirectory = Path.of(templatesAST.location().currentDirectory()).resolve(templatesAST.directory());
             TemplateModel templatesModel = createTemplatesModel(templatesAST);
 
             for (String include : parseIncludes(templatesAST)) {
@@ -197,7 +197,7 @@ public class OutputGenerator {
         }
 
         for (FileSetsAST filesAST : files) {
-            Path rootDirectory = Path.of(filesAST.directory());
+            Path rootDirectory = Path.of(filesAST.location().currentDirectory()).resolve(filesAST.directory());
             for (String include : parseIncludes(filesAST)) {
                 String outPath = processTransformation(
                         targetPath(filesAST.directory(), include),
@@ -220,7 +220,11 @@ public class OutputGenerator {
     }
 
     private List<String> parseIncludes(TemplatesAST templatesAST) {
-        return parseIncludes(templatesAST.directory(), templatesAST.includes(), templatesAST.excludes());
+        return parseIncludes(
+                Path.of(templatesAST.location().currentDirectory()).resolve(templatesAST.directory()).toString(),//templatesAST
+                // .directory(),
+                templatesAST.includes(),
+                templatesAST.excludes());
     }
 
     private List<String> parseIncludes(FileSetsAST filesAST) {
