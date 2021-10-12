@@ -22,7 +22,7 @@
 
     <output>
         <model>
-            <value key="package" order="0">${project.package}</value>
+            <value key="package" order="0">${package}</value>
         </model>
     </output>
 

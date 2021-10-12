@@ -38,7 +38,7 @@
                 <value key="version">${helidon.version}</value>
             </map>
             <map key="properties">
-                <value key="package">${project.package}</value>
+                <value key="package">${package}</value>
                 <value key="version">${helidon.version}</value>
             </map>
         </model>
