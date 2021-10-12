@@ -40,23 +40,23 @@
 
     <build>
         {{#build}}
-            <plugins>
-                {{#plugins}}
-                    <plugin>
-                        {{#plugin}}
-                            <groupId>{{groupId}}</groupId>
-                            <artifactId>{{artifactId}}</artifactId>
-                            <executions>
-                                {{#executions}}
-                                    <execution>
-                                        <id>{{id}}</id>
-                                    </execution>
-                                {{/executions}}
-                            </executions>
-                        {{/plugin}}
-                    </plugin>
-                {{/plugins}}
-            </plugins>
+        <plugins>
+            {{#plugins}}
+            <plugin>
+                {{#plugin}}
+                    <groupId>{{groupId}}</groupId>
+                    <artifactId>{{artifactId}}</artifactId>
+                    <executions>
+                        {{#executions}}
+                        <execution>
+                            <id>{{id}}</id>
+                        </execution>
+                        {{/executions}}
+                    </executions>
+                {{/plugin}}
+            </plugin>
+            {{/plugins}}
+        </plugins>
         {{/build}}
     </build>
 

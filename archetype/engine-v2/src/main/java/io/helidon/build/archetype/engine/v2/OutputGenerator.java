@@ -173,11 +173,12 @@ public class OutputGenerator {
             TemplateModel templatesModel = createTemplatesModel(templatesAST);
 
             for (String include : parseIncludes(templatesAST)) {
-                Path includePath = rootDirectory.resolve(include);
-                String outPath = transform(include, templatesAST.transformation());
+                String outPath = transform(
+                        targetPath(templatesAST.directory(), include),
+                        templatesAST.transformation());
                 File outputFile = new File(outputDirectory, outPath);
                 outputFile.getParentFile().mkdirs();
-                try (InputStream inputStream = archetype.getInputStream(includePath.toString())) {
+                try (InputStream inputStream = archetype.getInputStream(rootDirectory.resolve(include).toString())) {
                     MustacheHandler.renderMustacheTemplate(
                             inputStream,
                             outPath,
@@ -198,7 +199,9 @@ public class OutputGenerator {
         for (FileSetsAST filesAST : files) {
             Path rootDirectory = Path.of(filesAST.directory());
             for (String include : parseIncludes(filesAST)) {
-                String outPath = processTransformation(include, filesAST.transformations());
+                String outPath = processTransformation(
+                        targetPath(filesAST.directory(), include),
+                        filesAST.transformations());
                 File outputFile = new File(outputDirectory, outPath);
                 outputFile.getParentFile().mkdirs();
                 try (InputStream inputStream = archetype.getInputStream(rootDirectory.resolve(include).toString())) {
@@ -207,6 +210,13 @@ public class OutputGenerator {
 
             }
         }
+    }
+
+    private String targetPath(String directory, String filePath) {
+        String resolved = directory.replaceFirst("files", "");
+        return Path.of(resolved)
+                .resolve(filePath)
+                .toString();
     }
 
     private List<String> parseIncludes(TemplatesAST templatesAST) {

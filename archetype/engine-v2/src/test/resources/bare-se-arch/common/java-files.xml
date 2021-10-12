@@ -25,40 +25,34 @@
         <transformation id="packaged">
             <replace regex="__pkg__" replacement="${package/\./\/}"/>
         </transformation>
-        <templates engine="mustache">
+        <templates engine="mustache" transformations="mustache,packaged">
             <directory>files/src/main/java</directory>
             <includes>
                 <include>**/*.mustache</include>
             </includes>
         </templates>
-        <templates engine="mustache">
-            <directory>files/src/test/java</directory>
-            <includes>
-                <include>**/*.mustache</include>
-            </includes>
-        </templates>
-        <files transformations="mustache,packaged">
-            <directory>files/src/main/java</directory>
-            <includes>
-                <include>**/*.mustache</include>
-            </includes>
-        </files>
-        <files transformations="mustache">
+        <templates engine="mustache" transformations="mustache">
             <directory>files/src/main/resources</directory>
             <includes>
                 <include>**/*.mustache</include>
             </includes>
-        </files>
-        <files transformations="mustache,packaged">
+        </templates>
+        <templates engine="mustache" transformations="mustache,packaged">
             <directory>files/src/test/java</directory>
             <includes>
                 <include>**/*.mustache</include>
             </includes>
-        </files>
-        <files transformations="mustache">
+        </templates>
+        <templates engine="mustache" transformations="mustache">
             <directory>files/src/test/resources</directory>
             <includes>
                 <include>**/*.mustache</include>
+            </includes>
+        </templates>
+        <files>
+            <directory>files/src/main/resources/META-INF/native-image</directory>
+            <includes>
+                <include>**/*</include>
             </includes>
         </files>
     </output>

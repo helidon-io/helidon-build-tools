@@ -20,23 +20,12 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
 
-
-    <input>
-        <enum name="build-system"
-              label="Select a build system">
-            <option value="maven" label="Apache Maven">
-                <exec src="pom-file.xml"/>
-            </option>
-            <option value="gradle" label="Gradle"/>
-        </enum>
-    </input>
     <output>
-        <transformation id="common-file">
-            <replace regex="common/" replacement="se/bare/"/>
-        </transformation>
+        <templates engine="mustache" transformations="mustache,common-file">
+            <directory>files</directory>
+            <includes>
+                <include>.helidon.mustache</include>
+            </includes>
+        </templates>
     </output>
-
-    <exec src="helidon-file.xml"/>
-    <exec src="readme.xml"/>
-    <source src="main.xml"/>
 </archetype-script>
