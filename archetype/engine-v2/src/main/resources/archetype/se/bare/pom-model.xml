@@ -101,15 +101,6 @@
                 </list>
             </map>
 
-
-            <list id="java-imports">
-                <item>java.io.IOException</item>
-                <item>java.io.InputStream</item>
-                <item>java.util.logging.LogManager</item>
-            </list>
-            <list id="helidon-imports">
-                <item>io.helidon.webserver.WebServer</item>
-            </list>
         </model>
     </output>
 </archetype-script>

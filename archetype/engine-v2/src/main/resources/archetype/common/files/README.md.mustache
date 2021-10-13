@@ -1,17 +1,17 @@
 {{#readme}}
-    # {{title}}
+# {{title}}
 
-    {{description}}
+{{description}}
 
-    ## Build and run
+## Build and run
 
-    With JDK11+
-    ```bash
-    mvn package
-    java -jar target/{{artifactId}}.jar
-    ```
+With JDK11+
+```bash
+mvn package
+java -jar target/{{project.artifactId}}.jar
+```
 
-    {{#sections}}
-        {{section}}
-    {{/sections}}
+{{#sections}}
+{{section}}
+{{/sections}}
 {{/readme}}

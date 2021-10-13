@@ -24,7 +24,7 @@
         <templates engine="mustache" transformations="mustache">
             <directory>files</directory>
             <includes>
-                <include>README.md.mustache</include>
+                <include>.helidon.mustache</include>
             </includes>
         </templates>
     </output>

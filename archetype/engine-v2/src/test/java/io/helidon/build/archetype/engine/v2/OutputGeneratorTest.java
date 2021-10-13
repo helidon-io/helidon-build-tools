@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -60,12 +61,25 @@ public class OutputGeneratorTest {
 
         assertThat(tempDir.toFile().listFiles(), is(notNullValue()));
 
-        List<String> generatedFiles = Arrays.stream(tempDir.toFile().listFiles())
+        List<File> resultFiles = new ArrayList<>();
+        getFiles(tempDir.toFile(), resultFiles);
+        List<String> generatedFiles = resultFiles.stream()
                 .map(File::getName)
                 .collect(Collectors.toList());
 
         assertThat(true, is(generatedFiles.size() == expectedFiles.size()));
         assertThat(true, is(generatedFiles.containsAll(expectedFiles)));
+    }
+
+    private void getFiles(File file, List<File> files) {
+        if (file.isDirectory()) {
+            File[] listFiles = file.listFiles();
+            for (File f : listFiles) {
+                getFiles(f, files);
+            }
+        } else {
+            files.add(file);
+        }
     }
 
     private Archetype getArchetype() {

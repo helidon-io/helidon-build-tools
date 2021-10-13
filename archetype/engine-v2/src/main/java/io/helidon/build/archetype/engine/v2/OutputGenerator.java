@@ -221,8 +221,7 @@ public class OutputGenerator {
 
     private List<String> parseIncludes(TemplatesAST templatesAST) {
         return parseIncludes(
-                Path.of(templatesAST.location().currentDirectory()).resolve(templatesAST.directory()).toString(),//templatesAST
-                // .directory(),
+                Path.of(templatesAST.location().currentDirectory()).resolve(templatesAST.directory()).toString(),
                 templatesAST.includes(),
                 templatesAST.excludes());
     }
