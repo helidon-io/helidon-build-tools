@@ -25,6 +25,10 @@ public abstract class ArchetypeBaseTest {
     protected Archetype getArchetype(String name) {
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource(name).getFile());
+        return getArchetype(file);
+    }
+
+    protected Archetype getArchetype(File file) {
         return ArchetypeFactory.create(file);
     }
 }

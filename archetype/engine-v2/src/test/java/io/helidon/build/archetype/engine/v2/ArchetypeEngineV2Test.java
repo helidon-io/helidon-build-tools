@@ -17,22 +17,17 @@ package io.helidon.build.archetype.engine.v2;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
-import io.helidon.build.archetype.engine.v2.interpreter.ContextTextAST;
-import io.helidon.build.archetype.engine.v2.prompter.CLIPrompter;
 import io.helidon.build.archetype.engine.v2.prompter.DefaultPrompterImpl;
 import io.helidon.build.common.Strings;
 import io.helidon.build.common.test.utils.TestFiles;
@@ -40,10 +35,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 class ArchetypeEngineV2Test extends ArchetypeBaseTest {
 
@@ -59,14 +51,15 @@ class ArchetypeEngineV2Test extends ArchetypeBaseTest {
                     .forEach(File::delete);
         }
         assertThat(Files.exists(outputDirPath), is(false));
+
         Map<String, String> initContextValues = new HashMap<>();
         initContextValues.put("flavor", "se");
         initContextValues.put("base", "bare");
         initContextValues.put("build-system", "maven");
         ArchetypeEngineV2 archetypeEngineV2 = new ArchetypeEngineV2(getArchetype(
-                "bare-se-arch"),
+                Paths.get("src/main/resources/archetype").toFile()),
                 "flavor.xml",
-                new DefaultPrompterImpl(true),//new CLIPrompter()
+                new DefaultPrompterImpl(true),
                 initContextValues,
                 true,
                 List.of());
@@ -129,15 +122,6 @@ class ArchetypeEngineV2Test extends ArchetypeBaseTest {
         ZonedDateTime now = ZonedDateTime.now();
         assertThat(helidonFile, containsString(dtf.format(now)));
         assertThat(helidonFile, containsString("project.directory="+outputDirPath.toString()));
-
-
-//        assertThat(readFile(outputDirPath.resolve("pom.xml")),
-//                is (new String(Base64.getDecoder().decode(pomBase64), StandardCharsets.UTF_8)));
-
-//        String mainBase64 = testProps.getProperty("main.java");
-//        assertThat(mainBase64, is(not(nullValue())));
-//        assertThat(readFile(outputDirPath.resolve("src/main/java/com/example/myproject/Main.java")),
-//                is (new String(Base64.getDecoder().decode(mainBase64), StandardCharsets.UTF_8)));
     }
 
     private static String readFile(Path file) throws IOException {
