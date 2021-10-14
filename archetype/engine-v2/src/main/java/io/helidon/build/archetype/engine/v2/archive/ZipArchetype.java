@@ -60,7 +60,7 @@ public class ZipArchetype implements Archetype, Closeable {
     @Override
     public InputStream getInputStream(String path) {
         Objects.requireNonNull(path);
-        path = path.startsWith(File.separator) ? path.substring(1) : path;
+        path = path.startsWith(fileSystem.getSeparator()) ? path.substring(1) : path;
         Path filePath = fileSystem.getPath(path);
         if (Files.isRegularFile(filePath)) {
             ZipEntry file = zipFile.getEntry(filePath.toString());
