@@ -240,7 +240,7 @@ public class OutputGenerator {
                     resolved.addAll(archetype.getPaths().stream()
                             .map(s -> getPath(directory, s))
                             .filter(Objects::nonNull)
-                            .filter(s -> !s.startsWith("../"))
+                            .filter(s -> !Path.of(s).toUri().toString().contains("../"))
                             .filter(s -> s.contains(extension))
                             .filter(s -> !excludes.contains(s))
                             .collect(Collectors.toList()));
@@ -248,7 +248,7 @@ public class OutputGenerator {
                     resolved.addAll(archetype.getPaths().stream()
                             .map(s -> getPath(directory, s))
                             .filter(Objects::nonNull)
-                            .filter(s -> !s.startsWith("../"))
+                            .filter(s -> !Path.of(s).toUri().toString().contains("../"))
                             .filter(s -> !excludes.contains(s))
                             .collect(Collectors.toList()));
                 }
