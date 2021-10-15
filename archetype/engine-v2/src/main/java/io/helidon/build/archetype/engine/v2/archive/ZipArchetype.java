@@ -80,7 +80,7 @@ public class ZipArchetype implements Archetype, Closeable {
     public Path getPath(String path) {
         Objects.requireNonNull(path);
         Path filePath = fileSystem.getPath(path);
-        if (Files.isRegularFile(filePath)) {
+        if (Files.exists(filePath)) {
             return filePath;
         }
         throw new ArchetypeException(String.format("File %s does not exist in the archive %s", path, zipPath));

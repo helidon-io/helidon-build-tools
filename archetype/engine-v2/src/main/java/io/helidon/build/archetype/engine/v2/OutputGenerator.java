@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.archive.Archetype;
 import io.helidon.build.archetype.engine.v2.archive.ArchetypeException;
+import io.helidon.build.archetype.engine.v2.archive.ZipArchetype;
 import io.helidon.build.archetype.engine.v2.descriptor.ListType;
 import io.helidon.build.archetype.engine.v2.descriptor.MapType;
 import io.helidon.build.archetype.engine.v2.descriptor.Model;
@@ -62,6 +63,7 @@ import io.helidon.build.archetype.engine.v2.interpreter.TransformationAST;
 import io.helidon.build.archetype.engine.v2.interpreter.ValueTypeAST;
 import io.helidon.build.archetype.engine.v2.interpreter.Visitable;
 import io.helidon.build.archetype.engine.v2.template.TemplateModel;
+import io.helidon.build.common.SubstitutionVariables;
 
 /**
  * Generate Output files from interpreter.
@@ -172,7 +174,7 @@ public class OutputGenerator {
             Path rootDirectory = Path.of(templatesAST.location().currentDirectory()).resolve(templatesAST.directory());
             TemplateModel templatesModel = createTemplatesModel(templatesAST);
 
-            for (String include : parseIncludes(templatesAST)) {
+            for (String include : resolveIncludes(templatesAST)) {
                 String outPath = transform(
                         targetPath(templatesAST.directory(), include),
                         templatesAST.transformation());
@@ -198,7 +200,7 @@ public class OutputGenerator {
 
         for (FileSetsAST filesAST : files) {
             Path rootDirectory = Path.of(filesAST.location().currentDirectory()).resolve(filesAST.directory());
-            for (String include : parseIncludes(filesAST)) {
+            for (String include : resolveIncludes(filesAST)) {
                 String outPath = processTransformation(
                         targetPath(filesAST.directory(), include),
                         filesAST.transformations());
@@ -219,18 +221,18 @@ public class OutputGenerator {
                 .toString();
     }
 
-    private List<String> parseIncludes(TemplatesAST templatesAST) {
-        return parseIncludes(
+    private List<String> resolveIncludes(TemplatesAST templatesAST) {
+        return resolveIncludes(
                 Path.of(templatesAST.location().currentDirectory()).resolve(templatesAST.directory()).toString(),
                 templatesAST.includes(),
                 templatesAST.excludes());
     }
 
-    private List<String> parseIncludes(FileSetsAST filesAST) {
-        return parseIncludes(filesAST.directory(), filesAST.includes(), filesAST.excludes());
+    private List<String> resolveIncludes(FileSetsAST filesAST) {
+        return resolveIncludes(filesAST.directory(), filesAST.includes(), filesAST.excludes());
     }
 
-    private List<String> parseIncludes(String directory, LinkedList<String> includes, LinkedList<String> excludes) {
+    private List<String> resolveIncludes(String directory, LinkedList<String> includes, LinkedList<String> excludes) {
         List<String> resolved = new LinkedList<>();
 
         for (String include : includes) {
@@ -253,16 +255,33 @@ public class OutputGenerator {
                             .collect(Collectors.toList()));
                 }
             } else {
-                resolved.add(include);
+                if (checkIncludeFullPath(include, directory)) {
+                    resolved.add(include);
+                }
             }
         }
         return resolved;
     }
 
+    private boolean checkIncludeFullPath(String include, String directory) {
+        if (archetype instanceof ZipArchetype) {
+            include = Path.of("/" + directory).resolve(include).toString();
+        }
+        String path = getPath(directory, include);
+        return path != null;
+    }
+
     private String getPath(String directory, String file) {
         String path;
         try {
-            path = archetype.getPath(directory).relativize(Path.of(file)).toString();
+            if (archetype instanceof ZipArchetype) {
+                directory = "/" + directory;
+                path = file.startsWith(directory)
+                        ? archetype.getPath(file).toString().substring(directory.length() + 1)
+                        : null;
+            } else {
+                path = archetype.getPath(directory).relativize(Path.of(file)).toString();
+            }
         } catch (ArchetypeException e) {
             return null;
         }

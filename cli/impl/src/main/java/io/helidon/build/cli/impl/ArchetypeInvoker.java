@@ -16,8 +16,18 @@
 
 package io.helidon.build.cli.impl;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +43,14 @@ import io.helidon.build.archetype.engine.v1.ArchetypeLoader;
 import io.helidon.build.archetype.engine.v1.FlowNodeControllers;
 import io.helidon.build.archetype.engine.v1.FlowNodeControllers.FlowNodeController;
 import io.helidon.build.archetype.engine.v1.Maps;
+import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
+import io.helidon.build.archetype.engine.v2.archive.Archetype;
+import io.helidon.build.archetype.engine.v2.archive.ArchetypeFactory;
+import io.helidon.build.archetype.engine.v2.prompter.CLIPrompter;
+import io.helidon.build.archetype.engine.v2.prompter.DefaultPrompterImpl;
+import io.helidon.build.archetype.engine.v2.prompter.EnumPrompt;
+import io.helidon.build.archetype.engine.v2.prompter.Option;
+import io.helidon.build.archetype.engine.v2.prompter.Prompter;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
 import io.helidon.build.common.maven.MavenVersion;
 
@@ -272,7 +290,7 @@ abstract class ArchetypeInvoker {
     }
 
     /**
-     * Invoker for the archetype V1 engine.
+     * Invoker for the archetype V2 engine.
      */
     static class V2Invoker extends ArchetypeInvoker {
 
@@ -282,12 +300,50 @@ abstract class ArchetypeInvoker {
 
         @Override
         Path invoke() {
-            throw new UnsupportedOperationException("Not implemented");
+            Path projectDir = projectDirSupplier().apply(initOptions().initProperties().get("name"));
+
+            ArchetypeEngineV2 engine = new ArchetypeEngineV2(
+                    getArchetype(projectDir.toFile()),
+                    "flavor.xml",
+                    new CLIPrompter(),
+                    new HashMap<>(),
+                    false,
+                    List.of()
+            );
+
+            engine.generate(projectDir.toFile());
+            deleteArchetype(projectDir.resolve("cli-data.zip"));
+            return projectDir;
         }
 
         @Override
         EngineVersion engineVersion() {
             return EngineVersion.V2;
+        }
+
+        private Archetype getArchetype(File directory) {
+            try (
+                    InputStream is = getClass().getResourceAsStream("/cli-data.zip")
+            ) {
+                Path outputPath = Path.of(directory.getAbsolutePath()).resolve("cli-data.zip");
+                outputPath.toFile().getParentFile().mkdirs();
+                Files.createFile(outputPath);
+                OutputStream os = new FileOutputStream(outputPath.toString());
+                os.write(is.readAllBytes());
+                os.close();
+                File archetype = new File(outputPath.toString());
+                return ArchetypeFactory.create(archetype);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        private void deleteArchetype(Path resolve) {
+            try {
+                Files.delete(resolve);
+            } catch (IOException ignored) {
+            }
         }
     }
 }
