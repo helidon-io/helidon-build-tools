@@ -18,6 +18,7 @@ package io.helidon.build.archetype.engine.v2.archive;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -27,13 +28,22 @@ import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
  * Facade over descriptors, scripts and other files.
  */
 public interface Archetype extends Closeable {
+
     /**
-     * Get {@link Path} to the file.
+     * Get {@code InputStream} from {@code file} by its path in the archetype.
+     *
+     * @param path path to file
+     * @return File
+     */
+    InputStream getInputStream(String path);
+
+    /**
+     * Get {@link Path} to the file relative to the root directory in the archetype.
      *
      * @param path path
      * @return Path
      */
-    Path getFile(String path);
+    Path getPath(String path);
 
     /**
      * Get ArchetypeDescriptor.

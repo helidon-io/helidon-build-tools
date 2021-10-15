@@ -16,10 +16,16 @@
 
 package io.helidon.build.archetype.engine.v2.prompter;
 
+import io.helidon.build.archetype.engine.v2.interpreter.ContextNodeAST;
 import io.helidon.build.archetype.engine.v2.interpreter.InputNodeAST;
 import io.helidon.build.archetype.engine.v2.interpreter.UserInputAST;
 
-abstract class Prompt {
+/**
+ * Prompt.
+ *
+ * @param <T> type of the prompt.
+ */
+public abstract class Prompt<T> {
 
     private final String stepLabel;
     private final String stepHelp;
@@ -29,6 +35,7 @@ abstract class Prompt {
     private final String def;
     private final String prompt;
     private final boolean optional;
+    private final boolean canBeGenerated;
 
     Prompt(
             String stepLabel,
@@ -38,7 +45,8 @@ abstract class Prompt {
             String name,
             String def,
             String prompt,
-            boolean optional
+            boolean optional,
+            boolean canBeGenerated
     ) {
         this.stepLabel = stepLabel;
         this.stepHelp = stepHelp;
@@ -48,7 +56,25 @@ abstract class Prompt {
         this.def = def;
         this.prompt = prompt;
         this.optional = optional;
+        this.canBeGenerated = canBeGenerated;
     }
+
+    /**
+     * Add additional operation using {@code Prompter} instance.
+     *
+     * @param prompter prompter
+     * @return value that has type {@code T}.
+     */
+    public abstract T accept(Prompter prompter);
+
+    /**
+     * Add additional operation using {@code Prompter} instance and create a new instance of the {@code ContextNodeAST}.
+     *
+     * @param prompter prompter
+     * @param path     path that used to identify new ContextNodeAST instance.
+     * @return a new instance of the {@code ContextNodeAST}
+     */
+    public abstract ContextNodeAST acceptAndConvert(Prompter prompter, String path);
 
     /**
      * Get the step label.
@@ -123,6 +149,15 @@ abstract class Prompt {
     }
 
     /**
+     * Get the canBeGenerated attribute.
+     *
+     * @return boolean
+     */
+    public boolean canBeGenerated() {
+        return canBeGenerated;
+    }
+
+    /**
      * {@code Prompt} builder static inner class.
      *
      * @param <B> type of the {@code Builder} that derives from this class
@@ -138,6 +173,7 @@ abstract class Prompt {
         private String def;
         private String prompt;
         private boolean optional;
+        private boolean canBeGenerated;
 
         /**
          * Sets the {@code stepHelp} and returns a reference to the Builder so that the methods can be chained together.
@@ -227,6 +263,17 @@ abstract class Prompt {
             return instance();
         }
 
+        /**
+         * Sets the {@code canBeGenerated} and returns a reference to the Builder so that the methods can be chained together.
+         *
+         * @param canBeGenerated canBeGenerated
+         * @return reference to the Builder
+         */
+        public B canBeGenerated(boolean canBeGenerated) {
+            this.canBeGenerated = canBeGenerated;
+            return instance();
+        }
+
         String stepHelp() {
             return stepHelp;
         }
@@ -257,6 +304,10 @@ abstract class Prompt {
 
         boolean optional() {
             return optional;
+        }
+
+        boolean canBeGenerated() {
+            return canBeGenerated;
         }
 
         /**

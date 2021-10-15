@@ -24,12 +24,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import io.helidon.build.archetype.engine.v2.archive.Archetype;
+import io.helidon.build.archetype.engine.v2.archive.ArchetypeException;
 import io.helidon.build.archetype.engine.v2.descriptor.ListType;
 import io.helidon.build.archetype.engine.v2.descriptor.MapType;
 import io.helidon.build.archetype.engine.v2.descriptor.Model;
@@ -39,8 +43,12 @@ import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyValue;
 import io.helidon.build.archetype.engine.v2.descriptor.Replacement;
 import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
 import io.helidon.build.archetype.engine.v2.interpreter.ASTNode;
+import io.helidon.build.archetype.engine.v2.interpreter.ContextBooleanAST;
+import io.helidon.build.archetype.engine.v2.interpreter.ContextNodeAST;
+import io.helidon.build.archetype.engine.v2.interpreter.ContextTextAST;
 import io.helidon.build.archetype.engine.v2.interpreter.FileSetAST;
 import io.helidon.build.archetype.engine.v2.interpreter.FileSetsAST;
+import io.helidon.build.archetype.engine.v2.interpreter.Flow;
 import io.helidon.build.archetype.engine.v2.interpreter.ListTypeAST;
 import io.helidon.build.archetype.engine.v2.interpreter.MapTypeAST;
 import io.helidon.build.archetype.engine.v2.interpreter.ModelAST;
@@ -61,6 +69,8 @@ import io.helidon.build.archetype.engine.v2.template.TemplateModel;
 public class OutputGenerator {
 
     private final TemplateModel model;
+    private final Archetype archetype;
+    private final Map<String, String> properties;
     private final List<OutputAST> nodes;
     private final List<TransformationAST> transformations;
     private final List<TemplateAST> template;
@@ -71,13 +81,15 @@ public class OutputGenerator {
     /**
      * OutputGenerator constructor.
      *
-     * @param outputNodes   Output node from interpreter
+     * @param result Flow.Result from interpreter
      */
-    OutputGenerator(List<ASTNode> outputNodes) {
-        Objects.requireNonNull(outputNodes, "Output nodes are null");
+    OutputGenerator(Flow.Result result) {
+        Objects.requireNonNull(result, "Flow result is null");
 
-        this.nodes = getOutputNodes(outputNodes);
+        this.nodes = getOutputNodes(result.outputs());
         this.model = createUniqueModel();
+        this.archetype = result.archetype();
+        this.properties = parseContextProperties(result.context());
 
         this.transformations = nodes.stream()
                 .flatMap(output -> output.children().stream())
@@ -112,63 +124,149 @@ public class OutputGenerator {
                 .collect(Collectors.toList());
     }
 
+    private Map<String, String> parseContextProperties(Map<String, ContextNodeAST> context) {
+        if (context == null) {
+            return new HashMap<>();
+        }
+
+        Map<String, String> resolved = new HashMap<>();
+        for (Map.Entry<String, ContextNodeAST> entry : context.entrySet()) {
+            ContextNodeAST node = entry.getValue();
+            if (node instanceof ContextBooleanAST) {
+                resolved.put(entry.getKey(), String.valueOf(((ContextBooleanAST) node).bool()));
+            }
+            if (node instanceof ContextTextAST) {
+                resolved.put(entry.getKey(), ((ContextTextAST) node).text());
+            }
+        }
+        return resolved;
+    }
+
     /**
      * Generate output files.
      *
-     * @param outputDirectory   Output directory where the files will be generated
+     * @param outputDirectory Output directory where the files will be generated
      */
     public void generate(File outputDirectory) throws IOException {
         Objects.requireNonNull(outputDirectory, "output directory is null");
 
         for (TemplateAST templateAST : template) {
-            try (InputStream is = OutputGenerator.class.getClassLoader().getResourceAsStream(templateAST.source())) {
-                File outputFile = new File(outputDirectory, templateAST.target());
-                outputFile.getParentFile().mkdirs();
-                MustacheHandler.renderMustacheTemplate(is, templateAST.source(), new FileOutputStream(outputFile), model);
+            File outputFile = new File(outputDirectory, templateAST.target());
+            outputFile.getParentFile().mkdirs();
+            try (InputStream inputStream = archetype.getInputStream(templateAST.source())) {
+                if (templateAST.engine().equals("mustache")) {
+                    MustacheHandler.renderMustacheTemplate(
+                            inputStream,
+                            templateAST.source(),
+                            new FileOutputStream(outputFile),
+                            model);
+                } else {
+                    Files.copy(
+                            inputStream,
+                            outputFile.toPath());
+                }
             }
         }
 
         for (TemplatesAST templatesAST : templates) {
-            Path root = Path.of(templatesAST.directory());
+            Path rootDirectory = Path.of(templatesAST.location().currentDirectory()).resolve(templatesAST.directory());
             TemplateModel templatesModel = createTemplatesModel(templatesAST);
-            for (String include : templatesAST.includes()) {
-                String includePath = root.resolve(include).toString();
-                try (InputStream is = OutputGenerator.class.getClassLoader().getResourceAsStream(includePath)) {
-                    String outPath = transform(include, templatesAST.transformation());
-                    outPath = outPath.substring(0, outPath.lastIndexOf("."));
-                    File outputFile = new File(outputDirectory, outPath);
-                    outputFile.getParentFile().mkdirs();
-                    MustacheHandler.renderMustacheTemplate(is, outPath, new FileOutputStream(outputFile), templatesModel);
+
+            for (String include : parseIncludes(templatesAST)) {
+                String outPath = transform(
+                        targetPath(templatesAST.directory(), include),
+                        templatesAST.transformation());
+                File outputFile = new File(outputDirectory, outPath);
+                outputFile.getParentFile().mkdirs();
+                try (InputStream inputStream = archetype.getInputStream(rootDirectory.resolve(include).toString())) {
+                    MustacheHandler.renderMustacheTemplate(
+                            inputStream,
+                            outPath,
+                            new FileOutputStream(outputFile),
+                            templatesModel);
                 }
             }
         }
 
         for (FileSetAST fileAST : file) {
-            try (InputStream is = OutputGenerator.class.getClassLoader().getResourceAsStream(fileAST.source())) {
-                if (is == null) {
-                    throw new IllegalStateException(fileAST.source() + " not found");
-                }
-                File outputFile = new File(outputDirectory, fileAST.target());
-                outputFile.getParentFile().mkdirs();
-                Files.copy(is, outputFile.toPath());
+            File outputFile = new File(outputDirectory, fileAST.target());
+            outputFile.getParentFile().mkdirs();
+            try (InputStream inputStream = archetype.getInputStream(fileAST.source())) {
+                Files.copy(inputStream, outputFile.toPath());
             }
         }
 
         for (FileSetsAST filesAST : files) {
-            Path root = Path.of(filesAST.directory());
-            for (String include : filesAST.includes()) {
-                String includePath = root.resolve(include).toString();
-                try (InputStream is = OutputGenerator.class.getClassLoader().getResourceAsStream(includePath)) {
-                    if (is == null) {
-                        throw new IllegalStateException(includePath + " not found");
-                    }
-                    String outPath = processTransformation(include, filesAST.transformations());
-                    File outputFile = new File(outputDirectory, outPath);
-                    outputFile.getParentFile().mkdirs();
-                    Files.copy(is, outputFile.toPath());
+            Path rootDirectory = Path.of(filesAST.location().currentDirectory()).resolve(filesAST.directory());
+            for (String include : parseIncludes(filesAST)) {
+                String outPath = processTransformation(
+                        targetPath(filesAST.directory(), include),
+                        filesAST.transformations());
+                File outputFile = new File(outputDirectory, outPath);
+                outputFile.getParentFile().mkdirs();
+                try (InputStream inputStream = archetype.getInputStream(rootDirectory.resolve(include).toString())) {
+                    Files.copy(inputStream, outputFile.toPath());
                 }
+
             }
         }
+    }
+
+    private String targetPath(String directory, String filePath) {
+        String resolved = directory.replaceFirst("files", "");
+        return Path.of(resolved)
+                .resolve(filePath)
+                .toString();
+    }
+
+    private List<String> parseIncludes(TemplatesAST templatesAST) {
+        return parseIncludes(
+                Path.of(templatesAST.location().currentDirectory()).resolve(templatesAST.directory()).toString(),
+                templatesAST.includes(),
+                templatesAST.excludes());
+    }
+
+    private List<String> parseIncludes(FileSetsAST filesAST) {
+        return parseIncludes(filesAST.directory(), filesAST.includes(), filesAST.excludes());
+    }
+
+    private List<String> parseIncludes(String directory, LinkedList<String> includes, LinkedList<String> excludes) {
+        List<String> resolved = new LinkedList<>();
+
+        for (String include : includes) {
+            if (include.contains("**/*")) {
+                try {
+                    String extension = include.substring(include.lastIndexOf("."));
+                    resolved.addAll(archetype.getPaths().stream()
+                            .map(s -> getPath(directory, s))
+                            .filter(Objects::nonNull)
+                            .filter(s -> !Path.of(s).toUri().toString().contains("../"))
+                            .filter(s -> s.contains(extension))
+                            .filter(s -> !excludes.contains(s))
+                            .collect(Collectors.toList()));
+                } catch (IndexOutOfBoundsException e) {
+                    resolved.addAll(archetype.getPaths().stream()
+                            .map(s -> getPath(directory, s))
+                            .filter(Objects::nonNull)
+                            .filter(s -> !Path.of(s).toUri().toString().contains("../"))
+                            .filter(s -> !excludes.contains(s))
+                            .collect(Collectors.toList()));
+                }
+            } else {
+                resolved.add(include);
+            }
+        }
+        return resolved;
+    }
+
+    private String getPath(String directory, String file) {
+        String path;
+        try {
+            path = archetype.getPath(directory).relativize(Path.of(file)).toString();
+        } catch (ArchetypeException e) {
+            return null;
+        }
+        return path;
     }
 
     private TemplateModel createTemplatesModel(TemplatesAST templatesAST) {
@@ -183,25 +281,86 @@ public class OutputGenerator {
     }
 
     private String transform(String input, String transformation) {
-        List<String> applicable = Arrays.asList(transformation.split(","));
-        return processTransformation(input, applicable);
+        return transformation == null ? input
+                : processTransformation(input, Arrays.asList(transformation.split(",")));
     }
 
     private String processTransformation(String output, List<String> applicable) {
+        if (applicable.isEmpty()) {
+            return output;
+        }
+
         List<Replacement> replacements = transformations.stream()
                 .filter(t -> applicable.contains(t.id()))
                 .flatMap((t) -> t.replacements().stream())
                 .collect(Collectors.toList());
+
         for (Replacement rep : replacements) {
-            output = output.replaceAll(rep.regex(), rep.replacement());
+            String replacement = evaluate(rep.replacement(), properties);
+            output = output.replaceAll(rep.regex(), replacement);
         }
         return output;
     }
 
     /**
+     * Resolve a property of the form <code>${prop}</code>.
+     *
+     * @param input input to be resolved
+     * @param properties properties values
+     * @return resolved property
+     */
+    private String evaluate(String input, Map<String, String> properties) {
+        int start = input.indexOf("${");
+        int end = input.indexOf("}", start);
+        int index = 0;
+        String resolved = null;
+        while (start >= 0 && end > 0) {
+            if (resolved == null) {
+                resolved = input.substring(index, start);
+            } else {
+                resolved += input.substring(index, start);
+            }
+            String propName = input.substring(start + 2, end);
+
+            int matchStart = 0;
+            do {
+                matchStart = propName.indexOf("/", matchStart + 1);
+            } while (matchStart > 0 && propName.charAt(matchStart - 1) == '\\');
+            int matchEnd = matchStart;
+            do {
+                matchEnd = propName.indexOf("/", matchEnd + 1);
+            } while (matchStart > 0 && propName.charAt(matchStart - 1) == '\\');
+
+            String regexp = null;
+            String replace = null;
+            if (matchStart > 0 && matchEnd > matchStart) {
+                regexp = propName.substring(matchStart + 1, matchEnd);
+                replace = propName.substring(matchEnd + 1);
+                propName = propName.substring(0, matchStart);
+            }
+
+            String propValue = properties.get(propName);
+            if (propValue == null) {
+                propValue = "";
+            } else if (regexp != null && replace != null) {
+                propValue = propValue.replaceAll(regexp, replace);
+            }
+
+            resolved += propValue;
+            index = end + 1;
+            start = input.indexOf("${", index);
+            end = input.indexOf("}", index);
+        }
+        if (resolved != null) {
+            return resolved + input.substring(index);
+        }
+        return input;
+    }
+
+    /**
      * Consume a list of output nodes from interpreter and create a unique template model.
      *
-     * @return              Unique template model
+     * @return Unique template model
      */
     TemplateModel createUniqueModel() {
         Objects.requireNonNull(nodes, "outputNodes is null");
@@ -221,7 +380,10 @@ public class OutputGenerator {
 
     private Model convertASTModel(ModelAST model) {
         Model modelDescriptor = new Model("true");
-        convertKeyElements(modelDescriptor.keyValues(), modelDescriptor.keyLists(), modelDescriptor.keyMaps(), model.children());
+        convertKeyElements(modelDescriptor.keyValues(),
+                modelDescriptor.keyLists(),
+                modelDescriptor.keyMaps(),
+                model.children());
         return modelDescriptor;
     }
 
@@ -312,19 +474,19 @@ public class OutputGenerator {
                                     LinkedList<Visitable> children) {
 
         modelKeyValues.addAll(convertASTKeyValues(children.stream()
-                .filter(v ->  v instanceof ModelKeyValueAST)
+                .filter(v -> v instanceof ModelKeyValueAST)
                 .map(v -> (ModelKeyValueAST) v)
                 .collect(Collectors.toList()))
         );
 
         modelKeyLists.addAll(convertASTKeyLists(children.stream()
-                .filter(v ->  v instanceof ModelKeyListAST)
+                .filter(v -> v instanceof ModelKeyListAST)
                 .map(v -> (ModelKeyListAST) v)
                 .collect(Collectors.toList()))
         );
 
         modelKeyMaps.addAll(convertASTKeyMaps(children.stream()
-                .filter(v ->  v instanceof ModelKeyMapAST)
+                .filter(v -> v instanceof ModelKeyMapAST)
                 .map(v -> (ModelKeyMapAST) v)
                 .collect(Collectors.toList()))
         );

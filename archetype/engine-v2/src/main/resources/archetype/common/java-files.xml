@@ -25,41 +25,35 @@
         <transformation id="packaged">
             <replace regex="__pkg__" replacement="${package/\./\/}"/>
         </transformation>
-        <templates transformations="mustache,packaged">
+        <templates engine="mustache" transformations="mustache,packaged">
             <directory>files/src/main/java</directory>
             <includes>
                 <include>**/*.mustache</include>
             </includes>
         </templates>
-        <templates transformations="mustache,packaged">
+        <templates engine="mustache" transformations="mustache">
+            <directory>files/src/main/resources</directory>
+            <includes>
+                <include>**/*.mustache</include>
+            </includes>
+        </templates>
+        <templates engine="mustache" transformations="mustache,packaged">
             <directory>files/src/test/java</directory>
             <includes>
                 <include>**/*.mustache</include>
             </includes>
         </templates>
-        <files transformations="packaged">
-            <directory>files/src/main/java</directory>
-            <excludes>
-                <exclude>**/*.mustache</exclude>
-            </excludes>
-        </files>
+        <templates engine="mustache" transformations="mustache">
+            <directory>files/src/test/resources</directory>
+            <includes>
+                <include>**/*.mustache</include>
+            </includes>
+        </templates>
         <files>
-            <directory>files/src/main/resources</directory>
+            <directory>files/src/main/resources/META-INF/native-image</directory>
             <includes>
                 <include>**/*</include>
             </includes>
-        </files>
-        <files transformations="packaged">
-            <directory>files/src/test/java</directory>
-            <excludes>
-                <exclude>**/*.mustache</exclude>
-            </excludes>
-        </files>
-        <files>
-            <directory>files/src/test/resources</directory>
-            <excludes>
-                <exclude>**/*</exclude>
-            </excludes>
         </files>
     </output>
 </archetype-script>

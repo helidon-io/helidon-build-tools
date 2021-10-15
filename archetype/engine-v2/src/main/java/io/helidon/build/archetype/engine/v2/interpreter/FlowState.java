@@ -18,13 +18,21 @@ package io.helidon.build.archetype.engine.v2.interpreter;
 
 import java.util.Optional;
 
+/**
+ * State of the {@code Flow} instance.
+ */
 public abstract class FlowState {
 
     abstract Optional<Flow.Result> result();
 
     abstract void build(ContextAST context);
 
-    abstract FlowStateEnum type();
+    /**
+     * Get the type of the current {@code FlowState} instance.
+     *
+     * @return FlowStateEnum
+     */
+    public abstract FlowStateEnum type();
 
     abstract boolean canBeGenerated();
 }

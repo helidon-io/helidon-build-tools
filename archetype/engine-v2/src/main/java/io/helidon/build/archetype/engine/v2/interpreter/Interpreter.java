@@ -287,7 +287,6 @@ public class Interpreter implements Visitor<ASTNode> {
     @Override
     public void visit(FileSetsAST fileSets, ASTNode parent) {
         applyAdditionalVisitors(fileSets);
-        fileSets.directory(resolveDirectory(fileSets.directory(), fileSets.location()));
     }
 
     @Override
@@ -307,7 +306,6 @@ public class Interpreter implements Visitor<ASTNode> {
     public void visit(TemplatesAST templates, ASTNode parent) {
         applyAdditionalVisitors(templates);
         pushToStack(templates);
-        templates.directory(resolveDirectory(templates.directory(), templates.location()));
         acceptAll(templates);
         stack.pop();
     }

@@ -18,91 +18,75 @@ package io.helidon.build.archetype.engine.v2;
 
 import io.helidon.build.archetype.engine.v2.archive.Archetype;
 import io.helidon.build.archetype.engine.v2.archive.ArchetypeFactory;
-import io.helidon.build.archetype.engine.v2.descriptor.Model;
 import io.helidon.build.archetype.engine.v2.interpreter.ContextAST;
 import io.helidon.build.archetype.engine.v2.interpreter.Flow;
-import io.helidon.build.archetype.engine.v2.template.MustacheHandlerTest;
-import io.helidon.build.archetype.engine.v2.template.TemplateModel;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class OutputGeneratorTest {
 
-    private static final String EXPECTED_RESOURCE = "template/expected.xml";
-    private static final String GENERATOR_TEST_DIRECTORY = "outputGenerator-test-resources";
-    private static String expected;
     private static Path tempDir;
+    private Archetype archetype;
 
     @BeforeAll
     static void bootstrap() throws IOException {
         tempDir = Files.createTempDirectory("generated");
-        InputStream expectedStream = MustacheHandlerTest.class.getClassLoader()
-                .getResourceAsStream(EXPECTED_RESOURCE);
-        expected = new String(expectedStream.readAllBytes());
-        expectedStream.close();
     }
 
     @Test
     public void testOutputFileGenerator() throws IOException {
-        Archetype archetype = getArchetype(GENERATOR_TEST_DIRECTORY);
+        List<String> expectedFiles = List.of("generatedDocker.xml", "Readme2.md", "pom.xml", "README.md");
+        archetype = getArchetype();
 
         Flow flow = Flow.builder().archetype(archetype).startDescriptorPath("archetype.xml").build();
         flow.build(new ContextAST());
         flow.build(new ContextAST());
+        OutputGenerator generator = new OutputGenerator(flow.result().get());
 
-        OutputGenerator generator = new OutputGenerator(flow.result().get().outputs());
         generator.generate(tempDir.toFile());
 
-        File generatedFile = tempDir.resolve("pom.xml").toFile();
-        InputStream is = new FileInputStream(generatedFile);
-        assertThat(expected, is(new String(is.readAllBytes())));
+        assertThat(tempDir.toFile().listFiles(), is(notNullValue()));
 
-        generatedFile = tempDir.resolve("anotherPom.xml").toFile();
-        is = new FileInputStream(generatedFile);
-        assertThat(expected, is(new String(is.readAllBytes())));
+        List<File> resultFiles = new ArrayList<>();
+        getFiles(tempDir.toFile(), resultFiles);
+        List<String> generatedFiles = resultFiles.stream()
+                .map(File::getName)
+                .collect(Collectors.toList());
 
-        generatedFile = tempDir.resolve("expected.xml").toFile();
-        is = new FileInputStream(generatedFile);
-        assertThat(expected, is(new String(is.readAllBytes())));
-
-        generatedFile = tempDir.resolve("foo.xml").toFile();
-        is = new FileInputStream(generatedFile);
-        assertThat(expected, is(new String(is.readAllBytes())));
-
-        is.close();
+        assertThat(true, is(generatedFiles.size() == expectedFiles.size()));
+        assertThat(true, is(generatedFiles.containsAll(expectedFiles)));
     }
 
-    @Test
-    public void testUniqueModel() {
-        Archetype archetype = getArchetype(GENERATOR_TEST_DIRECTORY);
-
-        Flow flow = Flow.builder().archetype(archetype).startDescriptorPath("archetype.xml").build();
-        flow.build(new ContextAST());
-        flow.build(new ContextAST());
-
-        OutputGenerator generator = new OutputGenerator(flow.result().get().outputs());
-        TemplateModel model = generator.createUniqueModel();
-        Model modelDescriptor = model.model();
-
-        assertThat(modelDescriptor.keyValues().size(), is(1));
-        assertThat(modelDescriptor.keyLists().size(), is(1));
-        assertThat(modelDescriptor.keyMaps().size(), is(2));
+    private void getFiles(File file, List<File> files) {
+        if (file.isDirectory()) {
+            File[] listFiles = file.listFiles();
+            for (File f : listFiles) {
+                getFiles(f, files);
+            }
+        } else {
+            files.add(file);
+        }
     }
 
-    private Archetype getArchetype(String name) {
+    private Archetype getArchetype() {
         ClassLoader classLoader = getClass().getClassLoader();
-        File file = new File(classLoader.getResource(name).getFile());
-        return ArchetypeFactory.create(file);
+        File file = new File(classLoader.getResource("outputGenerator-test-resources").getFile());
+        archetype = ArchetypeFactory.create(file);
+        return archetype;
     }
 
 }

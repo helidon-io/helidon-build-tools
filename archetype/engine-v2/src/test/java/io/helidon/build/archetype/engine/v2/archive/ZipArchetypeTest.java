@@ -75,22 +75,45 @@ class ZipArchetypeTest {
     }
 
     @Test
-    void testGetFile() {
+    void testGetPath() {
         String expectedPath = "dir0" + fileSystem.getSeparator() + "file0";
 
         //relative path
-        Path path = archetype.getFile(expectedPath);
+        Path path = archetype.getPath(expectedPath);
         assertThat(path.toString(), is(expectedPath));
 
         //absolute path
         expectedPath = fileSystem.getSeparator() + expectedPath;
-        path = archetype.getFile(expectedPath);
+        path = archetype.getPath(expectedPath);
         assertThat(path.toString(), is(expectedPath));
 
         //incorrect path
         Exception e = assertThrows(ArchetypeException.class, () -> {
             String testValue = "someNonexistentFile";
-            archetype.getFile(testValue);
+            archetype.getPath(testValue);
+        });
+        assertThat(e.getMessage(), containsString("File someNonexistentFile does not exist"));
+    }
+
+    @Test
+    void testGetInputStream() throws IOException {
+        String expectedPath = "dir0" + fileSystem.getSeparator() + "file0";
+
+        //relative path
+        InputStream inputStream = archetype.getInputStream(expectedPath);
+        assertThat(inputStream, notNullValue());
+        inputStream.close();
+
+        //absolute path
+        expectedPath = fileSystem.getSeparator() + expectedPath;
+        inputStream = archetype.getInputStream(expectedPath);
+        assertThat(inputStream, notNullValue());
+        inputStream.close();
+
+        //incorrect path
+        Exception e = assertThrows(ArchetypeException.class, () -> {
+            String testValue = "someNonexistentFile";
+            archetype.getPath(testValue);
         });
         assertThat(e.getMessage(), containsString("File someNonexistentFile does not exist"));
     }

@@ -871,7 +871,7 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
             case "output/files/includes/include":
                 currentOutput.filesList().getLast().includes().add(value);
                 break;
-            case "output/files/excludes":
+            case "output/files/excludes/exclude":
                 currentOutput.filesList().getLast().excludes().add(value);
                 break;
             case "output/files/directory":

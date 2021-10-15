@@ -77,7 +77,7 @@ public class InitialFlowState extends FlowState {
     }
 
     @Override
-    FlowStateEnum type() {
+    public FlowStateEnum type() {
         return FlowStateEnum.INITIAL;
     }
 

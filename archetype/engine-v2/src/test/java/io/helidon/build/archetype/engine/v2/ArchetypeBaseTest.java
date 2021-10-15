@@ -13,36 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.build.archetype.engine.v2;
 
-package io.helidon.build.archetype.engine.v2.interpreter;
+import java.io.File;
 
-import java.util.Optional;
+import io.helidon.build.archetype.engine.v2.archive.Archetype;
+import io.helidon.build.archetype.engine.v2.archive.ArchetypeFactory;
 
-public class DoneFlowState extends FlowState {
+public abstract class ArchetypeBaseTest {
 
-    private final Flow.Result result;
-
-    DoneFlowState(Flow.Result result) {
-        this.result = result;
+    protected Archetype getArchetype(String name) {
+        ClassLoader classLoader = getClass().getClassLoader();
+        File file = new File(classLoader.getResource(name).getFile());
+        return getArchetype(file);
     }
 
-    @Override
-    Optional<Flow.Result> result() {
-        return Optional.ofNullable(result);
-    }
-
-    @Override
-    void build(ContextAST context) {
-
-    }
-
-    @Override
-    public FlowStateEnum type() {
-        return FlowStateEnum.DONE;
-    }
-
-    @Override
-    boolean canBeGenerated() {
-        return true;
+    protected Archetype getArchetype(File file) {
+        return ArchetypeFactory.create(file);
     }
 }

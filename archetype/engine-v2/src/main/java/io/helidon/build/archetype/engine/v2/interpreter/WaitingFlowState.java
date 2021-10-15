@@ -56,7 +56,7 @@ public class WaitingFlowState extends FlowState {
     }
 
     @Override
-    FlowStateEnum type() {
+    public FlowStateEnum type() {
         return FlowStateEnum.WAITING;
     }
 

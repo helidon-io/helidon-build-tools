@@ -16,13 +16,15 @@
 
 package io.helidon.build.archetype.engine.v2.prompter;
 
+import io.helidon.build.archetype.engine.v2.interpreter.ContextBooleanAST;
+import io.helidon.build.archetype.engine.v2.interpreter.ContextNodeAST;
 import io.helidon.build.archetype.engine.v2.interpreter.InputBooleanAST;
 import io.helidon.build.archetype.engine.v2.interpreter.UserInputAST;
 
 /**
  * Prompt of the boolean value.
  */
-public class BooleanPrompt extends Prompt {
+public class BooleanPrompt extends Prompt<Boolean> {
 
     private BooleanPrompt(
             String stepLabel,
@@ -32,9 +34,23 @@ public class BooleanPrompt extends Prompt {
             String name,
             String def,
             String prompt,
-            boolean optional
+            boolean optional,
+            boolean canBeGenerated
     ) {
-        super(stepLabel, stepHelp, help, label, name, def, prompt, optional);
+        super(stepLabel, stepHelp, help, label, name, def, prompt, optional, canBeGenerated);
+    }
+
+    @Override
+    public Boolean accept(Prompter prompter) {
+        return prompter.prompt(this);
+    }
+
+    @Override
+    public ContextNodeAST acceptAndConvert(Prompter prompter, String path) {
+        boolean value = prompter.prompt(this);
+        ContextBooleanAST result = new ContextBooleanAST(path);
+        result.bool(value);
+        return result;
     }
 
     /**
@@ -81,7 +97,8 @@ public class BooleanPrompt extends Prompt {
                     name(),
                     defaultValue(),
                     prompt(),
-                    optional()
+                    optional(),
+                    canBeGenerated()
             );
         }
     }

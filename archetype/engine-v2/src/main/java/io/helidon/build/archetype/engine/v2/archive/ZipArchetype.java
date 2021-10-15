@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
@@ -57,7 +58,26 @@ public class ZipArchetype implements Archetype, Closeable {
     }
 
     @Override
-    public Path getFile(String path) {
+    public InputStream getInputStream(String path) {
+        Objects.requireNonNull(path);
+        path = path.startsWith(fileSystem.getSeparator()) ? path.substring(1) : path;
+        Path filePath = fileSystem.getPath(path);
+        if (Files.isRegularFile(filePath)) {
+            ZipEntry file = zipFile.getEntry(filePath.toString());
+            if (file == null) {
+                throw new ArchetypeException(String.format("File %s does not exist in the archive %s", path, zipPath));
+            }
+            try {
+                return zipFile.getInputStream(file);
+            } catch (IOException e) {
+                throw new ArchetypeException("Cannot get InputStream from ZipArchetype" + path, e);
+            }
+        }
+        throw new ArchetypeException(String.format("File %s does not exist in the archive %s", path, zipPath));
+    }
+
+    @Override
+    public Path getPath(String path) {
         Objects.requireNonNull(path);
         Path filePath = fileSystem.getPath(path);
         if (Files.isRegularFile(filePath)) {
@@ -69,7 +89,7 @@ public class ZipArchetype implements Archetype, Closeable {
     @Override
     public ArchetypeDescriptor getDescriptor(String path) {
         Objects.requireNonNull(path);
-        Path descriptorPath = getFile(path);
+        Path descriptorPath = getPath(path);
         try {
             try (InputStream inputStream = Files.newInputStream(descriptorPath)) {
                 return ArchetypeDescriptor.read(inputStream);
@@ -98,7 +118,7 @@ public class ZipArchetype implements Archetype, Closeable {
     }
 
     /**
-     * Close underlying {@code FileSystem}.
+     * Close underlying resources.
      *
      * @throws IOException If an error occurs.
      */

@@ -22,15 +22,16 @@
 
 
     <input>
-        <list name="build-system"
+        <enum name="build-system"
               label="Select a build system">
             <option value="maven" label="Apache Maven">
                 <exec src="pom-file.xml"/>
             </option>
             <option value="gradle" label="Gradle"/>
-        </list>
+        </enum>
     </input>
 
+    <exec src="helidon-file.xml"/>
     <exec src="readme.xml"/>
     <source src="main.xml"/>
 </archetype-script>

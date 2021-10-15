@@ -22,7 +22,7 @@
 
     <step label="Application Type">
         <input>
-            <list name="base" label="Select archetype">
+            <enum name="base" label="Select archetype">
                 <option value="quickstart"
                         label="Sample Helidon SE project that includes multiple REST operations">
 
@@ -33,9 +33,9 @@
                 </option>
                 <option value="bare"
                         label="Minimal Helidon SE project suitable to start from scratch">
-                    <source src="bare/bare-se.xml"/>
+                    <exec src="bare/bare-se.xml"/>
                 </option>
-            </list>
+            </enum>
         </input>
         <exec src="../common/customize-project.xml"/>
     </step>
