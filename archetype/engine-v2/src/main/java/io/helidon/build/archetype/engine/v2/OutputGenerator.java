@@ -64,7 +64,6 @@ import io.helidon.build.archetype.engine.v2.interpreter.TransformationAST;
 import io.helidon.build.archetype.engine.v2.interpreter.ValueTypeAST;
 import io.helidon.build.archetype.engine.v2.interpreter.Visitable;
 import io.helidon.build.archetype.engine.v2.template.TemplateModel;
-import io.helidon.build.common.SubstitutionVariables;
 
 /**
  * Generate Output files from interpreter.

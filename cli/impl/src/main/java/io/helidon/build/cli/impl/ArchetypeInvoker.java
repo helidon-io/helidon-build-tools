@@ -16,17 +16,11 @@
 
 package io.helidon.build.cli.impl;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -47,10 +41,6 @@ import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
 import io.helidon.build.archetype.engine.v2.archive.Archetype;
 import io.helidon.build.archetype.engine.v2.archive.ArchetypeFactory;
 import io.helidon.build.archetype.engine.v2.prompter.CLIPrompter;
-import io.helidon.build.archetype.engine.v2.prompter.DefaultPrompterImpl;
-import io.helidon.build.archetype.engine.v2.prompter.EnumPrompt;
-import io.helidon.build.archetype.engine.v2.prompter.Option;
-import io.helidon.build.archetype.engine.v2.prompter.Prompter;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
 import io.helidon.build.common.maven.MavenVersion;
 

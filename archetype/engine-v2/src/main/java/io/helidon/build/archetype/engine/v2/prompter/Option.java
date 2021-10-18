@@ -25,6 +25,13 @@ public class Option {
     private final String value;
     private final String help;
 
+    /**
+     * Option constructor.
+     *
+     * @param label label
+     * @param value value
+     * @param help  help
+     */
     public Option(String label, String value, String help) {
         this.label = label;
         this.value = value;
