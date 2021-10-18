@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -194,7 +195,7 @@ public class OutputGenerator {
             File outputFile = new File(outputDirectory, fileAST.target());
             outputFile.getParentFile().mkdirs();
             try (InputStream inputStream = archetype.getInputStream(fileAST.source())) {
-                Files.copy(inputStream, outputFile.toPath());
+                Files.copy(inputStream, outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
         }
 
@@ -207,9 +208,8 @@ public class OutputGenerator {
                 File outputFile = new File(outputDirectory, outPath);
                 outputFile.getParentFile().mkdirs();
                 try (InputStream inputStream = archetype.getInputStream(rootDirectory.resolve(include).toString())) {
-                    Files.copy(inputStream, outputFile.toPath());
+                    Files.copy(inputStream, outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 }
-
             }
         }
     }
@@ -229,41 +229,50 @@ public class OutputGenerator {
     }
 
     private List<String> resolveIncludes(FileSetsAST filesAST) {
-        return resolveIncludes(filesAST.directory(), filesAST.includes(), filesAST.excludes());
+        return resolveIncludes(
+                Path.of(filesAST.location().currentDirectory()).resolve(filesAST.directory()).toString(),
+                filesAST.includes(),
+                filesAST.excludes());
     }
 
-    private List<String> resolveIncludes(String directory, LinkedList<String> includes, LinkedList<String> excludes) {
+    private List<String> resolveIncludes(String directory, List<String> includes, List<String> excludes) {
+        List<String> excludesPath = getPathsFromDirectory(directory, excludes);
+        List<String> includesPath = getPathsFromDirectory(directory, includes);
+        return includesPath.stream()
+                .filter(s -> !excludesPath.contains(s))
+                .collect(Collectors.toList());
+    }
+
+    private List<String> getPathsFromDirectory(String directory, List<String> paths) {
         List<String> resolved = new LinkedList<>();
 
-        for (String include : includes) {
-            if (include.contains("**/*")) {
+        for (String path : paths) {
+            if (path.contains("**/*")) {
                 try {
-                    String extension = include.substring(include.lastIndexOf("."));
+                    String extension = path.substring(path.lastIndexOf("."));
                     resolved.addAll(archetype.getPaths().stream()
                             .map(s -> getPath(directory, s))
                             .filter(Objects::nonNull)
                             .filter(s -> !Path.of(s).toUri().toString().contains("../"))
                             .filter(s -> s.contains(extension))
-                            .filter(s -> !excludes.contains(s))
                             .collect(Collectors.toList()));
                 } catch (IndexOutOfBoundsException e) {
                     resolved.addAll(archetype.getPaths().stream()
                             .map(s -> getPath(directory, s))
                             .filter(Objects::nonNull)
                             .filter(s -> !Path.of(s).toUri().toString().contains("../"))
-                            .filter(s -> !excludes.contains(s))
                             .collect(Collectors.toList()));
                 }
             } else {
-                if (checkIncludeFullPath(include, directory)) {
-                    resolved.add(include);
+                if (checkFullPath(path, directory)) {
+                    resolved.add(path);
                 }
             }
         }
         return resolved;
     }
 
-    private boolean checkIncludeFullPath(String include, String directory) {
+    private boolean checkFullPath(String include, String directory) {
         if (archetype instanceof ZipArchetype) {
             include = Path.of("/" + directory).resolve(include).toString();
         }

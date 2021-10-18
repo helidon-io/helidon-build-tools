@@ -101,6 +101,9 @@ public class MergingMap<K, V> extends LinkedHashMap<K, V> {
     }
 
     private String mergeTemplate(ValueType first, ValueType second) {
+        if (first.template() == null || second.template() == null) {
+            return "mustache";
+        }
         if (first.template().equals("mustache") || second.template().equals("mustache")) {
             return "mustache";
         }
