@@ -133,6 +133,7 @@
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
             </resource>
+            <!-- remove resource once mechanism for passing archetype to cli is implemented -->
             <resource>
                 <directory>src/test/resources/cli-data/3.0.0</directory>
             </resource>

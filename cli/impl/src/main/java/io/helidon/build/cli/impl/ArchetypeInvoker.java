@@ -311,6 +311,14 @@ abstract class ArchetypeInvoker {
             return EngineVersion.V2;
         }
 
+        /**
+         * Get the archetype file.
+         * This is a temporary method which need to be removed. Instead, a mechanism
+         * for passing archetype to cli has to be found.
+         *
+         * @param directory directory
+         * @return  archetype
+         */
         private Archetype getArchetype(File directory) {
             try (
                     InputStream is = getClass().getResourceAsStream("/cli-data.zip")
@@ -329,9 +337,15 @@ abstract class ArchetypeInvoker {
             }
         }
 
-        private void deleteArchetype(Path resolve) {
+        /**
+         * Delete archetype after being used.
+         * This method has to be removed.
+         *
+         * @param archetype archetype file path
+         */
+        private void deleteArchetype(Path archetype) {
             try {
-                Files.delete(resolve);
+                Files.delete(archetype);
             } catch (IOException ignored) {
             }
         }
