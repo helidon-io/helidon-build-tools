@@ -27,7 +27,7 @@ public class MavenUrlParserTest {
 
     @Test
     public void testURLVersion() throws MalformedURLException {
-        String mvnPath = "io.helidon.handler:helidon-handler:3.0.0-SNAPSHOT/some/useless/directory/test-file.xml";
+        String mvnPath = "mvn://io.helidon.handler:helidon-handler:3.0.0-SNAPSHOT/some/useless/directory/test-file.xml";
         MavenUrlParser parser = new MavenUrlParser(mvnPath);
 
         assertThat(parser.groupId(), is("io.helidon.handler"));
@@ -39,7 +39,7 @@ public class MavenUrlParserTest {
 
     @Test
     public void testURLClassifier() throws MalformedURLException {
-        String mvnPath = "io.helidon.handler:helidon-handler:3.0.0-SNAPSHOT:classifier/some/useless/directory/test-file.xml";
+        String mvnPath = "mvn://io.helidon.handler:helidon-handler:3.0.0-SNAPSHOT:classifier/some/useless/directory/test-file.xml";
         MavenUrlParser parser = new MavenUrlParser(mvnPath);
 
         assertThat(parser.groupId(), is("io.helidon.handler"));
@@ -51,7 +51,7 @@ public class MavenUrlParserTest {
 
     @Test
     public void testURLTypeJar() throws MalformedURLException {
-        String mvnPath = "io.helidon.handler:helidon-handler:3.0.0-SNAPSHOT:jar/some/useless/directory/test-file.xml";
+        String mvnPath = "mvn://io.helidon.handler:helidon-handler:3.0.0-SNAPSHOT:jar/some/useless/directory/test-file.xml";
         MavenUrlParser parser = new MavenUrlParser(mvnPath);
 
         assertThat(parser.groupId(), is("io.helidon.handler"));
@@ -63,7 +63,7 @@ public class MavenUrlParserTest {
 
     @Test
     public void testURLTypeZip() throws MalformedURLException {
-        String mvnPath = "io.helidon.handler:helidon-handler:3.0.0-SNAPSHOT:zip/some/useless/directory/test-file.xml";
+        String mvnPath = "mvn://io.helidon.handler:helidon-handler:3.0.0-SNAPSHOT:zip/some/useless/directory/test-file.xml";
         MavenUrlParser parser = new MavenUrlParser(mvnPath);
 
         assertThat(parser.groupId(), is("io.helidon.handler"));
@@ -75,7 +75,7 @@ public class MavenUrlParserTest {
 
     @Test
     public void testURLComplete() throws MalformedURLException {
-        String mvnPath = "io.helidon.handler:helidon-handler:3.0.0-SNAPSHOT:classifier:jar/some/useless/directory/test-file.xml";
+        String mvnPath = "mvn://io.helidon.handler:helidon-handler:3.0.0-SNAPSHOT:classifier:jar/some/useless/directory/test-file.xml";
         MavenUrlParser parser = new MavenUrlParser(mvnPath);
 
         assertThat(parser.groupId(), is("io.helidon.handler"));

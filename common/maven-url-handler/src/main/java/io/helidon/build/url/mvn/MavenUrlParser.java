@@ -31,72 +31,43 @@ class MavenUrlParser {
     private static final String SYNTAX =
             "mvn://groupId:artifactId:version:[classifier]:[type]/filePath";
 
-    /**
-     * Final artifact path separator.
-     */
-    private static final String FILE_SEPARATOR = "/";
+    private static final String PROTOCOL = "mvn";
 
-    /**
-     * Default artifact type.
-     */
     private static final String DEFAULT_TYPE = "jar";
 
-    /**
-     * List of supported artifact types.
-     */
-    private static final List<String> SUPPORTED_TYPE = Arrays.asList(DEFAULT_TYPE, "zip");
+    private static final List<String> SUPPORTED_TYPE = List.of(DEFAULT_TYPE, "zip");
 
-    /**
-     * Artifact group id.
-     */
     private String groupId;
 
-    /**
-     * Artifact id.
-     */
     private String artifactId;
 
-    /**
-     * Artifact version.
-     */
     private String version = "LATEST";
 
-    /**
-     * Artifact classifier.
-     */
     private String classifier = null;
 
-    /**
-     * Artifact type.
-     */
-    private String type = "jar";
+    private String type = DEFAULT_TYPE;
 
-    /**
-     * Path from version directory to target file.
-     */
     private String pathFromArchive;
 
     /**
      * Creates a new protocol parser.
      *
-     * @param path                   the path part of the url (without starting mvn://)
+     * @param url url
      *
      * @throws MalformedURLException if provided path does not comply to expected syntax or an malformed repository URL
      */
-    MavenUrlParser(String path) throws MalformedURLException {
-        Objects.requireNonNull(path, "Maven url provided to Parser is null");
-        parseArtifactPart(path);
+    MavenUrlParser(String url) throws MalformedURLException {
+        Objects.requireNonNull(url, "Maven url provided to Parser is null");
+        parseUrl(url);
     }
 
-    /**
-     * Parses the artifact part of the url.
-     *
-     * @param part                   url part without protocol and repository.
-     *
-     * @throws MalformedURLException if provided path does not comply to syntax.
-     */
-    private void parseArtifactPart(String part) throws MalformedURLException {
-        String[] segments = part.split(":");
+    private void parseUrl(String url) throws MalformedURLException {
+        if (!url.startsWith(PROTOCOL + ":")) {
+            throw new IllegalArgumentException("URL should be a mvn based protocol");
+        }
+        url = url.substring((PROTOCOL + "://").length());
+
+        String[] segments = url.split(":");
 
         if (segments.length > 2) {
             groupId = segments[0];
@@ -119,7 +90,7 @@ class MavenUrlParser {
                 parseCompleteUrl(segments);
                 break;
             default:
-                throw new MalformedURLException("Invalid path. Syntax " + SYNTAX);
+                throw new MalformedURLException("Invalid URL. Syntax " + SYNTAX);
         }
     }
 
@@ -133,7 +104,7 @@ class MavenUrlParser {
         classifier = segments[3];
         checkString(classifier, "classifier");
 
-        segments = segments[4].split(FILE_SEPARATOR);
+        segments = segments[4].split("/");
 
         type = SUPPORTED_TYPE.contains(segments[0]) ? segments[0] : DEFAULT_TYPE;
         checkString(type, "type");
@@ -149,7 +120,7 @@ class MavenUrlParser {
         version = segments[2];
         checkString(version, "version");
 
-        segments = segments[3].split(FILE_SEPARATOR);
+        segments = segments[3].split("/");
 
         if (SUPPORTED_TYPE.contains(segments[0])) {
             type = segments[0];
@@ -164,7 +135,7 @@ class MavenUrlParser {
         if (segments.length != 3) {
             throw new MalformedURLException("Invalid. Syntax " + SYNTAX);
         }
-        segments = segments[2].split(FILE_SEPARATOR);
+        segments = segments[2].split("/");
 
         version = segments[0];
         checkString(version, "version");
@@ -181,80 +152,45 @@ class MavenUrlParser {
         pathFromArchive = builder.toString();
     }
 
-    private void checkString(String patient, String patientName) throws MalformedURLException {
-        if (patient.trim().length() == 0) {
-            throw new MalformedURLException(String.format("Invalid %s. Syntax  %s. ", patientName, SYNTAX));
+    private void checkString(String arg, String name) throws MalformedURLException {
+        if (arg.trim().length() == 0) {
+            throw new MalformedURLException(String.format("Invalid %s. Syntax  %s. ", name, SYNTAX));
         }
     }
 
-    /**
-     * Returns the group id of the artifact.
-     *
-     * @return group Id
-     */
     String groupId() {
         return groupId;
     }
 
-    /**
-     * Returns the artifact id.
-     *
-     * @return artifact id
-     */
     String artifactId() {
         return artifactId;
     }
 
-    /**
-     * Returns the artifact version.
-     *
-     * @return version
-     */
     String version() {
         return version;
     }
 
-    /**
-     * Returns the artifact classifier.
-     *
-     * @return classifier
-     */
     Optional<String> classifier() {
         return Optional.ofNullable(classifier);
     }
 
-    /**
-     * Returns the artifact type.
-     *
-     * @return type
-     */
     String type() {
         return type;
     }
 
-    /**
-     * Return file path from version or classifier directory.
-     *
-     * @return file path
-     */
     String pathFromArchive() {
         return pathFromArchive;
     }
 
-    /**
-     * Get full path from groupId to file.
-     *
-     * @return full path
-     */
-    String[] archivePath() {
-        ArrayList<String> path = new ArrayList<>(Arrays.asList(groupId.split("\\.")));
+    List<String> archivePath() {
+        ArrayList<String> path = new ArrayList<>();
+        path.addAll(Arrays.asList(groupId.split("\\.")));
         path.add(artifactId);
         path.add(version);
         if (classifier != null) {
             path.add(classifier);
         }
-        String[] pathArray = new String[path.size()];
-        return path.toArray(pathArray);
+        return path;
     }
 
 }
