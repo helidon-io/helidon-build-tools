@@ -20,6 +20,7 @@
 module io.helidon.build.cli.impl {
     requires io.helidon.build.cli.harness;
     requires io.helidon.build.archetype.engine.v1;
+    requires io.helidon.build.archetype.engine.v2;
     requires io.helidon.build.cli.plugin;
     requires org.graalvm.sdk;
     requires io.helidon.build.common.ansi;

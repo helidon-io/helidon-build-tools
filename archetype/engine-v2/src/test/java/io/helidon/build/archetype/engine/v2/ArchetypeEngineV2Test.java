@@ -79,6 +79,7 @@ class ArchetypeEngineV2Test extends ArchetypeBaseTest {
                         "src/main/java/io/helidon/examples/bare/se/GreetService.java",
                         "src/main/java/io/helidon/examples/bare/se/Main.java",
                         "src/main/java/io/helidon/examples/bare/se/package-info.java",
+                        "src/main/resources/META-INF/native-image/reflect-config.json",
                         "src/main/resources/application.yaml",
                         "src/main/resources/logging.properties",
                         "src/test/java/io/helidon/examples/bare/se/MainTest.java"

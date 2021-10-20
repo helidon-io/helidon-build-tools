@@ -53,6 +53,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.helidon.build-tools.archetype</groupId>
+            <artifactId>helidon-archetype-engine-v2</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.build-tools.cli</groupId>
             <artifactId>helidon-cli-codegen</artifactId>
             <version>${project.version}</version>
@@ -127,6 +132,10 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
+            </resource>
+            <!-- remove resource once mechanism for passing archetype to cli is implemented -->
+            <resource>
+                <directory>src/test/resources/cli-data/3.0.0</directory>
             </resource>
         </resources>
         <plugins>

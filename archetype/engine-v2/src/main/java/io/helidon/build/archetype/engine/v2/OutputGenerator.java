@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.archive.Archetype;
 import io.helidon.build.archetype.engine.v2.archive.ArchetypeException;
+import io.helidon.build.archetype.engine.v2.archive.ZipArchetype;
 import io.helidon.build.archetype.engine.v2.descriptor.ListType;
 import io.helidon.build.archetype.engine.v2.descriptor.MapType;
 import io.helidon.build.archetype.engine.v2.descriptor.Model;
@@ -172,7 +174,7 @@ public class OutputGenerator {
             Path rootDirectory = Path.of(templatesAST.location().currentDirectory()).resolve(templatesAST.directory());
             TemplateModel templatesModel = createTemplatesModel(templatesAST);
 
-            for (String include : parseIncludes(templatesAST)) {
+            for (String include : resolveIncludes(templatesAST)) {
                 String outPath = transform(
                         targetPath(templatesAST.directory(), include),
                         templatesAST.transformation());
@@ -192,22 +194,21 @@ public class OutputGenerator {
             File outputFile = new File(outputDirectory, fileAST.target());
             outputFile.getParentFile().mkdirs();
             try (InputStream inputStream = archetype.getInputStream(fileAST.source())) {
-                Files.copy(inputStream, outputFile.toPath());
+                Files.copy(inputStream, outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
         }
 
         for (FileSetsAST filesAST : files) {
             Path rootDirectory = Path.of(filesAST.location().currentDirectory()).resolve(filesAST.directory());
-            for (String include : parseIncludes(filesAST)) {
+            for (String include : resolveIncludes(filesAST)) {
                 String outPath = processTransformation(
                         targetPath(filesAST.directory(), include),
                         filesAST.transformations());
                 File outputFile = new File(outputDirectory, outPath);
                 outputFile.getParentFile().mkdirs();
                 try (InputStream inputStream = archetype.getInputStream(rootDirectory.resolve(include).toString())) {
-                    Files.copy(inputStream, outputFile.toPath());
+                    Files.copy(inputStream, outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 }
-
             }
         }
     }
@@ -219,50 +220,76 @@ public class OutputGenerator {
                 .toString();
     }
 
-    private List<String> parseIncludes(TemplatesAST templatesAST) {
-        return parseIncludes(
+    private List<String> resolveIncludes(TemplatesAST templatesAST) {
+        return resolveIncludes(
                 Path.of(templatesAST.location().currentDirectory()).resolve(templatesAST.directory()).toString(),
                 templatesAST.includes(),
                 templatesAST.excludes());
     }
 
-    private List<String> parseIncludes(FileSetsAST filesAST) {
-        return parseIncludes(filesAST.directory(), filesAST.includes(), filesAST.excludes());
+    private List<String> resolveIncludes(FileSetsAST filesAST) {
+        return resolveIncludes(
+                Path.of(filesAST.location().currentDirectory()).resolve(filesAST.directory()).toString(),
+                filesAST.includes(),
+                filesAST.excludes());
     }
 
-    private List<String> parseIncludes(String directory, LinkedList<String> includes, LinkedList<String> excludes) {
+    private List<String> resolveIncludes(String directory, List<String> includes, List<String> excludes) {
+        List<String> excludesPath = getPathsFromDirectory(directory, excludes);
+        List<String> includesPath = getPathsFromDirectory(directory, includes);
+        return includesPath.stream()
+                .filter(s -> !excludesPath.contains(s))
+                .collect(Collectors.toList());
+    }
+
+    private List<String> getPathsFromDirectory(String directory, List<String> paths) {
         List<String> resolved = new LinkedList<>();
 
-        for (String include : includes) {
-            if (include.contains("**/*")) {
+        for (String path : paths) {
+            if (path.contains("**/*")) {
                 try {
-                    String extension = include.substring(include.lastIndexOf("."));
+                    String extension = path.substring(path.lastIndexOf("."));
                     resolved.addAll(archetype.getPaths().stream()
                             .map(s -> getPath(directory, s))
                             .filter(Objects::nonNull)
                             .filter(s -> !Path.of(s).toUri().toString().contains("../"))
                             .filter(s -> s.contains(extension))
-                            .filter(s -> !excludes.contains(s))
                             .collect(Collectors.toList()));
                 } catch (IndexOutOfBoundsException e) {
                     resolved.addAll(archetype.getPaths().stream()
                             .map(s -> getPath(directory, s))
                             .filter(Objects::nonNull)
                             .filter(s -> !Path.of(s).toUri().toString().contains("../"))
-                            .filter(s -> !excludes.contains(s))
                             .collect(Collectors.toList()));
                 }
             } else {
-                resolved.add(include);
+                if (checkFullPath(path, directory)) {
+                    resolved.add(path);
+                }
             }
         }
         return resolved;
     }
 
+    private boolean checkFullPath(String include, String directory) {
+        if (archetype instanceof ZipArchetype) {
+            include = Path.of("/" + directory).resolve(include).toString();
+        }
+        String path = getPath(directory, include);
+        return path != null;
+    }
+
     private String getPath(String directory, String file) {
         String path;
         try {
-            path = archetype.getPath(directory).relativize(Path.of(file)).toString();
+            if (archetype instanceof ZipArchetype) {
+                directory = "/" + directory;
+                path = file.startsWith(directory)
+                        ? archetype.getPath(file).toString().substring(directory.length() + 1)
+                        : null;
+            } else {
+                path = archetype.getPath(directory).relativize(Path.of(file)).toString();
+            }
         } catch (ArchetypeException e) {
             return null;
         }
