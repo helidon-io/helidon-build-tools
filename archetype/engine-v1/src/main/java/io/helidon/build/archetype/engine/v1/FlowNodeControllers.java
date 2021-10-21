@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import io.helidon.build.common.PropertyEvaluator;
+
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
 
 /**

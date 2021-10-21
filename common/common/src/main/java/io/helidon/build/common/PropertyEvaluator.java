@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.archetype.engine.v1;
+package io.helidon.build.common;
 
 import java.util.Map;
 
@@ -77,6 +77,32 @@ public class PropertyEvaluator {
         }
         if (resolved != null) {
             return resolved + input.substring(index);
+        }
+        return input;
+    }
+
+    /**
+     * Resolve a property of the form <code>${prop}</code> in the input string and return the input string where all found
+     * properties are replaced by the actual values from the map {@code properties}.
+     *
+     * @param input      input to be resolved
+     * @param properties properties values
+     * @return resolved input string
+     */
+    public static String resolve(String input, Map<String, String> properties) {
+        int start = input.indexOf("${");
+        int end = input.indexOf("}", start);
+        while (start >= 0 && end > 0) {
+            String target = input.substring(start, end + 1);
+            String propName = input.substring(start + 2, end);
+            String replacement = properties.get(propName);
+            if (replacement != null) {
+                input = input.replace(target, replacement);
+            } else {
+                input = input.replace(target, "");
+            }
+            start = input.indexOf("${");
+            end = input.indexOf("}");
         }
         return input;
     }
