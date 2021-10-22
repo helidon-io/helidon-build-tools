@@ -201,7 +201,7 @@ abstract class ArchetypeInvoker {
          * otherwise {@link V2Invoker}
          */
         ArchetypeInvoker build() {
-            if (initOptions.archetypeVersion().equals(EngineVersion.V1)) {
+            if (initOptions.engineVersion().equals(EngineVersion.V1)) {
                 return new V1Invoker(this);
             }
             return new V2Invoker(this);
@@ -299,7 +299,6 @@ abstract class ArchetypeInvoker {
             );
 
             engine.generate(projectDir.toFile());
-            deleteArchetype(projectDir.resolve("cli-data.zip"));
             return projectDir;
         }
 
@@ -320,19 +319,6 @@ abstract class ArchetypeInvoker {
                 throw new IOException("Archetype archive does not exist at path : " + archetypePath);
             }
             return ArchetypeFactory.create(archetype);
-        }
-
-        /**
-         * Delete archetype after being used.
-         * This method has to be removed.
-         *
-         * @param archetype archetype file path
-         */
-        private void deleteArchetype(Path archetype) {
-            try {
-                Files.delete(archetype);
-            } catch (IOException ignored) {
-            }
         }
     }
 }

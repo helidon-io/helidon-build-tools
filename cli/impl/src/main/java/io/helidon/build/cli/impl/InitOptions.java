@@ -53,7 +53,7 @@ public final class InitOptions {
     private final BuildSystem build;
     private final String archetypeName;
     private final String archetypePath;
-    private final ArchetypeInvoker.EngineVersion archetypeVersion;
+    private final ArchetypeInvoker.EngineVersion engineVersion;
     private String groupId;
     private String artifactId;
     private String packageName;
@@ -97,8 +97,8 @@ public final class InitOptions {
             @KeyValue(name = "package", description = "Project's package name") String packageName,
             @KeyValue(name = "name", description = "Project's name") String projectName,
             @KeyValue(name = "archetype-path", description = "Archetype's path", defaultValue = "") String archetypePath,
-            @KeyValue(name = "archetype-version", description = "Archetype's engine version", defaultValue = "v1")
-                    String archetypeVersion) {
+            @KeyValue(name = "engine-version", description = "Archetype's engine version", defaultValue = "v1")
+                    String engineVersion) {
 
         this.build = build;
         this.helidonVersion = version;
@@ -109,7 +109,7 @@ public final class InitOptions {
         this.packageName = packageName;
         this.projectName = projectName;
         this.archetypePath = archetypePath;
-        this.archetypeVersion = getEngineVersion(archetypeVersion);
+        this.engineVersion = getEngineVersion(engineVersion);
     }
 
     private ArchetypeInvoker.EngineVersion getEngineVersion(String version) {
@@ -222,8 +222,8 @@ public final class InitOptions {
      *
      * @return archetype version
      */
-    ArchetypeInvoker.EngineVersion archetypeVersion() {
-        return archetypeVersion;
+    ArchetypeInvoker.EngineVersion engineVersion() {
+        return engineVersion;
     }
 
     /**
