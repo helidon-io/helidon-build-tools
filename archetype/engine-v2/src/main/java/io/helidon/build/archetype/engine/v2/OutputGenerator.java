@@ -248,7 +248,7 @@ public class OutputGenerator {
             String finalDirectory = getDirectory(directory);
             resolved.addAll(archetype.getPaths().stream()
                     .map(SourcePath::new)
-                    .filter(s -> s.matches(Path.of(finalDirectory).resolve(path).toString()))
+                    .filter(s -> s.matches(resolvePath(finalDirectory, path)))
                     .map(s -> {
                         if (archetype instanceof ZipArchetype) {
                             return s.asString().substring(finalDirectory.length() + 1);
@@ -258,6 +258,11 @@ public class OutputGenerator {
                     .collect(Collectors.toList()));
         }
         return resolved;
+    }
+
+    private String resolvePath(String first, String second) {
+        String resolved = first + "/" + second;
+        return resolved.replaceAll("///", "/").replaceAll("//", "/");
     }
 
     private String getDirectory(String directory) {
