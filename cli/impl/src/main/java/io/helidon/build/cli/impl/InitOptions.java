@@ -96,8 +96,9 @@ public final class InitOptions {
             @KeyValue(name = "artifactid", description = "Project's artifact ID") String artifactId,
             @KeyValue(name = "package", description = "Project's package name") String packageName,
             @KeyValue(name = "name", description = "Project's name") String projectName,
-            @KeyValue(name = "archetype-path", description = "Archetype's path", defaultValue = "") String archetypePath,
-            @KeyValue(name = "engine-version", description = "Archetype's engine version", defaultValue = "v1")
+            @KeyValue(name = "archetype-path", description = "Archetype's path", visible = false, defaultValue = "")
+                    String archetypePath,
+            @KeyValue(name = "engine-version", description = "Archetype's engine version", visible = false, defaultValue = "v1")
                     String engineVersion) {
 
         this.build = build;
