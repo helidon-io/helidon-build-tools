@@ -18,6 +18,11 @@ package io.helidon.build.cli.impl;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
@@ -35,10 +40,8 @@ import io.helidon.build.archetype.engine.v1.FlowNodeControllers;
 import io.helidon.build.archetype.engine.v1.FlowNodeControllers.FlowNodeController;
 import io.helidon.build.archetype.engine.v1.Maps;
 import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
+import io.helidon.build.archetype.engine.v2.TerminalInputResolver;
 import io.helidon.build.archetype.engine.v2.UnresolvedInputException;
-import io.helidon.build.archetype.engine.v2.archive.Archetype;
-import io.helidon.build.archetype.engine.v2.archive.ArchetypeFactory;
-import io.helidon.build.archetype.engine.v2.prompter.CLIPrompter;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
 import io.helidon.build.common.RequirementFailure;
 import io.helidon.build.common.maven.MavenVersion;
@@ -210,7 +213,7 @@ abstract class ArchetypeInvoker {
 
         /**
          * Set the project directory supplier.
-         *
+         * <p>
          * The project directory supplier takes a project name and returns
          * a Path to the project directory.
          *
@@ -230,8 +233,8 @@ abstract class ArchetypeInvoker {
          */
         ArchetypeInvoker build() {
             if (EngineVersion.V2.equals(initOptions.engineVersion())
-                || initOptions.archetypePath() != null
-                || toMavenVersion(initOptions.helidonVersion()).isGreaterThanOrEqualTo(HELIDON_V3)) {
+                    || initOptions.archetypePath() != null
+                    || toMavenVersion(initOptions.helidonVersion()).isGreaterThanOrEqualTo(HELIDON_V3)) {
                 return new V2Invoker(this);
             }
             return new V1Invoker(this);
@@ -310,7 +313,7 @@ abstract class ArchetypeInvoker {
      * Invoker for the archetype V2 engine.
      */
     static class V2Invoker extends ArchetypeInvoker {
-        private static final String ENTRY_POINT_DESCRIPTOR = "flavor.xml";
+
         private static final String FLAVOR_PROPERTY = "flavor";
         private static final String PROJECT_NAME_PROPERTY = "project.name";
         private static final String GROUP_ID_PROPERTY = "project.groupId";
@@ -326,7 +329,7 @@ abstract class ArchetypeInvoker {
         }
 
         @Override
-        Path invoke() throws IOException {
+        Path invoke() {
             InitOptions initOptions = initOptions();
             Map<String, String> defaults = new HashMap<>();
 
@@ -387,18 +390,10 @@ abstract class ArchetypeInvoker {
                 params.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
             }
 
-            boolean batch = !isInteractive();
-            ArchetypeEngineV2 engine = new ArchetypeEngineV2(
-                    getArchetype(initOptions().archetypePath()),
-                    ENTRY_POINT_DESCRIPTOR,
-                    new CLIPrompter(),
-                    params,
-                    defaults,
-                    batch,
-                    batch,
-                    List.of());
+            ArchetypeEngineV2 engine = new ArchetypeEngineV2(archetype());
+            Map<String, String> initProperties = initOptions().initProperties();
             try {
-                return engine.generate(projectDirSupplier());
+                return engine.generate(new TerminalInputResolver(System.in), initProperties, defaults, projectDirSupplier());
             } catch (UnresolvedInputException e) {
                 String inputPath = e.inputPath();
                 String option = optionName(inputPath);
@@ -415,18 +410,27 @@ abstract class ArchetypeInvoker {
             return EngineVersion.V2;
         }
 
-        /**
-         * Get the archetype file.
-         *
-         * @param archetypePath path to archetype
-         * @return archetype
-         */
-        private Archetype getArchetype(String archetypePath) throws IOException {
-            File archetype = Path.of(archetypePath).toFile();
-            if (!archetype.exists()) {
-                throw new IOException("Archetype archive does not exist at path : " + archetypePath);
+        private static FileSystem archetype() {
+            // TODO This is a temporary method which need to be removed
+            //  Instead, a mechanism for passing archetype to cli has to be found.
+
+
+            // TODO grab the archetype path from initOptions if it is there
+            //   If the path ends with .zip, create a zip filesystem
+            //   Otherwise it is a directory create a virtual filesystem
+            // TODO otherwise use a new method in metadata to get the path fo the archetype.zip
+            try {
+                Path tempDirectory = Files.createTempDirectory("archetype");
+                Path data = tempDirectory.resolve("cli-data.zip");
+                InputStream is = ArchetypeInvoker.class.getResourceAsStream("/cli-data.zip");
+                if (is == null) {
+                    throw new IllegalArgumentException("cli-data.zip not found in class-path");
+                }
+                Files.copy(is, data);
+                return FileSystems.newFileSystem(data, null);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
             }
-            return ArchetypeFactory.create(archetype);
         }
 
         private static String optionName(String inputPath) {

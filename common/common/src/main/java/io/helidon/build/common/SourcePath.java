@@ -72,10 +72,10 @@ public class SourcePath {
         segments = parseSegments(path);
     }
 
-    private static String getRelativePath(Path sourcedir, Path source) {
-        return sourcedir.relativize(source).toString()
-                // force UNIX style path on windows
-                .replace("\\", "/");
+    private static String getRelativePath(Path sourceDir, Path source) {
+        return sourceDir.relativize(source).toString()
+                        // force UNIX style path on Windows
+                        .replace("\\", "/");
     }
 
     /**
@@ -103,7 +103,7 @@ public class SourcePath {
             }
             segments.add(token);
         }
-        return segments.toArray(new String[segments.size()]);
+        return segments.toArray(new String[0]);
     }
 
 
@@ -123,8 +123,8 @@ public class SourcePath {
             return Collections.emptyList();
         }
         return paths.stream()
-                .filter(p -> p.matches(includesPatterns, excludesPatterns))
-                .collect(Collectors.toList());
+                    .filter(p -> p.matches(includesPatterns, excludesPatterns))
+                    .collect(Collectors.toList());
     }
 
     @Override
@@ -319,7 +319,7 @@ public class SourcePath {
                     }
                 } else if (!subSegment.equals(subPattern)) {
                     // not expanding a wildcard
-                    // the sub-segment needs to stricly filter the sub-pattern
+                    // the sub-segment needs to strictly filter the sub-pattern
                     matched = false;
                 }
                 break;
@@ -396,28 +396,38 @@ public class SourcePath {
      * @return the {@code List} of scanned {@link SourcePath}
      */
     public static List<SourcePath> scan(File dir) {
+        return scan(dir.toPath());
+    }
+
+    /**
+     * Scan all files recursively as {@link SourcePath} instance in the given directory.
+     *
+     * @param dir the directory to scan
+     * @return the {@code List} of scanned {@link SourcePath}
+     */
+    public static List<SourcePath> scan(Path dir) {
         return doScan(dir, dir);
     }
 
-    private static List<SourcePath> doScan(File root, File dir) {
+    private static List<SourcePath> doScan(Path root, Path dir) {
         List<SourcePath> sourcePaths = new ArrayList<>();
         DirectoryStream<Path> dirStream = null;
         try {
-            dirStream = Files.newDirectoryStream(dir.toPath());
+            dirStream = Files.newDirectoryStream(dir);
             Iterator<Path> it = dirStream.iterator();
             while (it.hasNext()) {
                 Path next = it.next();
                 if (Files.isDirectory(next)) {
-                    sourcePaths.addAll(doScan(root, next.toFile()));
+                    sourcePaths.addAll(doScan(root, next));
                 } else {
-                    sourcePaths.add(new SourcePath(root, next.toFile()));
+                    sourcePaths.add(new SourcePath(root, next));
                 }
             }
         } catch (IOException ex) {
             if (dirStream != null) {
                 try {
                     dirStream.close();
-                } catch (IOException e) {
+                } catch (IOException ignored) {
                 }
             }
         }

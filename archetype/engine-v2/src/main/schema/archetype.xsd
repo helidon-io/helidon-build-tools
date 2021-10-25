@@ -19,10 +19,10 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
            targetNamespace="https://helidon.io/archetype/2.0"
            xmlns:a="https://helidon.io/archetype/2.0"
-           elementFormDefault="qualified" attributeFormDefault="unqualified">
+           elementFormDefault="qualified">
 
     <xs:attributeGroup name="src-group">
-        <xs:attribute type="xs:string" name="src" use="optional">
+        <xs:attribute type="xs:string" name="src">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
                 <xs:documentation source="description">
@@ -32,7 +32,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute type="xs:anyURI" name="url" use="optional">
+        <xs:attribute type="xs:anyURI" name="url">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
                 <xs:documentation source="description">URL of a script.</xs:documentation>
@@ -65,9 +65,35 @@
         <xs:attributeGroup ref="a:src-group"/>
     </xs:complexType>
 
+    <xs:complexType name="glob-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Ant glob pattern.
+                <br/>
+                <ul>
+                    <li>
+                        Use <code>*</code> to wildcard file and directory names and
+                        <code>**</code>
+                        to wildcard any depth of directory structure.
+                    </li>
+                    <li>
+                        E.g.
+                        <code>&lt;include&gt;**/*.java&lt;/include&gt;</code>
+                    </li>
+                </ul>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attributeGroup ref="a:if-group"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
     <xs:group name="file-includes-group">
         <xs:sequence>
-            <xs:element type="xs:string" name="directory" minOccurs="1" maxOccurs="1">
+            <xs:element type="xs:string" name="directory">
                 <xs:annotation>
                     <xs:documentation source="version">2.0</xs:documentation>
                     <xs:documentation source="description">
@@ -80,7 +106,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="includes" minOccurs="0" maxOccurs="1">
+            <xs:element name="includes" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="version">2.0</xs:documentation>
                     <xs:documentation source="description">
@@ -89,30 +115,11 @@
                 </xs:annotation>
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element type="xs:string" name="include">
-                            <xs:annotation>
-                                <xs:documentation source="version">2.0</xs:documentation>
-                                <xs:documentation source="description">
-                                    Ant glob pattern.
-                                    <br/>
-                                    <ul>
-                                        <li>
-                                            Use <code>*</code> to wildcard file and directory names and
-                                            <code>**</code>
-                                            to wildcard any depth of directory structure.
-                                        </li>
-                                        <li>
-                                            E.g.
-                                            <code>&lt;include&gt;**/*.java&lt;/include&gt;</code>
-                                        </li>
-                                    </ul>
-                                </xs:documentation>
-                            </xs:annotation>
-                        </xs:element>
+                        <xs:element type="a:glob-type" name="include" maxOccurs="unbounded"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="excludes" minOccurs="0" maxOccurs="1">
+            <xs:element name="excludes" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="version">2.0</xs:documentation>
                     <xs:documentation source="description">
@@ -121,21 +128,7 @@
                 </xs:annotation>
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element type="xs:string" name="exclude">
-                            <xs:annotation>
-                                <xs:documentation source="version">2.0</xs:documentation>
-                                <xs:documentation source="description">
-                                    Ant glob pattern.
-                                    <br/>
-                                    Use <code>*</code> to wildcard file and directory names and <code>**</code> to
-                                    wildcard any depth of directory structure.
-                                    <br/>
-                                    E.g.
-                                    <code>&lt;include&gt;**/*.java&lt;/include&gt;</code>
-                                    <code>**/*.java</code>
-                                </xs:documentation>
-                            </xs:annotation>
-                        </xs:element>
+                        <xs:element type="a:glob-type" name="exclude" maxOccurs="unbounded"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
@@ -143,7 +136,7 @@
     </xs:group>
 
     <xs:attributeGroup name="transformations-group">
-        <xs:attribute name="transformations" type="xs:string" use="optional">
+        <xs:attribute name="transformations" type="xs:string">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
                 <xs:documentation source="description">
@@ -157,7 +150,7 @@
     </xs:attributeGroup>
 
     <xs:attributeGroup name="if-group">
-        <xs:attribute name="if" type="xs:string" use="optional">
+        <xs:attribute name="if" type="xs:string">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
                 <xs:documentation source="description">
@@ -261,7 +254,7 @@
     </xs:attributeGroup>
 
     <xs:attributeGroup name="order-group">
-        <xs:attribute name="order" type="xs:integer" use="optional" default="100">
+        <xs:attribute name="order" type="xs:integer" default="100">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
                 <xs:documentation source="description">
@@ -290,7 +283,7 @@
                 <br/>
                 <br/>
                 <p>
-                    The value for the data can be declared as a literal or it can also use a property like syntax
+                    The value for the data can be declared as a literal, or it can also use a property like syntax
                     to resolve the value of an input.
                     <br/>
                     <br/>
@@ -314,7 +307,7 @@
         </xs:annotation>
         <xs:simpleContent>
             <xs:extension base="xs:string">
-                <xs:attribute name="file" type="xs:string" use="optional">
+                <xs:attribute name="file" type="xs:string">
                     <xs:annotation>
                         <xs:documentation source="version">2.0</xs:documentation>
                         <xs:documentation source="description">
@@ -322,7 +315,7 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
-                <xs:attribute name="url" type="xs:anyURI" use="optional">
+                <xs:attribute name="url" type="xs:anyURI">
                     <xs:annotation>
                         <xs:documentation source="version">2.0</xs:documentation>
                         <xs:documentation source="description">
@@ -330,7 +323,7 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
-                <xs:attribute name="template" type="xs:string" use="optional">
+                <xs:attribute name="template" type="xs:string">
                     <xs:annotation>
                         <xs:documentation source="version">2.0</xs:documentation>
                         <xs:documentation source="description">
@@ -353,7 +346,7 @@
                 <br/>
                 <br/>
                 <p>
-                    The value for the data can be declared as a literal or it can also use a property like syntax
+                    The value for the data can be declared as a literal, or it can also use a property like syntax
                     to resolve the value of an input.
                     <br/>
                     <br/>
@@ -490,7 +483,7 @@
         </xs:attribute>
     </xs:attributeGroup>
 
-    <xs:complexType name="context-type">
+    <xs:complexType name="presets-type">
         <xs:annotation>
             <xs:documentation source="version">2.0</xs:documentation>
             <xs:documentation source="description">
@@ -536,14 +529,11 @@
                             Define an enum value.
                         </xs:documentation>
                     </xs:annotation>
-                    <xs:sequence minOccurs="1" maxOccurs="unbounded">
-                        <xs:element name="value">
-                            <xs:simpleType>
-                                <xs:restriction base="xs:string"/>
-                            </xs:simpleType>
-                        </xs:element>
-                    </xs:sequence>
-                    <xs:attributeGroup ref="a:path-group"/>
+                    <xs:simpleContent>
+                        <xs:extension base="xs:string">
+                            <xs:attributeGroup ref="a:path-group"/>
+                        </xs:extension>
+                    </xs:simpleContent>
                 </xs:complexType>
             </xs:element>
             <xs:element name="list">
@@ -554,7 +544,7 @@
                             Define a list value.
                         </xs:documentation>
                     </xs:annotation>
-                    <xs:sequence minOccurs="1" maxOccurs="unbounded">
+                    <xs:sequence maxOccurs="unbounded">
                         <xs:element name="value">
                             <xs:simpleType>
                                 <xs:restriction base="xs:string"/>
@@ -585,7 +575,7 @@
                     </li>
                 </ul>
                 <br/>
-                The rich text format is a limited markdown format:
+                The rich text format is a limited Markdown format:
                 <br/>
                 <br/>
                 <code>
@@ -644,7 +634,7 @@
     </xs:attributeGroup>
 
     <xs:attributeGroup name="optional-group">
-        <xs:attribute name="optional" type="xs:boolean" use="optional">
+        <xs:attribute name="optional" type="xs:boolean">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
                 <xs:documentation source="description">
@@ -657,10 +647,10 @@
     <xs:group name="directive-group">
         <xs:sequence>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
-                <xs:element name="context" type="a:context-type"/>
+                <xs:element name="presets" type="a:presets-type"/>
                 <xs:element name="exec" type="a:exec-type"/>
                 <xs:element name="source" type="a:source-type"/>
-                <xs:element name="input" type="a:input-type"/>
+                <xs:element name="inputs" type="a:input-types"/>
                 <xs:element name="step" type="a:step-type"/>
             </xs:choice>
         </xs:sequence>
@@ -675,7 +665,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="prompt" use="optional">
+        <xs:attribute name="prompt">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
                 <xs:documentation source="description">
@@ -687,7 +677,7 @@
 
     <xs:complexType name="text-input-type">
         <xs:sequence>
-            <xs:element name="help" type="a:help-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="help" type="a:help-type" minOccurs="0"/>
         </xs:sequence>
         <xs:attributeGroup ref="a:input-group"/>
         <xs:attributeGroup ref="a:label-group"/>
@@ -704,9 +694,9 @@
 
     <xs:complexType name="boolean-input-type">
         <xs:sequence>
-            <xs:element name="help" type="a:help-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="help" type="a:help-type" minOccurs="0"/>
             <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="output" type="a:output-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="output" type="a:output-type" minOccurs="0"/>
         </xs:sequence>
         <xs:attributeGroup ref="a:input-group"/>
         <xs:attributeGroup ref="a:label-group"/>
@@ -723,14 +713,14 @@
 
     <xs:complexType name="enum-input-type">
         <xs:sequence>
-            <xs:element name="help" type="a:help-type" minOccurs="0" maxOccurs="1"/>
-            <xs:choice minOccurs="1" maxOccurs="unbounded">
+            <xs:element name="help" type="a:help-type" minOccurs="0"/>
+            <xs:choice maxOccurs="unbounded">
                 <xs:element name="option">
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:element name="help" type="a:help-type" minOccurs="0" maxOccurs="1"/>
+                            <xs:element name="help" type="a:help-type" minOccurs="0"/>
                             <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
-                            <xs:element name="output" type="a:output-type" minOccurs="0" maxOccurs="1"/>
+                            <xs:element name="output" type="a:output-type" minOccurs="0"/>
                         </xs:sequence>
                         <xs:attribute name="value" type="xs:string">
                             <xs:annotation>
@@ -747,6 +737,7 @@
         </xs:sequence>
         <xs:attributeGroup ref="a:input-group"/>
         <xs:attributeGroup ref="a:label-group"/>
+        <xs:attributeGroup ref="a:optional-group"/>
         <xs:attribute name="default" type="xs:string">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
@@ -759,14 +750,14 @@
 
     <xs:complexType name="list-input-type">
         <xs:sequence>
-            <xs:element name="help" type="a:help-type" minOccurs="0" maxOccurs="1"/>
-            <xs:choice minOccurs="1" maxOccurs="unbounded">
+            <xs:element name="help" type="a:help-type" minOccurs="0"/>
+            <xs:choice maxOccurs="unbounded">
                 <xs:element name="option">
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:element name="help" type="a:help-type" minOccurs="0" maxOccurs="1"/>
+                            <xs:element name="help" type="a:help-type" minOccurs="0"/>
                             <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
-                            <xs:element name="output" type="a:output-type" minOccurs="0" maxOccurs="1"/>
+                            <xs:element name="output" type="a:output-type" minOccurs="0"/>
                         </xs:sequence>
                         <xs:attribute name="value" type="xs:string">
                             <xs:annotation>
@@ -802,7 +793,7 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:complexType name="input-type">
+    <xs:complexType name="input-types">
         <xs:annotation>
             <xs:documentation source="version">2.0</xs:documentation>
             <xs:documentation source="description">
@@ -817,7 +808,7 @@
                 <xs:element name="list" type="a:list-input-type"/>
             </xs:choice>
             <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="output" type="a:output-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="output" type="a:output-type" minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
 
@@ -829,16 +820,18 @@
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:element name="help" type="a:help-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="help" type="a:help-type" minOccurs="0"/>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
-                <xs:element name="context" type="a:context-type"/>
+                <xs:element name="presets" type="a:presets-type"/>
                 <xs:element name="exec" type="a:exec-type"/>
                 <xs:element name="source" type="a:source-type"/>
-                <xs:element name="input" type="a:input-type"/>
+                <xs:element name="inputs" type="a:input-types"/>
             </xs:choice>
+            <xs:element name="output" type="a:output-type" minOccurs="0"/>
         </xs:sequence>
         <xs:attributeGroup ref="a:if-group"/>
         <xs:attributeGroup ref="a:label-group"/>
+        <xs:attributeGroup ref="a:optional-group"/>
     </xs:complexType>
 
     <xs:complexType name="model-type">
@@ -899,7 +892,7 @@
                     </xs:annotation>
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:element name="replace" minOccurs="1" maxOccurs="unbounded">
+                            <xs:element name="replace" maxOccurs="unbounded">
                                 <xs:annotation>
                                     <xs:documentation source="version">2.0</xs:documentation>
                                     <xs:documentation source="description">
@@ -1056,9 +1049,9 @@
                     </xs:annotation>
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:element name="model" type="a:model-type" minOccurs="0" maxOccurs="1"/>
+                            <xs:element name="model" type="a:model-type" minOccurs="0"/>
                         </xs:sequence>
-                        <xs:attribute name="engine" type="xs:string" use="optional">
+                        <xs:attribute name="engine" type="xs:string">
                             <xs:annotation>
                                 <xs:documentation source="version">2.0</xs:documentation>
                                 <xs:documentation source="description">
@@ -1106,9 +1099,9 @@
                     <xs:complexType>
                         <xs:sequence>
                             <xs:group ref="a:file-includes-group"/>
-                            <xs:element name="model" type="a:model-type" minOccurs="0" maxOccurs="1"/>
+                            <xs:element name="model" type="a:model-type" minOccurs="0"/>
                         </xs:sequence>
-                        <xs:attribute name="engine" type="xs:string" use="optional">
+                        <xs:attribute name="engine" type="xs:string">
                             <xs:annotation>
                                 <xs:documentation source="version">2.0</xs:documentation>
                                 <xs:documentation source="description">
@@ -1124,7 +1117,7 @@
                     </xs:complexType>
                 </xs:element>
             </xs:choice>
-            <xs:choice minOccurs="0" maxOccurs="1">
+            <xs:choice minOccurs="0">
                 <xs:element name="model" type="a:model-type"/>
             </xs:choice>
         </xs:sequence>
@@ -1140,9 +1133,9 @@
         </xs:annotation>
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="help" type="a:help-type" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="help" type="a:help-type" minOccurs="0"/>
                 <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="output" type="a:output-type" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="output" type="a:output-type" minOccurs="0"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>

@@ -1,1 +1,0 @@
-{{properties.helidon-media-groupId}}

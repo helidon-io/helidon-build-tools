@@ -20,18 +20,15 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <context>
+    <presets>
         <boolean path="test.option1">true</boolean>
         <list path="test.array1">
             <value>hello</value>
         </list>
-        <enum path="test.enum1">
-            <value>bob</value> <!-- error, this is not one of the enum values -->
-        </enum>
-        <enum path="test.array1">
-            <value>bob</value> <!-- error, this is declared as an array -->
-        </enum>
-    </context>
+        <enum path="test.enum1">bob</enum> <!-- error, this is not one of the enum values -->
+        <enum path="test.array1">bob</enum> <!-- error, this is declared as an array -->
+        <text path="test.text1">foo</text>
+    </presets>
     <step label="A Step Title">
         <help><![CDATA[
 Some **rich** help text !
@@ -40,20 +37,20 @@ Some **rich** help text !
 System.out.println("YEAH");
 ```
 ]]></help>
-        <input>
+        <inputs>
             <text name="some-input" label="Some text input"/>
-        </input>
+        </inputs>
     </step>
-    <input>
+    <inputs>
         <text name="test" label="test"></text>
         <boolean name="" label="" />
         <exec src="test.xml" />
         <step label="next">
             <help></help>
-            <input>
+            <inputs>
                 <text name="project-name" label="Project Name" default="my-project"/>
                 <boolean name="option1" label="Option1">
-                    <input />
+                    <inputs />
                 </boolean>
                 <enum name="enum1" label="Enum1">
                     <help/>
@@ -68,10 +65,10 @@ System.out.println("YEAH");
                         <help/>
                     </option>
                 </list>
-            </input>
+            </inputs>
         </step>
-    </input>
-    <input>
+    </inputs>
+    <inputs>
         <list name="foo" label="Foo" prompt="Select a foo">
             <help>Text to help the user make a decision</help>
             <option label="Bar" value="bar" />
@@ -80,11 +77,11 @@ System.out.println("YEAH");
             <help>Talk about bar</help>
             <step label="yeah">
                 <help>Well.. yeah!</help>
-                <input>
+                <inputs>
                     <text name="foo-again" label="Foo again !"/>
-                </input>
+                </inputs>
             </step>
-            <input>
+            <inputs>
                 <boolean name="a-super-option" label="A super option">
                     <output>
                         <template engine="mustache" source="Dockerfile.mustache" target="Dockerfile.native">
@@ -104,10 +101,10 @@ System.out.println("YEAH");
                     </output>
                 </boolean>
                 <text name="your-name" label="Your Name"/>
-            </input>
+            </inputs>
         </boolean>
         <text name="some-input" label="Some input" default="The place-holder" />
-    </input>
+    </inputs>
     <source src="dir1/dir2/file.xml"/>
     <exec url="mvn://groupId:artifactId:version/helidon-archetype.xml"/>
     <output if="${foo} == 'bar'">

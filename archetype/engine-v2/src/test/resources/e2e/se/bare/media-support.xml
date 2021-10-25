@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
+
+    <step optional="true" label="Media Support">
+        <inputs>
+            <boolean name="media-support" label="Media type support"
+                     prompt="Do you want to configure media type support (e.g. JSON, XML)">
+                <inputs>
+                    <boolean name="json" label="JSON" prompt="Do you want to use JSON">
+                        <inputs>
+                            <enum name="provider" label="Select JSON provider">
+                                <option value="jackson" label="Jackson"/>
+                                <option value="jsonb" label="JSON-B"/>
+                                <option value="jsonp" label="JSON-P"/>
+                            </enum>
+                        </inputs>
+                    </boolean>
+                    <boolean name="xml" label="XML" prompt="Do you want to use XML">
+                        <inputs>
+                            <enum name="provider" label="Select XML provider">
+                                <option value="jaxp" label="JAX-P"/>
+                                <option value="jaxb" label="JAX-B"/>
+                            </enum>
+                        </inputs>
+                    </boolean>
+                </inputs>
+                <output>
+                    <model>
+                        <list key="dependencies">
+                            <map if="${media-support/json/provider} == jackson">
+                                <value key="groupId">io.helidon.media</value>
+                                <value key="artifactId">helidon-media-jackson</value>
+                                <value key="scope">runtime</value>
+                            </map>
+                            <map if="${media-support/json/provider} == jsonb">
+                                <value key="groupId">io.helidon.media</value>
+                                <value key="artifactId">helidon-media-jsonb</value>
+                                <value key="scope">runtime</value>
+                            </map>
+                            <map if="${media-support/json/provider} == jsonp">
+                                <value key="groupId">io.helidon.media</value>
+                                <value key="artifactId">helidon-media-jsonp</value>
+                                <value key="scope">runtime</value>
+                            </map>
+                            <map if="${media-support/xml/provider} == jaxp">
+                                <value key="groupId">io.helidon.media</value>
+                                <value key="artifactId">helidon-media-jaxp</value>
+                                <value key="scope">runtime</value>
+                            </map>
+                            <map if="${media-support/xml/provider} == jaxb">
+                                <value key="groupId">io.helidon.media</value>
+                                <value key="artifactId">helidon-media-jaxb</value>
+                                <value key="scope">runtime</value>
+                            </map>
+                        </list>
+                    </model>
+                </output>
+            </boolean>
+        </inputs>
+    </step>
+</archetype-script>

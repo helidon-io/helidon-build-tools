@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
+    <output>
+        <transformation id="t1">
+            <replace replacement="token1" regex="regex1"/>
+        </transformation>
+        <templates transformations="t1" engine="tpl-engine-1">
+            <directory>dir1</directory>
+            <includes>
+                <include>**/*.tpl1</include>
+            </includes>
+        </templates>
+        <files transformations="t2">
+            <directory>dir2</directory>
+            <excludes>
+                <exclude>**/*.txt</exclude>
+            </excludes>
+        </files>
+        <template engine="tpl-engine-2" source="file1.tpl" target="file1.txt"/>
+        <file source="file1.txt" target="file2.txt"/>
+    </output>
+</archetype-script>

@@ -92,7 +92,7 @@
                                 <artifact>
                                     <file>src/main/schema/archetype.xsd</file>
                                     <type>xsd</type>
-                                    <classifier>schema</classifier>
+                                    <classifier>schema-2.0</classifier>
                                 </artifact>
                             </artifacts>
                         </configuration>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
+
+    <output>
+        <model>
+            <list key="dependencies">
+                <map>
+                    <value key="groupId">io.helidon.webserver</value>
+                    <value key="artifactId">helidon-webserver</value>
+                    <value key="scope">runtime</value>
+                </map>
+                <map>
+                    <value key="groupId">org.junit.jupiter</value>
+                    <value key="artifactId">junit-jupiter-api</value>
+                    <value key="scope">test</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.webclient</value>
+                    <value key="artifactId">helidon-webclient</value>
+                    <value key="scope">test</value>
+                </map>
+            </list>
+            <list key="java-imports">
+                <value>java.io.IOException</value>
+                <value>java.io.InputStream</value>
+                <value>java.util.logging.LogManager</value>
+            </list>
+            <list key="helidon-imports">
+                <value>io.helidon.webserver.WebServer</value>
+            </list>
+        </model>
+    </output>
+</archetype-script>
