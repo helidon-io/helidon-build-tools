@@ -52,6 +52,8 @@ public final class InitOptions {
     private String helidonVersion;
     private final BuildSystem build;
     private final String archetypeName;
+    private final String archetypePath;
+    private final ArchetypeInvoker.EngineVersion engineVersion;
     private String groupId;
     private String artifactId;
     private String packageName;
@@ -93,7 +95,10 @@ public final class InitOptions {
             @KeyValue(name = "groupid", description = "Project's group ID") String groupId,
             @KeyValue(name = "artifactid", description = "Project's artifact ID") String artifactId,
             @KeyValue(name = "package", description = "Project's package name") String packageName,
-            @KeyValue(name = "name", description = "Project's name") String projectName) {
+            @KeyValue(name = "name", description = "Project's name") String projectName,
+            @KeyValue(name = "archetype-path", description = "Archetype's path", visible = false) String archetypePath,
+            @KeyValue(name = "engine-version", description = "Archetype's engine version", visible = false, defaultValue = "v2")
+                    String engineVersion) {
 
         this.build = build;
         this.helidonVersion = version;
@@ -103,6 +108,14 @@ public final class InitOptions {
         this.artifactId = artifactId;
         this.packageName = packageName;
         this.projectName = projectName;
+        this.archetypePath = archetypePath;
+        this.engineVersion = getEngineVersion(engineVersion);
+    }
+
+    private ArchetypeInvoker.EngineVersion getEngineVersion(String version) {
+        return version.equalsIgnoreCase("v2")
+                ? ArchetypeInvoker.EngineVersion.V2
+                : ArchetypeInvoker.EngineVersion.V1;
     }
 
     /**
@@ -193,6 +206,24 @@ public final class InitOptions {
      */
     String packageName() {
         return packageName;
+    }
+
+    /**
+     * Get the archetype path.
+     *
+     * @return archetype path
+     */
+    String archetypePath() {
+        return archetypePath;
+    }
+
+    /**
+     * Get the archetype engine version.
+     *
+     * @return archetype version
+     */
+    ArchetypeInvoker.EngineVersion engineVersion() {
+        return engineVersion;
     }
 
     /**

@@ -17,11 +17,7 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
@@ -200,11 +196,11 @@ abstract class ArchetypeInvoker {
         /**
          * Build the invoker instance.
          *
-         * @return {@link V1Invoker} if the configured Helidon version is associated with the V1 engine,
+         * @return {@link V1Invoker} if the configured Helidon archetype version is associated with the V1 engine,
          * otherwise {@link V2Invoker}
          */
         ArchetypeInvoker build() {
-            if (MavenVersion.toMavenVersion(initOptions.helidonVersion()).isLessThan(HELIDON_V3)) {
+            if (initOptions.engineVersion().equals(EngineVersion.V1)) {
                 return new V1Invoker(this);
             }
             return new V2Invoker(this);
@@ -289,11 +285,11 @@ abstract class ArchetypeInvoker {
         }
 
         @Override
-        Path invoke() {
+        Path invoke() throws IOException {
             Path projectDir = projectDirSupplier().apply(initOptions().initProperties().get("name"));
 
             ArchetypeEngineV2 engine = new ArchetypeEngineV2(
-                    getArchetype(projectDir.toFile()),
+                    getArchetype(initOptions().archetypePath()),
                     "flavor.xml",
                     new CLIPrompter(),
                     new HashMap<>(),
@@ -302,7 +298,6 @@ abstract class ArchetypeInvoker {
             );
 
             engine.generate(projectDir.toFile());
-            deleteArchetype(projectDir.resolve("cli-data.zip"));
             return projectDir;
         }
 
@@ -313,41 +308,16 @@ abstract class ArchetypeInvoker {
 
         /**
          * Get the archetype file.
-         * This is a temporary method which need to be removed. Instead, a mechanism
-         * for passing archetype to cli has to be found.
          *
-         * @param directory directory
-         * @return  archetype
+         * @param archetypePath path to archetype
+         * @return archetype
          */
-        private Archetype getArchetype(File directory) {
-            try (
-                    InputStream is = getClass().getResourceAsStream("/cli-data.zip")
-            ) {
-                Path outputPath = Path.of(directory.getAbsolutePath()).resolve("cli-data.zip");
-                outputPath.toFile().getParentFile().mkdirs();
-                Files.createFile(outputPath);
-                OutputStream os = new FileOutputStream(outputPath.toString());
-                os.write(is.readAllBytes());
-                os.close();
-                File archetype = new File(outputPath.toString());
-                return ArchetypeFactory.create(archetype);
-            } catch (IOException e) {
-                e.printStackTrace();
-                return null;
+        private Archetype getArchetype(String archetypePath) throws IOException {
+            File archetype = Path.of(archetypePath).toFile();
+            if (!archetype.exists()) {
+                throw new IOException("Archetype archive does not exist at path : " + archetypePath);
             }
-        }
-
-        /**
-         * Delete archetype after being used.
-         * This method has to be removed.
-         *
-         * @param archetype archetype file path
-         */
-        private void deleteArchetype(Path archetype) {
-            try {
-                Files.delete(archetype);
-            } catch (IOException ignored) {
-            }
+            return ArchetypeFactory.create(archetype);
         }
     }
 }
