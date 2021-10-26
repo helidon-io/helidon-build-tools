@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -44,6 +45,7 @@ class DirectoryArchetype implements Archetype {
      */
     DirectoryArchetype(File directory) {
         this.directory = directory;
+        System.out.println("DirectoryArchetype: " + directory.getAbsolutePath());
     }
 
 
@@ -76,10 +78,11 @@ class DirectoryArchetype implements Archetype {
     @Override
     public ArchetypeDescriptor getDescriptor(String path) {
         Objects.requireNonNull(path);
-        Path descriptorPath = directory.toPath().resolve(getPath(path));
+        Path relativePath = getPath(path);
+        Path descriptorPath = directory.toPath().resolve(relativePath);
         try {
             try (InputStream inputStream = Files.newInputStream(descriptorPath)) {
-                return ArchetypeDescriptor.read(inputStream);
+                return ArchetypeDescriptor.read(directory.toPath(), Paths.get(path), inputStream);
             }
         } catch (IOException e) {
             throw new ArchetypeException("An I/O error occurs during opening the file " + path, e);

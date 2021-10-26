@@ -21,52 +21,10 @@ import io.helidon.build.archetype.engine.v2.descriptor.Source;
 /**
  * Archetype source AST node.
  */
-public class SourceAST extends ASTNode {
-
-    private final String src;
-    private final String url;
-    private String help;
+public class SourceAST extends ScriptAST {
 
     SourceAST(String src, String url, ASTNode parent, Location location) {
-        super(parent, location);
-        this.src = src;
-        this.url = url;
-    }
-
-    /**
-     * Get the help.
-     *
-     * @return help
-     */
-    public String help() {
-        return help;
-    }
-
-    /**
-     * Set the help content.
-     *
-     * @param help help content
-     */
-    public void help(String help) {
-        this.help = help;
-    }
-
-    /**
-     * Get the source attribute.
-     *
-     * @return source
-     */
-    public String source() {
-        return src;
-    }
-
-    /**
-     * Get the url attribute.
-     *
-     * @return url
-     */
-    public String url() {
-        return url;
+        super(src, url, parent, location);
     }
 
     @Override
@@ -77,6 +35,18 @@ public class SourceAST extends ASTNode {
     @Override
     public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
         return visitor.visit(this, arg);
+    }
+
+    @Override
+    public String includeType() {
+        return "source";
+    }
+
+    public String toString() {
+        return "SourceAST{" +
+               "src='" + source() + '\'' +
+               ", loc='" + location().scriptPath() + '\'' +
+               "}";
     }
 
     static SourceAST create(Source sourceFrom, ASTNode parent, Location location) {

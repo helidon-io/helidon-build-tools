@@ -16,6 +16,7 @@
 
 package io.helidon.build.archetype.engine.v2.interpreter;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -45,8 +46,9 @@ public class Interpreter implements Visitor<ASTNode> {
     private final List<UserInputAST> unresolvedInputs = new ArrayList<>();
     private final Deque<ASTNode> stack = new ArrayDeque<>();
     private final List<Visitor<ASTNode>> additionalVisitors;
+    private final Map<String, ScriptAST> pathToSourceNode = new HashMap<>();
+    private final String startDescriptorPath;
     private boolean skipOptional;
-    private String startDescriptorPath;
     private boolean canBeGenerated = false;
 
     Interpreter(
@@ -179,15 +181,18 @@ public class Interpreter implements Visitor<ASTNode> {
     public void visit(ExecAST exec, ASTNode parent) {
         applyAdditionalVisitors(exec);
         if (pushToStack(exec)) {
-            ArchetypeDescriptor descriptor = archetype
-                    .getDescriptor(resolveScriptPath(exec.location().scriptDirectory(), exec.src()));
-            String currentDir = Paths
-                    .get(resolveScriptPath(exec.location().scriptDirectory(), exec.src()))
-                    .getParent().toString();
+            String scriptDirectory = exec.location().scriptDirectory();
+            String scriptFile = exec.source();
+            String descriptorPath = resolveScriptPath(scriptDirectory, scriptFile);
+            ArchetypeDescriptor descriptor = getDescriptor(exec, descriptorPath);
+            Path path = Paths.get(descriptorPath);
+            String currentDir = path.getParent().toString();
             ASTNode.Location newLocation = ASTNode.Location.builder()
-                    .scriptDirectory(currentDir)
-                    .currentDirectory(currentDir)
-                    .build();
+                                                           .scriptFile(descriptorPath)
+                                                           .scriptDirectory(currentDir)
+                                                           .currentDirectory(currentDir)
+                                                           .build();
+            setParent(exec, parent);
             XmlDescriptor xmlDescriptor = XmlDescriptor.create(descriptor, exec, newLocation);
             exec.help(xmlDescriptor.help());
             exec.children().addAll(xmlDescriptor.children());
@@ -200,15 +205,17 @@ public class Interpreter implements Visitor<ASTNode> {
     public void visit(SourceAST source, ASTNode parent) {
         applyAdditionalVisitors(source);
         if (pushToStack((source))) {
-            ArchetypeDescriptor descriptor = archetype
-                    .getDescriptor(resolveScriptPath(source.location().scriptDirectory(), source.source()));
-            String currentDir = Paths
-                    .get(resolveScriptPath(source.location().scriptDirectory(), source.source()))
-                    .getParent().toString();
+            String scriptDirectory = source.location().scriptDirectory();
+            String scriptFile = source.source();
+            String descriptorPath = resolveScriptPath(scriptDirectory, scriptFile);
+            ArchetypeDescriptor descriptor = getDescriptor(source, descriptorPath);
+            String currentDir = Paths.get(descriptorPath).getParent().toString();
             ASTNode.Location newLocation = ASTNode.Location.builder()
-                    .scriptDirectory(currentDir)
-                    .currentDirectory(source.location().currentDirectory())
-                    .build();
+                                                           .scriptFile(descriptorPath)
+                                                           .scriptDirectory(currentDir)
+                                                           .currentDirectory(source.location().currentDirectory())
+                                                           .build();
+            setParent(source, parent);
             XmlDescriptor xmlDescriptor = XmlDescriptor.create(descriptor, source, newLocation);
             source.help(xmlDescriptor.help());
             source.children().addAll(xmlDescriptor.children());
@@ -217,11 +224,33 @@ public class Interpreter implements Visitor<ASTNode> {
         stack.pop();
     }
 
+    private ArchetypeDescriptor getDescriptor(ScriptAST script, String descriptorPath) {
+        // Check for duplicate script includes
+        ScriptAST existing = pathToSourceNode.putIfAbsent(descriptorPath, script);
+        if (existing == null) {
+            return archetype.getDescriptor(descriptorPath);
+        } else {
+            String existingPath = existing.location().scriptPath();
+            String existingType = existing.includeType();
+            String scriptPath = script.location().scriptPath();
+            String scriptType = script.includeType();
+            throw new IllegalStateException("Duplicate include: '" + descriptorPath
+                                            + "' is included via <" + existingType
+                                            + "> in '" + existingPath + "' and again via <"
+                                            + scriptType
+                                            + "> in '" + scriptPath + "'");
+        }
+    }
+
+    private void setParent(ASTNode node, ASTNode parent) {
+        if (node.parent() == null && parent != null) {
+            node.parent(parent);
+        }
+    }
+
     @Override
     public void visit(ContextAST context, ASTNode parent) {
-        if (context.parent() == null && parent != null) {
-            context.parent(parent);
-        }
+        setParent(context, parent);
         applyAdditionalVisitors(context);
         cleanUnresolvedInputs(context);
         acceptAll(context);
@@ -229,36 +258,28 @@ public class Interpreter implements Visitor<ASTNode> {
 
     @Override
     public void visit(ContextBooleanAST contextBoolean, ASTNode parent) {
-        if (contextBoolean.parent() == null && parent != null) {
-            contextBoolean.parent(parent);
-        }
+        setParent(contextBoolean, parent);
         applyAdditionalVisitors(contextBoolean);
         pathToContextNodeMap.putIfAbsent(contextBoolean.path(), contextBoolean);
     }
 
     @Override
     public void visit(ContextEnumAST contextEnum, ASTNode parent) {
-        if (contextEnum.parent() == null && parent != null) {
-            contextEnum.parent(parent);
-        }
+        setParent(contextEnum, parent);
         applyAdditionalVisitors(contextEnum);
         pathToContextNodeMap.putIfAbsent(contextEnum.path(), contextEnum);
     }
 
     @Override
     public void visit(ContextListAST contextList, ASTNode parent) {
-        if (contextList.parent() == null && parent != null) {
-            contextList.parent(parent);
-        }
+        setParent(contextList, parent);
         applyAdditionalVisitors(contextList);
         pathToContextNodeMap.putIfAbsent(contextList.path(), contextList);
     }
 
     @Override
     public void visit(ContextTextAST contextText, ASTNode parent) {
-        if (contextText.parent() == null && parent != null) {
-            contextText.parent(parent);
-        }
+        setParent(contextText, parent);
         applyAdditionalVisitors(contextText);
         pathToContextNodeMap.putIfAbsent(contextText.path(), contextText);
     }
@@ -423,7 +444,7 @@ public class Interpreter implements Visitor<ASTNode> {
      * Create unresolvedInput, add it to the {@code unresolvedInputs} and throw {@link WaitForUserInput} to stop the
      * interpreting process.
      *
-     * @param input                   initial unresolved {@code InputNodeAST} from the AST tree.
+     * @param input initial unresolved {@code InputNodeAST} from the AST tree.
      * @param unresolvedUserInputNode unresolvedUserInputNode that will be sent to the user
      */
     private void processUnresolvedInput(InputNodeAST input, InputNodeAST unresolvedUserInputNode) {
@@ -467,13 +488,6 @@ public class Interpreter implements Visitor<ASTNode> {
 
     private String resolveScriptPath(String currentDirectory, String scriptSrc) {
         return Paths.get(currentDirectory).resolve(scriptSrc).normalize().toString();
-    }
-
-    private String resolveDirectory(String currentValue, ASTNode.Location location) {
-        if (currentValue.startsWith("/")) {
-            return currentValue;
-        }
-        return Paths.get(location.currentDirectory()).resolve(currentValue).normalize().toString();
     }
 
     private void validate(InputNodeAST input) {

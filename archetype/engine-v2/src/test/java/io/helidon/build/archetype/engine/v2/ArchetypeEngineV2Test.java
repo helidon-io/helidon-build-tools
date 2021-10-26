@@ -28,14 +28,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import io.helidon.build.archetype.engine.v2.archive.Archetype;
 import io.helidon.build.archetype.engine.v2.prompter.DefaultPrompterImpl;
 import io.helidon.build.common.Strings;
 import io.helidon.build.common.test.utils.TestFiles;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class ArchetypeEngineV2Test extends ArchetypeBaseTest {
 
@@ -122,7 +125,59 @@ class ArchetypeEngineV2Test extends ArchetypeBaseTest {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("EEE MMM dd");
         ZonedDateTime now = ZonedDateTime.now();
         assertThat(helidonFile, containsString(dtf.format(now)));
-        assertThat(helidonFile, containsString("project.directory="+outputDirPath.toString()));
+        assertThat(helidonFile, containsString("project.directory="+outputDirPath));
+    }
+
+    @Test
+    void generateWithIncludeCycleFails() throws IOException {
+        File outputDir = Files.createTempDirectory("include-cycle").toFile();
+
+        Map<String, String> initContextValues = new HashMap<>();
+        initContextValues.put("flavor", "se");
+        initContextValues.put("base", "bare");
+        initContextValues.put("build-system", "maven");
+        Archetype archetype = getArchetype("include-cycle");
+        ArchetypeEngineV2 archetypeEngineV2 = new ArchetypeEngineV2(archetype,
+                                                                    "flavor.xml",
+                                                                    new DefaultPrompterImpl(true),
+                                                                    initContextValues,
+                                                                    true,
+                                                                    List.of());
+        try {
+            archetypeEngineV2.generate(outputDir);
+            fail("should have failed");
+        } catch (IllegalStateException e) {
+            String msg = e.getMessage();
+            assertThat("Got " + msg, msg.contains("Duplicate include: 'se/se.xml'"), is(true));
+            assertThat("Got " + msg, msg.contains("included via <source> in 'flavor.xml'"), is(true));
+            assertThat("Got " + msg, msg.contains("and again via <exec> in 'se/bare/bare-se.xml'"), is(true));
+        }
+    }
+
+    @Test
+    void generateWithDuplicateIncludeFails() throws IOException {
+        File outputDir = Files.createTempDirectory("duplicate-include").toFile();
+
+        Map<String, String> initContextValues = new HashMap<>();
+        initContextValues.put("flavor", "se");
+        initContextValues.put("base", "bare");
+        initContextValues.put("build-system", "maven");
+        Archetype archetype = getArchetype("duplicate-include");
+        ArchetypeEngineV2 archetypeEngineV2 = new ArchetypeEngineV2(archetype,
+                                                                    "flavor.xml",
+                                                                    new DefaultPrompterImpl(true),
+                                                                    initContextValues,
+                                                                    true,
+                                                                    List.of());
+        try {
+            archetypeEngineV2.generate(outputDir);
+            fail("should have failed");
+        } catch (IllegalStateException e) {
+            String msg = e.getMessage();
+            assertThat("Got " + msg, msg.contains("Duplicate include: 'common/java-files.xml'"), is(true));
+            assertThat("Got " + msg, msg.contains("included via <source> in 'se/bare/bare-se.xml'"), is(true));
+            assertThat("Got " + msg, msg.contains("and again via <source> in 'common/common.xml'"), is(true));
+        }
     }
 
     private static String readFile(Path file) throws IOException {

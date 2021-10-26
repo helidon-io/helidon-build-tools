@@ -57,9 +57,11 @@ class XmlDescriptor extends ASTNode {
 
     static XmlDescriptor create(ArchetypeDescriptor descriptor, ASTNode parent, Location location) {
         XmlDescriptor result = new XmlDescriptor(location);
+        result.parent(parent);
         descriptor.archetypeAttributes().forEach((key, value) -> result.archetypeAttributes().putIfAbsent(key, value));
         result.children().addAll(transformList(descriptor.contexts(), c -> ContextAST.create(c, parent, location)));
         result.help(descriptor.help());
+        // TODO: shouldn't all of the below use result instead of parent?
         result.children().addAll(transformList(descriptor.steps(), s -> StepAST.create(s, parent, location)));
         result.children().addAll(transformList(descriptor.inputs(), i -> InputAST.create(i, parent, location)));
         result.children().addAll(transformList(descriptor.sources(), s -> SourceAST.create(s, parent, location)));

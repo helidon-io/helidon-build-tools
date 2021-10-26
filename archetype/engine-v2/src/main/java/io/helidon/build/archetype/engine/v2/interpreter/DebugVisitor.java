@@ -73,7 +73,7 @@ public class DebugVisitor extends VisitorEmptyImpl<ASTNode> {
 
     @Override
     public void visit(ExecAST input, ASTNode parent) {
-        String message = String.format("%s ExecAST {src=\"%s\"}", indent(input), input.src());
+        String message = String.format("%s ExecAST {src=\"%s\"}", indent(input), input.source());
         processMessage(input, message);
     }
 

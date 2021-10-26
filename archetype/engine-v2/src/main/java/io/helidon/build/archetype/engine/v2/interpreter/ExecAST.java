@@ -21,52 +21,10 @@ import io.helidon.build.archetype.engine.v2.descriptor.Exec;
 /**
  * Archetype exec AST node.
  */
-public class ExecAST extends ASTNode {
-
-    private final String url;
-    private final String src;
-    private String help;
+public class ExecAST extends ScriptAST {
 
     ExecAST(String url, String src, ASTNode parent, Location location) {
-        super(parent, location);
-        this.url = url;
-        this.src = src;
-    }
-
-    /**
-     * Get the help.
-     *
-     * @return help
-     */
-    public String help() {
-        return help;
-    }
-
-    /**
-     * Set the help content.
-     *
-     * @param help help content
-     */
-    public void help(String help) {
-        this.help = help;
-    }
-
-    /**
-     * Get the source.
-     *
-     * @return source as a String
-     */
-    public String src() {
-        return src;
-    }
-
-    /**
-     * Get the url.
-     *
-     * @return url as a String
-     */
-    public String url() {
-        return url;
+        super(src, url, parent, location);
     }
 
     @Override
@@ -77,6 +35,19 @@ public class ExecAST extends ASTNode {
     @Override
     public <T, A> T accept(GenericVisitor<T, A> visitor, A arg) {
         return visitor.visit(this, arg);
+    }
+
+    @Override
+    public String includeType() {
+        return "exec";
+    }
+
+    @Override
+    public String toString() {
+        return "ExecAST{" +
+               "src='" + source() + '\'' +
+               ", loc='" + location().scriptPath() + '\'' +
+               "}";
     }
 
     static ExecAST create(Exec execFrom, ASTNode parent, Location location) {
