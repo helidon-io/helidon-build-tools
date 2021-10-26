@@ -63,8 +63,8 @@ import io.helidon.build.archetype.engine.v2.interpreter.TransformationAST;
 import io.helidon.build.archetype.engine.v2.interpreter.ValueTypeAST;
 import io.helidon.build.archetype.engine.v2.interpreter.Visitable;
 import io.helidon.build.archetype.engine.v2.template.TemplateModel;
+import io.helidon.build.common.PathFilters;
 import io.helidon.build.common.PropertyEvaluator;
-import io.helidon.build.common.SourcePath;
 
 /**
  * Generate Output files from interpreter.
@@ -247,14 +247,8 @@ public class OutputGenerator {
         for (String path : paths) {
             String finalDirectory = getDirectory(directory);
             resolved.addAll(archetype.getPaths().stream()
-                    .map(SourcePath::new)
-                    .filter(s -> s.matches(resolvePath(finalDirectory, path)))
-                    .map(s -> {
-                        if (archetype instanceof ZipArchetype) {
-                            return s.asString().substring(finalDirectory.length() + 1);
-                        }
-                        return s.asString().substring(finalDirectory.length() + 2);
-                    })
+                    .filter(s -> PathFilters.matches(resolvePath(finalDirectory, path)).test(Path.of(s), Path.of("/")))
+                    .map(s -> s.substring(finalDirectory.length() + 1))
                     .collect(Collectors.toList()));
         }
         return resolved;
@@ -262,7 +256,9 @@ public class OutputGenerator {
 
     private String resolvePath(String first, String second) {
         String resolved = first + "/" + second;
-        return resolved.replaceAll("///", "/").replaceAll("//", "/");
+        return resolved
+                .replaceAll("///", "/")
+                .replaceAll("//", "/");
     }
 
     private String getDirectory(String directory) {
