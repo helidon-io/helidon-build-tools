@@ -36,6 +36,7 @@ class InitCommandTestBase extends MetadataAccessTestBase {
     protected CommandInvoker.Builder commandInvoker() {
         return CommandInvoker.builder()
                 .helidonVersion(HELIDON_TEST_VERSION)
+                .engineVersion(ArchetypeInvoker.EngineVersion.V1)
                 .metadataUrl(metadataUrl())
                 .userConfig(userConfig())
                 .workDir(targetDir);
