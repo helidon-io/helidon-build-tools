@@ -44,10 +44,14 @@ public class ExecAST extends ScriptAST {
 
     @Override
     public String toString() {
-        return "ExecAST{" +
-               "src='" + source() + '\'' +
-               ", loc='" + location().scriptPath() + '\'' +
-               "}";
+        return "ExecAST{"
+               + "src='"
+               + source()
+               + '\''
+               + ", loc='"
+               + location().scriptPath()
+               + '\''
+               + "}";
     }
 
     static ExecAST create(Exec execFrom, ASTNode parent, Location location) {

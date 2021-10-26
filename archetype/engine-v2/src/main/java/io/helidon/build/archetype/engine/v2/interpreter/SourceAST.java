@@ -42,11 +42,16 @@ public class SourceAST extends ScriptAST {
         return "source";
     }
 
+    @Override
     public String toString() {
-        return "SourceAST{" +
-               "src='" + source() + '\'' +
-               ", loc='" + location().scriptPath() + '\'' +
-               "}";
+        return "SourceAST{"
+               + "src='"
+               + source()
+               + '\''
+               + ", loc='"
+               + location().scriptPath()
+               + '\''
+               + "}";
     }
 
     static SourceAST create(Source sourceFrom, ASTNode parent, Location location) {

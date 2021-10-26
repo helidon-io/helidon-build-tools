@@ -150,9 +150,11 @@ public abstract class ASTNode implements Visitable, Serializable {
 
         @Override
         public String toString() {
-            return "Location{" +
-                   "scriptPath='" + scriptFile + '\'' +
-                   '}';
+            return "Location{"
+                   + "scriptPath='"
+                   + scriptFile
+                   + '\''
+                   + '}';
         }
 
         /**

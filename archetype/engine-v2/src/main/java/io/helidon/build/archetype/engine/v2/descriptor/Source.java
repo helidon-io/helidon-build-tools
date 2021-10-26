@@ -26,6 +26,11 @@ public class Source {
     private final String src;
     private final String url;
 
+    /**
+     * Constructor.
+     * @param url The url.
+     * @param source The source path.
+     */
     public Source(String url, String source) {
         this.src = source;
         this.url = url;
