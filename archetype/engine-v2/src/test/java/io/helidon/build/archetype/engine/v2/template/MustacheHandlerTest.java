@@ -66,7 +66,7 @@ public class MustacheHandlerTest {
 
 
     private void testDescriptor(List<String> descriptorPaths, List<InputStream> descriptors) throws IOException {
-        Path archetypePath = Paths.get(getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
+        Path archetypePath = Paths.get("");
         OutputStream stream = new ByteArrayOutputStream();
         TemplateModel model = new TemplateModel();
         InputStream template = MustacheHandlerTest.class.getClassLoader()

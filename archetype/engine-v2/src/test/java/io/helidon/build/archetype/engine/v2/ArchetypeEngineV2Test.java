@@ -148,9 +148,9 @@ class ArchetypeEngineV2Test extends ArchetypeBaseTest {
             fail("should have failed");
         } catch (IllegalStateException e) {
             String msg = e.getMessage();
-            assertThat("Got " + msg, msg.contains("Duplicate include: 'se/se.xml'"), is(true));
+            assertThat("Got " + msg, msg.contains(fixPaths("Duplicate include: 'se/se.xml'")), is(true));
             assertThat("Got " + msg, msg.contains("included via <source> in 'flavor.xml'"), is(true));
-            assertThat("Got " + msg, msg.contains("and again via <exec> in 'se/bare/bare-se.xml'"), is(true));
+            assertThat("Got " + msg, msg.contains(fixPaths("and again via <exec> in 'se/bare/bare-se.xml'")), is(true));
         }
     }
 
@@ -174,10 +174,14 @@ class ArchetypeEngineV2Test extends ArchetypeBaseTest {
             fail("should have failed");
         } catch (IllegalStateException e) {
             String msg = e.getMessage();
-            assertThat("Got " + msg, msg.contains("Duplicate include: 'common/java-files.xml'"), is(true));
-            assertThat("Got " + msg, msg.contains("included via <source> in 'se/bare/bare-se.xml'"), is(true));
-            assertThat("Got " + msg, msg.contains("and again via <source> in 'common/common.xml'"), is(true));
+            assertThat("Got " + msg, msg.contains(fixPaths("Duplicate include: 'common/java-files.xml'")), is(true));
+            assertThat("Got " + msg, msg.contains(fixPaths("included via <source> in 'se/bare/bare-se.xml'")), is(true));
+            assertThat("Got " + msg, msg.contains(fixPaths("and again via <source> in 'common/common.xml'")), is(true));
         }
+    }
+
+    private static String fixPaths(String msg) {
+        return msg.replace("/", File.separator);
     }
 
     private static String readFile(Path file) throws IOException {
