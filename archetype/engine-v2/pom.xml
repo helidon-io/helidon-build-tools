@@ -34,6 +34,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.build-tools.common</groupId>
             <artifactId>helidon-build-common</artifactId>
             <version>${project.version}</version>

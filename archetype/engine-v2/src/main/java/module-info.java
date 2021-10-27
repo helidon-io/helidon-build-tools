@@ -26,6 +26,7 @@ module io.helidon.build.archetype.engine.v2 {
     requires com.github.mustachejava;
     requires io.helidon.build.common.xml;
     requires java.logging;
+    requires org.commonmark;
 
     exports io.helidon.build.archetype.engine.v2;
     exports io.helidon.build.archetype.engine.v2.prompter;
