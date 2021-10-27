@@ -24,7 +24,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,14 +34,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.archive.Archetype;
 import io.helidon.build.archetype.engine.v2.archive.ZipArchetype;
-import io.helidon.build.archetype.engine.v2.descriptor.ListType;
-import io.helidon.build.archetype.engine.v2.descriptor.MapType;
-import io.helidon.build.archetype.engine.v2.descriptor.Model;
-import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyList;
-import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyMap;
-import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyValue;
 import io.helidon.build.archetype.engine.v2.descriptor.Replacement;
-import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
 import io.helidon.build.archetype.engine.v2.interpreter.ASTNode;
 import io.helidon.build.archetype.engine.v2.interpreter.ContextBooleanAST;
 import io.helidon.build.archetype.engine.v2.interpreter.ContextNodeAST;
@@ -50,18 +42,11 @@ import io.helidon.build.archetype.engine.v2.interpreter.ContextTextAST;
 import io.helidon.build.archetype.engine.v2.interpreter.FileSetAST;
 import io.helidon.build.archetype.engine.v2.interpreter.FileSetsAST;
 import io.helidon.build.archetype.engine.v2.interpreter.Flow;
-import io.helidon.build.archetype.engine.v2.interpreter.ListTypeAST;
-import io.helidon.build.archetype.engine.v2.interpreter.MapTypeAST;
 import io.helidon.build.archetype.engine.v2.interpreter.ModelAST;
-import io.helidon.build.archetype.engine.v2.interpreter.ModelKeyListAST;
-import io.helidon.build.archetype.engine.v2.interpreter.ModelKeyMapAST;
-import io.helidon.build.archetype.engine.v2.interpreter.ModelKeyValueAST;
 import io.helidon.build.archetype.engine.v2.interpreter.OutputAST;
 import io.helidon.build.archetype.engine.v2.interpreter.TemplateAST;
 import io.helidon.build.archetype.engine.v2.interpreter.TemplatesAST;
 import io.helidon.build.archetype.engine.v2.interpreter.TransformationAST;
-import io.helidon.build.archetype.engine.v2.interpreter.ValueTypeAST;
-import io.helidon.build.archetype.engine.v2.interpreter.Visitable;
 import io.helidon.build.archetype.engine.v2.template.TemplateModel;
 import io.helidon.build.common.PathFilters;
 import io.helidon.build.common.PropertyEvaluator;
@@ -274,7 +259,7 @@ public class OutputGenerator {
                 .map(m -> (ModelAST) m)
                 .findFirst();
         templatesModel.mergeModel(model.model());
-        modelAST.ifPresent(ast -> templatesModel.mergeModel(convertASTModel(ast)));
+        modelAST.ifPresent(templatesModel::mergeModel);
         return templatesModel;
     }
 
@@ -316,147 +301,9 @@ public class OutputGenerator {
                 .collect(Collectors.toList());
 
         for (ModelAST node : models) {
-            templateModel.mergeModel(convertASTModel(node));
+            templateModel.mergeModel(node);
         }
         return templateModel;
-    }
-
-    private Model convertASTModel(ModelAST model) {
-        Model modelDescriptor = new Model("true");
-        convertKeyElements(modelDescriptor.keyValues(),
-                modelDescriptor.keyLists(),
-                modelDescriptor.keyMaps(),
-                model.children());
-        return modelDescriptor;
-    }
-
-    private Collection<? extends ModelKeyMap> convertASTKeyMaps(List<ModelKeyMapAST> astMaps) {
-        LinkedList<ModelKeyMap> maps = new LinkedList<>();
-
-        for (ModelKeyMapAST map : astMaps) {
-            ModelKeyMap keyMap = new ModelKeyMap(map.key(), map.order(), "true");
-            convertKeyElements(keyMap.keyValues(), keyMap.keyLists(), keyMap.keyMaps(), map.children());
-            maps.add(keyMap);
-        }
-
-        return maps;
-    }
-
-    private Collection<? extends ModelKeyList> convertASTKeyLists(List<ModelKeyListAST> astLists) {
-        LinkedList<ModelKeyList> lists = new LinkedList<>();
-
-        for (ModelKeyListAST list : astLists) {
-            ModelKeyList keyList = new ModelKeyList(list.key(), list.order(), "true");
-            convertElements(keyList.values(), keyList.lists(), keyList.maps(), list.children());
-            lists.add(keyList);
-        }
-
-        return lists;
-    }
-
-    private Collection<? extends ModelKeyValue> convertASTKeyValues(List<ModelKeyValueAST> astValues) {
-        LinkedList<ModelKeyValue> values = new LinkedList<>();
-
-        for (ModelKeyValueAST value : astValues) {
-            ModelKeyValue keyValue = new ModelKeyValue(
-                    value.key(),
-                    value.url(),
-                    value.file(),
-                    value.template(),
-                    value.order(),
-                    "true");
-            keyValue.value(value.value());
-            values.add(keyValue);
-        }
-        return values;
-    }
-
-    private Collection<? extends ValueType> convertASTValues(List<ValueTypeAST> astValues) {
-        LinkedList<ValueType> values = new LinkedList<>();
-
-        for (ValueTypeAST value : astValues) {
-            ValueType valueType = new ValueType(
-                    value.url(),
-                    value.file(),
-                    value.template(),
-                    value.order(),
-                    "true");
-            valueType.value(value.value());
-            values.add(valueType);
-        }
-        return values;
-    }
-
-    private Collection<? extends ListType> convertASTLists(List<ListTypeAST> astList) {
-        LinkedList<ListType> lists = new LinkedList<>();
-
-        for (ListTypeAST list : astList) {
-            ListType listType = new ListType(list.order(), "true");
-            convertElements(listType.values(), listType.lists(), listType.maps(), list.children());
-            lists.add(listType);
-        }
-
-        return lists;
-    }
-
-    private Collection<? extends MapType> convertASTMaps(List<MapTypeAST> astMap) {
-        LinkedList<MapType> maps = new LinkedList<>();
-
-        for (MapTypeAST map : astMap) {
-            MapType mapType = new MapType(map.order(), "true");
-            convertKeyElements(mapType.keyValues(), mapType.keyLists(), mapType.keyMaps(), map.children());
-            maps.add(mapType);
-        }
-
-        return maps;
-    }
-
-    private void convertKeyElements(LinkedList<ModelKeyValue> modelKeyValues,
-                                    LinkedList<ModelKeyList> modelKeyLists,
-                                    LinkedList<ModelKeyMap> modelKeyMaps,
-                                    LinkedList<Visitable> children) {
-
-        modelKeyValues.addAll(convertASTKeyValues(children.stream()
-                .filter(v -> v instanceof ModelKeyValueAST)
-                .map(v -> (ModelKeyValueAST) v)
-                .collect(Collectors.toList()))
-        );
-
-        modelKeyLists.addAll(convertASTKeyLists(children.stream()
-                .filter(v -> v instanceof ModelKeyListAST)
-                .map(v -> (ModelKeyListAST) v)
-                .collect(Collectors.toList()))
-        );
-
-        modelKeyMaps.addAll(convertASTKeyMaps(children.stream()
-                .filter(v -> v instanceof ModelKeyMapAST)
-                .map(v -> (ModelKeyMapAST) v)
-                .collect(Collectors.toList()))
-        );
-    }
-
-    private void convertElements(LinkedList<ValueType> values,
-                                 LinkedList<ListType> lists,
-                                 LinkedList<MapType> maps,
-                                 LinkedList<Visitable> children) {
-
-        values.addAll(convertASTValues(children.stream()
-                .filter(v -> v instanceof ValueTypeAST)
-                .map(v -> (ValueTypeAST) v)
-                .collect(Collectors.toList()))
-        );
-
-        lists.addAll(convertASTLists(children.stream()
-                .filter(v -> v instanceof ListTypeAST)
-                .map(v -> (ListTypeAST) v)
-                .collect(Collectors.toList()))
-        );
-
-        maps.addAll(convertASTMaps(children.stream()
-                .filter(v -> v instanceof MapTypeAST)
-                .map(v -> (MapTypeAST) v)
-                .collect(Collectors.toList()))
-        );
     }
 
     private List<OutputAST> getOutputNodes(List<ASTNode> nodes) {

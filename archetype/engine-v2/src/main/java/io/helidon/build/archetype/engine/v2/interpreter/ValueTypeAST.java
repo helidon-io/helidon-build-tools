@@ -21,7 +21,7 @@ import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
 /**
  * Archetype value AST node used in {@link ListTypeAST}.
  */
-public class ValueTypeAST extends ASTNode implements ConditionalNode {
+public class ValueTypeAST extends ASTNode implements ConditionalNode, Comparable {
 
     private String value;
     private final String url;
@@ -113,5 +113,13 @@ public class ValueTypeAST extends ASTNode implements ConditionalNode {
                 parent,
                 location
         );
+    }
+
+    @Override
+    public int compareTo(Object value) {
+        if (value instanceof ValueTypeAST) {
+            return Integer.compare(this.order, ((ValueTypeAST) value).order);
+        }
+        return 0;
     }
 }

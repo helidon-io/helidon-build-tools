@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
+import io.helidon.build.archetype.engine.v2.interpreter.ValueTypeAST;
 
 import com.github.mustachejava.Mustache;
 
@@ -44,7 +44,7 @@ public class ModelTransformer {
      * @param maps      Model maps
      * @return          scope
      */
-    public static Map<String, Object> transform(MergingMap<String, ValueType> values,
+    public static Map<String, Object> transform(MergingMap<String, ValueTypeAST> values,
                                                 MergingMap<String, TemplateList> lists,
                                                 MergingMap<String, TemplateMap> maps) {
         Map<String, Object> scope = new NonNullMap<>();
@@ -54,10 +54,10 @@ public class ModelTransformer {
         return scope;
     }
 
-    private static Map<String, Object> valuesToMap(MergingMap<String, ValueType> templateValues) {
+    private static Map<String, Object> valuesToMap(MergingMap<String, ValueTypeAST> templateValues) {
         Map<String, Object> resolved = new NonNullMap<>();
         for (String key : templateValues.keySet()) {
-            ValueType value = templateValues.get(key);
+            ValueTypeAST value = templateValues.get(key);
             if (value.value() != null && value.file() != null && value.template() != null) {
                 resolved.put(key, value.value());
                 continue;
@@ -121,9 +121,9 @@ public class ModelTransformer {
         return resolved;
     }
 
-    private static List<String> valuesToList(List<ValueType> values) {
+    private static List<String> valuesToList(List<ValueTypeAST> values) {
         List<String> resolved = new NonNullList<>();
-        for (ValueType value : values) {
+        for (ValueTypeAST value : values) {
             if (value.value() != null && value.file() != null && value.template() != null) {
                 resolved.add(value.value());
                 continue;

@@ -21,7 +21,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
+import io.helidon.build.archetype.engine.v2.interpreter.ValueTypeAST;
 
 /**
  * Class used to sort {@link TemplateModel} by order.
@@ -38,7 +38,7 @@ public class ModelSorter {
      * @param lists     Model lists
      * @param maps      Model maps
      */
-    public static void sortModelByOrder(MergingMap<String, ValueType> values,
+    public static void sortModelByOrder(MergingMap<String, ValueTypeAST> values,
                                         MergingMap<String, TemplateList> lists,
                                         MergingMap<String, TemplateMap> maps) {
         sortValuesOrder(values);
@@ -74,11 +74,11 @@ public class ModelSorter {
         }
     }
 
-    private static void sortValuesOrder(MergingMap<String, ValueType> values) {
-        List<Map.Entry<String, ValueType>> list = new ArrayList<>(values.entrySet());
+    private static void sortValuesOrder(MergingMap<String, ValueTypeAST> values) {
+        List<Map.Entry<String, ValueTypeAST>> list = new ArrayList<>(values.entrySet());
         list.sort(Map.Entry.comparingByValue());
         values.clear();
-        for (Map.Entry<String, ValueType> entry : list) {
+        for (Map.Entry<String, ValueTypeAST> entry : list) {
             values.put(entry.getKey(), entry.getValue());
         }
     }
@@ -101,7 +101,7 @@ public class ModelSorter {
         }
     }
 
-    private static void sortValuesOrder(List<ValueType> values) {
-        values.sort(Comparator.comparingInt(ValueType::order));
+    private static void sortValuesOrder(List<ValueTypeAST> values) {
+        values.sort(Comparator.comparingInt(ValueTypeAST::order));
     }
 }

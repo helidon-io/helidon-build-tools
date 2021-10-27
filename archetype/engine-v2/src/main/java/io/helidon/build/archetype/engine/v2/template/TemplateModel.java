@@ -16,14 +16,14 @@
 
 package io.helidon.build.archetype.engine.v2.template;
 
-import io.helidon.build.archetype.engine.v2.descriptor.Model;
+import io.helidon.build.archetype.engine.v2.interpreter.ModelAST;
 
 /**
  * Template Model Archetype.
  */
 public class TemplateModel {
 
-    private Model model;
+    private ModelAST model;
 
     /**
      * Template default constructor.
@@ -37,7 +37,7 @@ public class TemplateModel {
      *
      * @param model model to be merged
      */
-    public void mergeModel(Model model) {
+    public void mergeModel(ModelAST model) {
         if (model == null) {
             return;
         }
@@ -46,9 +46,7 @@ public class TemplateModel {
             return;
         }
 
-        this.model.keyValues().addAll(model.keyValues());
-        this.model.keyLists().addAll(model.keyLists());
-        this.model.keyMaps().addAll(model.keyMaps());
+        this.model.children().addAll(model.children());
     }
 
     /**
@@ -56,7 +54,7 @@ public class TemplateModel {
      *
      * @return model descriptor
      */
-    public Model model() {
+    public ModelAST model() {
         return model;
     }
 
