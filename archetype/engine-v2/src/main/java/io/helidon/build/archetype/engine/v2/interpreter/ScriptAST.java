@@ -14,26 +14,39 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.engine.v2.descriptor;
-
-import java.util.Objects;
+package io.helidon.build.archetype.engine.v2.interpreter;
 
 /**
- * Archetype source.
+ * Archetype script AST node.
  */
-public class Source {
+public abstract class ScriptAST extends ASTNode {
 
     private final String src;
     private final String url;
+    private String help;
+
+    ScriptAST(String src, String url, ASTNode parent, Location location) {
+        super(parent, location);
+        this.src = src;
+        this.url = url;
+    }
 
     /**
-     * Constructor.
-     * @param url The url.
-     * @param source The source path.
+     * Get the help.
+     *
+     * @return help
      */
-    public Source(String url, String source) {
-        this.src = source;
-        this.url = url;
+    public String help() {
+        return help;
+    }
+
+    /**
+     * Set the help content.
+     *
+     * @param help help content
+     */
+    public void help(String help) {
+        this.help = help;
     }
 
     /**
@@ -54,26 +67,9 @@ public class Source {
         return url;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-        Source s = (Source) o;
-        return src.equals(s.src)
-                && url.equals(s.url);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), src, url);
-    }
-
-    @Override
-    public String toString() {
-        return "Source{"
-                + "src=" + source()
-                + ", url=" + url()
-                + '}';
-    }
+    /**
+     * Returns the include type, e.g. "exec" or "source".
+     * @return The type.
+     */
+    public abstract String includeType();
 }

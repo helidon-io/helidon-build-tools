@@ -92,7 +92,7 @@ public class ZipArchetype implements Archetype, Closeable {
         Path descriptorPath = getPath(path);
         try {
             try (InputStream inputStream = Files.newInputStream(descriptorPath)) {
-                return ArchetypeDescriptor.read(inputStream);
+                return ArchetypeDescriptor.read(zipPath, descriptorPath, inputStream);
             }
         } catch (IOException e) {
             throw new ArchetypeException("An I/O error occurs during opening the file " + path, e);

@@ -16,17 +16,20 @@
 
 package io.helidon.build.archetype.engine.v2.template;
 
-import io.helidon.build.archetype.engine.v2.MustacheHandler;
-import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
-import io.helidon.build.archetype.engine.v2.interpreter.ModelAST;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Arrays;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
+import io.helidon.build.archetype.engine.v2.MustacheHandler;
+import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
+import io.helidon.build.archetype.engine.v2.interpreter.ModelAST;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -55,32 +58,38 @@ public class MustacheHandlerTest {
     public void parseModel() throws IOException {
         InputStream descStream = MustacheHandlerTest.class.getClassLoader()
                 .getResourceAsStream(DESCRIPTOR);
+        assertThat(descStream, is(notNullValue()));
         InputStream descSiblingStream = MustacheHandlerTest.class.getClassLoader()
                 .getResourceAsStream(DESCRIPTOR_SIBLING);
-        testDescriptor(descSiblingStream, descStream);
+        assertThat(descSiblingStream, is(notNullValue()));
+        testDescriptor(List.of(DESCRIPTOR, DESCRIPTOR_SIBLING), List.of(descSiblingStream, descStream));
     }
 
-    private void testDescriptor(InputStream ... descriptors) throws IOException {
+
+    private void testDescriptor(List<String> descriptorPaths, List<InputStream> descriptors) throws IOException {
+        Path archetypePath = Paths.get("");
         OutputStream stream = new ByteArrayOutputStream();
         TemplateModel model = new TemplateModel();
         InputStream template = MustacheHandlerTest.class.getClassLoader()
                 .getResourceAsStream(TEMPLATE_RESOURCE);
         assertThat(template, is(notNullValue()));
 
-        for (InputStream is : descriptors) {
+        for (int i = 0; i < descriptorPaths.size(); i++) {
+            String descriptorPath = descriptorPaths.get(i);
+            InputStream is = descriptors.get(i);
             assertThat(is, is(notNullValue()));
             model.mergeModel(ModelAST.create(
-                    ArchetypeDescriptor.read(is).output().model(),
+                    ArchetypeDescriptor.read(archetypePath, Paths.get(descriptorPath), is)
+                                       .output().model(),
                     null,
-                    null)
-            );
+                    null));
         }
 
         MustacheHandler.renderMustacheTemplate(template, TEMPLATE_RESOURCE, stream, model);
 
         assertThat(stream.toString(), containsString(expected));
 
-        Arrays.stream(descriptors).forEach(desc -> {
+        descriptors.forEach(desc -> {
             try {
                 desc.close();
             } catch (IOException ioException) {
