@@ -35,6 +35,7 @@ import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.FileSet;
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.Property;
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.Replacement;
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.Transformation;
+import io.helidon.build.common.PropertyEvaluator;
 import io.helidon.build.common.Strings;
 
 import io.helidon.build.common.test.utils.TestFiles;

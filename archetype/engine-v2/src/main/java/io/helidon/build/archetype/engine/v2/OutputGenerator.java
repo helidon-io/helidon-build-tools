@@ -34,7 +34,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.archive.Archetype;
-import io.helidon.build.archetype.engine.v2.archive.ArchetypeException;
 import io.helidon.build.archetype.engine.v2.archive.ZipArchetype;
 import io.helidon.build.archetype.engine.v2.descriptor.ListType;
 import io.helidon.build.archetype.engine.v2.descriptor.MapType;
@@ -64,6 +63,8 @@ import io.helidon.build.archetype.engine.v2.interpreter.TransformationAST;
 import io.helidon.build.archetype.engine.v2.interpreter.ValueTypeAST;
 import io.helidon.build.archetype.engine.v2.interpreter.Visitable;
 import io.helidon.build.archetype.engine.v2.template.TemplateModel;
+import io.helidon.build.common.PathFilters;
+import io.helidon.build.common.PropertyEvaluator;
 
 /**
  * Generate Output files from interpreter.
@@ -163,9 +164,7 @@ public class OutputGenerator {
                             new FileOutputStream(outputFile),
                             model);
                 } else {
-                    Files.copy(
-                            inputStream,
-                            outputFile.toPath());
+                    Files.copy(inputStream, outputFile.toPath());
                 }
             }
         }
@@ -246,54 +245,26 @@ public class OutputGenerator {
         List<String> resolved = new LinkedList<>();
 
         for (String path : paths) {
-            if (path.contains("**/*")) {
-                try {
-                    String extension = path.substring(path.lastIndexOf("."));
-                    resolved.addAll(archetype.getPaths().stream()
-                            .map(s -> getPath(directory, s))
-                            .filter(Objects::nonNull)
-                            .filter(s -> !Path.of(s).toUri().toString().contains("../"))
-                            .filter(s -> s.contains(extension))
-                            .collect(Collectors.toList()));
-                } catch (IndexOutOfBoundsException e) {
-                    resolved.addAll(archetype.getPaths().stream()
-                            .map(s -> getPath(directory, s))
-                            .filter(Objects::nonNull)
-                            .filter(s -> !Path.of(s).toUri().toString().contains("../"))
-                            .collect(Collectors.toList()));
-                }
-            } else {
-                if (checkFullPath(path, directory)) {
-                    resolved.add(path);
-                }
-            }
+            String finalDirectory = getDirectory(directory);
+            resolved.addAll(archetype.getPaths().stream()
+                    .filter(s -> PathFilters.matches(resolvePath(finalDirectory, path)).test(Path.of(s), Path.of("/")))
+                    .map(s -> s.substring(finalDirectory.length() + 1))
+                    .collect(Collectors.toList()));
         }
         return resolved;
     }
 
-    private boolean checkFullPath(String include, String directory) {
-        if (archetype instanceof ZipArchetype) {
-            include = Path.of("/" + directory).resolve(include).toString();
-        }
-        String path = getPath(directory, include);
-        return path != null;
+    private String resolvePath(String first, String second) {
+        String resolved = first + "/" + second;
+        return resolved
+                .replaceAll("///", "/")
+                .replaceAll("//", "/");
     }
 
-    private String getPath(String directory, String file) {
-        String path;
-        try {
-            if (archetype instanceof ZipArchetype) {
-                directory = "/" + directory;
-                path = file.startsWith(directory)
-                        ? archetype.getPath(file).toString().substring(directory.length() + 1)
-                        : null;
-            } else {
-                path = archetype.getPath(directory).relativize(Path.of(file)).toString();
-            }
-        } catch (ArchetypeException e) {
-            return null;
-        }
-        return path;
+    private String getDirectory(String directory) {
+        return archetype instanceof ZipArchetype
+                ? "/" + directory
+                : directory;
     }
 
     private TemplateModel createTemplatesModel(TemplatesAST templatesAST) {
@@ -323,65 +294,10 @@ public class OutputGenerator {
                 .collect(Collectors.toList());
 
         for (Replacement rep : replacements) {
-            String replacement = evaluate(rep.replacement(), properties);
+            String replacement = PropertyEvaluator.evaluate(rep.replacement(), properties);
             output = output.replaceAll(rep.regex(), replacement);
         }
         return output;
-    }
-
-    /**
-     * Resolve a property of the form <code>${prop}</code>.
-     *
-     * @param input input to be resolved
-     * @param properties properties values
-     * @return resolved property
-     */
-    private String evaluate(String input, Map<String, String> properties) {
-        int start = input.indexOf("${");
-        int end = input.indexOf("}", start);
-        int index = 0;
-        String resolved = null;
-        while (start >= 0 && end > 0) {
-            if (resolved == null) {
-                resolved = input.substring(index, start);
-            } else {
-                resolved += input.substring(index, start);
-            }
-            String propName = input.substring(start + 2, end);
-
-            int matchStart = 0;
-            do {
-                matchStart = propName.indexOf("/", matchStart + 1);
-            } while (matchStart > 0 && propName.charAt(matchStart - 1) == '\\');
-            int matchEnd = matchStart;
-            do {
-                matchEnd = propName.indexOf("/", matchEnd + 1);
-            } while (matchStart > 0 && propName.charAt(matchStart - 1) == '\\');
-
-            String regexp = null;
-            String replace = null;
-            if (matchStart > 0 && matchEnd > matchStart) {
-                regexp = propName.substring(matchStart + 1, matchEnd);
-                replace = propName.substring(matchEnd + 1);
-                propName = propName.substring(0, matchStart);
-            }
-
-            String propValue = properties.get(propName);
-            if (propValue == null) {
-                propValue = "";
-            } else if (regexp != null && replace != null) {
-                propValue = propValue.replaceAll(regexp, replace);
-            }
-
-            resolved += propValue;
-            index = end + 1;
-            start = input.indexOf("${", index);
-            end = input.indexOf("}", index);
-        }
-        if (resolved != null) {
-            return resolved + input.substring(index);
-        }
-        return input;
     }
 
     /**
