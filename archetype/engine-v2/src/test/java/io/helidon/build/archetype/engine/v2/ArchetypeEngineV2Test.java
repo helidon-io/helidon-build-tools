@@ -22,7 +22,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +29,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.archive.Archetype;
 import io.helidon.build.archetype.engine.v2.prompter.DefaultPrompterImpl;
+import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.Strings;
 import io.helidon.build.common.test.utils.TestFiles;
 
@@ -47,12 +47,7 @@ class ArchetypeEngineV2Test extends ArchetypeBaseTest {
         File targetDir = new File(new File("").getAbsolutePath(), "target");
         File outputDir = new File(targetDir, "test-project");
         Path outputDirPath = outputDir.toPath();
-        if (Files.exists(outputDirPath)) {
-            Files.walk(outputDirPath)
-                    .sorted(Comparator.reverseOrder())
-                    .map(Path::toFile)
-                    .forEach(File::delete);
-        }
+        FileUtils.deleteDirectory(outputDirPath);
         assertThat(Files.exists(outputDirPath), is(false));
 
         Map<String, String> initContextValues = new HashMap<>();
@@ -148,7 +143,7 @@ class ArchetypeEngineV2Test extends ArchetypeBaseTest {
             fail("should have failed");
         } catch (IllegalStateException e) {
             String msg = e.getMessage();
-            assertThat("Got " + msg, msg.contains(fixPaths("Duplicate include: 'se/se.xml'")), is(true));
+            assertThat("Got " + msg, msg.contains(fixPaths("Include cycle: 'se/se.xml'")), is(true));
             assertThat("Got " + msg, msg.contains("included via <source> in 'flavor.xml'"), is(true));
             assertThat("Got " + msg, msg.contains(fixPaths("and again via <exec> in 'se/bare/bare-se.xml'")), is(true));
         }

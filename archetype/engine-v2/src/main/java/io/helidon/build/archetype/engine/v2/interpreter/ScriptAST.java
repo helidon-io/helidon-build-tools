@@ -17,7 +17,7 @@
 package io.helidon.build.archetype.engine.v2.interpreter;
 
 /**
- * Archetype source AST node.
+ * Archetype script AST node.
  */
 public abstract class ScriptAST extends ASTNode {
 

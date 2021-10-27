@@ -234,7 +234,8 @@ public class Interpreter implements Visitor<ASTNode> {
             String existingType = existing.includeType();
             String scriptPath = script.location().scriptPath();
             String scriptType = script.includeType();
-            throw new IllegalStateException("Duplicate include: '" + descriptorPath
+            String error = isCycle(script, descriptorPath) ? "Include cycle" : "Duplicate include";
+            throw new IllegalStateException(error + ": '" + descriptorPath
                                             + "' is included via <" + existingType
                                             + "> in '" + existingPath + "' and again via <"
                                             + scriptType
@@ -242,7 +243,21 @@ public class Interpreter implements Visitor<ASTNode> {
         }
     }
 
-    private void setParent(ASTNode node, ASTNode parent) {
+    private static boolean isCycle(ScriptAST duplicate, String descriptorPath) {
+        ASTNode parent = duplicate.parent();
+        while (parent != null) {
+            if (parent instanceof ScriptAST) {
+                ScriptAST scriptParent = (ScriptAST) parent;
+                if (scriptParent.location().scriptPath().equals(descriptorPath)) {
+                    return true;
+                }
+            }
+            parent = parent.parent();
+        }
+        return false;
+    }
+
+    private static void setParent(ASTNode node, ASTNode parent) {
         if (node.parent() == null && parent != null) {
             node.parent(parent);
         }
@@ -506,9 +521,7 @@ public class Interpreter implements Visitor<ASTNode> {
 
     private Map<String, String> convertContext() {
         Map<String, String> result = new HashMap<>();
-        pathToContextNodeMap.forEach((key, value) -> {
-            result.putIfAbsent(key, value.accept(contextToStringConvertor, null));
-        });
+        pathToContextNodeMap.forEach((key, value) -> result.putIfAbsent(key, value.accept(contextToStringConvertor, null)));
         return result;
     }
 
