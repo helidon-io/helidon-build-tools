@@ -16,11 +16,9 @@
 
 package io.helidon.build.archetype.engine.v2.template;
 
-import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
+import java.util.Objects;
 
 /**
  * Map with unique key. For the same key, Object are merge together
@@ -33,11 +31,9 @@ public class MergingMap<K, V> extends LinkedHashMap<K, V> {
 
     @Override
     public V put(K key, V value) {
+        Objects.requireNonNull(key, "key is null");
         if (this.containsKey(key)) {
-            try {
-                value = merge(value, this.get(key));
-            } catch (IOException ignored) {
-            }
+            value = merge(value, this.get(key));
         }
         return super.put(key, value);
     }
@@ -49,16 +45,12 @@ public class MergingMap<K, V> extends LinkedHashMap<K, V> {
         }
     }
 
-    private V merge(V first, V second) throws IOException {
+    private V merge(V first, V second) {
         if (second == null) {
             return first;
         }
         if (first == null) {
             return second;
-        }
-
-        if (first instanceof ValueType) {
-            return mergeValues((ValueType) first, (ValueType) second);
         }
 
         if (first instanceof TemplateList) {
@@ -83,43 +75,6 @@ public class MergingMap<K, V> extends LinkedHashMap<K, V> {
         second.lists().addAll(first.lists());
         second.maps().addAll(first.maps());
         return (V) second;
-    }
-
-    private V mergeValues(ValueType first, ValueType second) throws IOException {
-        String value = mergeValue(first, second);
-        String url = mergeURL(first, second);
-        String file = mergeFile(first, second);
-        String template = mergeTemplate(first, second);
-        int order = mergeOrder(first, second);
-        ValueType valueType =  new ValueType(url, file, template, order, first.ifProperties());
-        valueType.value(value);
-        return (V) valueType;
-    }
-
-    private int mergeOrder(ValueType first, ValueType second) {
-        return Math.min(first.order(), second.order());
-    }
-
-    private String mergeTemplate(ValueType first, ValueType second) {
-        if (first.template() == null || second.template() == null) {
-            return "mustache";
-        }
-        if (first.template().equals("mustache") || second.template().equals("mustache")) {
-            return "mustache";
-        }
-        return first.template();
-    }
-
-    private String mergeFile(ValueType first, ValueType second) throws IOException {
-        return first.file();
-    }
-
-    private String mergeURL(ValueType first, ValueType second) {
-        return first.url() == null ? second.url() : first.url();
-    }
-
-    private String mergeValue(ValueType first, ValueType second) {
-        return first.value() + second.value();
     }
 
 }

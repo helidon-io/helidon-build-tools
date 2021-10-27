@@ -26,6 +26,7 @@ import java.util.List;
 
 import io.helidon.build.archetype.engine.v2.MustacheHandler;
 import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
+import io.helidon.build.archetype.engine.v2.interpreter.ModelAST;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -77,9 +78,11 @@ public class MustacheHandlerTest {
             String descriptorPath = descriptorPaths.get(i);
             InputStream is = descriptors.get(i);
             assertThat(is, is(notNullValue()));
-            model.mergeModel(
+            model.mergeModel(ModelAST.create(
                     ArchetypeDescriptor.read(archetypePath, Paths.get(descriptorPath), is)
-                            .output().model());
+                                       .output().model(),
+                    null,
+                    null));
         }
 
         MustacheHandler.renderMustacheTemplate(template, TEMPLATE_RESOURCE, stream, model);

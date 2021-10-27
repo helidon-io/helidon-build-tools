@@ -30,7 +30,7 @@
                 <value key="id">copy-libs</value>
             </map>
             <list key="dependencies">
-                <map if="${media-support.json.provider} == jsonb" order="10">
+                <map order="10">
                     <value key="groupId" file="src/test/resources/template/helidon-media-groupId.txt" template="mustache"/>
                     <value key="artifactId">helidon-media-jsonb</value>
                 </map>

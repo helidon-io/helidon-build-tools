@@ -27,9 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-import io.helidon.build.archetype.engine.v2.PropertyEvaluator;
 import io.helidon.build.archetype.engine.v2.archive.Archetype;
 import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
+import io.helidon.build.common.PropertyEvaluator;
 
 /**
  * Interpret user inputs and produce new steps.

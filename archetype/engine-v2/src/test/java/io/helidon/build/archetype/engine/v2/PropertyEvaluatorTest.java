@@ -17,6 +17,7 @@ package io.helidon.build.archetype.engine.v2;
 
 import java.util.Map;
 
+import io.helidon.build.common.PropertyEvaluator;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
