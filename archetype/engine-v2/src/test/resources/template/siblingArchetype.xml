@@ -23,7 +23,7 @@
     <output>
         <model>
             <list key="dependencies">
-                <map if="${media-support.json.provider} == jackson" order="50">
+                <map order="50">
                     <value key="groupId">io.helidon.media</value>
                     <value key="artifactId">helidon-media-jackson</value>
                 </map>

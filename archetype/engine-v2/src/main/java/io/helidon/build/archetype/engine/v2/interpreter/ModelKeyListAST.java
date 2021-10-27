@@ -24,15 +24,13 @@ import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyList;
 /**
  * Archetype list AST node with key attribute used in {@link ModelAST} and {@link MapTypeAST}.
  */
-public class ModelKeyListAST extends ASTNode implements ConditionalNode {
+public class ModelKeyListAST extends ListTypeAST implements ConditionalNode {
 
-    private int order = 100;
     private final String key;
 
     ModelKeyListAST(String key, int order, ASTNode parent, Location location) {
-        super(parent, location);
+        super(order, parent, location);
         this.key = key;
-        this.order = order;
     }
 
     /**
@@ -42,15 +40,6 @@ public class ModelKeyListAST extends ASTNode implements ConditionalNode {
      */
     public String key() {
         return key;
-    }
-
-    /**
-     * Get the list order.
-     *
-     * @return order
-     */
-    public int order() {
-        return order;
     }
 
     @Override
