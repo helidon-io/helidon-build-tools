@@ -337,8 +337,6 @@ abstract class ArchetypeInvoker {
                 params.put(HELIDON_VERSION_PROPERTY, initOptions.helidonVersion());
             }
 
-            Path projectDir = projectDirSupplier().apply(initOptions().projectName());
-
             ArchetypeEngineV2 engine = new ArchetypeEngineV2(
                     getArchetype(initOptions().archetypePath()),
                     ENTRY_POINT_DESCRIPTOR,
@@ -348,8 +346,7 @@ abstract class ArchetypeInvoker {
                     false,
                     List.of());
 
-            engine.generate(projectDir.toFile());
-            return projectDir;
+            return engine.generate(projectDirSupplier());
         }
 
         @Override

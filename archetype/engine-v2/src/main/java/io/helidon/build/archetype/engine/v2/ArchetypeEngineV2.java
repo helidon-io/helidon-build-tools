@@ -16,14 +16,15 @@
 
 package io.helidon.build.archetype.engine.v2;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import io.helidon.build.archetype.engine.v2.archive.Archetype;
 import io.helidon.build.archetype.engine.v2.interpreter.ASTNode;
@@ -87,9 +88,10 @@ public class ArchetypeEngineV2 {
     /**
      * Run the archetype.
      *
-     * @param outputDirectory output directory
+     * @param projectDirSupplier maps project name to project directory
+     * @return The project directory
      */
-    public void generate(File outputDirectory) {
+    public Path generate(Function<String, Path> projectDirSupplier) {
         Flow flow = Flow.builder()
                 .archetype(archetype)
                 .startDescriptorPath(startPoint)
@@ -98,8 +100,7 @@ public class ArchetypeEngineV2 {
                 .addAdditionalVisitor(additionalVisitors)
                 .build();
 
-        ContextAST context = new ContextAST();
-        initContext(context, outputDirectory);
+        ContextAST context = initContext();
         flow.build(context);
         while (!flow.unresolvedInputs().isEmpty()) {
             UserInputAST userInputAST = flow.unresolvedInputs().get(0);
@@ -120,16 +121,21 @@ public class ArchetypeEngineV2 {
             flow.build(contextAST);
         }
 
+        String projectName = ((ContextTextAST) flow.pathToContextNodeMap().get("project.name")).text();
+        Path projectDir = projectDirSupplier.apply(projectName);
+        ContextTextAST projectDirNode = new ContextTextAST("project.directory");
+        projectDirNode.text(projectDir.toString());
+        context.children().add(projectDirNode);
+        flow.pathToContextNodeMap().put("project.directory", projectDirNode);
+
         flow.build(new ContextAST());
         Flow.Result result = flow.result().orElseThrow(() -> {
             throw new RuntimeException("No results after the Flow instance finished its work. Project cannot be generated.");
         });
 
-        String projectName = ((ContextTextAST) flow.pathToContextNodeMap().get("project.name")).text();
-
         OutputGenerator outputGenerator = new OutputGenerator(result);
         try {
-            outputGenerator.generate(outputDirectory);
+            outputGenerator.generate(projectDir.toFile());
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -139,16 +145,16 @@ public class ArchetypeEngineV2 {
                 throw new RuntimeException(e);
             }
         }
+        return projectDir;
     }
 
-    private void initContext(ContextAST context, File outputDirectory) {
+    private static ContextAST initContext() {
+        ContextAST context = new ContextAST();
         ContextTextAST currentDateNode = new ContextTextAST("current.date");
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss z yyyy");
         ZonedDateTime now = ZonedDateTime.now();
         currentDateNode.text(dtf.format(now));
         context.children().add(currentDateNode);
-        ContextTextAST currentDirNode = new ContextTextAST("project.directory");
-        currentDirNode.text(outputDirectory.toString());
-        context.children().add(currentDirNode);
+        return context;
     }
 }
