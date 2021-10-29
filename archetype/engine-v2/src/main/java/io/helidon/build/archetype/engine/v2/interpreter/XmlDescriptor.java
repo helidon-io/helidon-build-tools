@@ -24,7 +24,7 @@ import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
 /**
  * Archetype descriptor.
  */
-class XmlDescriptor extends ASTNode {
+public class XmlDescriptor extends ASTNode {
 
     private final Map<String, String> archetypeAttributes = new LinkedHashMap<>();
     private String help;

@@ -20,7 +20,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -48,19 +47,20 @@ public class Interpreter implements Visitor<ASTNode> {
     private final List<Visitor<ASTNode>> additionalVisitors;
     private final Map<String, ScriptAST> pathToSourceNode = new HashMap<>();
     private final String startDescriptorPath;
+    private final Map<String, String> externalDefaults;
     private boolean skipOptional;
     private boolean canBeGenerated = false;
 
-    Interpreter(
-            Archetype archetype,
-            String startDescriptorPath,
-            boolean skipOptional,
-            List<Visitor<ASTNode>> additionalVisitors
-    ) {
+    Interpreter(Archetype archetype,
+                String startDescriptorPath,
+                boolean skipOptional,
+                List<Visitor<ASTNode>> additionalVisitors,
+                Map<String, String> externalDefaults) {
         this.archetype = archetype;
         pathToContextNodeMap = new HashMap<>();
         this.additionalVisitors = additionalVisitors;
         this.startDescriptorPath = startDescriptorPath;
+        this.externalDefaults = externalDefaults;
         this.skipOptional = skipOptional;
     }
 
@@ -115,7 +115,7 @@ public class Interpreter implements Visitor<ASTNode> {
     @Override
     public void visit(InputBooleanAST input, ASTNode parent) {
         applyAdditionalVisitors(input);
-        input.defaultValue(replaceDefaultValue(input.defaultValue()));
+        replaceDefaultValue(input);
         validate(input);
         pushToStack(input);
         boolean result = resolve(input);
@@ -135,7 +135,7 @@ public class Interpreter implements Visitor<ASTNode> {
     @Override
     public void visit(InputEnumAST input, ASTNode parent) {
         applyAdditionalVisitors(input);
-        input.defaultValue(replaceDefaultValue(input.defaultValue()));
+        replaceDefaultValue(input);
         validate(input);
         pushToStack(input);
         boolean result = resolve(input);
@@ -150,7 +150,7 @@ public class Interpreter implements Visitor<ASTNode> {
     @Override
     public void visit(InputListAST input, ASTNode parent) {
         applyAdditionalVisitors(input);
-        input.defaultValue(replaceDefaultValue(input.defaultValue()));
+        replaceDefaultValue(input);
         validate(input);
         pushToStack(input);
         boolean result = resolve(input);
@@ -165,8 +165,7 @@ public class Interpreter implements Visitor<ASTNode> {
     @Override
     public void visit(InputTextAST input, ASTNode parent) {
         applyAdditionalVisitors(input);
-        input.defaultValue(replaceDefaultValue(input.defaultValue()));
-        input.placeHolder(replaceDefaultValue(input.placeHolder()));
+        replaceDefaultValue(input);
         validate(input);
         pushToStack(input);
         boolean result = resolve(input);
@@ -476,7 +475,7 @@ public class Interpreter implements Visitor<ASTNode> {
         if (canBeGenerated) {
             return;
         }
-        Flow flow = new Flow(archetype, startDescriptorPath, true, Collections.emptyList());
+        Flow flow = new Flow(archetype, startDescriptorPath, true, List.of(), Map.of());
         ContextAST context = new ContextAST();
         context.children().addAll(pathToContextNodeMap.values());
         FlowState state = flow.build(context);
@@ -507,9 +506,6 @@ public class Interpreter implements Visitor<ASTNode> {
 
     private void validate(InputNodeAST input) {
         if (input.isOptional() && input.defaultValue() == null) {
-            if (input instanceof InputTextAST && ((InputTextAST) input).placeHolder() != null) {
-                return;
-            }
             throw new InterpreterException(
                     String.format("Input node %s is optional but it does not have a default value", input.path()));
         }
@@ -525,9 +521,18 @@ public class Interpreter implements Visitor<ASTNode> {
         return result;
     }
 
-    private String replaceDefaultValue(String defaultValue) {
-        if (defaultValue == null) {
-            return null;
+    private void replaceDefaultValue(InputNodeAST input) {
+        input.defaultValue(replaceDefaultValue(input.path(), input.defaultValue()));
+    }
+
+    private String replaceDefaultValue(String path, String defaultValue) {
+        String externalDefault = externalDefaults.get(path);
+        if (externalDefault == null) {
+            if (defaultValue == null) {
+                return null;
+            }
+        } else {
+            defaultValue = externalDefault;
         }
         if (!defaultValue.contains("${")) {
             return defaultValue;

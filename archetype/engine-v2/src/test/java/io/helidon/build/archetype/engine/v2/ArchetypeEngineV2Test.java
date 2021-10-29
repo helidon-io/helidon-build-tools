@@ -50,17 +50,19 @@ class ArchetypeEngineV2Test extends ArchetypeBaseTest {
         FileUtils.deleteDirectory(outputDirPath);
         assertThat(Files.exists(outputDirPath), is(false));
 
-        Map<String, String> initContextValues = new HashMap<>();
-        initContextValues.put("flavor", "se");
-        initContextValues.put("base", "bare");
-        initContextValues.put("build-system", "maven");
+        Map<String, String> presets = new HashMap<>();
+        presets.put("flavor", "se");
+        presets.put("base", "bare");
+        presets.put("build-system", "maven");
+        Map<String, String> defaults = Map.of("project.name", "test-project");
         ArchetypeEngineV2 archetypeEngineV2 = new ArchetypeEngineV2(getArchetype(
                 Paths.get("src/main/resources/archetype").toFile()),
-                "flavor.xml",
-                new DefaultPrompterImpl(true),
-                initContextValues,
-                true,
-                List.of());
+                                                                    "flavor.xml",
+                                                                    new DefaultPrompterImpl(true),
+                                                                    presets,
+                                                                    defaults,
+                                                                    true,
+                                                                    List.of());
 
         archetypeEngineV2.generate(outputDir);
         assertThat(Files.exists(outputDirPath), is(true));
@@ -127,17 +129,17 @@ class ArchetypeEngineV2Test extends ArchetypeBaseTest {
     void generateWithIncludeCycleFails() throws IOException {
         File outputDir = Files.createTempDirectory("include-cycle").toFile();
 
-        Map<String, String> initContextValues = new HashMap<>();
-        initContextValues.put("flavor", "se");
-        initContextValues.put("base", "bare");
-        initContextValues.put("build-system", "maven");
+        Map<String, String> presets = new HashMap<>();
+        presets.put("flavor", "se");
+        presets.put("base", "bare");
+        presets.put("build-system", "maven");
         Archetype archetype = getArchetype("include-cycle");
         ArchetypeEngineV2 archetypeEngineV2 = new ArchetypeEngineV2(archetype,
                                                                     "flavor.xml",
                                                                     new DefaultPrompterImpl(true),
-                                                                    initContextValues,
-                                                                    true,
-                                                                    List.of());
+                                                                    presets,
+                                                                    Map.of(),
+                                                                    true, List.of());
         try {
             archetypeEngineV2.generate(outputDir);
             fail("should have failed");
@@ -153,17 +155,17 @@ class ArchetypeEngineV2Test extends ArchetypeBaseTest {
     void generateWithDuplicateIncludeFails() throws IOException {
         File outputDir = Files.createTempDirectory("duplicate-include").toFile();
 
-        Map<String, String> initContextValues = new HashMap<>();
-        initContextValues.put("flavor", "se");
-        initContextValues.put("base", "bare");
-        initContextValues.put("build-system", "maven");
+        Map<String, String> presets = new HashMap<>();
+        presets.put("flavor", "se");
+        presets.put("base", "bare");
+        presets.put("build-system", "maven");
         Archetype archetype = getArchetype("duplicate-include");
         ArchetypeEngineV2 archetypeEngineV2 = new ArchetypeEngineV2(archetype,
                                                                     "flavor.xml",
                                                                     new DefaultPrompterImpl(true),
-                                                                    initContextValues,
-                                                                    true,
-                                                                    List.of());
+                                                                    presets,
+                                                                    Map.of(),
+                                                                    true, List.of());
         try {
             archetypeEngineV2.generate(outputDir);
             fail("should have failed");

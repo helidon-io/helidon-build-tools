@@ -54,10 +54,15 @@ public final class InitOptions {
     private final String archetypeName;
     private final String archetypePath;
     private final ArchetypeInvoker.EngineVersion engineVersion;
+    private final String projectNameOption;
+    private final String groupIdOption;
+    private final String artifactIdOption;
+    private final String packageNameOption;
+    private String projectName;
     private String groupId;
     private String artifactId;
     private String packageName;
-    private String projectName;
+
 
     /**
      * Helidon flavors.
@@ -104,12 +109,19 @@ public final class InitOptions {
         this.helidonVersion = version;
         this.flavor = flavor;
         this.archetypeName = archetypeName;
+        this.archetypePath = archetypePath;
+        this.engineVersion = getEngineVersion(engineVersion);
+        this.projectNameOption = projectName;
+        this.groupIdOption = groupId;
+        this.artifactIdOption = artifactId;
+        this.packageNameOption = packageName;
+
+        // The following will be updated by applyConfig:
+
+        this.projectName = projectName;
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.packageName = packageName;
-        this.projectName = projectName;
-        this.archetypePath = archetypePath;
-        this.engineVersion = getEngineVersion(engineVersion);
     }
 
     private ArchetypeInvoker.EngineVersion getEngineVersion(String version) {
@@ -173,7 +185,7 @@ public final class InitOptions {
     }
 
     /**
-     * Get the project name.
+     * Get the project name. May have been updated from user config.
      *
      * @return project name
      */
@@ -182,7 +194,7 @@ public final class InitOptions {
     }
 
     /**
-     * Get the groupId.
+     * Get the groupId. May have been updated from user config.
      *
      * @return groupId
      */
@@ -191,7 +203,7 @@ public final class InitOptions {
     }
 
     /**
-     * Get the artifactId.
+     * Get the artifactId. May have been updated from user config.
      *
      * @return artifactId
      */
@@ -200,12 +212,48 @@ public final class InitOptions {
     }
 
     /**
-     * Get the package name.
+     * Get the package name. May have been updated from user config.
      *
      * @return package name
      */
     String packageName() {
         return packageName;
+    }
+
+    /**
+     * Get the project name option.
+     *
+     * @return project name
+     */
+    String projectNameOption() {
+        return projectNameOption;
+    }
+
+    /**
+     * Get the groupId option.
+     *
+     * @return groupId
+     */
+    String groupIdOption() {
+        return groupIdOption;
+    }
+
+    /**
+     * Get the artifactId.
+     *
+     * @return artifactId
+     */
+    String artifactIdOption() {
+        return artifactIdOption;
+    }
+
+    /**
+     * Get the package name.
+     *
+     * @return package name
+     */
+    String packageNameOption() {
+        return packageNameOption;
     }
 
     /**

@@ -47,33 +47,36 @@ public class ArchetypeEngineV2 {
     private final Archetype archetype;
     private final String startPoint;
     private final Prompter prompter;
-    private final Map<String, String> contextValues = new HashMap<>();
+    private final Map<String, String> externalValues = new HashMap<>();
+    private final Map<String, String> externalDefaults = new HashMap<>();
     private boolean skipOptional;
     private List<Visitor<ASTNode>> additionalVisitors = new ArrayList<>();
 
     /**
      * Create a new archetype engine instance.
-     *
-     * @param archetype          archetype
+     *  @param archetype          archetype
      * @param startPoint         entry point in the archetype
      * @param prompter           prompter
-     * @param params             external Flow Context Values
+     * @param presets            external Flow Context values
+     * @param defaults           external Flow Context default values
      * @param skipOptional       mark that indicates whether to skip optional input
      * @param additionalVisitors additional Visitor for the {@code Interpreter}
      */
-    public ArchetypeEngineV2(
-            Archetype archetype,
-            String startPoint,
-            Prompter prompter,
-            Map<String, String> params,
-            boolean skipOptional,
-            List<Visitor<ASTNode>> additionalVisitors
-    ) {
+    public ArchetypeEngineV2(Archetype archetype,
+                             String startPoint,
+                             Prompter prompter,
+                             Map<String, String> presets,
+                             Map<String, String> defaults,
+                             boolean skipOptional,
+                             List<Visitor<ASTNode>> additionalVisitors) {
         this.archetype = archetype;
         this.startPoint = startPoint;
         this.prompter = prompter;
-        if (params != null) {
-            contextValues.putAll(params);
+        if (presets != null) {
+            externalValues.putAll(presets);
+        }
+        if (defaults != null) {
+            externalDefaults.putAll(defaults);
         }
         this.skipOptional = skipOptional;
         if (additionalVisitors != null) {
@@ -91,6 +94,7 @@ public class ArchetypeEngineV2 {
                 .archetype(archetype)
                 .startDescriptorPath(startPoint)
                 .skipOptional(skipOptional)
+                .externalDefaults(externalDefaults)
                 .addAdditionalVisitor(additionalVisitors)
                 .build();
 
@@ -99,12 +103,12 @@ public class ArchetypeEngineV2 {
         flow.build(context);
         while (!flow.unresolvedInputs().isEmpty()) {
             UserInputAST userInputAST = flow.unresolvedInputs().get(0);
-            ContextNodeAST contextNodeAST = null;
-            if (contextValues.containsKey(userInputAST.path())) {
+            ContextNodeAST contextNodeAST;
+            if (externalValues.containsKey(userInputAST.path())) {
                 contextNodeAST = ContextNodeASTFactory.create(
                         (InputNodeAST) userInputAST.children().get(0),
                         userInputAST.path(),
-                        contextValues.get(userInputAST.path())
+                        externalValues.get(userInputAST.path())
                 );
             } else {
                 Prompt<?> prompt = PromptFactory.create(userInputAST, flow.canBeGenerated());
@@ -120,6 +124,8 @@ public class ArchetypeEngineV2 {
         Flow.Result result = flow.result().orElseThrow(() -> {
             throw new RuntimeException("No results after the Flow instance finished its work. Project cannot be generated.");
         });
+
+        String projectName = ((ContextTextAST) flow.pathToContextNodeMap().get("project.name")).text();
 
         OutputGenerator outputGenerator = new OutputGenerator(result);
         try {
