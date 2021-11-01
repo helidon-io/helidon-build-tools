@@ -284,7 +284,7 @@ abstract class ArchetypeInvoker {
         private static final String PROJECT_NAME_PROPERTY = "project.name";
         private static final String GROUP_ID_PROPERTY = "project.groupId";
         private static final String ARTIFACT_ID_PROPERTY = "project.artifactId";
-        private static final String PACKAGE_NAME_PROPERTY = "package.name";
+        private static final String PACKAGE_NAME_PROPERTY = "package";
         private static final String HELIDON_VERSION_PROPERTY = "helidon.version";
         private static final String BUILD_SYSTEM_PROPERTY = "build-system";
         private static final String ARCHETYPE_BASE_PROPERTY = "base";
