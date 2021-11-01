@@ -45,7 +45,6 @@ class DirectoryArchetype implements Archetype {
      */
     DirectoryArchetype(File directory) {
         this.directory = directory;
-        System.out.println("DirectoryArchetype: " + directory.getAbsolutePath());
     }
 
 
