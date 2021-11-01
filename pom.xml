@@ -912,11 +912,6 @@
                 <artifactId>maven-embedder</artifactId>
                 <version>${version.lib.maven-embedder}</version>
             </dependency>
-            <dependency>
-                <groupId>org.commonmark</groupId>
-                <artifactId>commonmark</artifactId>
-                <version>${version.lib.commonmark}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 

@@ -18,11 +18,6 @@ package io.helidon.build.archetype.engine.v2.markdown;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.commonmark.node.AbstractVisitor;
-import org.commonmark.node.Node;
-import org.commonmark.node.Text;
-import org.commonmark.parser.PostProcessor;
-
 /**
  * PostProcessor for the {@code KramdownNode}.
  */

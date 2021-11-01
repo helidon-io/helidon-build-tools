@@ -18,11 +18,6 @@ package io.helidon.build.archetype.engine.v2.markdown;
 import java.util.Collections;
 import java.util.Set;
 
-import org.commonmark.node.Node;
-import org.commonmark.renderer.NodeRenderer;
-import org.commonmark.renderer.html.HtmlNodeRendererContext;
-import org.commonmark.renderer.html.HtmlWriter;
-
 /**
  * Render {@code KramdownNode} as html.
  */

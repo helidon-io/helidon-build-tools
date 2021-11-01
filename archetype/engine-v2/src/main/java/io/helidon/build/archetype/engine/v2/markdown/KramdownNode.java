@@ -15,7 +15,6 @@
  */
 package io.helidon.build.archetype.engine.v2.markdown;
 
-import org.commonmark.node.CustomNode;
 
 /**
  * Base class for different types of AST nodes that represent markdown text written using kramdown extension.

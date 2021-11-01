@@ -15,10 +15,6 @@
  */
 package io.helidon.build.archetype.engine.v2.markdown;
 
-import org.commonmark.node.Node;
-import org.commonmark.renderer.html.HtmlNodeRendererContext;
-import org.commonmark.renderer.html.HtmlWriter;
-
 /**
  * Render AST nodes that are subclasses of {@link KramdownNode} as html.
  */

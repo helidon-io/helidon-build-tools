@@ -18,9 +18,6 @@ package io.helidon.build.archetype.engine.v2.markdown;
 import java.util.Collections;
 import java.util.Set;
 
-import org.commonmark.Extension;
-import org.commonmark.parser.Parser;
-import org.commonmark.renderer.html.HtmlRenderer;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -52,7 +49,8 @@ class KramdownExtensionTest {
                         "    response.send(\"OK\");\n" +
                         "});\n" +
                         "```\n" +
-                        "[The link](https://example.com)",
+                        "[The link](https://example.com)\n" +
+                        "baz `code` bar",
                 "<p>foo <strong>bold text</strong> <div style=\"background-color:#cce5ff; color:#004085; border-color:#b8daff;" +
                         "\">This is an info colored text</div> boo <em>italic</em></p>\n" +
                         "<pre><code class=\"language-java\">request.content().as(JsonObject.class).thenAccept(json -&gt; {\n" +
@@ -60,7 +58,9 @@ class KramdownExtensionTest {
                         "    response.send(&quot;OK&quot;);\n" +
                         "});\n" +
                         "</code></pre>\n" +
-                        "<p><a href=\"https://example.com\">The link</a></p>\n");
+                        "<p><a href=\"https://example.com\">The link</a>\n" +
+                        "baz <code>code</code> bar</p>\n"
+        );
     }
 
     @Test
@@ -79,6 +79,7 @@ class KramdownExtensionTest {
     }
 
     private String render(String source) {
+        Node parse = PARSER.parse(source);
         return RENDERER.render(PARSER.parse(source));
     }
 

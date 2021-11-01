@@ -15,16 +15,12 @@
  */
 package io.helidon.build.archetype.engine.v2.markdown;
 
-import org.commonmark.Extension;
-import org.commonmark.parser.Parser;
-import org.commonmark.renderer.html.HtmlRenderer;
-
 /**
  * Extension that provides support for the non-standard markdown syntax (kramdown extension).
  * See <a href="https://kramdown.gettalong.org/syntax.html#extensions>Kramdown extensions</a>.
  * <p>
  * Create it with {@link #create()} and then configure it on the builders
- * ({@link org.commonmark.parser.Parser.Builder#extensions(Iterable)},
+ * ({@link Parser.Builder#extensions(Iterable)},
  * {@link HtmlRenderer.Builder#extensions(Iterable)}).
  * </p>
  */

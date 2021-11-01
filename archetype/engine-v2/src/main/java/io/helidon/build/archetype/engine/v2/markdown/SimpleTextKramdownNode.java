@@ -18,9 +18,6 @@ package io.helidon.build.archetype.engine.v2.markdown;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.commonmark.node.Text;
-import org.commonmark.node.Visitor;
-
 /**
  * Simple kramdown extension for markdown, that contains as child AST node an {@link Text} node.
  */
@@ -54,10 +51,10 @@ class SimpleTextKramdownNode extends KramdownNode {
         return attributes;
     }
 
-    @Override
-    public void accept(Visitor visitor) {
-        visitor.visit(this);
-    }
+//    @Override
+//    public void accept(Visitor visitor) {
+//        visitor.visit(this);
+//    }
 
     @Override
     <T> void accept(KramdownVisitor<T> visitor, T arg) {
