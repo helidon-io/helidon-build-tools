@@ -54,10 +54,16 @@ public final class InitOptions {
     private final String archetypeName;
     private final String archetypePath;
     private final ArchetypeInvoker.EngineVersion engineVersion;
+    private final Flavor flavorOption;
+    private final String projectNameOption;
+    private final String groupIdOption;
+    private final String artifactIdOption;
+    private final String packageNameOption;
+    private String projectName;
     private String groupId;
     private String artifactId;
     private String packageName;
-    private String projectName;
+
 
     /**
      * Helidon flavors.
@@ -87,7 +93,7 @@ public final class InitOptions {
 
     @Creator
     InitOptions(
-            @KeyValue(name = "flavor", description = "Helidon flavor", defaultValue = DEFAULT_FLAVOR) Flavor flavor,
+            @KeyValue(name = "flavor", description = "Helidon flavor") Flavor flavor,
             @KeyValue(name = "build", description = "Build type", defaultValue = "MAVEN") BuildSystem build,
             @KeyValue(name = "version", description = "Helidon version") String version,
             @KeyValue(name = "archetype", description = "Archetype name", defaultValue = DEFAULT_ARCHETYPE_NAME)
@@ -102,14 +108,22 @@ public final class InitOptions {
 
         this.build = build;
         this.helidonVersion = version;
-        this.flavor = flavor;
         this.archetypeName = archetypeName;
+        this.archetypePath = archetypePath;
+        this.engineVersion = getEngineVersion(engineVersion);
+        this.flavorOption = flavor;
+        this.flavor = flavor == null ? Flavor.valueOf(DEFAULT_FLAVOR) : flavor;
+        this.projectNameOption = projectName;
+        this.groupIdOption = groupId;
+        this.artifactIdOption = artifactId;
+        this.packageNameOption = packageName;
+
+        // The following will be updated by applyConfig:
+
+        this.projectName = projectName;
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.packageName = packageName;
-        this.projectName = projectName;
-        this.archetypePath = archetypePath;
-        this.engineVersion = getEngineVersion(engineVersion);
     }
 
     private ArchetypeInvoker.EngineVersion getEngineVersion(String version) {
@@ -119,7 +133,16 @@ public final class InitOptions {
     }
 
     /**
-     * Get the flavor.
+     * Get the flavor option.
+     *
+     * @return Flavor
+     */
+    Flavor flavorOption() {
+        return flavorOption;
+    }
+
+    /**
+     * Get the flavor, defaults to SE.
      *
      * @return Flavor
      */
@@ -173,7 +196,7 @@ public final class InitOptions {
     }
 
     /**
-     * Get the project name.
+     * Get the project name. May have been updated from user config.
      *
      * @return project name
      */
@@ -182,7 +205,7 @@ public final class InitOptions {
     }
 
     /**
-     * Get the groupId.
+     * Get the groupId. May have been updated from user config.
      *
      * @return groupId
      */
@@ -191,7 +214,7 @@ public final class InitOptions {
     }
 
     /**
-     * Get the artifactId.
+     * Get the artifactId. May have been updated from user config.
      *
      * @return artifactId
      */
@@ -200,12 +223,48 @@ public final class InitOptions {
     }
 
     /**
-     * Get the package name.
+     * Get the package name. May have been updated from user config.
      *
      * @return package name
      */
     String packageName() {
         return packageName;
+    }
+
+    /**
+     * Get the project name option.
+     *
+     * @return project name
+     */
+    String projectNameOption() {
+        return projectNameOption;
+    }
+
+    /**
+     * Get the groupId option.
+     *
+     * @return groupId
+     */
+    String groupIdOption() {
+        return groupIdOption;
+    }
+
+    /**
+     * Get the artifactId.
+     *
+     * @return artifactId
+     */
+    String artifactIdOption() {
+        return artifactIdOption;
+    }
+
+    /**
+     * Get the package name.
+     *
+     * @return package name
+     */
+    String packageNameOption() {
+        return packageNameOption;
     }
 
     /**

@@ -71,7 +71,7 @@
                 </map>
                 <map>
                     <value key="groupId">io.helidon.webclient</value>
-                    <value key="artifactId">jhelidon-webclient</value>
+                    <value key="artifactId">helidon-webclient</value>
                     <map key="scope">
                         <value key="scope" template="mustache">test</value>
                     </map>

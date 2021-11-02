@@ -34,42 +34,36 @@
         <input>
             <text name="project.name"
                   label="Project name"
-                  placeholder="${default.project.name}"
                   optional="true"
                   default="${default.project.name}"
             />
 
             <text name="project.groupId"
                   label="Project groupId"
-                  placeholder="${default.group.id}"
                   optional="true"
                   default="${default.group.id}"
             />
 
             <text name="project.artifactId"
                   label="Project artifactId"
-                  placeholder="${default.artifact.id}"
                   optional="true"
                   default="${default.artifact.id}"
             />
 
             <text name="project.version"
                   label="Project version"
-                  placeholder="${default.project.version}"
                   optional="true"
                   default="${default.project.version}"
             />
 
             <text name="package"
                   label="Java package name"
-                  placeholder="${default.package.name}"
                   optional="true"
                   default="${default.package.name}"
             />
 
             <text name="helidon.version"
                   label="Helidon version"
-                  placeholder="${default.helidon.version}"
                   optional="true"
                   default="${default.helidon.version}"
             />

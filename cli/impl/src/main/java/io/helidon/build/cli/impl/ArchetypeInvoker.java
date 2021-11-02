@@ -279,6 +279,16 @@ abstract class ArchetypeInvoker {
      * Invoker for the archetype V2 engine.
      */
     static class V2Invoker extends ArchetypeInvoker {
+        private static final String ENTRY_POINT_DESCRIPTOR = "flavor.xml";
+        private static final String FLAVOR_PROPERTY = "flavor";
+        private static final String PROJECT_NAME_PROPERTY = "project.name";
+        private static final String GROUP_ID_PROPERTY = "project.groupId";
+        private static final String ARTIFACT_ID_PROPERTY = "project.artifactId";
+        private static final String PACKAGE_NAME_PROPERTY = "package";
+        private static final String HELIDON_VERSION_PROPERTY = "helidon.version";
+        private static final String BUILD_SYSTEM_PROPERTY = "build-system";
+        private static final String ARCHETYPE_BASE_PROPERTY = "base";
+        private static final String SUPPORTED_BUILD_SYSTEM = "maven"; // We only support one
 
         private V2Invoker(Builder builder) {
             super(builder);
@@ -286,19 +296,70 @@ abstract class ArchetypeInvoker {
 
         @Override
         Path invoke() throws IOException {
-            Path projectDir = projectDirSupplier().apply(initOptions().initProperties().get("name"));
+            InitOptions initOptions = initOptions();
+            Map<String, String> params = new HashMap<>();
+            Map<String, String> defaults = new HashMap<>();
+
+            // We've already got helidon version, don't prompt again
+            params.put(HELIDON_VERSION_PROPERTY, initOptions.helidonVersion());
+
+            // Don't prompt for build system since we only support one for now
+            params.put(BUILD_SYSTEM_PROPERTY, SUPPORTED_BUILD_SYSTEM);
+
+            // Set flavor if provided on command-line
+            if (initOptions.flavorOption() != null) {
+                params.put(FLAVOR_PROPERTY, initOptions.flavorOption().toString());
+            }
+
+            // Set base if provided on command-line
+            if (initOptions.archetypeName() != null) {
+                params.put(ARCHETYPE_BASE_PROPERTY, initOptions.archetypeName());
+            }
+            if (isInteractive()) {
+
+                // Set remaining command-line options as params and user config as defaults
+
+                if (initOptions.projectNameOption() != null) {
+                    params.put(PROJECT_NAME_PROPERTY, initOptions.projectNameOption());
+                } else {
+                    defaults.put(PROJECT_NAME_PROPERTY, initOptions.projectName());
+                }
+                if (initOptions.groupIdOption() != null) {
+                    params.put(GROUP_ID_PROPERTY, initOptions.groupIdOption());
+                } else {
+                    defaults.put(GROUP_ID_PROPERTY, initOptions.groupId());
+                }
+                if (initOptions.artifactIdOption() != null) {
+                    params.put(ARTIFACT_ID_PROPERTY, initOptions.artifactIdOption());
+                } else {
+                    defaults.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
+                }
+                if (initOptions.packageNameOption() != null) {
+                    params.put(PACKAGE_NAME_PROPERTY, initOptions.packageNameOption());
+                } else {
+                    defaults.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
+                }
+
+            } else {
+
+                // Batch mode, so pass merged init options as params
+
+                params.put(PROJECT_NAME_PROPERTY, initOptions.projectName());
+                params.put(GROUP_ID_PROPERTY, initOptions.groupId());
+                params.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
+                params.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
+            }
 
             ArchetypeEngineV2 engine = new ArchetypeEngineV2(
                     getArchetype(initOptions().archetypePath()),
-                    "flavor.xml",
+                    ENTRY_POINT_DESCRIPTOR,
                     new CLIPrompter(),
-                    new HashMap<>(),
+                    params,
+                    defaults,
                     false,
-                    List.of()
-            );
+                    List.of());
 
-            engine.generate(projectDir.toFile());
-            return projectDir;
+            return engine.generate(projectDirSupplier());
         }
 
         @Override
