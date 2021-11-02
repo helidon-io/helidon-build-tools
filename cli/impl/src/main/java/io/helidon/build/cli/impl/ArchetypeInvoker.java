@@ -307,8 +307,8 @@ abstract class ArchetypeInvoker {
             params.put(BUILD_SYSTEM_PROPERTY, SUPPORTED_BUILD_SYSTEM);
 
             // Set flavor if provided on command-line
-            if (initOptions.flavor() != null) {
-                params.put(FLAVOR_PROPERTY, initOptions.flavor().toString());
+            if (initOptions.flavorOption() != null) {
+                params.put(FLAVOR_PROPERTY, initOptions.flavorOption().toString());
             }
 
             // Set base if provided on command-line

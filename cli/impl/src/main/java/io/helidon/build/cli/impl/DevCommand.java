@@ -161,7 +161,7 @@ public final class DevCommand extends BaseCommand {
             Log.verbose("Using CLI plugin version %s", cliPluginVersion);
             devGoal += ":" + cliPluginVersion;
             // Pass along the version so that the loop can specify it when doing full builds
-            cliPluginVersionProperty = String.format("-D%=%", HELIDON_CLI_PLUGIN_VERSION_PROPERTY, cliPluginVersion);
+            cliPluginVersionProperty = String.format("-D%s=%s", HELIDON_CLI_PLUGIN_VERSION_PROPERTY, cliPluginVersion);
         }
         devGoal += DEV_GOAL_SUFFIX;
 

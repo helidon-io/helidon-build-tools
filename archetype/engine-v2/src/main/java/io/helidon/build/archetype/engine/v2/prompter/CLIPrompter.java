@@ -58,8 +58,7 @@ public class CLIPrompter extends DefaultPrompterImpl {
     @Override
     public String prompt(TextPrompt inputInfo) {
         try {
-            String question = "Enter text";
-            printTitle(inputInfo);
+            String question = getTitle(inputInfo);
 
             String defaultValue = Optional.ofNullable(inputInfo.placeHolder())
                     .or(() -> Optional.ofNullable(inputInfo.defaultValue()))
@@ -194,10 +193,14 @@ public class CLIPrompter extends DefaultPrompterImpl {
     }
 
     private void printTitle(Prompt inputInfo) {
+        System.out.println(getTitle(inputInfo));
+    }
+
+    private String getTitle(Prompt inputInfo) {
         if (inputInfo.stepLabel() != null && !inputInfo.stepLabel().equals(lastStepLabel)) {
-            System.out.println(Bold.apply(inputInfo.stepLabel()));
+            return (Bold.apply(inputInfo.stepLabel()));
         }
-        System.out.println(getQuestion(inputInfo));
+        return (getQuestion(inputInfo));
     }
 
     private String getQuestion(Prompt inputInfo) {
