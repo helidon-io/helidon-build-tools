@@ -56,7 +56,7 @@ public class Prompter {
         try {
             String def = BoldBlue.apply(defaultResponse);
             String q = defaultResponse != null
-                    ? String.format("%s (Default: %s): ", question, def)
+                    ? String.format("%s (default: %s): ", question, def)
                     : String.format("%s: ", question);
             System.out.print(Bold.apply(q));
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));

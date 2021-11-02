@@ -223,7 +223,7 @@ public class CLIPrompter extends DefaultPrompterImpl {
 
     private String request(String question, String defaultValue) throws IOException {
         String request = defaultValue != null
-                ? String.format("%s (Default: %s): ", question, defaultValue)
+                ? String.format("%s (default: %s): ", question, defaultValue)
                 : String.format("%s: ", question);
         System.out.print(Bold.apply(request));
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
