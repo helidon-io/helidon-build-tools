@@ -1,11 +1,12 @@
 package io.helidon.build.archetype.engine.v2.markdown;
 
+import java.util.ArrayList;
 import java.util.List;
 
 class ParagraphParser implements BlockParser {
 
     private final Paragraph block = new Paragraph();
-    private final LinkReferenceDefinitionParser linkReferenceDefinitionParser = new LinkReferenceDefinitionParser();
+    private final List<SourceLine> paragraphLines = new ArrayList<>();
 
     @Override
     public boolean canHaveLazyContinuationLines() {
@@ -28,29 +29,25 @@ class ParagraphParser implements BlockParser {
 
     @Override
     public void addLine(SourceLine line) {
-        linkReferenceDefinitionParser.parse(line);
+        paragraphLines.add(line);
     }
 
     @Override
     public void closeBlock() {
-        if (linkReferenceDefinitionParser.getParagraphLines().isEmpty()) {
+        if (paragraphLines.isEmpty()) {
             block.unlink();
         }
     }
 
     @Override
     public void parseInlines(InlineParser inlineParser) {
-        SourceLines lines = linkReferenceDefinitionParser.getParagraphLines();
+        SourceLines lines = SourceLines.of(paragraphLines);
         if (!lines.isEmpty()) {
             inlineParser.parse(lines, block);
         }
     }
 
     public SourceLines getParagraphLines() {
-        return linkReferenceDefinitionParser.getParagraphLines();
-    }
-
-    public List<LinkReferenceDefinition> getDefinitions() {
-        return linkReferenceDefinitionParser.getDefinitions();
+        return SourceLines.of(paragraphLines);
     }
 }

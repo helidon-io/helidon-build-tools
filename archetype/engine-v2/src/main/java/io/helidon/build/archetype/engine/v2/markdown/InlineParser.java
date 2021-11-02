@@ -275,14 +275,6 @@ class InlineParser {
                 // If there is, we don't even need to try to look up the reference. This is an optimization.
                 ref = scanner.getSource(opener.contentPosition, beforeClose).getContent();
             }
-
-            if (ref != null) {
-                LinkReferenceDefinition definition = context.getLinkReferenceDefinition(ref);
-                if (definition != null) {
-                    dest = definition.getDestination();
-                    title = definition.getTitle();
-                }
-            }
         }
 
         if (dest != null) {

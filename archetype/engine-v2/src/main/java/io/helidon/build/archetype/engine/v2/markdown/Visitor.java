@@ -10,10 +10,6 @@ public interface Visitor {
         visitChildren(fencedCodeBlock);
     }
 
-    default void visit(LinkReferenceDefinition linkReferenceDefinition) {
-        visitChildren(linkReferenceDefinition);
-    }
-
     default void visit(Paragraph paragraph) {
         visitChildren(paragraph);
     }

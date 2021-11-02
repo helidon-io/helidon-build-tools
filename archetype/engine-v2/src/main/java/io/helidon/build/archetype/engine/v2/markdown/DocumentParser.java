@@ -50,7 +50,6 @@ class DocumentParser implements ParserState {
     private final List<BlockStartFactory> blockStartFactories;
     private final List<DelimiterProcessor> delimiterProcessors;
     private final DocumentBlockParser documentBlockParser;
-    private final LinkReferenceDefinitions definitions = new LinkReferenceDefinitions();
 
     private final List<DocumentParser.OpenBlockParser> openBlockParsers = new ArrayList<>();
     private final List<BlockParser> allBlockParsers = new ArrayList<>();
@@ -380,27 +379,14 @@ class DocumentParser implements ParserState {
      * collecting link reference definitions from paragraphs.
      */
     private void finalize(BlockParser blockParser) {
-        if (blockParser instanceof ParagraphParser) {
-            addDefinitionsFrom((ParagraphParser) blockParser);
-        }
-
         blockParser.closeBlock();
-    }
-
-    private void addDefinitionsFrom(ParagraphParser paragraphParser) {
-        for (LinkReferenceDefinition definition : paragraphParser.getDefinitions()) {
-            // Add nodes into document before paragraph.
-            paragraphParser.getBlock().insertBefore(definition);
-
-            definitions.add(definition);
-        }
     }
 
     /**
      * Walk through a block & children recursively, parsing string content into inline content where appropriate.
      */
     private void processInlines() {
-        InlineParserContext context = new InlineParserContext(delimiterProcessors, definitions);
+        InlineParserContext context = new InlineParserContext(delimiterProcessors);
         InlineParser inlineParser = new InlineParser(context);
 
         for (BlockParser blockParser : allBlockParsers) {
