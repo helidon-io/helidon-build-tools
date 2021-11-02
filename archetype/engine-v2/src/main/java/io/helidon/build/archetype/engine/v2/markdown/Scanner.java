@@ -22,7 +22,7 @@ class Scanner {
     private int index;
 
     // Current line or "" if at the end of the lines (using "" instead of null saves a null check)
-    private SourceLine line = SourceLine.of("", null);
+    private SourceLine line = SourceLine.of("");
     private int lineLength = 0;
 
     Scanner(List<SourceLine> lines, int lineIndex, int index) {
@@ -108,7 +108,7 @@ class Scanner {
             if (lineIndex < lines.size()) {
                 setLine(lines.get(lineIndex));
             } else {
-                setLine(SourceLine.of("", null));
+                setLine(SourceLine.of(""));
             }
             index = 0;
         }
@@ -213,12 +213,7 @@ class Scanner {
             // Shortcut for common case of text from a single line
             SourceLine line = lines.get(begin.lineIndex);
             CharSequence newContent = line.getContent().subSequence(begin.index, end.index);
-            SourceSpan newSourceSpan = null;
-            SourceSpan sourceSpan = line.getSourceSpan();
-            if (sourceSpan != null) {
-                newSourceSpan = SourceSpan.of(sourceSpan.getLineIndex(), sourceSpan.getColumnIndex() + begin.index, newContent.length());
-            }
-            return SourceLines.of(SourceLine.of(newContent, newSourceSpan));
+            return SourceLines.of(SourceLine.of(newContent));
         } else {
             SourceLines sourceLines = SourceLines.empty();
 

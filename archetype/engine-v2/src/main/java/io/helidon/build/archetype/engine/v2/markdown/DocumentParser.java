@@ -49,7 +49,6 @@ class DocumentParser implements ParserState {
 
     private final List<BlockStartFactory> blockStartFactories;
     private final List<DelimiterProcessor> delimiterProcessors;
-    private final IncludeSourceSpans includeSourceSpans;
     private final DocumentBlockParser documentBlockParser;
     private final LinkReferenceDefinitions definitions = new LinkReferenceDefinitions();
 
@@ -58,12 +57,10 @@ class DocumentParser implements ParserState {
 
     public DocumentParser(
             List<BlockStartFactory> blockStartFactories,
-            List<DelimiterProcessor> delimiterProcessors,
-            IncludeSourceSpans includeSourceSpans
+            List<DelimiterProcessor> delimiterProcessors
     ) {
         this.blockStartFactories = blockStartFactories;
         this.delimiterProcessors = delimiterProcessors;
-        this.includeSourceSpans = includeSourceSpans;
 
         this.documentBlockParser = new DocumentBlockParser();
         activateBlockParser(new DocumentParser.OpenBlockParser(documentBlockParser, 0));
@@ -171,7 +168,6 @@ class DocumentParser implements ParserState {
             if (result != null) {
                 openBlockParser.sourceIndex = getIndex();
                 if (result.isFinalize()) {
-                    addSourceSpans();
                     closeBlockParsers(openBlockParsers.size() - i);
                     return;
                 } else {
@@ -258,15 +254,6 @@ class DocumentParser implements ParserState {
                 ParagraphParser paragraphParser = new ParagraphParser();
                 addChild(new DocumentParser.OpenBlockParser(paragraphParser, lastIndex));
                 addLine();
-            } else {
-                // This can happen for a list item like this:
-                // ```
-                // *
-                // list item
-                // ```
-                //
-                // The first line does not start a paragraph yet, but we still want to record source positions.
-                addSourceSpans();
             }
         }
     }
@@ -278,11 +265,7 @@ class DocumentParser implements ParserState {
         columnIsInTab = false;
 
         CharSequence lineContent = Parsing.prepareLine(ln);
-        SourceSpan sourceSpan = null;
-        if (includeSourceSpans != IncludeSourceSpans.NONE) {
-            sourceSpan = SourceSpan.of(lineIndex, 0, lineContent.length());
-        }
-        this.line = SourceLine.of(lineContent, sourceSpan);
+        this.line = SourceLine.of(lineContent);
     }
 
     private void findNextNonSpace() {
@@ -378,28 +361,7 @@ class DocumentParser implements ParserState {
         } else {
             content = line.getContent().subSequence(index, line.getContent().length());
         }
-        SourceSpan sourceSpan = null;
-        if (includeSourceSpans == IncludeSourceSpans.BLOCKS_AND_INLINES) {
-            // Note that if we're in a partially-consumed tab, the length here corresponds to the content but not to the
-            // actual source length. That sounds like a problem, but I haven't found a test case where it matters (yet).
-            sourceSpan = SourceSpan.of(lineIndex, index, content.length());
-        }
-        getActiveBlockParser().addLine(SourceLine.of(content, sourceSpan));
-        addSourceSpans();
-    }
-
-    private void addSourceSpans() {
-        if (includeSourceSpans != IncludeSourceSpans.NONE) {
-            // Don't add source spans for Document itself (it would get the whole source text)
-            for (int i = 1; i < openBlockParsers.size(); i++) {
-                DocumentParser.OpenBlockParser openBlockParser = openBlockParsers.get(i);
-                int blockIndex = openBlockParser.sourceIndex;
-                int length = line.getContent().length() - blockIndex;
-                if (length != 0) {
-                    openBlockParser.blockParser.addSourceSpan(SourceSpan.of(lineIndex, blockIndex, length));
-                }
-            }
-        }
+        getActiveBlockParser().addLine(SourceLine.of(content));
     }
 
     private BlockStart findBlockStart(BlockParser blockParser) {

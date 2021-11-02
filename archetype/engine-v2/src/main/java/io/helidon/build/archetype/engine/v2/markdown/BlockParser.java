@@ -29,15 +29,6 @@ interface BlockParser {
     default void addLine(SourceLine line) {
     }
 
-    /**
-     * Add a source span of the currently parsed block. The default implementation  adds
-     * it to the block. Unless you have some complicated parsing where you need to check source positions, you don't
-     * need to override this.
-     */
-    default void addSourceSpan(SourceSpan sourceSpan) {
-        getBlock().addSourceSpan(sourceSpan);
-    }
-
     default void closeBlock() {
     }
 

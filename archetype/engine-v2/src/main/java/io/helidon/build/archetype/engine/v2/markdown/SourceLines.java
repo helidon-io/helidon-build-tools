@@ -48,15 +48,4 @@ public class SourceLines {
         }
         return sb.toString();
     }
-
-    public List<SourceSpan> getSourceSpans() {
-        List<SourceSpan> sourceSpans = new ArrayList<>();
-        for (SourceLine line : lines) {
-            SourceSpan sourceSpan = line.getSourceSpan();
-            if (sourceSpan != null) {
-                sourceSpans.add(sourceSpan);
-            }
-        }
-        return sourceSpans;
-    }
 }

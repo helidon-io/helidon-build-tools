@@ -14,7 +14,6 @@ abstract class Node {
     private Node lastChild = null;
     private Node prev = null;
     private Node next = null;
-    private List<SourceSpan> sourceSpans = null;
 
     public abstract void accept(Visitor visitor);
 
@@ -97,39 +96,6 @@ abstract class Node {
         if (sibling.prev == null) {
             sibling.parent.firstChild = sibling;
         }
-    }
-
-
-    /**
-     * @return the source spans of this node if included by the parser, an empty list otherwise
-     */
-    public List<SourceSpan> getSourceSpans() {
-        return sourceSpans != null ? Collections.unmodifiableList(sourceSpans) : Collections.<SourceSpan>emptyList();
-    }
-
-    /**
-     * Replace the current source spans with the provided list.
-     *
-     * @param sourceSpans the new source spans to set
-     */
-    public void setSourceSpans(List<SourceSpan> sourceSpans) {
-        if (sourceSpans.isEmpty()) {
-            this.sourceSpans = null;
-        } else {
-            this.sourceSpans = new ArrayList<>(sourceSpans);
-        }
-    }
-
-    /**
-     * Add a source span to the end of the list.
-     *
-     * @param sourceSpan the source span to add
-     */
-    public void addSourceSpan(SourceSpan sourceSpan) {
-        if (sourceSpans == null) {
-            this.sourceSpans = new ArrayList<>();
-        }
-        this.sourceSpans.add(sourceSpan);
     }
 
     @Override

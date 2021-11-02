@@ -12,7 +12,6 @@ class LinkReferenceDefinitionParser {
 
     private final List<SourceLine> paragraphLines = new ArrayList<>();
     private final List<LinkReferenceDefinition> definitions = new ArrayList<>();
-    private final List<SourceSpan> sourceSpans = new ArrayList<>();
 
     private StringBuilder label;
     private String destination;
@@ -64,19 +63,11 @@ class LinkReferenceDefinitionParser {
         }
     }
 
-    public void addSourceSpan(SourceSpan sourceSpan) {
-        sourceSpans.add(sourceSpan);
-    }
-
     /**
      * @return the lines that are normal paragraph content, without newlines
      */
     SourceLines getParagraphLines() {
         return SourceLines.of(paragraphLines);
-    }
-
-    List<SourceSpan> getParagraphSourceSpans() {
-        return sourceSpans;
     }
 
     List<LinkReferenceDefinition> getDefinitions() {
@@ -240,8 +231,6 @@ class LinkReferenceDefinitionParser {
         String d = Escaping.unescapeString(destination);
         String t = title != null ? Escaping.unescapeString(title.toString()) : null;
         LinkReferenceDefinition definition = new LinkReferenceDefinition(label.toString(), d, t);
-        definition.setSourceSpans(sourceSpans);
-        sourceSpans.clear();
         definitions.add(definition);
 
         label = null;

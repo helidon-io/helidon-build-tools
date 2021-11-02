@@ -6,38 +6,24 @@ package io.helidon.build.archetype.engine.v2.markdown;
 class SourceLine {
 
     private final CharSequence content;
-    private final SourceSpan sourceSpan;
 
-    public static SourceLine of(CharSequence content, SourceSpan sourceSpan) {
-        return new SourceLine(content, sourceSpan);
+    public static SourceLine of(CharSequence content) {
+        return new SourceLine(content);
     }
 
-    private SourceLine(CharSequence content, SourceSpan sourceSpan) {
+    private SourceLine(CharSequence content) {
         if (content == null) {
             throw new NullPointerException("content must not be null");
         }
         this.content = content;
-        this.sourceSpan = sourceSpan;
     }
 
     public CharSequence getContent() {
         return content;
     }
 
-    public SourceSpan getSourceSpan() {
-        return sourceSpan;
-    }
-
     public SourceLine substring(int beginIndex, int endIndex) {
         CharSequence newContent = content.subSequence(beginIndex, endIndex);
-        SourceSpan newSourceSpan = null;
-        if (sourceSpan != null) {
-            int columnIndex = sourceSpan.getColumnIndex() + beginIndex;
-            int length = endIndex - beginIndex;
-            if (length != 0) {
-                newSourceSpan = SourceSpan.of(sourceSpan.getLineIndex(), columnIndex, length);
-            }
-        }
-        return SourceLine.of(newContent, newSourceSpan);
+        return SourceLine.of(newContent);
     }
 }

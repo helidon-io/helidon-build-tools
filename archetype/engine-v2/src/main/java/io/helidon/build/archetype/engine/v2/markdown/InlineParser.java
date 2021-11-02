@@ -17,7 +17,6 @@ class InlineParser {
     private final Map<Character, List<InlineContentParser>> inlineParsers;
 
     private Scanner scanner;
-    private boolean includeSourceSpans;
 
     /**
      * Top delimiter (emphasis, strong emphasis or custom emphasis). (Brackets are on a separate stack, different
@@ -116,15 +115,12 @@ class InlineParser {
 
     void reset(SourceLines lines) {
         this.scanner = Scanner.of(lines);
-        this.includeSourceSpans = !lines.getSourceSpans().isEmpty();
         this.lastDelimiter = null;
         this.lastBracket = null;
     }
 
     private Text text(SourceLines sourceLines) {
-        Text text = new Text(sourceLines.getContent());
-        text.setSourceSpans(sourceLines.getSourceSpans());
-        return text;
+        return new Text(sourceLines.getContent());
     }
 
     /**
@@ -158,9 +154,6 @@ class InlineParser {
                     ParsedInline parsedInlineImpl = (ParsedInline) parsedInline;
                     Node node = parsedInlineImpl.getNode();
                     scanner.setPosition(parsedInlineImpl.getPosition());
-                    if (includeSourceSpans && node.getSourceSpans().isEmpty()) {
-                        node.setSourceSpans(scanner.getSource(position, scanner.position()).getSourceSpans());
-                    }
                     return Collections.singletonList(node);
                 } else {
                     // Reset position
@@ -304,10 +297,6 @@ class InlineParser {
                 node = next;
             }
 
-            if (includeSourceSpans) {
-                link.setSourceSpans(scanner.getSource(opener.markerPosition, scanner.position()).getSourceSpans());
-            }
-
             // Process delimiters such as emphasis inside link
             processDelimiters(opener.previousDelimiter);
             mergeChildTextNodes(link);
@@ -437,9 +426,7 @@ class InlineParser {
             content = content.substring(0, end);
         }
 
-        Text text = new Text(content);
-        text.setSourceSpans(source.getSourceSpans());
-        return text;
+        return new Text(content);
     }
 
     /**
@@ -661,18 +648,10 @@ class InlineParser {
         if (first != null && last != null && first != last) {
             StringBuilder sb = new StringBuilder(textLength);
             sb.append(first.getLiteral());
-            SourceSpans sourceSpans = null;
-            if (includeSourceSpans) {
-                sourceSpans = new SourceSpans();
-                sourceSpans.addAll(first.getSourceSpans());
-            }
             Node node = first.getNext();
             Node stop = last.getNext();
             while (node != stop) {
                 sb.append(((Text) node).getLiteral());
-                if (sourceSpans != null) {
-                    sourceSpans.addAll(node.getSourceSpans());
-                }
 
                 Node unlink = node;
                 node = node.getNext();
@@ -680,9 +659,6 @@ class InlineParser {
             }
             String literal = sb.toString();
             first.setLiteral(literal);
-            if (sourceSpans != null) {
-                first.setSourceSpans(sourceSpans.getSourceSpans());
-            }
         }
     }
 

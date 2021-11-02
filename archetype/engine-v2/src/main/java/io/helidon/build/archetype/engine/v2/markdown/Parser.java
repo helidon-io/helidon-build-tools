@@ -12,13 +12,11 @@ public class Parser {
     private final List<BlockStartFactory> blockStartFactories;
     private final List<DelimiterProcessor> delimiterProcessors;
     private final List<PostProcessor> postProcessors;
-    private final IncludeSourceSpans includeSourceSpans;
-    
+
     private Parser(Builder builder) {
         this.blockStartFactories = DocumentParser.calculateBlockParserFactories(builder.blockStartFactories, builder.enabledBlockTypes);
         this.postProcessors = builder.postProcessors;
         this.delimiterProcessors = builder.delimiterProcessors;
-        this.includeSourceSpans = builder.includeSourceSpans;
     }
 
     /**
@@ -37,7 +35,7 @@ public class Parser {
     }
 
     private DocumentParser createDocumentParser() {
-        return new DocumentParser(blockStartFactories, delimiterProcessors, includeSourceSpans);
+        return new DocumentParser(blockStartFactories, delimiterProcessors);
     }
 
     private Node postProcess(Node document) {
@@ -63,8 +61,7 @@ public class Parser {
         private final List<BlockStartFactory> blockStartFactories = new ArrayList<>();
         private final List<DelimiterProcessor> delimiterProcessors = new ArrayList<>();
         private final List<PostProcessor> postProcessors = new ArrayList<>();
-        private Set<Class<? extends Block>> enabledBlockTypes = DocumentParser.getDefaultBlockParserTypes();
-        private IncludeSourceSpans includeSourceSpans = IncludeSourceSpans.NONE;
+        private final Set<Class<? extends Block>> enabledBlockTypes = DocumentParser.getDefaultBlockParserTypes();
 
         /**
          * @return the configured {@link Parser}
@@ -87,19 +84,6 @@ public class Parser {
                     parserExtension.extend(this);
                 }
             }
-            return this;
-        }
-
-        /**
-         * Whether to calculate {@link SourceSpan} for {@link Node}.
-         * <p>
-         * By default, source spans are disabled.
-         *
-         * @param includeSourceSpans which kind of source spans should be included
-         * @return {@code this}
-         */
-        public Parser.Builder includeSourceSpans(IncludeSourceSpans includeSourceSpans) {
-            this.includeSourceSpans = includeSourceSpans;
             return this;
         }
 
