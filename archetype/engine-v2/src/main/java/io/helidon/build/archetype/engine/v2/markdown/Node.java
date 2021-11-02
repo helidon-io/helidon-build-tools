@@ -5,9 +5,9 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * The base class of all CommonMark AST nodes ({@link Block} and inlines).
+ * The base class of all AST nodes ({@link Block} and inlines).
  */
-public abstract class Node {
+abstract class Node {
 
     private Node parent = null;
     private Node firstChild = null;
@@ -49,19 +49,6 @@ public abstract class Node {
             this.lastChild.next = child;
             child.prev = this.lastChild;
             this.lastChild = child;
-        } else {
-            this.firstChild = child;
-            this.lastChild = child;
-        }
-    }
-
-    public void prependChild(Node child) {
-        child.unlink();
-        child.setParent(this);
-        if (this.firstChild != null) {
-            this.firstChild.prev = child;
-            child.next = this.firstChild;
-            this.firstChild = child;
         } else {
             this.firstChild = child;
             this.lastChild = child;
@@ -115,7 +102,6 @@ public abstract class Node {
 
     /**
      * @return the source spans of this node if included by the parser, an empty list otherwise
-     * @since 0.16.0
      */
     public List<SourceSpan> getSourceSpans() {
         return sourceSpans != null ? Collections.unmodifiableList(sourceSpans) : Collections.<SourceSpan>emptyList();
@@ -125,7 +111,6 @@ public abstract class Node {
      * Replace the current source spans with the provided list.
      *
      * @param sourceSpans the new source spans to set
-     * @since 0.16.0
      */
     public void setSourceSpans(List<SourceSpan> sourceSpans) {
         if (sourceSpans.isEmpty()) {
@@ -139,7 +124,6 @@ public abstract class Node {
      * Add a source span to the end of the list.
      *
      * @param sourceSpan the source span to add
-     * @since 0.16.0
      */
     public void addSourceSpan(SourceSpan sourceSpan) {
         if (sourceSpans == null) {

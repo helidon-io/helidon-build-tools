@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * A list of source spans that can be added to. Takes care of merging adjacent source spans.
  */
-public class SourceSpans {
+class SourceSpans {
 
     private List<SourceSpan> sourceSpans;
 

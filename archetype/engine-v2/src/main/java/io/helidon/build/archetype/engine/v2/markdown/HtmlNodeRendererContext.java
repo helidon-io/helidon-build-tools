@@ -2,7 +2,7 @@ package io.helidon.build.archetype.engine.v2.markdown;
 
 import java.util.Map;
 
-public interface HtmlNodeRendererContext {
+interface HtmlNodeRendererContext {
 
     /**
      * @param url to be encoded
@@ -26,11 +26,6 @@ public interface HtmlNodeRendererContext {
     HtmlWriter getWriter();
 
     /**
-     * @return HTML that should be rendered for a soft line break
-     */
-    String getSoftbreak();
-
-    /**
      * Render the specified node and its children using the configured renderers. This should be used to render child
      * nodes; be careful not to pass the node that is being rendered, that would result in an endless loop.
      *
@@ -39,19 +34,7 @@ public interface HtmlNodeRendererContext {
     void render(Node node);
 
     /**
-     * @return whether HTML blocks and tags should be escaped or not
-     */
-    boolean shouldEscapeHtml();
-
-//    /**
-//     * @return true if the {@link UrlSanitizer} should be used.
-//     * @since 0.14.0
-//     */
-//    boolean shouldSanitizeUrls();
-
-    /**
-     * @return Sanitizer to use for securing {@link Link} href and {@link Image} src if {@link #shouldSanitizeUrls()} is true.
-     * @since 0.14.0
+     * @return Sanitizer to use for securing {@link Link} href
      */
     UrlSanitizer urlSanitizer();
 }

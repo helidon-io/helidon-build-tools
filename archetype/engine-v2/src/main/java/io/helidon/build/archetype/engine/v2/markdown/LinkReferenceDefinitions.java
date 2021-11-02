@@ -3,7 +3,7 @@ package io.helidon.build.archetype.engine.v2.markdown;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class LinkReferenceDefinitions {
+class LinkReferenceDefinitions {
 
     // LinkedHashMap for determinism and to preserve document order
     private final Map<String, LinkReferenceDefinition> definitions = new LinkedHashMap<>();

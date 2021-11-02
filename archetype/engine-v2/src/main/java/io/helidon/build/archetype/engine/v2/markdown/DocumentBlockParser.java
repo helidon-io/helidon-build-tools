@@ -1,6 +1,6 @@
 package io.helidon.build.archetype.engine.v2.markdown;
 
-public class DocumentBlockParser implements BlockParser {
+class DocumentBlockParser implements BlockParser {
 
     private final Document document = new Document();
 

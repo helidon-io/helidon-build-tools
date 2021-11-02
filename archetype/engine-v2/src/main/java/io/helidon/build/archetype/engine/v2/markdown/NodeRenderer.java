@@ -5,7 +5,7 @@ import java.util.Set;
 /**
  * A renderer for a set of node types.
  */
-public interface NodeRenderer {
+interface NodeRenderer {
 
     /**
      * @return the types of nodes that this renderer handles

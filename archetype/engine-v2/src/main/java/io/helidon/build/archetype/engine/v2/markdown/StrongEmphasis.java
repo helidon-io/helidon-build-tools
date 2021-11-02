@@ -1,11 +1,8 @@
 package io.helidon.build.archetype.engine.v2.markdown;
 
-public class StrongEmphasis extends Node implements Delimited {
+class StrongEmphasis extends Node implements Delimited {
 
     private String delimiter;
-
-    public StrongEmphasis() {
-    }
 
     public StrongEmphasis(String delimiter) {
         this.delimiter = delimiter;

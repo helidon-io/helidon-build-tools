@@ -1,6 +1,6 @@
 package io.helidon.build.archetype.engine.v2.markdown;
 
-public class FencedCodeBlock extends Block {
+class FencedCodeBlock extends Block {
 
     private char fenceChar;
     private int fenceLength;

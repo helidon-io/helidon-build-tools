@@ -4,7 +4,7 @@ package io.helidon.build.archetype.engine.v2.markdown;
  * Open block parser that was last matched during the continue phase. This is different from the currently active
  * block parser, as an unmatched block is only closed when a new block is started.
  */
-public interface MatchedBlockParser {
+interface MatchedBlockParser {
 
     BlockParser getMatchedBlockParser();
 

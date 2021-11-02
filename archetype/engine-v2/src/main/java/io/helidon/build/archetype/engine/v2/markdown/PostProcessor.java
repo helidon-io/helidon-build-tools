@@ -1,6 +1,6 @@
 package io.helidon.build.archetype.engine.v2.markdown;
 
-public interface PostProcessor {
+interface PostProcessor {
 
     /**
      * @param node the node to post-process

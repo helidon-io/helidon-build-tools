@@ -1,7 +1,7 @@
 package io.helidon.build.archetype.engine.v2.markdown;
 
 
-public class Text extends Node {
+class Text extends Node {
 
     private String literal;
 

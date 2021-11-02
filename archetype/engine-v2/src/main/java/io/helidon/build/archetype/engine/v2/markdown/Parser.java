@@ -9,22 +9,16 @@ import java.util.Set;
  */
 public class Parser {
 
-    private final List<BlockParserFactory> blockParserFactories;
+    private final List<BlockStartFactory> blockStartFactories;
     private final List<DelimiterProcessor> delimiterProcessors;
-    private final InlineParserFactory inlineParserFactory;
     private final List<PostProcessor> postProcessors;
     private final IncludeSourceSpans includeSourceSpans;
     
     private Parser(Builder builder) {
-        this.blockParserFactories = DocumentParser.calculateBlockParserFactories(builder.blockParserFactories, builder.enabledBlockTypes);
-        this.inlineParserFactory = builder.getInlineParserFactory();
+        this.blockStartFactories = DocumentParser.calculateBlockParserFactories(builder.blockStartFactories, builder.enabledBlockTypes);
         this.postProcessors = builder.postProcessors;
         this.delimiterProcessors = builder.delimiterProcessors;
         this.includeSourceSpans = builder.includeSourceSpans;
-
-        // Try to construct an inline parser. Invalid configuration might result in an exception, which we want to
-        // detect as soon as possible.
-        this.inlineParserFactory.create(new InlineParserContextImpl(delimiterProcessors, new LinkReferenceDefinitions()));
     }
 
     /**
@@ -43,7 +37,7 @@ public class Parser {
     }
 
     private DocumentParser createDocumentParser() {
-        return new DocumentParser(blockParserFactories, inlineParserFactory, delimiterProcessors, includeSourceSpans);
+        return new DocumentParser(blockStartFactories, delimiterProcessors, includeSourceSpans);
     }
 
     private Node postProcess(Node document) {
@@ -66,11 +60,10 @@ public class Parser {
      * Builder for configuring a {@link Parser}.
      */
     public static class Builder {
-        private final List<BlockParserFactory> blockParserFactories = new ArrayList<>();
+        private final List<BlockStartFactory> blockStartFactories = new ArrayList<>();
         private final List<DelimiterProcessor> delimiterProcessors = new ArrayList<>();
         private final List<PostProcessor> postProcessors = new ArrayList<>();
         private Set<Class<? extends Block>> enabledBlockTypes = DocumentParser.getDefaultBlockParserTypes();
-        private InlineParserFactory inlineParserFactory;
         private IncludeSourceSpans includeSourceSpans = IncludeSourceSpans.NONE;
 
         /**
@@ -98,24 +91,12 @@ public class Parser {
         }
 
         /**
-         * Describe the list of markdown features the parser will recognize and parse.
-         */
-        public Parser.Builder enabledBlockTypes(Set<Class<? extends Block>> enabledBlockTypes) {
-            if (enabledBlockTypes == null) {
-                throw new NullPointerException("enabledBlockTypes must not be null");
-            }
-            this.enabledBlockTypes = enabledBlockTypes;
-            return this;
-        }
-
-        /**
          * Whether to calculate {@link SourceSpan} for {@link Node}.
          * <p>
          * By default, source spans are disabled.
          *
          * @param includeSourceSpans which kind of source spans should be included
          * @return {@code this}
-         * @since 0.16.0
          */
         public Parser.Builder includeSourceSpans(IncludeSourceSpans includeSourceSpans) {
             this.includeSourceSpans = includeSourceSpans;
@@ -147,15 +128,6 @@ public class Parser {
             }
             postProcessors.add(postProcessor);
             return this;
-        }
-
-        private InlineParserFactory getInlineParserFactory() {
-            return new InlineParserFactory() {
-                @Override
-                public InlineParser create(InlineParserContext inlineParserContext) {
-                    return new InlineParser(inlineParserContext);
-                }
-            };
         }
     }
 

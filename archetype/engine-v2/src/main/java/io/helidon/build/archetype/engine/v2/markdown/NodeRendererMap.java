@@ -3,7 +3,7 @@ package io.helidon.build.archetype.engine.v2.markdown;
 import java.util.HashMap;
 import java.util.Map;
 
-public class NodeRendererMap {
+class NodeRendererMap {
 
     private final Map<Class<? extends Node>, NodeRenderer> renderers = new HashMap<>(32);
 

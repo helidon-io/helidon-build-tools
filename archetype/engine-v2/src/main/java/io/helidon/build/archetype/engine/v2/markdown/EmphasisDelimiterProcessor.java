@@ -1,6 +1,6 @@
 package io.helidon.build.archetype.engine.v2.markdown;
 
-public abstract class EmphasisDelimiterProcessor implements DelimiterProcessor {
+abstract class EmphasisDelimiterProcessor implements DelimiterProcessor {
 
     private final char delimiterChar;
 
@@ -24,18 +24,18 @@ public abstract class EmphasisDelimiterProcessor implements DelimiterProcessor {
     }
 
     @Override
-    public int process(DelimiterRun openingRun, DelimiterRun closingRun) {
+    public int process(Delimiter opening, Delimiter closing) {
         // "multiple of 3" rule for internal delimiter runs
-        if ((openingRun.canClose() || closingRun.canOpen()) &&
-                closingRun.originalLength() % 3 != 0 &&
-                (openingRun.originalLength() + closingRun.originalLength()) % 3 == 0) {
+        if ((opening.canClose() || closing.canOpen()) &&
+                closing.originalLength() % 3 != 0 &&
+                (opening.originalLength() + closing.originalLength()) % 3 == 0) {
             return 0;
         }
 
         int usedDelimiters;
         Node emphasis;
         // calculate actual number of delimiters used from this closer
-        if (openingRun.length() >= 2 && closingRun.length() >= 2) {
+        if (opening.length() >= 2 && closing.length() >= 2) {
             usedDelimiters = 2;
             emphasis = new StrongEmphasis(String.valueOf(delimiterChar) + delimiterChar);
         } else {
@@ -44,15 +44,15 @@ public abstract class EmphasisDelimiterProcessor implements DelimiterProcessor {
         }
 
         SourceSpans sourceSpans = SourceSpans.empty();
-        sourceSpans.addAllFrom(openingRun.getOpeners(usedDelimiters));
+        sourceSpans.addAllFrom(opening.getOpeners(usedDelimiters));
 
-        Text opener = openingRun.getOpener();
-        for (Node node : Nodes.between(opener, closingRun.getCloser())) {
+        Text opener = opening.getOpener();
+        for (Node node : Nodes.between(opener, closing.getCloser())) {
             emphasis.appendChild(node);
             sourceSpans.addAll(node.getSourceSpans());
         }
 
-        sourceSpans.addAllFrom(closingRun.getClosers(usedDelimiters));
+        sourceSpans.addAllFrom(closing.getClosers(usedDelimiters));
 
         emphasis.setSourceSpans(sourceSpans.getSourceSpans());
         opener.insertAfter(emphasis);

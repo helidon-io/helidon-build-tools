@@ -10,31 +10,14 @@ import java.util.Map;
  */
 public class HtmlRenderer implements Renderer {
 
-    private final String softbreak;
-    private final boolean escapeHtml;
-    private final boolean sanitizeUrls;
-    private final UrlSanitizer urlSanitizer;
-    private final boolean percentEncodeUrls;
-    private final List<AttributeProviderFactory> attributeProviderFactories;
+    private final UrlSanitizer urlSanitizer = new UrlSanitizer();
     private final List<HtmlNodeRendererFactory> nodeRendererFactories;
 
     private HtmlRenderer(Builder builder) {
-        this.softbreak = builder.softbreak;
-        this.escapeHtml = builder.escapeHtml;
-        this.sanitizeUrls = builder.sanitizeUrls;
-        this.percentEncodeUrls = builder.percentEncodeUrls;
-        this.urlSanitizer = builder.urlSanitizer;
-        this.attributeProviderFactories = new ArrayList<>(builder.attributeProviderFactories);
-
         this.nodeRendererFactories = new ArrayList<>(builder.nodeRendererFactories.size() + 1);
         this.nodeRendererFactories.addAll(builder.nodeRendererFactories);
         // Add as last. This means clients can override the rendering of core nodes if they want.
-        this.nodeRendererFactories.add(new HtmlNodeRendererFactory() {
-            @Override
-            public NodeRenderer create(HtmlNodeRendererContext context) {
-                return new CoreHtmlNodeRenderer(context);
-            }
-        });
+        this.nodeRendererFactories.add(CoreHtmlNodeRenderer::new);
     }
 
     @Override
@@ -77,106 +60,13 @@ public class HtmlRenderer implements Renderer {
      */
     public static class Builder {
 
-        private String softbreak = "\n";
-        private boolean escapeHtml = false;
-        private boolean sanitizeUrls = false;
-        private UrlSanitizer urlSanitizer = new DefaultUrlSanitizer();
-        private boolean percentEncodeUrls = false;
-        private List<AttributeProviderFactory> attributeProviderFactories = new ArrayList<>();
-        private List<HtmlNodeRendererFactory> nodeRendererFactories = new ArrayList<>();
+        private final List<HtmlNodeRendererFactory> nodeRendererFactories = new ArrayList<>();
 
         /**
          * @return the configured {@link HtmlRenderer}
          */
         public HtmlRenderer build() {
             return new HtmlRenderer(this);
-        }
-
-        /**
-         * The HTML to use for rendering a softbreak, defaults to {@code "\n"} (meaning the rendered result doesn't have
-         * a line break).
-         * <p>
-         * Set it to {@code "<br>"} (or {@code "<br />"} to make them hard breaks.
-         * <p>
-         * Set it to {@code " "} to ignore line wrapping in the source.
-         *
-         * @param softbreak HTML for softbreak
-         * @return {@code this}
-         */
-        public Builder softbreak(String softbreak) {
-            this.softbreak = softbreak;
-            return this;
-        }
-
-        /**
-         * Whether {@link HtmlInline} and {@link HtmlBlock} should be escaped, defaults to {@code false}.
-         * <p>
-         * Note that {@link HtmlInline} is only a tag itself, not the text between an opening tag and a closing tag. So
-         * markup in the text will be parsed as normal and is not affected by this option.
-         *
-         * @param escapeHtml true for escaping, false for preserving raw HTML
-         * @return {@code this}
-         */
-        public Builder escapeHtml(boolean escapeHtml) {
-            this.escapeHtml = escapeHtml;
-            return this;
-        }
-
-        /**
-         * Whether {@link Image} src and {@link Link} href should be sanitized, defaults to {@code false}.
-         *
-         * @param sanitizeUrls true for sanitization, false for preserving raw attribute
-         * @return {@code this}
-         * @since 0.14.0
-         */
-        public Builder sanitizeUrls(boolean sanitizeUrls) {
-            this.sanitizeUrls = sanitizeUrls;
-            return this;
-        }
-
-        /**
-         * {@link UrlSanitizer} used to filter URL's if {@link #sanitizeUrls} is true.
-         *
-         * @param urlSanitizer Filterer used to filter {@link Image} src and {@link Link}.
-         * @return {@code this}
-         * @since 0.14.0
-         */
-        public Builder urlSanitizer(UrlSanitizer urlSanitizer) {
-            this.urlSanitizer = urlSanitizer;
-            return this;
-        }
-
-        /**
-         * Whether URLs of link or images should be percent-encoded, defaults to {@code false}.
-         * <p>
-         * If enabled, the following is done:
-         * <ul>
-         * <li>Existing percent-encoded parts are preserved (e.g. "%20" is kept as "%20")</li>
-         * <li>Reserved characters such as "/" are preserved, except for "[" and "]" (see encodeURI in JS)</li>
-         * <li>Unreserved characters such as "a" are preserved</li>
-         * <li>Other characters such umlauts are percent-encoded</li>
-         * </ul>
-         *
-         * @param percentEncodeUrls true to percent-encode, false for leaving as-is
-         * @return {@code this}
-         */
-        public Builder percentEncodeUrls(boolean percentEncodeUrls) {
-            this.percentEncodeUrls = percentEncodeUrls;
-            return this;
-        }
-
-        /**
-         * Add a factory for an attribute provider for adding/changing HTML attributes to the rendered tags.
-         *
-         * @param attributeProviderFactory the attribute provider factory to add
-         * @return {@code this}
-         */
-        public Builder attributeProviderFactory(AttributeProviderFactory attributeProviderFactory) {
-            if (attributeProviderFactory == null) {
-                throw new NullPointerException("attributeProviderFactory must not be null");
-            }
-            this.attributeProviderFactories.add(attributeProviderFactory);
-            return this;
         }
 
         /**
@@ -215,19 +105,13 @@ public class HtmlRenderer implements Renderer {
         }
     }
 
-    private class RendererContext implements HtmlNodeRendererContext, AttributeProviderContext {
+    private class RendererContext implements HtmlNodeRendererContext {
 
         private final HtmlWriter htmlWriter;
-        private final List<AttributeProvider> attributeProviders;
         private final NodeRendererMap nodeRendererMap = new NodeRendererMap();
 
         private RendererContext(HtmlWriter htmlWriter) {
             this.htmlWriter = htmlWriter;
-
-            attributeProviders = new ArrayList<>(attributeProviderFactories.size());
-            for (AttributeProviderFactory attributeProviderFactory : attributeProviderFactories) {
-                attributeProviders.add(attributeProviderFactory.create(this));
-            }
 
             // The first node renderer for a node type "wins".
             for (int i = nodeRendererFactories.size() - 1; i >= 0; i--) {
@@ -238,29 +122,18 @@ public class HtmlRenderer implements Renderer {
         }
 
         @Override
-        public boolean shouldEscapeHtml() {
-            return escapeHtml;
-        }
-
-        @Override
         public UrlSanitizer urlSanitizer() {
             return urlSanitizer;
         }
 
         @Override
         public String encodeUrl(String url) {
-            if (percentEncodeUrls) {
-                return Escaping.percentEncodeUrl(url);
-            } else {
-                return url;
-            }
+            return Escaping.percentEncodeUrl(url);
         }
 
         @Override
         public Map<String, String> extendAttributes(Node node, String tagName, Map<String, String> attributes) {
-            Map<String, String> attrs = new LinkedHashMap<>(attributes);
-            setCustomAttributes(node, tagName, attrs);
-            return attrs;
+            return new LinkedHashMap<>(attributes);
         }
 
         @Override
@@ -269,19 +142,8 @@ public class HtmlRenderer implements Renderer {
         }
 
         @Override
-        public String getSoftbreak() {
-            return softbreak;
-        }
-
-        @Override
         public void render(Node node) {
             nodeRendererMap.render(node);
-        }
-
-        private void setCustomAttributes(Node node, String tagName, Map<String, String> attrs) {
-            for (AttributeProvider attributeProvider : attributeProviders) {
-                attributeProvider.setAttributes(node, tagName, attrs);
-            }
         }
     }
 }

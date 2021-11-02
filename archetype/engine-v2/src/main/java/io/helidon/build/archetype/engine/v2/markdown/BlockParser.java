@@ -3,7 +3,7 @@ package io.helidon.build.archetype.engine.v2.markdown;
 /**
  * Parser for a specific block node.
  */
-public interface BlockParser {
+interface BlockParser {
     /**
      * Return true if the block that is parsed is a container (contains other blocks), or false if it's a leaf.
      */
@@ -30,11 +30,9 @@ public interface BlockParser {
     }
 
     /**
-     * Add a source span of the currently parsed block. The default implementation in {@link AbstractBlockParser} adds
+     * Add a source span of the currently parsed block. The default implementation  adds
      * it to the block. Unless you have some complicated parsing where you need to check source positions, you don't
      * need to override this.
-     *
-     * @since 0.16.0
      */
     default void addSourceSpan(SourceSpan sourceSpan) {
         getBlock().addSourceSpan(sourceSpan);

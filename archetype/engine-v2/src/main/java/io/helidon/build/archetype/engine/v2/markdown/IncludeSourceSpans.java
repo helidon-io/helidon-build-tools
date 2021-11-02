@@ -3,10 +3,8 @@ package io.helidon.build.archetype.engine.v2.markdown;
 /**
  * Whether to include {@link SourceSpan} or not while parsing,
  * see {@link Parser.Builder#includeSourceSpans(IncludeSourceSpans)}.
- *
- * @since 0.16.0
  */
-public enum IncludeSourceSpans {
+enum IncludeSourceSpans {
     /**
      * Do not include source spans.
      */

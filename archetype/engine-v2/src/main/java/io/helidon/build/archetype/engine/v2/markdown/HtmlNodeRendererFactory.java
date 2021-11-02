@@ -3,7 +3,7 @@ package io.helidon.build.archetype.engine.v2.markdown;
 /**
  * Factory for instantiating new node renderers when rendering is done.
  */
-public interface HtmlNodeRendererFactory {
+interface HtmlNodeRendererFactory {
 
     /**
      * Create a new node renderer for the specified rendering context.

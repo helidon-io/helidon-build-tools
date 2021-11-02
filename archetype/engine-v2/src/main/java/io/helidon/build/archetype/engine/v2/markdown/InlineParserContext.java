@@ -2,15 +2,23 @@ package io.helidon.build.archetype.engine.v2.markdown;
 
 import java.util.List;
 
-/**
- * Context for inline parsing.
- */
-public interface InlineParserContext {
+class InlineParserContext {
+
+    private final List<DelimiterProcessor> delimiterProcessors;
+    private final LinkReferenceDefinitions linkReferenceDefinitions;
+
+    public InlineParserContext(List<DelimiterProcessor> delimiterProcessors,
+                               LinkReferenceDefinitions linkReferenceDefinitions) {
+        this.delimiterProcessors = delimiterProcessors;
+        this.linkReferenceDefinitions = linkReferenceDefinitions;
+    }
 
     /**
      * @return custom delimiter processors that have been configured with {@link Parser.Builder#customDelimiterProcessor(DelimiterProcessor)}
      */
-    List<DelimiterProcessor> getCustomDelimiterProcessors();
+    public List<DelimiterProcessor> getCustomDelimiterProcessors() {
+        return delimiterProcessors;
+    }
 
     /**
      * Look up a {@link LinkReferenceDefinition} for a given label.
@@ -20,5 +28,7 @@ public interface InlineParserContext {
      * @param label the link label to look up
      * @return the definition if one exists, {@code null} otherwise
      */
-    LinkReferenceDefinition getLinkReferenceDefinition(String label);
+    public LinkReferenceDefinition getLinkReferenceDefinition(String label) {
+        return linkReferenceDefinitions.get(label);
+    }
 }

@@ -4,26 +4,20 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class DocumentParser implements ParserState {
+class DocumentParser implements ParserState {
 
-    private static final Set<Class<? extends Block>> CORE_FACTORY_TYPES = new LinkedHashSet<>(Arrays.asList(
-            FencedCodeBlock.class,
-            IndentedCodeBlock.class));
+    private static final Set<Class<? extends Block>> CORE_FACTORY_TYPES = new LinkedHashSet<>(
+            List.of(FencedCodeBlock.class));
 
-    private static final Map<Class<? extends Block>, BlockParserFactory> NODES_TO_CORE_FACTORIES;
+    private static final Map<Class<? extends Block>, BlockStartFactory> NODES_TO_CORE_FACTORIES;
 
     static {
-        NODES_TO_CORE_FACTORIES = Map.of(
-                FencedCodeBlock.class, new FencedCodeBlockParser.Factory(),
-                IndentedCodeBlock.class, new IndentedCodeBlockParser.Factory());
+        NODES_TO_CORE_FACTORIES = Map.of(FencedCodeBlock.class, new FencedCodeBlockParser.Factory());
     }
 
     private SourceLine line;
@@ -53,8 +47,7 @@ public class DocumentParser implements ParserState {
     private int indent = 0;
     private boolean blank;
 
-    private final List<BlockParserFactory> blockParserFactories;
-    private final InlineParserFactory inlineParserFactory;
+    private final List<BlockStartFactory> blockStartFactories;
     private final List<DelimiterProcessor> delimiterProcessors;
     private final IncludeSourceSpans includeSourceSpans;
     private final DocumentBlockParser documentBlockParser;
@@ -63,10 +56,12 @@ public class DocumentParser implements ParserState {
     private final List<DocumentParser.OpenBlockParser> openBlockParsers = new ArrayList<>();
     private final List<BlockParser> allBlockParsers = new ArrayList<>();
 
-    public DocumentParser(List<BlockParserFactory> blockParserFactories, InlineParserFactory inlineParserFactory,
-                          List<DelimiterProcessor> delimiterProcessors, IncludeSourceSpans includeSourceSpans) {
-        this.blockParserFactories = blockParserFactories;
-        this.inlineParserFactory = inlineParserFactory;
+    public DocumentParser(
+            List<BlockStartFactory> blockStartFactories,
+            List<DelimiterProcessor> delimiterProcessors,
+            IncludeSourceSpans includeSourceSpans
+    ) {
+        this.blockStartFactories = blockStartFactories;
         this.delimiterProcessors = delimiterProcessors;
         this.includeSourceSpans = includeSourceSpans;
 
@@ -78,11 +73,10 @@ public class DocumentParser implements ParserState {
         return CORE_FACTORY_TYPES;
     }
 
-    public static List<BlockParserFactory> calculateBlockParserFactories(List<BlockParserFactory> customBlockParserFactories,
-                                                                         Set<Class<? extends Block>> enabledBlockTypes) {
-        List<BlockParserFactory> list = new ArrayList<>();
+    public static List<BlockStartFactory> calculateBlockParserFactories(List<BlockStartFactory> customBlockStartFactories,
+                                                                        Set<Class<? extends Block>> enabledBlockTypes) {
         // By having the custom factories come first, extensions are able to change behavior of core syntax.
-        list.addAll(customBlockParserFactories);
+        List<BlockStartFactory> list = new ArrayList<>(customBlockStartFactories);
         for (Class<? extends Block> blockType : enabledBlockTypes) {
             list.add(NODES_TO_CORE_FACTORIES.get(blockType));
         }
@@ -144,11 +138,6 @@ public class DocumentParser implements ParserState {
     }
 
     @Override
-    public int getColumn() {
-        return column;
-    }
-
-    @Override
     public int getIndent() {
         return indent;
     }
@@ -179,18 +168,17 @@ public class DocumentParser implements ParserState {
             findNextNonSpace();
 
             BlockContinue result = blockParser.tryContinue(this);
-            if (result instanceof BlockContinueImpl) {
-                BlockContinueImpl blockContinue = (BlockContinueImpl) result;
+            if (result != null) {
                 openBlockParser.sourceIndex = getIndex();
-                if (blockContinue.isFinalize()) {
+                if (result.isFinalize()) {
                     addSourceSpans();
                     closeBlockParsers(openBlockParsers.size() - i);
                     return;
                 } else {
-                    if (blockContinue.getNewIndex() != -1) {
-                        setNewIndex(blockContinue.getNewIndex());
-                    } else if (blockContinue.getNewColumn() != -1) {
-                        setNewColumn(blockContinue.getNewColumn());
+                    if (result.getNewIndex() != -1) {
+                        setNewIndex(result.getNewIndex());
+                    } else if (result.getNewColumn() != -1) {
+                        setNewColumn(result.getNewColumn());
                     }
                     matches++;
                 }
@@ -218,7 +206,7 @@ public class DocumentParser implements ParserState {
                 break;
             }
 
-            BlockStartImpl blockStart = findBlockStart(blockParser);
+            BlockStart blockStart = findBlockStart(blockParser);
             if (blockStart == null) {
                 setNewIndex(nextNonSpace);
                 break;
@@ -239,17 +227,8 @@ public class DocumentParser implements ParserState {
                 setNewColumn(blockStart.getNewColumn());
             }
 
-            List<SourceSpan> replacedSourceSpans = null;
-            if (blockStart.isReplaceActiveBlockParser()) {
-                Block replacedBlock = prepareActiveBlockParserForReplacement();
-                replacedSourceSpans = replacedBlock.getSourceSpans();
-            }
-
             for (BlockParser newBlockParser : blockStart.getBlockParsers()) {
                 addChild(new DocumentParser.OpenBlockParser(newBlockParser, sourceIndex));
-                if (replacedSourceSpans != null) {
-                    newBlockParser.getBlock().setSourceSpans(replacedSourceSpans);
-                }
                 blockParser = newBlockParser;
                 tryBlockStarts = newBlockParser.isContainer();
             }
@@ -423,12 +402,12 @@ public class DocumentParser implements ParserState {
         }
     }
 
-    private BlockStartImpl findBlockStart(BlockParser blockParser) {
+    private BlockStart findBlockStart(BlockParser blockParser) {
         MatchedBlockParser matchedBlockParser = new DocumentParser.MatchedBlockParserImpl(blockParser);
-        for (BlockParserFactory blockParserFactory : blockParserFactories) {
-            BlockStart result = blockParserFactory.tryStart(this, matchedBlockParser);
-            if (result instanceof BlockStartImpl) {
-                return (BlockStartImpl) result;
+        for (BlockStartFactory blockStartFactory : blockStartFactories) {
+            BlockStart result = blockStartFactory.tryStart(this, matchedBlockParser);
+            if (result != null) {
+                return result;
             }
         }
         return null;
@@ -459,8 +438,8 @@ public class DocumentParser implements ParserState {
      * Walk through a block & children recursively, parsing string content into inline content where appropriate.
      */
     private void processInlines() {
-        InlineParserContextImpl context = new InlineParserContextImpl(delimiterProcessors, definitions);
-        InlineParser inlineParser = inlineParserFactory.create(context);
+        InlineParserContext context = new InlineParserContext(delimiterProcessors, definitions);
+        InlineParser inlineParser = new InlineParser(context);
 
         for (BlockParser blockParser : allBlockParsers) {
             blockParser.parseInlines(inlineParser);
@@ -486,26 +465,6 @@ public class DocumentParser implements ParserState {
 
     private DocumentParser.OpenBlockParser deactivateBlockParser() {
         return openBlockParsers.remove(openBlockParsers.size() - 1);
-    }
-
-    private Block prepareActiveBlockParserForReplacement() {
-        // Note that we don't want to parse inlines, as it's getting replaced.
-        BlockParser old = deactivateBlockParser().blockParser;
-
-        if (old instanceof ParagraphParser) {
-            ParagraphParser paragraphParser = (ParagraphParser) old;
-            // Collect any link reference definitions. Note that replacing the active block parser is done after a
-            // block parser got the current paragraph content using MatchedBlockParser#getContentString. In case the
-            // paragraph started with link reference definitions, we parse and strip them before the block parser gets
-            // the content. We want to keep them.
-            // If no replacement happens, we collect the definitions as part of finalizing paragraph blocks.
-            addDefinitionsFrom(paragraphParser);
-        }
-
-        // Do this so that source positions are calculated, which we will carry over to the replacing block.
-        old.closeBlock();
-        old.getBlock().unlink();
-        return old.getBlock();
     }
 
     private Document finalizeAndProcess() {

@@ -10,7 +10,7 @@ import java.util.Set;
 /**
  * The node renderer that renders all the core nodes (comes last in the order of node renderers).
  */
-public class CoreHtmlNodeRenderer extends AbstractVisitor implements NodeRenderer {
+class CoreHtmlNodeRenderer implements NodeRenderer, Visitor {
 
     protected final HtmlNodeRendererContext context;
     private final HtmlWriter html;
@@ -26,8 +26,6 @@ public class CoreHtmlNodeRenderer extends AbstractVisitor implements NodeRendere
                 Document.class,
                 Paragraph.class,
                 FencedCodeBlock.class,
-                HtmlBlock.class,
-                IndentedCodeBlock.class,
                 Link.class,
                 Emphasis.class,
                 StrongEmphasis.class,
@@ -75,24 +73,6 @@ public class CoreHtmlNodeRenderer extends AbstractVisitor implements NodeRendere
     }
 
     @Override
-    public void visit(HtmlBlock htmlBlock) {
-        html.line();
-        if (context.shouldEscapeHtml()) {
-            html.tag("p", getAttrs(htmlBlock, "p"));
-            html.text(htmlBlock.getLiteral());
-            html.tag("/p");
-        } else {
-            html.raw(htmlBlock.getLiteral());
-        }
-        html.line();
-    }
-
-    @Override
-    public void visit(IndentedCodeBlock indentedCodeBlock) {
-        renderCodeBlock(indentedCodeBlock.getLiteral(), indentedCodeBlock, Collections.<String, String>emptyMap());
-    }
-
-    @Override
     public void visit(Link link) {
         Map<String, String> attrs = new LinkedHashMap<>();
         String url = link.getDestination();
@@ -135,8 +115,7 @@ public class CoreHtmlNodeRenderer extends AbstractVisitor implements NodeRendere
         html.tag("/code");
     }
 
-    @Override
-    protected void visitChildren(Node parent) {
+    private void visitChildren(Node parent) {
         Node node = parent.getFirstChild();
         while (node != null) {
             Node next = node.getNext();

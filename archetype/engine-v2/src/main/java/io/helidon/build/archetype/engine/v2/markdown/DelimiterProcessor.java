@@ -1,20 +1,20 @@
 package io.helidon.build.archetype.engine.v2.markdown;
 
 /**
- * Custom delimiter processor for additional delimiters besides {@code _} and {@code *}.
+ * Custom delimiter processor.
  * <p>
  * Note that implementations of this need to be thread-safe, the same instance may be used by multiple parsers.
  */
-public interface DelimiterProcessor {
+interface DelimiterProcessor {
 
     /**
-     * @return the character that marks the beginning of a delimited node, must not clash with any built-in special
+     * @return the character that marks the beginning of a delimited node, must not clash with any other special
      * characters
      */
     char getOpeningCharacter();
 
     /**
-     * @return the character that marks the the ending of a delimited node, must not clash with any built-in special
+     * @return the character that marks the the ending of a delimited node, must not clash with any other special
      * characters. Note that for a symmetric delimiter such as "*", this is the same as the opening.
      */
     char getClosingCharacter();
@@ -33,10 +33,10 @@ public interface DelimiterProcessor {
      * <p>
      * Note that removal (unlinking) of the used delimiter {@link Text} nodes is done by the caller.
      *
-     * @param openingRun the opening delimiter run
-     * @param closingRun the closing delimiter run
+     * @param opening the opening delimiter run
+     * @param closing the closing delimiter run
      * @return how many delimiters were used; must not be greater than length of either opener or closer
      */
-    int process(DelimiterRun openingRun, DelimiterRun closingRun);
+    int process(Delimiter opening, Delimiter closing);
 
 }

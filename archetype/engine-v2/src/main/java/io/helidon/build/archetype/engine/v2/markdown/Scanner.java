@@ -2,7 +2,7 @@ package io.helidon.build.archetype.engine.v2.markdown;
 
 import java.util.List;
 
-public class Scanner {
+class Scanner {
 
     /**
      * Character representing the end of input source (or outside of the text in case of the "previous" methods).
@@ -160,15 +160,6 @@ public class Scanner {
         return count;
     }
 
-    public int match(CharMatcher matcher) {
-        int count = 0;
-        while (matcher.matches(peek())) {
-            count++;
-            next();
-        }
-        return count;
-    }
-
     public int whitespace() {
         int count = 0;
         while (true) {
@@ -195,20 +186,6 @@ public class Scanner {
             if (cur == Scanner.END) {
                 return -1;
             } else if (cur == c) {
-                return count;
-            }
-            count++;
-            next();
-        }
-    }
-
-    public int find(CharMatcher matcher) {
-        int count = 0;
-        while (true) {
-            char c = peek();
-            if (c == END) {
-                return -1;
-            } else if (matcher.matches(c)) {
                 return count;
             }
             count++;

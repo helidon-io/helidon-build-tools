@@ -3,7 +3,7 @@ package io.helidon.build.archetype.engine.v2.markdown;
 /**
  * Block nodes such as paragraphs, list blocks, code blocks etc.
  */
-public abstract class Block extends Node {
+abstract class Block extends Node {
 
     public Block getParent() {
         return (Block) super.getParent();

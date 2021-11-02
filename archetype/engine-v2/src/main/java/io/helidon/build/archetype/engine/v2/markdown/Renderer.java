@@ -1,6 +1,6 @@
 package io.helidon.build.archetype.engine.v2.markdown;
 
-public interface Renderer {
+interface Renderer {
 
     /**
      * Render the tree of nodes to output.

@@ -3,7 +3,7 @@ package io.helidon.build.archetype.engine.v2.markdown;
 /**
  * A line or part of a line from the input source.
  */
-public class SourceLine {
+class SourceLine {
 
     private final CharSequence content;
     private final SourceSpan sourceSpan;

@@ -3,7 +3,7 @@ package io.helidon.build.archetype.engine.v2.markdown;
 /**
  * Attempt to parse backticks, returning either a backtick code span or a literal sequence of backticks.
  */
-public class BackticksInlineParser implements InlineContentParser {
+class BackticksInlineParser implements InlineContentParser {
 
     @Override
     public ParsedInline tryParse(InlineParser inlineParser) {

@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class InlineParser {
+class InlineParser {
 
     private final BitSet specialCharacters;
     private final Map<Character, DelimiterProcessor> delimiterProcessors;
@@ -68,25 +68,13 @@ public class InlineParser {
         return scanner;
     }
 
-    private static void addDelimiterProcessors(Iterable<DelimiterProcessor> delimiterProcessors, Map<Character, DelimiterProcessor> map) {
+    private static void addDelimiterProcessors(Iterable<DelimiterProcessor> delimiterProcessors,
+                                               Map<Character, DelimiterProcessor> map) {
         for (DelimiterProcessor delimiterProcessor : delimiterProcessors) {
             char opening = delimiterProcessor.getOpeningCharacter();
             char closing = delimiterProcessor.getClosingCharacter();
             if (opening == closing) {
-                DelimiterProcessor old = map.get(opening);
-                if (old != null && old.getOpeningCharacter() == old.getClosingCharacter()) {
-                    StaggeredDelimiterProcessor s;
-                    if (old instanceof StaggeredDelimiterProcessor) {
-                        s = (StaggeredDelimiterProcessor) old;
-                    } else {
-                        s = new StaggeredDelimiterProcessor(opening);
-                        s.add(old);
-                    }
-                    s.add(delimiterProcessor);
-                    map.put(opening, s);
-                } else {
-                    addDelimiterProcessorForChar(opening, delimiterProcessor, map);
-                }
+                addDelimiterProcessorForChar(opening, delimiterProcessor, map);
             } else {
                 addDelimiterProcessorForChar(opening, delimiterProcessor, map);
                 addDelimiterProcessorForChar(closing, delimiterProcessor, map);
@@ -94,7 +82,8 @@ public class InlineParser {
         }
     }
 
-    private static void addDelimiterProcessorForChar(char delimiterChar, DelimiterProcessor toAdd, Map<Character, DelimiterProcessor> delimiterProcessors) {
+    private static void addDelimiterProcessorForChar(char delimiterChar, DelimiterProcessor toAdd,
+                                                     Map<Character, DelimiterProcessor> delimiterProcessors) {
         DelimiterProcessor existing = delimiterProcessors.put(delimiterChar, toAdd);
         if (existing != null) {
             throw new IllegalArgumentException("Delimiter processor conflict with delimiter char '" + delimiterChar + "'");
@@ -165,8 +154,8 @@ public class InlineParser {
             Position position = scanner.position();
             for (InlineContentParser inlineParser : inlineParsers) {
                 ParsedInline parsedInline = inlineParser.tryParse(this);
-                if (parsedInline instanceof ParsedInlineImpl) {
-                    ParsedInlineImpl parsedInlineImpl = (ParsedInlineImpl) parsedInline;
+                if (parsedInline instanceof ParsedInline) {
+                    ParsedInline parsedInlineImpl = (ParsedInline) parsedInline;
                     Node node = parsedInlineImpl.getNode();
                     scanner.setPosition(parsedInlineImpl.getPosition());
                     if (includeSourceSpans && node.getSourceSpans().isEmpty()) {
@@ -329,10 +318,8 @@ public class InlineParser {
             // Links within links are not allowed. We found this link, so there can be no other link around it.
             Bracket bracket = lastBracket;
             while (bracket != null) {
-                if (!bracket.image) {
-                    // Disallow link opener. It will still get matched, but will not result in a link.
-                    bracket.allowed = false;
-                }
+                // Disallow link opener. It will still get matched, but will not result in a link.
+                bracket.allowed = false;
                 bracket = bracket.previous;
             }
 

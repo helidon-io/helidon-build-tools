@@ -4,9 +4,6 @@ public class Emphasis extends Node implements Delimited {
 
     private String delimiter;
 
-    public Emphasis() {
-    }
-
     public Emphasis(String delimiter) {
         this.delimiter = delimiter;
     }

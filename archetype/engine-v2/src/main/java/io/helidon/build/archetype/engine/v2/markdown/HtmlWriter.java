@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
-public class HtmlWriter {
+class HtmlWriter {
 
     private static final Map<String, String> NO_ATTRIBUTES = Collections.emptyMap();
 
@@ -16,10 +16,6 @@ public class HtmlWriter {
             throw new NullPointerException("out must not be null");
         }
         this.buffer = out;
-    }
-
-    public void raw(String s) {
-        append(s);
     }
 
     public void text(String text) {
@@ -59,7 +55,7 @@ public class HtmlWriter {
         }
     }
 
-    protected void append(String s) {
+    private void append(String s) {
         try {
             buffer.append(s);
         } catch (IOException e) {

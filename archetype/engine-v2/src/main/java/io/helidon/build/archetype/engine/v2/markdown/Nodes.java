@@ -4,8 +4,6 @@ import java.util.Iterator;
 
 /**
  * Utility class for working with multiple {@link Node}s.
- *
- * @since 0.16.0
  */
 public class Nodes {
 

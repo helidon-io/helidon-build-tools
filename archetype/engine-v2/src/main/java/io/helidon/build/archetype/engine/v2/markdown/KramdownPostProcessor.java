@@ -72,7 +72,7 @@ class KramdownPostProcessor implements PostProcessor {
         return node;
     }
 
-    private class NodeVisitor extends AbstractVisitor {
+    private class NodeVisitor implements Visitor {
 
         @Override
         public void visit(Text text) {

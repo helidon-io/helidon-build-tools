@@ -6,27 +6,59 @@ package io.helidon.build.archetype.engine.v2.markdown;
  */
 public interface Visitor {
 
-    void visit(FencedCodeBlock fencedCodeBlock);
+    default void visit(FencedCodeBlock fencedCodeBlock) {
+        visitChildren(fencedCodeBlock);
+    }
 
-    void visit(IndentedCodeBlock indentedCodeBlock);
+    default void visit(LinkReferenceDefinition linkReferenceDefinition) {
+        visitChildren(linkReferenceDefinition);
+    }
 
-    void visit(LinkReferenceDefinition linkReferenceDefinition);
+    default void visit(Paragraph paragraph) {
+        visitChildren(paragraph);
+    }
 
-    void visit(Paragraph paragraph);
+    default void visit(Document document) {
+        visitChildren(document);
+    }
 
-    void visit(Document document);
+    default void visit(StrongEmphasis strongEmphasis) {
+        visitChildren(strongEmphasis);
+    }
 
-    void visit(StrongEmphasis strongEmphasis);
+    default void visit(Emphasis emphasis) {
+        visitChildren(emphasis);
+    }
 
-    void visit(Emphasis emphasis);
+    default void visit(Code code) {
+        visitChildren(code);
+    }
 
-    void visit(HtmlBlock htmlBlock);
+    default void visit(Text text) {
+        visitChildren(text);
+    }
 
-    void visit(Code code);
+    default void visit(Link link) {
+        visitChildren(link);
+    }
 
-    void visit(Text text);
+    default void visit(CustomNode customNode) {
+        visitChildren(customNode);
+    }
 
-    void visit(Link link);
-
-    void visit(CustomNode customNode);
+    /**
+     * Visit the child nodes.
+     *
+     * @param parent the parent node whose children should be visited
+     */
+    private void visitChildren(Node parent) {
+        Node node = parent.getFirstChild();
+        while (node != null) {
+            // A subclass of this visitor might modify the node, resulting in getNext returning a different node or no
+            // node after visiting it. So get the next node before visiting.
+            Node next = node.getNext();
+            node.accept(this);
+            node = next;
+        }
+    }
 }

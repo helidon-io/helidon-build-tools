@@ -5,10 +5,8 @@ import java.util.List;
 
 /**
  * Parser for link reference definitions at the beginning of a paragraph.
- *
- * @see <a href="https://spec.commonmark.org/0.29/#link-reference-definition">Link reference definitions</a>
  */
-public class LinkReferenceDefinitionParser {
+class LinkReferenceDefinitionParser {
 
     private LinkReferenceDefinitionParser.State state = LinkReferenceDefinitionParser.State.START_DEFINITION;
 

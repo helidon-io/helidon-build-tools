@@ -5,7 +5,7 @@ import java.util.Objects;
 /**
  * A source span references a snippet of text from the source input.
  */
-public class SourceSpan {
+class SourceSpan {
 
     private final int lineIndex;
     private final int columnIndex;

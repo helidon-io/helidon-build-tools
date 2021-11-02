@@ -2,7 +2,7 @@ package io.helidon.build.archetype.engine.v2.markdown;
 
 import java.util.List;
 
-public class ParagraphParser implements BlockParser {
+class ParagraphParser implements BlockParser {
 
     private final Paragraph block = new Paragraph();
     private final LinkReferenceDefinitionParser linkReferenceDefinitionParser = new LinkReferenceDefinitionParser();

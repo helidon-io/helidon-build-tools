@@ -2,12 +2,12 @@ package io.helidon.build.archetype.engine.v2.markdown;
 
 import static io.helidon.build.archetype.engine.v2.markdown.Escaping.unescapeString;
 
-public class FencedCodeBlockParser implements BlockParser {
+class FencedCodeBlockParser implements BlockParser {
 
     private final FencedCodeBlock block = new FencedCodeBlock();
 
     private String firstLine;
-    private StringBuilder otherLines = new StringBuilder();
+    private final StringBuilder otherLines = new StringBuilder();
 
     public FencedCodeBlockParser(char fenceChar, int fenceLength, int fenceIndent) {
         block.setFenceChar(fenceChar);
@@ -57,7 +57,7 @@ public class FencedCodeBlockParser implements BlockParser {
         block.setLiteral(otherLines.toString());
     }
 
-    public static class Factory implements BlockParserFactory {
+    public static class Factory implements BlockStartFactory {
 
         @Override
         public BlockStart tryStart(ParserState state, MatchedBlockParser matchedBlockParser) {

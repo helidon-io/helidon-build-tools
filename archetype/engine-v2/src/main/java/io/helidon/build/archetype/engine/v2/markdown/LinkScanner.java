@@ -1,6 +1,6 @@
 package io.helidon.build.archetype.engine.v2.markdown;
 
-public class LinkScanner {
+class LinkScanner {
 
     /**
      * Attempt to scan the contents of a link label (inside the brackets), stopping after the content or returning false.

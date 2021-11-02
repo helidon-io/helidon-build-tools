@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Delimiter (emphasis, strong emphasis or custom emphasis).
  */
-public class Delimiter implements DelimiterRun {
+class Delimiter {
 
     public final List<Text> characters;
     public final char delimiterChar;
@@ -29,37 +29,30 @@ public class Delimiter implements DelimiterRun {
         this.originalLength = characters.size();
     }
 
-    @Override
     public boolean canOpen() {
         return canOpen;
     }
 
-    @Override
     public boolean canClose() {
         return canClose;
     }
 
-    @Override
     public int length() {
         return characters.size();
     }
 
-    @Override
     public int originalLength() {
         return originalLength;
     }
 
-    @Override
     public Text getOpener() {
         return characters.get(characters.size() - 1);
     }
 
-    @Override
     public Text getCloser() {
         return characters.get(0);
     }
 
-    @Override
     public Iterable<Text> getOpeners(int length) {
         if (!(length >= 1 && length <= length())) {
             throw new IllegalArgumentException("length must be between 1 and " + length() + ", was " + length);
@@ -68,7 +61,6 @@ public class Delimiter implements DelimiterRun {
         return characters.subList(characters.size() - length, characters.size());
     }
 
-    @Override
     public Iterable<Text> getClosers(int length) {
         if (!(length >= 1 && length <= length())) {
             throw new IllegalArgumentException("length must be between 1 and " + length() + ", was " + length);
