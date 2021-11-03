@@ -312,8 +312,8 @@ abstract class ArchetypeInvoker {
             }
 
             // Set base if provided on command-line
-            if (initOptions.archetypeName() != null) {
-                params.put(ARCHETYPE_BASE_PROPERTY, initOptions.archetypeName());
+            if (initOptions.archetypeNameOption() != null) {
+                params.put(ARCHETYPE_BASE_PROPERTY, initOptions.archetypeNameOption());
             }
             if (isInteractive()) {
 
