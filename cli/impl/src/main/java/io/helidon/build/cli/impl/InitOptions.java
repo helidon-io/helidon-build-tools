@@ -52,6 +52,7 @@ public final class InitOptions {
     private String helidonVersion;
     private final BuildSystem build;
     private final String archetypeName;
+    private final String archetypeNameOption;
     private final String archetypePath;
     private final ArchetypeInvoker.EngineVersion engineVersion;
     private final Flavor flavorOption;
@@ -96,7 +97,7 @@ public final class InitOptions {
             @KeyValue(name = "flavor", description = "Helidon flavor") Flavor flavor,
             @KeyValue(name = "build", description = "Build type", defaultValue = "MAVEN") BuildSystem build,
             @KeyValue(name = "version", description = "Helidon version") String version,
-            @KeyValue(name = "archetype", description = "Archetype name", defaultValue = DEFAULT_ARCHETYPE_NAME)
+            @KeyValue(name = "archetype", description = "Archetype name")
                     String archetypeName,
             @KeyValue(name = "groupid", description = "Project's group ID") String groupId,
             @KeyValue(name = "artifactid", description = "Project's artifact ID") String artifactId,
@@ -108,7 +109,8 @@ public final class InitOptions {
 
         this.build = build;
         this.helidonVersion = version;
-        this.archetypeName = archetypeName;
+        this.archetypeNameOption = archetypeName;
+        this.archetypeName = archetypeName == null ? DEFAULT_ARCHETYPE_NAME : archetypeName;
         this.archetypePath = archetypePath;
         this.engineVersion = getEngineVersion(engineVersion);
         this.flavorOption = flavor;
@@ -184,6 +186,15 @@ public final class InitOptions {
      */
     BuildSystem build() {
         return build;
+    }
+
+    /**
+     * Get the archetype name option.
+     *
+     * @return archetype name
+     */
+    String archetypeNameOption() {
+        return archetypeNameOption;
     }
 
     /**

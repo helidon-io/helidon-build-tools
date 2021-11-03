@@ -74,11 +74,12 @@ public final class InitCommand extends BaseCommand {
     @Override
     protected void invoke(CommandContext context) throws Exception {
 
-        // Attempt to find default Helidon version if none provided
+        // Get Helidon version if not provided
         String helidonVersion = initOptions.helidonVersion();
         if (helidonVersion == null) {
             if (batch) {
                 helidonVersion = defaultHelidonVersion();
+                Log.info("Using Helidon version " + helidonVersion);
             } else {
                 String defaultHelidonVersion = null;
                 try {
@@ -91,7 +92,6 @@ public final class InitCommand extends BaseCommand {
             }
             initOptions.helidonVersion(helidonVersion);
         }
-        Log.info("Using Helidon version " + helidonVersion);
 
         ArchetypeInvoker archetypeInvoker = ArchetypeInvoker
                 .builder()
