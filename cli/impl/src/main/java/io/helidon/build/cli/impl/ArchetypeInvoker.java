@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -42,6 +43,7 @@ import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
 import static io.helidon.build.common.Requirements.require;
+import static java.util.Collections.unmodifiableMap;
 
 /**
  * Class ArchetypeInvoker.
@@ -64,12 +66,14 @@ abstract class ArchetypeInvoker {
     private final Metadata metadata;
     private final boolean batch;
     private final InitOptions initOptions;
+    private final Map<String, String> initProperties;
     private final Function<String, Path> projectDirSupplier;
 
     private ArchetypeInvoker(Builder builder) {
         metadata = builder.metadata;
         batch = builder.batch;
         initOptions = builder.initOptions;
+        initProperties = unmodifiableMap(builder.initProperties);
         projectDirSupplier = builder.projectDirSupplier;
     }
 
@@ -98,6 +102,15 @@ abstract class ArchetypeInvoker {
      */
     protected InitOptions initOptions() {
         return initOptions;
+    }
+
+    /**
+     * Get the init properties.
+     *
+     * @return The properties.
+     */
+    protected Map<String, String> initProperties() {
+        return initProperties;
     }
 
     /**
@@ -141,9 +154,11 @@ abstract class ArchetypeInvoker {
         private Metadata metadata;
         private boolean batch;
         private InitOptions initOptions;
+        private final Map<String, String> initProperties;
         private Function<String, Path> projectDirSupplier;
 
         private Builder() {
+            initProperties = new HashMap<>();
         }
 
         /**
@@ -176,6 +191,17 @@ abstract class ArchetypeInvoker {
          */
         Builder initOptions(InitOptions initOptions) {
             this.initOptions = initOptions;
+            return this;
+        }
+
+        /**
+         * Set any properties passed on the command line.
+         *
+         * @param properties the properties
+         * @return this builder
+         */
+        Builder initProperties(Properties properties) {
+            properties.forEach((key, value) -> initProperties.put((String) key, (String) value));
             return this;
         }
 
@@ -297,11 +323,17 @@ abstract class ArchetypeInvoker {
         @Override
         Path invoke() throws IOException {
             InitOptions initOptions = initOptions();
-            Map<String, String> params = new HashMap<>();
             Map<String, String> defaults = new HashMap<>();
 
-            // We've already got helidon version, don't prompt again
+            // Initialize params with any properties passed on the command-line; options will take precedence
+            Map<String, String> params = new HashMap<>(initProperties());
+
+            // We've already got helidon version, don't prompt again. Note that this will not override
+            // any "helidon.version" command-line property as that is already set in InitOptions
             params.put(HELIDON_VERSION_PROPERTY, initOptions.helidonVersion());
+
+            // Ensure that flavor is lower case if present.
+            params.computeIfPresent(FLAVOR_PROPERTY, (key, value) -> value.toLowerCase());
 
             // Don't prompt for build system since we only support one for now
             params.put(BUILD_SYSTEM_PROPERTY, SUPPORTED_BUILD_SYSTEM);
