@@ -163,7 +163,6 @@
         <version.lib.slf4j>1.7.25</version.lib.slf4j>
         <version.lib.spotbugs-annotations>3.1.12</version.lib.spotbugs-annotations>
         <version.lib.wagon-http>3.3.4</version.lib.wagon-http>
-        <version.lib.commonmark>0.18.0</version.lib.commonmark>
 
         <!--
             !Version statement! - end
