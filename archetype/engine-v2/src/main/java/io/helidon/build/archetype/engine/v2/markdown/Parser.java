@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2021 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.build.archetype.engine.v2.markdown;
 
 import java.util.ArrayList;
@@ -14,7 +30,8 @@ public class Parser {
     private final List<PostProcessor> postProcessors;
 
     private Parser(Builder builder) {
-        this.blockStartFactories = DocumentParser.calculateBlockParserFactories(builder.blockStartFactories, builder.enabledBlockTypes);
+        this.blockStartFactories = DocumentParser.calculateBlockParserFactories(
+                builder.blockStartFactories, builder.enabledBlockTypes);
         this.postProcessors = builder.postProcessors;
         this.delimiterProcessors = builder.delimiterProcessors;
     }
@@ -106,6 +123,12 @@ public class Parser {
             return this;
         }
 
+        /**
+         * Add a postProcessor.
+         *
+         * @param postProcessor custom postProcessor
+         * @return {@code this}
+         */
         public Parser.Builder postProcessor(PostProcessor postProcessor) {
             if (postProcessor == null) {
                 throw new NullPointerException("postProcessor must not be null");
@@ -119,6 +142,11 @@ public class Parser {
      * Extension for {@link Parser}.
      */
     public interface ParserExtension extends Extension {
+        /**
+         * Extent builder.
+         *
+         * @param parserBuilder Builder
+         */
         void extend(Builder parserBuilder);
     }
 }

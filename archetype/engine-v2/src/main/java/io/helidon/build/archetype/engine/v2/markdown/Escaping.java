@@ -1,11 +1,30 @@
+/*
+ * Copyright (c) 2021 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.build.archetype.engine.v2.markdown;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 class Escaping {
+
+    private Escaping() {
+
+    }
 
     public static final String ESCAPABLE = "[!\"#$%&\'()*+,./:;<=>?@\\[\\\\\\]^_`{|}~-]";
 
@@ -23,8 +42,6 @@ class Escaping {
     private static final char[] HEX_DIGITS =
             new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
-    private static final Pattern WHITESPACE = Pattern.compile("[ \t\r\n]+");
-
     private static final Replacer UNESCAPE_REPLACER = (input, sb) -> {
         if (input.charAt(0) == '\\') {
             sb.append(input, 1, input.length());
@@ -34,7 +51,6 @@ class Escaping {
     private static final Replacer URI_REPLACER = (input, sb) -> {
         if (input.startsWith("%")) {
             if (input.length() == 3) {
-                // Already percent-encoded, preserve
                 sb.append(input);
             } else {
                 // %25 is the percent-encoding for %
@@ -52,7 +68,6 @@ class Escaping {
     };
 
     public static String escapeHtml(String input) {
-        // Avoid building a new string in the majority of cases (nothing to escape)
         StringBuilder sb = null;
 
         loop:
@@ -101,19 +116,6 @@ class Escaping {
 
     public static String percentEncodeUrl(String s) {
         return replaceAll(ESCAPE_IN_URI, s, URI_REPLACER);
-    }
-
-    public static String normalizeLabelContent(String input) {
-        String trimmed = input.trim();
-
-        // This is necessary to correctly case fold "ẞ" to "SS":
-        // "ẞ".toLowerCase(Locale.ROOT)  -> "ß"
-        // "ß".toUpperCase(Locale.ROOT)  -> "SS"
-        // Note that doing upper first (or only upper without lower) wouldn't work because:
-        // "ẞ".toUpperCase(Locale.ROOT)  -> "ẞ"
-        String caseFolded = trimmed.toLowerCase(Locale.ROOT).toUpperCase(Locale.ROOT);
-
-        return WHITESPACE.matcher(caseFolded).replaceAll(" ");
     }
 
     private static String replaceAll(Pattern p, String s, Replacer replacer) {

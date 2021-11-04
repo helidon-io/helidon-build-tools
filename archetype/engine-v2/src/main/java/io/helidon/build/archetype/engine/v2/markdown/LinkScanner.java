@@ -1,6 +1,26 @@
+/*
+ * Copyright (c) 2021 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.build.archetype.engine.v2.markdown;
 
 class LinkScanner {
+
+    private LinkScanner() {
+
+    }
 
     /**
      * Attempt to scan the contents of a link label (inside the brackets), stopping after the content or returning false.
@@ -19,8 +39,6 @@ class LinkScanner {
                 case ']':
                     return true;
                 case '[':
-                    // spec: Unescaped square bracket characters are not allowed inside the opening and closing
-                    // square brackets of link labels.
                     return false;
                 default:
                     scanner.next();
@@ -104,7 +122,6 @@ class LinkScanner {
             } else if (c == endDelimiter) {
                 return true;
             } else if (endDelimiter == ')' && c == '(') {
-                // unescaped '(' in title within parens is invalid
                 return false;
             } else {
                 scanner.next();
@@ -113,9 +130,6 @@ class LinkScanner {
         return true;
     }
 
-    // spec: a nonempty sequence of characters that does not start with <, does not include ASCII space or control
-    // characters, and includes parentheses only if (a) they are backslash-escaped or (b) they are part of a balanced
-    // pair of unescaped parentheses
     private static boolean scanLinkDestinationWithBalancedParens(Scanner scanner) {
         int parens = 0;
         boolean empty = true;
@@ -132,7 +146,6 @@ class LinkScanner {
                     break;
                 case '(':
                     parens++;
-                    // Limit to 32 nested parens for pathological cases
                     if (parens > 32) {
                         return false;
                     }
@@ -147,7 +160,6 @@ class LinkScanner {
                     scanner.next();
                     break;
                 default:
-                    // or control character
                     if (Character.isISOControl(c)) {
                         return !empty;
                     }

@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests for {@link KramdownExtension}, Markdown parser and rendering Markdown text to {@code html}.
  */
-class KramdownExtensionTest {
+class MarkdownSupportTest {
 
     private static final Set<Extension> EXTENSIONS = Collections.singleton(KramdownExtension.create());
     private static final Parser PARSER = Parser.builder().extensions(EXTENSIONS).build();

@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2021 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.build.archetype.engine.v2.markdown;
 
 /**
@@ -5,39 +21,39 @@ package io.helidon.build.archetype.engine.v2.markdown;
  */
 class Bracket {
 
-    public final Text node;
+    private final Text node;
 
     /**
-     * The position of the marker for the bracket (<code>[</code>)
+     * The position of the marker for the bracket (<code>[</code>).
      */
-    public final Position markerPosition;
+    private final Position markerPosition;
 
     /**
-     * The position of the content (after the opening bracket)
+     * The position of the content (after the opening bracket).
      */
-    public final Position contentPosition;
+    private final Position contentPosition;
 
     /**
      * Previous bracket.
      */
-    public final Bracket previous;
+    private final Bracket previous;
 
     /**
      * Previous delimiter (emphasis, etc) before this bracket.
      */
-    public final Delimiter previousDelimiter;
+    private final Delimiter previousDelimiter;
 
     /**
      * Whether this bracket is allowed to form a link (also known as "active").
      */
-    public boolean allowed = true;
+    private boolean allowed = true;
 
     /**
      * Whether there is an unescaped bracket (opening or closing) anywhere after this opening bracket.
      */
-    public boolean bracketAfter = false;
+    private boolean bracketAfter = false;
 
-    static public Bracket link(Text node, Position markerPosition, Position contentPosition, Bracket previous,
+    public static Bracket link(Text node, Position markerPosition, Position contentPosition, Bracket previous,
                                Delimiter previousDelimiter) {
         return new Bracket(node, markerPosition, contentPosition, previous, previousDelimiter);
     }
@@ -48,5 +64,41 @@ class Bracket {
         this.contentPosition = contentPosition;
         this.previous = previous;
         this.previousDelimiter = previousDelimiter;
+    }
+
+    public Text node() {
+        return node;
+    }
+
+    public Position markerPosition() {
+        return markerPosition;
+    }
+
+    public Position contentPosition() {
+        return contentPosition;
+    }
+
+    public Bracket previous() {
+        return previous;
+    }
+
+    public Delimiter previousDelimiter() {
+        return previousDelimiter;
+    }
+
+    public boolean allowed() {
+        return allowed;
+    }
+
+    public void allowed(boolean allowed) {
+        this.allowed = allowed;
+    }
+
+    public boolean bracketAfter() {
+        return bracketAfter;
+    }
+
+    public void bracketAfter(boolean bracketAfter) {
+        this.bracketAfter = bracketAfter;
     }
 }

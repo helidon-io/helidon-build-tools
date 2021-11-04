@@ -62,7 +62,6 @@ class KramdownPostProcessor implements PostProcessor {
         }
 
         if (lastNode != textNode) {
-            // Original node no longer needed
             textNode.unlink();
         }
     }

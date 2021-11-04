@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2021 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.build.archetype.engine.v2.markdown;
 
 import java.util.List;
@@ -12,16 +28,10 @@ class Scanner {
      */
     public static final char END = '\0';
 
-    // Lines without newlines at the end. The scanner will yield `\n` between lines because they're significant for
-    // parsing and the final output. There is no `\n` after the last line.
     private final List<SourceLine> lines;
-    // Which line we're at.
     private int lineIndex;
-    // The index within the line. If index == length(), we pretend that there's a `\n` and only advance after we yield
-    // that.
     private int index;
 
-    // Current line or "" if at the end of the lines (using "" instead of null saves a null check)
     private SourceLine line = SourceLine.of("");
     private int lineLength = 0;
 
@@ -46,7 +56,6 @@ class Scanner {
             if (lineIndex < lines.size() - 1) {
                 return '\n';
             } else {
-                // Don't return newline for end of last line
                 return END;
             }
         }
@@ -66,7 +75,6 @@ class Scanner {
             if (lineIndex < lines.size() - 1) {
                 return '\n';
             } else {
-                // Don't return newline for end of last line
                 return END;
             }
         }
@@ -96,7 +104,6 @@ class Scanner {
         if (index < lineLength) {
             return true;
         } else {
-            // No newline at end of last line
             return lineIndex < lines.size() - 1;
         }
     }
@@ -138,7 +145,6 @@ class Scanner {
      */
     public boolean next(String content) {
         if (index < lineLength && index + content.length() <= lineLength) {
-            // Can't use startsWith because it's not available on CharSequence
             for (int i = 0; i < content.length(); i++) {
                 if (line.getContent().charAt(index + i) != content.charAt(i)) {
                     return false;
@@ -193,40 +199,34 @@ class Scanner {
         }
     }
 
-    // Don't expose the int index, because it would be good if we could switch input to a List<String> of lines later
-    // instead of one contiguous String.
     public Position position() {
         return new Position(lineIndex, index);
     }
 
     public void setPosition(Position position) {
-        checkPosition(position.lineIndex, position.index);
-        this.lineIndex = position.lineIndex;
-        this.index = position.index;
+        checkPosition(position.lineIndex(), position.index());
+        this.lineIndex = position.lineIndex();
+        this.index = position.index();
         setLine(lines.get(this.lineIndex));
     }
 
-    // For cases where the caller appends the result to a StringBuilder, we could offer another method to avoid some
-    // unnecessary copying.
     public SourceLines getSource(Position begin, Position end) {
-        if (begin.lineIndex == end.lineIndex) {
-            // Shortcut for common case of text from a single line
-            SourceLine line = lines.get(begin.lineIndex);
-            CharSequence newContent = line.getContent().subSequence(begin.index, end.index);
+        if (begin.lineIndex() == end.lineIndex()) {
+            SourceLine line = lines.get(begin.lineIndex());
+            CharSequence newContent = line.getContent().subSequence(begin.index(), end.index());
             return SourceLines.of(SourceLine.of(newContent));
         } else {
             SourceLines sourceLines = SourceLines.empty();
 
-            SourceLine firstLine = lines.get(begin.lineIndex);
-            sourceLines.addLine(firstLine.substring(begin.index, firstLine.getContent().length()));
+            SourceLine firstLine = lines.get(begin.lineIndex());
+            sourceLines.addLine(firstLine.substring(begin.index(), firstLine.getContent().length()));
 
-            // Lines between begin and end (we are appending the full line)
-            for (int line = begin.lineIndex + 1; line < end.lineIndex; line++) {
+            for (int line = begin.lineIndex() + 1; line < end.lineIndex(); line++) {
                 sourceLines.addLine(lines.get(line));
             }
 
-            SourceLine lastLine = lines.get(end.lineIndex);
-            sourceLines.addLine(lastLine.substring(0, end.index));
+            SourceLine lastLine = lines.get(end.lineIndex());
+            sourceLines.addLine(lastLine.substring(0, end.index()));
             return sourceLines;
         }
     }

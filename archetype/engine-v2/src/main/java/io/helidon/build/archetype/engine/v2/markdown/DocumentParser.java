@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2021 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.build.archetype.engine.v2.markdown;
 
 import java.io.BufferedReader;
@@ -23,22 +39,22 @@ class DocumentParser implements ParserState {
     private SourceLine line;
 
     /**
-     * Line index (0-based)
+     * Line index (0-based).
      */
     private int lineIndex = -1;
 
     /**
-     * current index (offset) in input line (0-based)
+     * current index (offset) in input line (0-based).
      */
     private int index = 0;
 
     /**
-     * current column of input line (tab causes column to go to next 4-space tab stop) (0-based)
+     * current column of input line (tab causes column to go to next 4-space tab stop) (0-based).
      */
     private int column = 0;
 
     /**
-     * if the current column is within a tab character (partially consumed tab)
+     * if the current column is within a tab character (partially consumed tab).
      */
     private boolean columnIsInTab;
 
@@ -54,7 +70,7 @@ class DocumentParser implements ParserState {
     private final List<DocumentParser.OpenBlockParser> openBlockParsers = new ArrayList<>();
     private final List<BlockParser> allBlockParsers = new ArrayList<>();
 
-    public DocumentParser(
+    DocumentParser(
             List<BlockStartFactory> blockStartFactories,
             List<DelimiterProcessor> delimiterProcessors
     ) {
@@ -71,7 +87,6 @@ class DocumentParser implements ParserState {
 
     public static List<BlockStartFactory> calculateBlockParserFactories(List<BlockStartFactory> customBlockStartFactories,
                                                                         Set<Class<? extends Block>> enabledBlockTypes) {
-        // By having the custom factories come first, extensions are able to change behavior of core syntax.
         List<BlockStartFactory> list = new ArrayList<>(customBlockStartFactories);
         for (Class<? extends Block> blockType : enabledBlockTypes) {
             list.add(NODES_TO_CORE_FACTORIES.get(blockType));
@@ -155,8 +170,6 @@ class DocumentParser implements ParserState {
     private void parseLine(CharSequence ln) {
         setLine(ln);
 
-        // For each containing block, try to parse the associated line start.
-        // The document will always match, so we can skip the first block parser and start at 1 matches
         int matches = 1;
         for (int i = 1; i < openBlockParsers.size(); i++) {
             DocumentParser.OpenBlockParser openBlockParser = openBlockParsers.get(i);
@@ -188,15 +201,12 @@ class DocumentParser implements ParserState {
 
         int lastIndex = index;
 
-        // Unless last matched container is a code block, try new container starts,
-        // adding children to the last matched container:
         boolean tryBlockStarts = blockParser.getBlock() instanceof Paragraph || blockParser.isContainer();
         while (tryBlockStarts) {
             lastIndex = index;
             findNextNonSpace();
 
-            // this is a little performance optimization:
-            if (isBlank() || (indent < Parsing.CODE_BLOCK_INDENT && Parsing.isLetter(this.line.getContent(), nextNonSpace))) {
+            if (isBlank() || (indent < Parsing.codeBlockIndent() && Parsing.isLetter(this.line.getContent(), nextNonSpace))) {
                 setNewIndex(nextNonSpace);
                 break;
             }
@@ -210,7 +220,6 @@ class DocumentParser implements ParserState {
             startedNewBlock = true;
             int sourceIndex = getIndex();
 
-            // We're starting a new block. If we have any previous blocks that need to be closed, we need to do it now.
             if (unmatchedBlocks > 0) {
                 closeBlockParsers(unmatchedBlocks);
                 unmatchedBlocks = 0;
@@ -229,19 +238,13 @@ class DocumentParser implements ParserState {
             }
         }
 
-        // What remains at the offset is a text line. Add the text to the
-        // appropriate block.
-
-        // First check for a lazy paragraph continuation:
-        if (!startedNewBlock && !isBlank() &&
-                getActiveBlockParser().canHaveLazyContinuationLines()) {
+        if (!startedNewBlock
+                && !isBlank()
+                && getActiveBlockParser().canHaveLazyContinuationLines()
+        ) {
             openBlockParsers.get(openBlockParsers.size() - 1).sourceIndex = lastIndex;
-            // lazy paragraph continuation
             addLine();
-
         } else {
-
-            // finalize any blocks not matched
             if (unmatchedBlocks > 0) {
                 closeBlockParsers(unmatchedBlocks);
             }
@@ -249,7 +252,6 @@ class DocumentParser implements ParserState {
             if (!blockParser.isContainer()) {
                 addLine();
             } else if (!isBlank()) {
-                // create paragraph container for line
                 ParagraphParser paragraphParser = new ParagraphParser();
                 addChild(new DocumentParser.OpenBlockParser(paragraphParser, lastIndex));
                 addLine();
@@ -284,6 +286,7 @@ class DocumentParser implements ParserState {
                     i++;
                     cols += (4 - (cols % 4));
                     continue;
+                default:
             }
             blank = false;
             break;
@@ -296,7 +299,6 @@ class DocumentParser implements ParserState {
 
     private void setNewIndex(int newIndex) {
         if (newIndex >= nextNonSpace) {
-            // We can start from here, no need to calculate tab stops again
             index = nextNonSpace;
             column = nextNonSpaceColumn;
         }
@@ -304,13 +306,11 @@ class DocumentParser implements ParserState {
         while (index < newIndex && index != length) {
             advance();
         }
-        // If we're going to an index as opposed to a column, we're never within a tab
         columnIsInTab = false;
     }
 
     private void setNewColumn(int newColumn) {
         if (newColumn >= nextNonSpaceColumn) {
-            // We can start from here, no need to calculate tab stops again
             index = nextNonSpace;
             column = nextNonSpaceColumn;
         }
@@ -319,7 +319,6 @@ class DocumentParser implements ParserState {
             advance();
         }
         if (column > newColumn) {
-            // Last character was a tab and we overshot our target
             index--;
             column = newColumn;
             columnIsInTab = true;
@@ -345,7 +344,6 @@ class DocumentParser implements ParserState {
     private void addLine() {
         CharSequence content;
         if (columnIsInTab) {
-            // Our column is in a partially consumed tab. Expand the remaining columns (to the next tab stop) to spaces.
             int afterTab = index + 1;
             CharSequence rest = line.getContent().subSequence(afterTab, line.getContent().length());
             int spaces = Parsing.columnsToNextTabStop(column);
@@ -425,9 +423,6 @@ class DocumentParser implements ParserState {
         for (int i = 0; i < count; i++) {
             BlockParser blockParser = deactivateBlockParser().blockParser;
             finalize(blockParser);
-            // Remember for inline parsing. Note that a lot of blocks don't need inline parsing. We could have a
-            // separate interface (e.g. BlockParserWithInlines) so that we only have to remember those that actually
-            // have inlines to parse.
             allBlockParsers.add(blockParser);
         }
     }
@@ -436,7 +431,7 @@ class DocumentParser implements ParserState {
 
         private final BlockParser matchedBlockParser;
 
-        public MatchedBlockParserImpl(BlockParser matchedBlockParser) {
+        MatchedBlockParserImpl(BlockParser matchedBlockParser) {
             this.matchedBlockParser = matchedBlockParser;
         }
 

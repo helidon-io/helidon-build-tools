@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2021 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.build.archetype.engine.v2.markdown;
 
 import java.util.ArrayList;
@@ -16,7 +32,6 @@ public class HtmlRenderer implements Renderer {
     private HtmlRenderer(Builder builder) {
         this.nodeRendererFactories = new ArrayList<>(builder.nodeRendererFactories.size() + 1);
         this.nodeRendererFactories.addAll(builder.nodeRendererFactories);
-        // Add as last. This means clients can override the rendering of core nodes if they want.
         this.nodeRendererFactories.add(CoreHtmlNodeRenderer::new);
     }
 
@@ -43,6 +58,11 @@ public class HtmlRenderer implements Renderer {
      * Extension for {@link HtmlRenderer}.
      */
     public interface HtmlRendererExtension extends Extension {
+        /**
+         * Extends {@code HtmlRenderer} through the Builder instance.
+         *
+         * @param rendererBuilder rendererBuilder
+         */
         void extend(Builder rendererBuilder);
     }
 
@@ -113,7 +133,6 @@ public class HtmlRenderer implements Renderer {
         private RendererContext(HtmlWriter htmlWriter) {
             this.htmlWriter = htmlWriter;
 
-            // The first node renderer for a node type "wins".
             for (int i = nodeRendererFactories.size() - 1; i >= 0; i--) {
                 HtmlNodeRendererFactory nodeRendererFactory = nodeRendererFactories.get(i);
                 NodeRenderer nodeRenderer = nodeRendererFactory.create(this);

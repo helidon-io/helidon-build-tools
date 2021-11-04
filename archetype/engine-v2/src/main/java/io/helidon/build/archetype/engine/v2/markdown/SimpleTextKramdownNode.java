@@ -51,11 +51,6 @@ class SimpleTextKramdownNode extends KramdownNode {
         return attributes;
     }
 
-//    @Override
-//    public void accept(Visitor visitor) {
-//        visitor.visit(this);
-//    }
-
     @Override
     <T> void accept(KramdownVisitor<T> visitor, T arg) {
         visitor.visit(this, arg);

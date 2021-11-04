@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2021 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.build.archetype.engine.v2.markdown;
 
 import java.util.List;
@@ -7,26 +23,45 @@ import java.util.List;
  */
 class Delimiter {
 
-    public final List<Text> characters;
-    public final char delimiterChar;
+    private final List<Text> characters;
+    private final char delimiterChar;
     private final int originalLength;
-
-    // Can open emphasis, see spec.
     private final boolean canOpen;
-
-    // Can close emphasis, see spec.
     private final boolean canClose;
+    private Delimiter previous;
+    private Delimiter next;
 
-    public Delimiter previous;
-    public Delimiter next;
-
-    public Delimiter(List<Text> characters, char delimiterChar, boolean canOpen, boolean canClose, Delimiter previous) {
+    Delimiter(List<Text> characters, char delimiterChar, boolean canOpen, boolean canClose, Delimiter previous) {
         this.characters = characters;
         this.delimiterChar = delimiterChar;
         this.canOpen = canOpen;
         this.canClose = canClose;
         this.previous = previous;
         this.originalLength = characters.size();
+    }
+
+    public Delimiter previous() {
+        return previous;
+    }
+
+    public Delimiter next() {
+        return next;
+    }
+
+    public void previous(Delimiter previous) {
+        this.previous = previous;
+    }
+
+    public void next(Delimiter next) {
+        this.next = next;
+    }
+
+    public List<Text> characters() {
+        return characters;
+    }
+
+    public char delimiterChar() {
+        return delimiterChar;
     }
 
     public boolean canOpen() {
@@ -52,21 +87,4 @@ class Delimiter {
     public Text getCloser() {
         return characters.get(0);
     }
-
-    public Iterable<Text> getOpeners(int length) {
-        if (!(length >= 1 && length <= length())) {
-            throw new IllegalArgumentException("length must be between 1 and " + length() + ", was " + length);
-        }
-
-        return characters.subList(characters.size() - length, characters.size());
-    }
-
-    public Iterable<Text> getClosers(int length) {
-        if (!(length >= 1 && length <= length())) {
-            throw new IllegalArgumentException("length must be between 1 and " + length() + ", was " + length);
-        }
-
-        return characters.subList(0, length);
-    }
 }
-    

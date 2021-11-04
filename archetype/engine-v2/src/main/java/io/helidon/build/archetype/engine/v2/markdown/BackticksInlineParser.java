@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2021 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.build.archetype.engine.v2.markdown;
 
 /**
@@ -21,12 +37,11 @@ class BackticksInlineParser implements InlineContentParser {
                 String content = scanner.getSource(afterOpening, beforeClosing).getContent();
                 content = content.replace('\n', ' ');
 
-                // spec: If the resulting string both begins and ends with a space character, but does not consist
-                // entirely of space characters, a single space character is removed from the front and back.
-                if (content.length() >= 3 &&
-                        content.charAt(0) == ' ' &&
-                        content.charAt(content.length() - 1) == ' ' &&
-                        Parsing.hasNonSpace(content)) {
+                if (content.length() >= 3
+                        && content.charAt(0) == ' '
+                        && content.charAt(content.length() - 1) == ' '
+                        && Parsing.hasNonSpace(content)
+                ) {
                     content = content.substring(1, content.length() - 1);
                 }
 
@@ -35,7 +50,6 @@ class BackticksInlineParser implements InlineContentParser {
             }
         }
 
-        // If we got here, we didn't find a matching closing backtick sequence.
         SourceLines source = scanner.getSource(start, afterOpening);
         Text text = new Text(source.getContent());
         return ParsedInline.of(text, afterOpening);

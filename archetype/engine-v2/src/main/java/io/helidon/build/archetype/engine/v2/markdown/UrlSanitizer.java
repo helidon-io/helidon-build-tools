@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2021 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.build.archetype.engine.v2.markdown;
 
 import java.util.Arrays;
@@ -14,11 +30,11 @@ import java.util.Set;
 class UrlSanitizer {
     private final Set<String> protocols;
 
-    public UrlSanitizer() {
+    UrlSanitizer() {
         this(Arrays.asList("http", "https", "mailto"));
     }
 
-    public UrlSanitizer(Collection<String> protocols) {
+    UrlSanitizer(Collection<String> protocols) {
         this.protocols = new HashSet<>(protocols);
     }
 
@@ -37,13 +53,15 @@ class UrlSanitizer {
                         return "";
                     }
                     break protocol_loop;
+                default:
             }
         }
         return url;
     }
 
     private String stripHtmlSpaces(String s) {
-        int i = 0, n = s.length();
+        int i = 0;
+        int n = s.length();
         for (; n > i; --n) {
             if (!isHtmlSpace(s.charAt(n - 1))) {
                 break;

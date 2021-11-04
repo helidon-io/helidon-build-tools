@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 /**
- * Extension that provides support for the non-standard markdown syntax (kramdown extension).
- * See <a href="https://kramdown.gettalong.org/syntax.html#extensions>Kramdown extensions</a>.
+ * Markdown support.
  */
 package io.helidon.build.archetype.engine.v2.markdown;

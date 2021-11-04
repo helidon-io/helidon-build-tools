@@ -1,11 +1,34 @@
+/*
+ * Copyright (c) 2021 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.build.archetype.engine.v2.markdown;
 
 class Parsing {
 
-    public static int CODE_BLOCK_INDENT = 4;
+    private static final int CODE_BLOCK_INDENT = 4;
+
+    private Parsing() {
+
+    }
+
+    public static int codeBlockIndent() {
+        return CODE_BLOCK_INDENT;
+    }
 
     public static int columnsToNextTabStop(int column) {
-        // Tab stop is 4
         return 4 - (column % 4);
     }
 
@@ -26,6 +49,7 @@ class Parsing {
                 case '\n':
                 case '\r':
                     return i;
+                default:
             }
         }
         return -1;
@@ -77,6 +101,7 @@ class Parsing {
             case '}':
             case '~':
                 return true;
+            default:
         }
         return false;
     }
@@ -123,10 +148,9 @@ class Parsing {
     }
 
     /**
-     * Prepares the input line replacing {@code \0}
+     * Prepares the input line replacing {@code \0}.
      */
     public static CharSequence prepareLine(CharSequence line) {
-        // Avoid building a new string in the majority of cases (no \0)
         StringBuilder sb = null;
         int length = line.length();
         for (int i = 0; i < length; i++) {
