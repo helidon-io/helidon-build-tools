@@ -35,10 +35,12 @@ import io.helidon.build.archetype.engine.v1.FlowNodeControllers;
 import io.helidon.build.archetype.engine.v1.FlowNodeControllers.FlowNodeController;
 import io.helidon.build.archetype.engine.v1.Maps;
 import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
+import io.helidon.build.archetype.engine.v2.UnresolvedInputException;
 import io.helidon.build.archetype.engine.v2.archive.Archetype;
 import io.helidon.build.archetype.engine.v2.archive.ArchetypeFactory;
 import io.helidon.build.archetype.engine.v2.prompter.CLIPrompter;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
+import io.helidon.build.common.RequirementFailure;
 import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
@@ -374,24 +376,35 @@ abstract class ArchetypeInvoker {
 
             } else {
 
-                // Batch mode, so pass merged init options as params
+                // Batch mode, so pass merged init options as defaults
 
-                params.put(PROJECT_NAME_PROPERTY, initOptions.projectName());
-                params.put(GROUP_ID_PROPERTY, initOptions.groupId());
-                params.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
-                params.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
+                defaults.put(PROJECT_NAME_PROPERTY, initOptions.projectName());
+                defaults.put(GROUP_ID_PROPERTY, initOptions.groupId());
+                defaults.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
+                defaults.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
             }
 
+            boolean batch = !isInteractive();
             ArchetypeEngineV2 engine = new ArchetypeEngineV2(
                     getArchetype(initOptions().archetypePath()),
                     ENTRY_POINT_DESCRIPTOR,
                     new CLIPrompter(),
                     params,
                     defaults,
-                    false,
+                    batch,
+                    batch,
                     List.of());
-
-            return engine.generate(projectDirSupplier());
+            try {
+                return engine.generate(projectDirSupplier());
+            } catch (UnresolvedInputException e) {
+                String inputPath = e.inputPath();
+                String option = optionName(inputPath);
+                if (option == null) {
+                    throw new RequirementFailure("Missing required option: -D%s=<value>", inputPath);
+                } else {
+                    throw new RequirementFailure("Missing required option: %s <value> or -D%s=<value>", option, inputPath);
+                }
+            }
         }
 
         @Override
@@ -411,6 +424,29 @@ abstract class ArchetypeInvoker {
                 throw new IOException("Archetype archive does not exist at path : " + archetypePath);
             }
             return ArchetypeFactory.create(archetype);
+        }
+
+        private static String optionName(String inputPath) {
+            switch (inputPath) {
+                case FLAVOR_PROPERTY:
+                    return "--flavor";
+                case BUILD_SYSTEM_PROPERTY:
+                    return "--build";
+                case HELIDON_VERSION_PROPERTY:
+                    return "--version";
+                case ARCHETYPE_BASE_PROPERTY:
+                    return "--archetype";
+                case GROUP_ID_PROPERTY:
+                    return "--groupId";
+                case ARTIFACT_ID_PROPERTY:
+                    return "--artifactId";
+                case PACKAGE_NAME_PROPERTY:
+                    return "--package";
+                case PROJECT_NAME_PROPERTY:
+                    return "--name";
+                default:
+                    return null;
+            }
         }
     }
 }

@@ -50,17 +50,19 @@ public class ArchetypeEngineV2 {
     private final Prompter prompter;
     private final Map<String, String> externalValues = new HashMap<>();
     private final Map<String, String> externalDefaults = new HashMap<>();
+    private final boolean failOnUnresolvedInput;
     private boolean skipOptional;
     private List<Visitor<ASTNode>> additionalVisitors = new ArrayList<>();
 
     /**
      * Create a new archetype engine instance.
-     *  @param archetype          archetype
+     * @param archetype          archetype
      * @param startPoint         entry point in the archetype
      * @param prompter           prompter
      * @param presets            external Flow Context values
      * @param defaults           external Flow Context default values
      * @param skipOptional       mark that indicates whether to skip optional input
+     * @param failOnUnresolvedInput fail if there are any unresolved inputs
      * @param additionalVisitors additional Visitor for the {@code Interpreter}
      */
     public ArchetypeEngineV2(Archetype archetype,
@@ -69,6 +71,7 @@ public class ArchetypeEngineV2 {
                              Map<String, String> presets,
                              Map<String, String> defaults,
                              boolean skipOptional,
+                             boolean failOnUnresolvedInput,
                              List<Visitor<ASTNode>> additionalVisitors) {
         this.archetype = archetype;
         this.startPoint = startPoint;
@@ -80,6 +83,7 @@ public class ArchetypeEngineV2 {
             externalDefaults.putAll(defaults);
         }
         this.skipOptional = skipOptional;
+        this.failOnUnresolvedInput = failOnUnresolvedInput;
         if (additionalVisitors != null) {
             this.additionalVisitors.addAll(additionalVisitors);
         }
@@ -111,6 +115,8 @@ public class ArchetypeEngineV2 {
                         userInputAST.path(),
                         externalValues.get(userInputAST.path())
                 );
+            } else if (failOnUnresolvedInput) {
+                throw new UnresolvedInputException(userInputAST.path());
             } else {
                 Prompt<?> prompt = PromptFactory.create(userInputAST, flow.canBeGenerated());
                 contextNodeAST = prompt.acceptAndConvert(prompter, userInputAST.path());

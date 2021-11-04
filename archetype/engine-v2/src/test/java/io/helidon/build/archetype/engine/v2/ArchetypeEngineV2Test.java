@@ -67,6 +67,7 @@ class ArchetypeEngineV2Test extends ArchetypeBaseTest {
                                                                     presets,
                                                                     defaults,
                                                                     true,
+                                                                    false,
                                                                     List.of());
 
         Path outputDir = archetypeEngineV2.generate(ArchetypeEngineV2Test::projectNameToDirectory);
@@ -145,7 +146,9 @@ class ArchetypeEngineV2Test extends ArchetypeBaseTest {
                                                                     new DefaultPrompterImpl(true),
                                                                     presets,
                                                                     Map.of(),
-                                                                    true, List.of());
+                                                                    true,
+                                                                    false,
+                                                                    List.of());
         try {
             archetypeEngineV2.generate(ArchetypeEngineV2Test::projectNameToDirectory);
             fail("should have failed");
@@ -169,7 +172,8 @@ class ArchetypeEngineV2Test extends ArchetypeBaseTest {
                                                                     new DefaultPrompterImpl(true),
                                                                     presets,
                                                                     Map.of(),
-                                                                    true, List.of());
+                                                                    true,
+                                                                    false, List.of());
         try {
             archetypeEngineV2.generate(ArchetypeEngineV2Test::projectNameToDirectory);
             fail("should have failed");
