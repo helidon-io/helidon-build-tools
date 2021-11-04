@@ -45,14 +45,17 @@ import io.helidon.build.archetype.engine.v2.prompter.Prompter;
  */
 public class ArchetypeEngineV2 {
 
+    private static final String PROJECT_NAME_PATH = "project.name";
+    private static final String PROJECT_DIRECTORY_PATH = "project.directory";
+
     private final Archetype archetype;
     private final String startPoint;
     private final Prompter prompter;
     private final Map<String, String> externalValues = new HashMap<>();
     private final Map<String, String> externalDefaults = new HashMap<>();
     private final boolean failOnUnresolvedInput;
-    private boolean skipOptional;
-    private List<Visitor<ASTNode>> additionalVisitors = new ArrayList<>();
+    private final boolean skipOptional;
+    private final List<Visitor<ASTNode>> additionalVisitors = new ArrayList<>();
 
     /**
      * Create a new archetype engine instance.
@@ -129,12 +132,12 @@ public class ArchetypeEngineV2 {
             flow.build(contextAST);
         }
 
-        String projectName = ((ContextTextAST) flow.pathToContextNodeMap().get("project.name")).text();
+        String projectName = ((ContextTextAST) flow.pathToContextNodeMap().get(PROJECT_NAME_PATH)).text();
         Path projectDir = projectDirSupplier.apply(projectName);
-        ContextTextAST projectDirNode = new ContextTextAST("project.directory");
+        ContextTextAST projectDirNode = new ContextTextAST(PROJECT_DIRECTORY_PATH);
         projectDirNode.text(projectDir.toString());
         context.children().add(projectDirNode);
-        flow.pathToContextNodeMap().put("project.directory", projectDirNode);
+        flow.pathToContextNodeMap().put(PROJECT_DIRECTORY_PATH, projectDirNode);
 
         flow.build(new ContextAST());
         Flow.Result result = flow.result().orElseThrow(() -> {
