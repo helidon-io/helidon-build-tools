@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.build.archetype.engine.v2.PropertyEvaluator;
+import io.helidon.build.common.PropertyEvaluator;
 
 public class ReadyFlowState extends FlowState {
 

@@ -57,6 +57,14 @@ public class ContextTextAST extends ContextNodeAST {
     }
 
     @Override
+    public String toString() {
+        return "ContextTextAST{"
+               + "path='" + path() + '\''
+               + ", text='" + text + '\''
+               + '}';
+    }
+
+    @Override
     public <A> void accept(Visitor<A> visitor, A arg) {
         visitor.visit(this, arg);
     }

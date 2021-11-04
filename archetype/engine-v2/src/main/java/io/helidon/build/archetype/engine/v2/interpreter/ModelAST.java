@@ -40,7 +40,15 @@ public class ModelAST extends ASTNode implements ConditionalNode {
         return visitor.visit(this, arg);
     }
 
-    static ModelAST create(Model model, ASTNode parent, Location location) {
+    /**
+     * Create a ModelAST.
+     *
+     * @param model xml model descriptor
+     * @param parent parent node
+     * @param location location
+     * @return ModelAST
+     */
+    public static ModelAST create(Model model, ASTNode parent, Location location) {
         ModelAST result = new ModelAST(parent, location);
 
         LinkedList<Visitable> children = getChildren(model, result, location);

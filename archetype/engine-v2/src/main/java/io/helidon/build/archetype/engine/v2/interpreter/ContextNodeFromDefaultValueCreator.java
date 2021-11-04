@@ -58,11 +58,11 @@ class ContextNodeFromDefaultValueCreator extends GenericVisitorEmptyImpl<Context
 
     @Override
     public ContextNodeAST visit(InputTextAST input, ASTNode arg) {
-        if (input.defaultValue() == null && input.placeHolder() == null) {
+        if (input.defaultValue() == null) {
             return null;
         }
         ContextTextAST result = new ContextTextAST(input.path());
-        result.text(input.placeHolder() != null ? input.placeHolder() : input.defaultValue());
+        result.text(input.defaultValue());
         return result;
     }
 }

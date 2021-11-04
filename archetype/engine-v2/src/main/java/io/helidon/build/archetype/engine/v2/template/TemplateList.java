@@ -19,16 +19,17 @@ package io.helidon.build.archetype.engine.v2.template;
 import java.util.LinkedList;
 import java.util.List;
 
-import io.helidon.build.archetype.engine.v2.descriptor.ListType;
-import io.helidon.build.archetype.engine.v2.descriptor.MapType;
 import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
+import io.helidon.build.archetype.engine.v2.interpreter.ListTypeAST;
+import io.helidon.build.archetype.engine.v2.interpreter.MapTypeAST;
+import io.helidon.build.archetype.engine.v2.interpreter.ValueTypeAST;
 
 /**
  * Template list used in {@link TemplateModel}.
  */
 public class TemplateList implements Comparable {
 
-    private final List<ValueType> templateValues = new LinkedList<>();
+    private final List<ValueTypeAST> templateValues = new LinkedList<>();
     private final List<TemplateList> templateLists = new LinkedList<>();
     private final List<TemplateMap> templateMaps = new LinkedList<>();
     private final int order;
@@ -38,15 +39,20 @@ public class TemplateList implements Comparable {
      *
      * @param list list containing xml descriptor data
      */
-    public TemplateList(ListType list) {
+    public TemplateList(ListTypeAST list) {
         this.order = list.order();
-        templateValues.addAll(list.values());
-        for (MapType map : list.maps()) {
-            templateMaps.add(new TemplateMap(map));
-        }
-        for (ListType listType : list.lists()) {
-            templateLists.add(new TemplateList(listType));
-        }
+        list.children().stream()
+                .filter(o -> o instanceof ValueTypeAST)
+                .map(o -> (ValueTypeAST) o)
+                .forEach(templateValues::add);
+        list.children().stream()
+                .filter(o -> o instanceof ListTypeAST)
+                .map(o -> (ListTypeAST) o)
+                .forEach(l -> templateLists.add(new TemplateList(l)));
+        list.children().stream()
+                .filter(o -> o instanceof MapTypeAST)
+                .map(o -> (MapTypeAST) o)
+                .forEach(m -> templateMaps.add(new TemplateMap(m)));
     }
 
     /**
@@ -63,7 +69,7 @@ public class TemplateList implements Comparable {
      *
      * @return values
      */
-    public List<ValueType> values() {
+    public List<ValueTypeAST> values() {
         return templateValues;
     }
 

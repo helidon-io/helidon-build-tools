@@ -21,7 +21,7 @@ import java.util.Objects;
 /**
  * Archetype value used in {@link ListType}.
  */
-public class ValueType extends Conditional implements Comparable {
+public class ValueType extends Conditional {
 
     private String value;
     private final String url;
@@ -139,11 +139,4 @@ public class ValueType extends Conditional implements Comparable {
                 + '}';
     }
 
-    @Override
-    public int compareTo(Object value) {
-        if (value instanceof ValueType) {
-            return Integer.compare(this.order, ((ValueType) value).order);
-        }
-        return 0;
-    }
 }

@@ -30,14 +30,14 @@ import java.util.Set;
 import io.helidon.build.archetype.engine.v2.MustacheHandler;
 import io.helidon.build.archetype.engine.v2.MustacheTemplateEngine;
 import io.helidon.build.archetype.engine.v2.TemplateEngine;
-import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
+import io.helidon.build.archetype.engine.v2.interpreter.ValueTypeAST;
 
 /**
  * Class used to render Preprocessed and external values.
  */
 public class MustacheResolver {
 
-    private static MergingMap<String, ValueType> valuesMap;
+    private static MergingMap<String, ValueTypeAST> valuesMap;
     private static MergingMap<String, TemplateMap> mapsMap;
     private static final Set<String> FILES = new HashSet<>();
 
@@ -54,7 +54,7 @@ public class MustacheResolver {
      * @param maps              Model maps
      * @param templateFiles     Template file list
      */
-    public static void render(MergingMap<String, ValueType> values,
+    public static void render(MergingMap<String, ValueTypeAST> values,
                               MergingMap<String, TemplateList> lists,
                               MergingMap<String, TemplateMap> maps,
                               Set<String> templateFiles) {
@@ -78,25 +78,23 @@ public class MustacheResolver {
      * @param templateFiles     Template files list to be rendered
      * @param scope             scope used by Mustache
      */
-    public static void renderTemplateFiles(MergingMap<String, ValueType> values,
+    public static void renderTemplateFiles(MergingMap<String, ValueTypeAST> values,
                                            MergingMap<String, TemplateList> lists,
                                            MergingMap<String, TemplateMap> maps,
                                            Set<String> templateFiles,
-                                           Map<String, Object> scope) {
+                                           Map<String, Object> scope) throws IOException {
 
         TemplateEngine engine = new MustacheTemplateEngine();
         for (String file : templateFiles) {
             ByteArrayOutputStream content = new ByteArrayOutputStream();
             try (InputStream fileStream = new FileInputStream(file)) {
                 engine.render(fileStream, file,  StandardCharsets.UTF_8, content, scope);
-            } catch (IOException e) {
-                System.out.println("file not found");
             }
             injectIntoModel(values, lists, maps, content, file);
         }
     }
 
-    private static void injectIntoModel(MergingMap<String, ValueType> values,
+    private static void injectIntoModel(MergingMap<String, ValueTypeAST> values,
                                         MergingMap<String, TemplateList> lists,
                                         MergingMap<String, TemplateMap> maps,
                                         OutputStream content,
@@ -124,9 +122,9 @@ public class MustacheResolver {
         }
     }
 
-    private static void findFileIntoValues(MergingMap<String, ValueType> values, OutputStream content, String file) {
+    private static void findFileIntoValues(MergingMap<String, ValueTypeAST> values, OutputStream content, String file) {
         for (String key : values.keySet()) {
-            ValueType value = values.get(key);
+            ValueTypeAST value = values.get(key);
             if (value.file() != null
                     && value.file().equals(file)
                     && value.template() != null
@@ -136,8 +134,8 @@ public class MustacheResolver {
         }
     }
 
-    private static void findFileIntoValues(List<ValueType> values, OutputStream content, String file) {
-        for (ValueType value : values) {
+    private static void findFileIntoValues(List<ValueTypeAST> values, OutputStream content, String file) {
+        for (ValueTypeAST value : values) {
             if (value.file() != null
                     && value.file().equals(file)
                     && value.template() != null
@@ -195,19 +193,19 @@ public class MustacheResolver {
         }
     }
 
-    private static void parseValues(List<ValueType> values) {
-        for (ValueType templateValue : values) {
+    private static void parseValues(List<ValueTypeAST> values) {
+        for (ValueTypeAST templateValue : values) {
             lookForKey(templateValue);
         }
     }
 
-    private static void parseValues(MergingMap<String, ValueType> values) {
+    private static void parseValues(MergingMap<String, ValueTypeAST> values) {
         for (String key : values.keySet()) {
             lookForKey(values.get(key));
         }
     }
 
-    private static void lookForKey(ValueType value) {
+    private static void lookForKey(ValueTypeAST value) {
         if (value.template() != null && value.template().equals(MustacheHandler.MUSTACHE)) {
             if (value.value() != null && value.value().startsWith("{{") && value.value().endsWith("}}")) {
                 String keyWord = value.value().substring(2, value.value().length() - 2);
@@ -226,7 +224,7 @@ public class MustacheResolver {
     private static String inspectModel(String keyWord) {
         String[] path = keyWord.split("\\.");
         MergingMap<String, TemplateMap> maps = mapsMap;
-        MergingMap<String, ValueType> values = valuesMap;
+        MergingMap<String, ValueTypeAST> values = valuesMap;
         int pathIx = 0;
 
         while (pathIx < path.length) {

@@ -18,6 +18,7 @@ package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -56,15 +57,19 @@ public class ArchetypeDescriptorReader implements SimpleXMLParser.Reader {
 
     /**
      * Read the descriptor from the given input stream.
+     *
+     *
+     * @param archetypePath path to the archetype.
+     * @param descriptorPath path to descriptor.
      * @param is input stream
      * @return descriptor, never {@code null}
      */
-    static ArchetypeDescriptor read(InputStream is) {
+    static ArchetypeDescriptor read(Path archetypePath, Path descriptorPath, InputStream is) {
         try {
             ArchetypeDescriptorReader reader = new ArchetypeDescriptorReader();
             SimpleXMLParser.parse(is, reader);
-            return new ArchetypeDescriptor(reader.archetypeAttributes, reader.context, reader.steps, reader.inputs,
-                    reader.source, reader.exec, reader.output, reader.help);
+            return new ArchetypeDescriptor(archetypePath, descriptorPath, reader.archetypeAttributes, reader.context,
+                                           reader.steps, reader.inputs, reader.source, reader.exec, reader.output, reader.help);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }

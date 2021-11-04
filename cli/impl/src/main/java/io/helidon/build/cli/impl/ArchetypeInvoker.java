@@ -17,11 +17,7 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
@@ -200,11 +196,11 @@ abstract class ArchetypeInvoker {
         /**
          * Build the invoker instance.
          *
-         * @return {@link V1Invoker} if the configured Helidon version is associated with the V1 engine,
+         * @return {@link V1Invoker} if the configured Helidon archetype version is associated with the V1 engine,
          * otherwise {@link V2Invoker}
          */
         ArchetypeInvoker build() {
-            if (MavenVersion.toMavenVersion(initOptions.helidonVersion()).isLessThan(HELIDON_V3)) {
+            if (initOptions.engineVersion().equals(EngineVersion.V1)) {
                 return new V1Invoker(this);
             }
             return new V2Invoker(this);
@@ -283,27 +279,87 @@ abstract class ArchetypeInvoker {
      * Invoker for the archetype V2 engine.
      */
     static class V2Invoker extends ArchetypeInvoker {
+        private static final String ENTRY_POINT_DESCRIPTOR = "flavor.xml";
+        private static final String FLAVOR_PROPERTY = "flavor";
+        private static final String PROJECT_NAME_PROPERTY = "project.name";
+        private static final String GROUP_ID_PROPERTY = "project.groupId";
+        private static final String ARTIFACT_ID_PROPERTY = "project.artifactId";
+        private static final String PACKAGE_NAME_PROPERTY = "package";
+        private static final String HELIDON_VERSION_PROPERTY = "helidon.version";
+        private static final String BUILD_SYSTEM_PROPERTY = "build-system";
+        private static final String ARCHETYPE_BASE_PROPERTY = "base";
+        private static final String SUPPORTED_BUILD_SYSTEM = "maven"; // We only support one
 
         private V2Invoker(Builder builder) {
             super(builder);
         }
 
         @Override
-        Path invoke() {
-            Path projectDir = projectDirSupplier().apply(initOptions().initProperties().get("name"));
+        Path invoke() throws IOException {
+            InitOptions initOptions = initOptions();
+            Map<String, String> params = new HashMap<>();
+            Map<String, String> defaults = new HashMap<>();
+
+            // We've already got helidon version, don't prompt again
+            params.put(HELIDON_VERSION_PROPERTY, initOptions.helidonVersion());
+
+            // Don't prompt for build system since we only support one for now
+            params.put(BUILD_SYSTEM_PROPERTY, SUPPORTED_BUILD_SYSTEM);
+
+            // Set flavor if provided on command-line
+            if (initOptions.flavorOption() != null) {
+                params.put(FLAVOR_PROPERTY, initOptions.flavorOption().toString());
+            }
+
+            // Set base if provided on command-line
+            if (initOptions.archetypeNameOption() != null) {
+                params.put(ARCHETYPE_BASE_PROPERTY, initOptions.archetypeNameOption());
+            }
+            if (isInteractive()) {
+
+                // Set remaining command-line options as params and user config as defaults
+
+                if (initOptions.projectNameOption() != null) {
+                    params.put(PROJECT_NAME_PROPERTY, initOptions.projectNameOption());
+                } else {
+                    defaults.put(PROJECT_NAME_PROPERTY, initOptions.projectName());
+                }
+                if (initOptions.groupIdOption() != null) {
+                    params.put(GROUP_ID_PROPERTY, initOptions.groupIdOption());
+                } else {
+                    defaults.put(GROUP_ID_PROPERTY, initOptions.groupId());
+                }
+                if (initOptions.artifactIdOption() != null) {
+                    params.put(ARTIFACT_ID_PROPERTY, initOptions.artifactIdOption());
+                } else {
+                    defaults.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
+                }
+                if (initOptions.packageNameOption() != null) {
+                    params.put(PACKAGE_NAME_PROPERTY, initOptions.packageNameOption());
+                } else {
+                    defaults.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
+                }
+
+            } else {
+
+                // Batch mode, so pass merged init options as params
+
+                params.put(PROJECT_NAME_PROPERTY, initOptions.projectName());
+                params.put(GROUP_ID_PROPERTY, initOptions.groupId());
+                params.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
+                params.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
+            }
 
             ArchetypeEngineV2 engine = new ArchetypeEngineV2(
-                    getArchetype(projectDir.toFile()),
-                    "flavor.xml",
+                    getArchetype(initOptions().archetypePath()),
+                    ENTRY_POINT_DESCRIPTOR,
                     new CLIPrompter(),
-                    new HashMap<>(),
+                    params,
+                    defaults,
                     false,
-                    List.of()
-            );
+                    List.of());
 
-            engine.generate(projectDir.toFile());
-            deleteArchetype(projectDir.resolve("cli-data.zip"));
-            return projectDir;
+            return engine.generate(projectDirSupplier());
         }
 
         @Override
@@ -313,41 +369,16 @@ abstract class ArchetypeInvoker {
 
         /**
          * Get the archetype file.
-         * This is a temporary method which need to be removed. Instead, a mechanism
-         * for passing archetype to cli has to be found.
          *
-         * @param directory directory
-         * @return  archetype
+         * @param archetypePath path to archetype
+         * @return archetype
          */
-        private Archetype getArchetype(File directory) {
-            try (
-                    InputStream is = getClass().getResourceAsStream("/cli-data.zip")
-            ) {
-                Path outputPath = Path.of(directory.getAbsolutePath()).resolve("cli-data.zip");
-                outputPath.toFile().getParentFile().mkdirs();
-                Files.createFile(outputPath);
-                OutputStream os = new FileOutputStream(outputPath.toString());
-                os.write(is.readAllBytes());
-                os.close();
-                File archetype = new File(outputPath.toString());
-                return ArchetypeFactory.create(archetype);
-            } catch (IOException e) {
-                e.printStackTrace();
-                return null;
+        private Archetype getArchetype(String archetypePath) throws IOException {
+            File archetype = Path.of(archetypePath).toFile();
+            if (!archetype.exists()) {
+                throw new IOException("Archetype archive does not exist at path : " + archetypePath);
             }
-        }
-
-        /**
-         * Delete archetype after being used.
-         * This method has to be removed.
-         *
-         * @param archetype archetype file path
-         */
-        private void deleteArchetype(Path archetype) {
-            try {
-                Files.delete(archetype);
-            } catch (IOException ignored) {
-            }
+            return ArchetypeFactory.create(archetype);
         }
     }
 }

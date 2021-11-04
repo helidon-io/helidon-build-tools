@@ -30,11 +30,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import io.helidon.build.archetype.engine.v2.descriptor.Model;
-import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyList;
-import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyMap;
-import io.helidon.build.archetype.engine.v2.descriptor.ModelKeyValue;
-import io.helidon.build.archetype.engine.v2.descriptor.ValueType;
+import io.helidon.build.archetype.engine.v2.interpreter.ModelAST;
+import io.helidon.build.archetype.engine.v2.interpreter.ModelKeyListAST;
+import io.helidon.build.archetype.engine.v2.interpreter.ModelKeyMapAST;
+import io.helidon.build.archetype.engine.v2.interpreter.ModelKeyValueAST;
+import io.helidon.build.archetype.engine.v2.interpreter.ValueTypeAST;
 import io.helidon.build.archetype.engine.v2.template.MergingMap;
 import io.helidon.build.archetype.engine.v2.template.ModelSorter;
 import io.helidon.build.archetype.engine.v2.template.ModelTransformer;
@@ -56,9 +56,9 @@ public class MustacheHandler {
      * Mustache factory.
      */
     private static final MustacheFactory MUSTACHE_FACTORY = new DefaultMustacheFactory();
-    private static final MergingMap<String, ValueType>      TEMPLATE_VALUES_MAP = new MergingMap<>();
-    private static final MergingMap<String, TemplateList>   TEMPLATE_LISTS_MAP  = new MergingMap<>();
-    private static final MergingMap<String, TemplateMap>    TEMPLATE_MAPS_MAP   = new MergingMap<>();
+    private static final MergingMap<String, ValueTypeAST> TEMPLATE_VALUES_MAP = new MergingMap<>();
+    private static final MergingMap<String, TemplateList> TEMPLATE_LISTS_MAP  = new MergingMap<>();
+    private static final MergingMap<String, TemplateMap>  TEMPLATE_MAPS_MAP   = new MergingMap<>();
     private static final Set<String> TEMPLATE_FILES = new HashSet<>();
 
     /**
@@ -122,7 +122,7 @@ public class MustacheHandler {
      *
      * @return          Object usually used as Mustache scope
      */
-    private static Map<String, Object> createScope(TemplateModel model) {
+    private static Map<String, Object> createScope(TemplateModel model) throws IOException {
         resolveModel(model.model());
         ModelSorter.sortModelByOrder(TEMPLATE_VALUES_MAP, TEMPLATE_LISTS_MAP, TEMPLATE_MAPS_MAP);
         MustacheResolver.render(TEMPLATE_VALUES_MAP, TEMPLATE_LISTS_MAP, TEMPLATE_MAPS_MAP, TEMPLATE_FILES);
@@ -136,16 +136,19 @@ public class MustacheHandler {
         return scope;
     }
 
-    private static void resolveModel(Model model) {
-        for (ModelKeyValue value : model.keyValues()) {
-            TEMPLATE_VALUES_MAP.put(value.key(), value);
-        }
-        for (ModelKeyList list : model.keyLists()) {
-            TEMPLATE_LISTS_MAP.put(list.key(), new TemplateList(list));
-        }
-        for (ModelKeyMap map : model.keyMaps()) {
-            TEMPLATE_MAPS_MAP.put(map.key(), new TemplateMap(map));
-        }
+    private static void resolveModel(ModelAST model) {
+        model.children().stream()
+                .filter(o -> o instanceof ModelKeyValueAST)
+                .map(o -> (ModelKeyValueAST) o)
+                .forEach(v -> TEMPLATE_VALUES_MAP.put(v.key(), v));
+        model.children().stream()
+                .filter(o -> o instanceof ModelKeyListAST)
+                .map(o -> (ModelKeyListAST) o)
+                .forEach(l -> TEMPLATE_LISTS_MAP.put(l.key(), new TemplateList(l)));
+        model.children().stream()
+                .filter(o -> o instanceof ModelKeyMapAST)
+                .map(o -> (ModelKeyMapAST) o)
+                .forEach(m -> TEMPLATE_MAPS_MAP.put(m.key(), new TemplateMap(m)));
     }
 
     private static void cleanHandler() {

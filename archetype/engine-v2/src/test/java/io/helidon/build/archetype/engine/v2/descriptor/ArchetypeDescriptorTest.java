@@ -16,9 +16,11 @@
 
 package io.helidon.build.archetype.engine.v2.descriptor;
 
-import org.junit.jupiter.api.Test;
-
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -36,7 +38,11 @@ public class ArchetypeDescriptorTest {
 
         assertThat(is, is(notNullValue()));
 
-        ArchetypeDescriptor desc = ArchetypeDescriptor.read(is);
+        Path archetypePath = Paths.get("");
+        Path descriptorPath = Paths.get(DESCRIPTOR_RESOURCE_NAME);
+        ArchetypeDescriptor desc = ArchetypeDescriptor.read(archetypePath, descriptorPath, is);
+
+        assertThat(desc.descriptorPath(), is (descriptorPath));
 
         assertThat(desc.archetypeAttributes(), is(notNullValue()));
         assertThat(desc.archetypeAttributes().get("xmlns"), is("https://helidon.io/archetype/2.0"));

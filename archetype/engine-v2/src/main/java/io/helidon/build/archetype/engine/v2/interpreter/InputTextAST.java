@@ -23,40 +23,15 @@ import io.helidon.build.archetype.engine.v2.descriptor.InputText;
  */
 public class InputTextAST extends InputNodeAST {
 
-    private String placeHolder;
-
-    InputTextAST(
-            String label,
-            String name,
-            String def,
-            String prompt,
-            String placeHolder,
-            boolean optional,
-            ASTNode parent,
-            Location location
-    ) {
+    InputTextAST(String label,
+                 String name,
+                 String def,
+                 String prompt,
+                 boolean optional,
+                 ASTNode parent,
+                 Location location) {
         super(label, name, def, prompt, optional, parent, location);
-        this.placeHolder = placeHolder;
     }
-
-    /**
-     * Get the placeholder (default value).
-     *
-     * @return placeholder
-     */
-    public String placeHolder() {
-        return placeHolder;
-    }
-
-    /**
-     * Setthe placeholder (default value).
-     *
-     * @param placeHolder placeholder
-     */
-    public void placeHolder(String placeHolder) {
-        this.placeHolder = placeHolder;
-    }
-
 
     @Override
     public <A> void accept(Visitor<A> visitor, A arg) {
@@ -71,7 +46,7 @@ public class InputTextAST extends InputNodeAST {
     static InputTextAST create(InputText input, ASTNode parent, Location location) {
         InputTextAST result =
                 new InputTextAST(input.label(), input.name(), input.def(), input.prompt(),
-                        input.placeHolder(), input.isOptional(),
+                                 input.isOptional(),
                         parent,
                         location);
         result.help(input.help());

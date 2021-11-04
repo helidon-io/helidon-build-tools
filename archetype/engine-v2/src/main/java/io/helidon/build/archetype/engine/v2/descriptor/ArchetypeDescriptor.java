@@ -17,6 +17,7 @@
 package io.helidon.build.archetype.engine.v2.descriptor;
 
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
@@ -26,6 +27,8 @@ import java.util.Objects;
  */
 public class ArchetypeDescriptor {
 
+    private final Path archetypePath;
+    private final Path descriptorPath;
     private final Map<String, String> archetypeAttributes;
     private final LinkedList<Context> contexts;
     private final LinkedList<Step> steps;
@@ -35,14 +38,18 @@ public class ArchetypeDescriptor {
     private final Output output;
     private String help;
 
-    ArchetypeDescriptor(Map<String, String> archetypeAttributes,
-                               LinkedList<Context> context,
-                               LinkedList<Step> step,
-                               LinkedList<Input> inputs,
-                               LinkedList<Source> source,
-                               LinkedList<Exec> exec,
-                               Output output,
-                               String help) {
+    ArchetypeDescriptor(Path archetypePath,
+                        Path descriptorPath,
+                        Map<String, String> archetypeAttributes,
+                        LinkedList<Context> context,
+                        LinkedList<Step> step,
+                        LinkedList<Input> inputs,
+                        LinkedList<Source> source,
+                        LinkedList<Exec> exec,
+                        Output output,
+                        String help) {
+        this.archetypePath = archetypePath;
+        this.descriptorPath = descriptorPath;
         this.archetypeAttributes = archetypeAttributes;
         this.contexts = context;
         this.steps = step;
@@ -56,11 +63,31 @@ public class ArchetypeDescriptor {
     /**
      * Create a archetype descriptor instance from an input stream.
      *
+     *
+     *
+     * @param archetypePath path to the archetype.
+     * @param descriptorPath path to descriptor.
      * @param is input stream
      * @return ArchetypeDescriptor
      */
-    public static ArchetypeDescriptor read(InputStream is) {
-        return ArchetypeDescriptorReader.read(is);
+    public static ArchetypeDescriptor read(Path archetypePath, Path descriptorPath, InputStream is) {
+        return ArchetypeDescriptorReader.read(archetypePath, descriptorPath, is);
+    }
+
+    /**
+     * Returns the path to the archetype containing this descriptor.
+     * @return the path.
+     */
+    public Path archetypePath() {
+        return archetypePath;
+    }
+
+    /**
+     * Returns the path to this descriptor.
+     * @return the path.
+     */
+    public Path descriptorPath() {
+        return descriptorPath;
     }
 
     /**

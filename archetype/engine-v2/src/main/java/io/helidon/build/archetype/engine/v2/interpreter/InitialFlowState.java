@@ -22,7 +22,9 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
 import io.helidon.build.archetype.engine.v2.descriptor.Context;
+import io.helidon.build.archetype.engine.v2.descriptor.Source;
 import io.helidon.build.archetype.engine.v2.descriptor.Step;
+import io.helidon.build.archetype.engine.v2.interpreter.ASTNode.Location;
 
 public class InitialFlowState extends FlowState {
 
@@ -62,7 +64,7 @@ public class InitialFlowState extends FlowState {
     private LinkedList<ContextAST> getContexts(ArchetypeDescriptor entryPoint) {
         LinkedList<Context> contexts = entryPoint.contexts() != null ? entryPoint.contexts() : new LinkedList<>();
         return contexts.stream()
-                .map(context -> ContextAST.create(context, null, ASTNode.Location.builder().build()))
+                .map(context -> ContextAST.create(context, null, Location.builder().build()))
                 .collect(Collectors.toCollection(LinkedList::new));
     }
 
@@ -71,8 +73,13 @@ public class InitialFlowState extends FlowState {
         if (steps.isEmpty()) {
             throw new InterpreterException("Archetype descriptor does not contain steps");
         }
+        Source parentSource = new Source(null, entryPoint.descriptorPath().toString());
+        Location location = Location.builder()
+                                    .scriptFile(entryPoint.descriptorPath().toString())
+                                    .build();
+        SourceAST parent = SourceAST.create(parentSource, null, location);
         return steps.stream()
-                .map(step -> StepAST.create(step, null, ASTNode.Location.builder().build()))
+                .map(step -> StepAST.create(step, parent, location))
                 .collect(Collectors.toCollection(LinkedList::new));
     }
 

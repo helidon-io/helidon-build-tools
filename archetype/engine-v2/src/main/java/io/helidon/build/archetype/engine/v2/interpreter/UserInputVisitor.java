@@ -66,7 +66,6 @@ public class UserInputVisitor extends GenericVisitorEmptyImpl<InputNodeAST, ASTN
                 input.name(),
                 input.defaultValue(),
                 input.prompt(),
-                input.placeHolder(),
                 input.isOptional(),
                 null,
                 ASTNode.Location.builder().build());

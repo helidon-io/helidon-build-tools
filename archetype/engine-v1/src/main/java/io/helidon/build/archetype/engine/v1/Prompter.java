@@ -55,10 +55,11 @@ public class Prompter {
     public static String prompt(String question, String defaultResponse) {
         try {
             String def = BoldBlue.apply(defaultResponse);
+            String boldQuestion = Bold.apply(question);
             String q = defaultResponse != null
-                    ? String.format("%s (Default: %s): ", question, def)
-                    : String.format("%s: ", question);
-            System.out.print(Bold.apply(q));
+                    ? String.format("%s (default: %s): ", boldQuestion, def)
+                    : String.format("%s: ", boldQuestion);
+            System.out.print(q);
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             String response = reader.readLine();
             return response == null || response.length() == 0 ? defaultResponse : response.trim();
@@ -96,8 +97,9 @@ public class Prompter {
                 System.out.println(o);
             }
             String def = BoldBlue.apply(String.format("%d", defaultOption + 1));
-            String q = String.format("Enter selection (Default: %s): ", def);
-            System.out.print(Bold.apply(q));
+            String prompt = Bold.apply("Enter selection");
+            String q = String.format("%s (default: %s): ", prompt, def);
+            System.out.print(q);
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             String response = reader.readLine();
             if (response == null || response.trim().length() == 0) {
@@ -125,8 +127,9 @@ public class Prompter {
     public static boolean promptYesNo(String question, boolean defaultOption) {
         try {
             String def = BoldBlue.apply(defaultOption ? "y" : "n");
-            String q = String.format("%s (Default: %s): ", question, def);
-            System.out.print(Bold.apply(q));
+            String boldQuestion = Bold.apply(question);
+            String q = String.format("%s (default: %s): ", boldQuestion, def);
+            System.out.print(q);
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             String response = reader.readLine();
             if (response == null || response.trim().length() == 0) {

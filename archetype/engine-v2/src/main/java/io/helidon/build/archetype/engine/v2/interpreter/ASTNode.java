@@ -103,10 +103,12 @@ public abstract class ASTNode implements Visitable, Serializable {
 
         private final String currentDirectory;
         private final String scriptDirectory;
+        private final String scriptFile;
 
-        private Location(String currentDirectory, String scriptDirectory) {
+        private Location(String currentDirectory, String scriptDirectory, String scriptFile) {
             this.currentDirectory = currentDirectory;
             this.scriptDirectory = scriptDirectory;
+            this.scriptFile = scriptFile;
         }
 
         /**
@@ -129,12 +131,30 @@ public abstract class ASTNode implements Visitable, Serializable {
         }
 
         /**
+         * Path to the current descriptor script file (resolved relative to the archetype root directory).
+         *
+         * @return script directory
+         */
+        public String scriptPath() {
+            return scriptFile;
+        }
+
+        /**
          * Create a new builder.
          *
          * @return a new builder
          */
         public static Builder builder() {
             return new Builder();
+        }
+
+        @Override
+        public String toString() {
+            return "Location{"
+                   + "scriptPath='"
+                   + scriptFile
+                   + '\''
+                   + '}';
         }
 
         /**
@@ -144,6 +164,7 @@ public abstract class ASTNode implements Visitable, Serializable {
 
             private String currentDirectory;
             private String scriptDirectory;
+            private String scriptFile;
 
             private Builder() {
             }
@@ -174,6 +195,19 @@ public abstract class ASTNode implements Visitable, Serializable {
             }
 
             /**
+             * Sets the path to the descriptor script file and returns a reference to this Builder so that
+             * the methods can be chained
+             * together.
+             *
+             * @param scriptFile the {@code scriptDirectory} to set
+             * @return a reference to this Builder
+             */
+            public Builder scriptFile(String scriptFile) {
+                this.scriptFile = scriptFile;
+                return this;
+            }
+
+            /**
              * Returns a {@code Location} built from the parameters previously set.
              *
              * @return a {@code Location} built with parameters of this {@code Builder}
@@ -185,7 +219,10 @@ public abstract class ASTNode implements Visitable, Serializable {
                 if (scriptDirectory == null) {
                     scriptDirectory = "";
                 }
-                return new Location(currentDirectory, scriptDirectory);
+                if (scriptFile == null) {
+                    scriptFile = "";
+                }
+                return new Location(currentDirectory, scriptDirectory, scriptFile);
             }
         }
     }

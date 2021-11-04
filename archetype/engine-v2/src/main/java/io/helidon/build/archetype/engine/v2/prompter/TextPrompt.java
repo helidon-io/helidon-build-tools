@@ -104,7 +104,7 @@ public class TextPrompt extends Prompt<String> {
                 InputTextAST inputTextAST = (InputTextAST) userInputAST.children().get(0);
 
                 initFields(userInputAST);
-                placeHolder = inputTextAST.placeHolder();
+                placeHolder = inputTextAST.defaultValue();
 
                 return this;
             }

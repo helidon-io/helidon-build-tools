@@ -24,7 +24,7 @@ import io.helidon.build.archetype.engine.v2.descriptor.ArchetypeDescriptor;
 /**
  * Archetype descriptor.
  */
-class XmlDescriptor extends ASTNode {
+public class XmlDescriptor extends ASTNode {
 
     private final Map<String, String> archetypeAttributes = new LinkedHashMap<>();
     private String help;
@@ -57,6 +57,7 @@ class XmlDescriptor extends ASTNode {
 
     static XmlDescriptor create(ArchetypeDescriptor descriptor, ASTNode parent, Location location) {
         XmlDescriptor result = new XmlDescriptor(location);
+        result.parent(parent);
         descriptor.archetypeAttributes().forEach((key, value) -> result.archetypeAttributes().putIfAbsent(key, value));
         result.children().addAll(transformList(descriptor.contexts(), c -> ContextAST.create(c, parent, location)));
         result.help(descriptor.help());
