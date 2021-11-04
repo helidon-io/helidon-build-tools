@@ -144,11 +144,13 @@ public class Flow {
          String startDescriptorPath,
          boolean skipOptional,
          List<Visitor<ASTNode>> additionalVisitors,
+         Map<String, String> externalValues,
          Map<String, String> externalDefaults) {
         this.archetype = archetype;
         this.additionalVisitors = additionalVisitors;
         entryPoint = archetype.getDescriptor(startDescriptorPath);
-        interpreter = new Interpreter(archetype, startDescriptorPath, skipOptional, additionalVisitors, externalDefaults);
+        interpreter = new Interpreter(archetype, startDescriptorPath, skipOptional, additionalVisitors, externalValues,
+                                      externalDefaults);
         this.skipOptional = skipOptional;
         state = new InitialFlowState(this);
     }
@@ -186,6 +188,7 @@ public class Flow {
         private String startDescriptorPath = "flavor.xml";
         private final List<Visitor<ASTNode>> additionalVisitors = new ArrayList<>();
         private boolean skipOptional = false;
+        private Map<String, String> externalValues;
         private Map<String, String> externalDefaults;
 
         private Builder() {
@@ -202,6 +205,16 @@ public class Flow {
             return this;
         }
 
+        /**
+         * Sets the {@code externalValues} and returns a reference to this Builder so that the methods can be chained together.
+         *
+         * @param externalValues external values
+         * @return a reference to this Builder
+         */
+        public Builder externalValues(Map<String, String> externalValues) {
+            this.externalValues = externalValues;
+            return this;
+        }
 
         /**
          * Sets the {@code externalDefaults} and returns a reference to this Builder so that the methods can be chained together.
@@ -270,10 +283,13 @@ public class Flow {
             if (archetype == null) {
                 throw new InterpreterException("Archetype must be specified.");
             }
+            if (externalValues == null) {
+                externalValues = Map.of();
+            }
             if (externalDefaults == null) {
                 externalDefaults = Map.of();
             }
-            return new Flow(archetype, startDescriptorPath, skipOptional, additionalVisitors, externalDefaults);
+            return new Flow(archetype, startDescriptorPath, skipOptional, additionalVisitors, externalValues, externalDefaults);
         }
     }
 

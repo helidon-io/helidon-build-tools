@@ -100,6 +100,7 @@ public class ArchetypeEngineV2 {
                 .archetype(archetype)
                 .startDescriptorPath(startPoint)
                 .skipOptional(skipOptional)
+                .externalValues(externalValues)
                 .externalDefaults(externalDefaults)
                 .addAdditionalVisitor(additionalVisitors)
                 .build();
@@ -109,17 +110,18 @@ public class ArchetypeEngineV2 {
         while (!flow.unresolvedInputs().isEmpty()) {
             UserInputAST userInputAST = flow.unresolvedInputs().get(0);
             ContextNodeAST contextNodeAST;
-            if (externalValues.containsKey(userInputAST.path())) {
+            String path = userInputAST.path();
+            if (externalValues.containsKey(path)) {
                 contextNodeAST = ContextNodeASTFactory.create(
                         (InputNodeAST) userInputAST.children().get(0),
                         userInputAST.path(),
-                        externalValues.get(userInputAST.path())
+                        externalValues.get(path)
                 );
             } else if (failOnUnresolvedInput) {
-                throw new UnresolvedInputException(userInputAST.path());
+                throw new UnresolvedInputException(path);
             } else {
                 Prompt<?> prompt = PromptFactory.create(userInputAST, flow.canBeGenerated());
-                contextNodeAST = prompt.acceptAndConvert(prompter, userInputAST.path());
+                contextNodeAST = prompt.acceptAndConvert(prompter, path);
                 flow.skipOptional(prompter.skipOptional());
             }
             ContextAST contextAST = new ContextAST();

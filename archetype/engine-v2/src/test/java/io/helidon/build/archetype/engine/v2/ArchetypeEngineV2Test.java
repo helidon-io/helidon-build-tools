@@ -48,6 +48,17 @@ class ArchetypeEngineV2Test extends ArchetypeBaseTest {
         return projectDir.toPath();
     }
 
+    static File archetypeDir() {
+        // NOTE: this is not right or IDE friendly as it assumes that the working directory is set to the project directory
+        //       and that we resolve into the sources rather than target, e.g. this resolves to
+        //       ${HOME}/dev/helidon-build-tools/archetype/engine-v2/src/main/resources/archetype
+        return Paths.get("src/main/resources/archetype").toFile();
+    }
+
+    Archetype getArchetype() {
+        return getArchetype(archetypeDir());
+    }
+
     @Test
     void generateSkipOptional() throws IOException {
         String projectName = "skip-optional";
@@ -55,19 +66,17 @@ class ArchetypeEngineV2Test extends ArchetypeBaseTest {
         FileUtils.deleteDirectory(outputDirPath);
         assertThat(Files.exists(outputDirPath), is(false));
 
-        Map<String, String> presets = new HashMap<>();
-        presets.put("flavor", "se");
-        presets.put("base", "bare");
-        presets.put("build-system", "maven");
-        Map<String, String> defaults = Map.of("project.name", projectName);
-        ArchetypeEngineV2 archetypeEngineV2 = new ArchetypeEngineV2(getArchetype(
-                Paths.get("src/main/resources/archetype").toFile()),
+        Map<String, String> params = Map.of("flavor", "se",
+                                             "base", "bare",
+                                             "build-system", "maven",
+                                             "project.name", projectName);
+        ArchetypeEngineV2 archetypeEngineV2 = new ArchetypeEngineV2(getArchetype(),
                                                                     "flavor.xml",
                                                                     new DefaultPrompterImpl(true),
-                                                                    presets,
-                                                                    defaults,
+                                                                    params,
+                                                                    Map.of(),
                                                                     true,
-                                                                    false,
+                                                                    true,
                                                                     List.of());
 
         Path outputDir = archetypeEngineV2.generate(ArchetypeEngineV2Test::projectNameToDirectory);
@@ -135,16 +144,37 @@ class ArchetypeEngineV2Test extends ArchetypeBaseTest {
     }
 
     @Test
+    void generateWithFailOnUnresolvedInputFails() {
+        Map<String, String> params = Map.of("flavor", "se",
+                                            "build-system", "maven");
+
+        ArchetypeEngineV2 archetypeEngineV2 = new ArchetypeEngineV2(getArchetype(),
+                                                                    "flavor.xml",
+                                                                    new DefaultPrompterImpl(true),
+                                                                    params,
+                                                                    Map.of(),
+                                                                    true,
+                                                                    true,
+                                                                    List.of());
+        try {
+            archetypeEngineV2.generate(ArchetypeEngineV2Test::projectNameToDirectory);
+            fail("should have failed");
+        } catch (UnresolvedInputException e) {
+            assertThat(e.inputPath(), is("base"));
+        }
+    }
+
+    @Test
     void generateWithIncludeCycleFails() {
-        Map<String, String> presets = new HashMap<>();
-        presets.put("flavor", "se");
-        presets.put("base", "bare");
-        presets.put("build-system", "maven");
+        Map<String, String> params = new HashMap<>();
+        params.put("flavor", "se");
+        params.put("base", "bare");
+        params.put("build-system", "maven");
         Archetype archetype = getArchetype("include-cycle");
         ArchetypeEngineV2 archetypeEngineV2 = new ArchetypeEngineV2(archetype,
                                                                     "flavor.xml",
                                                                     new DefaultPrompterImpl(true),
-                                                                    presets,
+                                                                    params,
                                                                     Map.of(),
                                                                     true,
                                                                     false,
@@ -162,15 +192,15 @@ class ArchetypeEngineV2Test extends ArchetypeBaseTest {
 
     @Test
     void generateWithDuplicateIncludeFails() {
-        Map<String, String> presets = new HashMap<>();
-        presets.put("flavor", "se");
-        presets.put("base", "bare");
-        presets.put("build-system", "maven");
+        Map<String, String> params = new HashMap<>();
+        params.put("flavor", "se");
+        params.put("base", "bare");
+        params.put("build-system", "maven");
         Archetype archetype = getArchetype("duplicate-include");
         ArchetypeEngineV2 archetypeEngineV2 = new ArchetypeEngineV2(archetype,
                                                                     "flavor.xml",
                                                                     new DefaultPrompterImpl(true),
-                                                                    presets,
+                                                                    params,
                                                                     Map.of(),
                                                                     true,
                                                                     false, List.of());

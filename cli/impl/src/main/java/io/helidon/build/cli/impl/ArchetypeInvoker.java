@@ -376,12 +376,12 @@ abstract class ArchetypeInvoker {
 
             } else {
 
-                // Batch mode, so pass merged init options as defaults
+                // Batch mode, so pass merged init options as params
 
-                defaults.put(PROJECT_NAME_PROPERTY, initOptions.projectName());
-                defaults.put(GROUP_ID_PROPERTY, initOptions.groupId());
-                defaults.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
-                defaults.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
+                params.put(PROJECT_NAME_PROPERTY, initOptions.projectName());
+                params.put(GROUP_ID_PROPERTY, initOptions.groupId());
+                params.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
+                params.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
             }
 
             boolean batch = !isInteractive();
