@@ -45,22 +45,27 @@ import io.helidon.build.archetype.engine.v2.prompter.Prompter;
  */
 public class ArchetypeEngineV2 {
 
+    private static final String PROJECT_NAME_PATH = "project.name";
+    private static final String PROJECT_DIRECTORY_PATH = "project.directory";
+
     private final Archetype archetype;
     private final String startPoint;
     private final Prompter prompter;
     private final Map<String, String> externalValues = new HashMap<>();
     private final Map<String, String> externalDefaults = new HashMap<>();
-    private boolean skipOptional;
-    private List<Visitor<ASTNode>> additionalVisitors = new ArrayList<>();
+    private final boolean failOnUnresolvedInput;
+    private final boolean skipOptional;
+    private final List<Visitor<ASTNode>> additionalVisitors = new ArrayList<>();
 
     /**
      * Create a new archetype engine instance.
-     *  @param archetype          archetype
+     * @param archetype          archetype
      * @param startPoint         entry point in the archetype
      * @param prompter           prompter
      * @param presets            external Flow Context values
      * @param defaults           external Flow Context default values
      * @param skipOptional       mark that indicates whether to skip optional input
+     * @param failOnUnresolvedInput fail if there are any unresolved inputs
      * @param additionalVisitors additional Visitor for the {@code Interpreter}
      */
     public ArchetypeEngineV2(Archetype archetype,
@@ -69,6 +74,7 @@ public class ArchetypeEngineV2 {
                              Map<String, String> presets,
                              Map<String, String> defaults,
                              boolean skipOptional,
+                             boolean failOnUnresolvedInput,
                              List<Visitor<ASTNode>> additionalVisitors) {
         this.archetype = archetype;
         this.startPoint = startPoint;
@@ -80,6 +86,7 @@ public class ArchetypeEngineV2 {
             externalDefaults.putAll(defaults);
         }
         this.skipOptional = skipOptional;
+        this.failOnUnresolvedInput = failOnUnresolvedInput;
         if (additionalVisitors != null) {
             this.additionalVisitors.addAll(additionalVisitors);
         }
@@ -96,6 +103,7 @@ public class ArchetypeEngineV2 {
                 .archetype(archetype)
                 .startDescriptorPath(startPoint)
                 .skipOptional(skipOptional)
+                .externalValues(externalValues)
                 .externalDefaults(externalDefaults)
                 .addAdditionalVisitor(additionalVisitors)
                 .build();
@@ -105,15 +113,18 @@ public class ArchetypeEngineV2 {
         while (!flow.unresolvedInputs().isEmpty()) {
             UserInputAST userInputAST = flow.unresolvedInputs().get(0);
             ContextNodeAST contextNodeAST;
-            if (externalValues.containsKey(userInputAST.path())) {
+            String path = userInputAST.path();
+            if (externalValues.containsKey(path)) {
                 contextNodeAST = ContextNodeASTFactory.create(
                         (InputNodeAST) userInputAST.children().get(0),
                         userInputAST.path(),
-                        externalValues.get(userInputAST.path())
+                        externalValues.get(path)
                 );
+            } else if (failOnUnresolvedInput) {
+                throw new UnresolvedInputException(path);
             } else {
                 Prompt<?> prompt = PromptFactory.create(userInputAST, flow.canBeGenerated());
-                contextNodeAST = prompt.acceptAndConvert(prompter, userInputAST.path());
+                contextNodeAST = prompt.acceptAndConvert(prompter, path);
                 flow.skipOptional(prompter.skipOptional());
             }
             ContextAST contextAST = new ContextAST();
@@ -121,12 +132,12 @@ public class ArchetypeEngineV2 {
             flow.build(contextAST);
         }
 
-        String projectName = ((ContextTextAST) flow.pathToContextNodeMap().get("project.name")).text();
+        String projectName = ((ContextTextAST) flow.pathToContextNodeMap().get(PROJECT_NAME_PATH)).text();
         Path projectDir = projectDirSupplier.apply(projectName);
-        ContextTextAST projectDirNode = new ContextTextAST("project.directory");
+        ContextTextAST projectDirNode = new ContextTextAST(PROJECT_DIRECTORY_PATH);
         projectDirNode.text(projectDir.toString());
         context.children().add(projectDirNode);
-        flow.pathToContextNodeMap().put("project.directory", projectDirNode);
+        flow.pathToContextNodeMap().put(PROJECT_DIRECTORY_PATH, projectDirNode);
 
         flow.build(new ContextAST());
         Flow.Result result = flow.result().orElseThrow(() -> {

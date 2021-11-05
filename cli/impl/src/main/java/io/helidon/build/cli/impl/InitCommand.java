@@ -74,10 +74,12 @@ public final class InitCommand extends BaseCommand {
     @Override
     protected void invoke(CommandContext context) throws Exception {
 
-        // Get Helidon version if not provided
+        // Get Helidon version even if not provided
         String helidonVersion = initOptions.helidonVersion();
         if (helidonVersion == null) {
-            if (batch) {
+            if (context.properties().containsKey(HELIDON_VERSION_PROPERTY)) {
+                helidonVersion = context.properties().getProperty(HELIDON_VERSION_PROPERTY);
+            } else if (batch) {
                 helidonVersion = defaultHelidonVersion();
                 Log.info("Using Helidon version " + helidonVersion);
             } else {
@@ -98,6 +100,7 @@ public final class InitCommand extends BaseCommand {
                 .batch(batch)
                 .metadata(metadata)
                 .initOptions(initOptions)
+                .initProperties(context.properties())
                 .projectDir(this::initProjectDir)
                 .build();
 
