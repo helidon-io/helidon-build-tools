@@ -38,6 +38,15 @@ public class FlowTest extends ArchetypeBaseTest {
     private Archetype archetype;
 
     @Test
+    public void testEagerMode() {
+        archetype = getArchetype("eager-run");
+
+        Flow flow = new Flow(archetype, "flavor.xml", false, List.of(DebugVisitor.builder().build()), Map.of());
+        flow.build(new ContextAST());
+        assertResult(flow, 2, 6);
+    }
+
+    @Test
     public void testInnerOutputsElements() {
         archetype = getArchetype("interpreter-test-resources");
 

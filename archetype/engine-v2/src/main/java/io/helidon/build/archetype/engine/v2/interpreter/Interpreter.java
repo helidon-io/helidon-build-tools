@@ -50,6 +50,7 @@ public class Interpreter implements Visitor<ASTNode> {
     private final Map<String, String> externalDefaults;
     private boolean skipOptional;
     private boolean canBeGenerated = false;
+    private final boolean isEagerRun = true;
 
     Interpreter(Archetype archetype,
                 String startDescriptorPath,
@@ -118,16 +119,20 @@ public class Interpreter implements Visitor<ASTNode> {
         replaceDefaultValue(input);
         validate(input);
         pushToStack(input);
-        boolean result = resolve(input);
-        if (!result) {
-            InputNodeAST unresolvedUserInputNode = userInputVisitor.visit(input, parent);
-            processUnresolvedInput(input, unresolvedUserInputNode);
-        } else {
-            if (((ContextBooleanAST) getContextNode(input)).bool()) {
-                acceptAll(input);
+        if (!isEagerRun) {
+            boolean result = resolve(input);
+            if (!result) {
+                InputNodeAST unresolvedUserInputNode = userInputVisitor.visit(input, parent);
+                processUnresolvedInput(input, unresolvedUserInputNode);
             } else {
-                input.children().clear();
+                if (((ContextBooleanAST) getContextNode(input)).bool()) {
+                    acceptAll(input);
+                } else {
+                    input.children().clear();
+                }
             }
+        } else {
+            acceptAll(input);
         }
         stack.pop();
     }
@@ -138,10 +143,12 @@ public class Interpreter implements Visitor<ASTNode> {
         replaceDefaultValue(input);
         validate(input);
         pushToStack(input);
-        boolean result = resolve(input);
-        if (!result) {
-            InputNodeAST unresolvedUserInputNode = userInputVisitor.visit(input, parent);
-            processUnresolvedInput(input, unresolvedUserInputNode);
+        if (!isEagerRun) {
+            boolean result = resolve(input);
+            if (!result) {
+                InputNodeAST unresolvedUserInputNode = userInputVisitor.visit(input, parent);
+                processUnresolvedInput(input, unresolvedUserInputNode);
+            }
         }
         acceptAll(input);
         stack.pop();
@@ -153,10 +160,12 @@ public class Interpreter implements Visitor<ASTNode> {
         replaceDefaultValue(input);
         validate(input);
         pushToStack(input);
-        boolean result = resolve(input);
-        if (!result) {
-            InputNodeAST unresolvedUserInputNode = userInputVisitor.visit(input, parent);
-            processUnresolvedInput(input, unresolvedUserInputNode);
+        if (!isEagerRun) {
+            boolean result = resolve(input);
+            if (!result) {
+                InputNodeAST unresolvedUserInputNode = userInputVisitor.visit(input, parent);
+                processUnresolvedInput(input, unresolvedUserInputNode);
+            }
         }
         acceptAll(input);
         stack.pop();
@@ -168,10 +177,12 @@ public class Interpreter implements Visitor<ASTNode> {
         replaceDefaultValue(input);
         validate(input);
         pushToStack(input);
-        boolean result = resolve(input);
-        if (!result) {
-            InputNodeAST unresolvedUserInputNode = userInputVisitor.visit(input, parent);
-            processUnresolvedInput(input, unresolvedUserInputNode);
+        if (!isEagerRun) {
+            boolean result = resolve(input);
+            if (!result) {
+                InputNodeAST unresolvedUserInputNode = userInputVisitor.visit(input, parent);
+                processUnresolvedInput(input, unresolvedUserInputNode);
+            }
         }
         stack.pop();
     }
@@ -187,10 +198,10 @@ public class Interpreter implements Visitor<ASTNode> {
             Path path = Paths.get(descriptorPath);
             String currentDir = path.getParent().toString();
             ASTNode.Location newLocation = ASTNode.Location.builder()
-                                                           .scriptFile(descriptorPath)
-                                                           .scriptDirectory(currentDir)
-                                                           .currentDirectory(currentDir)
-                                                           .build();
+                    .scriptFile(descriptorPath)
+                    .scriptDirectory(currentDir)
+                    .currentDirectory(currentDir)
+                    .build();
             setParent(exec, parent);
             XmlDescriptor xmlDescriptor = XmlDescriptor.create(descriptor, exec, newLocation);
             exec.help(xmlDescriptor.help());
@@ -208,12 +219,13 @@ public class Interpreter implements Visitor<ASTNode> {
             String scriptFile = source.source();
             String descriptorPath = resolveScriptPath(scriptDirectory, scriptFile);
             ArchetypeDescriptor descriptor = getDescriptor(source, descriptorPath);
-            String currentDir = Paths.get(descriptorPath).getParent().toString();
+            Path parentDir = Paths.get(descriptorPath).getParent();
+            String currentDir = parentDir == null ? "" : parentDir.toString();
             ASTNode.Location newLocation = ASTNode.Location.builder()
-                                                           .scriptFile(descriptorPath)
-                                                           .scriptDirectory(currentDir)
-                                                           .currentDirectory(source.location().currentDirectory())
-                                                           .build();
+                    .scriptFile(descriptorPath)
+                    .scriptDirectory(currentDir)
+                    .currentDirectory(source.location().currentDirectory())
+                    .build();
             setParent(source, parent);
             XmlDescriptor xmlDescriptor = XmlDescriptor.create(descriptor, source, newLocation);
             source.help(xmlDescriptor.help());
@@ -233,12 +245,18 @@ public class Interpreter implements Visitor<ASTNode> {
             String existingType = existing.includeType();
             String scriptPath = script.location().scriptPath();
             String scriptType = script.includeType();
-            String error = isCycle(script, descriptorPath) ? "Include cycle" : "Duplicate include";
+            boolean isCycle = isCycle(script, descriptorPath);
+            if (isEagerRun) {
+                if (!isCycle) {
+                    return archetype.getDescriptor(descriptorPath);
+                }
+            }
+            String error = isCycle ? "Include cycle" : "Duplicate include";
             throw new IllegalStateException(error + ": '" + descriptorPath
-                                            + "' is included via <" + existingType
-                                            + "> in '" + existingPath + "' and again via <"
-                                            + scriptType
-                                            + "> in '" + scriptPath + "'");
+                    + "' is included via <" + existingType
+                    + "> in '" + existingPath + "' and again via <"
+                    + scriptType
+                    + "> in '" + scriptPath + "'");
         }
     }
 
@@ -358,10 +376,14 @@ public class Interpreter implements Visitor<ASTNode> {
         applyAdditionalVisitors(input);
         pushToStack(input);
         Map<String, String> contextValuesMap = convertContext();
-        if (input.expression().evaluate(contextValuesMap)) {
-            acceptAll(input);
+        if (!isEagerRun) {
+            if (input.expression().evaluate(contextValuesMap)) {
+                acceptAll(input);
+            } else {
+                input.children().clear();
+            }
         } else {
-            input.children().clear();
+            acceptAll(input);
         }
         stack.pop();
     }
@@ -458,7 +480,7 @@ public class Interpreter implements Visitor<ASTNode> {
      * Create unresolvedInput, add it to the {@code unresolvedInputs} and throw {@link WaitForUserInput} to stop the
      * interpreting process.
      *
-     * @param input initial unresolved {@code InputNodeAST} from the AST tree.
+     * @param input                   initial unresolved {@code InputNodeAST} from the AST tree.
      * @param unresolvedUserInputNode unresolvedUserInputNode that will be sent to the user
      */
     private void processUnresolvedInput(InputNodeAST input, InputNodeAST unresolvedUserInputNode) {
