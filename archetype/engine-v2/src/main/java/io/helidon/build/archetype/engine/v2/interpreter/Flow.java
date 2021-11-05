@@ -153,6 +153,22 @@ public class Flow {
         state = new InitialFlowState(this);
     }
 
+    Flow(Archetype archetype,
+         String startDescriptorPath,
+         boolean skipOptional,
+         List<Visitor<ASTNode>> additionalVisitors,
+         Map<String, String> externalDefaults,
+         boolean eagerRun
+    ) {
+        this.archetype = archetype;
+        this.additionalVisitors = additionalVisitors;
+        entryPoint = archetype.getDescriptor(startDescriptorPath);
+        interpreter = new Interpreter(archetype, startDescriptorPath, skipOptional, additionalVisitors, externalDefaults,
+                eagerRun);
+        this.skipOptional = skipOptional;
+        state = new InitialFlowState(this);
+    }
+
     LinkedList<StepAST> tree() {
         return tree;
     }

@@ -19,6 +19,7 @@ package io.helidon.build.archetype.engine.v2.interpreter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -41,16 +42,58 @@ public class FlowTest extends ArchetypeBaseTest {
     public void testEagerMode() {
         archetype = getArchetype("eager-run");
 
-        Flow flow = new Flow(archetype, "flavor.xml", false, List.of(DebugVisitor.builder().build()), Map.of());
+        Flow flow = new Flow(archetype, "flavor.xml", false, List.of(DebugVisitor.builder().build()), Map.of(), true);
         flow.build(new ContextAST());
         assertResult(flow, 2, 6);
+        LinkedList<StepAST> tree = flow.tree();
+        InputAST input1 = (InputAST) tree.get(0).children().get(0);
+        InputAST input2 = (InputAST) tree.get(0).children().get(1);
+
+        InputEnumAST input1Enum = (InputEnumAST) input1.children().get(0);
+
+        OptionAST enumOtion1 = (OptionAST) input1Enum.children().get(0);
+        SourceAST enumSource1 = (SourceAST) enumOtion1.children().get(0);
+        ContextAST enumContext1 = (ContextAST) enumSource1.children().get(0);
+        assertThat(enumContext1.children().size(), is(2));
+
+        OptionAST enumOtion2 = (OptionAST) input1Enum.children().get(1);
+        SourceAST enumSource2 = (SourceAST) enumOtion2.children().get(0);
+        IfStatement ifStatement1 = (IfStatement) enumSource2.children().get(0);
+        assertThat(ifStatement1.children().get(0) instanceof OutputAST, is(true));
+
+        OptionAST enumOtion3 = (OptionAST) input1Enum.children().get(2);
+        SourceAST enumSource3 = (SourceAST) enumOtion3.children().get(0);
+        OutputAST outputAST3 = (OutputAST) enumSource3.children().get(0);
+        assertThat(outputAST3.children().get(0) instanceof TemplatesAST, is(true));
+
+        InputListAST input1List = (InputListAST) input1.children().get(1);
+
+        OptionAST listOtion1 = (OptionAST) input1List.children().get(0);
+        SourceAST listSource1 = (SourceAST) listOtion1.children().get(0);
+        ContextAST listContext1 = (ContextAST) listSource1.children().get(0);
+        assertThat(listContext1.children().size(), is(2));
+
+        OptionAST listOtion2 = (OptionAST) input1List.children().get(1);
+        SourceAST listSource2 = (SourceAST) listOtion2.children().get(0);
+        IfStatement ifStatement2 = (IfStatement) listSource2.children().get(0);
+        assertThat(ifStatement2.children().get(0) instanceof OutputAST, is(true));
+
+        InputBooleanAST input2Bool = (InputBooleanAST) input2.children().get(0);
+
+        SourceAST boolSource1 = (SourceAST) input2Bool.children().get(0);
+        OutputAST outputAST4 = (OutputAST) boolSource1.children().get(0);
+        assertThat(outputAST4.children().get(0) instanceof TemplatesAST, is(true));
+
+        InputTextAST input2Text = (InputTextAST) input2.children().get(1);
+        assertThat(input2Text.defaultValue(), is("default text"));
     }
 
     @Test
     public void testInnerOutputsElements() {
         archetype = getArchetype("interpreter-test-resources");
 
-        Flow flow = new Flow(archetype, "inner-output-elements-test.xml", false, List.of(DebugVisitor.builder().build()), Map.of());
+        Flow flow = new Flow(archetype, "inner-output-elements-test.xml", false, List.of(DebugVisitor.builder().build()),
+                Map.of());
         flow.build(new ContextAST());
         assertResult(flow, 6, 3);
 

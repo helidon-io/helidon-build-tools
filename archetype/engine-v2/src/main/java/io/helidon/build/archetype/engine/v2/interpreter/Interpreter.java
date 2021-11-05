@@ -50,19 +50,30 @@ public class Interpreter implements Visitor<ASTNode> {
     private final Map<String, String> externalDefaults;
     private boolean skipOptional;
     private boolean canBeGenerated = false;
-    private final boolean isEagerRun = true;
+    private final boolean eagerRun;
 
     Interpreter(Archetype archetype,
                 String startDescriptorPath,
                 boolean skipOptional,
                 List<Visitor<ASTNode>> additionalVisitors,
                 Map<String, String> externalDefaults) {
+        this(archetype, startDescriptorPath, skipOptional, additionalVisitors, externalDefaults, false);
+    }
+
+    Interpreter(Archetype archetype,
+                String startDescriptorPath,
+                boolean skipOptional,
+                List<Visitor<ASTNode>> additionalVisitors,
+                Map<String, String> externalDefaults,
+                boolean eagerRun
+                ) {
         this.archetype = archetype;
         pathToContextNodeMap = new HashMap<>();
         this.additionalVisitors = additionalVisitors;
         this.startDescriptorPath = startDescriptorPath;
         this.externalDefaults = externalDefaults;
         this.skipOptional = skipOptional;
+        this.eagerRun = eagerRun;
     }
 
     boolean canBeGenerated() {
@@ -119,7 +130,7 @@ public class Interpreter implements Visitor<ASTNode> {
         replaceDefaultValue(input);
         validate(input);
         pushToStack(input);
-        if (!isEagerRun) {
+        if (!eagerRun) {
             boolean result = resolve(input);
             if (!result) {
                 InputNodeAST unresolvedUserInputNode = userInputVisitor.visit(input, parent);
@@ -143,7 +154,7 @@ public class Interpreter implements Visitor<ASTNode> {
         replaceDefaultValue(input);
         validate(input);
         pushToStack(input);
-        if (!isEagerRun) {
+        if (!eagerRun) {
             boolean result = resolve(input);
             if (!result) {
                 InputNodeAST unresolvedUserInputNode = userInputVisitor.visit(input, parent);
@@ -160,7 +171,7 @@ public class Interpreter implements Visitor<ASTNode> {
         replaceDefaultValue(input);
         validate(input);
         pushToStack(input);
-        if (!isEagerRun) {
+        if (!eagerRun) {
             boolean result = resolve(input);
             if (!result) {
                 InputNodeAST unresolvedUserInputNode = userInputVisitor.visit(input, parent);
@@ -177,7 +188,7 @@ public class Interpreter implements Visitor<ASTNode> {
         replaceDefaultValue(input);
         validate(input);
         pushToStack(input);
-        if (!isEagerRun) {
+        if (!eagerRun) {
             boolean result = resolve(input);
             if (!result) {
                 InputNodeAST unresolvedUserInputNode = userInputVisitor.visit(input, parent);
@@ -246,7 +257,7 @@ public class Interpreter implements Visitor<ASTNode> {
             String scriptPath = script.location().scriptPath();
             String scriptType = script.includeType();
             boolean isCycle = isCycle(script, descriptorPath);
-            if (isEagerRun) {
+            if (eagerRun) {
                 if (!isCycle) {
                     return archetype.getDescriptor(descriptorPath);
                 }
@@ -376,7 +387,7 @@ public class Interpreter implements Visitor<ASTNode> {
         applyAdditionalVisitors(input);
         pushToStack(input);
         Map<String, String> contextValuesMap = convertContext();
-        if (!isEagerRun) {
+        if (!eagerRun) {
             if (input.expression().evaluate(contextValuesMap)) {
                 acceptAll(input);
             } else {
