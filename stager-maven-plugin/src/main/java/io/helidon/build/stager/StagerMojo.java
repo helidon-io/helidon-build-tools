@@ -192,6 +192,7 @@ public class StagerMojo extends AbstractMojo {
                 }
                 return null;
         }
+        return null;
     }
 
     /**
