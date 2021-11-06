@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import io.helidon.build.cli.harness.CommandModel.CommandInfo;
 import io.helidon.build.common.Log;
 import io.helidon.build.common.Log.Level;
+import io.helidon.build.common.LogWriter;
 import io.helidon.build.common.Requirements;
 import io.helidon.build.common.SystemLogWriter;
 import io.helidon.build.common.ansi.AnsiTextStyle;
@@ -418,23 +419,26 @@ public final class CommandContext {
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
     void verbosity(Verbosity verbosity) {
         this.verbosity = verbosity;
+        Level level;
         switch (verbosity) {
             case DEBUG: {
-                logWriter().level(Level.DEBUG);
+                level = Level.DEBUG;
                 break;
             }
             case VERBOSE: {
-                logWriter().level(VERBOSE);
+                level = VERBOSE;
                 break;
             }
             case NORMAL: {
-                logWriter().level(INFO);
+                level = (INFO);
                 break;
             }
             default: {
                 throw new RuntimeException("unknown verbosity: " + verbosity);
             }
         }
+        logWriter().level(level);
+        System.setProperty(LogWriter.LEVEL_PROPERTY, level.name());
     }
 
     /**

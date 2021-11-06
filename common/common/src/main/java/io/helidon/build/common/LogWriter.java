@@ -23,14 +23,19 @@ import io.helidon.build.common.Log.Level;
  * The {@link Log} writer.
  */
 public interface LogWriter {
+    /**
+     * System property name that may be used by an implementation for setting the log level. The value must be
+     * parseable by {@code j.u.l.Level.parse()}.
+     */
+    String LEVEL_PROPERTY = "log.level";
 
     /**
      * Writes the record.
      *
-     * @param level   log level
-     * @param thrown  exception thrown
+     * @param level log level
+     * @param thrown exception thrown
      * @param message log message
-     * @param args    formatting arguments
+     * @param args formatting arguments
      */
     void write(Level level, Throwable thrown, String message, Object[] args);
 

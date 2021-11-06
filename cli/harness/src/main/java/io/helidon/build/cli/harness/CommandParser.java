@@ -102,8 +102,6 @@ public final class CommandParser {
                         commandName = arg;
                         it.remove();
                     }
-                } else {
-                    break;
                 }
             } else {
                 arg = arg.substring(2);

@@ -164,7 +164,7 @@ public class Plugins {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                stdOut.accept(line);
+                Log.info(line);
             }
         } catch (IOException ex) {
             throw new PluginFailed(ex);
