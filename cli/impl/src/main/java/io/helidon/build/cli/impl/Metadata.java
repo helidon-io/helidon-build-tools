@@ -482,11 +482,10 @@ public class Metadata {
         args.add("--maxAttempts");
         args.add(Integer.toString(maxAttempts));
         if (debugPlugin) {
+            // Force debug even if log is not at debug level
             args.add("--debug");
-            Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS, Metadata::info);
-        } else {
-            Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS);
         }
+        Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS, Metadata::info);
     }
 
     private static void info(String line) {
