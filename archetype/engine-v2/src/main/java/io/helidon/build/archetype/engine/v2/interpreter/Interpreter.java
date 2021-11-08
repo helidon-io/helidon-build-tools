@@ -42,11 +42,13 @@ public class Interpreter implements Visitor<ASTNode> {
     private final ContextToStringConvertor contextToStringConvertor = new ContextToStringConvertor();
     private final ContextNodeFromDefaultValueCreator contextNodeFromDefaultValueCreator =
             new ContextNodeFromDefaultValueCreator();
+    private final ContextNodeFromExternalValueCreator contextNodeFromExternalValueCreator;
     private final List<UserInputAST> unresolvedInputs = new ArrayList<>();
     private final Deque<ASTNode> stack = new ArrayDeque<>();
     private final List<Visitor<ASTNode>> additionalVisitors;
     private final Map<String, ScriptAST> pathToSourceNode = new HashMap<>();
     private final String startDescriptorPath;
+    private final Map<String, String> externalValues;
     private final Map<String, String> externalDefaults;
     private boolean skipOptional;
     private boolean canBeGenerated = false;
@@ -56,6 +58,7 @@ public class Interpreter implements Visitor<ASTNode> {
                 String startDescriptorPath,
                 boolean skipOptional,
                 List<Visitor<ASTNode>> additionalVisitors,
+                Map<String, String> externalValues,
                 Map<String, String> externalDefaults) {
         this(archetype, startDescriptorPath, skipOptional, additionalVisitors, externalDefaults, false);
     }
@@ -71,8 +74,10 @@ public class Interpreter implements Visitor<ASTNode> {
         pathToContextNodeMap = new HashMap<>();
         this.additionalVisitors = additionalVisitors;
         this.startDescriptorPath = startDescriptorPath;
+        this.externalValues = externalValues;
         this.externalDefaults = externalDefaults;
         this.skipOptional = skipOptional;
+        this.contextNodeFromExternalValueCreator = new ContextNodeFromExternalValueCreator(externalValues);
         this.eagerRun = eagerRun;
     }
 
@@ -470,11 +475,15 @@ public class Interpreter implements Visitor<ASTNode> {
     }
 
     private boolean resolve(InputNodeAST input) {
-        ContextNodeAST contextNodeAST = pathToContextNodeMap.get(input.path());
+        String path = input.path();
+        ContextNodeAST contextNodeAST = pathToContextNodeMap.get(path);
         if (input.isOptional() && skipOptional && contextNodeAST == null) {
-            contextNodeAST = input.accept(contextNodeFromDefaultValueCreator, input);
+            contextNodeAST = input.accept(contextNodeFromExternalValueCreator, input);
+            if (contextNodeAST == null) {
+                contextNodeAST = input.accept(contextNodeFromDefaultValueCreator, input);
+            }
             if (contextNodeAST != null) {
-                pathToContextNodeMap.put(contextNodeAST.path(), contextNodeAST);
+                pathToContextNodeMap.put(path, contextNodeAST);
             }
         }
         if (contextNodeAST != null) {
@@ -508,7 +517,7 @@ public class Interpreter implements Visitor<ASTNode> {
         if (canBeGenerated) {
             return;
         }
-        Flow flow = new Flow(archetype, startDescriptorPath, true, List.of(), Map.of());
+        Flow flow = new Flow(archetype, startDescriptorPath, true, List.of(), externalValues, externalDefaults);
         ContextAST context = new ContextAST();
         context.children().addAll(pathToContextNodeMap.values());
         FlowState state = flow.build(context);

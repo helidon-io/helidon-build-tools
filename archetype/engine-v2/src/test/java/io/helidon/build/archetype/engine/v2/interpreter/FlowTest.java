@@ -92,8 +92,7 @@ public class FlowTest extends ArchetypeBaseTest {
     public void testInnerOutputsElements() {
         archetype = getArchetype("interpreter-test-resources");
 
-        Flow flow = new Flow(archetype, "inner-output-elements-test.xml", false, List.of(DebugVisitor.builder().build()),
-                Map.of());
+        Flow flow = new Flow(archetype, "inner-output-elements-test.xml", false, List.of(DebugVisitor.builder().build()), Map.of(), Map.of());
         flow.build(new ContextAST());
         assertResult(flow, 6, 3);
 
@@ -182,7 +181,7 @@ public class FlowTest extends ArchetypeBaseTest {
     public void testIfStatement() {
         archetype = getArchetype("interpreter-test-resources");
 
-        Flow flow = new Flow(archetype, "if-output-test.xml", false, List.of(DebugVisitor.builder().build()), Map.of());
+        Flow flow = new Flow(archetype, "if-output-test.xml", false, List.of(DebugVisitor.builder().build()), Map.of(), Map.of());
         flow.build(new ContextAST());
         assertResult(flow, 4, 1);
 
@@ -198,7 +197,7 @@ public class FlowTest extends ArchetypeBaseTest {
     public void testOutput() {
         archetype = getArchetype("interpreter-test-resources");
 
-        Flow flow = new Flow(archetype, "output-test.xml", false, List.of(DebugVisitor.builder().build()), Map.of());
+        Flow flow = new Flow(archetype, "output-test.xml", false, List.of(DebugVisitor.builder().build()), Map.of(), Map.of());
         flow.build(new ContextAST());
         flow.build(getUserInput("User boolean input label"));
 
@@ -214,7 +213,7 @@ public class FlowTest extends ArchetypeBaseTest {
     public void testSource() {
         archetype = getArchetype("interpreter-test-resources");
 
-        Flow flow = new Flow(archetype, "source_script_test.xml", false, List.of(DebugVisitor.builder().build()), Map.of());
+        Flow flow = new Flow(archetype, "source_script_test.xml", false, List.of(DebugVisitor.builder().build()), Map.of(), Map.of());
         flow.build(new ContextAST());
 
         flow.build(getUserInput("User boolean input label"));
@@ -233,7 +232,7 @@ public class FlowTest extends ArchetypeBaseTest {
     public void testExec() {
         archetype = getArchetype("interpreter-test-resources");
 
-        Flow flow = new Flow(archetype, "exec_script_test.xml", false, List.of(DebugVisitor.builder().build()), Map.of());
+        Flow flow = new Flow(archetype, "exec_script_test.xml", false, List.of(DebugVisitor.builder().build()), Map.of(), Map.of());
         flow.build(new ContextAST());
 
         flow.build(getUserInput("User boolean input label"));
@@ -252,7 +251,7 @@ public class FlowTest extends ArchetypeBaseTest {
     public void testInputList() {
         archetype = getArchetype("interpreter-test-resources");
 
-        Flow flow = new Flow(archetype, "input-list.xml", false, List.of(DebugVisitor.builder().build()), Map.of());
+        Flow flow = new Flow(archetype, "input-list.xml", false, List.of(DebugVisitor.builder().build()), Map.of(), Map.of());
         flow.build(new ContextAST());
         flow.build(getUserInput("Select the list1"));
         ContextListAST contextNode = (ContextListAST) flow.pathToContextNodeMap().get("list1");
@@ -265,7 +264,7 @@ public class FlowTest extends ArchetypeBaseTest {
     public void testInputEnum() {
         archetype = getArchetype("interpreter-test-resources");
 
-        Flow flow = new Flow(archetype, "input-enum.xml", false, List.of(DebugVisitor.builder().build()), Map.of());
+        Flow flow = new Flow(archetype, "input-enum.xml", false, List.of(DebugVisitor.builder().build()), Map.of(), Map.of());
         flow.build(new ContextAST());
         flow.build(getUserInput("Enum option 1"));
         ContextEnumAST contextNode = (ContextEnumAST) flow.pathToContextNodeMap().get("enum1");
@@ -281,7 +280,7 @@ public class FlowTest extends ArchetypeBaseTest {
     public void testInputBoolean() {
         archetype = getArchetype("interpreter-test-resources");
 
-        Flow flow = new Flow(archetype, "input-boolean.xml", false, List.of(DebugVisitor.builder().build()), Map.of());
+        Flow flow = new Flow(archetype, "input-boolean.xml", false, List.of(DebugVisitor.builder().build()), Map.of(), Map.of());
         flow.build(new ContextAST());
         flow.build(getUserInput("User boolean input label"));
         ContextBooleanAST contextNode = (ContextBooleanAST) flow.pathToContextNodeMap().get("bool-input");
@@ -297,7 +296,7 @@ public class FlowTest extends ArchetypeBaseTest {
     public void testCanBeGenerated() {
         archetype = getArchetype("interpreter-test-resources");
 
-        Flow flow = new Flow(archetype, "can-be-generated-test.xml", false, List.of(DebugVisitor.builder().build()), Map.of());
+        Flow flow = new Flow(archetype, "can-be-generated-test.xml", false, List.of(DebugVisitor.builder().build()), Map.of(), Map.of());
         FlowState state = flow.build(new ContextAST());
         assertThat(state.canBeGenerated(), is(false));
         state = flow.build(getUserInput("User boolean input label"));
@@ -308,7 +307,7 @@ public class FlowTest extends ArchetypeBaseTest {
     public void testInputText() {
         archetype = getArchetype("interpreter-test-resources");
 
-        Flow flow = new Flow(archetype, "input-text.xml", false, List.of(DebugVisitor.builder().build()), Map.of());
+        Flow flow = new Flow(archetype, "input-text.xml", false, List.of(DebugVisitor.builder().build()), Map.of(), Map.of());
         flow.build(new ContextAST());
         FlowState state = flow.build(getUserInput("User text input"));
         ContextTextAST contextNode = (ContextTextAST) flow.pathToContextNodeMap().get("user_text_input");
@@ -332,7 +331,7 @@ public class FlowTest extends ArchetypeBaseTest {
         labels.add("Do you want a jlink Dockerfile");
         labels.add("Kubernetes Support");
 
-        Flow flow = new Flow(archetype, "flavor.xml", false, List.of(DebugVisitor.builder().build()), Map.of());
+        Flow flow = new Flow(archetype, "flavor.xml", false, List.of(DebugVisitor.builder().build()), Map.of(), Map.of());
         FlowState state = flow.build(new ContextAST());
         for (String label : labels) {
             state = flow.build(getUserInput(label));
