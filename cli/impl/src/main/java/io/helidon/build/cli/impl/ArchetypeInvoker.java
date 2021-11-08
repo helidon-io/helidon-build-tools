@@ -45,6 +45,7 @@ import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
 import static io.helidon.build.common.Requirements.require;
+import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 import static java.util.Collections.unmodifiableMap;
 
 /**
@@ -63,7 +64,7 @@ abstract class ArchetypeInvoker {
     /**
      * The first Helidon version that uses the archetype engine V2.
      */
-    private static final MavenVersion HELIDON_V3 = MavenVersion.toMavenVersion("3.0.0");
+    private static final MavenVersion HELIDON_V3 = toMavenVersion("3.0.0");
 
     private final Metadata metadata;
     private final boolean batch;
@@ -228,10 +229,12 @@ abstract class ArchetypeInvoker {
          * otherwise {@link V2Invoker}
          */
         ArchetypeInvoker build() {
-            if (initOptions.engineVersion().equals(EngineVersion.V1)) {
-                return new V1Invoker(this);
+            if (EngineVersion.V2.equals(initOptions.engineVersion())
+                || initOptions.archetypePath() != null
+                || toMavenVersion(initOptions.helidonVersion()).isGreaterThanOrEqualTo(HELIDON_V3)) {
+                return new V2Invoker(this);
             }
-            return new V2Invoker(this);
+            return new V1Invoker(this);
         }
     }
 

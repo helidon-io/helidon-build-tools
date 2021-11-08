@@ -15,13 +15,8 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -136,10 +131,7 @@ public class Plugins {
     }
 
     private static void embedded(String pluginName, List<String> pluginArgs, Consumer<String> stdOut) {
-        PrintStream origStdOut = System.out;
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
-            System.setOut(new PrintStream(baos));
             List<String> command = new ArrayList<>();
             command.add(requireNonNull(pluginName));
             if (Log.isDebug()) {
@@ -148,7 +140,7 @@ public class Plugins {
                 command.add("--verbose");
             }
             command.addAll(pluginArgs);
-            Plugin.execute(command.toArray(new String[0]));
+            Plugin.execute(command.toArray(new String[0]), stdOut);
         } catch (Plugin.Failed ex) {
             if (ex.getCause() != null) {
                 throw new PluginFailed(ex.getCause());
@@ -156,17 +148,6 @@ public class Plugins {
                 throw new PluginFailed(ex);
             }
         } catch (Exception ex) {
-            throw new PluginFailed(ex);
-        } finally {
-            System.setOut(origStdOut);
-        }
-        ByteArrayInputStream is = new ByteArrayInputStream(baos.toByteArray());
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                stdOut.accept(line);
-            }
-        } catch (IOException ex) {
             throw new PluginFailed(ex);
         }
     }

@@ -42,7 +42,6 @@ public final class AnsiLogWriter extends SystemLogWriter {
     private static final String WARN_PREFIX = STYLES_ENABLED ? BoldYellow.apply("warning: ") : "WARNING: ";
     private static final String ERROR_PREFIX = STYLES_ENABLED ? Red.apply("error: ") : "ERROR: ";
     private static final String DEFAULT_LEVEL = "info";
-    private static final String LEVEL_PROPERTY = "log.level";
     private static final Map<Level, AnsiTextStyles> DEFAULT_STYLES = defaultStyles();
     private final Map<Level, AnsiTextStyles> styles;
 

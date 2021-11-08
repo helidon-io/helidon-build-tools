@@ -18,6 +18,7 @@ package io.helidon.build.cli.plugin;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import static io.helidon.build.cli.plugin.Style.style;
 import static java.util.Objects.requireNonNull;
@@ -26,12 +27,12 @@ import static java.util.Objects.requireNonNull;
  * Simple logging.
  */
 class Log {
+    private static final AtomicReference<Consumer<String>> OUT = new AtomicReference<>(System.out::println);
     private static final AtomicReference<Verbosity> VERBOSITY = new AtomicReference<>(Verbosity.NORMAL);
     private static final String EOL = System.getProperty("line.separator");
     private static final String DEBUG_STYLE = "italic";
     private static final String WARN_STYLE = "YELLOW";
     private static final String ERROR_STYLE = "red";
-
 
     /**
      * Verbosity levels.
@@ -93,6 +94,15 @@ class Log {
      */
     static Verbosity verbosity() {
         return VERBOSITY.get();
+    }
+
+    /**
+     * Sets the output consumer.
+     *
+     * @param outputConsumer The output consumer.
+     */
+    static void output(Consumer<String> outputConsumer) {
+        OUT.set(outputConsumer);
     }
 
     /**
@@ -198,7 +208,7 @@ class Log {
 
     private static void log(String message, Object... args) {
         if (message != null) {
-            System.out.println(String.format(message, args));
+            OUT.get().accept(String.format(message, args));
         }
     }
 
@@ -208,7 +218,7 @@ class Log {
         if (trace != null) {
             msg += (msg + EOL + trace);
         }
-        System.out.println(msg);
+        OUT.get().accept(msg);
     }
 
     private static String toStackTrace(Throwable thrown) {

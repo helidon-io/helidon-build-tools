@@ -104,7 +104,7 @@ public final class InitOptions {
             @KeyValue(name = "package", description = "Project's package name") String packageName,
             @KeyValue(name = "name", description = "Project's name") String projectName,
             @KeyValue(name = "archetype-path", description = "Archetype's path", visible = false) String archetypePath,
-            @KeyValue(name = "engine-version", description = "Archetype's engine version", visible = false, defaultValue = "v2")
+            @KeyValue(name = "engine-version", description = "Archetype's engine version", visible = false)
                     String engineVersion) {
 
         this.build = build;
@@ -129,6 +129,9 @@ public final class InitOptions {
     }
 
     private ArchetypeInvoker.EngineVersion getEngineVersion(String version) {
+        if (version == null) {
+            return null;
+        }
         return version.equalsIgnoreCase("v2")
                 ? ArchetypeInvoker.EngineVersion.V2
                 : ArchetypeInvoker.EngineVersion.V1;
@@ -290,7 +293,7 @@ public final class InitOptions {
     /**
      * Get the archetype engine version.
      *
-     * @return archetype version
+     * @return engine version, may be null.
      */
     ArchetypeInvoker.EngineVersion engineVersion() {
         return engineVersion;

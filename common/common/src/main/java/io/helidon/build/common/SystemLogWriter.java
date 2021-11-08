@@ -29,7 +29,6 @@ public class SystemLogWriter implements LogWriter {
     private static final String ERROR_PREFIX = "ERROR: ";
     private static final String EOL = System.getProperty("line.separator");
     private static final String DEFAULT_LEVEL = "info";
-    private static final String LEVEL_PROPERTY = "log.level";
     private int ordinal;
 
     /**
