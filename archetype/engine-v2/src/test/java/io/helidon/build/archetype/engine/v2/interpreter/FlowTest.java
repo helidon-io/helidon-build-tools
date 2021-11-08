@@ -42,7 +42,7 @@ public class FlowTest extends ArchetypeBaseTest {
     public void testEagerMode() {
         archetype = getArchetype("eager-run");
 
-        Flow flow = new Flow(archetype, "flavor.xml", false, List.of(DebugVisitor.builder().build()), Map.of(), true);
+        Flow flow = new Flow(archetype, "flavor.xml", false, List.of(DebugVisitor.builder().build()), Map.of(), Map.of(), true);
         flow.build(new ContextAST());
         assertResult(flow, 2, 6);
         LinkedList<StepAST> tree = flow.tree();
@@ -92,7 +92,8 @@ public class FlowTest extends ArchetypeBaseTest {
     public void testInnerOutputsElements() {
         archetype = getArchetype("interpreter-test-resources");
 
-        Flow flow = new Flow(archetype, "inner-output-elements-test.xml", false, List.of(DebugVisitor.builder().build()), Map.of(), Map.of());
+        Flow flow = new Flow(archetype, "inner-output-elements-test.xml", false, List.of(DebugVisitor.builder().build()),
+                Map.of(), Map.of());
         flow.build(new ContextAST());
         assertResult(flow, 6, 3);
 
@@ -213,7 +214,8 @@ public class FlowTest extends ArchetypeBaseTest {
     public void testSource() {
         archetype = getArchetype("interpreter-test-resources");
 
-        Flow flow = new Flow(archetype, "source_script_test.xml", false, List.of(DebugVisitor.builder().build()), Map.of(), Map.of());
+        Flow flow = new Flow(archetype, "source_script_test.xml", false, List.of(DebugVisitor.builder().build()), Map.of(),
+                Map.of());
         flow.build(new ContextAST());
 
         flow.build(getUserInput("User boolean input label"));
@@ -232,7 +234,8 @@ public class FlowTest extends ArchetypeBaseTest {
     public void testExec() {
         archetype = getArchetype("interpreter-test-resources");
 
-        Flow flow = new Flow(archetype, "exec_script_test.xml", false, List.of(DebugVisitor.builder().build()), Map.of(), Map.of());
+        Flow flow = new Flow(archetype, "exec_script_test.xml", false, List.of(DebugVisitor.builder().build()), Map.of(),
+                Map.of());
         flow.build(new ContextAST());
 
         flow.build(getUserInput("User boolean input label"));
@@ -296,7 +299,8 @@ public class FlowTest extends ArchetypeBaseTest {
     public void testCanBeGenerated() {
         archetype = getArchetype("interpreter-test-resources");
 
-        Flow flow = new Flow(archetype, "can-be-generated-test.xml", false, List.of(DebugVisitor.builder().build()), Map.of(), Map.of());
+        Flow flow = new Flow(archetype, "can-be-generated-test.xml", false, List.of(DebugVisitor.builder().build()), Map.of(),
+                Map.of());
         FlowState state = flow.build(new ContextAST());
         assertThat(state.canBeGenerated(), is(false));
         state = flow.build(getUserInput("User boolean input label"));

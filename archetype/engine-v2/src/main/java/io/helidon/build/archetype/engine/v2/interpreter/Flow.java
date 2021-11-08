@@ -159,14 +159,15 @@ public class Flow {
          String startDescriptorPath,
          boolean skipOptional,
          List<Visitor<ASTNode>> additionalVisitors,
+         Map<String, String> externalValues,
          Map<String, String> externalDefaults,
          boolean eagerRun
     ) {
         this.archetype = archetype;
         this.additionalVisitors = additionalVisitors;
         entryPoint = archetype.getDescriptor(startDescriptorPath);
-        interpreter = new Interpreter(archetype, startDescriptorPath, skipOptional, additionalVisitors, externalDefaults,
-                eagerRun);
+        interpreter = new Interpreter(archetype, startDescriptorPath, skipOptional, additionalVisitors, externalValues,
+                externalDefaults, eagerRun);
         this.skipOptional = skipOptional;
         state = new InitialFlowState(this);
     }

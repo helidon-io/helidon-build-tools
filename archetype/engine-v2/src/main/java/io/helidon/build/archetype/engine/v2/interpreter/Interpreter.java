@@ -60,13 +60,14 @@ public class Interpreter implements Visitor<ASTNode> {
                 List<Visitor<ASTNode>> additionalVisitors,
                 Map<String, String> externalValues,
                 Map<String, String> externalDefaults) {
-        this(archetype, startDescriptorPath, skipOptional, additionalVisitors, externalDefaults, false);
+        this(archetype, startDescriptorPath, skipOptional, additionalVisitors, externalValues, externalDefaults, false);
     }
 
     Interpreter(Archetype archetype,
                 String startDescriptorPath,
                 boolean skipOptional,
                 List<Visitor<ASTNode>> additionalVisitors,
+                Map<String, String> externalValues,
                 Map<String, String> externalDefaults,
                 boolean eagerRun
                 ) {
