@@ -216,7 +216,7 @@ public class MavenCommand {
             // Could not determine the Maven version. The code to do so is fragile and is known
             // not to work in some environments (especially where shims are involved). So
             // don't fail if we can't determine the maven version.
-            Log.debug("Could not determine Maven version: " + ex.toString()
+            Log.debug("Could not determine Maven version: " + ex
                     + " Assuming version is acceptable.");
             return;
         }
@@ -241,6 +241,7 @@ public class MavenCommand {
                                                       .stdErr(stdErr)
                                                       .filter(filter)
                                                       .transform(transform)
+                                                      .errorMessageSuffixIfNoOutput("Retry with --verbose or --debug option.")
                                                       .capture(false)
                                                       .build()
                                                       .start();
