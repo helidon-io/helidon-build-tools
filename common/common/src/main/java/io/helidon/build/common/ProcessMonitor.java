@@ -29,10 +29,10 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNullElseGet;
@@ -49,12 +49,15 @@ public final class ProcessMonitor {
     private final List<String> capturedOutput;
     private final List<String> capturedStdOut;
     private final List<String> capturedStdErr;
+    private final AtomicInteger stdOutLineCount;
+    private final AtomicInteger stdErrLineCount;
     private final Consumer<String> monitorOut;
     private final ProcessBuilder.Redirect stdIn;
     private final Consumer<String> stdOut;
     private final Consumer<String> stdErr;
     private final Predicate<String> filter;
     private final Function<String, String> transform;
+    private final String errorMsgSuffix;
     private final AtomicBoolean running;
     private volatile Process process;
     private volatile MonitorTask out;
@@ -82,6 +85,7 @@ public final class ProcessMonitor {
         private Consumer<String> stdErr;
         private Predicate<String> filter;
         private Function<String, String> transform;
+        private String errorMsgSuffix;
 
         private Builder() {
         }
@@ -188,6 +192,18 @@ public final class ProcessMonitor {
             return this;
         }
 
+
+        /**
+         * Sets error message suffix to append if there is no stdout or stderr output.
+         *
+         * @param suffix The suffix.
+         * @return This builder.
+         */
+        public Builder errorMessageSuffixIfNoOutput(String suffix) {
+            this.errorMsgSuffix = suffix;
+            return this;
+        }
+
         /**
          * Builds the instance.
          *
@@ -228,8 +244,11 @@ public final class ProcessMonitor {
         this.capturedOutput = capturing ? new ArrayList<>() : emptyList();
         this.capturedStdOut = capturing ? new ArrayList<>() : emptyList();
         this.capturedStdErr = capturing ? new ArrayList<>() : emptyList();
+        this.stdOutLineCount = new AtomicInteger();
+        this.stdErrLineCount = new AtomicInteger();
         this.filter = builder.filter;
         this.transform = builder.transform;
+        this.errorMsgSuffix = builder.errorMsgSuffix;
         this.running = new AtomicBoolean();
     }
 
@@ -269,12 +288,12 @@ public final class ProcessMonitor {
         if (stdIn != null) {
             builder.redirectInput(stdIn);
         }
-        Log.debug("Executing command: %s", builder.command().stream().collect(Collectors.joining(" ")));
+        Log.debug("Executing command: %s", String.join(" ", builder.command()));
         process = builder.start();
         Log.debug("Process ID: %d", process.pid());
         running.set(true);
-        out = monitor(process.getInputStream(), filter, transform, capturing ? this::captureStdOut : stdOut, running);
-        err = monitor(process.getErrorStream(), filter, transform, capturing ? this::captureStdErr : stdErr, running);
+        out = monitor(process.getInputStream(), filter, transform, capturing ? this::captureStdOut : this::countStdOut, running);
+        err = monitor(process.getErrorStream(), filter, transform, capturing ? this::captureStdErr : this::countStdErr, running);
         return this;
     }
 
@@ -401,6 +420,26 @@ public final class ProcessMonitor {
     }
 
     /**
+     * Returns count of any lines written to stdout.
+     *
+     * @return The count.
+     */
+    public int stdOutCount() {
+        assertStarted();
+        return stdOutLineCount.get();
+    }
+
+    /**
+     * Returns count of any lines written to stderr.
+     *
+     * @return The count.
+     */
+    public int stdErrCount() {
+        assertStarted();
+        return stdErrLineCount.get();
+    }
+
+    /**
      * Process exception.
      */
     public static class ProcessException extends Exception {
@@ -504,6 +543,9 @@ public final class ProcessMonitor {
         } else {
             message.append(" failed with exit code ").append(process.exitValue());
         }
+        if (errorMsgSuffix != null && stdOutCount() == 0 && stdErrCount() == 0) {
+            message.append(". ").append(errorMsgSuffix);
+        }
         if (capturing) {
             message.append(EOL);
             capturedOutput.forEach(line -> message.append("    ").append(line).append(EOL));
@@ -518,8 +560,18 @@ public final class ProcessMonitor {
     private static void devNull(String line) {
     }
 
-    private void captureStdOut(String line) {
+    private void countStdOut(String line) {
         stdOut.accept(line);
+        stdOutLineCount.incrementAndGet();
+    }
+
+    private void countStdErr(String line) {
+        stdErr.accept(line);
+        stdErrLineCount.incrementAndGet();
+    }
+
+    private void captureStdOut(String line) {
+        countStdOut(line);
         synchronized (capturedOutput) {
             capturedOutput.add(line);
             capturedStdOut.add(line);
@@ -527,7 +579,7 @@ public final class ProcessMonitor {
     }
 
     private void captureStdErr(String line) {
-        stdErr.accept(line);
+        countStdErr(line);
         synchronized (capturedOutput) {
             capturedOutput.add(line);
             capturedStdErr.add(line);
