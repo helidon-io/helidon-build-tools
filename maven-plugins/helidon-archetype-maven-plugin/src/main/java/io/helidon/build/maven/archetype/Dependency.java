@@ -58,6 +58,8 @@ public class Dependency {
 
     /**
      * Set groupId.
+     *
+     * @param groupId groupId
      */
     public void groupId(String groupId) {
         this.groupId = groupId;

@@ -292,7 +292,7 @@ public class JarMojo extends AbstractMojo {
         } catch (ArtifactResolutionException ex) {
             throw new RuntimeException(ex);
         }
-        return result.getArtifact() !=null ? result.getArtifact().getFile() : null;
+        return result.getArtifact() != null ? result.getArtifact().getFile() : null;
     }
 
     private void processDescriptor(Map<String, List<String>> resources, Path baseDir, Path archetypeDescriptor)
@@ -373,7 +373,7 @@ public class JarMojo extends AbstractMojo {
                 .stream()
                 .filter(path -> path.endsWith(".class"))
                 .collect(toMap(path -> path.replace('/', '.')
-                                           .replace(".class", ""),
+                                .replace(".class", ""),
                         path -> {
                             try {
                                 byte[] byteCode = resolveResource(path).readAllBytes();
@@ -388,9 +388,9 @@ public class JarMojo extends AbstractMojo {
 
         // name of the properties to pass to the Helidon archetype engine
         scope.put("propNames", desc.properties().stream()
-                                   .filter(Property::isExported)
-                                   .map(Property::id)
-                                   .collect(toList()));
+                .filter(Property::isExported)
+                .map(Property::id)
+                .collect(toList()));
 
         // Helidon archetype engine GAV
         scope.put("engineGAV", ENGINE_GROUP_ID + ":" + ENGINE_ARTIFACT_ID + ":" + ENGINE_VERSION);
@@ -513,10 +513,10 @@ public class JarMojo extends AbstractMojo {
 
     private Path findResource(Map<String, List<String>> resources, Path baseDir, String name) {
         return resources.entrySet().stream()
-                        .filter(e -> e.getValue().contains(name))
-                        .map(e -> baseDir.resolve(e.getKey()).resolve(name))
-                        .findAny()
-                        .orElse(null);
+                .filter(e -> e.getValue().contains(name))
+                .map(e -> baseDir.resolve(e.getKey()).resolve(name))
+                .findAny()
+                .orElse(null);
     }
 
     private Map<String, List<String>> scanResources() {
@@ -524,9 +524,9 @@ public class JarMojo extends AbstractMojo {
         Map<String, List<String>> allResources = new HashMap<>();
         for (Resource resource : project.getResources()) {
             List<String> resources = SourcePath.scan(new File(resource.getDirectory())).stream()
-                                               .filter(p -> p.matches(resource.getIncludes(), resource.getExcludes()))
-                                               .map(p -> p.asString(false))
-                                               .collect(toList());
+                    .filter(p -> p.matches(resource.getIncludes(), resource.getExcludes()))
+                    .map(p -> p.asString(false))
+                    .collect(toList());
             if (getLog().isDebugEnabled()) {
                 resources.forEach(r -> getLog().debug("Found resource: " + r));
             }
