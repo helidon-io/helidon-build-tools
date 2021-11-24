@@ -25,61 +25,112 @@ public class Dependency {
      */
     private String groupId;
     /**
-     *  artifactId of the artifact that contains the schema file.
+     * artifactId of the artifact that contains the schema file.
      */
     private String artifactId;
     /**
-     *  version of the artifact that contains the schema file.
+     * version of the artifact that contains the schema file.
      */
     private String version;
     /**
-     *  type of the schema file.
+     * type of the schema file.
      */
     private String type;
     /**
-     *  classifier for the schema file.
+     * classifier for the schema file.
      */
     private String classifier;
 
+    /**
+     * Create a new instance.
+     */
     public Dependency() {
     }
 
+    /**
+     * Get groupId.
+     *
+     * @return groupId
+     */
     public String groupId() {
         return groupId;
     }
 
+    /**
+     * Set groupId.
+     */
     public void groupId(String groupId) {
         this.groupId = groupId;
     }
 
+    /**
+     * Get artifactId.
+     *
+     * @return artifactId
+     */
     public String artifactId() {
         return artifactId;
     }
 
+    /**
+     * Set artifactId.
+     *
+     * @param artifactId artifactId
+     */
     public void artifactId(String artifactId) {
         this.artifactId = artifactId;
     }
 
+    /**
+     * Get version.
+     *
+     * @return version
+     */
     public String version() {
         return version;
     }
 
+    /**
+     * Set version.
+     *
+     * @param version version
+     */
     public void version(String version) {
         this.version = version;
     }
 
+    /**
+     * Get type.
+     *
+     * @return type
+     */
     public String type() {
         return type;
     }
 
+    /**
+     * Set type.
+     *
+     * @param type type
+     */
     public void type(String type) {
         this.type = type;
     }
 
+    /**
+     * Get classifier.
+     *
+     * @return classifier
+     */
     public String classifier() {
         return classifier;
     }
 
+    /**
+     * Set classifier.
+     *
+     * @param classifier classifier
+     */
     public void classifier(String classifier) {
         this.classifier = classifier;
     }
