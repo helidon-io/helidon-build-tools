@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,23 +20,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>io.helidon.build-tools.archetype.tests</groupId>
-    <artifactId>parent</artifactId>
-    <version>@project.version@</version>
-    <name>Parent</name>
-    <packaging>pom</packaging>
+    <parent>
+        <groupId>io.helidon.build-tools.archetype.tests</groupId>
+        <artifactId>parent</artifactId>
+        <version>@project.version@</version>
+    </parent>
+    <artifactId>test-archetype3</artifactId>
+    <name>Test Archetype 3</name>
+    <packaging>helidon-archetype</packaging>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
-
-    <modules>
-        <module>archetype1</module>
-        <module>archetype2</module>
-        <module>archetype3</module>
-        <module>catalog1</module>
-        <module>catalog2</module>
-    </modules>
     <build>
         <plugins>
             <plugin>
@@ -44,7 +36,25 @@
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
                 <version>${project.version}</version>
                 <extensions>true</extensions>
+                <configuration>
+                    <dependency>
+                        <groupId>io.helidon.build-tools.archetype</groupId>
+                        <artifactId>helidon-archetype-engine-v2</artifactId>
+                        <classifier>schema</classifier>
+                        <type>xsd</type>
+                        <version>${project.version}</version>
+                    </dependency>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-artifacts</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
+
 </project>

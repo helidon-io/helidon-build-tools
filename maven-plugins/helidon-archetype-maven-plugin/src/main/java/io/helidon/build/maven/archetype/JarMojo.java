@@ -25,9 +25,12 @@ import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -41,12 +44,22 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
+
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor;
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.Property;
 import io.helidon.build.archetype.engine.v1.ArchetypeEngine;
 import io.helidon.build.archetype.engine.v1.MustacheHelper.RawString;
 import io.helidon.build.common.SourcePath;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.archiver.MavenArchiveConfiguration;
 import org.apache.maven.archiver.MavenArchiver;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
@@ -66,6 +79,15 @@ import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.ArchiverException;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
 import org.codehaus.plexus.archiver.jar.ManifestException;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.ArtifactRequest;
+import org.eclipse.aether.resolution.ArtifactResolutionException;
+import org.eclipse.aether.resolution.ArtifactResult;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import static io.helidon.build.archetype.engine.v1.MustacheHelper.MUSTACHE_EXT;
 import static io.helidon.build.archetype.engine.v1.MustacheHelper.renderMustacheTemplate;
@@ -87,6 +109,8 @@ public class JarMojo extends AbstractMojo {
     private static final String POST_SCRIPT_NAME = "archetype-post-generate.groovy";
     private static final String POST_SCRIPT_PKG = "io/helidon/build/maven/archetype/postgenerate";
     private static final Pattern COPYRIGHT_HEADER = Pattern.compile("^(\\s?\\R)?\\/\\*.*\\*\\/(\\s?\\R)?", DOTALL);
+    private static final String SCHEMA_LANG = "http://www.w3.org/2001/XMLSchema";
+    private static final String ARCHETYPE_ROOT_ELEMENT = "archetype-script";
 
     /**
      * The Maven project this mojo executes on.
@@ -155,13 +179,38 @@ public class JarMojo extends AbstractMojo {
     @Parameter(defaultValue = "true")
     private boolean mavenArchetypeCompatible;
 
+    /**
+     * The dependency of the plugin.
+     */
+    @Parameter
+    private Dependency dependency;
+
+    /**
+     * The entry point to Aether.
+     */
+    @Component
+    private RepositorySystem repoSystem;
+
+    /**
+     * The current repository/network configuration of Maven.
+     */
+    @Parameter(defaultValue = "${repositorySystemSession}", readonly = true)
+    private RepositorySystemSession repoSession;
+
+    /**
+     * The project remote repositories to use.
+     */
+    @Parameter(defaultValue = "${project.remoteProjectRepositories}", readonly = true)
+    private List<RemoteRepository> remoteRepos;
+
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+        validateArchetypeScripts();
         Path archetypeDir = outputDirectory.toPath().resolve("archetype");
         Path baseDir = project.getBasedir().toPath();
         Path archetypeDescriptor = archetypeDir.resolve(ArchetypeEngine.DESCRIPTOR_RESOURCE_NAME);
         Path archetypeResourcesList = archetypeDir.resolve(ArchetypeEngine.RESOURCES_LIST);
-
         Map<String, List<String>> resources = scanResources();
         processDescriptor(resources, baseDir, archetypeDescriptor);
         if (mavenArchetypeCompatible) {
@@ -171,6 +220,79 @@ public class JarMojo extends AbstractMojo {
 
         File jarFile = generateArchetypeJar(archetypeDir);
         project.getArtifact().setFile(jarFile);
+    }
+
+    private void validateArchetypeScripts() throws MojoExecutionException {
+        File schemaFile = getArchetypeSchemaFile();
+        if (schemaFile == null) {
+            return;
+        }
+        try {
+            Validator validator = getValidator(schemaFile);
+            List<Path> xmlFiles = getXmlFiles();
+            DocumentBuilder db = getDocumentBuilder();
+            for (Path xmlFilePath : xmlFiles) {
+                File xmlFile = xmlFilePath.toFile();
+                Document doc = db.parse(xmlFile);
+                if (doc.getDocumentElement().getNodeName().equals(ARCHETYPE_ROOT_ELEMENT)) {
+                    validator.validate(new StreamSource(xmlFile));
+                }
+            }
+        } catch (SAXException | IOException | ParserConfigurationException e) {
+            throw new MojoExecutionException(e.getMessage(), e);
+        }
+    }
+
+    private DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        return dbf.newDocumentBuilder();
+    }
+
+    private Validator getValidator(File schemaFile) throws SAXException {
+        SchemaFactory factory = SchemaFactory.newInstance(SCHEMA_LANG);
+        Schema schema = factory.newSchema(schemaFile);
+        return schema.newValidator();
+    }
+
+    private List<Path> getXmlFiles() throws IOException {
+        List<Path> result = new ArrayList<>();
+        Files.walkFileTree(project.getBasedir().toPath(), new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                if (dir.getFileName().toString().equals("target")) {
+                    return FileVisitResult.SKIP_SUBTREE;
+                }
+                return super.preVisitDirectory(dir, attrs);
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                if (!Files.isDirectory(file)
+                        && FilenameUtils.getExtension(file.toString()).equalsIgnoreCase("xml")) {
+                    result.add(file);
+                }
+                return super.visitFile(file, attrs);
+            }
+        });
+        return result;
+    }
+
+    private File getArchetypeSchemaFile() {
+        if (dependency == null) {
+            return null;
+        }
+        ArtifactRequest request = new ArtifactRequest();
+        request.setArtifact(new DefaultArtifact(dependency.groupId(), dependency.artifactId(), dependency.classifier(),
+                dependency.type(), dependency.version()));
+        request.setRepositories(remoteRepos);
+        ArtifactResult result;
+        try {
+            result = repoSystem.resolveArtifact(repoSession, request);
+        } catch (ArtifactResolutionException ex) {
+            throw new RuntimeException(ex);
+        }
+        return result.getArtifact() !=null ? result.getArtifact().getFile() : null;
     }
 
     private void processDescriptor(Map<String, List<String>> resources, Path baseDir, Path archetypeDescriptor)
@@ -343,7 +465,13 @@ public class JarMojo extends AbstractMojo {
                     printer.println(resource);
                     Path resourceTarget = archetypeDir.resolve(resource);
                     getLog().debug("adding resource to archetype directory: " + resource);
-                    Files.createDirectories(resourceTarget);
+                    if (resourceTarget.toFile().isDirectory()) {
+                        Files.createDirectories(resourceTarget);
+                    } else {
+                        if (!resourceTarget.getParent().toFile().exists()) {
+                            Files.createDirectories(resourceTarget.getParent());
+                        }
+                    }
                     Files.copy(baseDir.resolve(resourcesEntry.getKey()).resolve(resource), resourceTarget,
                             StandardCopyOption.REPLACE_EXISTING);
                 }
