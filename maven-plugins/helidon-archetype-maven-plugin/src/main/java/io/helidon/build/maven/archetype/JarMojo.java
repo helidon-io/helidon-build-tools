@@ -25,12 +25,9 @@ import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -206,12 +203,12 @@ public class JarMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        validateArchetypeScripts();
+        Map<String, List<String>> resources = scanResources();
+        validateArchetypeScripts(resources);
         Path archetypeDir = outputDirectory.toPath().resolve("archetype");
         Path baseDir = project.getBasedir().toPath();
         Path archetypeDescriptor = archetypeDir.resolve(ArchetypeEngine.DESCRIPTOR_RESOURCE_NAME);
         Path archetypeResourcesList = archetypeDir.resolve(ArchetypeEngine.RESOURCES_LIST);
-        Map<String, List<String>> resources = scanResources();
         processDescriptor(resources, baseDir, archetypeDescriptor);
         if (mavenArchetypeCompatible) {
             processMavenCompat(archetypeDir, archetypeDescriptor);
@@ -222,60 +219,34 @@ public class JarMojo extends AbstractMojo {
         project.getArtifact().setFile(jarFile);
     }
 
-    private void validateArchetypeScripts() throws MojoExecutionException {
+    private void validateArchetypeScripts(Map<String, List<String>> resources) throws MojoExecutionException {
         File schemaFile = getArchetypeSchemaFile();
         if (schemaFile == null) {
             return;
         }
         try {
-            Validator validator = getValidator(schemaFile);
-            List<Path> xmlFiles = getXmlFiles();
-            DocumentBuilder db = getDocumentBuilder();
-            for (Path xmlFilePath : xmlFiles) {
-                File xmlFile = xmlFilePath.toFile();
-                Document doc = db.parse(xmlFile);
-                if (doc.getDocumentElement().getNodeName().equals(ARCHETYPE_ROOT_ELEMENT)) {
-                    validator.validate(new StreamSource(xmlFile));
+            SchemaFactory factory = SchemaFactory.newInstance(SCHEMA_LANG);
+            Schema schema = factory.newSchema(schemaFile);
+            Validator validator = schema.newValidator();
+
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            DocumentBuilder db = dbf.newDocumentBuilder();
+
+            for (Entry<String, List<String>> resourcesEntry : resources.entrySet()) {
+                for (String resource : resourcesEntry.getValue()) {
+                    if (FilenameUtils.getExtension(resource).equalsIgnoreCase("xml")){
+                        File xmlFile = Path.of(resourcesEntry.getKey(), resource).toFile();
+                        Document doc = db.parse(xmlFile);
+                        if (doc.getDocumentElement().getNodeName().equals(ARCHETYPE_ROOT_ELEMENT)) {
+                            validator.validate(new StreamSource(xmlFile));
+                        }
+                    }
                 }
             }
         } catch (SAXException | IOException | ParserConfigurationException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
-    }
-
-    private DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        return dbf.newDocumentBuilder();
-    }
-
-    private Validator getValidator(File schemaFile) throws SAXException {
-        SchemaFactory factory = SchemaFactory.newInstance(SCHEMA_LANG);
-        Schema schema = factory.newSchema(schemaFile);
-        return schema.newValidator();
-    }
-
-    private List<Path> getXmlFiles() throws IOException {
-        List<Path> result = new ArrayList<>();
-        Files.walkFileTree(project.getBasedir().toPath(), new SimpleFileVisitor<>() {
-            @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                if (dir.getFileName().toString().equals("target")) {
-                    return FileVisitResult.SKIP_SUBTREE;
-                }
-                return super.preVisitDirectory(dir, attrs);
-            }
-
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                if (!Files.isDirectory(file)
-                        && FilenameUtils.getExtension(file.toString()).equalsIgnoreCase("xml")) {
-                    result.add(file);
-                }
-                return super.visitFile(file, attrs);
-            }
-        });
-        return result;
     }
 
     private File getArchetypeSchemaFile() {
@@ -465,15 +436,15 @@ public class JarMojo extends AbstractMojo {
                     printer.println(resource);
                     Path resourceTarget = archetypeDir.resolve(resource);
                     getLog().debug("adding resource to archetype directory: " + resource);
-                    if (resourceTarget.toFile().isDirectory()) {
+                    Path sourceFilePath = baseDir.resolve(resourcesEntry.getKey()).resolve(resource);
+                    if (sourceFilePath.toFile().isDirectory()) {
                         Files.createDirectories(resourceTarget);
                     } else {
                         if (!resourceTarget.getParent().toFile().exists()) {
                             Files.createDirectories(resourceTarget.getParent());
                         }
                     }
-                    Files.copy(baseDir.resolve(resourcesEntry.getKey()).resolve(resource), resourceTarget,
-                            StandardCopyOption.REPLACE_EXISTING);
+                    Files.copy(sourceFilePath, resourceTarget, StandardCopyOption.REPLACE_EXISTING);
                 }
             }
         } catch (IOException ex) {
