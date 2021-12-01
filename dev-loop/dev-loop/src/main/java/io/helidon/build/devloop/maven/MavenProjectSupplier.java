@@ -71,8 +71,7 @@ import static java.util.Collections.emptyList;
  * A {@code ProjectSupplier} for Maven projects.
  */
 public class MavenProjectSupplier implements ProjectSupplier {
-    private static final String HELIDON_CLI_PLUGIN_VERSION_PROP = "version.plugin.helidon-cli";
-    private static final String HELIDON_CLI_PLUGIN_VERSION = System.getProperty(HELIDON_CLI_PLUGIN_VERSION_PROP);
+    private static final List<String> PASS_THROUGH_PROPERTIES = List.of("version.plugin.helidon-cli", "maven.repo.local");
     private static final List<String> DEFAULT_EXCLUDES = List.of("**/.*.swp");
     private static final String CLEAN_ARG = "clean";
     private static final String SKIP_TESTS_ARG = "-DskipTests";
@@ -122,9 +121,9 @@ public class MavenProjectSupplier implements ProjectSupplier {
     /**
      * Checks whether any matching file has a modified time more recent than the given time.
      *
-     * @param projectDir    The project directory.
+     * @param projectDir The project directory.
      * @param lastCheckTime The time to check against.
-     * @param type          The type of search.
+     * @param type The type of search.
      * @return The time, if changed.
      */
     public static Optional<FileTime> changedSince(Path projectDir, FileTime lastCheckTime, DetectionType type) {
@@ -134,11 +133,11 @@ public class MavenProjectSupplier implements ProjectSupplier {
     /**
      * Checks whether any matching file has a modified time more recent than the given time.
      *
-     * @param projectDir    The project directory.
+     * @param projectDir The project directory.
      * @param lastCheckTime The time to check against.
-     * @param dirFilter     A filter for directories to visit.
-     * @param fileFilter    A filter for which files to check.
-     * @param type          The type of search.
+     * @param dirFilter A filter for directories to visit.
+     * @param fileFilter A filter for which files to check.
+     * @param type The type of search.
      * @return The time, if changed.
      */
     public static Optional<FileTime> changedSince(Path projectDir,
@@ -148,7 +147,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
                                                   DetectionType type) {
 
         return FileChanges.changedSince(projectDir, lastCheckTime, NOT_HIDDEN.and(NOT_TARGET_DIR).and(dirFilter),
-                NOT_HIDDEN.and(fileFilter), type);
+                                        NOT_HIDDEN.and(fileFilter), type);
     }
 
     @Override
@@ -188,7 +187,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
         executor.execute(command);
         projectConfig = projectConfig(executor.projectDirectory());
         Requirements.require(projectConfig.lastSuccessfulBuildTime() > 0,
-                "$(cyan helidon-cli-maven-plugin) must be configured as an extension");
+                             "$(cyan helidon-cli-maven-plugin) must be configured as an extension");
     }
 
     private boolean canSkipBuild(Path projectDir) {
@@ -333,11 +332,13 @@ public class MavenProjectSupplier implements ProjectSupplier {
     }
 
     private static List<String> command(String... arguments) {
-        List<String> command = List.of(arguments);
-        if (HELIDON_CLI_PLUGIN_VERSION != null) {
-            command = new ArrayList<>(command);
-            command.add("-D" + HELIDON_CLI_PLUGIN_VERSION_PROP + "=" + HELIDON_CLI_PLUGIN_VERSION);
-        }
+        final List<String> command = new ArrayList<>(Arrays.asList(arguments));
+        PASS_THROUGH_PROPERTIES.forEach(property -> {
+            String value = System.getProperty(property);
+            if (value != null) {
+                command.add("-D" + property + "=" + value);
+            }
+        });
         return command;
     }
 }
