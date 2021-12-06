@@ -41,7 +41,7 @@ def postGenerate(Map<String, String> classes, request, String engineGAV, List<St
         classes.each {gcl.defineClass(it.key, it.value.replace('\n', '').decodeBase64())}
 
         // invoke the engine facade
-        def aClass = gcl.loadClass("io.helidon.build.archetype.maven.postgenerate.EngineFacade")
+        def aClass = gcl.loadClass("io.helidon.build.maven.archetype.postgenerate.EngineFacade")
         def method = aClass.getMethods().find { ("generate" == it.getName()) }
         try {
             method.invoke(null, request, engineGAV, propNames)

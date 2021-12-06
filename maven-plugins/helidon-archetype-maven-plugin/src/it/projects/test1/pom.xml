@@ -32,10 +32,6 @@
 
     <modules>
         <module>archetype1</module>
-        <module>archetype2</module>
-        <module>archetype3</module>
-        <module>catalog1</module>
-        <module>catalog2</module>
     </modules>
     <build>
         <plugins>

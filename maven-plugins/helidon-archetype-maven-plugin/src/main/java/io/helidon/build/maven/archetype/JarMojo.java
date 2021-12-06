@@ -19,7 +19,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
@@ -27,7 +26,6 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -52,13 +50,13 @@ import javax.xml.validation.Validator;
 
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor;
 import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.Property;
-import io.helidon.build.archetype.engine.v1.ArchetypeEngine;
 import io.helidon.build.archetype.engine.v1.MustacheHelper.RawString;
 import io.helidon.build.common.SourcePath;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.archiver.MavenArchiveConfiguration;
 import org.apache.maven.archiver.MavenArchiver;
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Resource;
@@ -66,6 +64,7 @@ import org.apache.maven.model.io.ModelReader;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -76,13 +75,6 @@ import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.ArchiverException;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
 import org.codehaus.plexus.archiver.jar.ManifestException;
-import org.eclipse.aether.RepositorySystem;
-import org.eclipse.aether.RepositorySystemSession;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.resolution.ArtifactRequest;
-import org.eclipse.aether.resolution.ArtifactResolutionException;
-import org.eclipse.aether.resolution.ArtifactResult;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -100,7 +92,7 @@ import static java.util.stream.Collectors.toMap;
         requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
 public class JarMojo extends AbstractMojo {
 
-    private static final String ENGINE_GROUP_ID = MojoHelper.PLUGIN_GROUP_ID;
+    private static final String ENGINE_GROUP_ID = MojoHelper.PLUGIN_GROUP_ID + ".archetype";
     private static final String ENGINE_ARTIFACT_ID = "helidon-archetype-engine-v1";
     private static final String ENGINE_VERSION = MojoHelper.PLUGIN_VERSION;
     private static final String POST_SCRIPT_NAME = "archetype-post-generate.groovy";
@@ -176,44 +168,17 @@ public class JarMojo extends AbstractMojo {
     @Parameter(defaultValue = "true")
     private boolean mavenArchetypeCompatible;
 
-    /**
-     * The dependency of the plugin.
-     */
-    @Parameter
-    private Dependency dependency;
-
-    /**
-     * The entry point to Aether.
-     */
-    @Component
-    private RepositorySystem repoSystem;
-
-    /**
-     * The current repository/network configuration of Maven.
-     */
-    @Parameter(defaultValue = "${repositorySystemSession}", readonly = true)
-    private RepositorySystemSession repoSession;
-
-    /**
-     * The project remote repositories to use.
-     */
-    @Parameter(defaultValue = "${project.remoteProjectRepositories}", readonly = true)
-    private List<RemoteRepository> remoteRepos;
-
-
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         Map<String, List<String>> resources = scanResources();
         validateArchetypeScripts(resources);
         Path archetypeDir = outputDirectory.toPath().resolve("archetype");
         Path baseDir = project.getBasedir().toPath();
-        Path archetypeDescriptor = archetypeDir.resolve(ArchetypeEngine.DESCRIPTOR_RESOURCE_NAME);
-        Path archetypeResourcesList = archetypeDir.resolve(ArchetypeEngine.RESOURCES_LIST);
-        processDescriptor(resources, baseDir, archetypeDescriptor);
-        if (mavenArchetypeCompatible) {
-            processMavenCompat(archetypeDir, archetypeDescriptor);
-        }
-        processArchetypeResources(resources, archetypeDir, baseDir, archetypeResourcesList);
+
+        //TODO uncomment later
+//        if (mavenArchetypeCompatible) {
+//            processMavenCompat(archetypeDir, null);
+//        }
 
         File jarFile = generateArchetypeJar(archetypeDir);
         project.getArtifact().setFile(jarFile);
@@ -235,7 +200,7 @@ public class JarMojo extends AbstractMojo {
 
             for (Entry<String, List<String>> resourcesEntry : resources.entrySet()) {
                 for (String resource : resourcesEntry.getValue()) {
-                    if (FilenameUtils.getExtension(resource).equalsIgnoreCase("xml")){
+                    if (FilenameUtils.getExtension(resource).equalsIgnoreCase("xml")) {
                         File xmlFile = Path.of(resourcesEntry.getKey(), resource).toFile();
                         Document doc = db.parse(xmlFile);
                         if (doc.getDocumentElement().getNodeName().equals(ARCHETYPE_ROOT_ELEMENT)) {
@@ -249,50 +214,14 @@ public class JarMojo extends AbstractMojo {
         }
     }
 
+
     private File getArchetypeSchemaFile() {
-        if (dependency == null) {
-            return null;
-        }
-        ArtifactRequest request = new ArtifactRequest();
-        request.setArtifact(new DefaultArtifact(dependency.groupId(), dependency.artifactId(), dependency.classifier(),
-                dependency.type(), dependency.version()));
-        request.setRepositories(remoteRepos);
-        ArtifactResult result;
-        try {
-            result = repoSystem.resolveArtifact(repoSession, request);
-        } catch (ArtifactResolutionException ex) {
-            throw new RuntimeException(ex);
-        }
-        return result.getArtifact() != null ? result.getArtifact().getFile() : null;
-    }
-
-    private void processDescriptor(Map<String, List<String>> resources, Path baseDir, Path archetypeDescriptor)
-            throws MojoFailureException, MojoExecutionException {
-
-        try {
-            getLog().info("Processing archetype descriptor");
-
-            // create target/archetype/META-INF
-            Files.createDirectories(archetypeDescriptor.getParent());
-
-            // find a descriptor template
-            Path archetypeDescriptorTemplate = findResource(resources, baseDir,
-                    ArchetypeEngine.DESCRIPTOR_RESOURCE_NAME + MUSTACHE_EXT);
-            if (archetypeDescriptorTemplate != null) {
-                preProcessDescriptor(archetypeDescriptorTemplate, archetypeDescriptor);
-            } else {
-                // or else copy a descriptor
-                Path archetypeDescriptorSource = findResource(resources, baseDir,
-                        ArchetypeEngine.DESCRIPTOR_RESOURCE_NAME);
-                if (archetypeDescriptorSource == null) {
-                    throw new MojoFailureException(ArchetypeEngine.DESCRIPTOR_RESOURCE_NAME + " not found");
-                }
-                getLog().info("Copying " + archetypeDescriptorSource);
-                Files.copy(archetypeDescriptorSource, archetypeDescriptor, StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException ex) {
-            throw new MojoExecutionException(ex.getMessage(), ex);
-        }
+        PluginDescriptor pluginDescriptor = (PluginDescriptor) getPluginContext().get("pluginDescriptor");
+        return pluginDescriptor.getArtifacts().stream()
+                        .filter(artifact -> artifact.getArtifactId().equals("helidon-archetype-engine-v2")
+                                && artifact.getClassifier().equals("schema")
+                                && artifact.getType().equals("xsd")
+                        ).findFirst().map(Artifact::getFile).orElse(null);
     }
 
     private static InputStream resolveResource(String path) {
@@ -414,45 +343,13 @@ public class JarMojo extends AbstractMojo {
         }
     }
 
-    private void processArchetypeResources(Map<String, List<String>> resources,
-                                           Path archetypeDir,
-                                           Path baseDir,
-                                           Path archetypeResourcesList)
-            throws MojoExecutionException {
-
-        getLog().info("Processing archetype resources");
-
-        // create target/archetype/META-INF/helidon-archetype-resources.txt
-        // copy archetype resources to target/archetype/
-        try (BufferedWriter writer = Files.newBufferedWriter(archetypeResourcesList)) {
-            PrintWriter printer = new PrintWriter(writer);
-            for (Entry<String, List<String>> resourcesEntry : resources.entrySet()) {
-                getLog().debug("processing resources scanned from: " + resourcesEntry.getKey());
-                for (String resource : resourcesEntry.getValue()) {
-                    if (resource.startsWith("META-INF/")) {
-                        continue;
-                    }
-                    getLog().debug("adding resource to archetype manifest: " + resource);
-                    printer.println(resource);
-                    Path resourceTarget = archetypeDir.resolve(resource);
-                    getLog().debug("adding resource to archetype directory: " + resource);
-                    Path sourceFilePath = baseDir.resolve(resourcesEntry.getKey()).resolve(resource);
-                    if (sourceFilePath.toFile().isDirectory()) {
-                        Files.createDirectories(resourceTarget);
-                    } else {
-                        if (!resourceTarget.getParent().toFile().exists()) {
-                            Files.createDirectories(resourceTarget.getParent());
-                        }
-                    }
-                    Files.copy(sourceFilePath, resourceTarget, StandardCopyOption.REPLACE_EXISTING);
-                }
-            }
+    private File generateArchetypeJar(Path archetypeDir) throws MojoExecutionException {
+        //todo can be removed if processMavenCompat() will create the directory when it will be uncommented
+        try {
+            Files.createDirectories(archetypeDir);
         } catch (IOException ex) {
             throw new MojoExecutionException(ex.getMessage(), ex);
         }
-    }
-
-    private File generateArchetypeJar(Path archetypeDir) throws MojoExecutionException {
         File jarFile = new File(outputDirectory, finalName + ".jar");
 
         MavenArchiver archiver = new MavenArchiver();
@@ -469,17 +366,6 @@ public class JarMojo extends AbstractMojo {
             throw new MojoExecutionException("Error assembling archetype jar " + jarFile, e);
         }
         return jarFile;
-    }
-
-    private void preProcessDescriptor(Path template, Path archetypeDescriptor) throws MojoExecutionException {
-        getLog().info("Rendering " + template);
-        Map<String, String> props = MojoHelper.templateProperties(properties, includeProjectProperties, project);
-        try {
-            renderMustacheTemplate(Files.newInputStream(template),
-                    ArchetypeEngine.DESCRIPTOR_RESOURCE_NAME + MUSTACHE_EXT, archetypeDescriptor, props);
-        } catch (IOException ex) {
-            throw new MojoExecutionException(ex.getMessage(), ex);
-        }
     }
 
     private Path findResource(Map<String, List<String>> resources, Path baseDir, String name) {
