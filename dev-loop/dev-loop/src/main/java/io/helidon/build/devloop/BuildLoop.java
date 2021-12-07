@@ -287,6 +287,7 @@ public class BuildLoop {
     }
 
     private void buildSucceeded(BuildType type) {
+        lastFailedTime.set(0);
         monitor.onBuildSuccess(cycleNumber.get(), type);
     }
 
