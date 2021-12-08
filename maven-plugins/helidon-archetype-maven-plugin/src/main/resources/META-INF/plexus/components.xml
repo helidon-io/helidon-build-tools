@@ -37,8 +37,8 @@
                         <id>default</id>
                         <phases>
                             <process-test-resources>org.apache.maven.plugins:maven-resources-plugin:testResources</process-test-resources>
-                            <package>io.helidon.build-tools.archetype:helidon-archetype-maven-plugin:jar</package>
-                            <integration-test>io.helidon.build-tools.archetype:helidon-archetype-maven-plugin:integration-test</integration-test>
+                            <package>io.helidon.build-tools:helidon-archetype-maven-plugin:jar</package>
+                            <integration-test>io.helidon.build-tools:helidon-archetype-maven-plugin:integration-test</integration-test>
                             <install>org.apache.maven.plugins:maven-install-plugin:install</install>
                             <deploy>org.apache.maven.plugins:maven-deploy-plugin:deploy</deploy>
                         </phases>
@@ -65,7 +65,7 @@
                     <lifecycle>
                         <id>default</id>
                         <phases>
-                            <package>io.helidon.build-tools.archetype:helidon-archetype-maven-plugin:catalog</package>
+                            <package>io.helidon.build-tools:helidon-archetype-maven-plugin:catalog</package>
                             <install>org.apache.maven.plugins:maven-install-plugin:install</install>
                             <deploy>org.apache.maven.plugins:maven-deploy-plugin:deploy</deploy>
                         </phases>

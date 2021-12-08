@@ -16,17 +16,19 @@
     limitations under the License.
 
 -->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>io.helidon.build-tools.archetype.tests</groupId>
-        <artifactId>parent</artifactId>
-        <version>@project.version@</version>
-    </parent>
-    <artifactId>test-archetype1</artifactId>
-    <name>Test Archetype 1</name>
-    <packaging>helidon-archetype</packaging>
-
-</project>
+    <step label="Helidon Flavor">
+        <input>
+            <enum name="flavor" label="Select a flavor">
+                <option value="se" label="Helidon SE">
+                    <source src="se/se.xml"/>
+                </option>
+                <option value="mp" label="Helidon MP">
+                </option>
+            </enum>
+        </input>
+    </step>
+</archetype-script>
