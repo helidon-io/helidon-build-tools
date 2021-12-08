@@ -301,6 +301,7 @@ public final class DevCommand extends BaseCommand {
                         buildFailed = false;
                     } else if (line.contains(DEV_LOOP_BUILD_COMPLETED)) {
                         building = false;
+                        buildFailed = false;
                     } else if (line.contains(DEV_LOOP_APPLICATION_STARTING)) {
                         appendLine = true;
                         building = false;

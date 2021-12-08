@@ -278,6 +278,7 @@ public class BuildLoop {
         delay.set(0);
         if (type != ChangeType.SourceFile) {
             project.set(null);
+            lastFailedTime.set(0);
         }
     }
 
