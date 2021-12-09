@@ -321,7 +321,8 @@ public class VirtualFileSystem extends FileSystem {
                 return o;
             }
             Path path = o.internal;
-            if (path.toString().startsWith("/")) {
+            String pathStr = path.toString();
+            if (pathStr.startsWith("/") || pathStr.startsWith("\\")) {
                 return new VPath(fs, fs.internal.resolve(path.subpath(0, path.getNameCount())));
             }
             return new VPath(fs, internal.resolve(path));
@@ -330,7 +331,8 @@ public class VirtualFileSystem extends FileSystem {
         @Override
         public VPath resolve(String other) {
             Path path = internal.getFileSystem().getPath(other);
-            if (path.toString().startsWith("/")) {
+            String pathStr = path.toString();
+            if (pathStr.startsWith("/") || pathStr.startsWith("\\")) {
                 return new VPath(fs, fs.internal.resolve(path.subpath(0, path.getNameCount())));
             }
             return new VPath(fs, internal.resolve(path));

@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.common.test.utils.TestFiles;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.common.Strings.normalizeNewLines;
@@ -48,6 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class VirtualFileSystemTest {
 
+    private static final boolean IS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
     private static final Path ROOT = TestFiles.targetDir(VirtualFileSystemTest.class)
                                               .resolve("test-classes/vfs")
                                               .normalize();
@@ -70,10 +72,10 @@ class VirtualFileSystemTest {
         FileSystem fs = vfs();
         Iterator<Path> it = fs.getRootDirectories().iterator();
         assertThat(it.hasNext(), is(true));
-        assertThat(it.next().toString(), is("/"));
+        assertThat(toString(it.next()), is("/"));
         assertThat(it.hasNext(), is(false));
-        assertThat(fs.getPath("/").toAbsolutePath().toString(), is("/"));
-        assertThat(fs.getPath("").toAbsolutePath().toString(), is("/"));
+        assertThat(toString(fs.getPath("/").toAbsolutePath()), is("/"));
+        assertThat(toString(fs.getPath("").toAbsolutePath()), is("/"));
         //noinspection ResultOfMethodCallIgnored
         InvalidPathException ex = assertThrows(InvalidPathException.class, () -> fs.getPath("../../").toAbsolutePath());
         assertThat(ex.getMessage(), startsWith("Not within virtual root"));
@@ -83,10 +85,10 @@ class VirtualFileSystemTest {
     void testNormalize() {
         FileSystem fs = vfs();
         Path red = fs.getPath("red");
-        assertThat(red.resolve("./blue").toString(), is("red/./blue"));
-        assertThat(red.resolve("./blue").normalize().toString(), is("red/blue"));
-        assertThat(red.resolve("blue/../green").toString(), is("red/blue/../green"));
-        assertThat(red.resolve("blue/../green").normalize().toString(), is("red/green"));
+        assertThat(toString(red.resolve("./blue")), is("red/./blue"));
+        assertThat(toString(red.resolve("./blue").normalize()), is("red/blue"));
+        assertThat(toString(red.resolve("blue/../green")), is("red/blue/../green"));
+        assertThat(toString(red.resolve("blue/../green").normalize()), is("red/green"));
     }
 
     @Test
@@ -94,20 +96,21 @@ class VirtualFileSystemTest {
         FileSystem fs = vfs();
         Path red = fs.getPath("red");
         Path green = red.resolve("blue/green");
-        assertThat(red.relativize(green).toString(), is("blue/green"));
-        assertThat(green.relativize(red).toString(), is("../.."));
+        assertThat(toString(red.relativize(green)), is("blue/green"));
+        assertThat(toString(green.relativize(red)), is("../.."));
     }
 
     @Test
     void testGetRoot() {
-        assertThat(vfs().getPath("red/blue/green").toAbsolutePath().getRoot().toString(), is("/"));
+        Path path = vfs().getPath("red/blue/green");
+        assertThat(toString(path.toAbsolutePath().getRoot()), is("/"));
     }
 
     @Test
     void testGetParent() {
         Path green = vfs().getPath("red/blue/green");
-        assertThat(green.getParent().toString(), is("red/blue"));
-        assertThat(green.getParent().getParent().toString(), is("red"));
+        assertThat(toString(green.getParent()), is("red/blue"));
+        assertThat(toString(green.getParent().getParent()), is("red"));
         assertThat(green.getParent().getParent().getParent(), is(nullValue()));
     }
 
@@ -115,10 +118,10 @@ class VirtualFileSystemTest {
     void testGetFileName() {
         FileSystem fs = vfs();
         Path green = fs.getPath("red/blue/green");
-        assertThat(green.getFileName().toString(), is("green"));
+        assertThat(toString(green.getFileName()), is("green"));
         Path blue = fs.getPath("red/blue/green/..");
-        assertThat(blue.getFileName().toString(), is(".."));
-        assertThat(blue.normalize().getFileName().toString(), is("blue"));
+        assertThat(toString(blue.getFileName()), is(".."));
+        assertThat(toString(blue.normalize().getFileName()), is("blue"));
     }
 
     @Test
@@ -132,34 +135,35 @@ class VirtualFileSystemTest {
     void testGetName() {
         FileSystem fs = vfs();
         Path green = fs.getPath("red/blue/green");
-        assertThat(green.getName(0).toString(), is("red"));
-        assertThat(green.getName(1).toString(), is("blue"));
-        assertThat(green.getName(2).toString(), is("green"));
+        assertThat(toString(green.getName(0)), is("red"));
+        assertThat(toString(green.getName(1)), is("blue"));
+        assertThat(toString(green.getName(2)), is("green"));
     }
 
     @Test
     void testSubPath() {
         FileSystem fs = vfs();
         Path green = fs.getPath("red/blue/green");
-        assertThat(green.subpath(0, 1).toString(), is("red"));
-        assertThat(green.subpath(0, 2).toString(), is("red/blue"));
-        assertThat(green.subpath(1, 2).toString(), is("blue"));
-        assertThat(green.subpath(1, 3).toString(), is("blue/green"));
-        assertThat(green.subpath(0, 3).toString(), is("red/blue/green"));
+        assertThat(toString(green.subpath(0, 1)), is("red"));
+        assertThat(toString(green.subpath(0, 2)), is("red/blue"));
+        assertThat(toString(green.subpath(1, 2)), is("blue"));
+        assertThat(toString(green.subpath(1, 3)), is("blue/green"));
+        assertThat(toString(green.subpath(0, 3)), is("red/blue/green"));
     }
 
     @Test
     void testToRealPath() throws IOException {
+        Assumptions.assumeFalse(IS_WINDOWS);
         FileSystem fs = VirtualFileSystem.create(TestFiles.targetDir(VirtualFileSystemTest.class)
                                                           .resolve("../src/test/resources/vfs")
                                                           .normalize());
-        assertThat(fs.getPath("green").toRealPath().toString(), is("blue"));
+        assertThat(toString(fs.getPath("green").toRealPath()), is("blue"));
     }
 
     @Test
     void testToUri() {
         assertThat(vfs().getPath("green").toUri().toString(),
-                is(String.format("virtual:file://%s/!green", ROOT)));
+                is(String.format("virtual:file://%s%s/!green", IS_WINDOWS ? "/" : "", toString(ROOT))));
     }
 
     @Test
@@ -207,7 +211,7 @@ class VirtualFileSystemTest {
     void testResolveSibling() {
         FileSystem fs = vfs();
         Path green = fs.getPath("green/blue");
-        assertThat(green.resolveSibling("red").toString(), is("green/red"));
+        assertThat(toString(green.resolveSibling("red")), is("green/red"));
     }
 
     @Test
@@ -219,7 +223,7 @@ class VirtualFileSystemTest {
     @Test
     void testWalk() throws IOException {
         FileSystem fs = vfs();
-        List<String> paths = Files.walk(fs.getPath("/")).map(Path::toString).collect(Collectors.toList());
+        List<String> paths = Files.walk(fs.getPath("/")).map(p -> toString(p)).collect(Collectors.toList());
         assertThat(paths, hasItems("/", "dir1", "dir1/file.txt", "blue", "green"));
     }
 
@@ -239,6 +243,7 @@ class VirtualFileSystemTest {
 
     @Test
     void testSymbolicLink() {
+        Assumptions.assumeFalse(IS_WINDOWS);
         FileSystem fs = VirtualFileSystem.create(TestFiles.targetDir(VirtualFileSystemTest.class)
                                                           .resolve("../src/test/resources/vfs")
                                                           .normalize());
@@ -278,6 +283,7 @@ class VirtualFileSystemTest {
 
     @Test
     void testIsHidden() throws IOException {
+        Assumptions.assumeFalse(IS_WINDOWS);
         FileSystem fs = vfs();
         Path path1 = echo(fs.getPath("dir1/.testIsHidden.txt"), "bar\n");
         assertThat(Files.isHidden(path1), is(true));
@@ -305,5 +311,9 @@ class VirtualFileSystemTest {
         Path root =  vfs().getPath("/");
         InvalidPathException ex = assertThrows(InvalidPathException.class, () -> readString(root.resolve("/../test.txt")));
         assertThat(ex.getMessage(), startsWith("Not within virtual root"));
+    }
+
+    private String toString(Path path) {
+        return path.toString().replace("\\", "/");
     }
 }
