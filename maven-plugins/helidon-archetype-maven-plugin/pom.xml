@@ -116,6 +116,13 @@
             <optional>true</optional>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools.archetype</groupId>
+            <artifactId>helidon-archetype-engine-v2</artifactId>
+            <classifier>schema</classifier>
+            <type>xsd</type>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -123,6 +130,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-invoker-plugin</artifactId>
+                <configuration>
+                    <streamLogs>true</streamLogs>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>

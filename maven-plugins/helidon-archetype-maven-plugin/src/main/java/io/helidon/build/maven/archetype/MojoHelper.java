@@ -32,7 +32,7 @@ final class MojoHelper {
     /**
      * The plugin groupId.
      */
-    static final String PLUGIN_GROUP_ID = "io.helidon.build-tools.archetype";
+    static final String PLUGIN_GROUP_ID = "io.helidon.build-tools";
 
     /**
      * The plugin artifactId.
