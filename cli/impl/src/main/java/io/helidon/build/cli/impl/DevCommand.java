@@ -298,8 +298,10 @@ public final class DevCommand extends BaseCommand {
                     if (line.contains(DEV_LOOP_BUILD_STARTING)) {
                         insertLineIfError = true;
                         building = true;
+                        buildFailed = false;
                     } else if (line.contains(DEV_LOOP_BUILD_COMPLETED)) {
                         building = false;
+                        buildFailed = false;
                     } else if (line.contains(DEV_LOOP_APPLICATION_STARTING)) {
                         appendLine = true;
                         building = false;
@@ -326,6 +328,7 @@ public final class DevCommand extends BaseCommand {
                            || line.contains(HELP_TAG)) {
                     suspendOutput();
                     building = false;
+                    buildFailed = false;
                     return false;
                 } else {
                     return !line.equals(AT_TAG);
