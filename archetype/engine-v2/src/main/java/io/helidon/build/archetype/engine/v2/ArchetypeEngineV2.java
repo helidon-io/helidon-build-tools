@@ -61,7 +61,7 @@ public class ArchetypeEngineV2 {
         Context context = Context.create(cwd, externalValues, externalDefaults);
         Script script = ScriptLoader.load(cwd.resolve(ENTRYPOINT));
 
-        // resolve inputs
+        // resolve inputs (full traversal)
         Controller.walk(inputResolver, script, context);
         context.ensureEmptyInputs();
 
@@ -69,8 +69,11 @@ public class ArchetypeEngineV2 {
         String projectName = requireNonNull(context.lookup(PROJECT_NAME), "project name is null").asString();
         Path directory = directorySupplier.apply(projectName);
 
-        //  generate output
-        OutputGenerator outputGenerator = new OutputGenerator(script, directorySupplier.apply(projectName), context);
+        // resolve model  (full traversal)
+        MergedModel model = MergedModel.resolveModel(script, context);
+
+        //  generate output  (full traversal)
+        OutputGenerator outputGenerator = new OutputGenerator(model, directory);
         Controller.walk(outputGenerator, script, context);
         context.ensureEmptyInputs();
 

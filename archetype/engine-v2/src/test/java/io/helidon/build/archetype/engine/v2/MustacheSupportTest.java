@@ -25,6 +25,7 @@ import com.github.mustachejava.MustacheException;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.archetype.engine.v2.MergedModel.resolveModel;
 import static io.helidon.build.archetype.engine.v2.TestHelper.model;
 import static io.helidon.build.archetype.engine.v2.TestHelper.modelList;
 import static io.helidon.build.archetype.engine.v2.TestHelper.modelMap;
@@ -268,7 +269,7 @@ class MustacheSupportTest {
     private static String render(String template, Block scope, Block extraScope, Context context) {
         InputStream is = new ByteArrayInputStream(template.getBytes(UTF_8));
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        MustacheSupport support = new MustacheSupport(scope, context);
+        MustacheSupport support = new MustacheSupport(resolveModel(scope, context), context);
         support.render(is, "test", UTF_8, os, extraScope);
         return os.toString(UTF_8);
     }

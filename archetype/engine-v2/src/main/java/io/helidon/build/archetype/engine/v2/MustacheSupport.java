@@ -55,35 +55,31 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class MustacheSupport implements TemplateSupport {
 
-    private final Block block;
     private final Context context;
     private final MergedModel scope;
-    private final DefaultMustacheFactory factory;
-    private final Map<String, Mustache> cache;
+    private final DefaultMustacheFactory factory = new MustacheFactoryImpl();
+    private final Map<String, Mustache> cache = new HashMap<>();
 
     /**
      * Create a new instance.
      *
-     * @param block   block
+     * @param scope   scope
      * @param context context
      */
-    MustacheSupport(Block block, Context context) {
-        this.block = block;
+    MustacheSupport(MergedModel scope, Context context) {
         this.context = context;
-        factory = new MustacheFactoryImpl();
-        scope = resolveModel(block, context);
-        cache = new HashMap<>();
+        this.scope = scope;
     }
 
     @Override
-    public void render(InputStream template, String name, Charset charset, OutputStream os, Block extraScope) {
-        Mustache mustache = cache.computeIfAbsent(name, n -> factory.compile(new InputStreamReader(template), name));
+    public void render(InputStream is, String name, Charset charset, OutputStream os, Block extraScope) {
+        Mustache mustache = name == null ? compile(is, "inline") : cache.computeIfAbsent(name, n -> compile(is, n));
         try (Writer writer = new OutputStreamWriter(os, charset)) {
             List<Object> scopes;
             if (extraScope != null) {
-                scopes = List.of(scope, resolveModel(extraScope, context));
+                scopes = List.of(scope.node(), resolveModel(extraScope, context).node());
             } else {
-                scopes = List.of(scope);
+                scopes = List.of(scope.node());
             }
             Writer result = mustache.execute(writer, scopes);
             if (result != null) {
@@ -94,14 +90,18 @@ public class MustacheSupport implements TemplateSupport {
         }
     }
 
+    private Mustache compile(InputStream template, String name) {
+        return factory.compile(new InputStreamReader(template), name);
+    }
+
     private String preprocess(Value value) {
         String content = value.value();
-        String template = value.template();
-        if (template != null) {
-            TemplateSupport templateSupport = SUPPORTS.get(block).get(template);
+        String engine = value.template();
+        if (engine != null) {
+            TemplateSupport templateSupport = TemplateSupport.get(engine, scope, context);
             InputStream is = new ByteArrayInputStream(content.getBytes(UTF_8));
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            templateSupport.render(is, content, UTF_8, baos, null);
+            templateSupport.render(is, null, UTF_8, baos, null);
             return baos.toString(UTF_8);
         }
         return content;
@@ -120,8 +120,8 @@ public class MustacheSupport implements TemplateSupport {
                 ListIterator<Object> it = scopes.listIterator(scopes.size());
                 while (it.hasPrevious()) {
                     Object scope = it.previous();
-                    if (scope instanceof MergedModel) {
-                        Object result = ((MergedModel) scope).get(name);
+                    if (scope instanceof MergedModel.Node) {
+                        Object result = ((MergedModel.Node) scope).get(name);
                         if (result != null) {
                             // handle conditional
                             // treat "false" as the absence of value

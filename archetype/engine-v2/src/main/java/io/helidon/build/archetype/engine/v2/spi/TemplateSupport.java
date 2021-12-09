@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 import io.helidon.build.archetype.engine.v2.Context;
+import io.helidon.build.archetype.engine.v2.MergedModel;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 
 import static io.helidon.build.archetype.engine.v2.spi.TemplateSupportProvider.Cache.PROVIDERS;
@@ -37,7 +38,7 @@ public interface TemplateSupport {
      * Render a template.
      *
      * @param template     template to render
-     * @param templateName name of the template
+     * @param templateName name of the template, may be {@code null}
      * @param charset      charset for the written characters
      * @param target       path to target file to create
      * @param extraScope   extra scope, may be {@code null}
@@ -47,17 +48,22 @@ public interface TemplateSupport {
     /**
      * Template supports cache by block.
      */
-    WeakHashMap<Block, Map<String, TemplateSupport>> SUPPORTS = new WeakHashMap<>();
+    Map<Block, Map<String, TemplateSupport>> CACHE = new WeakHashMap<>();
 
     /**
-     * Load all providers, and create all template supports for the given block.
+     * Get a template support.
      *
-     * @param block   block
+     * @param engine  engine
+     * @param scope   scope
      * @param context context
+     * @return template support
      */
-    static void loadAll(Block block, Context context) {
-        PROVIDERS.forEach((engine, provider) ->
-                SUPPORTS.computeIfAbsent(block, b -> new HashMap<>())
-                        .computeIfAbsent(engine, e -> provider.create(block, context)));
+    static TemplateSupport get(String engine, MergedModel scope, Context context) {
+        TemplateSupportProvider provider = PROVIDERS.get(engine);
+        if (provider == null) {
+            throw new IllegalArgumentException("Unknown template support provider: " + engine);
+        }
+        return CACHE.computeIfAbsent(scope.block(), b -> new HashMap<>())
+                    .computeIfAbsent(engine, e -> provider.create(scope, context));
     }
 }

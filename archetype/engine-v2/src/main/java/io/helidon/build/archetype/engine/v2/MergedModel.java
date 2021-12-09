@@ -27,25 +27,38 @@ import io.helidon.build.archetype.engine.v2.ast.Block;
  *
  * @see #resolveModel(Block, Context)
  */
-public abstract class MergedModel {
+public final class MergedModel {
 
-    private final MergedModel parent;
-    private final String key;
-    private final int order;
+    private final Block block;
+    private final Node root;
 
-    private MergedModel(MergedModel parent, String key, int order) {
-        this.parent = parent;
-        this.key = key;
-        this.order = order;
+    /**
+     * Create a new model resolver.
+     *
+     * @param block block
+     * @param node  root node
+     */
+    MergedModel(Block block, Node node) {
+        this.block = block;
+        this.root = node;
     }
 
     /**
-     * Get the parent.
+     * Get the root node of the merged model tree.
      *
-     * @return parent
+     * @return root node
      */
-    MergedModel parent() {
-        return parent;
+    public Node node() {
+        return root;
+    }
+
+    /**
+     * Get the original block.
+     *
+     * @return block
+     */
+    public Block block() {
+        return block;
     }
 
     /**
@@ -57,64 +70,89 @@ public abstract class MergedModel {
      * @throws NullPointerException if context or block is {@code null}
      */
     public static MergedModel resolveModel(Block block, Context context) {
-        ModelResolver modelResolver = new ModelResolver();
+        ModelResolver modelResolver = new ModelResolver(block);
         Controller.walk(modelResolver, block, context);
         context.ensureEmptyInputs();
-        return modelResolver.head();
+        return modelResolver.model();
     }
 
     /**
-     * Get a model node by key.
-     *
-     * @param key key
-     * @return model
+     * Merged model node.
      */
-    public MergedModel get(String key) {
-        return this.key != null && this.key.equals(key) ? this : null;
-    }
+    public abstract static class Node {
 
-    /**
-     * Sort the nested values.
-     */
-    protected void sort() {
-        throw new UnsupportedOperationException();
-    }
+        private final Node parent;
+        private final String key;
+        private final int order;
 
-    /**
-     * Merge the given node.
-     *
-     * @param node node
-     * @return the merged node
-     */
-    protected MergedModel add(MergedModel node) {
-        throw new UnsupportedOperationException();
+        private Node(Node parent, String key, int order) {
+            this.parent = parent;
+            this.key = key;
+            this.order = order;
+        }
+
+        /**
+         * Get the parent.
+         *
+         * @return parent
+         */
+        Node parent() {
+            return parent;
+        }
+
+        /**
+         * Get a node by key.
+         *
+         * @param key key
+         * @return node
+         */
+        public Node get(String key) {
+            return this.key != null && this.key.equals(key) ? this : null;
+        }
+
+        /**
+         * Sort the nested values.
+         */
+        protected void sort() {
+            throw new UnsupportedOperationException();
+        }
+
+        /**
+         * Merge the given node.
+         *
+         * @param node node
+         * @return the merged node
+         */
+        protected Node add(Node node) {
+            throw new UnsupportedOperationException();
+        }
     }
 
     /**
      * List node.
      */
-    public static class List extends MergedModel implements Iterable<MergedModel> {
+    public static class List extends Node implements Iterable<Node> {
 
-        private final java.util.List<MergedModel> value = new LinkedList<>();
+        private final java.util.List<Node> value = new LinkedList<>();
 
         /**
          * Create a new instance.
          *
-         * @param parent parent
+         * @param parent parent node
          * @param key    key
          * @param order  order
          */
-        List(MergedModel parent, String key, int order) {
+        List(Node parent, String key, int order) {
             super(parent, key, order);
         }
 
         @Override
-        public Iterator<MergedModel> iterator() {
+        public Iterator<Node> iterator() {
             return value.iterator();
         }
 
         @Override
-        protected MergedModel add(MergedModel node) {
+        protected Node add(Node node) {
             value.add(node);
             return node;
         }
@@ -128,28 +166,28 @@ public abstract class MergedModel {
     /**
      * Map node.
      */
-    public static class Map extends MergedModel {
+    public static class Map extends Node {
 
-        private final java.util.Map<String, MergedModel> value = new HashMap<>();
+        private final java.util.Map<String, Node> value = new HashMap<>();
 
         /**
          * Create a new instance.
          *
-         * @param parent parent
+         * @param parent parent node
          * @param key    key
          * @param order  order
          */
-        Map(MergedModel parent, String key, int order) {
+        Map(Node parent, String key, int order) {
             super(parent, key, order);
         }
 
         @Override
-        public MergedModel get(String key) {
+        public Node get(String key) {
             return value.get(key);
         }
 
         @Override
-        protected MergedModel add(MergedModel node) {
+        protected Node add(Node node) {
             if (node.key == null) {
                 throw new IllegalArgumentException("Cannot add a model with no key to a map");
             }
@@ -169,7 +207,7 @@ public abstract class MergedModel {
     /**
      * Value node.
      */
-    public static class Value extends MergedModel {
+    public static class Value extends Node {
 
         private final String value;
         private final String template;
@@ -177,13 +215,13 @@ public abstract class MergedModel {
         /**
          * Create a new instance.
          *
-         * @param parent   parent
+         * @param parent   parent node
          * @param key      key
          * @param order    order
          * @param value    value
          * @param template template engine
          */
-        Value(MergedModel parent, String key, int order, String value, String template) {
+        Value(Node parent, String key, int order, String value, String template) {
             super(parent, key, order);
             this.value = value;
             this.template = template;

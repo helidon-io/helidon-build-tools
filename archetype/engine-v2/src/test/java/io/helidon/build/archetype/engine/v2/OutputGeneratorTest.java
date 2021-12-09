@@ -120,7 +120,8 @@ class OutputGeneratorTest {
         Path outputDir = uniqueDir(target.resolve("generator-ut/"), dirname);
         Context context = Context.create(script.scriptPath().getParent());
         initializer.accept(context);
-        OutputGenerator outputGenerator = new OutputGenerator(script, outputDir, context);
+        MergedModel mergedModel = MergedModel.resolveModel(script, context);
+        OutputGenerator outputGenerator = new OutputGenerator(mergedModel, outputDir);
         Controller.walk(outputGenerator, script, context);
         return outputDir;
     }

@@ -21,7 +21,7 @@ import java.util.ServiceLoader;
 import java.util.function.Function;
 
 import io.helidon.build.archetype.engine.v2.Context;
-import io.helidon.build.archetype.engine.v2.ast.Block;
+import io.helidon.build.archetype.engine.v2.MergedModel;
 
 import static java.util.stream.Collectors.toUnmodifiableMap;
 
@@ -40,25 +40,11 @@ public interface TemplateSupportProvider {
     /**
      * Instantiate the template support.
      *
-     * @param block   block
+     * @param scope   scope
      * @param context context
      * @return template support
      */
-    TemplateSupport create(Block block, Context context);
-
-    /**
-     * Find a provider by its name.
-     *
-     * @param name name of provider
-     * @return Optional
-     */
-    static TemplateSupportProvider providerByName(String name) {
-        TemplateSupportProvider provider = Cache.PROVIDERS.get(name);
-        if (provider == null) {
-            throw new IllegalArgumentException("Unresolved template support provider: " + name);
-        }
-        return provider;
-    }
+    TemplateSupport create(MergedModel scope, Context context);
 
     /**
      * Provider cache.

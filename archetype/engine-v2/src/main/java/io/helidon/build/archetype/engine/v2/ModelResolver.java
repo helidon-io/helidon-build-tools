@@ -20,6 +20,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Model;
 import io.helidon.build.archetype.engine.v2.ast.Node;
 import io.helidon.build.common.PropertyEvaluator;
@@ -30,15 +31,26 @@ import io.helidon.build.common.PropertyEvaluator;
  */
 final class ModelResolver implements Model.Visitor<Context> {
 
-    private MergedModel head = new MergedModel.Map(null, null, 0);
+    private final MergedModel model;
+    private MergedModel.Node head;
 
     /**
-     * Get the head.
+     * Create a new model resolver.
      *
-     * @return head
+     * @param block block
      */
-    MergedModel head() {
-        return head;
+    ModelResolver(Block block) {
+        model = new MergedModel(block, new MergedModel.Map(null, null, 0));
+        head = model.node();
+    }
+
+    /**
+     * Get the model.
+     *
+     * @return model
+     */
+    MergedModel model() {
+        return model;
     }
 
     @Override
