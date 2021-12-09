@@ -23,7 +23,7 @@ import java.util.List;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
- * No-op statement builder used at "builder-time" only.
+ * No-op node builder used at "builder-time" only.
  * <p>
  * This is a hack that helps in making the XML reader strictly follow the document hierarchy. It is used to map
  * the values of some nested XML elements as fields rather than child nodes.
@@ -92,7 +92,7 @@ public final class Noop {
     /**
      * No-op builder.
      */
-    public static final class Builder extends Statement.Builder<Statement, Builder> {
+    public static final class Builder extends Node.Builder<Node, Builder> {
 
         private String value;
         private final Kind kind;
@@ -131,7 +131,7 @@ public final class Noop {
         }
 
         @Override
-        protected Statement doBuild() {
+        protected Node doBuild() {
             return null;
         }
     }

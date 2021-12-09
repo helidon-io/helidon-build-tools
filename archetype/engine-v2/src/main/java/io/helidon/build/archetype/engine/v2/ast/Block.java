@@ -17,19 +17,18 @@
 package io.helidon.build.archetype.engine.v2.ast;
 
 import java.nio.file.Path;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
- * Block statement.
+ * Block.
  */
-public class Block extends Statement {
+public class Block extends Node {
 
     private final Kind kind;
-    private final List<Statement> statements;
+    private final List<Node> children;
 
     /**
      * Create a new block.
@@ -39,10 +38,11 @@ public class Block extends Statement {
     protected Block(Builder builder) {
         super(builder);
         this.kind = Objects.requireNonNull(builder.kind, "kind is null");
-        this.statements = builder.statements.stream()
-                                            .filter(b -> !(b instanceof Noop.Builder))
-                                            .map(Statement.Builder::build)
-                                            .collect(toUnmodifiableList());
+        this.children = builder.children()
+                               .stream()
+                               .filter(b -> !(b instanceof Noop.Builder))
+                               .map(Node.Builder::build)
+                               .collect(toUnmodifiableList());
     }
 
     /**
@@ -51,21 +51,21 @@ public class Block extends Statement {
      * @param scriptPath script path
      * @param position   position
      * @param kind       kind
-     * @param statements statements
+     * @param children   children
      */
-    protected Block(Path scriptPath, Position position, Kind kind, List<Statement> statements) {
+    protected Block(Path scriptPath, Position position, Kind kind, List<Node> children) {
         super(scriptPath, position);
         this.kind = Objects.requireNonNull(kind, "kind is null");
-        this.statements = Objects.requireNonNull(statements, "statements is null");
+        this.children = Objects.requireNonNull(children, "children is null");
     }
 
     /**
-     * Get the nested statements.
+     * Get the nested nodes.
      *
-     * @return statements
+     * @return nested nodes
      */
-    public List<Statement> statements() {
-        return statements;
+    public List<Node> children() {
+        return children;
     }
 
     /**
@@ -97,7 +97,7 @@ public class Block extends Statement {
         }
 
         /**
-         * Visit an input block after traversing the nested statements.
+         * Visit an input block after traversing the nested nodes.
          *
          * @param input input
          * @param arg   visitor argument
@@ -119,7 +119,7 @@ public class Block extends Statement {
         }
 
         /**
-         * Visit a step block after traversing the nested statements.
+         * Visit a step block after traversing the nested nodes.
          *
          * @param step step
          * @param arg  visitor argument
@@ -141,7 +141,7 @@ public class Block extends Statement {
         }
 
         /**
-         * Visit an output block after traversing the nested statements.
+         * Visit an output block after traversing the nested nodes.
          *
          * @param output output
          * @param arg    visitor argument
@@ -163,7 +163,7 @@ public class Block extends Statement {
         }
 
         /**
-         * Visit a model block after traversing the nested statements.
+         * Visit a model block after traversing the nested nodes.
          *
          * @param model model
          * @param arg   visitor argument
@@ -186,7 +186,7 @@ public class Block extends Statement {
         }
 
         /**
-         * Visit any block after traversing the nested statements.
+         * Visit any block after traversing the nested nodes.
          *
          * @param block block
          * @param arg   visitor argument
@@ -211,7 +211,7 @@ public class Block extends Statement {
     }
 
     /**
-     * Visit this block after traversing the nested statements.
+     * Visit this block after traversing the nested nodes.
      *
      * @param visitor block visitor
      * @param arg     visitor argument
@@ -372,9 +372,8 @@ public class Block extends Statement {
     /**
      * Block builder.
      */
-    public static class Builder extends Statement.Builder<Block, Builder> {
+    public static class Builder extends Node.Builder<Block, Builder> {
 
-        private final List<Statement.Builder<? extends Statement, ?>> statements = new LinkedList<>();
         private final Kind kind;
 
         /**
@@ -398,25 +397,10 @@ public class Block extends Statement {
             return kind;
         }
 
-        /**
-         * Get the nested statements.
-         *
-         * @return statement builders
-         */
-        List<Statement.Builder<? extends Statement, ?>> statements() {
-            return statements;
-        }
-
-        @Override
-        public Builder statement(Statement.Builder<? extends Statement, ?> builder) {
-            statements.add(builder);
-            return this;
-        }
-
         @Override
         protected Block doBuild() {
             if (kind == Kind.MODEL) {
-                statements.replaceAll(b -> {
+                children().replaceAll(b -> {
                     if (b instanceof Noop.Builder) {
                         return Model.builder(b.scriptPath(), b.position(), Kind.VALUE)
                                     .value(((Noop.Builder) b).value())

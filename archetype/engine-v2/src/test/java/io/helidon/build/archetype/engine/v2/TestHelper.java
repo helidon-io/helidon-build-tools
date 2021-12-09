@@ -156,7 +156,7 @@ class TestHelper {
     static Block.Builder block(Block.Kind kind, Block.Builder... statements) {
         Block.Builder builder = Block.builder(null, null, kind);
         for (Block.Builder statement : statements) {
-            builder.statement(statement);
+            builder.addChild(statement);
         }
         return builder;
     }
@@ -279,7 +279,7 @@ class TestHelper {
         Block.Builder builder = Input.builder(null, null, Block.Kind.OPTION)
                                      .attributes(inputAttributes(name, value));
         for (Block.Builder statement : statements) {
-            builder.statement(statement);
+            builder.addChild(statement);
         }
         return builder;
     }
@@ -335,7 +335,7 @@ class TestHelper {
         Block.Builder builder = Input.builder(null, null, kind)
                                      .attributes(inputAttributes(name, defaultValue, name));
         for (Block.Builder statement : statements) {
-            builder.statement(statement);
+            builder.addChild(statement);
         }
         return builder.build();
     }
@@ -347,7 +347,7 @@ class TestHelper {
             builder.attributes(Map.of("key", key));
         }
         for (Block.Builder statement : statements) {
-            builder.statement(statement);
+            builder.addChild(statement);
         }
         return builder;
     }

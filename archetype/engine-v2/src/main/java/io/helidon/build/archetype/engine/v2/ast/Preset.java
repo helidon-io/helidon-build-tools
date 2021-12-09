@@ -25,7 +25,7 @@ import java.util.Objects;
 /**
  * Preset.
  */
-public final class Preset extends Statement {
+public final class Preset extends Node {
 
     private final Kind kind;
     private final Value value;
@@ -124,9 +124,8 @@ public final class Preset extends Statement {
     /**
      * Preset builder.
      */
-    public static final class Builder extends Statement.Builder<Preset, Builder> {
+    public static final class Builder extends Node.Builder<Preset, Builder> {
 
-        private final List<Statement.Builder<? extends Statement, ?>> statements = new LinkedList<>();
         private final List<String> values = new LinkedList<>();
         private final Kind kind;
         private String value;
@@ -147,12 +146,6 @@ public final class Preset extends Statement {
             return this;
         }
 
-        @Override
-        public Builder statement(Statement.Builder<? extends Statement, ?> builder) {
-            statements.add(builder);
-            return this;
-        }
-
         private boolean doRemove(Noop.Builder b) {
             if (b.kind() == Noop.Kind.VALUE) {
                 values.add(b.value());
@@ -162,7 +155,7 @@ public final class Preset extends Statement {
 
         @Override
         protected Preset doBuild() {
-            remove(statements, Noop.Builder.class, this::doRemove);
+            remove(children(), Noop.Builder.class, this::doRemove);
             return new Preset(this);
         }
     }

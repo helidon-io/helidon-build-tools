@@ -19,12 +19,12 @@ package io.helidon.build.archetype.engine.v2.ast;
 import java.nio.file.Path;
 
 /**
- * Condition statement.
+ * Condition.
  */
-public final class Condition extends Statement {
+public final class Condition extends Node {
 
     private final Expression expression;
-    private final Statement then;
+    private final Node then;
 
     private Condition(Builder builder) {
         super(builder);
@@ -42,11 +42,11 @@ public final class Condition extends Statement {
     }
 
     /**
-     * Get the "then" statement.
+     * Get the "then" node.
      *
-     * @return statement
+     * @return node
      */
-    public Statement then() {
+    public Node then() {
         return then;
     }
 
@@ -67,23 +67,23 @@ public final class Condition extends Statement {
     }
 
     /**
-     * Condition statement builder.
+     * Condition builder.
      */
-    public static final class Builder extends Statement.Builder<Condition, Builder> {
+    public static final class Builder extends Node.Builder<Condition, Builder> {
 
         private Expression expression;
-        private Statement.Builder<?, ?> then;
+        private Node.Builder<? extends Node, ?> then;
 
         private Builder(Path scriptPath, Position position) {
             super(scriptPath, position);
         }
 
         /**
-         * Get the then statement.
+         * Get the then node.
          *
-         * @return statement builder
+         * @return node builder
          */
-        Statement.Builder<?, ?> then() {
+        Node.Builder<?, ?> then() {
             return then;
         }
 
@@ -99,12 +99,12 @@ public final class Condition extends Statement {
         }
 
         /**
-         * Set the {@code then} statement.
+         * Set the {@code then} node.
          *
-         * @param then statement builder
+         * @param then node builder
          * @return this builder
          */
-        public Builder then(Statement.Builder<?, ?> then) {
+        public Builder then(Node.Builder<? extends Node, ?> then) {
             this.then = then;
             return this;
         }

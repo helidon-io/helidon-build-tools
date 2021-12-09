@@ -18,9 +18,13 @@ package io.helidon.build.archetype.engine.v2.ast;
 
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
@@ -196,7 +200,7 @@ public abstract class Node {
         }
 
         /**
-         * Visit a block after traversing the nested statements.
+         * Visit a block after traversing the nested nodes.
          *
          * @param block block
          * @param arg   visitor argument
@@ -219,7 +223,7 @@ public abstract class Node {
         }
 
         /**
-         * Visit a node after traversing the nested statements.
+         * Visit a node after traversing the nested nodes.
          *
          * @param node node
          * @param arg  visitor argument
@@ -228,6 +232,29 @@ public abstract class Node {
         @SuppressWarnings("unused")
         default VisitResult postVisitAny(Node node, A arg) {
             return VisitResult.CONTINUE;
+        }
+    }
+
+    /**
+     * Remove builders from the given list of node builders.
+     *
+     * @param children list of node builders
+     * @param type     class used to match the builders to remove
+     * @param function function invoked to control removal
+     */
+    static <T> void remove(List<Builder<? extends Node, ?>> children,
+                           Class<T> type,
+                           Function<T, Boolean> function) {
+
+        Iterator<Builder<? extends Node, ?>> it = children.iterator();
+        while (it.hasNext()) {
+            Node.Builder<?, ?> b = it.next();
+            if (type.isInstance(b)) {
+                T tb = type.cast(b);
+                if (function.apply(tb)) {
+                    it.remove();
+                }
+            }
         }
     }
 
@@ -243,10 +270,20 @@ public abstract class Node {
         private static final Path NULL_SCRIPT_PATH = Path.of("script.xml");
         private static final Position NULL_SOURCE = Position.of(0, 0);
 
+        private final List<Node.Builder<? extends Node, ?>> children = new LinkedList<>();
         private final Map<String, String> attributes = new HashMap<>();
         private final Path scriptPath;
         private final Position position;
         private T instance;
+
+        /**
+         * Get the children.
+         *
+         * @return children
+         */
+        List<Builder<? extends Node, ?>> children() {
+            return children;
+        }
 
         /**
          * Get the script path.
@@ -287,13 +324,15 @@ public abstract class Node {
         }
 
         /**
-         * Add a statement.
+         * Add a child.
          *
-         * @param builder statement builder
+         * @param builder node builder
          * @return this builder
          */
-        public U statement(Statement.Builder<? extends Statement, ?> builder) {
-            throw new UnsupportedOperationException("Unable to add statement to " + getClass().getName());
+        @SuppressWarnings("UnusedReturnValue")
+        public U addChild(Node.Builder<? extends Node, ?> builder) {
+            children.add(builder);
+            return (U) this;
         }
 
         /**

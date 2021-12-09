@@ -101,7 +101,7 @@ public abstract class Output extends Block {
         }
 
         /**
-         * Visit a template block after traversing the nested statements.
+         * Visit a template block after traversing the nested nodes.
          *
          * @param template template
          * @param arg      visitor argument
@@ -124,7 +124,7 @@ public abstract class Output extends Block {
         }
 
         /**
-         * Visit any output after traversing the nested statements.
+         * Visit any output after traversing the nested nodes.
          *
          * @param output output
          * @param arg    visitor argument
@@ -147,7 +147,7 @@ public abstract class Output extends Block {
     public abstract <A> VisitResult accept(Visitor<A> visitor, A arg);
 
     /**
-     * Visit this output after traversing the nested statements.
+     * Visit this output after traversing the nested nodes.
      *
      * @param visitor visitor
      * @param arg     visitor argument
@@ -471,7 +471,7 @@ public abstract class Output extends Block {
             switch (b.kind()) {
                 case EXCLUDES:
                 case INCLUDES:
-                    remove(b.statements(), Noop.Builder.class, this::doRemove);
+                    remove(b.children(), Noop.Builder.class, this::doRemove);
                     return true;
                 default:
                     return false;
@@ -480,8 +480,8 @@ public abstract class Output extends Block {
 
         @Override
         protected Block doBuild() {
-            remove(statements(), Noop.Builder.class, this::doRemove);
-            remove(statements(), Block.Builder.class, this::doRemove);
+            remove(children(), Noop.Builder.class, this::doRemove);
+            remove(children(), Block.Builder.class, this::doRemove);
             Kind kind = kind();
             switch (kind) {
                 case TRANSFORMATION:

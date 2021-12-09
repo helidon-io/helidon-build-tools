@@ -38,7 +38,6 @@ import io.helidon.build.archetype.engine.v2.ast.Output;
 import io.helidon.build.archetype.engine.v2.ast.Position;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
-import io.helidon.build.archetype.engine.v2.ast.Statement;
 import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.common.xml.SimpleXMLParser;
 import io.helidon.build.common.xml.SimpleXMLParser.XMLReaderException;
@@ -190,7 +189,7 @@ public class ScriptLoader {
 
         void processElement() {
             if (Noop.Kind.NAMES.contains(qName)) {
-                statement(State.VALUE, Noop.builder(location, position, noopKind()));
+                addChild(State.VALUE, Noop.builder(location, position, noopKind()));
                 return;
             }
             switch (ctx.state) {
@@ -198,7 +197,7 @@ public class ScriptLoader {
                     switch (qName) {
                         case "exec":
                         case "source":
-                            statement(ctx.state, Invocation.builder(location, position, invocationKind()));
+                            addChild(ctx.state, Invocation.builder(location, position, invocationKind()));
                             break;
                         default:
                             processBlock();
@@ -211,7 +210,7 @@ public class ScriptLoader {
                     processInput();
                     break;
                 case PRESET:
-                    statement(State.VALUE, Preset.builder(location, position, presetKind()));
+                    addChild(State.VALUE, Preset.builder(location, position, presetKind()));
                     break;
                 default:
                     throw new XMLReaderException(String.format(
@@ -239,7 +238,7 @@ public class ScriptLoader {
                     throw new XMLReaderException(String.format(
                             "Invalid input block: %s. { element=%s }", blockKind, qName));
             }
-            statement(nextState, Input.builder(location, position, blockKind));
+            addChild(nextState, Input.builder(location, position, blockKind));
         }
 
         void processBlock() {
@@ -277,18 +276,18 @@ public class ScriptLoader {
             if (builder == null) {
                 builder = Block.builder(location, position, blockKind);
             }
-            statement(nextState, builder);
+            addChild(nextState, builder);
         }
 
-        void statement(State nextState, Statement.Builder<? extends Statement, ?> stmt) {
-            stmt.attributes(attrs);
+        void addChild(State nextState, Node.Builder<? extends Node, ?> node) {
+            node.attributes(attrs);
             String ifExpr = attrs.get("if");
             if (ifExpr != null) {
-                ctx.builder.statement(Condition.builder(location, position).expression(ifExpr).then(stmt));
+                ctx.builder.addChild(Condition.builder(location, position).expression(ifExpr).then(node));
             } else {
-                ctx.builder.statement(stmt);
+                ctx.builder.addChild(node);
             }
-            stack.push(new Context(nextState, stmt, true));
+            stack.push(new Context(nextState, node, true));
         }
 
         Preset.Kind presetKind() {

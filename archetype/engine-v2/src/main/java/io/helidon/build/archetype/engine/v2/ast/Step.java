@@ -92,7 +92,7 @@ public class Step extends Block {
 
         @Override
         protected Block doBuild() {
-            remove(statements(), Noop.Builder.class, this::doRemove);
+            remove(children(), Noop.Builder.class, this::doRemove);
             return new Step(this);
         }
     }

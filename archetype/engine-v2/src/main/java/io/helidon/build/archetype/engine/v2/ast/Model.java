@@ -45,7 +45,7 @@ public abstract class Model extends Block {
         }
 
         /**
-         * Visit a list after traversing the nested statements.
+         * Visit a list after traversing the nested nodes.
          *
          * @param list list
          * @param arg  visitor argument
@@ -67,7 +67,7 @@ public abstract class Model extends Block {
         }
 
         /**
-         * Visit a map after traversing the nested statements.
+         * Visit a map after traversing the nested nodes.
          *
          * @param map map
          * @param arg visitor argument
@@ -101,7 +101,7 @@ public abstract class Model extends Block {
         }
 
         /**
-         * Visit any model after traversing the nested statements.
+         * Visit any model after traversing the nested nodes.
          *
          * @param model model
          * @param arg   visitor argument
@@ -124,7 +124,7 @@ public abstract class Model extends Block {
     public abstract <A> VisitResult accept(Visitor<A> visitor, A arg);
 
     /**
-     * Visit this model after traversing the nested statements.
+     * Visit this model after traversing the nested nodes.
      *
      * @param visitor visitor
      * @param arg     visitor argument
@@ -310,12 +310,12 @@ public abstract class Model extends Block {
 
         @Override
         protected Block doBuild() {
-            statements().replaceAll(b -> {
+            children().replaceAll(b -> {
                 if (b instanceof Noop.Builder) {
                     return valueBuilder((Noop.Builder) b);
                 } else if (b instanceof Condition.Builder) {
                     Condition.Builder c = (Condition.Builder) b;
-                    Statement.Builder<?, ?> then = c.then();
+                    Node.Builder<?, ?> then = c.then();
                     if (then instanceof Noop.Builder) {
                         c.then(valueBuilder((Noop.Builder) then));
                     }

@@ -86,7 +86,7 @@ public abstract class Input extends Block {
         }
 
         /**
-         * Visit a boolean input after traversing the nested statements.
+         * Visit a boolean input after traversing the nested nodes.
          *
          * @param input input
          * @param arg   visitor argument
@@ -108,7 +108,7 @@ public abstract class Input extends Block {
         }
 
         /**
-         * Visit a text input after traversing the nested statements.
+         * Visit a text input after traversing the nested nodes.
          *
          * @param input input
          * @param arg   visitor argument
@@ -130,7 +130,7 @@ public abstract class Input extends Block {
         }
 
         /**
-         * Visit an option after traversing the nested statements.
+         * Visit an option after traversing the nested nodes.
          *
          * @param option option
          * @param arg    visitor argument
@@ -152,7 +152,7 @@ public abstract class Input extends Block {
         }
 
         /**
-         * Visit an enum input after traversing the nested statements.
+         * Visit an enum input after traversing the nested nodes.
          *
          * @param input input
          * @param arg   visitor argument
@@ -174,7 +174,7 @@ public abstract class Input extends Block {
         }
 
         /**
-         * Visit a list input after traversing the nested statements.
+         * Visit a list input after traversing the nested nodes.
          *
          * @param input input
          * @param arg   visitor argument
@@ -197,7 +197,7 @@ public abstract class Input extends Block {
         }
 
         /**
-         * Visit any input after traversing the nested statements.
+         * Visit any input after traversing the nested nodes.
          *
          * @param input input
          * @param arg   visitor argument
@@ -220,7 +220,7 @@ public abstract class Input extends Block {
     public abstract <A> VisitResult accept(Visitor<A> visitor, A arg);
 
     /**
-     * Visit this input after traversing the nested statements.
+     * Visit this input after traversing the nested nodes.
      *
      * @param visitor visitor
      * @param arg     visitor argument
@@ -385,8 +385,8 @@ public abstract class Input extends Block {
 
         private Options(Input.Builder builder) {
             super(builder);
-            options = builder.statements().stream()
-                             .map(Statement.Builder::build)
+            options = builder.children().stream()
+                             .map(Node.Builder::build)
                              .filter(Option.class::isInstance)
                              .map(Option.class::cast)
                              .collect(Collectors.toUnmodifiableList());
@@ -548,7 +548,7 @@ public abstract class Input extends Block {
 
         @Override
         protected Block doBuild() {
-            remove(statements(), Noop.Builder.class, this::doRemove);
+            remove(children(), Noop.Builder.class, this::doRemove);
             Kind kind = kind();
             switch (kind) {
                 case BOOLEAN:

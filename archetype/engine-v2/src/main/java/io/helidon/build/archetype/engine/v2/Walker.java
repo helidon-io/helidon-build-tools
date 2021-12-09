@@ -31,7 +31,6 @@ import io.helidon.build.archetype.engine.v2.ast.Node;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
-import io.helidon.build.archetype.engine.v2.ast.Statement;
 
 /**
  * Block walker.
@@ -42,7 +41,7 @@ import io.helidon.build.archetype.engine.v2.ast.Statement;
 public final class Walker<A> {
 
     private final Deque<Node> callStack = new ArrayDeque<>();
-    private final Deque<Statement> stack = new ArrayDeque<>();
+    private final Deque<Node> stack = new ArrayDeque<>();
     private final Deque<Node> parents = new ArrayDeque<>();
     private final Node.Visitor<A> visitor;
     private final Function<Invocation, Path> pathResolver;
@@ -93,20 +92,20 @@ public final class Walker<A> {
     private void walk(Block block, A arg) {
         Objects.requireNonNull(block, "block is null");
         VisitResult result = accept(block, arg, true);
-        if (result != VisitResult.CONTINUE || block.statements().isEmpty()) {
+        if (result != VisitResult.CONTINUE || block.children().isEmpty()) {
             return;
         }
         while (!stack.isEmpty()) {
             traversing = false;
-            Statement stmt = stack.peek();
+            Node node = stack.peek();
             Node parent = parents.peek();
             int parentId = parent != null ? parent.nodeId() : 0;
-            int nodeId = stmt.nodeId();
+            int nodeId = node.nodeId();
             if (nodeId != parentId) {
-                result = accept(stmt, arg, true);
+                result = accept(node, arg, true);
             } else {
-                if (stmt instanceof Block) {
-                    result = accept(stmt, arg, false);
+                if (node instanceof Block) {
+                    result = accept(node, arg, false);
                 }
                 parentId = parents.pop().nodeId();
             }
@@ -114,10 +113,10 @@ public final class Walker<A> {
                 stack.pop();
                 if (result == VisitResult.SKIP_SIBLINGS) {
                     while (!stack.isEmpty()) {
-                        Statement peek = stack.peek();
-                        if (!(peek instanceof Block)) {
+                        Node n = stack.peek();
+                        if (!(n instanceof Block)) {
                             continue;
-                        } else if (peek.nodeId() == parentId) {
+                        } else if (n.nodeId() == parentId) {
                             break;
                         }
                         stack.pop();
@@ -176,10 +175,10 @@ public final class Walker<A> {
         public VisitResult visitBlock(Block block, A arg) {
             VisitResult result = delegate.visitBlock(block, arg);
             if (result != VisitResult.TERMINATE) {
-                List<Statement> statements = block.statements();
-                int children = statements.size();
-                if (result != VisitResult.SKIP_SUBTREE && children > 0) {
-                    ListIterator<Statement> it = statements.listIterator(children);
+                List<Node> children = block.children();
+                int childrenSize = children.size();
+                if (result != VisitResult.SKIP_SUBTREE && childrenSize > 0) {
+                    ListIterator<Node> it = children.listIterator(childrenSize);
                     while (it.hasPrevious()) {
                         stack.push(it.previous());
                     }

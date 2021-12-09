@@ -22,7 +22,7 @@ import java.util.Objects;
 /**
  * Invocation.
  */
-public final class Invocation extends Statement {
+public final class Invocation extends Node {
 
     private final Kind kind;
     private final String src;
@@ -87,7 +87,7 @@ public final class Invocation extends Statement {
     /**
      * Invocation builder.
      */
-    public static final class Builder extends Statement.Builder<Invocation, Builder> {
+    public static final class Builder extends Node.Builder<Invocation, Builder> {
 
         private final Kind kind;
 
