@@ -67,8 +67,12 @@ final class ModelResolver implements Model.Visitor<Context> {
 
     @Override
     public Node.VisitResult visitValue(Model.Value value, Context ctx) {
+        // interpolate context variables now since they are expressed as input path
+        // and input path is changes during traversal
+        String content = evaluate(value, ctx);
+
         // value is a leaf-node, thus we are not updating the head
-        head.add(new MergedModel.Value(head, value.key(), value.order(), evaluate(value, ctx), value.template()));
+        head.add(new MergedModel.Value(head, value.key(), value.order(), content, value.template()));
         return Node.VisitResult.CONTINUE;
     }
 
