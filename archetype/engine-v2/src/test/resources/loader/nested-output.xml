@@ -19,23 +19,38 @@
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
-
-    <step optional="true" label="Customize Project">
+    <step label="my step">
         <inputs>
-            <text name="name" label="Project name" optional="true" default="my-project"/>
-            <text name="groupId" label="Project groupId" optional="true" default="com.example"/>
-            <text name="artifactId" label="Project artifactId" optional="true" default="my-project"/>
-            <text name="version" label="Project version" optional="true" default="1.0-SNAPSHOT"/>
-            <text name="package" label="Java package name" optional="true" default="com.example.myproject"/>
+            <boolean name="input1" label="label1">
+                <output>
+                    <model>
+                        <list key="colors">
+                            <value>yellow</value>
+                        </list>
+                    </model>
+                </output>
+            </boolean>
+            <output>
+                <model>
+                    <list key="colors">
+                        <value>green</value>
+                    </list>
+                </model>
+            </output>
         </inputs>
         <output>
             <model>
-                <value key="name">${name}</value>
-                <value key="groupId">${groupId}</value>
-                <value key="artifactId">${artifactId}</value>
-                <value key="version">${version}</value>
-                <value key="package">${package}</value>
+                <list key="colors">
+                    <value>red</value>
+                </list>
             </model>
         </output>
     </step>
+    <output>
+        <model>
+            <list key="colors">
+                <value>blue</value>
+            </list>
+        </model>
+    </output>
 </archetype-script>

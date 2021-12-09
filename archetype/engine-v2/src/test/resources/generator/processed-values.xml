@@ -18,20 +18,24 @@
 -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
-
-
-    <input>
-        <enum name="build-system"
-              label="Select a build system">
-            <option value="maven" label="Apache Maven">
-                <exec src="pom-file.xml"/>
-            </option>
-            <option value="gradle" label="Gradle"/>
-        </enum>
-    </input>
-
-    <exec src="helidon-file.xml"/>
-    <exec src="readme.xml"/>
-    <source src="main.xml"/>
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
+    <output>
+        <template engine="mustache" source="shapes/shapes.mustache" target="shapes.txt" />
+        <model>
+            <value key="circle-color">red</value>
+            <value key="rectangle-color">yellow</value>
+            <list key="shapes">
+                <value template="mustache">
+                    <![CDATA[Here is a {{circle-color}} circle
+]]>
+                </value>
+                <value>
+                    <![CDATA[Here is a blue triangle
+]]>
+                </value>
+                <value file="shapes/square.txt"/>
+                <value file="shapes/rectangle.mustache" template="mustache"/>
+            </list>
+        </model>
+    </output>
 </archetype-script>

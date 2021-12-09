@@ -47,7 +47,7 @@ final class Controller extends VisitorAdapter<Context> {
 
     @Override
     public VisitResult visitBlock(Block block, Context ctx) {
-        if (block.blockKind() == Block.Kind.CD) {
+        if (block.blockKind() == Block.Kind.INVOKE_DIR) {
             ctx.pushCwd(block.scriptPath().getParent());
             return VisitResult.CONTINUE;
         }
@@ -56,7 +56,7 @@ final class Controller extends VisitorAdapter<Context> {
 
     @Override
     public VisitResult postVisitBlock(Block block, Context ctx) {
-        if (block.blockKind() == Block.Kind.CD) {
+        if (block.blockKind() == Block.Kind.INVOKE_DIR) {
             ctx.popCwd();
             return VisitResult.CONTINUE;
         }
@@ -78,6 +78,7 @@ final class Controller extends VisitorAdapter<Context> {
      * @param block         block, must be non {@code null}
      * @param context       context, must be non {@code null}
      * @throws NullPointerException if context or block is {@code null}
+     * @throws InvocationException  if an exception is thrown while traversing
      */
     static void walk(InputResolver inputResolver, Block block, Context context) {
         walk(inputResolver, null, null, block, context);
@@ -91,6 +92,7 @@ final class Controller extends VisitorAdapter<Context> {
      * @param block         block, must be non {@code null}
      * @param context       context, must be non {@code null}
      * @throws NullPointerException if context or block is {@code null}
+     * @throws InvocationException  if an exception is thrown while traversing
      */
     static void walk(InputResolver inputResolver, Output.Visitor<Context> outputVisitor, Block block, Context context) {
         walk(inputResolver, outputVisitor, null, block, context);
@@ -104,6 +106,7 @@ final class Controller extends VisitorAdapter<Context> {
      * @param block         block, must be non {@code null}
      * @param context       context, must be non {@code null}
      * @throws NullPointerException if context or block is {@code null}
+     * @throws InvocationException  if an exception is thrown while traversing
      */
     static void walk(InputResolver inputResolver, Model.Visitor<Context> modelVisitor, Block block, Context context) {
         walk(inputResolver, null, modelVisitor, block, context);
@@ -115,6 +118,7 @@ final class Controller extends VisitorAdapter<Context> {
      * @param block   block, must be non {@code null}
      * @param context context, must be non {@code null}
      * @throws NullPointerException if context or block is {@code null}
+     * @throws InvocationException  if an exception is thrown while traversing
      */
     static void walk(Block block, Context context) {
         walk(new BatchInputResolver(), null, null, block, context);
@@ -127,6 +131,7 @@ final class Controller extends VisitorAdapter<Context> {
      * @param block         block, must be non {@code null}
      * @param context       context, must be non {@code null}
      * @throws NullPointerException if context or block is {@code null}
+     * @throws InvocationException  if an exception is thrown while traversing
      */
     static void walk(Output.Visitor<Context> outputVisitor, Block block, Context context) {
         walk(new BatchInputResolver(), outputVisitor, null, block, context);
@@ -139,6 +144,7 @@ final class Controller extends VisitorAdapter<Context> {
      * @param block        block, must be non {@code null}
      * @param context      context, must be non {@code null}
      * @throws NullPointerException if context or block is {@code null}
+     * @throws InvocationException  if an exception is thrown while traversing
      */
     static void walk(Model.Visitor<Context> modelVisitor, Block block, Context context) {
         walk(new BatchInputResolver(), null, modelVisitor, block, context);
@@ -153,6 +159,7 @@ final class Controller extends VisitorAdapter<Context> {
      * @param block         block, must be non {@code null}
      * @param context       context, must be non {@code null}
      * @throws NullPointerException if context or block is {@code null}
+     * @throws InvocationException  if an exception is thrown while traversing
      */
     static void walk(InputResolver inputResolver,
                      Output.Visitor<Context> outputVisitor,

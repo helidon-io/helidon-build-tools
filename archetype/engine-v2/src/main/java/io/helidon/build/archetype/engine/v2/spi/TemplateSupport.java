@@ -19,8 +19,14 @@ package io.helidon.build.archetype.engine.v2.spi;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.WeakHashMap;
 
+import io.helidon.build.archetype.engine.v2.Context;
 import io.helidon.build.archetype.engine.v2.ast.Block;
+
+import static io.helidon.build.archetype.engine.v2.spi.TemplateSupportProvider.Cache.PROVIDERS;
 
 /**
  * Template support.
@@ -37,4 +43,21 @@ public interface TemplateSupport {
      * @param extraScope   extra scope, may be {@code null}
      */
     void render(InputStream template, String templateName, Charset charset, OutputStream target, Block extraScope);
+
+    /**
+     * Template supports cache by block.
+     */
+    WeakHashMap<Block, Map<String, TemplateSupport>> SUPPORTS = new WeakHashMap<>();
+
+    /**
+     * Load all providers, and create all template supports for the given block.
+     *
+     * @param block   block
+     * @param context context
+     */
+    static void loadAll(Block block, Context context) {
+        PROVIDERS.forEach((engine, provider) ->
+                SUPPORTS.computeIfAbsent(block, b -> new HashMap<>())
+                        .computeIfAbsent(engine, e -> provider.create(block, context)));
+    }
 }

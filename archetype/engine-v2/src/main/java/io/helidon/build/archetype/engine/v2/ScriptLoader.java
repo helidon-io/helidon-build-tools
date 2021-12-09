@@ -109,17 +109,11 @@ public class ScriptLoader {
 
         private final State state;
         private final Node.Builder<?, ?> builder;
-        private final Position position;
-        private final String qName;
-        private final Map<String, String> attrs;
         private final boolean build;
 
-        Context(State state, Node.Builder<?, ?> builder, ReaderImpl reader, boolean build) {
+        Context(State state, Node.Builder<?, ?> builder, boolean build) {
             this.state = state;
             this.builder = builder;
-            this.position = reader.position.copy();
-            this.qName = reader.qName;
-            this.attrs = reader.attrs;
             this.build = build;
         }
     }
@@ -162,7 +156,7 @@ public class ScriptLoader {
                             qName, location, position));
                 }
                 script = Script.builder(location, position);
-                stack.push(new Context(State.EXECUTABLE, script, this, true));
+                stack.push(new Context(State.EXECUTABLE, script, true));
             } else {
                 try {
                     processElement();
@@ -238,6 +232,9 @@ public class ScriptLoader {
                 case ENUM:
                     nextState = State.INPUT;
                     break;
+                case OUTPUT:
+                    processBlock();
+                    return;
                 default:
                     throw new XMLReaderException(String.format(
                             "Invalid input block: %s. { element=%s }", blockKind, qName));
@@ -291,7 +288,7 @@ public class ScriptLoader {
             } else {
                 ctx.builder.statement(stmt);
             }
-            stack.push(new Context(nextState, stmt, this, true));
+            stack.push(new Context(nextState, stmt, true));
         }
 
         Preset.Kind presetKind() {

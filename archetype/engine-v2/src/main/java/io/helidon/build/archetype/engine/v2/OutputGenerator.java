@@ -35,11 +35,10 @@ import io.helidon.build.archetype.engine.v2.ast.Output.Template;
 import io.helidon.build.archetype.engine.v2.ast.Output.Transformation;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.spi.TemplateSupport;
-import io.helidon.build.archetype.engine.v2.spi.TemplateSupportProvider;
 import io.helidon.build.common.PropertyEvaluator;
 import io.helidon.build.common.SourcePath;
 
-import static io.helidon.build.archetype.engine.v2.spi.TemplateSupportProvider.providerByName;
+import static io.helidon.build.archetype.engine.v2.spi.TemplateSupport.SUPPORTS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -48,12 +47,10 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
  */
 public class OutputGenerator implements Output.Visitor<Context> {
 
-    private final Map<String, TemplateSupport> templateSupports = new HashMap<>();
     private final Map<String, Transformation> transformations = new HashMap<>();
 
     private final Path outputDir;
     private final Block block;
-    private final Context context;
 
     /**
      * Create a new generator.
@@ -66,9 +63,10 @@ public class OutputGenerator implements Output.Visitor<Context> {
     OutputGenerator(Block block, Path outputDir, Context context) {
         this.block = block;
         this.outputDir = outputDir;
-        this.context = context;
-        TemplateSupportProvider.Cache.ENTRIES.forEach((engine, provider) ->
-                templateSupports.putIfAbsent(engine, provider.create(block, context)));
+        // template support perform full traversal of the tree in order to resolve the global model
+        // the context inputs are kept in sync by the input resolver used by the controller
+        // there can only be one traversal at a time, thus initializing the template support eagerly.
+        TemplateSupport.loadAll(block, context);
     }
 
     @Override
@@ -175,6 +173,6 @@ public class OutputGenerator implements Output.Visitor<Context> {
     }
 
     private TemplateSupport templateSupport(String engine) {
-        return templateSupports.computeIfAbsent(engine, eng -> providerByName(eng).create(block, context));
+        return SUPPORTS.get(block).get(engine);
     }
 }

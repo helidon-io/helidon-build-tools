@@ -53,7 +53,7 @@ public interface TemplateSupportProvider {
      * @return Optional
      */
     static TemplateSupportProvider providerByName(String name) {
-        TemplateSupportProvider provider = Cache.ENTRIES.get(name);
+        TemplateSupportProvider provider = Cache.PROVIDERS.get(name);
         if (provider == null) {
             throw new IllegalArgumentException("Unresolved template support provider: " + name);
         }
@@ -69,9 +69,9 @@ public interface TemplateSupportProvider {
         }
 
         /**
-         * Cache entries.
+         * Template support providers cache.
          */
-        public static final Map<String, TemplateSupportProvider> ENTRIES =
+        static final Map<String, TemplateSupportProvider> PROVIDERS =
                 ServiceLoader.load(TemplateSupportProvider.class)
                              .stream()
                              .map(ServiceLoader.Provider::get)

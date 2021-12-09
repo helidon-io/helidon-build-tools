@@ -63,6 +63,7 @@ public class ArchetypeEngineV2 {
 
         // resolve inputs
         Controller.walk(inputResolver, script, context);
+        context.ensureEmptyInputs();
 
         // resolve output directory
         String projectName = requireNonNull(context.lookup(PROJECT_NAME), "project name is null").asString();
@@ -71,6 +72,7 @@ public class ArchetypeEngineV2 {
         //  generate output
         OutputGenerator outputGenerator = new OutputGenerator(script, directorySupplier.apply(projectName), context);
         Controller.walk(outputGenerator, script, context);
+        context.ensureEmptyInputs();
 
         return directory;
     }

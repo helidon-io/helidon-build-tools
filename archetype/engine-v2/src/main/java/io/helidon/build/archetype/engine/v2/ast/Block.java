@@ -347,14 +347,14 @@ public class Block extends Statement {
         EXCLUDES,
 
         /**
-         * Change dir.
+         * Invoke with directory.
          */
-        CD,
+        INVOKE_DIR,
 
         /**
-         * No-op.
+         * Invoke.
          */
-        NOOP,
+        INVOKE,
     }
 
     /**

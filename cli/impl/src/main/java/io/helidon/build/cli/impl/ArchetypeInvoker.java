@@ -40,6 +40,7 @@ import io.helidon.build.archetype.engine.v1.FlowNodeControllers;
 import io.helidon.build.archetype.engine.v1.FlowNodeControllers.FlowNodeController;
 import io.helidon.build.archetype.engine.v1.Maps;
 import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
+import io.helidon.build.archetype.engine.v2.InvocationException;
 import io.helidon.build.archetype.engine.v2.TerminalInputResolver;
 import io.helidon.build.archetype.engine.v2.UnresolvedInputException;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
@@ -394,14 +395,18 @@ abstract class ArchetypeInvoker {
             Map<String, String> initProperties = initOptions().initProperties();
             try {
                 return engine.generate(new TerminalInputResolver(System.in), initProperties, defaults, projectDirSupplier());
-            } catch (UnresolvedInputException e) {
-                String inputPath = e.inputPath();
-                String option = optionName(inputPath);
-                if (option == null) {
-                    throw new RequirementFailure("Missing required option: -D%s=<value>", inputPath);
-                } else {
-                    throw new RequirementFailure("Missing required option: %s <value> or -D%s=<value>", option, inputPath);
+            } catch (InvocationException ie) {
+                if (ie.getCause() instanceof UnresolvedInputException) {
+                    UnresolvedInputException uie = (UnresolvedInputException) ie.getCause();
+                    String inputPath = uie.inputPath();
+                    String option = optionName(inputPath);
+                    if (option == null) {
+                        throw new RequirementFailure("Missing required option: -D%s=<value>", inputPath);
+                    } else {
+                        throw new RequirementFailure("Missing required option: %s <value> or -D%s=<value>", option, inputPath);
+                    }
                 }
+                throw ie;
             }
         }
 

@@ -271,6 +271,17 @@ public final class Context {
     }
 
     /**
+     * Ensure that {@code inputs} is empty.
+     *
+     * @throws IllegalStateException if {@code inputs} is not empty
+     */
+    public void ensureEmptyInputs() {
+        if (!inputs.isEmpty()) {
+            throw new IllegalStateException("Invalid state, inputs is not empty: " + inputs);
+        }
+    }
+
+    /**
      * Context value.
      */
     private static class ContextValue extends Value {

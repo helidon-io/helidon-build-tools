@@ -17,6 +17,8 @@
 package io.helidon.build.archetype.engine.v2;
 
 import java.nio.file.Path;
+import java.util.LinkedList;
+import java.util.List;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
@@ -434,5 +436,21 @@ class ScriptLoaderTest {
             }
         }, script);
         assertThat(index[0], is(1));
+    }
+
+    @Test
+    void testNestedOutput() {
+        Path target = TestFiles.targetDir(ScriptLoader.class);
+        Path testResources = target.resolve("test-classes");
+        Script script = ScriptLoader.load(testResources.resolve("loader/nested-output.xml"));
+        List<String> colors = new LinkedList<>();
+        walk(new Model.Visitor<>() {
+            @Override
+            public VisitResult visitValue(Model.Value value, Void arg) {
+                colors.add(value.value());
+                return VisitResult.CONTINUE;
+            }
+        }, script);
+        assertThat(colors, contains("yellow", "green", "red", "blue"));
     }
 }

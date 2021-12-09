@@ -22,6 +22,7 @@ import java.io.InputStream;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 
 import com.github.mustachejava.MustacheException;
+import io.helidon.build.archetype.engine.v2.ast.Value;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.archetype.engine.v2.TestHelper.model;
@@ -204,7 +205,7 @@ class MustacheSupportTest {
         Block scope = model(modelMap("data")).build();
         MustacheException ex = assertThrows(MustacheException.class, () -> render("{{data}}", scope));
         assertThat(ex.getCause(), is(not(nullValue())));
-        assertThat(ex.getCause(), is(instanceOf(UnsupportedOperationException.class)));
+        assertThat(ex.getCause(), is(instanceOf(IllegalArgumentException.class)));
     }
 
     @Test
@@ -212,7 +213,7 @@ class MustacheSupportTest {
         Block scope = model(modelList("data")).build();
         MustacheException ex = assertThrows(MustacheException.class, () -> render("{{data}}", scope));
         assertThat(ex.getCause(), is(not(nullValue())));
-        assertThat(ex.getCause(), is(instanceOf(UnsupportedOperationException.class)));
+        assertThat(ex.getCause(), is(instanceOf(IllegalArgumentException.class)));
     }
 
     @Test
@@ -229,14 +230,45 @@ class MustacheSupportTest {
         assertThat(render("{{color}}", scope, extraScope), is("blue"));
     }
 
+    @Test
+    void testConditional() {
+        Block scope = model(modelValue("doColors", "false")).build();
+        assertThat(render("{{#doColors}}red{{/doColors}}", scope), is(""));
+        assertThat(render("{{^doColors}}red{{/doColors}}", scope), is("red"));
+        scope = model(modelValue("doColors", "true")).build();
+        assertThat(render("{{#doColors}}red{{/doColors}}", scope), is("red"));
+        assertThat(render("{{^doColors}}red{{/doColors}}", scope), is(""));
+    }
+
+    @Test
+    void testModelValueWithContextVariable() {
+        Block scope = model(modelValue("color", "${color}")).build();
+        Context context = Context.create();
+        context.put("color", Value.create("red"));
+        assertThat(render("{{color}}", scope, null, context), is("red"));
+    }
+
+    @Test
+    void testModelValueWithContextVariables() {
+        Block scope = model(modelValue("colors", "${red},${blue}")).build();
+        Context context = Context.create();
+        context.put("red", Value.create("red"));
+        context.put("blue", Value.create("blue"));
+        assertThat(render("{{colors}}", scope, null, context), is("red,blue"));
+    }
+
     private static String render(String template, Block scope) {
-        return render(template, scope, null);
+        return render(template, scope, null, Context.create());
     }
 
     private static String render(String template, Block scope, Block extraScope) {
+        return render(template, scope, extraScope, Context.create());
+    }
+
+    private static String render(String template, Block scope, Block extraScope, Context context) {
         InputStream is = new ByteArrayInputStream(template.getBytes(UTF_8));
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        MustacheSupport support = new MustacheSupport(scope, Context.create());
+        MustacheSupport support = new MustacheSupport(scope, context);
         support.render(is, "test", UTF_8, os, extraScope);
         return os.toString(UTF_8);
     }

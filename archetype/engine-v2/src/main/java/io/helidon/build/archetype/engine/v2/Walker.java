@@ -23,8 +23,6 @@ import java.util.ListIterator;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
@@ -59,6 +57,7 @@ public final class Walker<A> {
      * @param cwd     cwd supplier
      * @param <A>     visitor argument type
      * @throws NullPointerException if block is {@code null}
+     * @throws InvocationException  if an exception is thrown while traversing
      */
     public static <A> void walk(Node.Visitor<A> visitor, Block block, A arg, Supplier<Path> cwd) {
         new Walker<>(visitor, i -> cwd.get()).walk(block, arg);
@@ -72,6 +71,7 @@ public final class Walker<A> {
      * @param arg     visitor argument
      * @param <A>     visitor argument type
      * @throws NullPointerException if block is {@code null}
+     * @throws InvocationException  if an exception is thrown while traversing
      */
     public static <A> void walk(Node.Visitor<A> visitor, Block block, A arg) {
         new Walker<>(visitor, i -> i.scriptPath().getParent()).walk(block, arg);
@@ -86,10 +86,7 @@ public final class Walker<A> {
         try {
             return before ? node.accept(visitor, arg) : node.acceptAfter(visitor, arg);
         } catch (Throwable ex) {
-            throw new RuntimeException(ex.getMessage() + "\n"
-                    + Stream.concat(Stream.of(node), callStack.stream())
-                            .map(n -> "\tat " + n.scriptPath() + ":" + n.position())
-                            .collect(Collectors.joining("\n")), ex);
+            throw new InvocationException(callStack, node, ex);
         }
     }
 
@@ -160,9 +157,9 @@ public final class Walker<A> {
             }
             Script script = ScriptLoader.load(pathResolver.apply(invocation).resolve(invocation.src()));
             if (invocation.kind() == Invocation.Kind.EXEC) {
-                stack.push(script.wrap(Block.Kind.CD));
+                stack.push(script.wrap(Block.Kind.INVOKE_DIR));
             } else {
-                stack.push(script.wrap(Block.Kind.NOOP));
+                stack.push(script.wrap(Block.Kind.INVOKE));
             }
             callStack.push(invocation);
             parents.push(invocation);
@@ -198,8 +195,8 @@ public final class Walker<A> {
         @Override
         public VisitResult postVisitBlock(Block block, A arg) {
             switch (block.blockKind()) {
-                case NOOP:
-                case CD:
+                case INVOKE:
+                case INVOKE_DIR:
                     callStack.pop();
                     break;
                 default:

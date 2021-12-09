@@ -80,7 +80,7 @@ class OutputGeneratorTest {
 
     @Test
     void testTransformation() {
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        InvocationException ex = assertThrows(InvocationException.class,
                 () -> generate("generator/transformation.xml"));
         assertThat(ex.getCause(), is(instanceOf(IllegalArgumentException.class)));
         assertThat(ex.getCause().getMessage(), is("Unresolved transformation: t1"));
@@ -93,6 +93,19 @@ class OutputGeneratorTest {
         Path expected = outputDir.resolve("com/example/file1.txt");
         assertThat(Files.exists(expected), is(true));
         assertThat(readFile(expected), is("foo\n"));
+    }
+
+    @Test
+    void testProcessedValues() throws IOException {
+        Path outputDir = generate("generator/processed-values.xml");
+        Path expected = outputDir.resolve("shapes.txt");
+        assertThat(Files.exists(expected), is(true));
+        assertThat(readFile(expected), is(""
+                + "Here is a red circle\n"
+                + "Here is a blue triangle\n"
+                + "Here is a green square\n"
+                + "Here is a yellow rectangle\n"
+                + "\n"));
     }
 
     private static Path generate(String path) {

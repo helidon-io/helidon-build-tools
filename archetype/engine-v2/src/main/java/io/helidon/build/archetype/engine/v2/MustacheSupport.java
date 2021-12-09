@@ -16,6 +16,8 @@
 
 package io.helidon.build.archetype.engine.v2;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -36,19 +38,24 @@ import io.helidon.build.archetype.engine.v2.spi.TemplateSupport;
 import com.github.mustachejava.Binding;
 import com.github.mustachejava.Code;
 import com.github.mustachejava.DefaultMustacheFactory;
+import com.github.mustachejava.DefaultMustacheVisitor;
 import com.github.mustachejava.Mustache;
+import com.github.mustachejava.MustacheException;
+import com.github.mustachejava.MustacheVisitor;
 import com.github.mustachejava.TemplateContext;
+import com.github.mustachejava.codes.ValueCode;
 import com.github.mustachejava.reflect.SimpleObjectHandler;
 import com.github.mustachejava.util.Wrapper;
 
 import static io.helidon.build.archetype.engine.v2.MergedModel.resolveModel;
-import static io.helidon.build.common.PropertyEvaluator.evaluate;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Implementation of the {@link TemplateSupport} for Mustache.
  */
 public class MustacheSupport implements TemplateSupport {
 
+    private final Block block;
     private final Context context;
     private final MergedModel scope;
     private final DefaultMustacheFactory factory;
@@ -61,9 +68,9 @@ public class MustacheSupport implements TemplateSupport {
      * @param context context
      */
     MustacheSupport(Block block, Context context) {
+        this.block = block;
         this.context = context;
-        factory = new DefaultMustacheFactory();
-        factory.setObjectHandler(new ModelHandler());
+        factory = new MustacheFactoryImpl();
         scope = resolveModel(block, context);
         cache = new HashMap<>();
     }
@@ -87,6 +94,19 @@ public class MustacheSupport implements TemplateSupport {
         }
     }
 
+    private String preprocess(Value value) {
+        String content = value.value();
+        String template = value.template();
+        if (template != null) {
+            TemplateSupport templateSupport = SUPPORTS.get(block).get(template);
+            InputStream is = new ByteArrayInputStream(content.getBytes(UTF_8));
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            templateSupport.render(is, content, UTF_8, baos, null);
+            return baos.toString(UTF_8);
+        }
+        return content;
+    }
+
     private class ModelHandler extends SimpleObjectHandler {
 
         @Override
@@ -103,11 +123,14 @@ public class MustacheSupport implements TemplateSupport {
                     if (scope instanceof MergedModel) {
                         Object result = ((MergedModel) scope).get(name);
                         if (result != null) {
+                            // handle conditional
+                            // treat "false" as the absence of value
                             if (result instanceof Value) {
-                                String value = value((Value) result);
+                                String value = preprocess((Value) result);
                                 if ("false".equals(value)) {
                                     return null;
                                 }
+                                return value;
                             }
                             return result;
                         }
@@ -117,16 +140,43 @@ public class MustacheSupport implements TemplateSupport {
             };
         }
 
-        String value(MergedModel model) {
-            return evaluate(model.asString(), s -> String.valueOf(context.lookup(s).unwrap()));
+        @Override
+        public String stringify(Object object) {
+            if (object instanceof Value) {
+                return preprocess((Value) object);
+            }
+            if (object instanceof String) {
+                return (String) object;
+            }
+            throw new IllegalArgumentException("Cannot stringify: " + object);
+        }
+    }
+
+    // used to customize the execute method in order to avoid URI encoding
+    private final class MustacheFactoryImpl extends DefaultMustacheFactory {
+
+        MustacheFactoryImpl() {
+            super.oh = new ModelHandler();
         }
 
         @Override
-        public String stringify(Object object) {
-            if (object instanceof MergedModel) {
-                return value((MergedModel) object);
-            }
-            throw new IllegalStateException("Only instances of type " + MergedModel.class + "are supported");
+        public MustacheVisitor createMustacheVisitor() {
+            return new DefaultMustacheVisitor(this) {
+                @Override
+                public void value(TemplateContext tc, String variable, boolean encoded) {
+                    list.add(new ValueCode(tc, df, variable, encoded) {
+                        @Override
+                        public Writer execute(Writer writer, List<Object> scopes) {
+                            try {
+                                writer.write(oh.stringify(get(scopes)));
+                                return appendText(run(writer, scopes));
+                            } catch (Exception e) {
+                                throw new MustacheException("Failed to get value for " + name, e, tc);
+                            }
+                        }
+                    });
+                }
+            };
         }
     }
 }

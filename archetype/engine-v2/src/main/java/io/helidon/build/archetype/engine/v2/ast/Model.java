@@ -28,6 +28,7 @@ public abstract class Model extends Block {
 
     /**
      * Model visitor.
+     *
      * @param <A> argument type
      */
     public interface Visitor<A> {
@@ -36,7 +37,7 @@ public abstract class Model extends Block {
          * Visit a list model.
          *
          * @param list list
-         * @param arg   visitor argument
+         * @param arg  visitor argument
          * @return result
          */
         default VisitResult visitList(List list, A arg) {
@@ -47,7 +48,7 @@ public abstract class Model extends Block {
          * Visit a list after traversing the nested statements.
          *
          * @param list list
-         * @param arg   visitor argument
+         * @param arg  visitor argument
          * @return result
          */
         default VisitResult postVisitList(List list, A arg) {
@@ -58,7 +59,7 @@ public abstract class Model extends Block {
          * Visit a map model.
          *
          * @param map map
-         * @param arg   visitor argument
+         * @param arg visitor argument
          * @return result
          */
         default VisitResult visitMap(Map map, A arg) {
@@ -69,7 +70,7 @@ public abstract class Model extends Block {
          * Visit a map after traversing the nested statements.
          *
          * @param map map
-         * @param arg   visitor argument
+         * @param arg visitor argument
          * @return result
          */
         default VisitResult postVisitMap(Map map, A arg) {
@@ -116,21 +117,21 @@ public abstract class Model extends Block {
      * Visit this model.
      *
      * @param visitor visitor
-     * @param arg visitor argument
-     * @param <A> visitor argument type
+     * @param arg     visitor argument
+     * @param <A>     visitor argument type
      * @return result
      */
-    public abstract <A> VisitResult accept(Visitor<A>  visitor, A arg);
+    public abstract <A> VisitResult accept(Visitor<A> visitor, A arg);
 
     /**
      * Visit this model after traversing the nested statements.
      *
      * @param visitor visitor
-     * @param arg visitor argument
-     * @param <A> visitor argument type
+     * @param arg     visitor argument
+     * @param <A>     visitor argument type
      * @return result
      */
-    public <A> VisitResult acceptAfter(Visitor<A>  visitor, A arg) {
+    public <A> VisitResult acceptAfter(Visitor<A> visitor, A arg) {
         return VisitResult.CONTINUE;
     }
 
@@ -224,21 +225,46 @@ public abstract class Model extends Block {
     public static final class Value extends MergeableModel {
 
         private final String value;
+        private final String file;
+        private final String template;
 
         private Value(Model.Builder builder) {
             super(builder);
+            this.template = builder.attributes().get("template");
             this.value = builder.value;
-            // TODO file
-            // TODO template engine
+            if (this.value == null) {
+                this.file = builder.attribute("file");
+            } else {
+                this.file = null;
+            }
         }
 
         /**
          * Get the value.
          *
-         * @return value
+         * @return value, or {@code null} if the value is defined with an external file
+         * @see #file() if the value is {@code null}
          */
         public String value() {
             return value;
+        }
+
+        /**
+         * Get the file path for the external value content.
+         *
+         * @return file path
+         */
+        public String file() {
+            return file;
+        }
+
+        /**
+         * Get the template engine to pre-process the value.
+         *
+         * @return template engine, or {@code null} if the value is plain text
+         */
+        public String template() {
+            return template;
         }
 
         @Override

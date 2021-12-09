@@ -59,6 +59,7 @@ public abstract class MergedModel {
     public static MergedModel resolveModel(Block block, Context context) {
         ModelResolver modelResolver = new ModelResolver();
         Controller.walk(modelResolver, block, context);
+        context.ensureEmptyInputs();
         return modelResolver.head();
     }
 
@@ -70,15 +71,6 @@ public abstract class MergedModel {
      */
     public MergedModel get(String key) {
         return this.key != null && this.key.equals(key) ? this : null;
-    }
-
-    /**
-     * Get this node as a string.
-     *
-     * @return string
-     */
-    public String asString() {
-        throw new UnsupportedOperationException();
     }
 
     /**
@@ -180,22 +172,38 @@ public abstract class MergedModel {
     public static class Value extends MergedModel {
 
         private final String value;
+        private final String template;
 
         /**
          * Create a new instance.
          *
-         * @param parent parent
-         * @param key    key
-         * @param order  order
-         * @param value  value
+         * @param parent   parent
+         * @param key      key
+         * @param order    order
+         * @param value    value
+         * @param template template engine
          */
-        Value(MergedModel parent, String key, int order, String value) {
+        Value(MergedModel parent, String key, int order, String value, String template) {
             super(parent, key, order);
             this.value = value;
+            this.template = template;
         }
 
-        @Override
-        public String asString() {
+        /**
+         * Get the template engine.
+         *
+         * @return template engine, may be {@code null}
+         */
+        public String template() {
+            return template;
+        }
+
+        /**
+         * Get the value.
+         *
+         * @return value
+         */
+        public String value() {
             return value;
         }
     }

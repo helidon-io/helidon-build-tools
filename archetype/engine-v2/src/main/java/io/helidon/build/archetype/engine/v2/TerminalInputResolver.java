@@ -99,7 +99,7 @@ public class TerminalInputResolver extends InputResolver {
             if (defaultValue == null) {
                 defaultValue = Value.NULL;
             }
-            String defaultText = defaultValue != null ? BoldBlue.apply(defaultValue.asString()) : null;
+            String defaultText = defaultValue != Value.NULL ? BoldBlue.apply(defaultValue.asString()) : null;
             String response = prompt("Enter text", defaultText);
             if (response == null || response.trim().length() == 0) {
                 context.push(input.name(), defaultValue);

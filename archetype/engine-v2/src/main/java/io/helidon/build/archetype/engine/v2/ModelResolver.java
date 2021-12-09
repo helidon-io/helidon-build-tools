@@ -15,8 +15,14 @@
  */
 package io.helidon.build.archetype.engine.v2;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import io.helidon.build.archetype.engine.v2.ast.Model;
 import io.helidon.build.archetype.engine.v2.ast.Node;
+import io.helidon.build.common.PropertyEvaluator;
 
 /**
  * Model resolver.
@@ -50,7 +56,7 @@ final class ModelResolver implements Model.Visitor<Context> {
     @Override
     public Node.VisitResult visitValue(Model.Value value, Context ctx) {
         // value is a leaf-node, thus we are not updating the head
-        head.add(new MergedModel.Value(head, value.key(), value.order(), value.value()));
+        head.add(new MergedModel.Value(head, value.key(), value.order(), evaluate(value, ctx), value.template()));
         return Node.VisitResult.CONTINUE;
     }
 
@@ -64,5 +70,35 @@ final class ModelResolver implements Model.Visitor<Context> {
     public Node.VisitResult postVisitAny(Model model, Context ctx) {
         head = head.parent();
         return Node.VisitResult.CONTINUE;
+    }
+
+    private static String valueContent(Model.Value value, Context ctx) throws IOException {
+        String content = value.value();
+        if (content == null) {
+            String file = value.file();
+            if (file == null) {
+                throw new IllegalStateException("Value has no content");
+            }
+            Path contentFile = ctx.cwd().resolve(file);
+            if (!Files.exists(contentFile)) {
+                throw new IllegalStateException("Value content file does not exist: " + contentFile);
+            }
+            content = Files.readString(contentFile);
+        }
+        return content;
+    }
+
+    private static String evaluate(Model.Value value, Context ctx) {
+        try {
+            String content = valueContent(value, ctx);
+            String template = value.template();
+            if (template == null) {
+                return PropertyEvaluator.evaluate(content, s -> String.valueOf(ctx.lookup(s).unwrap()));
+            } else {
+                return content;
+            }
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
     }
 }
