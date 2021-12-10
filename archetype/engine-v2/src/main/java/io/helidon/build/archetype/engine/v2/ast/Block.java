@@ -40,7 +40,6 @@ public class Block extends Node {
         this.kind = Objects.requireNonNull(builder.kind, "kind is null");
         this.children = builder.children()
                                .stream()
-                               .filter(b -> !(b instanceof Noop.Builder))
                                .map(Node.Builder::build)
                                .collect(toUnmodifiableList());
     }
@@ -84,6 +83,17 @@ public class Block extends Node {
      * @param <A> argument type
      */
     public interface Visitor<A> {
+
+        /**
+         * Visit a preset block.
+         *
+         * @param preset preset
+         * @param arg    visitor argument
+         * @return visit result
+         */
+        default VisitResult visitPreset(Preset preset, A arg) {
+            return visitAny(preset, arg);
+        }
 
         /**
          * Visit an input block.
@@ -237,7 +247,7 @@ public class Block extends Node {
      *
      * @return kind
      */
-    public Kind blockKind() {
+    public Kind kind() {
         return kind;
     }
 
@@ -337,14 +347,29 @@ public class Block extends Node {
         TRANSFORMATION,
 
         /**
+         * REPLACE.
+         */
+        REPLACE,
+
+        /**
          * Includes.
          */
         INCLUDES,
 
         /**
+         * Include.
+         */
+        INCLUDE,
+
+        /**
          * Excludes.
          */
         EXCLUDES,
+
+        /**
+         * Exclude.
+         */
+        EXCLUDE,
 
         /**
          * Invoke with directory.
@@ -399,16 +424,6 @@ public class Block extends Node {
 
         @Override
         protected Block doBuild() {
-            if (kind == Kind.MODEL) {
-                children().replaceAll(b -> {
-                    if (b instanceof Noop.Builder) {
-                        return Model.builder(b.scriptPath(), b.position(), Kind.VALUE)
-                                    .value(((Noop.Builder) b).value())
-                                    .attributes(b.attributes());
-                    }
-                    return b;
-                });
-            }
             return new Block(this);
         }
     }

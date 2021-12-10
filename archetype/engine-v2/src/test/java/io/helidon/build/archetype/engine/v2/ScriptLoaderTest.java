@@ -41,7 +41,6 @@ import static io.helidon.build.archetype.engine.v2.TestHelper.walk;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -163,7 +162,7 @@ class ScriptLoaderTest {
     void testPresets() {
         Script script = load0("loader/presets.xml");
         int[] index = new int[]{0};
-        walk(new Node.Visitor<>() {
+        walk(new VisitorAdapter<>(null, null, null) {
 
             @Override
             public VisitResult visitPreset(Preset preset, Void arg) {
@@ -204,36 +203,51 @@ class ScriptLoaderTest {
             public VisitResult visitTransformation(Output.Transformation transformation, Void arg) {
                 assertThat(++index[0], is(1));
                 assertThat(transformation.id(), is("t1"));
-                assertThat(transformation.operations().size(), is(1));
-                assertThat(transformation.operations().get(0).replacement(), is("token1"));
-                assertThat(transformation.operations().get(0).regex(), is("regex1"));
+                return VisitResult.CONTINUE;
+            }
+
+            @Override
+            public VisitResult visitReplace(Output.Replace replace, Void arg) {
+                assertThat(++index[0], is(2));
+                assertThat(replace.replacement(), is("token1"));
+                assertThat(replace.regex(), is("regex1"));
                 return VisitResult.CONTINUE;
             }
 
             @Override
             public VisitResult visitTemplates(Output.Templates templates, Void arg) {
-                assertThat(++index[0], is(2));
+                assertThat(++index[0], is(3));
                 assertThat(templates.transformations(), contains("t1"));
                 assertThat(templates.engine(), is("tpl-engine-1"));
                 assertThat(templates.directory(), is("dir1"));
-                assertThat(templates.includes(), contains("**/*.tpl1"));
-                assertThat(templates.excludes(), is(empty()));
+                return VisitResult.CONTINUE;
+            }
+
+            @Override
+            public VisitResult visitInclude(Output.Include include, Void arg) {
+                assertThat(++index[0], is(4));
+                assertThat(include.value(), is("**/*.tpl1"));
+                return VisitResult.CONTINUE;
+            }
+
+            @Override
+            public VisitResult visitExclude(Output.Exclude exclude, Void arg) {
+                assertThat(++index[0], is(6));
+                assertThat(exclude.value(), is("**/*.txt"));
                 return VisitResult.CONTINUE;
             }
 
             @Override
             public VisitResult visitFiles(Output.Files files, Void arg) {
-                assertThat(++index[0], is(3));
+                assertThat(++index[0], is(5));
                 assertThat(files.transformations(), contains("t2"));
                 assertThat(files.directory(), is("dir2"));
-                assertThat(files.excludes(), contains("**/*.txt"));
-                assertThat(files.includes(), is(empty()));
                 return VisitResult.CONTINUE;
             }
 
             @Override
             public VisitResult visitTemplate(Output.Template template, Void arg) {
-                assertThat(++index[0], is(4));
+                assertThat(++index[0], is(7));
                 assertThat(template.engine(), is("tpl-engine-2"));
                 assertThat(template.source(), is("file1.tpl"));
                 assertThat(template.target(), is("file1.txt"));
@@ -242,13 +256,13 @@ class ScriptLoaderTest {
 
             @Override
             public VisitResult visitFile(Output.File file, Void arg) {
-                assertThat(++index[0], is(5));
+                assertThat(++index[0], is(8));
                 assertThat(file.source(), is("file1.txt"));
                 assertThat(file.target(), is("file2.txt"));
                 return VisitResult.CONTINUE;
             }
         }, script);
-        assertThat(index[0], is(5));
+        assertThat(index[0], is(8));
     }
 
     @Test

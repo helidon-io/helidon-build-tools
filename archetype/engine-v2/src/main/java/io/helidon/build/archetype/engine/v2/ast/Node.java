@@ -18,13 +18,11 @@ package io.helidon.build.archetype.engine.v2.ast;
 
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
@@ -178,17 +176,6 @@ public abstract class Node {
         }
 
         /**
-         * Visit a preset.
-         *
-         * @param preset preset
-         * @param arg    visitor argument
-         * @return visit result
-         */
-        default VisitResult visitPreset(Preset preset, A arg) {
-            return visitAny(preset, arg);
-        }
-
-        /**
          * Visit a block.
          *
          * @param block block
@@ -236,35 +223,12 @@ public abstract class Node {
     }
 
     /**
-     * Remove builders from the given list of node builders.
-     *
-     * @param children list of node builders
-     * @param type     class used to match the builders to remove
-     * @param function function invoked to control removal
-     */
-    static <T> void remove(List<Builder<? extends Node, ?>> children,
-                           Class<T> type,
-                           Function<T, Boolean> function) {
-
-        Iterator<Builder<? extends Node, ?>> it = children.iterator();
-        while (it.hasNext()) {
-            Node.Builder<?, ?> b = it.next();
-            if (type.isInstance(b)) {
-                T tb = type.cast(b);
-                if (function.apply(tb)) {
-                    it.remove();
-                }
-            }
-        }
-    }
-
-    /**
      * Node builder.
      *
      * @param <T> node sub-type
      * @param <U> builder sub-type
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "UnusedReturnValue"})
     public abstract static class Builder<T, U extends Builder<T, U>> {
 
         private static final Path NULL_SCRIPT_PATH = Path.of("script.xml");
@@ -274,43 +238,8 @@ public abstract class Node {
         private final Map<String, String> attributes = new HashMap<>();
         private final Path scriptPath;
         private final Position position;
+        private String value;
         private T instance;
-
-        /**
-         * Get the children.
-         *
-         * @return children
-         */
-        List<Builder<? extends Node, ?>> children() {
-            return children;
-        }
-
-        /**
-         * Get the script path.
-         *
-         * @return script path
-         */
-        Path scriptPath() {
-            return scriptPath;
-        }
-
-        /**
-         * Get the position.
-         *
-         * @return position
-         */
-        Position position() {
-            return position;
-        }
-
-        /**
-         * Get the attributes map.
-         *
-         * @return attributes map
-         */
-        Map<String, String> attributes() {
-            return attributes;
-        }
 
         /**
          * Create a new node builder.
@@ -324,12 +253,47 @@ public abstract class Node {
         }
 
         /**
+         * Get the children.
+         *
+         * @return children
+         */
+        protected List<Builder<? extends Node, ?>> children() {
+            return children;
+        }
+
+        /**
+         * Get the script path.
+         *
+         * @return script path
+         */
+        protected Path scriptPath() {
+            return scriptPath;
+        }
+
+        /**
+         * Get the position.
+         *
+         * @return position
+         */
+        protected Position position() {
+            return position;
+        }
+
+        /**
+         * Get the attributes map.
+         *
+         * @return attributes map
+         */
+        protected Map<String, String> attributes() {
+            return attributes;
+        }
+
+        /**
          * Add a child.
          *
          * @param builder node builder
          * @return this builder
          */
-        @SuppressWarnings("UnusedReturnValue")
         public U addChild(Node.Builder<? extends Node, ?> builder) {
             children.add(builder);
             return (U) this;
@@ -342,7 +306,17 @@ public abstract class Node {
          * @return this builder
          */
         public U value(String value) {
-            throw new UnsupportedOperationException("Unable to add value to " + getClass().getName());
+            this.value = value;
+            return (U) this;
+        }
+
+        /**
+         * Get the value.
+         *
+         * @return value.
+         */
+        protected String value() {
+            return value;
         }
 
         /**
@@ -351,21 +325,34 @@ public abstract class Node {
          * @param attributes attributes
          * @return this builder
          */
-        @SuppressWarnings("UnusedReturnValue")
         public U attributes(Map<String, String> attributes) {
             this.attributes.putAll(attributes);
             return (U) this;
         }
 
         /**
+         * Add an attribute.
+         *
+         * @param name  attribute name
+         * @param value attribute value
+         * @return this builder
+         */
+        public U attributes(String name, String value) {
+            this.attributes.put(name, value);
+            return (U) this;
+        }
+
+        /**
          * Get a required attribute.
          *
-         * @param key attribute key
+         * @param key      attribute key
+         * @param required {@code true} if required
          * @return value
+         * @throws IllegalStateException if {@code required} is {@code true} and the value is {@code null}
          */
-        String attribute(String key) {
+        String attribute(String key, boolean required) {
             String value = attributes.get(key);
-            if (value == null) {
+            if (required && value == null) {
                 throw new IllegalStateException(String.format(
                         "Unable to get attribute '%s', file=%s, position=%s",
                         key, scriptPath, position));

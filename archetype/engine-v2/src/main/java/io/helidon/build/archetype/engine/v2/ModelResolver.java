@@ -23,7 +23,6 @@ import java.nio.file.Path;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Model;
 import io.helidon.build.archetype.engine.v2.ast.Node;
-import io.helidon.build.common.PropertyEvaluator;
 
 /**
  * Model resolver.
@@ -54,22 +53,22 @@ final class ModelResolver implements Model.Visitor<Context> {
     }
 
     @Override
-    public Node.VisitResult visitList(Model.List list, Context ctx) {
+    public Node.VisitResult visitList(Model.List list, Context context) {
         head = head.add(new MergedModel.List(head, list.key(), list.order()));
         return Node.VisitResult.CONTINUE;
     }
 
     @Override
-    public Node.VisitResult visitMap(Model.Map map, Context ctx) {
+    public Node.VisitResult visitMap(Model.Map map, Context context) {
         head = head.add(new MergedModel.Map(head, map.key(), map.order()));
         return Node.VisitResult.CONTINUE;
     }
 
     @Override
-    public Node.VisitResult visitValue(Model.Value value, Context ctx) {
+    public Node.VisitResult visitValue(Model.Value value, Context context) {
         // interpolate context variables now since they are expressed as input path
         // and input path is changes during traversal
-        String content = evaluate(value, ctx);
+        String content = evaluate(value, context);
 
         // value is a leaf-node, thus we are not updating the head
         head.add(new MergedModel.Value(head, value.key(), value.order(), content, value.template()));
@@ -77,25 +76,25 @@ final class ModelResolver implements Model.Visitor<Context> {
     }
 
     @Override
-    public Node.VisitResult postVisitList(Model.List list, Context ctx) {
+    public Node.VisitResult postVisitList(Model.List list, Context context) {
         head.sort();
-        return postVisitAny(list, ctx);
+        return postVisitAny(list, context);
     }
 
     @Override
-    public Node.VisitResult postVisitAny(Model model, Context ctx) {
+    public Node.VisitResult postVisitAny(Model model, Context context) {
         head = head.parent();
         return Node.VisitResult.CONTINUE;
     }
 
-    private static String valueContent(Model.Value value, Context ctx) throws IOException {
+    private static String valueContent(Model.Value value, Context context) throws IOException {
         String content = value.value();
         if (content == null) {
             String file = value.file();
             if (file == null) {
                 throw new IllegalStateException("Value has no content");
             }
-            Path contentFile = ctx.cwd().resolve(file);
+            Path contentFile = context.cwd().resolve(file);
             if (!Files.exists(contentFile)) {
                 throw new IllegalStateException("Value content file does not exist: " + contentFile);
             }
@@ -104,12 +103,12 @@ final class ModelResolver implements Model.Visitor<Context> {
         return content;
     }
 
-    private static String evaluate(Model.Value value, Context ctx) {
+    private static String evaluate(Model.Value value, Context context) {
         try {
-            String content = valueContent(value, ctx);
+            String content = valueContent(value, context);
             String template = value.template();
             if (template == null) {
-                return PropertyEvaluator.evaluate(content, s -> String.valueOf(ctx.lookup(s).unwrap()));
+                return context.interpolate(content);
             } else {
                 return content;
             }

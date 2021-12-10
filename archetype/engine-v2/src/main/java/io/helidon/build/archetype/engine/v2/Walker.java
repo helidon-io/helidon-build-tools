@@ -29,7 +29,6 @@ import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.Invocation;
 import io.helidon.build.archetype.engine.v2.ast.Node;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
-import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 
 /**
@@ -167,11 +166,6 @@ public final class Walker<A> {
         }
 
         @Override
-        public VisitResult visitPreset(Preset preset, A arg) {
-            return delegate.visitPreset(preset, arg);
-        }
-
-        @Override
         public VisitResult visitBlock(Block block, A arg) {
             VisitResult result = delegate.visitBlock(block, arg);
             if (result != VisitResult.TERMINATE) {
@@ -193,7 +187,7 @@ public final class Walker<A> {
 
         @Override
         public VisitResult postVisitBlock(Block block, A arg) {
-            switch (block.blockKind()) {
+            switch (block.kind()) {
                 case INVOKE:
                 case INVOKE_DIR:
                     callStack.pop();

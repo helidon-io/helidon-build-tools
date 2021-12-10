@@ -35,9 +35,9 @@ public abstract class Input extends Block {
 
     private Input(Input.Builder builder) {
         super(builder);
-        label = builder.attributes().get("label");
-        prompt = builder.attributes().get("prompt");
-        help = builder.help;
+        label = builder.attribute("label", false);
+        prompt = builder.attribute("prompt", false);
+        help = builder.attribute("help", false);
     }
 
     /**
@@ -249,8 +249,8 @@ public abstract class Input extends Block {
 
         private NamedInput(Input.Builder builder) {
             super(builder);
-            this.name = builder.attribute("name");
-            this.optional = parseBoolean(builder.attributes().get("optional"));
+            this.name = builder.attribute("name", true);
+            this.optional = parseBoolean(builder.attribute("optional", false));
         }
 
         /**
@@ -296,7 +296,7 @@ public abstract class Input extends Block {
 
         private Option(Input.Builder builder) {
             super(builder);
-            this.value = builder.attribute("value");
+            this.value = builder.attribute("value", true);
         }
 
         @Override
@@ -328,7 +328,7 @@ public abstract class Input extends Block {
 
         private Text(Input.Builder builder) {
             super(builder);
-            this.defaultValue = builder.attributes().get("default");
+            this.defaultValue = builder.attribute("default", false);
         }
 
 
@@ -357,7 +357,7 @@ public abstract class Input extends Block {
 
         private Boolean(Input.Builder builder) {
             super(builder);
-            defaultValue = parseBoolean(builder.attributes().get("default"));
+            defaultValue = parseBoolean(builder.attribute("default", false));
         }
 
         @Override
@@ -411,7 +411,7 @@ public abstract class Input extends Block {
 
         private List(Input.Builder builder) {
             super(builder);
-            String rawDefault = builder.attributes().get("default");
+            String rawDefault = builder.attribute("default", false);
             if (rawDefault != null) {
                 defaultValue = Arrays.stream(rawDefault.split(","))
                                      .map(String::trim)
@@ -479,7 +479,7 @@ public abstract class Input extends Block {
 
         private Enum(Input.Builder builder) {
             super(builder);
-            this.defaultValue = builder.attributes().get("default");
+            this.defaultValue = builder.attribute("default", false);
         }
 
         /**
@@ -533,22 +533,12 @@ public abstract class Input extends Block {
      */
     public static class Builder extends Block.Builder {
 
-        private String help;
-
         private Builder(Path scriptPath, Position position, Kind blockKind) {
             super(scriptPath, position, blockKind);
         }
 
-        private boolean doRemove(Noop.Builder b) {
-            if (b.kind() == Noop.Kind.HELP) {
-                help = b.value();
-            }
-            return true;
-        }
-
         @Override
         protected Block doBuild() {
-            remove(children(), Noop.Builder.class, this::doRemove);
             Kind kind = kind();
             switch (kind) {
                 case BOOLEAN:

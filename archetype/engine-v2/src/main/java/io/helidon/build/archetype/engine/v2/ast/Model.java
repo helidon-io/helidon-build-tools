@@ -175,9 +175,9 @@ public abstract class Model extends Block {
 
         private MergeableModel(Model.Builder builder) {
             super(builder);
-            String rawOrder = builder.attributes().get("order");
+            String rawOrder = builder.attribute("order", false);
             this.order = rawOrder != null ? Integer.parseInt(rawOrder) : 100;
-            this.key = builder.attributes().get("key");
+            this.key = builder.attribute("key", false);
         }
 
         /**
@@ -230,10 +230,10 @@ public abstract class Model extends Block {
 
         private Value(Model.Builder builder) {
             super(builder);
-            this.template = builder.attributes().get("template");
+            this.template = builder.attribute("template", false);
             this.value = builder.value;
             if (this.value == null) {
-                this.file = builder.attribute("file");
+                this.file = builder.attribute("file", true);
             } else {
                 this.file = null;
             }
@@ -302,26 +302,8 @@ public abstract class Model extends Block {
             return this;
         }
 
-        private static Block.Builder valueBuilder(Noop.Builder noop) {
-            return new Builder(noop.scriptPath(), noop.position(), Kind.VALUE)
-                    .value(noop.value())
-                    .attributes(noop.attributes());
-        }
-
         @Override
         protected Block doBuild() {
-            children().replaceAll(b -> {
-                if (b instanceof Noop.Builder) {
-                    return valueBuilder((Noop.Builder) b);
-                } else if (b instanceof Condition.Builder) {
-                    Condition.Builder c = (Condition.Builder) b;
-                    Node.Builder<?, ?> then = c.then();
-                    if (then instanceof Noop.Builder) {
-                        c.then(valueBuilder((Noop.Builder) then));
-                    }
-                }
-                return b;
-            });
             Kind kind = kind();
             switch (kind) {
                 case MAP:

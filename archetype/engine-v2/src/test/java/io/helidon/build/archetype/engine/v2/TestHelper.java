@@ -150,13 +150,13 @@ class TestHelper {
      * Create a block builder.
      *
      * @param kind       block kind
-     * @param statements nested statements
+     * @param children nested children
      * @return block builder
      */
-    static Block.Builder block(Block.Kind kind, Block.Builder... statements) {
+    static Block.Builder block(Block.Kind kind, Block.Builder... children) {
         Block.Builder builder = Block.builder(null, null, kind);
-        for (Block.Builder statement : statements) {
-            builder.addChild(statement);
+        for (Block.Builder child : children) {
+            builder.addChild(child);
         }
         return builder;
     }
@@ -164,63 +164,63 @@ class TestHelper {
     /**
      * Create an output block builder.
      *
-     * @param statements nested statements
+     * @param children nested children
      * @return block builder
      */
-    static Block.Builder output(Block.Builder... statements) {
-        return block(Block.Kind.OUTPUT, statements);
+    static Block.Builder output(Block.Builder... children) {
+        return block(Block.Kind.OUTPUT, children);
     }
 
     /**
      * Create a model block builder.
      *
-     * @param statements nested statements
+     * @param children nested children
      * @return block builder
      */
-    static Block.Builder model(Block.Builder... statements) {
-        return block(Block.Kind.MODEL, statements);
+    static Block.Builder model(Block.Builder... children) {
+        return block(Block.Kind.MODEL, children);
     }
 
     /**
      * Create a model map block builder.
      *
-     * @param statements nested statements
+     * @param children nested children
      * @return block builder
      */
-    static Block.Builder modelMap(Block.Builder... statements) {
-        return modelBuilder(null, Block.Kind.MAP, 100, statements);
+    static Block.Builder modelMap(Block.Builder... children) {
+        return modelBuilder(null, Block.Kind.MAP, 100, children);
     }
 
     /**
      * Create a model map block builder.
      *
      * @param key        model key
-     * @param statements nested statements
+     * @param children nested children
      * @return block builder
      */
-    static Block.Builder modelMap(String key, Block.Builder... statements) {
-        return modelBuilder(key, Block.Kind.MAP, 100, statements);
+    static Block.Builder modelMap(String key, Block.Builder... children) {
+        return modelBuilder(key, Block.Kind.MAP, 100, children);
     }
 
     /**
      * Create a model list block builder.
      *
-     * @param statements nested statements
+     * @param children nested children
      * @return block builder
      */
-    static Block.Builder modelList(Block.Builder... statements) {
-        return modelBuilder(null, Block.Kind.LIST, 100, statements);
+    static Block.Builder modelList(Block.Builder... children) {
+        return modelBuilder(null, Block.Kind.LIST, 100, children);
     }
 
     /**
      * Create a model list block builder.
      *
      * @param key        model key
-     * @param statements nested statements
+     * @param children nested children
      * @return block builder
      */
-    static Block.Builder modelList(String key, Block.Builder... statements) {
-        return modelBuilder(key, Block.Kind.LIST, 100, statements);
+    static Block.Builder modelList(String key, Block.Builder... children) {
+        return modelBuilder(key, Block.Kind.LIST, 100, children);
     }
 
     /**
@@ -272,14 +272,14 @@ class TestHelper {
      *
      * @param name       option name
      * @param value      option value
-     * @param statements nested statements
+     * @param children nested children
      * @return block builder
      */
-    static Block.Builder inputOption(String name, String value, Block.Builder... statements) {
+    static Block.Builder inputOption(String name, String value, Block.Builder... children) {
         Block.Builder builder = Input.builder(null, null, Block.Kind.OPTION)
                                      .attributes(inputAttributes(name, value));
-        for (Block.Builder statement : statements) {
-            builder.addChild(statement);
+        for (Block.Builder child : children) {
+            builder.addChild(child);
         }
         return builder;
     }
@@ -291,8 +291,8 @@ class TestHelper {
      * @param defaultValue default value
      * @return block builder
      */
-    static Block inputText(String name, String defaultValue, Block.Builder... statements) {
-        return inputBuilder(name, Block.Kind.TEXT, defaultValue, statements);
+    static Block inputText(String name, String defaultValue, Block.Builder... children) {
+        return inputBuilder(name, Block.Kind.TEXT, defaultValue, children);
     }
 
     /**
@@ -300,11 +300,11 @@ class TestHelper {
      *
      * @param name         option name
      * @param defaultValue default value
-     * @param statements   nested statements
+     * @param children   nested children
      * @return block builder
      */
-    static Block inputBoolean(String name, boolean defaultValue, Block.Builder... statements) {
-        return inputBuilder(name, Block.Kind.BOOLEAN, String.valueOf(defaultValue), statements);
+    static Block inputBoolean(String name, boolean defaultValue, Block.Builder... children) {
+        return inputBuilder(name, Block.Kind.BOOLEAN, String.valueOf(defaultValue), children);
     }
 
     /**
@@ -312,11 +312,11 @@ class TestHelper {
      *
      * @param name         option name
      * @param defaultValue default value
-     * @param statements   nested statements
+     * @param children   nested children
      * @return block builder
      */
-    static Block inputEnum(String name, String defaultValue, Block.Builder... statements) {
-        return inputBuilder(name, Block.Kind.ENUM, defaultValue, statements);
+    static Block inputEnum(String name, String defaultValue, Block.Builder... children) {
+        return inputBuilder(name, Block.Kind.ENUM, defaultValue, children);
     }
 
     /**
@@ -324,30 +324,30 @@ class TestHelper {
      *
      * @param name         option name
      * @param defaultValue default value
-     * @param statements   nested statements
+     * @param children   nested children
      * @return block builder
      */
-    static Block inputList(String name, List<String> defaultValue, Block.Builder... statements) {
-        return inputBuilder(name, Block.Kind.LIST, String.join(",", defaultValue), statements);
+    static Block inputList(String name, List<String> defaultValue, Block.Builder... children) {
+        return inputBuilder(name, Block.Kind.LIST, String.join(",", defaultValue), children);
     }
 
-    private static Block inputBuilder(String name, Block.Kind kind, String defaultValue, Block.Builder... statements) {
+    private static Block inputBuilder(String name, Block.Kind kind, String defaultValue, Block.Builder... children) {
         Block.Builder builder = Input.builder(null, null, kind)
                                      .attributes(inputAttributes(name, defaultValue, name));
-        for (Block.Builder statement : statements) {
-            builder.addChild(statement);
+        for (Block.Builder child : children) {
+            builder.addChild(child);
         }
         return builder.build();
     }
 
-    private static Block.Builder modelBuilder(String key, Block.Kind kind, int order, Block.Builder... statements) {
+    private static Block.Builder modelBuilder(String key, Block.Kind kind, int order, Block.Builder... children) {
         Block.Builder builder = Model.builder(null, null, kind)
                                      .attributes(Map.of("order", String.valueOf(order)));
         if (key != null) {
             builder.attributes(Map.of("key", key));
         }
-        for (Block.Builder statement : statements) {
-            builder.addChild(statement);
+        for (Block.Builder child : children) {
+            builder.addChild(child);
         }
         return builder;
     }

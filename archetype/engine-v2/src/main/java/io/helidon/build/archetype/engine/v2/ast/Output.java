@@ -17,9 +17,7 @@ package io.helidon.build.archetype.engine.v2.ast;
 
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -57,6 +55,28 @@ public abstract class Output extends Block {
         }
 
         /**
+         * Visit a transformation block after traversing the nested nodes.
+         *
+         * @param transformation transformation
+         * @param arg            visitor argument
+         * @return result
+         */
+        default VisitResult postVisitTransformation(Transformation transformation, A arg) {
+            return visitAny(transformation, arg);
+        }
+
+        /**
+         * Visit a replacement block.
+         *
+         * @param replace replacement block
+         * @param arg     visitor argument
+         * @return result
+         */
+        default VisitResult visitReplace(Replace replace, A arg) {
+            return visitAny(replace, arg);
+        }
+
+        /**
          * Visit a files block.
          *
          * @param files files
@@ -68,6 +88,39 @@ public abstract class Output extends Block {
         }
 
         /**
+         * Visit a files block after traversing the nested nodes.
+         *
+         * @param files files
+         * @param arg   visitor argument
+         * @return result
+         */
+        default VisitResult postVisitFiles(Files files, A arg) {
+            return visitAny(files, arg);
+        }
+
+        /**
+         * Visit an include block.
+         *
+         * @param include include block
+         * @param arg     visitor argument
+         * @return result
+         */
+        default VisitResult visitInclude(Include include, A arg) {
+            return visitAny(include, arg);
+        }
+
+        /**
+         * Visit an exclude block.
+         *
+         * @param exclude exclude block
+         * @param arg     visitor argument
+         * @return result
+         */
+        default VisitResult visitExclude(Exclude exclude, A arg) {
+            return visitAny(exclude, arg);
+        }
+
+        /**
          * Visit a templates block.
          *
          * @param templates templates
@@ -75,6 +128,17 @@ public abstract class Output extends Block {
          * @return result
          */
         default VisitResult visitTemplates(Templates templates, A arg) {
+            return visitAny(templates, arg);
+        }
+
+        /**
+         * Visit a templates block after traversing the nested nodes.
+         *
+         * @param templates templates
+         * @param arg       visitor argument
+         * @return result
+         */
+        default VisitResult postVisitTemplates(Templates templates, A arg) {
             return visitAny(templates, arg);
         }
 
@@ -174,17 +238,20 @@ public abstract class Output extends Block {
     public static final class Transformation extends Output {
 
         private final String id;
-        private final List<Replace> operations;
 
         private Transformation(Output.Builder builder) {
             super(builder);
-            this.id = builder.attribute("id");
-            this.operations = builder.operations;
+            this.id = builder.attribute("id", true);
         }
 
         @Override
         public <A> VisitResult accept(Output.Visitor<A> visitor, A arg) {
             return visitor.visitTransformation(this, arg);
+        }
+
+        @Override
+        public <A> VisitResult acceptAfter(Output.Visitor<A> visitor, A arg) {
+            return visitor.postVisitTransformation(this, arg);
         }
 
         /**
@@ -195,46 +262,95 @@ public abstract class Output extends Block {
         public String id() {
             return id;
         }
+    }
 
-        /**
-         * Get the operations.
-         *
-         * @return operations
-         */
-        public List<Replace> operations() {
-            return operations;
+    /**
+     * Replace operation.
+     */
+    public static final class Replace extends Output {
+
+        private final String replacement;
+        private final String regex;
+
+        private Replace(Output.Builder builder) {
+            super(builder);
+            this.replacement = builder.attribute("replacement", true);
+            this.regex = builder.attribute("regex", true);
         }
 
         /**
-         * Replace operation.
+         * Get the replacement.
+         *
+         * @return replacement
          */
-        public static final class Replace {
+        public String replacement() {
+            return replacement;
+        }
 
-            private final String replacement;
-            private final String regex;
+        /**
+         * Get the regex.
+         *
+         * @return regex
+         */
+        public String regex() {
+            return regex;
+        }
 
-            private Replace(String replacement, String regex) {
-                this.replacement = replacement;
-                this.regex = regex;
-            }
+        @Override
+        public <A> VisitResult accept(Output.Visitor<A> visitor, A arg) {
+            return visitor.visitReplace(this, arg);
+        }
+    }
 
-            /**
-             * Get the replacement.
-             *
-             * @return replacement
-             */
-            public String replacement() {
-                return replacement;
-            }
+    /**
+     * Pattern.
+     */
+    public abstract static class Pattern extends Output {
 
-            /**
-             * Get the regex.
-             *
-             * @return regex
-             */
-            public String regex() {
-                return regex;
-            }
+        private final String value;
+
+        private Pattern(Output.Builder builder) {
+            super(builder);
+            this.value = builder.value();
+        }
+
+        /**
+         * Get the value.
+         *
+         * @return value
+         */
+        public String value() {
+            return value;
+        }
+    }
+
+    /**
+     * Include block.
+     */
+    public static final class Include extends Pattern {
+
+        private Include(Output.Builder builder) {
+            super(builder);
+        }
+
+        @Override
+        public <A> VisitResult accept(Output.Visitor<A> visitor, A arg) {
+            return visitor.visitInclude(this, arg);
+        }
+    }
+
+    /**
+     * Exclude block.
+     */
+    public static final class Exclude extends Pattern {
+
+        private Exclude(Output.Builder builder) {
+            super(builder);
+        }
+
+        @Override
+        public <A> VisitResult accept(Output.Visitor<A> visitor, A arg) {
+            return visitor.visitExclude(this, arg);
         }
     }
 
@@ -245,8 +361,6 @@ public abstract class Output extends Block {
 
         private final List<String> transformations;
         private final String directory;
-        private final List<String> includes;
-        private final List<String> excludes;
 
         /**
          * Create a new files block.
@@ -255,18 +369,21 @@ public abstract class Output extends Block {
          */
         Files(Output.Builder builder) {
             super(builder);
-            String attr = builder.attributes().get("transformations");
-            this.transformations = attr != null ? Arrays.stream(attr.split(","))
-                                                        .map(String::trim)
-                                                        .collect(toList()) : emptyList();
-            this.directory = Objects.requireNonNull(builder.directory, "directory is null");
-            this.includes = builder.includes;
-            this.excludes = builder.excludes;
+            this.directory = builder.attribute("directory", true);
+            String transformations = builder.attribute("transformations", false);
+            this.transformations = transformations != null ? Arrays.stream(transformations.split(","))
+                                                                   .map(String::trim)
+                                                                   .collect(toList()) : emptyList();
         }
 
         @Override
         public <A> VisitResult accept(Output.Visitor<A> visitor, A arg) {
             return visitor.visitFiles(this, arg);
+        }
+
+        @Override
+        public <A> VisitResult acceptAfter(Output.Visitor<A> visitor, A arg) {
+            return visitor.postVisitFiles(this, arg);
         }
 
         /**
@@ -286,24 +403,6 @@ public abstract class Output extends Block {
         public String directory() {
             return directory;
         }
-
-        /**
-         * Get the includes.
-         *
-         * @return includes
-         */
-        public List<String> includes() {
-            return includes;
-        }
-
-        /**
-         * Get the excludes.
-         *
-         * @return excludes
-         */
-        public List<String> excludes() {
-            return excludes;
-        }
     }
 
     /**
@@ -315,12 +414,17 @@ public abstract class Output extends Block {
 
         private Templates(Output.Builder builder) {
             super(builder);
-            this.engine = builder.attribute("engine");
+            this.engine = builder.attribute("engine", true);
         }
 
         @Override
         public <A> VisitResult accept(Output.Visitor<A> visitor, A arg) {
             return visitor.visitTemplates(this, arg);
+        }
+
+        @Override
+        public <A> VisitResult acceptAfter(Output.Visitor<A> visitor, A arg) {
+            return visitor.postVisitTemplates(this, arg);
         }
 
         /**
@@ -348,8 +452,8 @@ public abstract class Output extends Block {
          */
         File(Output.Builder builder) {
             super(builder);
-            this.source = builder.attribute("source");
-            this.target = builder.attribute("target");
+            this.source = builder.attribute("source", true);
+            this.target = builder.attribute("target", true);
         }
 
         @Override
@@ -390,7 +494,7 @@ public abstract class Output extends Block {
          */
         Template(Output.Builder builder) {
             super(builder);
-            this.engine = builder.attribute("engine");
+            this.engine = builder.attribute("engine", true);
         }
 
         @Override
@@ -430,11 +534,6 @@ public abstract class Output extends Block {
      */
     public static class Builder extends Block.Builder {
 
-        private String directory;
-        private final List<String> includes = new LinkedList<>();
-        private final List<String> excludes = new LinkedList<>();
-        private final List<Transformation.Replace> operations = new LinkedList<>();
-
         /**
          * Create a new output builder.
          *
@@ -446,46 +545,18 @@ public abstract class Output extends Block {
             super(scriptPath, position, kind);
         }
 
-        private boolean doRemove(Noop.Builder b) {
-            switch (b.kind()) {
-                case REPLACE:
-                    operations.add(new Transformation.Replace(
-                            b.attribute("replacement"),
-                            b.attribute("regex")));
-                    return true;
-                case DIRECTORY:
-                    directory = b.value();
-                    return true;
-                case EXCLUDE:
-                    excludes.add(b.value());
-                    return true;
-                case INCLUDE:
-                    includes.add(b.value());
-                    return true;
-                default:
-                    return true;
-            }
-        }
-
-        private boolean doRemove(Block.Builder b) {
-            switch (b.kind()) {
-                case EXCLUDES:
-                case INCLUDES:
-                    remove(b.children(), Noop.Builder.class, this::doRemove);
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
         @Override
         protected Block doBuild() {
-            remove(children(), Noop.Builder.class, this::doRemove);
-            remove(children(), Block.Builder.class, this::doRemove);
             Kind kind = kind();
             switch (kind) {
+                case REPLACE:
+                    return new Transformation.Replace(this);
                 case TRANSFORMATION:
                     return new Transformation(this);
+                case INCLUDE:
+                    return new Include(this);
+                case EXCLUDE:
+                    return new Exclude(this);
                 case FILES:
                     return new Files(this);
                 case TEMPLATES:

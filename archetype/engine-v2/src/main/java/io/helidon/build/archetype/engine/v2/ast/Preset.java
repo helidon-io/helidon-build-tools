@@ -17,34 +17,34 @@
 package io.helidon.build.archetype.engine.v2.ast;
 
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * Preset.
  */
-public final class Preset extends Node {
+public final class Preset extends Block {
 
-    private final Kind kind;
     private final Value value;
     private final String path;
 
     private Preset(Builder builder) {
         super(builder);
-        this.kind = Objects.requireNonNull(builder.kind, "kind is null");
-        this.path = builder.attribute("path");
+        this.path = builder.attribute("path", true);
+        Block.Kind kind = builder.kind();
         switch (kind) {
             case BOOLEAN:
-                value = Value.create(Boolean.parseBoolean(builder.value));
+                value = Value.create(Boolean.parseBoolean(builder.value()));
                 break;
             case TEXT:
             case ENUM:
-                value = Value.create(builder.value);
+                value = Value.create(builder.value());
                 break;
             case LIST:
-                value = Value.create(Collections.unmodifiableList(builder.values));
+                List<Node.Builder<? extends Node, ?>> children = builder.children();
+                value = Value.create(children.stream().map(Node.Builder::value).collect(toUnmodifiableList()));
+                children.clear();
                 break;
             default:
                 throw new IllegalArgumentException("Unknown preset kind: " + kind);
@@ -70,43 +70,8 @@ public final class Preset extends Node {
     }
 
     @Override
-    public <A> VisitResult accept(Node.Visitor<A> visitor, A arg) {
+    public <A> VisitResult accept(Block.Visitor<A> visitor, A arg) {
         return visitor.visitPreset(this, arg);
-    }
-
-    /**
-     * Preset kind.
-     */
-    public enum Kind {
-
-        /**
-         * Text.
-         */
-        TEXT,
-
-        /**
-         * Boolean.
-         */
-        BOOLEAN,
-
-        /**
-         * Enum.
-         */
-        ENUM,
-
-        /**
-         * List.
-         */
-        LIST
-    }
-
-    /**
-     * Get the preset kind.
-     *
-     * @return kind
-     */
-    public Kind kind() {
-        return kind;
     }
 
     /**
@@ -117,45 +82,21 @@ public final class Preset extends Node {
      * @param kind       kind
      * @return builder
      */
-    public static Builder builder(Path scriptPath, Position position, Kind kind) {
+    public static Builder builder(Path scriptPath, Position position, Block.Kind kind) {
         return new Builder(scriptPath, position, kind);
     }
 
     /**
      * Preset builder.
      */
-    public static final class Builder extends Node.Builder<Preset, Builder> {
+    public static final class Builder extends Block.Builder {
 
-        private final List<String> values = new LinkedList<>();
-        private final Kind kind;
-        private String value;
-
-        private Builder(Path scriptPath, Position position, Kind kind) {
-            super(scriptPath, position);
-            this.kind = kind;
-        }
-
-        /**
-         * Set the value.
-         *
-         * @param value value
-         * @return this builder
-         */
-        public Builder value(String value) {
-            this.value = value;
-            return this;
-        }
-
-        private boolean doRemove(Noop.Builder b) {
-            if (b.kind() == Noop.Kind.VALUE) {
-                values.add(b.value());
-            }
-            return true;
+        private Builder(Path scriptPath, Position position, Block.Kind kind) {
+            super(scriptPath, position, kind);
         }
 
         @Override
         protected Preset doBuild() {
-            remove(children(), Noop.Builder.class, this::doRemove);
             return new Preset(this);
         }
     }

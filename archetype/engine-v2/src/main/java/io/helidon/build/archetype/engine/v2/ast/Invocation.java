@@ -30,7 +30,7 @@ public final class Invocation extends Node {
     private Invocation(Builder builder) {
         super(builder);
         this.kind = Objects.requireNonNull(builder.kind, "kind is null");
-        this.src = builder.attributes().get("src");
+        this.src = builder.attribute("src", false);
     }
 
     /**

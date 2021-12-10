@@ -21,9 +21,8 @@ import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -33,7 +32,6 @@ import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Invocation;
 import io.helidon.build.archetype.engine.v2.ast.Model;
 import io.helidon.build.archetype.engine.v2.ast.Node;
-import io.helidon.build.archetype.engine.v2.ast.Noop;
 import io.helidon.build.archetype.engine.v2.ast.Output;
 import io.helidon.build.archetype.engine.v2.ast.Position;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
@@ -48,7 +46,7 @@ import io.helidon.build.common.xml.SimpleXMLParser.XMLReaderException;
  */
 public class ScriptLoader {
 
-    private static final WeakHashMap<FileSystem, Map<Path, Script>> CACHE = new WeakHashMap<>();
+    private static final Map<FileSystem, Map<Path, Script>> CACHE = new WeakHashMap<>();
 
     /**
      * Get or load the script at the given path.
@@ -100,7 +98,8 @@ public class ScriptLoader {
         PRESET,
         INPUT,
         EXECUTABLE,
-        VALUE,
+        OUTPUT,
+        MODEL,
         BLOCK
     }
 
@@ -124,7 +123,7 @@ public class ScriptLoader {
         private SimpleXMLParser parser;
         private String qName;
         private Map<String, String> attrs;
-        private Deque<Context> stack;
+        private LinkedList<Context> stack;
         private Context ctx;
         private Script.Builder script;
 
@@ -133,7 +132,7 @@ public class ScriptLoader {
 
         Script read(InputStream is, Path path) throws IOException {
             location = path;
-            stack = new ArrayDeque<>();
+            stack = new LinkedList<>();
             parser = SimpleXMLParser.create(is, this);
             parser.parse();
             if (script == null) {
@@ -174,7 +173,7 @@ public class ScriptLoader {
         @Override
         public void elementText(String value) {
             ctx = stack.peek();
-            if (ctx != null && ctx.state == State.VALUE) {
+            if (ctx != null) {
                 ctx.builder.value(value);
             }
         }
@@ -188,9 +187,12 @@ public class ScriptLoader {
         }
 
         void processElement() {
-            if (Noop.Kind.NAMES.contains(qName)) {
-                addChild(State.VALUE, Noop.builder(location, position, noopKind()));
-                return;
+            switch (qName) {
+                case "directory":
+                case "help":
+                    stack.push(new Context(ctx.state, new ValueBuilder(ctx.builder, qName), true));
+                    return;
+                default:
             }
             switch (ctx.state) {
                 case EXECUTABLE:
@@ -206,11 +208,17 @@ public class ScriptLoader {
                 case BLOCK:
                     processBlock();
                     break;
+                case PRESET:
+                    processPreset();
+                    break;
                 case INPUT:
                     processInput();
                     break;
-                case PRESET:
-                    addChild(State.VALUE, Preset.builder(location, position, presetKind()));
+                case OUTPUT:
+                    processOutput();
+                    break;
+                case MODEL:
+                    processModel();
                     break;
                 default:
                     throw new XMLReaderException(String.format(
@@ -220,8 +228,8 @@ public class ScriptLoader {
 
         void processInput() {
             State nextState;
-            Block.Kind blockKind = blockKind();
-            switch (blockKind) {
+            Block.Kind kind = blockKind();
+            switch (kind) {
                 case OPTION:
                 case BOOLEAN:
                 case TEXT:
@@ -236,22 +244,91 @@ public class ScriptLoader {
                     return;
                 default:
                     throw new XMLReaderException(String.format(
-                            "Invalid input block: %s. { element=%s }", blockKind, qName));
+                            "Invalid input block: %s. { element=%s }", kind, qName));
             }
-            addChild(nextState, Input.builder(location, position, blockKind));
+            addChild(nextState, Input.builder(location, position, kind));
+        }
+
+        void processPreset() {
+            Block.Builder builder;
+            Block.Kind kind = blockKind();
+            switch (kind) {
+                case BOOLEAN:
+                case TEXT:
+                case ENUM:
+                case LIST:
+                    builder = Preset.builder(location, position, blockKind());
+                    break;
+                case VALUE:
+                    builder = Block.builder(location, position, blockKind());
+                    break;
+                default:
+                    throw new XMLReaderException(String.format(
+                            "Invalid preset block: %s. { element=%s }", kind, qName));
+
+            }
+            addChild(ctx.state, builder);
+        }
+
+        void processOutput() {
+            State nextState = State.OUTPUT;
+            Block.Builder builder;
+            Block.Kind kind = blockKind();
+            switch (kind) {
+                case INCLUDES:
+                case EXCLUDES:
+                    builder = Block.builder(location, position, kind);
+                    break;
+                case INCLUDE:
+                case EXCLUDE:
+                case TRANSFORMATION:
+                case REPLACE:
+                case FILES:
+                case TEMPLATES:
+                case FILE:
+                case TEMPLATE:
+                    builder = Output.builder(location, position, kind);
+                    break;
+                case MODEL:
+                    nextState = State.MODEL;
+                    builder = Block.builder(location, position, kind);
+                    break;
+                default:
+                    throw new XMLReaderException(String.format(
+                            "Invalid output block: %s. { element=%s }", kind, qName));
+
+            }
+            addChild(nextState, builder);
+        }
+
+        void processModel() {
+            Block.Builder builder;
+            Block.Kind kind = blockKind();
+            switch (kind) {
+                case MAP:
+                case VALUE:
+                case LIST:
+                    builder = Model.builder(location, position, kind);
+                    break;
+                default:
+                    throw new XMLReaderException(String.format(
+                            "Invalid model block: %s. { element=%s }", kind, qName));
+
+            }
+            addChild(ctx.state, builder);
         }
 
         void processBlock() {
             State nextState = State.BLOCK;
             Block.Builder builder = null;
-            Block.Kind blockKind = blockKind();
-            switch (blockKind) {
+            Block.Kind kind = blockKind();
+            switch (kind) {
                 case SCRIPT:
                     nextState = State.EXECUTABLE;
                     break;
                 case STEP:
                     nextState = State.EXECUTABLE;
-                    builder = Step.builder(location, position, blockKind);
+                    builder = Step.builder(location, position, kind);
                     break;
                 case INPUTS:
                     nextState = State.INPUT;
@@ -259,39 +336,26 @@ public class ScriptLoader {
                 case PRESETS:
                     nextState = State.PRESET;
                     break;
-                case TRANSFORMATION:
-                case FILES:
-                case TEMPLATES:
-                case FILE:
-                case TEMPLATE:
-                    builder = Output.builder(location, position, blockKind);
-                    break;
-                case MAP:
-                case VALUE:
-                case LIST:
-                    builder = Model.builder(location, position, blockKind);
+                case OUTPUT:
+                    nextState = State.OUTPUT;
                     break;
                 default:
             }
             if (builder == null) {
-                builder = Block.builder(location, position, blockKind);
+                builder = Block.builder(location, position, kind);
             }
             addChild(nextState, builder);
         }
 
-        void addChild(State nextState, Node.Builder<? extends Node, ?> node) {
-            node.attributes(attrs);
+        void addChild(State nextState, Node.Builder<? extends Node, ?> builder) {
+            builder.attributes(attrs);
             String ifExpr = attrs.get("if");
             if (ifExpr != null) {
-                ctx.builder.addChild(Condition.builder(location, position).expression(ifExpr).then(node));
+                ctx.builder.addChild(Condition.builder(location, position).expression(ifExpr).then(builder));
             } else {
-                ctx.builder.addChild(node);
+                ctx.builder.addChild(builder);
             }
-            stack.push(new Context(nextState, node, true));
-        }
-
-        Preset.Kind presetKind() {
-            return Preset.Kind.valueOf(qName.toUpperCase());
+            stack.push(new Context(nextState, builder, true));
         }
 
         Block.Kind blockKind() {
@@ -301,9 +365,28 @@ public class ScriptLoader {
         Invocation.Kind invocationKind() {
             return Invocation.Kind.valueOf(qName.toUpperCase());
         }
+    }
 
-        Noop.Kind noopKind() {
-            return Noop.Kind.valueOf(qName.toUpperCase());
+    private static final class ValueBuilder extends Node.Builder<Node, ValueBuilder> {
+
+        private final Node.Builder<?, ?> parent;
+        private final String qName;
+
+        private ValueBuilder(Node.Builder<?, ?> parent, String qName) {
+            super(null, null);
+            this.parent = parent;
+            this.qName = qName;
+        }
+
+        @Override
+        public ValueBuilder value(String value) {
+            parent.attributes(qName, value);
+            return this;
+        }
+
+        @Override
+        protected Node doBuild() {
+            return null;
         }
     }
 }

@@ -28,6 +28,7 @@ import java.util.Objects;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
 import io.helidon.build.common.GenericType;
+import io.helidon.build.common.PropertyEvaluator;
 
 import static java.util.stream.Collectors.toList;
 
@@ -223,6 +224,23 @@ public final class Context {
             path = name;
         }
         return path;
+    }
+
+    /**
+     * Interpolate a string by expanding the context variables within it.
+     *
+     * @param value string to interpolate
+     * @return interpolated string
+     * @throws IllegalArgumentException if the string contains any unresolved variable
+     */
+    public String interpolate(String value) {
+        return PropertyEvaluator.evaluate(value, var -> {
+            Value val = lookup(var);
+            if (val == null) {
+                throw new IllegalArgumentException("Unresolved variable: " + var);
+            }
+            return String.valueOf(val.unwrap());
+        });
     }
 
     private String fullPath() {
