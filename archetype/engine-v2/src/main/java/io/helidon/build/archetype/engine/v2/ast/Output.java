@@ -370,10 +370,14 @@ public abstract class Output extends Block {
         Files(Output.Builder builder) {
             super(builder);
             this.directory = builder.attribute("directory", true);
-            String transformations = builder.attribute("transformations", false);
-            this.transformations = transformations != null ? Arrays.stream(transformations.split(","))
-                                                                   .map(String::trim)
-                                                                   .collect(toList()) : emptyList();
+            String rawTransformations = builder.attribute("transformations", false);
+            if (rawTransformations != null) {
+                this.transformations = Arrays.stream(rawTransformations.split(","))
+                                             .map(String::trim)
+                                             .collect(toList());
+            } else {
+                this.transformations = emptyList();
+            }
         }
 
         @Override

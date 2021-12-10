@@ -262,33 +262,6 @@ public abstract class Node {
         }
 
         /**
-         * Get the script path.
-         *
-         * @return script path
-         */
-        protected Path scriptPath() {
-            return scriptPath;
-        }
-
-        /**
-         * Get the position.
-         *
-         * @return position
-         */
-        protected Position position() {
-            return position;
-        }
-
-        /**
-         * Get the attributes map.
-         *
-         * @return attributes map
-         */
-        protected Map<String, String> attributes() {
-            return attributes;
-        }
-
-        /**
          * Add a child.
          *
          * @param builder node builder

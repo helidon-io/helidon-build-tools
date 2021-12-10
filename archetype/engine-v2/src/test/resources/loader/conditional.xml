@@ -24,13 +24,59 @@
         <help>Help about step 1</help>
         <inputs>
             <boolean name="input1" label="Input 1">
-                <output if="true">
-                    <file source="file1.txt" target="file2.txt"/>
+                <output if="false">
+                    <file source="file3.txt" target="file4.txt"/>
                 </output>
             </boolean>
         </inputs>
     </step>
-    <output if="false">
-        <file source="file3.txt" target="file4.txt"/>
+    <output if="true">
+        <file source="file1.txt" target="file2.txt" if="true"/>
+        <file source="file3.txt" target="file4.txt" if="false"/>
+        <template source="file1.tpl" target="file2.txt" engine="foo" if="true"/>
+        <template source="file3.tpl" target="file4.txt" engine="bar" if="false"/>
+        <files if="true">
+            <directory>colors</directory>
+            <includes>
+                <include if="true">red</include>
+                <include>green</include>
+                <include if="false">blue</include>
+            </includes>
+            <excludes>
+                <exclude if="true">yellow</exclude>
+                <exclude>pink</exclude>
+                <exclude if="false">purple</exclude>
+            </excludes>
+        </files>
+        <files if="false">
+            <directory>colors2</directory>
+            <includes>
+                <include>burgundy</include>
+            </includes>
+            <excludes>
+                <exclude>beige</exclude>
+            </excludes>
+        </files>
+        <model>
+            <value key="red" if="true">red</value>
+            <value key="green">green</value>
+            <value key="blue" if="false">blue</value>
+            <list key="colors1" if="true">
+                <value if="true">yellow</value>
+                <value>pink</value>
+                <value if="false">purple</value>
+            </list>
+            <list key="colors2" if="false">
+                <value>magenta</value>
+            </list>
+            <map key="shapes1" if="true">
+                <value key="rectangle" if="true">orange</value>
+                <value key="circle">lavender</value>
+                <value key="triangle" if="false">black</value>
+            </map>
+            <map key="shapes2" if="false">
+                <value key="circle">white</value>
+            </map>
+        </model>
     </output>
 </archetype-script>

@@ -372,7 +372,7 @@ public class ScriptLoader {
         private final Node.Builder<?, ?> parent;
         private final String qName;
 
-        private ValueBuilder(Node.Builder<?, ?> parent, String qName) {
+        ValueBuilder(Node.Builder<?, ?> parent, String qName) {
             super(null, null);
             this.parent = parent;
             this.qName = qName;
