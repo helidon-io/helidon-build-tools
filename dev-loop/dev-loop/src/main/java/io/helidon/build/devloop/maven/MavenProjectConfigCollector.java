@@ -168,6 +168,9 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
         config.property(PROJECT_SOURCE_EXCLUDES, toList(pluginConfig, "excludes"));
         config.property(PROJECT_RESOURCEDIRS, resourceDirs);
         this.projectConfig = config;
+
+        // Make the session available to our dev loop code for incremental builds
+        CurrentMavenSession.set(session);
     }
 
     private static String format(Resource resource) {
