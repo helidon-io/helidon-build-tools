@@ -46,13 +46,11 @@ import static java.util.Objects.requireNonNull;
  */
 public class MavenGoal implements BuildStep {
     private static final String DEFAULT_EXECUTION_ID_PREFIX = "default-";
-
     private final String name;
     private final String pluginKey;
     private final String executionId;
     private final MojoExecution execution;
     private final BuildPluginManager pluginManager;
-    private final MavenSession session;
 
     /**
      * Returns a new instance.
@@ -70,37 +68,41 @@ public class MavenGoal implements BuildStep {
                                    String goalName,
                                    String executionId,
                                    MavenEnvironment environment) throws Exception {
-        return new MavenGoal(requireNonNull(pluginGroupId),
-                             requireNonNull(pluginArtifactId),
-                             requireNonNull(goalName),
-                             executionId == null ? DEFAULT_EXECUTION_ID_PREFIX + goalName : executionId,
-                             requireNonNull(environment));
+
+        CurrentMavenSession.initialize(environment.session());
+
+        String pluginKey = requireNonNull(pluginGroupId) + ":" + requireNonNull(pluginArtifactId);
+        if (executionId == null) {
+            executionId = DEFAULT_EXECUTION_ID_PREFIX + goalName;
+        }
+        Plugin plugin = plugin(environment.project(), pluginKey);
+        MojoDescriptor mojoDescriptor = mojoDescriptor(environment, plugin, goalName);
+        Xpp3Dom configuration = configuration(plugin, executionId);
+        MojoExecution execution = mojoExecution(mojoDescriptor, executionId, configuration);
+        BuildPluginManager pluginManager = environment.buildPluginManager();
+
+        return new MavenGoal(pluginKey, goalName, executionId, execution, pluginManager);
     }
 
     /**
      * Constructor.
      *
-     * @param pluginGroupId The plugin group id.
-     * @param pluginArtifactId The plugin artifact id.
+     * @param pluginKey The plugin group id.
      * @param goalName The plugin goal to execute.
      * @param executionId The execution id.
-     * @param environment The plugin execution environment.
-     * @throws Exception if an error occurs.
+     * @param execution The plugin execution.
+     * @param pluginManager The plugin manager.
      */
-    private MavenGoal(String pluginGroupId,
-                      String pluginArtifactId,
+    private MavenGoal(String pluginKey,
                       String goalName,
                       String executionId,
-                      MavenEnvironment environment) throws Exception {
+                      MojoExecution execution,
+                      BuildPluginManager pluginManager) {
         this.name = goalName;
-        this.pluginKey = pluginGroupId + ":" + pluginArtifactId;
+        this.pluginKey = pluginKey;
         this.executionId = executionId;
-        final Plugin plugin = plugin(environment.project(), pluginKey);
-        final MojoDescriptor mojoDescriptor = mojoDescriptor(environment, plugin, name);
-        final Xpp3Dom configuration = configuration(plugin, executionId);
-        this.execution = mojoExecution(mojoDescriptor, executionId, configuration);
-        this.pluginManager = environment.buildPluginManager();
-        this.session = environment.session();
+        this.execution = execution;
+        this.pluginManager = pluginManager;
     }
 
     @Override
@@ -117,6 +119,7 @@ public class MavenGoal implements BuildStep {
      */
     public void execute() throws Exception {
         Log.debug("Executing %s", this);
+        MavenSession session = CurrentMavenSession.get();
         pluginManager.executeMojo(session, execution);
     }
 

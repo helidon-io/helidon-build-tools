@@ -77,12 +77,6 @@ public class DevMojo extends AbstractMojo {
     private boolean clean;
 
     /**
-     * Fork builds.
-     */
-    @Parameter(defaultValue = "false", property = "dev.fork")
-    private boolean fork;
-
-    /**
      * Use terminal mode.
      */
     @Parameter(defaultValue = "false", property = "dev.terminalMode")
@@ -171,7 +165,7 @@ public class DevMojo extends AbstractMojo {
             final List<String> jvmArgs = toList(appJvmArgs);
             final List<String> args = toList(appArgs);
             final Path dir = devProjectDir.toPath();
-            final DevLoop loop = new DevLoop(dir, projectSupplier, clean, fork, terminalMode, jvmArgs, args, configuration);
+            final DevLoop loop = new DevLoop(dir, projectSupplier, clean, terminalMode, jvmArgs, args, configuration);
             loop.start(Integer.MAX_VALUE);
         } catch (Exception e) {
             throw new MojoExecutionException("Error", e);

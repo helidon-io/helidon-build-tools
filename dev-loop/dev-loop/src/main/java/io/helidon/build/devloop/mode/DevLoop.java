@@ -32,7 +32,6 @@ import io.helidon.build.devloop.Project;
 import io.helidon.build.devloop.ProjectSupplier;
 import io.helidon.build.devloop.maven.DevLoopBuildConfig;
 import io.helidon.build.devloop.maven.EmbeddedMavenExecutor;
-import io.helidon.build.devloop.maven.ForkedMavenExecutor;
 
 import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
@@ -66,11 +65,9 @@ public class DevLoop {
 
     /**
      * Create a dev loop.
-     *
      * @param rootDir Project's root.
      * @param projectSupplier Project supplier.
      * @param initialClean Clean flag.
-     * @param forkBuilds {@code true} if builds should be forked.
      * @param terminalMode {@code true} for terminal output.
      * @param appJvmArgs The application JVM arguments.
      * @param appArgs The application arguments.
@@ -79,15 +76,13 @@ public class DevLoop {
     public DevLoop(Path rootDir,
                    ProjectSupplier projectSupplier,
                    boolean initialClean,
-                   boolean forkBuilds,
                    boolean terminalMode,
                    List<String> appJvmArgs,
                    List<String> appArgs,
                    DevLoopBuildConfig config) {
         this.terminalMode = terminalMode;
         this.monitor = new DevLoopMonitor(terminalMode, projectSupplier.buildFileName(), appJvmArgs, appArgs, config);
-        this.buildExecutor = forkBuilds ? new ForkedMavenExecutor(rootDir, monitor, MAX_BUILD_WAIT_SECONDS)
-                : new EmbeddedMavenExecutor(rootDir, monitor);
+        this.buildExecutor = new EmbeddedMavenExecutor(rootDir, monitor);
         this.initialClean = initialClean;
         this.projectSupplier = projectSupplier;
     }
