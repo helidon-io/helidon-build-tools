@@ -107,12 +107,10 @@ public class ScriptLoader {
 
         private final State state;
         private final Node.Builder<?, ?> builder;
-        private final boolean build;
 
-        Context(State state, Node.Builder<?, ?> builder, boolean build) {
+        Context(State state, Node.Builder<?, ?> builder) {
             this.state = state;
             this.builder = builder;
-            this.build = build;
         }
     }
 
@@ -154,7 +152,7 @@ public class ScriptLoader {
                             qName, location, position));
                 }
                 script = Script.builder(location, position);
-                stack.push(new Context(State.EXECUTABLE, script, true));
+                stack.push(new Context(State.EXECUTABLE, script));
             } else {
                 try {
                     processElement();
@@ -180,17 +178,14 @@ public class ScriptLoader {
 
         @Override
         public void endElement(String name) {
-            Context ctx = stack.pop();
-            if (ctx.build) {
-                ctx.builder.build();
-            }
+            stack.pop().builder.build();
         }
 
         void processElement() {
             switch (qName) {
                 case "directory":
                 case "help":
-                    stack.push(new Context(ctx.state, new ValueBuilder(ctx.builder, qName), true));
+                    stack.push(new Context(ctx.state, new ValueBuilder(ctx.builder, qName)));
                     return;
                 default:
             }
@@ -355,7 +350,7 @@ public class ScriptLoader {
             } else {
                 ctx.builder.addChild(builder);
             }
-            stack.push(new Context(nextState, builder, true));
+            stack.push(new Context(nextState, builder));
         }
 
         Block.Kind blockKind() {

@@ -222,7 +222,7 @@ public class IntegrationTestMojo extends AbstractMojo {
                                      Path basedir)
             throws MojoExecutionException {
 
-        // pre install the archetype JAR so that the post-generate script can resolve it
+        // pre-install the archetype JAR so that the post-generate script can resolve it
         ProjectInstallerRequest projectInstallerRequest = new ProjectInstallerRequest().setProject(project);
         try {
             installer.install(session.getProjectBuildingRequest(), projectInstallerRequest);

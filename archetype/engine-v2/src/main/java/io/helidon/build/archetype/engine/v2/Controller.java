@@ -28,7 +28,7 @@ import io.helidon.build.archetype.engine.v2.ast.Preset;
 /**
  * Controller.
  * Context aware visitor adapter with convenience methods to perform full AST traversal with complete flow control.
- * Always uses an implementation {@link InputResolver} in order to control the flow of input nodes.
+ * Always uses an implementation of {@link InputResolver} in order to control the flow of input nodes.
  */
 final class Controller extends VisitorAdapter<Context> {
 
