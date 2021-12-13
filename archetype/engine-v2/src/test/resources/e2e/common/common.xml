@@ -20,30 +20,26 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
+    <source src="mustache.xml"/>
     <inputs>
-        <enum name="build-system" label="Select a build system" optional="true" default="maven">
-            <option value="maven" label="Apache Maven">
+        <enum name="style" label="Select a style" optional="true" default="modern">
+            <option value="modern" label="Modern">
                 <output>
                     <templates transformations="mustache" engine="mustache">
                         <directory>files</directory>
                         <includes>
-                            <include>pom.xml.mustache</include>
+                            <include>modern.txt.mustache</include>
                         </includes>
                     </templates>
                 </output>
             </option>
-            <option value="gradle" label="Gradle"/>
+            <option value="classic" label="Classic"/>
         </enum>
     </inputs>
-    <exec src="security/security.xml"/>
     <exec src="readme.xml"/>
-    <exec src="docker.xml"/>
-    <exec src="kubernetes.xml"/>
-    <source src="java-files.xml"/>
     <output>
         <model>
-            <value key="helidonVersion">2.4.0</value>
-            <list key="dependencies"/>
+            <list key="style-notes"/>
         </model>
     </output>
 </archetype-script>

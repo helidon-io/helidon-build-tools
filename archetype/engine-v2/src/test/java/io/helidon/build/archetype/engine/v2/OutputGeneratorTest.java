@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.archetype.engine.v2.TestHelper.load;
 import static io.helidon.build.archetype.engine.v2.TestHelper.readFile;
-import static io.helidon.build.archetype.engine.v2.TestHelper.uniqueDir;
+import static io.helidon.build.archetype.engine.v2.TestHelper.unique;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -117,7 +117,7 @@ class OutputGeneratorTest {
         Path scriptPath = script.scriptPath();
         String dirname = scriptPath.getFileName().toString().replaceAll(".xml", "");
         Path target = TestFiles.targetDir(OutputGeneratorTest.class);
-        Path outputDir = uniqueDir(target.resolve("generator-ut/"), dirname);
+        Path outputDir = unique(target.resolve("generator-ut/"), dirname);
         Context context = Context.create(script.scriptPath().getParent());
         initializer.accept(context);
         MergedModel mergedModel = MergedModel.resolveModel(script, context);

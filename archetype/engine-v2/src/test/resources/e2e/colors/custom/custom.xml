@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
+
+    <exec src="../../common/common.xml"/>
+    <inputs>
+        <text name="palette-name" label="Palette name" optional="true" default="My Palette"/>
+        <list name="colors" label="Select colors" optional="true" default="red,green,blue">
+            <option value="red" label="Red"/>
+            <option value="orange" label="Orange"/>
+            <option value="yellow" label="Yellow"/>
+            <option value="green" label="Green"/>
+            <option value="blue" label="Blue"/>
+            <option value="indigo" label="Indigo"/>
+            <option value="violet" label="Violet"/>
+            <option value="pink" label="Pink"/>
+            <option value="light-pink" label="LightPink"/>
+            <option value="cyan" label="Cyan"/>
+            <option value="light-salmon" label="LightSalmon"/>
+            <option value="coral" label="Coral"/>
+            <option value="tomato" label="Tomato"/>
+            <option value="lemon" label="Lemon"/>
+            <option value="khaki" label="Khaki"/>
+        </list>
+    </inputs>
+    <output>
+        <templates transformations="mustache" engine="mustache">
+            <directory>files</directory>
+            <includes>
+                <include>colors.txt.mustache</include>
+            </includes>
+        </templates>
+        <model>
+            <value key="palette-name">${palette-name}</value>
+            <list key="colors">
+                <value if="${colors} contains 'red'">Red</value>
+                <value if="${colors} contains 'orange'">Orange</value>
+                <value if="${colors} contains 'yellow'">Yellow</value>
+                <value if="${colors} contains 'green'">Green</value>
+                <value if="${colors} contains 'blue'">Blue</value>
+                <value if="${colors} contains 'indigo'">Indigo</value>
+                <value if="${colors} contains 'violet'">Violet</value>
+                <value if="${colors} contains 'pink'">Pink</value>
+                <value if="${colors} contains 'light-pink'">Light-pink</value>
+                <value if="${colors} contains 'cyan'">Cyan</value>
+                <value if="${colors} contains 'light-salmon'">Light-salmon</value>
+                <value if="${colors} contains 'coral'">Coral</value>
+                <value if="${colors} contains 'tomato'">Tomato</value>
+                <value if="${colors} contains 'lemon'">Lemon</value>
+                <value if="${colors} contains 'khaki'">Khaki</value>
+            </list>
+            <list key="style-notes">
+                <value>Colors can have many styles</value>
+            </list>
+        </model>
+    </output>
+</archetype-script>

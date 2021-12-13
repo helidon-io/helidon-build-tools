@@ -20,17 +20,14 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step label="Theme">
+    <step optional="true" label="Customize Project">
         <inputs>
-            <enum name="theme" label="Select a theme">
-                <option value="colors" label="Colors">
-                    <exec src="colors/colors.xml"/>
-                </option>
-                <option value="shapes" label="Shapes">
-                    <exec src="shapes/shapes.xml"/>
-                </option>
-            </enum>
+            <text name="name" label="Project name" optional="true" default="my-project"/>
         </inputs>
-        <source src="common/finalize.xml"/>
+        <output>
+            <model>
+                <value key="name">${name}</value>
+            </model>
+        </output>
     </step>
 </archetype-script>

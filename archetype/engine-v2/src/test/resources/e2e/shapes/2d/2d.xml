@@ -20,17 +20,25 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step label="Theme">
-        <inputs>
-            <enum name="theme" label="Select a theme">
-                <option value="colors" label="Colors">
-                    <exec src="colors/colors.xml"/>
-                </option>
-                <option value="shapes" label="Shapes">
-                    <exec src="shapes/shapes.xml"/>
-                </option>
-            </enum>
-        </inputs>
-        <source src="common/finalize.xml"/>
-    </step>
+    <presets>
+        <list path="theme.base.shapes">
+            <value>circle</value>
+            <value>triangle</value>
+            <value>rectangle</value>
+        </list>
+        <text path="theme.base.library-name">2D Shapes</text>
+    </presets>
+    <exec src="../custom/custom.xml"/>
+    <output>
+        <model>
+            <value key="readme-description">2D shapes library.</value>
+            <list key="readme-sections">
+                <value order="21" file="files/2d-shapes.md"/>
+                <value order="20" file="files/LIBRARY.md.mustache" template="mustache" />
+            </list>
+            <list key="style-notes">
+                <value>2D shapes can be used for a retro style!</value>
+            </list>
+        </model>
+    </output>
 </archetype-script>

@@ -64,6 +64,8 @@ public class OutputGenerator implements Output.Visitor<Context> {
 
     @Override
     public VisitResult visitTransformation(Transformation transformation, Context context) {
+        // transformations are scope dependent, though they are not implemented as such
+        // TODO add something in context to handle scoped transformations
         transformationId = transformation.id();
         return VisitResult.CONTINUE;
     }
@@ -88,15 +90,16 @@ public class OutputGenerator implements Output.Visitor<Context> {
     }
 
     @Override
-    public VisitResult visitAny(Output block, Context context) {
-        switch (block.kind()) {
-            case FILES:
-            case TEMPLATES:
-                includes.clear();
-                excludes.clear();
-                break;
-            default:
-        }
+    public VisitResult visitFiles(Output.Files files, Context arg) {
+        includes.clear();
+        excludes.clear();
+        return VisitResult.CONTINUE;
+    }
+
+    @Override
+    public VisitResult visitTemplates(Output.Templates templates, Context arg) {
+        includes.clear();
+        excludes.clear();
         return VisitResult.CONTINUE;
     }
 

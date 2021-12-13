@@ -20,17 +20,29 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step label="Theme">
-        <inputs>
-            <enum name="theme" label="Select a theme">
-                <option value="colors" label="Colors">
-                    <exec src="colors/colors.xml"/>
-                </option>
-                <option value="shapes" label="Shapes">
-                    <exec src="shapes/shapes.xml"/>
-                </option>
-            </enum>
-        </inputs>
-        <source src="common/finalize.xml"/>
-    </step>
+    <presets>
+        <list path="theme.base.colors">
+            <value>red</value>
+            <value>orange</value>
+            <value>yellow</value>
+            <value>green</value>
+            <value>blue</value>
+            <value>indigo</value>
+            <value>violet</value>
+        </list>
+        <text path="theme.base.palette-name">Rainbow</text>
+    </presets>
+    <exec src="../custom/custom.xml"/>
+    <output>
+        <model>
+            <value key="readme-description">Rainbow color palette.</value>
+            <list key="readme-sections">
+                <value order="21" file="files/RAINBOW.md"/>
+                <value order="20" file="files/PALETTE.md.mustache" template="mustache" />
+            </list>
+            <list key="style-notes">
+                <value>Rainbow has a unique style</value>
+            </list>
+        </model>
+    </output>
 </archetype-script>

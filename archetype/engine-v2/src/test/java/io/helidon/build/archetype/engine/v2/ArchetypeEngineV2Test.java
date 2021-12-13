@@ -16,23 +16,22 @@
 package io.helidon.build.archetype.engine.v2;
 
 import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 
-import io.helidon.build.common.test.utils.TestFiles;
-
+import io.helidon.build.common.VirtualFileSystem;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.archetype.engine.v2.TestHelper.engine;
-import static io.helidon.build.archetype.engine.v2.TestHelper.uniqueDir;
-import static io.helidon.build.common.test.utils.TestFiles.pathOf;
-import static java.nio.file.Files.isDirectory;
-import static java.util.stream.Collectors.toList;
+import static io.helidon.build.archetype.engine.v2.TestHelper.readFile;
+import static io.helidon.build.archetype.engine.v2.TestHelper.unique;
+import static io.helidon.build.archetype.engine.v2.TestHelper.zip;
+import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 
 /**
  * Tests {@link ArchetypeEngineV2}.
@@ -40,28 +39,390 @@ import static org.hamcrest.Matchers.contains;
 class ArchetypeEngineV2Test {
 
     @Test
-    void e2e() throws IOException {
-        Map<String, String> externalValues = Map.of(
-                "flavor", "se",
-                "flavor.base", "bare");
-        Path directory = TestFiles.targetDir(ArchetypeEngineV2Test.class).resolve("e2e");
+    void testProjectName() {
+        Path outputDir = e2eDir("testProjectName", Map.of(
+                "theme", "colors",
+                "theme.base", "rainbow",
+                "name", "foo"));
+        assertThat(outputDir.getFileName().toString(), startsWith("foo"));
+    }
 
-        ArchetypeEngineV2 engine = engine("e2e");
-        Path outputDir = engine.generate(new BatchInputResolver(), externalValues, Map.of(), n -> uniqueDir(directory, n));
+    @Test
+    void testRainbowColors() throws IOException {
+        Path outputDir = e2eDir("testRainbowColors", Map.of(
+                "theme", "colors",
+                "theme.base", "rainbow"));
+
+        assertRainbowColorsReadme(outputDir);
+        assertRainbowColors(outputDir);
+        assertRainbowModernStyle(outputDir);
+    }
+
+    @Test
+    void testRainbowColorsClassic() throws IOException {
+        Path outputDir = e2eDir("testRainbowColorsClassic", Map.of(
+                "theme", "colors",
+                "theme.base", "rainbow",
+                "theme.base.style", "classic"));
+
+        assertRainbowColorsReadme(outputDir);
+        assertRainbowColors(outputDir);
+        assertThat(Files.exists(outputDir.resolve("modern.txt")), is(false));
+    }
+
+    @Test
+    void testCustomDefaultColors() throws IOException {
+        Path outputDir = e2eDir("testCustomDefaultColors", Map.of(
+                "theme", "colors",
+                "theme.base", "custom"));
+
+        assertCustomReadme(outputDir);
+        assertDefaultCustomColors(outputDir);
+        asserCustomColorsModernStyle(outputDir);
+    }
+
+    @Test
+    void testCustomColors() throws IOException {
+        Path outputDir = e2eDir("testCustomColors", Map.of(
+                "theme", "colors",
+                "theme.base", "custom",
+                "theme.base.colors", "cyan,khaki"));
+
+        assertCustomReadme(outputDir);
+        assertCustomColors(outputDir);
+        asserCustomColorsModernStyle(outputDir);
+    }
+
+    @Test
+    void test2dShapes() throws IOException {
+        Path outputDir = e2eDir("test2dShapes", Map.of(
+                "theme", "shapes",
+                "theme.base", "2d"));
+
+        assert2dShapesReadme(outputDir);
+        assert2dShapes(outputDir);
+        assert2dModernStyle(outputDir);
+    }
+
+    @Test
+    void test2dShapesClassic() throws IOException {
+        Path outputDir = e2eDir("test2dShapesClassic", Map.of(
+                "theme", "shapes",
+                "theme.base", "2d",
+                "theme.base.style", "classic"));
+
+        assert2dShapesReadme(outputDir);
+        assert2dShapes(outputDir);
+        assertThat(Files.exists(outputDir.resolve("modern.txt")), is(false));
+    }
+
+    @Test
+    void testCustomDefaultShapes() throws IOException {
+        Path outputDir = e2eDir("testCustomDefaultShapes", Map.of(
+                "theme", "shapes",
+                "theme.base", "custom"));
+
+        assertCustomReadme(outputDir);
+        assertCustomDefaultShapes(outputDir);
+        asserCustomShapesModernStyle(outputDir);
+    }
+
+    @Test
+    void testCustomShapes() throws IOException {
+        Path outputDir = e2eDir("testCustomShapes", Map.of(
+                "theme", "shapes",
+                "theme.base", "custom",
+                "theme.base.shapes", "arrow,donut"));
+
+        assertCustomReadme(outputDir);
+        assertCustomShapes(outputDir);
+        asserCustomShapesModernStyle(outputDir);
+    }
+
+    @Test
+    void testRainbowColorsZip() throws IOException {
+        Path outputDir = e2eZip("testRainbowColorsZip", Map.of(
+                "theme", "colors",
+                "theme.base", "rainbow"));
+
+        assertRainbowColorsReadme(outputDir);
+        assertRainbowColors(outputDir);
+        assertRainbowModernStyle(outputDir);
+    }
+
+    @Test
+    void testProjectNameZip() throws IOException {
+        Path outputDir = e2eZip("testProjectNameZip", Map.of(
+                "theme", "colors",
+                "theme.base", "rainbow",
+                "name", "bar"));
+        assertThat(outputDir.getFileName().toString(), startsWith("bar"));
+    }
+
+    @Test
+    void testCustomDefaultColorsZip() throws IOException {
+        Path outputDir = e2eZip("testCustomDefaultColorsZip", Map.of(
+                "theme", "colors",
+                "theme.base", "custom"));
+
+        assertCustomReadme(outputDir);
+        assertDefaultCustomColors(outputDir);
+        asserCustomColorsModernStyle(outputDir);
+    }
+
+    @Test
+    void testRainbowColorsClassicZip() throws IOException {
+        Path outputDir = e2eZip("testRainbowColorsClassicZip", Map.of(
+                "theme", "colors",
+                "theme.base", "rainbow",
+                "theme.base.style", "classic"));
+
+        assertRainbowColorsReadme(outputDir);
+        assertRainbowColors(outputDir);
+        assertThat(Files.exists(outputDir.resolve("modern.txt")), is(false));
+    }
+
+    @Test
+    void testCustomColorsZip() throws IOException {
+        Path outputDir = e2eZip("testCustomColorsZip", Map.of(
+                "theme", "colors",
+                "theme.base", "custom",
+                "theme.base.colors", "cyan,khaki"));
+
+        assertCustomReadme(outputDir);
+        assertCustomColors(outputDir);
+        asserCustomColorsModernStyle(outputDir);
+    }
+
+    @Test
+    void test2dShapesZip() throws IOException {
+        Path outputDir = e2eZip("test2dShapesZip", Map.of(
+                "theme", "shapes",
+                "theme.base", "2d"));
+
+        assert2dShapesReadme(outputDir);
+        assert2dShapes(outputDir);
+        assert2dModernStyle(outputDir);
+    }
+
+    @Test
+    void test2dShapesClassicZip() throws IOException {
+        Path outputDir = e2eZip("test2dShapesClassicZip", Map.of(
+                "theme", "shapes",
+                "theme.base", "2d",
+                "theme.base.style", "classic"));
+
+        assert2dShapesReadme(outputDir);
+        assert2dShapes(outputDir);
+        assertThat(Files.exists(outputDir.resolve("modern.txt")), is(false));
+    }
+
+    @Test
+    void testCustomDefaultShapesZip() throws IOException {
+        Path outputDir = e2eZip("testCustomDefaultShapesZip", Map.of(
+                "theme", "shapes",
+                "theme.base", "custom"));
+
+        assertCustomReadme(outputDir);
+        assertCustomDefaultShapes(outputDir);
+        asserCustomShapesModernStyle(outputDir);
+    }
+
+    @Test
+    void testCustomShapesZip() throws IOException {
+        Path outputDir = e2eZip("testCustomShapesZip", Map.of(
+                "theme", "shapes",
+                "theme.base", "custom",
+                "theme.base.shapes", "arrow,donut"));
+
+        assertCustomReadme(outputDir);
+        assertCustomShapes(outputDir);
+        asserCustomShapesModernStyle(outputDir);
+    }
+
+    private void assert2dShapesReadme(Path outputDir) throws IOException {
+        Path readmeFile = outputDir.resolve("README.md");
+        assertThat(Files.exists(readmeFile), is(true));
+        String readme = readFile(readmeFile);
+        assertThat(readme, is(""
+                + "# my-project\n"
+                + "\n"
+                + "This the README\n"
+                + "\n"
+                + "## A hard-coded section\n"
+                + "\n"
+                + "Some text.\n"
+                + "\n"
+                + "## About\n"
+                + "\n"
+                + "About 2D shapes...\n"
+                + "\n"
+                + "## What is 2D Shapes\n"
+                + "\n"
+                + "A shape library composed of 2D shapes.\n"
+                + "\n"));
+    }
+
+    private void assert2dShapes(Path outputDir) throws IOException {
+        Path shapesFiles = outputDir.resolve("shapes.txt");
+        assertThat(Files.exists(shapesFiles), is(true));
+        assertThat(readFile(shapesFiles), is(""
+                + "Circle\n"
+                + "Triangle\n"
+                + "Rectangle\n"));
+    }
+
+    private void assertCustomDefaultShapes(Path outputDir) throws IOException {
+        Path shapesFile = outputDir.resolve("shapes.txt");
+        assertThat(Files.exists(shapesFile), is(true));
+        assertThat(readFile(shapesFile), is(""
+                + "Circle\n"
+                + "Triangle\n"));
+    }
+
+    private void assertCustomShapes(Path outputDir) throws IOException {
+        Path shapesFile = outputDir.resolve("shapes.txt");
+        assertThat(Files.exists(shapesFile), is(true));
+        assertThat(readFile(shapesFile), is(""
+                + "Arrow\n"
+                + "Donut\n"));
+    }
+
+    private void assert2dModernStyle(Path outputDir) throws IOException {
+        Path modernFile = outputDir.resolve("modern.txt");
+        assertThat(Files.exists(modernFile), is(true));
+        assertThat(readFile(modernFile), is(""
+                + "Modern style.\n"
+                + "\n"
+                + "Notes:\n"
+                + "- Shapes can have many styles\n"
+                + "- 2D shapes can be used for a retro style!\n"));
+    }
+
+    private void asserCustomShapesModernStyle(Path outputDir) throws IOException {
+        Path modernFile = outputDir.resolve("modern.txt");
+        assertThat(Files.exists(modernFile), is(true));
+        assertThat(readFile(modernFile), is(""
+                + "Modern style.\n"
+                + "\n"
+                + "Notes:\n"
+                + "- Shapes can have many styles\n"));
+    }
+
+    private void assertCustomReadme(Path outputDir) throws IOException {
+        Path readmeFile = outputDir.resolve("README.md");
+        assertThat(Files.exists(readmeFile), is(true));
+        String readme = readFile(readmeFile);
+        assertThat(readme, is(""
+                + "# my-project\n"
+                + "\n"
+                + "This the README\n"
+                + "\n"
+                + "## A hard-coded section\n"
+                + "\n"
+                + "Some text.\n"
+                + "\n"));
+    }
+
+    private void assertRainbowColorsReadme(Path outputDir) throws IOException {
+        Path readmeFile = outputDir.resolve("README.md");
+        assertThat(Files.exists(readmeFile), is(true));
+        String readme = readFile(readmeFile);
+        assertThat(readme, is(""
+                + "# my-project\n"
+                + "\n"
+                + "This the README\n"
+                + "\n"
+                + "## A hard-coded section\n"
+                + "\n"
+                + "Some text.\n"
+                + "\n"
+                + "## About\n"
+                + "\n"
+                + "About rainbows...\n"
+                + "\n"
+                + "## What is Rainbow\n"
+                + "\n"
+                + "A color palette composed of the rainbow colors.\n"
+                + "\n"));
+    }
+
+
+    private void assertCustomColors(Path outputDir) throws IOException {
+        Path colorsFile = outputDir.resolve("colors.txt");
+        assertThat(Files.exists(colorsFile), is(true));
+        assertThat(readFile(colorsFile), is(""
+                + "Cyan\n"
+                + "Khaki\n"));
+    }
+
+    private void assertDefaultCustomColors(Path outputDir) throws IOException {
+        Path colorsFile = outputDir.resolve("colors.txt");
+        assertThat(Files.exists(colorsFile), is(true));
+        assertThat(readFile(colorsFile), is(""
+                + "Red\n"
+                + "Green\n"
+                + "Blue\n"));
+    }
+
+    private void assertRainbowColors(Path outputDir) throws IOException {
+        Path colorsFile = outputDir.resolve("colors.txt");
+        assertThat(Files.exists(colorsFile), is(true));
+        assertThat(readFile(colorsFile), is(""
+                + "Red\n"
+                + "Orange\n"
+                + "Yellow\n"
+                + "Green\n"
+                + "Blue\n"
+                + "Indigo\n"
+                + "Violet\n"));
+    }
+
+    private void asserCustomColorsModernStyle(Path outputDir) throws IOException {
+        Path modernFile = outputDir.resolve("modern.txt");
+        assertThat(Files.exists(modernFile), is(true));
+        assertThat(readFile(modernFile), is(""
+                + "Modern style.\n"
+                + "\n"
+                + "Notes:\n"
+                + "- Colors can have many styles\n"));
+    }
+
+    private void assertRainbowModernStyle(Path outputDir) throws IOException {
+        Path modernFile = outputDir.resolve("modern.txt");
+        assertThat(Files.exists(modernFile), is(true));
+        assertThat(readFile(modernFile), is(""
+                + "Modern style.\n"
+                + "\n"
+                + "Notes:\n"
+                + "- Colors can have many styles\n"
+                + "- Rainbow has a unique style\n"));
+    }
+
+    private Path e2eZip(String name, Map<String, String> externalValues) throws IOException {
+        Path targetDir = targetDir(this.getClass());
+        Path sourceDir = targetDir.resolve("test-classes/e2e");
+        Path testOutputDir = targetDir.resolve("engine-ut");
+        Path zipFile = unique(testOutputDir, "archetype", ".zip");
+        zip(zipFile, sourceDir);
+        FileSystem fs = FileSystems.newFileSystem(zipFile, this.getClass().getClassLoader());
+        Path outputDir = unique(testOutputDir, name);
+        return e2e(fs, outputDir, externalValues);
+    }
+
+    private Path e2eDir(String name, Map<String, String> externalValues) {
+        Path targetDir = targetDir(this.getClass());
+        Path sourceDir = targetDir.resolve("test-classes/e2e");
+        Path testOutputDir = targetDir.resolve("engine-ut");
+        FileSystem fs = VirtualFileSystem.create(sourceDir);
+        Path outputDir = unique(testOutputDir, name);
+        return e2e(fs, outputDir, externalValues);
+    }
+
+    private Path e2e(FileSystem archetype, Path directory, Map<String, String> externalValues) {
+        ArchetypeEngineV2 engine = new ArchetypeEngineV2(archetype);
+        Path outputDir = engine.generate(new BatchInputResolver(), externalValues, Map.of(), n -> unique(directory, n));
         assertThat(Files.exists(outputDir), is(true));
-
-        List<String> files = Files.walk(outputDir)
-                                  .filter(p -> !isDirectory(p))
-                                  .map((p) -> pathOf(outputDir.relativize(p)))
-                                  .sorted()
-                                  .collect(toList());
-        assertThat(files, contains(
-                ".dockerignore",
-                "README.md",
-                "pom.xml",
-                "src/main/java/com/example/myproject/Main.java",
-                "src/main/java/com/example/myproject/package-info.java",
-                "src/main/resources/application.yaml"
-        ));
+        return outputDir;
     }
 }

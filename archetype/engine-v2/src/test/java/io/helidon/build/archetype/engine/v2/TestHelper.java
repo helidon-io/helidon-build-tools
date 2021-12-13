@@ -23,18 +23,22 @@ import io.helidon.build.archetype.engine.v2.ast.Node;
 import io.helidon.build.archetype.engine.v2.ast.Output;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.common.Strings;
-import io.helidon.build.common.VirtualFileSystem;
-import io.helidon.build.common.test.utils.TestFiles;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.net.URI;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.helidon.build.common.test.utils.TestFiles.targetDir;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -45,18 +49,30 @@ import static org.hamcrest.core.IsNull.notNullValue;
 class TestHelper {
 
     /**
-     * Create a unique directory.
+     * Create a unique path.
      *
      * @param parent parent
      * @param name   name
      * @return directory
      */
-    static Path uniqueDir(Path parent, String name) {
-        Path newDir = parent.resolve(name);
-        for (int i = 1; Files.exists(newDir); i++) {
-            newDir = parent.resolve(name + "-" + i);
+    static Path unique(Path parent, String name) {
+        return unique(parent, name, "");
+    }
+
+    /**
+     * Create a unique path.
+     *
+     * @param parent parent
+     * @param name   name
+     * @param suffix suffix, must be non {@code null}
+     * @return directory
+     */
+    static Path unique(Path parent, String name, String suffix) {
+        Path path = parent.resolve(name + suffix);
+        for (int i = 1; Files.exists(path); i++) {
+            path = parent.resolve(name + "-" + i + suffix);
         }
-        return newDir;
+        return path;
     }
 
     /**
@@ -71,15 +87,32 @@ class TestHelper {
     }
 
     /**
-     * Create a new archetype engine.
+     * Zip a directory.
      *
-     * @param path archetype directory path under {@code test-classes}.
-     * @return engine
+     * @param zip       target file
+     * @param directory source directory
+     * @throws IOException if an IO error occurs
      */
-    static ArchetypeEngineV2 engine(String path) {
-        Path target = TestFiles.targetDir(TestHelper.class);
-        FileSystem fileSystem = VirtualFileSystem.create(target.resolve("test-classes/" + path));
-        return new ArchetypeEngineV2(fileSystem);
+    static void zip(Path zip, Path directory) throws IOException {
+        Files.createDirectories(zip.getParent());
+        URI uri = URI.create("jar:file:" + zip);
+        try (FileSystem fs = FileSystems.newFileSystem(uri, Map.of("create", "true"))) {
+            Files.walk(directory)
+                 .sorted(Comparator.reverseOrder())
+                 .filter(Files::isRegularFile)
+                 .forEach(p -> {
+                     try {
+                         Path target = fs.getPath(directory.relativize(p).toString());
+                         Path parent = target.getParent();
+                         if (parent != null) {
+                             Files.createDirectories(parent);
+                         }
+                         Files.copy(p, target, REPLACE_EXISTING);
+                     } catch (IOException ioe) {
+                         throw new UncheckedIOException(ioe);
+                     }
+                 });
+        }
     }
 
     /**
@@ -89,7 +122,7 @@ class TestHelper {
      * @return script
      */
     static Script load(String path) {
-        Path target = TestFiles.targetDir(TestHelper.class);
+        Path target = targetDir(TestHelper.class);
         Path testResources = target.resolve("test-classes");
         return ScriptLoader.load(testResources.resolve(path));
     }
@@ -149,7 +182,7 @@ class TestHelper {
     /**
      * Create a block builder.
      *
-     * @param kind       block kind
+     * @param kind     block kind
      * @param children nested children
      * @return block builder
      */
@@ -194,7 +227,7 @@ class TestHelper {
     /**
      * Create a model map block builder.
      *
-     * @param key        model key
+     * @param key      model key
      * @param children nested children
      * @return block builder
      */
@@ -215,7 +248,7 @@ class TestHelper {
     /**
      * Create a model list block builder.
      *
-     * @param key        model key
+     * @param key      model key
      * @param children nested children
      * @return block builder
      */
@@ -270,8 +303,8 @@ class TestHelper {
     /**
      * Create an input option block builder.
      *
-     * @param name       option name
-     * @param value      option value
+     * @param name     option name
+     * @param value    option value
      * @param children nested children
      * @return block builder
      */
@@ -300,7 +333,7 @@ class TestHelper {
      *
      * @param name         option name
      * @param defaultValue default value
-     * @param children   nested children
+     * @param children     nested children
      * @return block builder
      */
     static Block inputBoolean(String name, boolean defaultValue, Block.Builder... children) {
@@ -312,7 +345,7 @@ class TestHelper {
      *
      * @param name         option name
      * @param defaultValue default value
-     * @param children   nested children
+     * @param children     nested children
      * @return block builder
      */
     static Block inputEnum(String name, String defaultValue, Block.Builder... children) {
@@ -324,7 +357,7 @@ class TestHelper {
      *
      * @param name         option name
      * @param defaultValue default value
-     * @param children   nested children
+     * @param children     nested children
      * @return block builder
      */
     static Block inputList(String name, List<String> defaultValue, Block.Builder... children) {
