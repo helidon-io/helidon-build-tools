@@ -203,8 +203,7 @@ public class DevMojo extends AbstractMojo {
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private void warnForkDeprecated() {
-        getLog().warn(Yellow.apply("fork mode is deprecated and will be removed in the next major release: incremental compiles "
-                                   + "may fail to see pom.xml changes."));
+        getLog().warn(Yellow.apply("fork mode is deprecated and will be removed in the next major release"));
         try {
             getLog().warn("press enter to continue");
             System.in.read();
