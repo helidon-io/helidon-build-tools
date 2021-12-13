@@ -41,6 +41,7 @@ import static io.helidon.build.util.ConsoleUtils.rewriteLine;
 import static io.helidon.build.util.ConsoleUtils.showCursor;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_APPLICATION_FAILED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_APPLICATION_STARTING;
+import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_COMPLETED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_BUILD_STARTING;
 import static io.helidon.build.util.DevLoopMessages.DEV_LOOP_HEADER;
@@ -69,6 +70,7 @@ public final class DevCommand extends BaseCommand {
     private static final String DEV_GOAL_SUFFIX = ":dev";
     private static final String MAVEN_LOG_LEVEL_START = "[";
     private static final String MAVEN_LOG_LEVEL_END = "]";
+    private static final String MAVEN_WARNING_LEVEL = "WARNING";
     private static final String MAVEN_ERROR_LEVEL = "ERROR";
     private static final String MAVEN_FATAL_LEVEL = "FATAL";
     private static final String SLF4J_PREFIX = "SLF4J:";
@@ -232,6 +234,8 @@ public final class DevCommand extends BaseCommand {
 
         private static final String DEBUGGER_LISTEN_MESSAGE_PREFIX = "Listening for transport";
         private static final String DOWNLOADING_MESSAGE_PREFIX = "Downloading from";
+        private static final String DOWNLOAD_MESSAGE_PREFIX = "Download";
+        private static final String PROGRESS_MESSAGE_PREFIX = "Progress ";
         private static final String BUILD_SUCCEEDED = "BUILD SUCCESS";
         private static final String BUILD_FAILED = "BUILD FAILURE";
         private static final String HELP_TAG = "[Help";
@@ -260,6 +264,7 @@ public final class DevCommand extends BaseCommand {
         private boolean insertLine;
         private boolean appendLine;
         private boolean insertLineIfError;
+        private boolean building;
 
         private TerminalModeOutput() {
             this.ansiEnabled = AnsiConsoleInstaller.areAnsiEscapesEnabled();
@@ -282,14 +287,23 @@ public final class DevCommand extends BaseCommand {
                            || line.startsWith(DEV_LOOP_MESSAGE_PREFIX)) {
                     if (line.contains(DEV_LOOP_BUILD_STARTING)) {
                         insertLineIfError = true;
+                        building = true;
+                        buildFailed = false;
+                    } else if (line.contains(DEV_LOOP_BUILD_COMPLETED)) {
+                        building = false;
+                        buildFailed = false;
                     } else if (line.contains(DEV_LOOP_APPLICATION_STARTING)) {
                         appendLine = true;
+                        building = false;
                     } else if (line.contains(DEV_LOOP_BUILD_FAILED)
                                || line.contains(DEV_LOOP_APPLICATION_FAILED)) {
                         insertLine = true;
+                        building = false;
                     }
                     restoreOutput();
                     return true;
+                } else if (building && (line.startsWith(DOWNLOAD_MESSAGE_PREFIX) || line.startsWith(PROGRESS_MESSAGE_PREFIX))) {
+                    return false;
                 } else if (line.startsWith(SLF4J_PREFIX)) {
                     return false;
                 } else if (buildFailed) {
@@ -298,10 +312,13 @@ public final class DevCommand extends BaseCommand {
                     return false;
                 } else if (line.contains(BUILD_FAILED)) {
                     buildFailed = true;
+                    building = false;
                     return false;
                 } else if (line.contains(BUILD_SUCCEEDED)
                            || line.contains(HELP_TAG)) {
                     suspendOutput();
+                    building = false;
+                    buildFailed = false;
                     return false;
                 } else {
                     return !line.equals(AT_TAG);
@@ -409,7 +426,8 @@ public final class DevCommand extends BaseCommand {
                 int levelEnd = line.indexOf(MAVEN_LOG_LEVEL_END);
                 if (levelEnd > 0) {
                     String level = line.substring(0, levelEnd);
-                    if (level.contains(MAVEN_ERROR_LEVEL)
+                    if (level.contains(MAVEN_WARNING_LEVEL)
+                        || level.contains(MAVEN_ERROR_LEVEL)
                         || level.contains(MAVEN_FATAL_LEVEL)) {
                         return line.substring(levelEnd + 2);
                     }
