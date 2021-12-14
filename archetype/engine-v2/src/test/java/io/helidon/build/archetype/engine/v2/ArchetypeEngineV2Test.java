@@ -39,6 +39,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class ArchetypeEngineV2Test {
 
     @Test
+    void testExternalDefault() {
+        Path outputDir = e2eDir("testExternalDefault",
+                Map.of(
+                        "theme", "colors",
+                        "theme.base", "rainbow"),
+                Map.of("name", "foo"));
+        assertThat(outputDir.getFileName().toString(), startsWith("foo"));
+    }
+
+    @Test
     void testProjectName() {
         Path outputDir = e2eDir("testProjectName", Map.of(
                 "theme", "colors",
@@ -78,7 +88,7 @@ class ArchetypeEngineV2Test {
 
         assertCustomReadme(outputDir);
         assertDefaultCustomColors(outputDir);
-        asserCustomColorsModernStyle(outputDir);
+        assertCustomColorsModernStyle(outputDir);
     }
 
     @Test
@@ -90,7 +100,7 @@ class ArchetypeEngineV2Test {
 
         assertCustomReadme(outputDir);
         assertCustomColors(outputDir);
-        asserCustomColorsModernStyle(outputDir);
+        assertCustomColorsModernStyle(outputDir);
     }
 
     @Test
@@ -151,6 +161,16 @@ class ArchetypeEngineV2Test {
     }
 
     @Test
+    void testExternalDefaultZip() throws IOException {
+        Path outputDir = e2eZip("testExternalDefaultZip",
+                Map.of(
+                        "theme", "colors",
+                        "theme.base", "rainbow"),
+                Map.of("name", "not-bar"));
+        assertThat(outputDir.getFileName().toString(), startsWith("not-bar"));
+    }
+
+    @Test
     void testProjectNameZip() throws IOException {
         Path outputDir = e2eZip("testProjectNameZip", Map.of(
                 "theme", "colors",
@@ -167,7 +187,7 @@ class ArchetypeEngineV2Test {
 
         assertCustomReadme(outputDir);
         assertDefaultCustomColors(outputDir);
-        asserCustomColorsModernStyle(outputDir);
+        assertCustomColorsModernStyle(outputDir);
     }
 
     @Test
@@ -191,7 +211,7 @@ class ArchetypeEngineV2Test {
 
         assertCustomReadme(outputDir);
         assertCustomColors(outputDir);
-        asserCustomColorsModernStyle(outputDir);
+        assertCustomColorsModernStyle(outputDir);
     }
 
     @Test
@@ -347,7 +367,6 @@ class ArchetypeEngineV2Test {
                 + "\n"));
     }
 
-
     private void assertCustomColors(Path outputDir) throws IOException {
         Path colorsFile = outputDir.resolve("colors.txt");
         assertThat(Files.exists(colorsFile), is(true));
@@ -378,7 +397,7 @@ class ArchetypeEngineV2Test {
                 + "Violet\n"));
     }
 
-    private void asserCustomColorsModernStyle(Path outputDir) throws IOException {
+    private void assertCustomColorsModernStyle(Path outputDir) throws IOException {
         Path modernFile = outputDir.resolve("modern.txt");
         assertThat(Files.exists(modernFile), is(true));
         assertThat(readFile(modernFile), is(""
@@ -400,6 +419,13 @@ class ArchetypeEngineV2Test {
     }
 
     private Path e2eZip(String name, Map<String, String> externalValues) throws IOException {
+        return e2eZip(name, externalValues, Map.of());
+    }
+
+    private Path e2eZip(String name,
+                        Map<String, String> externalValues,
+                        Map<String, String> externalDefaults) throws IOException {
+
         Path targetDir = targetDir(this.getClass());
         Path sourceDir = targetDir.resolve("test-classes/e2e");
         Path testOutputDir = targetDir.resolve("engine-ut");
@@ -407,21 +433,28 @@ class ArchetypeEngineV2Test {
         zip(zipFile, sourceDir);
         FileSystem fs = FileSystems.newFileSystem(zipFile, this.getClass().getClassLoader());
         Path outputDir = unique(testOutputDir, name);
-        return e2e(fs, outputDir, externalValues);
+        return e2e(fs, outputDir, externalValues, externalDefaults);
     }
 
     private Path e2eDir(String name, Map<String, String> externalValues) {
+        return e2eDir(name, externalValues, Map.of());
+    }
+
+    private Path e2eDir(String name, Map<String, String> externalValues, Map<String, String> externalDefaults) {
         Path targetDir = targetDir(this.getClass());
         Path sourceDir = targetDir.resolve("test-classes/e2e");
         Path testOutputDir = targetDir.resolve("engine-ut");
         FileSystem fs = VirtualFileSystem.create(sourceDir);
         Path outputDir = unique(testOutputDir, name);
-        return e2e(fs, outputDir, externalValues);
+        return e2e(fs, outputDir, externalValues, externalDefaults);
     }
 
-    private Path e2e(FileSystem archetype, Path directory, Map<String, String> externalValues) {
+    private Path e2e(FileSystem archetype,
+                     Path directory,
+                     Map<String, String> externalValues,
+                     Map<String, String> externalDefaults) {
         ArchetypeEngineV2 engine = new ArchetypeEngineV2(archetype);
-        Path outputDir = engine.generate(new BatchInputResolver(), externalValues, Map.of(), n -> unique(directory, n));
+        Path outputDir = engine.generate(new BatchInputResolver(), externalValues, externalDefaults, n -> unique(directory, n));
         assertThat(Files.exists(outputDir), is(true));
         return outputDir;
     }

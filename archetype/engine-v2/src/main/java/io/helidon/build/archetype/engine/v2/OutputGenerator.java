@@ -64,16 +64,16 @@ public class OutputGenerator implements Output.Visitor<Context> {
 
     @Override
     public VisitResult visitTransformation(Transformation transformation, Context context) {
-        // transformations are scope dependent, though they are not implemented as such
-        // TODO add something in context to handle scoped transformations
+        // transformations are not scoped
+        // visiting order applies, can be overridden.
         transformationId = transformation.id();
+        transformations.put(transformationId, new LinkedList<>());
         return VisitResult.CONTINUE;
     }
 
     @Override
     public VisitResult visitReplace(Replace replace, Context context) {
-        transformations.computeIfAbsent(transformationId, id -> new LinkedList<>())
-                       .add(replace);
+        transformations.get(transformationId).add(replace);
         return VisitResult.CONTINUE;
     }
 
