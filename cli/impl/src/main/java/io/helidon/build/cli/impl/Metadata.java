@@ -256,7 +256,7 @@ public class Metadata {
      * @return The notes, in sorted order.
      */
     public Map<MavenVersion, String> cliReleaseNotesOf(MavenVersion latestHelidonVersion,
-                                                       MavenVersion sinceCliVersion){
+                                                       MavenVersion sinceCliVersion) {
         requireNonNull(latestHelidonVersion, "latestHelidonVersion must not be null");
         requireNonNull(sinceCliVersion, "sinceCliVersion must not be null");
         final ConfigProperties props = propertiesOf(latestHelidonVersion, true);
@@ -326,6 +326,19 @@ public class Metadata {
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
+    }
+
+    /**
+     * Get the cache directory for the given helidon version.
+     *
+     * @param helidonVersion The version.
+     * @return The directory.
+     */
+    public Path directoryOf(MavenVersion helidonVersion) {
+        final Path versionDir = rootDir.resolve(requireNonNull(helidonVersion).toString());
+        final Path checkFile = versionDir.resolve(LAST_UPDATE_FILE_NAME);
+        checkForUpdates(helidonVersion, checkFile, false);
+        return requireHelidonVersionDir(versionDir);
     }
 
     /**

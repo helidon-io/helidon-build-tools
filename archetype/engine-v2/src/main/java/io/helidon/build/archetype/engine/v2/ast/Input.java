@@ -334,7 +334,7 @@ public abstract class Input extends Block {
 
         @Override
         public Value defaultValue() {
-            return defaultValue != null ? Value.create(defaultValue) : null;
+            return Value.create(defaultValue);
         }
 
         @Override
@@ -502,7 +502,7 @@ public abstract class Input extends Block {
 
         @Override
         public Value defaultValue() {
-            return defaultValue != null ? Value.create(defaultValue) : null;
+            return Value.create(defaultValue);
         }
 
         @Override

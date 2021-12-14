@@ -18,7 +18,6 @@ package io.helidon.build.cli.impl;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -40,11 +39,14 @@ import io.helidon.build.archetype.engine.v1.FlowNodeControllers;
 import io.helidon.build.archetype.engine.v1.FlowNodeControllers.FlowNodeController;
 import io.helidon.build.archetype.engine.v1.Maps;
 import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
+import io.helidon.build.archetype.engine.v2.BatchInputResolver;
+import io.helidon.build.archetype.engine.v2.InputResolver;
 import io.helidon.build.archetype.engine.v2.InvocationException;
 import io.helidon.build.archetype.engine.v2.TerminalInputResolver;
 import io.helidon.build.archetype.engine.v2.UnresolvedInputException;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
 import io.helidon.build.common.RequirementFailure;
+import io.helidon.build.common.VirtualFileSystem;
 import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
@@ -356,10 +358,11 @@ abstract class ArchetypeInvoker {
             if (initOptions.archetypeNameOption() != null) {
                 params.put(ARCHETYPE_BASE_PROPERTY, initOptions.archetypeNameOption());
             }
+            InputResolver inputResolver;
             if (isInteractive()) {
+                inputResolver = new TerminalInputResolver(System.in);
 
                 // Set remaining command-line options as params and user config as defaults
-
                 if (initOptions.projectNameOption() != null) {
                     params.put(PROJECT_NAME_PROPERTY, initOptions.projectNameOption());
                 } else {
@@ -382,9 +385,9 @@ abstract class ArchetypeInvoker {
                 }
 
             } else {
+                inputResolver = new BatchInputResolver();
 
                 // Batch mode, so pass merged init options as params
-
                 params.put(PROJECT_NAME_PROPERTY, initOptions.projectName());
                 params.put(GROUP_ID_PROPERTY, initOptions.groupId());
                 params.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
@@ -394,7 +397,7 @@ abstract class ArchetypeInvoker {
             ArchetypeEngineV2 engine = new ArchetypeEngineV2(archetype());
             Map<String, String> initProperties = initOptions().initProperties();
             try {
-                return engine.generate(new TerminalInputResolver(System.in), initProperties, defaults, projectDirSupplier());
+                return engine.generate(inputResolver, initProperties, defaults, projectDirSupplier());
             } catch (InvocationException ie) {
                 if (ie.getCause() instanceof UnresolvedInputException) {
                     UnresolvedInputException uie = (UnresolvedInputException) ie.getCause();
@@ -415,24 +418,18 @@ abstract class ArchetypeInvoker {
             return EngineVersion.V2;
         }
 
-        private static FileSystem archetype() {
-            // TODO This is a temporary method which need to be removed
-            //  Instead, a mechanism for passing archetype to cli has to be found.
-
-
-            // TODO grab the archetype path from initOptions if it is there
-            //   If the path ends with .zip, create a zip filesystem
-            //   Otherwise it is a directory create a virtual filesystem
-            // TODO otherwise use a new method in metadata to get the path fo the archetype.zip
+        private FileSystem archetype() {
             try {
-                Path tempDirectory = Files.createTempDirectory("archetype");
-                Path data = tempDirectory.resolve("cli-data.zip");
-                InputStream is = ArchetypeInvoker.class.getResourceAsStream("/cli-data.zip");
-                if (is == null) {
-                    throw new IllegalArgumentException("cli-data.zip not found in class-path");
+                String archetypePath = initOptions().archetypePath();
+                if (archetypePath != null) {
+                    Path archetype = Path.of(archetypePath);
+                    if (Files.isDirectory(archetype)) {
+                        return VirtualFileSystem.create(archetype);
+                    }
+                    return FileSystems.newFileSystem(archetype, this.getClass().getClassLoader());
                 }
-                Files.copy(is, data);
-                return FileSystems.newFileSystem(data, null);
+                Path archetype = metadata().directoryOf(toMavenVersion(initOptions().helidonVersion()));
+                return VirtualFileSystem.create(archetype);
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }

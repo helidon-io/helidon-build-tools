@@ -48,6 +48,8 @@ import static org.hamcrest.core.IsNull.notNullValue;
  */
 class TestHelper {
 
+    private static final boolean IS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
+
     /**
      * Create a unique path.
      *
@@ -95,7 +97,11 @@ class TestHelper {
      */
     static void zip(Path zip, Path directory) throws IOException {
         Files.createDirectories(zip.getParent());
-        URI uri = URI.create("jar:file:" + zip);
+        String uriPrefix = "jar:file:";
+        if (IS_WINDOWS) {
+            uriPrefix += "/";
+        }
+        URI uri = URI.create(uriPrefix + zip.toString().replace("\\", "/"));
         try (FileSystem fs = FileSystems.newFileSystem(uri, Map.of("create", "true"))) {
             Files.walk(directory)
                  .sorted(Comparator.reverseOrder())

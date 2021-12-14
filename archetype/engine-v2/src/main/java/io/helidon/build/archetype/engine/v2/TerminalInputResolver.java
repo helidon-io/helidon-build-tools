@@ -95,14 +95,14 @@ public class TerminalInputResolver extends InputResolver {
         }
         try {
             printLabel(input);
-            Value defaultValue = defaultValue(input, context);
-            if (defaultValue == null) {
-                defaultValue = Value.NULL;
+            String defaultValue = defaultValue(input, context).asString();
+            if (defaultValue != null) {
+                defaultValue = context.interpolate(defaultValue);
             }
-            String defaultText = defaultValue != Value.NULL ? BoldBlue.apply(defaultValue.asString()) : null;
+            String defaultText = defaultValue != null ? BoldBlue.apply(defaultValue) : null;
             String response = prompt("Enter text", defaultText);
             if (response == null || response.trim().length() == 0) {
-                context.push(input.name(), defaultValue);
+                context.push(input.name(), Value.create(defaultValue));
             } else {
                 context.push(input.name(), Value.create(response));
             }
@@ -195,7 +195,6 @@ public class TerminalInputResolver extends InputResolver {
         if (label != null && !label.equals(lastLabel)) {
             System.out.println(Bold.apply(label));
         }
-        System.out.println(Bold.apply(input.prompt()));
     }
 
     private static void printOptions(Input.Options input) {
