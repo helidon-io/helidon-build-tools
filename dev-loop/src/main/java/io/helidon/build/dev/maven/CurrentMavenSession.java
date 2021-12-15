@@ -15,13 +15,10 @@
  */
 package io.helidon.build.dev.maven;
 
-import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.maven.artifact.resolver.filter.CumulativeScopeArtifactFilter;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.project.MavenProject;
 
 import static java.util.Objects.requireNonNull;
 
@@ -81,8 +78,6 @@ class CurrentMavenSession {
 
             MavenSession session = (MavenSession) fullBuildSession;
             session.setCurrentProject(session.getAllProjects().get(0));
-            MavenProject project = session.getCurrentProject();
-            project.setArtifactFilter(new CumulativeScopeArtifactFilter(List.of("compile+runtime")));
             CURRENT_SESSION.set(session);
             systemProperties.remove(MAVEN_SESSION_PROPERTY);
             return session;

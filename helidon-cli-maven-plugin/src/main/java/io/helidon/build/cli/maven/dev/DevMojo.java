@@ -193,8 +193,8 @@ public class DevMojo extends AbstractMojo {
         final DevLoopBuildConfig config = devLoop == null ? new DevLoopBuildConfig() : devLoop;
         config.validate();
         if (resolve) {
-            final MavenEnvironment env = new MavenEnvironment(project, session, mojoDescriptorCreator, defaultLifeCycles,
-                                                              standardDelegate, delegates, plugins);
+            final MavenEnvironment env = new MavenEnvironment(project, session, mojoDescriptorCreator,
+                    defaultLifeCycles, standardDelegate, delegates, plugins, mojoExecutor);
             final MavenGoalReferenceResolver resolver = new MavenGoalReferenceResolver(env);
             config.resolve(resolver);
         }
