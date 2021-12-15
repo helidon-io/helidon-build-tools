@@ -219,7 +219,7 @@ public class JarMojo extends AbstractMojo {
         PluginDescriptor pluginDescriptor = (PluginDescriptor) getPluginContext().get("pluginDescriptor");
         return pluginDescriptor.getArtifacts().stream()
                         .filter(artifact -> artifact.getArtifactId().equals("helidon-archetype-engine-v2")
-                                && artifact.getClassifier().equals("schema")
+                                && artifact.getClassifier().equals("schema-2.0")
                                 && artifact.getType().equals("xsd")
                         ).findFirst().map(Artifact::getFile).orElse(null);
     }

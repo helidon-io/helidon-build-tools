@@ -16,76 +16,113 @@
 
 package io.helidon.build.archetype.engine.v2;
 
-import io.helidon.build.archetype.engine.v2.archive.Archetype;
-import io.helidon.build.archetype.engine.v2.archive.ArchetypeFactory;
-import io.helidon.build.archetype.engine.v2.interpreter.ContextAST;
-import io.helidon.build.archetype.engine.v2.interpreter.Flow;
-
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.function.Consumer;
 
+import io.helidon.build.archetype.engine.v2.ast.Script;
+import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.common.test.utils.TestFiles;
+
+import org.junit.jupiter.api.Test;
+
+import static io.helidon.build.archetype.engine.v2.TestHelper.load;
+import static io.helidon.build.archetype.engine.v2.TestHelper.readFile;
+import static io.helidon.build.archetype.engine.v2.TestHelper.unique;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class OutputGeneratorTest {
+/**
+ * Tests {@link OutputGenerator}.
+ */
+class OutputGeneratorTest {
 
-    private static Path tempDir;
-    private Archetype archetype;
-
-    @BeforeAll
-    static void bootstrap() throws IOException {
-        tempDir = Files.createTempDirectory("generated");
+    @Test
+    void testFile() throws IOException {
+        Path outputDir = generate("generator/file.xml");
+        Path expected = outputDir.resolve("file2.txt");
+        assertThat(Files.exists(expected), is(true));
+        assertThat(readFile(expected), is("foo\n"));
     }
 
     @Test
-    public void testOutputFileGenerator() throws IOException {
-        List<String> expectedFiles = List.of("generatedDocker.xml", "Readme2.md", "pom.xml", "README.md");
-        archetype = getArchetype();
-
-        Flow flow = Flow.builder().archetype(archetype).startDescriptorPath("archetype.xml").build();
-        flow.build(new ContextAST());
-        flow.build(new ContextAST());
-        OutputGenerator generator = new OutputGenerator(flow.result().get());
-
-        generator.generate(tempDir.toFile());
-
-        assertThat(tempDir.toFile().listFiles(), is(notNullValue()));
-
-        List<File> resultFiles = new ArrayList<>();
-        getFiles(tempDir.toFile(), resultFiles);
-        List<String> generatedFiles = resultFiles.stream()
-                .map(File::getName)
-                .collect(Collectors.toList());
-
-        assertThat(true, is(generatedFiles.size() == expectedFiles.size()));
-        assertThat(true, is(generatedFiles.containsAll(expectedFiles)));
+    void testTemplate() throws IOException {
+        Path outputDir = generate("generator/template.xml");
+        Path expected = outputDir.resolve("template1.txt");
+        assertThat(Files.exists(expected), is(true));
+        assertThat(readFile(expected), is("bar\n"));
     }
 
-    private void getFiles(File file, List<File> files) {
-        if (file.isDirectory()) {
-            File[] listFiles = file.listFiles();
-            for (File f : listFiles) {
-                getFiles(f, files);
-            }
-        } else {
-            files.add(file);
-        }
+    @Test
+    void testFiles() throws IOException {
+        Path outputDir = generate("generator/files.xml");
+        Path expected1 = outputDir.resolve("file1.xml");
+        assertThat(Files.exists(expected1), is(true));
+        assertThat(readFile(expected1), is("<foo/>\n"));
+        Path expected2 = outputDir.resolve("file2.xml");
+        assertThat(Files.exists(expected2), is(true));
+        assertThat(readFile(expected2), is("<bar/>\n"));
     }
 
-    private Archetype getArchetype() {
-        ClassLoader classLoader = getClass().getClassLoader();
-        File file = new File(classLoader.getResource("outputGenerator-test-resources").getFile());
-        archetype = ArchetypeFactory.create(file);
-        return archetype;
+    @Test
+    void testTemplates() throws IOException {
+        Path outputDir = generate("generator/templates.xml");
+        Path expected1 = outputDir.resolve("file1.txt");
+        assertThat(Files.exists(expected1), is(true));
+        assertThat(readFile(expected1), is("red\n"));
+        Path expected2 = outputDir.resolve("file2.txt");
+        assertThat(Files.exists(expected2), is(true));
+        assertThat(readFile(expected2), is("circle\n"));
     }
 
+    @Test
+    void testTransformation() {
+        InvocationException ex = assertThrows(InvocationException.class,
+                () -> generate("generator/transformation.xml"));
+        assertThat(ex.getCause(), is(instanceOf(IllegalArgumentException.class)));
+        assertThat(ex.getCause().getMessage(), is("Unresolved transformation: t1"));
+    }
+
+    @Test
+    void testReplacement() throws IOException {
+        Path outputDir = generate("generator/replacement.xml",
+                ctx -> ctx.put("package", Value.create("com.example")));
+        Path expected = outputDir.resolve("com/example/file1.txt");
+        assertThat(Files.exists(expected), is(true));
+        assertThat(readFile(expected), is("foo\n"));
+    }
+
+    @Test
+    void testProcessedValues() throws IOException {
+        Path outputDir = generate("generator/processed-values.xml");
+        Path expected = outputDir.resolve("shapes.txt");
+        assertThat(Files.exists(expected), is(true));
+        assertThat(readFile(expected), is(""
+                + "Here is a red circle\n"
+                + "Here is a blue triangle\n"
+                + "Here is a green square\n"
+                + "Here is a yellow rectangle\n"
+                + "\n"));
+    }
+
+    private static Path generate(String path) {
+        return generate(path, ctx -> {});
+    }
+
+    private static Path generate(String path, Consumer<Context> initializer) {
+        Script script = load(path);
+        Path scriptPath = script.scriptPath();
+        String dirname = scriptPath.getFileName().toString().replaceAll(".xml", "");
+        Path target = TestFiles.targetDir(OutputGeneratorTest.class);
+        Path outputDir = unique(target.resolve("generator-ut/"), dirname);
+        Context context = Context.create(script.scriptPath().getParent());
+        initializer.accept(context);
+        MergedModel mergedModel = MergedModel.resolveModel(script, context);
+        OutputGenerator outputGenerator = new OutputGenerator(mergedModel, outputDir);
+        Controller.walk(outputGenerator, script, context);
+        return outputDir;
+    }
 }

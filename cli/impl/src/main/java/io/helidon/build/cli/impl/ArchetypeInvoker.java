@@ -18,6 +18,10 @@ package io.helidon.build.cli.impl;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
@@ -35,12 +39,14 @@ import io.helidon.build.archetype.engine.v1.FlowNodeControllers;
 import io.helidon.build.archetype.engine.v1.FlowNodeControllers.FlowNodeController;
 import io.helidon.build.archetype.engine.v1.Maps;
 import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
+import io.helidon.build.archetype.engine.v2.BatchInputResolver;
+import io.helidon.build.archetype.engine.v2.InputResolver;
+import io.helidon.build.archetype.engine.v2.InvocationException;
+import io.helidon.build.archetype.engine.v2.TerminalInputResolver;
 import io.helidon.build.archetype.engine.v2.UnresolvedInputException;
-import io.helidon.build.archetype.engine.v2.archive.Archetype;
-import io.helidon.build.archetype.engine.v2.archive.ArchetypeFactory;
-import io.helidon.build.archetype.engine.v2.prompter.CLIPrompter;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
 import io.helidon.build.common.RequirementFailure;
+import io.helidon.build.common.VirtualFileSystem;
 import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
@@ -210,7 +216,7 @@ abstract class ArchetypeInvoker {
 
         /**
          * Set the project directory supplier.
-         *
+         * <p>
          * The project directory supplier takes a project name and returns
          * a Path to the project directory.
          *
@@ -230,8 +236,8 @@ abstract class ArchetypeInvoker {
          */
         ArchetypeInvoker build() {
             if (EngineVersion.V2.equals(initOptions.engineVersion())
-                || initOptions.archetypePath() != null
-                || toMavenVersion(initOptions.helidonVersion()).isGreaterThanOrEqualTo(HELIDON_V3)) {
+                    || initOptions.archetypePath() != null
+                    || toMavenVersion(initOptions.helidonVersion()).isGreaterThanOrEqualTo(HELIDON_V3)) {
                 return new V2Invoker(this);
             }
             return new V1Invoker(this);
@@ -310,13 +316,13 @@ abstract class ArchetypeInvoker {
      * Invoker for the archetype V2 engine.
      */
     static class V2Invoker extends ArchetypeInvoker {
-        private static final String ENTRY_POINT_DESCRIPTOR = "flavor.xml";
+
         private static final String FLAVOR_PROPERTY = "flavor";
-        private static final String PROJECT_NAME_PROPERTY = "project.name";
-        private static final String GROUP_ID_PROPERTY = "project.groupId";
-        private static final String ARTIFACT_ID_PROPERTY = "project.artifactId";
+        private static final String PROJECT_NAME_PROPERTY = "name";
+        private static final String GROUP_ID_PROPERTY = "groupId";
+        private static final String ARTIFACT_ID_PROPERTY = "artifactId";
         private static final String PACKAGE_NAME_PROPERTY = "package";
-        private static final String HELIDON_VERSION_PROPERTY = "helidon.version";
+        private static final String HELIDON_VERSION_PROPERTY = "helidon-version";
         private static final String BUILD_SYSTEM_PROPERTY = "build-system";
         private static final String ARCHETYPE_BASE_PROPERTY = "base";
         private static final String SUPPORTED_BUILD_SYSTEM = "maven"; // We only support one
@@ -326,87 +332,84 @@ abstract class ArchetypeInvoker {
         }
 
         @Override
-        Path invoke() throws IOException {
+        Path invoke() {
             InitOptions initOptions = initOptions();
-            Map<String, String> defaults = new HashMap<>();
+            Map<String, String> externalDefaults = new HashMap<>();
 
             // Initialize params with any properties passed on the command-line; options will take precedence
-            Map<String, String> params = new HashMap<>(initProperties());
+            Map<String, String> externalValues = new HashMap<>(initProperties());
 
             // We've already got helidon version, don't prompt again. Note that this will not override
             // any "helidon.version" command-line property as that is already set in InitOptions
-            params.put(HELIDON_VERSION_PROPERTY, initOptions.helidonVersion());
+            externalValues.put(HELIDON_VERSION_PROPERTY, initOptions.helidonVersion());
 
             // Ensure that flavor is lower case if present.
-            params.computeIfPresent(FLAVOR_PROPERTY, (key, value) -> value.toLowerCase());
+            externalValues.computeIfPresent(FLAVOR_PROPERTY, (key, value) -> value.toLowerCase());
 
-            // Don't prompt for build system since we only support one for now
-            params.put(BUILD_SYSTEM_PROPERTY, SUPPORTED_BUILD_SYSTEM);
+            // Set build if provided on command-line
+            if (initOptions.buildOption() != null) {
+                externalValues.put(BUILD_SYSTEM_PROPERTY, initOptions.buildOption().toString());
+            }
 
             // Set flavor if provided on command-line
             if (initOptions.flavorOption() != null) {
-                params.put(FLAVOR_PROPERTY, initOptions.flavorOption().toString());
+                externalValues.put(FLAVOR_PROPERTY, initOptions.flavorOption().toString());
             }
 
             // Set base if provided on command-line
             if (initOptions.archetypeNameOption() != null) {
-                params.put(ARCHETYPE_BASE_PROPERTY, initOptions.archetypeNameOption());
+                externalValues.put(ARCHETYPE_BASE_PROPERTY, initOptions.archetypeNameOption());
             }
+            InputResolver inputResolver;
             if (isInteractive()) {
+                inputResolver = new TerminalInputResolver(System.in);
 
                 // Set remaining command-line options as params and user config as defaults
-
                 if (initOptions.projectNameOption() != null) {
-                    params.put(PROJECT_NAME_PROPERTY, initOptions.projectNameOption());
+                    externalValues.put(PROJECT_NAME_PROPERTY, initOptions.projectNameOption());
                 } else {
-                    defaults.put(PROJECT_NAME_PROPERTY, initOptions.projectName());
+                    externalDefaults.put(PROJECT_NAME_PROPERTY, initOptions.projectName());
                 }
                 if (initOptions.groupIdOption() != null) {
-                    params.put(GROUP_ID_PROPERTY, initOptions.groupIdOption());
+                    externalValues.put(GROUP_ID_PROPERTY, initOptions.groupIdOption());
                 } else {
-                    defaults.put(GROUP_ID_PROPERTY, initOptions.groupId());
+                    externalDefaults.put(GROUP_ID_PROPERTY, initOptions.groupId());
                 }
                 if (initOptions.artifactIdOption() != null) {
-                    params.put(ARTIFACT_ID_PROPERTY, initOptions.artifactIdOption());
+                    externalValues.put(ARTIFACT_ID_PROPERTY, initOptions.artifactIdOption());
                 } else {
-                    defaults.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
+                    externalDefaults.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
                 }
                 if (initOptions.packageNameOption() != null) {
-                    params.put(PACKAGE_NAME_PROPERTY, initOptions.packageNameOption());
+                    externalValues.put(PACKAGE_NAME_PROPERTY, initOptions.packageNameOption());
                 } else {
-                    defaults.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
+                    externalDefaults.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
                 }
-
             } else {
+                inputResolver = new BatchInputResolver();
 
                 // Batch mode, so pass merged init options as params
-
-                params.put(PROJECT_NAME_PROPERTY, initOptions.projectName());
-                params.put(GROUP_ID_PROPERTY, initOptions.groupId());
-                params.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
-                params.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
+                externalValues.put(PROJECT_NAME_PROPERTY, initOptions.projectName());
+                externalValues.put(GROUP_ID_PROPERTY, initOptions.groupId());
+                externalValues.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
+                externalValues.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
             }
 
-            boolean batch = !isInteractive();
-            ArchetypeEngineV2 engine = new ArchetypeEngineV2(
-                    getArchetype(initOptions().archetypePath()),
-                    ENTRY_POINT_DESCRIPTOR,
-                    new CLIPrompter(),
-                    params,
-                    defaults,
-                    batch,
-                    batch,
-                    List.of());
+            ArchetypeEngineV2 engine = new ArchetypeEngineV2(archetype());
             try {
-                return engine.generate(projectDirSupplier());
-            } catch (UnresolvedInputException e) {
-                String inputPath = e.inputPath();
-                String option = optionName(inputPath);
-                if (option == null) {
-                    throw new RequirementFailure("Missing required option: -D%s=<value>", inputPath);
-                } else {
-                    throw new RequirementFailure("Missing required option: %s <value> or -D%s=<value>", option, inputPath);
+                return engine.generate(inputResolver, externalValues, externalDefaults, projectDirSupplier());
+            } catch (InvocationException ie) {
+                if (ie.getCause() instanceof UnresolvedInputException) {
+                    UnresolvedInputException uie = (UnresolvedInputException) ie.getCause();
+                    String inputPath = uie.inputPath();
+                    String option = optionName(inputPath);
+                    if (option == null) {
+                        throw new RequirementFailure("Missing required option: -D%s=<value>", inputPath);
+                    } else {
+                        throw new RequirementFailure("Missing required option: %s <value> or -D%s=<value>", option, inputPath);
+                    }
                 }
+                throw ie;
             }
         }
 
@@ -415,18 +418,22 @@ abstract class ArchetypeInvoker {
             return EngineVersion.V2;
         }
 
-        /**
-         * Get the archetype file.
-         *
-         * @param archetypePath path to archetype
-         * @return archetype
-         */
-        private Archetype getArchetype(String archetypePath) throws IOException {
-            File archetype = Path.of(archetypePath).toFile();
-            if (!archetype.exists()) {
-                throw new IOException("Archetype archive does not exist at path : " + archetypePath);
+        private FileSystem archetype() {
+            try {
+                String archetypePath = initOptions().archetypePath();
+                if (archetypePath != null) {
+                    Path archetype = Path.of(archetypePath);
+                    if (Files.isDirectory(archetype)) {
+                        return VirtualFileSystem.create(archetype);
+                    }
+                    return FileSystems.newFileSystem(archetype, this.getClass().getClassLoader());
+                }
+                // TODO this is subject to changes depending on how the archetype bundling
+                Path archetype = metadata().directoryOf(toMavenVersion(initOptions().helidonVersion()));
+                return VirtualFileSystem.create(archetype);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
             }
-            return ArchetypeFactory.create(archetype);
         }
 
         private static String optionName(String inputPath) {

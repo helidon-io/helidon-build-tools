@@ -25,6 +25,7 @@ import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
+import io.helidon.build.cli.impl.ArchetypeInvoker.EngineVersion;
 import io.helidon.build.cli.impl.InitOptions.BuildSystem;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
 import io.helidon.build.common.Log;
@@ -104,22 +105,25 @@ public final class InitCommand extends BaseCommand {
                 .projectDir(this::initProjectDir)
                 .build();
 
-        if (archetypeInvoker.engineVersion() == V1 && !batch) {
+        EngineVersion engineVersion = archetypeInvoker.engineVersion();
+        if (engineVersion == V1 && !batch) {
             String[] flavorOptions = new String[]{"SE", "MP"};
             int flavorIndex = initOptions.flavor() == Flavor.SE ? 0 : 1;
             flavorIndex = prompt("Helidon flavor", flavorOptions, flavorIndex);
             initOptions.flavor(Flavor.valueOf(flavorOptions[flavorIndex]));
         }
-        initOptions.applyConfig(config);
+        initOptions.applyConfig(config, engineVersion);
 
         Path projectDir = archetypeInvoker.invoke();
 
-        // Create config file that includes feature information
-        ProjectConfig configFile = projectConfig(projectDir);
-        configFile.property(PROJECT_DIRECTORY, projectDir.toString());
-        configFile.property(PROJECT_FLAVOR, initOptions.flavor().toString());
-        configFile.property(HELIDON_VERSION_PROPERTY, helidonVersion);
-        configFile.store();
+        if (engineVersion == V1) {
+            // Create config file that includes feature information
+            ProjectConfig configFile = projectConfig(projectDir);
+            configFile.property(PROJECT_DIRECTORY, projectDir.toString());
+            configFile.property(PROJECT_FLAVOR, initOptions.flavor().toString());
+            configFile.property(HELIDON_VERSION_PROPERTY, helidonVersion);
+            configFile.store();
+        }
 
         String dir = BoldBrightCyan.apply(projectDir);
         Prompter.displayLine("Switch directory to " + dir + " to use CLI");

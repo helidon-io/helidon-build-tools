@@ -33,3 +33,4 @@ HELIDON_THIRD_PARTY_LICENSES.xml
 /node_modules/
 /node/
 /dist/
+/common/common/src/test/resources/vfs/

@@ -21,7 +21,9 @@ import java.util.Map;
 import io.helidon.build.cli.harness.CommandFragment;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.KeyValue;
+import io.helidon.build.cli.impl.ArchetypeInvoker.EngineVersion;
 import io.helidon.build.common.SubstitutionVariables;
+import io.helidon.build.common.SubstitutionVariables.NotFoundAction;
 
 import static io.helidon.build.common.SubstitutionVariables.systemPropertyOrEnvVarSource;
 
@@ -51,10 +53,11 @@ public final class InitOptions {
     private Flavor flavor;
     private String helidonVersion;
     private final BuildSystem build;
+    private final BuildSystem buildOption;
     private final String archetypeName;
     private final String archetypeNameOption;
     private final String archetypePath;
-    private final ArchetypeInvoker.EngineVersion engineVersion;
+    private final EngineVersion engineVersion;
     private final Flavor flavorOption;
     private final String projectNameOption;
     private final String groupIdOption;
@@ -95,19 +98,18 @@ public final class InitOptions {
     @Creator
     InitOptions(
             @KeyValue(name = "flavor", description = "Helidon flavor") Flavor flavor,
-            @KeyValue(name = "build", description = "Build type", defaultValue = "MAVEN") BuildSystem build,
+            @KeyValue(name = "build", description = "Build type") BuildSystem build,
             @KeyValue(name = "version", description = "Helidon version") String version,
-            @KeyValue(name = "archetype", description = "Archetype name")
-                    String archetypeName,
+            @KeyValue(name = "archetype", description = "Archetype name") String archetypeName,
             @KeyValue(name = "groupid", description = "Project's group ID") String groupId,
             @KeyValue(name = "artifactid", description = "Project's artifact ID") String artifactId,
             @KeyValue(name = "package", description = "Project's package name") String packageName,
             @KeyValue(name = "name", description = "Project's name") String projectName,
-            @KeyValue(name = "archetype-path", description = "Archetype's path", visible = false) String archetypePath,
-            @KeyValue(name = "engine-version", description = "Archetype's engine version", visible = false)
-                    String engineVersion) {
+            @KeyValue(name = "archetype-path", description = "Archetype path", visible = false) String archetypePath,
+            @KeyValue(name = "engine-version", description = "Archetype engine version", visible = false) String engineVersion) {
 
-        this.build = build;
+        this.buildOption = build;
+        this.build = build == null ? BuildSystem.MAVEN : build;
         this.helidonVersion = version;
         this.archetypeNameOption = archetypeName;
         this.archetypeName = archetypeName == null ? DEFAULT_ARCHETYPE_NAME : archetypeName;
@@ -128,13 +130,13 @@ public final class InitOptions {
         this.packageName = packageName;
     }
 
-    private ArchetypeInvoker.EngineVersion getEngineVersion(String version) {
+    private EngineVersion getEngineVersion(String version) {
         if (version == null) {
             return null;
         }
         return version.equalsIgnoreCase("v2")
-                ? ArchetypeInvoker.EngineVersion.V2
-                : ArchetypeInvoker.EngineVersion.V1;
+                ? EngineVersion.V2
+                : EngineVersion.V1;
     }
 
     /**
@@ -180,6 +182,15 @@ public final class InitOptions {
      */
     void helidonVersion(String helidonVersion) {
         this.helidonVersion = helidonVersion;
+    }
+
+    /**
+     * Get the build system option.
+     *
+     * @return BuildSystem
+     */
+    BuildSystem buildOption() {
+        return buildOption;
     }
 
     /**
@@ -295,28 +306,49 @@ public final class InitOptions {
      *
      * @return engine version, may be null.
      */
-    ArchetypeInvoker.EngineVersion engineVersion() {
+    EngineVersion engineVersion() {
         return engineVersion;
     }
 
     /**
      * Transform the init options by applying the given user configuration.
      *
-     * @param config user configuration
+     * @param config        user configuration
+     * @param engineVersion archetype engine version
      */
-    void applyConfig(UserConfig config) {
-        SubstitutionVariables substitutions = SubstitutionVariables.of(key -> {
-            switch (key.toLowerCase()) {
-                case "init_flavor":
-                    return flavor.toString();
-                case "init_archetype":
-                    return archetypeName;
-                case "init_build":
-                    return build.toString();
-                default:
-                    return null;
-            }
-        }, systemPropertyOrEnvVarSource());
+    void applyConfig(UserConfig config, EngineVersion engineVersion) {
+        SubstitutionVariables substitutions;
+        if (engineVersion == EngineVersion.V1) {
+            substitutions = SubstitutionVariables.of(NotFoundAction.Fail, key -> {
+                switch (key.toLowerCase()) {
+                    case "init_flavor":
+                        return flavor.toString();
+                    case "init_archetype":
+                        return archetypeName;
+                    case "init_build":
+                        return build.toString();
+                    default:
+                        return null;
+                }
+            }, systemPropertyOrEnvVarSource());
+        } else {
+            // Cannot substitute anything as the values are not resolved yet.
+            // Map the "config" variables to archetype variables to let the engine perform the substitutions
+            // when the input values are resolved
+            // Note that this mapping is tightly coupled with the helidon archetype
+            substitutions = SubstitutionVariables.of(NotFoundAction.AsIs, key -> {
+                switch (key.toLowerCase()) {
+                    case "init_flavor":
+                        return "${flavor}";
+                    case "init_archetype":
+                        return "${flavor.base}";
+                    case "init_build":
+                        return "${flavor.base.build-system}";
+                    default:
+                        return null;
+                }
+            }, systemPropertyOrEnvVarSource());
+        }
         String projectNameArg = projectName;
         projectName = config.projectName(projectNameArg, artifactId, substitutions);
         groupId = config.groupId(groupId, substitutions);

@@ -70,7 +70,7 @@ final class MojoHelper {
         props.putAll(properties);
         if (includeProjectProperties) {
             Properties projectProperties = project.getProperties();
-            props.putAll(Maps.fromProperties(project.getProperties()));
+            props.putAll(Maps.fromProperties(projectProperties));
             props.put("project.groupId", project.getGroupId());
             props.put("project.artifactId", project.getArtifactId());
             props.put("project.version", project.getVersion());

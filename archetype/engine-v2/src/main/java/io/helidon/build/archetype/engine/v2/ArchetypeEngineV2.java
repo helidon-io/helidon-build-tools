@@ -16,156 +16,67 @@
 
 package io.helidon.build.archetype.engine.v2;
 
-import java.io.IOException;
+import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import io.helidon.build.archetype.engine.v2.archive.Archetype;
-import io.helidon.build.archetype.engine.v2.interpreter.ASTNode;
-import io.helidon.build.archetype.engine.v2.interpreter.ContextAST;
-import io.helidon.build.archetype.engine.v2.interpreter.ContextNodeAST;
-import io.helidon.build.archetype.engine.v2.interpreter.ContextNodeASTFactory;
-import io.helidon.build.archetype.engine.v2.interpreter.ContextTextAST;
-import io.helidon.build.archetype.engine.v2.interpreter.Flow;
-import io.helidon.build.archetype.engine.v2.interpreter.InputNodeAST;
-import io.helidon.build.archetype.engine.v2.interpreter.UserInputAST;
-import io.helidon.build.archetype.engine.v2.interpreter.Visitor;
-import io.helidon.build.archetype.engine.v2.prompter.Prompt;
-import io.helidon.build.archetype.engine.v2.prompter.PromptFactory;
-import io.helidon.build.archetype.engine.v2.prompter.Prompter;
+import io.helidon.build.archetype.engine.v2.ast.Script;
+
+import static java.util.Objects.requireNonNull;
 
 /**
- * Archetype engine (version 2).
+ * Archetype engine (v2).
  */
 public class ArchetypeEngineV2 {
 
-    private static final String PROJECT_NAME_PATH = "project.name";
-    private static final String PROJECT_DIRECTORY_PATH = "project.directory";
+    private static final String ENTRYPOINT = "main.xml";
+    private static final String PROJECT_NAME = "name";
 
-    private final Archetype archetype;
-    private final String startPoint;
-    private final Prompter prompter;
-    private final Map<String, String> externalValues = new HashMap<>();
-    private final Map<String, String> externalDefaults = new HashMap<>();
-    private final boolean failOnUnresolvedInput;
-    private final boolean skipOptional;
-    private final List<Visitor<ASTNode>> additionalVisitors = new ArrayList<>();
+    private final Path cwd;
 
     /**
-     * Create a new archetype engine instance.
-     * @param archetype          archetype
-     * @param startPoint         entry point in the archetype
-     * @param prompter           prompter
-     * @param presets            external Flow Context values
-     * @param defaults           external Flow Context default values
-     * @param skipOptional       mark that indicates whether to skip optional input
-     * @param failOnUnresolvedInput fail if there are any unresolved inputs
-     * @param additionalVisitors additional Visitor for the {@code Interpreter}
-     */
-    public ArchetypeEngineV2(Archetype archetype,
-                             String startPoint,
-                             Prompter prompter,
-                             Map<String, String> presets,
-                             Map<String, String> defaults,
-                             boolean skipOptional,
-                             boolean failOnUnresolvedInput,
-                             List<Visitor<ASTNode>> additionalVisitors) {
-        this.archetype = archetype;
-        this.startPoint = startPoint;
-        this.prompter = prompter;
-        if (presets != null) {
-            externalValues.putAll(presets);
-        }
-        if (defaults != null) {
-            externalDefaults.putAll(defaults);
-        }
-        this.skipOptional = skipOptional;
-        this.failOnUnresolvedInput = failOnUnresolvedInput;
-        if (additionalVisitors != null) {
-            this.additionalVisitors.addAll(additionalVisitors);
-        }
-    }
-
-    /**
-     * Run the archetype.
+     * Create a new archetype engine.
      *
-     * @param projectDirSupplier maps project name to project directory
-     * @return The project directory
+     * @param fs archetype file system
      */
-    public Path generate(Function<String, Path> projectDirSupplier) {
-        Flow flow = Flow.builder()
-                .archetype(archetype)
-                .startDescriptorPath(startPoint)
-                .skipOptional(skipOptional)
-                .externalValues(externalValues)
-                .externalDefaults(externalDefaults)
-                .addAdditionalVisitor(additionalVisitors)
-                .build();
-
-        ContextAST context = initContext();
-        flow.build(context);
-        while (!flow.unresolvedInputs().isEmpty()) {
-            UserInputAST userInputAST = flow.unresolvedInputs().get(0);
-            ContextNodeAST contextNodeAST;
-            String path = userInputAST.path();
-            if (externalValues.containsKey(path)) {
-                contextNodeAST = ContextNodeASTFactory.create(
-                        (InputNodeAST) userInputAST.children().get(0),
-                        userInputAST.path(),
-                        externalValues.get(path)
-                );
-            } else if (failOnUnresolvedInput) {
-                throw new UnresolvedInputException(path);
-            } else {
-                Prompt<?> prompt = PromptFactory.create(userInputAST, flow.canBeGenerated());
-                contextNodeAST = prompt.acceptAndConvert(prompter, path);
-                flow.skipOptional(prompter.skipOptional());
-            }
-            ContextAST contextAST = new ContextAST();
-            contextAST.children().add(contextNodeAST);
-            flow.build(contextAST);
-        }
-
-        String projectName = ((ContextTextAST) flow.pathToContextNodeMap().get(PROJECT_NAME_PATH)).text();
-        Path projectDir = projectDirSupplier.apply(projectName);
-        ContextTextAST projectDirNode = new ContextTextAST(PROJECT_DIRECTORY_PATH);
-        projectDirNode.text(projectDir.toString());
-        context.children().add(projectDirNode);
-        flow.pathToContextNodeMap().put(PROJECT_DIRECTORY_PATH, projectDirNode);
-
-        flow.build(new ContextAST());
-        Flow.Result result = flow.result().orElseThrow(() -> {
-            throw new RuntimeException("No results after the Flow instance finished its work. Project cannot be generated.");
-        });
-
-        OutputGenerator outputGenerator = new OutputGenerator(result);
-        try {
-            outputGenerator.generate(projectDir.toFile());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                result.archetype().close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return projectDir;
+    public ArchetypeEngineV2(FileSystem fs) {
+        this.cwd = fs.getPath("/");
     }
 
-    private static ContextAST initContext() {
-        ContextAST context = new ContextAST();
-        ContextTextAST currentDateNode = new ContextTextAST("current.date");
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss z yyyy");
-        ZonedDateTime now = ZonedDateTime.now();
-        currentDateNode.text(dtf.format(now));
-        context.children().add(currentDateNode);
-        return context;
+    /**
+     * Generate a project.
+     *
+     * @param inputResolver     input resolver
+     * @param externalValues    external values
+     * @param externalDefaults  external defaults
+     * @param directorySupplier output directory supplier
+     * @return output directory
+     */
+    public Path generate(InputResolver inputResolver,
+                         Map<String, String> externalValues,
+                         Map<String, String> externalDefaults,
+                         Function<String, Path> directorySupplier) {
+
+        Context context = Context.create(cwd, externalValues, externalDefaults);
+        Script script = ScriptLoader.load(cwd.resolve(ENTRYPOINT));
+
+        // resolve inputs (full traversal)
+        Controller.walk(inputResolver, script, context);
+        context.ensureEmptyInputs();
+
+        // resolve output directory
+        String projectName = requireNonNull(context.lookup(PROJECT_NAME), "project name is null").asString();
+        Path directory = directorySupplier.apply(projectName);
+
+        // resolve model  (full traversal)
+        MergedModel model = MergedModel.resolveModel(script, context);
+
+        //  generate output  (full traversal)
+        OutputGenerator outputGenerator = new OutputGenerator(model, directory);
+        Controller.walk(outputGenerator, script, context);
+        context.ensureEmptyInputs();
+
+        return directory;
     }
 }

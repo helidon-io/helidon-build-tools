@@ -19,8 +19,6 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static io.helidon.build.common.FileUtils.ensureDirectory;
-
 /**
  * Test files utility.
  */
@@ -38,7 +36,7 @@ public abstract class TestFiles {
     public static Path targetDir(Class<?> testClass) {
         try {
             final Path codeSource = Paths.get(testClass.getProtectionDomain().getCodeSource().getLocation().toURI());
-            return ensureDirectory(codeSource.getParent());
+            return codeSource.getParent();
         } catch (URISyntaxException e) {
             throw new IllegalStateException(e);
         }

@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-import io.helidon.build.archetype.engine.v2.TemplateEngine;
-import io.helidon.build.archetype.engine.v2.MustacheTemplateEngine;
+import io.helidon.build.archetype.engine.v2.MustacheProvider;
+import io.helidon.build.archetype.engine.v2.spi.TemplateSupportProvider;
 
 /**
  * Helidon archetype engine.
  */
+@SuppressWarnings("JavaModuleNaming")
 module io.helidon.build.archetype.engine.v2 {
     requires io.helidon.build.common;
     requires io.helidon.build.common.ansi;
-    requires com.github.mustachejava;
     requires io.helidon.build.common.xml;
-    requires java.logging;
+    requires com.github.mustachejava;
 
     exports io.helidon.build.archetype.engine.v2;
-    exports io.helidon.build.archetype.engine.v2.prompter;
-    exports io.helidon.build.archetype.engine.v2.archive;
+    exports io.helidon.build.archetype.engine.v2.ast;
+    exports io.helidon.build.archetype.engine.v2.spi;
 
-    uses TemplateEngine;
-    provides TemplateEngine with MustacheTemplateEngine;
+    uses TemplateSupportProvider;
+    provides TemplateSupportProvider with MustacheProvider;
 }
