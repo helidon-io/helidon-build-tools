@@ -79,15 +79,6 @@ public final class Condition extends Node {
         }
 
         /**
-         * Get the then node.
-         *
-         * @return node builder
-         */
-        Node.Builder<?, ?> then() {
-            return then;
-        }
-
-        /**
          * Set the expression.
          *
          * @param expression expression

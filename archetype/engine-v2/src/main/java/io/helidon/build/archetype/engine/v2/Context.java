@@ -97,7 +97,12 @@ public final class Context {
      * @return value
      */
     public Value defaultValue(String name) {
-        return defaults.get(path(name));
+        Value defaultValue = defaults.get(path(name));
+        String wrapped = defaultValue != null ? defaultValue.asString() : null;
+        if (wrapped != null) {
+            defaultValue = Value.create(substituteVariables(wrapped));
+        }
+        return defaultValue;
     }
 
     /**
@@ -227,13 +232,13 @@ public final class Context {
     }
 
     /**
-     * Interpolate a string by expanding the context variables within it.
+     * Substitute the context variables within the given string.
      *
-     * @param value string to interpolate
-     * @return interpolated string
+     * @param value string to process
+     * @return processed string
      * @throws IllegalArgumentException if the string contains any unresolved variable
      */
-    public String interpolate(String value) {
+    public String substituteVariables(String value) {
         return PropertyEvaluator.evaluate(value, var -> {
             Value val = lookup(var);
             if (val == null) {

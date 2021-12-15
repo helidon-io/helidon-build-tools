@@ -94,7 +94,7 @@ public class SubstitutionVariables {
     }
 
     /**
-     * Returns an instance using using the {@link NotFoundAction#Fail} action with the given variable sources.
+     * Returns an instance using the {@link NotFoundAction#Fail} action with the given variable sources.
      *
      * @param sources The sources.
      * @return The instance.

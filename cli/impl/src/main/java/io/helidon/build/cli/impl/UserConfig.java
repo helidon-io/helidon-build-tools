@@ -202,7 +202,7 @@ public class UserConfig {
      * Returns the project name to use given the command line arguments, preferring {@code --name}, then {@code --artifactid}
      * and {@link #defaultProjectName(SubstitutionVariables)} if neither are provided.
      *
-     * @param nameArg The {@code --name} argument or {@code null} if not provided.
+     * @param nameArg       The {@code --name} argument or {@code null} if not provided.
      * @param artifactIdArg The {@code --artifactid} argument or {@code null} if not provided.
      * @param substitutions The substitution variables.
      * @return The project name.
@@ -221,7 +221,7 @@ public class UserConfig {
      * Returns the group id to use given the command line arguments, using {@code --groupid} if provided
      * and {@link #defaultGroupId(SubstitutionVariables)} if not.
      *
-     * @param groupIdArg The {@code --groupid} argument or {@code null} if not provided.
+     * @param groupIdArg    The {@code --groupid} argument or {@code null} if not provided.
      * @param substitutions The substitution variables.
      * @return The artifactId.
      */
@@ -238,7 +238,7 @@ public class UserConfig {
      * and {@link #defaultArtifactId(SubstitutionVariables)} if neither are provided.
      *
      * @param artifactIdArg The {@code --artifactid} argument or {@code null} if not provided.
-     * @param nameArg The {@code --name} argument or {@code null} if not provided.
+     * @param nameArg       The {@code --name} argument or {@code null} if not provided.
      * @param substitutions The substitution variables.
      * @return The artifactId.
      */
@@ -256,7 +256,7 @@ public class UserConfig {
      * Returns the package name to use given the command line arguments, using {@code --package} if provided
      * and {@link #defaultPackageName(SubstitutionVariables)} if not.
      *
-     * @param packageArg The {@code --package} argument or {@code null} if not provided.
+     * @param packageArg    The {@code --package} argument or {@code null} if not provided.
      * @param substitutions The substitution variables.
      * @return The artifactId.
      */
@@ -306,6 +306,10 @@ public class UserConfig {
      */
     public String defaultPackageName(SubstitutionVariables substitutions) {
         String result = substitutions.resolve(property(DEFAULT_PACKAGE_NAME_KEY, DEFAULT_PACKAGE_NAME_DEFAULT_VALUE));
+        if (result.contains("${")) {
+            // result is not fully resolved, skip validation
+            return result;
+        }
         if (result.length() > 0 && Character.isJavaIdentifierStart(result.charAt(0))) {
             for (String name : result.split("\\.")) {
                 for (int i = 1; i < name.length(); i++) {

@@ -108,7 +108,7 @@ final class ModelResolver implements Model.Visitor<Context> {
             String content = valueContent(value, context);
             String template = value.template();
             if (template == null) {
-                return context.interpolate(content);
+                return context.substituteVariables(content);
             } else {
                 return content;
             }

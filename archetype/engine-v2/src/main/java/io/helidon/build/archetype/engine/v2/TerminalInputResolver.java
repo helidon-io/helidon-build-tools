@@ -60,7 +60,7 @@ public class TerminalInputResolver extends InputResolver {
                 printLabel(input);
                 Value defaultValue = defaultValue(input, context);
                 String defaultText = defaultValue != null ? BoldBlue.apply(defaultValue.asBoolean()) : null;
-                String question = String.format("%s (yes/no)", Bold.apply(input.prompt()));
+                String question = String.format("%s (yes/no)", Bold.apply(input.label()));
                 String response = prompt(question, defaultText);
                 if (response == null || response.trim().length() == 0) {
                     context.push(input.name(), defaultValue);
@@ -94,13 +94,9 @@ public class TerminalInputResolver extends InputResolver {
             return result;
         }
         try {
-            printLabel(input);
             String defaultValue = defaultValue(input, context).asString();
-            if (defaultValue != null) {
-                defaultValue = context.interpolate(defaultValue);
-            }
             String defaultText = defaultValue != null ? BoldBlue.apply(defaultValue) : null;
-            String response = prompt("Enter text", defaultText);
+            String response = prompt(input.label(), defaultText);
             if (response == null || response.trim().length() == 0) {
                 context.push(input.name(), Value.create(defaultValue));
             } else {
@@ -120,11 +116,18 @@ public class TerminalInputResolver extends InputResolver {
         }
         while (true) {
             try {
+                Value defaultValue = defaultValue(input, context);
+                int defaultIndex = input.optionIndex(defaultValue.asString());
+
+                // skip prompting if there is only one option with a default value
+                if (input.options().size() == 1 && defaultIndex >= 0) {
+                    context.push(input.name(), defaultValue);
+                    return VisitResult.CONTINUE;
+                }
+
                 printLabel(input);
                 printOptions(input);
 
-                Value defaultValue = defaultValue(input, context);
-                int defaultIndex = input.optionIndex(defaultValue.asString());
                 String defaultText = defaultIndex != -1
                         ? BoldBlue.apply(String.format("%s", defaultIndex + 1))
                         : null;

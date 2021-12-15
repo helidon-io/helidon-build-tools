@@ -318,11 +318,11 @@ abstract class ArchetypeInvoker {
     static class V2Invoker extends ArchetypeInvoker {
 
         private static final String FLAVOR_PROPERTY = "flavor";
-        private static final String PROJECT_NAME_PROPERTY = "project.name";
-        private static final String GROUP_ID_PROPERTY = "project.groupId";
-        private static final String ARTIFACT_ID_PROPERTY = "project.artifactId";
+        private static final String PROJECT_NAME_PROPERTY = "name";
+        private static final String GROUP_ID_PROPERTY = "groupId";
+        private static final String ARTIFACT_ID_PROPERTY = "artifactId";
         private static final String PACKAGE_NAME_PROPERTY = "package";
-        private static final String HELIDON_VERSION_PROPERTY = "helidon.version";
+        private static final String HELIDON_VERSION_PROPERTY = "helidon-version";
         private static final String BUILD_SYSTEM_PROPERTY = "build-system";
         private static final String ARCHETYPE_BASE_PROPERTY = "base";
         private static final String SUPPORTED_BUILD_SYSTEM = "maven"; // We only support one
@@ -334,29 +334,31 @@ abstract class ArchetypeInvoker {
         @Override
         Path invoke() {
             InitOptions initOptions = initOptions();
-            Map<String, String> defaults = new HashMap<>();
+            Map<String, String> externalDefaults = new HashMap<>();
 
             // Initialize params with any properties passed on the command-line; options will take precedence
-            Map<String, String> params = new HashMap<>(initProperties());
+            Map<String, String> externalValues = new HashMap<>(initProperties());
 
             // We've already got helidon version, don't prompt again. Note that this will not override
             // any "helidon.version" command-line property as that is already set in InitOptions
-            params.put(HELIDON_VERSION_PROPERTY, initOptions.helidonVersion());
+            externalValues.put(HELIDON_VERSION_PROPERTY, initOptions.helidonVersion());
 
             // Ensure that flavor is lower case if present.
-            params.computeIfPresent(FLAVOR_PROPERTY, (key, value) -> value.toLowerCase());
+            externalValues.computeIfPresent(FLAVOR_PROPERTY, (key, value) -> value.toLowerCase());
 
-            // Don't prompt for build system since we only support one for now
-            params.put(BUILD_SYSTEM_PROPERTY, SUPPORTED_BUILD_SYSTEM);
+            // Set build if provided on command-line
+            if (initOptions.buildOption() != null) {
+                externalValues.put(BUILD_SYSTEM_PROPERTY, initOptions.buildOption().toString());
+            }
 
             // Set flavor if provided on command-line
             if (initOptions.flavorOption() != null) {
-                params.put(FLAVOR_PROPERTY, initOptions.flavorOption().toString());
+                externalValues.put(FLAVOR_PROPERTY, initOptions.flavorOption().toString());
             }
 
             // Set base if provided on command-line
             if (initOptions.archetypeNameOption() != null) {
-                params.put(ARCHETYPE_BASE_PROPERTY, initOptions.archetypeNameOption());
+                externalValues.put(ARCHETYPE_BASE_PROPERTY, initOptions.archetypeNameOption());
             }
             InputResolver inputResolver;
             if (isInteractive()) {
@@ -364,40 +366,38 @@ abstract class ArchetypeInvoker {
 
                 // Set remaining command-line options as params and user config as defaults
                 if (initOptions.projectNameOption() != null) {
-                    params.put(PROJECT_NAME_PROPERTY, initOptions.projectNameOption());
+                    externalValues.put(PROJECT_NAME_PROPERTY, initOptions.projectNameOption());
                 } else {
-                    defaults.put(PROJECT_NAME_PROPERTY, initOptions.projectName());
+                    externalDefaults.put(PROJECT_NAME_PROPERTY, initOptions.projectName());
                 }
                 if (initOptions.groupIdOption() != null) {
-                    params.put(GROUP_ID_PROPERTY, initOptions.groupIdOption());
+                    externalValues.put(GROUP_ID_PROPERTY, initOptions.groupIdOption());
                 } else {
-                    defaults.put(GROUP_ID_PROPERTY, initOptions.groupId());
+                    externalDefaults.put(GROUP_ID_PROPERTY, initOptions.groupId());
                 }
                 if (initOptions.artifactIdOption() != null) {
-                    params.put(ARTIFACT_ID_PROPERTY, initOptions.artifactIdOption());
+                    externalValues.put(ARTIFACT_ID_PROPERTY, initOptions.artifactIdOption());
                 } else {
-                    defaults.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
+                    externalDefaults.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
                 }
                 if (initOptions.packageNameOption() != null) {
-                    params.put(PACKAGE_NAME_PROPERTY, initOptions.packageNameOption());
+                    externalValues.put(PACKAGE_NAME_PROPERTY, initOptions.packageNameOption());
                 } else {
-                    defaults.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
+                    externalDefaults.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
                 }
-
             } else {
                 inputResolver = new BatchInputResolver();
 
                 // Batch mode, so pass merged init options as params
-                params.put(PROJECT_NAME_PROPERTY, initOptions.projectName());
-                params.put(GROUP_ID_PROPERTY, initOptions.groupId());
-                params.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
-                params.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
+                externalValues.put(PROJECT_NAME_PROPERTY, initOptions.projectName());
+                externalValues.put(GROUP_ID_PROPERTY, initOptions.groupId());
+                externalValues.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
+                externalValues.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
             }
 
             ArchetypeEngineV2 engine = new ArchetypeEngineV2(archetype());
-            Map<String, String> initProperties = initOptions().initProperties();
             try {
-                return engine.generate(inputResolver, initProperties, defaults, projectDirSupplier());
+                return engine.generate(inputResolver, externalValues, externalDefaults, projectDirSupplier());
             } catch (InvocationException ie) {
                 if (ie.getCause() instanceof UnresolvedInputException) {
                     UnresolvedInputException uie = (UnresolvedInputException) ie.getCause();
@@ -428,6 +428,7 @@ abstract class ArchetypeInvoker {
                     }
                     return FileSystems.newFileSystem(archetype, this.getClass().getClassLoader());
                 }
+                // TODO this is subject to changes depending on how the archetype bundling
                 Path archetype = metadata().directoryOf(toMavenVersion(initOptions().helidonVersion()));
                 return VirtualFileSystem.create(archetype);
             } catch (IOException ex) {

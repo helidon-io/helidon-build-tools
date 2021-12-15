@@ -26,6 +26,8 @@ import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.time.Instant;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -117,11 +119,15 @@ public class MustacheSupport implements TemplateSupport {
         @Override
         public Wrapper find(String name, List<Object> ignore) {
             return scopes -> {
+                Object result = builtInModel(name);
+                if (result != null) {
+                    return result;
+                }
                 ListIterator<Object> it = scopes.listIterator(scopes.size());
                 while (it.hasPrevious()) {
                     Object scope = it.previous();
                     if (scope instanceof MergedModel.Node) {
-                        Object result = ((MergedModel.Node) scope).get(name);
+                        result = ((MergedModel.Node) scope).get(name);
                         if (result != null) {
                             // handle conditional
                             // treat "false" as the absence of value
@@ -136,8 +142,18 @@ public class MustacheSupport implements TemplateSupport {
                         }
                     }
                 }
-                throw new RuntimeException(String.format("Unresolved model value: '%s'", name));
+                return null;
             };
+        }
+
+        private String builtInModel(String name) {
+            //noinspection SwitchStatementWithTooFewBranches
+            switch (name) {
+                case "current-date":
+                    return Date.from(Instant.now()).toString();
+                default:
+                    return null;
+            }
         }
 
         @Override
@@ -168,8 +184,12 @@ public class MustacheSupport implements TemplateSupport {
                         @Override
                         public Writer execute(Writer writer, List<Object> scopes) {
                             try {
-                                writer.write(oh.stringify(get(scopes)));
-                                return appendText(run(writer, scopes));
+                                final Object object = get(scopes);
+                                if (object != null) {
+                                    writer.write(oh.stringify(object));
+                                    return appendText(run(writer, scopes));
+                                }
+                                return super.execute(writer, scopes);
                             } catch (Exception e) {
                                 throw new MustacheException("Failed to get value for " + name, e, tc);
                             }

@@ -36,7 +36,6 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -140,15 +139,13 @@ class MustacheSupportTest {
     @Test
     void testUnknownValue() {
         Block scope = model().build();
-        MustacheException ex = assertThrows(MustacheException.class, () -> render("{{bar}}", scope));
-        assertThat(ex.getMessage(), startsWith("Failed to get value for bar"));
+        assertThat(render("{{bar}}", scope), is(""));
     }
 
     @Test
     void testUnknownIterable() {
         Block scope = model().build();
-        MustacheException ex = assertThrows(MustacheException.class, () -> render("{{#bar}}{{.}}{{/bar}}", scope));
-        assertThat(ex.getMessage(), startsWith("Unresolved model value: 'bar'"));
+        assertThat(render("{{#bar}}{{.}}{{/bar}}", scope), is(""));
     }
 
     @Test
@@ -256,6 +253,20 @@ class MustacheSupportTest {
         context.put("red", Value.create("red"));
         context.put("blue", Value.create("blue"));
         assertThat(render("{{colors}}", scope, null, context), is("red,blue"));
+    }
+
+    @Test
+    void testNestedOverride() {
+        Block scope = model(
+                modelValue("shape", "circle"),
+                modelList("shapes", modelMap(modelValue("shape", "triangle")))).build();
+        assertThat(render("{{#shapes}}{{shape}}{{/shapes}}", scope), is("triangle"));
+    }
+
+    @Test
+    void testBuiltInModel() {
+        Block scope = model().build();
+        assertThat(render("{{current-date}}", scope), is(not("")));
     }
 
     private static String render(String template, Block scope) {

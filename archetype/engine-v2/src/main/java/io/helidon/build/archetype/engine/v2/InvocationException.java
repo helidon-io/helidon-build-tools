@@ -19,6 +19,9 @@ package io.helidon.build.archetype.engine.v2;
 import java.util.Deque;
 import java.util.Iterator;
 
+import io.helidon.build.archetype.engine.v2.ast.Block;
+import io.helidon.build.archetype.engine.v2.ast.Condition;
+import io.helidon.build.archetype.engine.v2.ast.Invocation;
 import io.helidon.build.archetype.engine.v2.ast.Node;
 
 /**
@@ -34,25 +37,41 @@ public class InvocationException extends RuntimeException {
      * @param cause     cause
      */
     InvocationException(Deque<Node> callStack, Node node, Throwable cause) {
-        super(String.format("Invocation error: %s\n%s", cause.getMessage(), printStackTrace(callStack, node)), cause);
+        super("Invocation error: " + cause.getMessage(), cause, false, true);
+        setStackTrace(stackTrace(callStack, node));
     }
 
-    private static String printStackTrace(Deque<Node> callStack, Node node) {
-        StringBuilder sb = new StringBuilder(printStackItem(node));
+    private StackTraceElement[] stackTrace(Deque<Node> callStack, Node node) {
+        StackTraceElement[] original = getStackTrace();
+        int size = callStack.size() + 1;
+        StackTraceElement[] stackTrace = new StackTraceElement[size + original.length];
+        stackTrace[0] = stackTraceElement(node);
         if (!callStack.isEmpty()) {
-            sb.append("\n");
             Iterator<Node> it = callStack.iterator();
-            while (it.hasNext()) {
-                sb.append(printStackItem(it.next()));
-                if (it.hasNext()) {
-                    sb.append("\n");
-                }
+            for (int i = 1; it.hasNext(); i++) {
+                stackTrace[i] = stackTraceElement(it.next());
             }
         }
-        return sb.toString();
+        System.arraycopy(original, 0, stackTrace, size, original.length);
+        return stackTrace;
     }
 
-    private static String printStackItem(Node node) {
-        return "\tat " + node.scriptPath() + ":" + node.position();
+    private static StackTraceElement stackTraceElement(Node node) {
+        String fileName = node.scriptPath().toString();
+        int lineNumber = node.position().lineNumber();
+        return new StackTraceElement("archetype", method(node), fileName, lineNumber);
+    }
+
+    private static String method(Node node) {
+        if (node instanceof Condition) {
+            return "condition";
+        }
+        if (node instanceof Invocation) {
+            return ((Invocation) node).kind().name().toLowerCase();
+        }
+        if (node instanceof Block) {
+            return ((Block) node).kind().name().toLowerCase();
+        }
+        return "?";
     }
 }

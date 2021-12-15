@@ -153,6 +153,19 @@ class TerminalInputResolverTest {
     }
 
     @Test
+    void testInputEnumWithSingleOptionAndDefault() {
+        Block block = inputEnum("enum-input1", "value1",
+                inputOption("option1", "value1"));
+
+        Context context = prompt(block, "2");
+        Value value = context.lookup("enum-input1");
+
+        assertThat(value, is(notNullValue()));
+        assertThat(value.type(), is(ValueTypes.STRING));
+        assertThat(value.asString(), is("value1"));
+    }
+
+    @Test
     void testInputEnum() {
         Block block = inputEnum("enum-input2", "value3",
                 inputOption("option1", "value1"),
@@ -201,9 +214,28 @@ class TerminalInputResolverTest {
         assertThat(value.asString(), is("not-value1"));
     }
 
-    private static Context prompt(Block block, String userInput) {
+    @Test
+    void testDefaultValueSubstitutions() {
+        Block block = inputText("text-input3", "${foo}");
+
         Context context = Context.create();
-        Controller.walk(new TerminalInputResolver(new ByteArrayInputStream(userInput.getBytes())), block, context);
+        context.put("foo", Value.create("bar"));
+        prompt(block, "", context);
+
+        Value value = context.lookup("text-input3");
+
+        assertThat(value, is(notNullValue()));
+        assertThat(value.type(), is(ValueTypes.STRING));
+        assertThat(value.asString(), is("bar"));
+    }
+
+    private static Context prompt(Block block, String userInput) {
+        return prompt(block, userInput, Context.create());
+    }
+
+    private static Context prompt(Block block, String userInput, Context context) {
+        byte[] bytes = userInput != null ? userInput.getBytes() : new byte[0];
+        Controller.walk(new TerminalInputResolver(new ByteArrayInputStream(bytes)), block, context);
         return context;
     }
 }
