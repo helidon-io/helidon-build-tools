@@ -95,6 +95,9 @@ public class TerminalInputResolver extends InputResolver {
         }
         try {
             String defaultValue = defaultValue(input, context).asString();
+            if (defaultValue != null) {
+                defaultValue = context.substituteVariables(defaultValue);
+            }
             String defaultText = defaultValue != null ? BoldBlue.apply(defaultValue) : null;
             String response = prompt(input.label(), defaultText);
             if (response == null || response.trim().length() == 0) {

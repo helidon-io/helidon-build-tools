@@ -18,7 +18,9 @@ package io.helidon.build.archetype.engine.v2;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Input;
@@ -216,13 +218,28 @@ class TerminalInputResolverTest {
 
     @Test
     void testDefaultValueSubstitutions() {
-        Block block = inputText("text-input3", "${foo}");
+        Block block = inputText("text-input4", "${foo}");
 
         Context context = Context.create();
         context.put("foo", Value.create("bar"));
         prompt(block, "", context);
 
-        Value value = context.lookup("text-input3");
+        Value value = context.lookup("text-input4");
+
+        assertThat(value, is(notNullValue()));
+        assertThat(value.type(), is(ValueTypes.STRING));
+        assertThat(value.asString(), is("bar"));
+    }
+
+    @Test
+    void testExternalDefaultValueSubstitutions() {
+        Block block = inputText("text-input5", "foo");
+
+        Context context = Context.create(Path.of(""), Map.of(), Map.of("text-input5", "${foo}"));
+        context.put("foo", Value.create("bar"));
+        prompt(block, "", context);
+
+        Value value = context.lookup("text-input5");
 
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.STRING));
