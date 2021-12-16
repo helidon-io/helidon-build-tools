@@ -71,18 +71,16 @@ import static java.util.Collections.emptyList;
  * A {@code ProjectSupplier} for Maven projects.
  */
 public class MavenProjectSupplier implements ProjectSupplier {
-    private static final String HELIDON_CLI_PLUGIN_VERSION_PROP = "version.plugin.helidon-cli";
-    private static final String HELIDON_CLI_PLUGIN_VERSION = System.getProperty(HELIDON_CLI_PLUGIN_VERSION_PROP);
+    private static final List<String> PASS_THROUGH_PROPERTIES = List.of("version.plugin.helidon-cli", "maven.repo.local");
     private static final List<String> DEFAULT_EXCLUDES = List.of("**/.*.swp");
     private static final String CLEAN_ARG = "clean";
     private static final String SKIP_TESTS_ARG = "-DskipTests";
     private static final String TARGET_DIR_NAME = "target";
     private static final String POM_FILE = "pom.xml";
     private static final String DOT = ".";
-    private static final List<String> FS_ROOTS = Arrays.asList(File.listRoots())
-            .stream()
-            .map(File::getPath)
-            .collect(Collectors.toList());
+    private static final List<String> FS_ROOTS = Arrays.stream(File.listRoots())
+                                                       .map(File::getPath)
+                                                       .collect(Collectors.toList());
 
     private static final Predicate<Path> NOT_HIDDEN = file -> {
         final String name = file.getFileName().toString();
@@ -247,7 +245,7 @@ public class MavenProjectSupplier implements ProjectSupplier {
             // capture the file system root part of the entry
             // on Windows this will be the drive (E.g. C:\), on Unix, just a slash
             String prefix = FS_ROOTS.stream()
-                    .filter(fsRoot -> resourcesDirEntry.startsWith(fsRoot))
+                    .filter(resourcesDirEntry::startsWith)
                     .findFirst()
                     .orElse("");
 
@@ -331,11 +329,13 @@ public class MavenProjectSupplier implements ProjectSupplier {
     }
 
     private static List<String> command(String... arguments) {
-        List<String> command = List.of(arguments);
-        if (HELIDON_CLI_PLUGIN_VERSION != null) {
-            command = new ArrayList<>(command);
-            command.add("-D" + HELIDON_CLI_PLUGIN_VERSION_PROP + "=" + HELIDON_CLI_PLUGIN_VERSION);
-        }
+        final List<String> command = new ArrayList<>(Arrays.asList(arguments));
+        PASS_THROUGH_PROPERTIES.forEach(property -> {
+            String value = System.getProperty(property);
+            if (value != null) {
+                command.add("-D" + property + "=" + value);
+            }
+        });
         return command;
     }
 }

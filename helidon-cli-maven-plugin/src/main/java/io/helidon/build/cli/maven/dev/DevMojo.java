@@ -17,6 +17,7 @@
 package io.helidon.build.cli.maven.dev;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -49,6 +50,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
+import static io.helidon.build.util.StyleFunction.Yellow;
 import static java.util.Collections.emptyList;
 
 /**
@@ -172,7 +174,9 @@ public class DevMojo extends AbstractMojo {
             } else {
                 MavenLogWriter.install(getLog());
             }
-
+            if (fork) {
+                warnForkDeprecated();
+            }
             final DevLoopBuildConfig configuration = buildConfig(true);
             final ProjectSupplier projectSupplier = new MavenProjectSupplier(configuration);
             final List<String> jvmArgs = toList(appJvmArgs);
@@ -195,6 +199,16 @@ public class DevMojo extends AbstractMojo {
             config.resolve(resolver);
         }
         return config;
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    private void warnForkDeprecated() {
+        getLog().warn(Yellow.apply("fork mode is deprecated and will be removed in the next major release"));
+        try {
+            getLog().warn("press enter to continue");
+            System.in.read();
+        } catch (IOException ignore) {
+        }
     }
 
     private static List<String> toList(String args) {

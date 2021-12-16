@@ -52,8 +52,6 @@ import static java.util.Objects.requireNonNull;
  */
 public class MavenEnvironment {
 
-    private final MavenProject project;
-    private final MavenSession session;
     private final MojoDescriptorCreator mojoDescriptorCreator;
     private final DefaultLifecycles defaultLifeCycles;
     private final LifecycleMappingDelegate standardLifecycleDelegate;
@@ -83,8 +81,10 @@ public class MavenEnvironment {
                             BuildPluginManager buildPluginManager,
                             MojoExecutor mojoExecutor) {
 
-        this.project = project;
-        this.session = session;
+        // Initialize current session, making sure that current project is set
+        session.setCurrentProject(project);
+        CurrentMavenSession.initialize(session);
+
         this.projectIndex = new ProjectIndex(session.getProjects());
         this.mojoDescriptorCreator = mojoDescriptorCreator;
         this.defaultLifeCycles = defaultLifeCycles;
@@ -100,7 +100,7 @@ public class MavenEnvironment {
      * @return The project.
      */
     public MavenProject project() {
-        return project;
+        return session().getCurrentProject();
     }
 
     /**
@@ -109,7 +109,7 @@ public class MavenEnvironment {
      * @return The session.
      */
     public MavenSession session() {
-        return session;
+        return CurrentMavenSession.get();
     }
 
     /**
@@ -119,7 +119,7 @@ public class MavenEnvironment {
      */
     public void execute(MojoExecution execution) {
         try {
-            mojoExecutor.execute(session, List.of(execution), projectIndex);
+            mojoExecutor.execute(session(), List.of(execution), projectIndex);
         } catch (LifecycleExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -134,7 +134,7 @@ public class MavenEnvironment {
      * @return MojoExecution
      */
     public MojoExecution execution(String pluginKey, String goal, String executionId) {
-        Plugin plugin = plugin(project, pluginKey);
+        Plugin plugin = plugin(project(), pluginKey);
         MojoDescriptor mojoDescriptor;
         try {
             mojoDescriptor = mojoDescriptor(plugin, goal);
@@ -154,7 +154,7 @@ public class MavenEnvironment {
      * @throws Exception if the plugin is not found using the prefix
      */
     public MavenGoal goal(String prefix, String goal, String executionId) throws Exception {
-        final Plugin plugin = mojoDescriptorCreator.findPluginForPrefix(prefix, session);
+        final Plugin plugin = mojoDescriptorCreator.findPluginForPrefix(prefix, session());
         return MavenGoal.create(plugin.getGroupId(), plugin.getArtifactId(), goal, executionId, this);
     }
 
@@ -175,7 +175,7 @@ public class MavenEnvironment {
             }
         }
         // Collect the executions for this phase rather
-        return delegate.calculateLifecycleMappings(session, project, lifecycle, phase)
+        return delegate.calculateLifecycleMappings(session(), project(), lifecycle, phase)
                 .entrySet()
                 .stream()
                 .filter(e -> !e.getValue().isEmpty())
@@ -227,8 +227,8 @@ public class MavenEnvironment {
     }
 
     private MojoDescriptor mojoDescriptor(Plugin plugin, String goal) throws Exception {
-        final RepositorySystemSession repositorySession = session.getRepositorySession();
-        final List<RemoteRepository> repositories = project.getRemotePluginRepositories();
+        final RepositorySystemSession repositorySession = session().getRepositorySession();
+        final List<RemoteRepository> repositories = project().getRemotePluginRepositories();
         final PluginDescriptor pluginDescriptor = pluginManager.loadPlugin(plugin, repositories, repositorySession);
         return pluginDescriptor.getMojo(goal);
     }

@@ -87,6 +87,7 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
     private ProjectDependenciesResolver dependenciesResolver;
     private Path supportedProjectDir;
     private ProjectConfig projectConfig;
+    private ExecutionListener originalListener;
 
     /**
      * Assert that the project is one whose configuration we can support.
@@ -110,13 +111,15 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
             // Init state
             supportedProjectDir = null;
             projectConfig = null;
+            originalListener = null;
             debug("collector enabled");
             try {
                 // Ensure that we support this project
                 supportedProjectDir = assertSupportedProject(session);
                 // Install our listener so we can know if compilation occurred and succeeded
                 final MavenExecutionRequest request = session.getRequest();
-                request.setExecutionListener(new EventListener(request.getExecutionListener()));
+                originalListener = request.getExecutionListener();
+                request.setExecutionListener(new EventListener(originalListener));
             } catch (IllegalStateException e) {
                 supportedProjectDir = null;
                 projectConfig = null;
@@ -129,6 +132,10 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
     @Override
     public void afterSessionEnd(MavenSession session) {
         if (ENABLED && supportedProjectDir != null) {
+            // Remove our event listener so that incremental compiles don't fire it
+            if (originalListener != null) {
+                session.getRequest().setExecutionListener(originalListener);
+            }
             final MavenExecutionResult result = session.getResult();
             if (result == null) {
                 debug("Build failed: no result");
@@ -169,6 +176,9 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
         config.property(PROJECT_SOURCE_EXCLUDES, toList(pluginConfig, "excludes"));
         config.property(PROJECT_RESOURCEDIRS, resourceDirs);
         this.projectConfig = config;
+
+        // Make the session available to our dev loop code for incremental builds
+        CurrentMavenSession.set(session);
     }
 
     private static String format(Resource resource) {

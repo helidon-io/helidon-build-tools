@@ -278,6 +278,7 @@ public class BuildLoop {
         delay.set(0);
         if (type != ChangeType.SourceFile) {
             project.set(null);
+            lastFailedTime.set(0);
         }
     }
 
@@ -287,6 +288,7 @@ public class BuildLoop {
     }
 
     private void buildSucceeded(BuildType type) {
+        lastFailedTime.set(0);
         monitor.onBuildSuccess(cycleNumber.get(), type);
     }
 
