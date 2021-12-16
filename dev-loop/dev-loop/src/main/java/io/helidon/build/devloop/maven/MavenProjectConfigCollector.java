@@ -86,6 +86,7 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
     private ProjectDependenciesResolver dependenciesResolver;
     private Path supportedProjectDir;
     private ProjectConfig projectConfig;
+    private ExecutionListener originalListener;
 
     /**
      * Assert that the project is one whose configuration we can support.
@@ -115,10 +116,12 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
                 supportedProjectDir = assertSupportedProject(session);
                 // Install our listener so we can know if compilation occurred and succeeded
                 final MavenExecutionRequest request = session.getRequest();
-                request.setExecutionListener(new EventListener(request.getExecutionListener()));
+                originalListener = request.getExecutionListener();
+                request.setExecutionListener(new EventListener(originalListener));
             } catch (IllegalStateException e) {
                 supportedProjectDir = null;
                 projectConfig = null;
+                originalListener = null;
             }
         } else {
             debug("collector disabled");
@@ -128,6 +131,10 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
     @Override
     public void afterSessionEnd(MavenSession session) {
         if (ENABLED && supportedProjectDir != null) {
+            // Restore the original execution listener
+            session.getRequest().setExecutionListener(originalListener);
+
+            // Update the config based on the result
             final MavenExecutionResult result = session.getResult();
             if (result == null) {
                 debug("Build failed: no result");

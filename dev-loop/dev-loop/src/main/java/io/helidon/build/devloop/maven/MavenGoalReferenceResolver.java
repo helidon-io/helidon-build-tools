@@ -15,21 +15,11 @@
  */
 package io.helidon.build.devloop.maven;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import io.helidon.build.common.Log;
 
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.lifecycle.DefaultLifecycles;
-import org.apache.maven.lifecycle.Lifecycle;
-import org.apache.maven.lifecycle.LifecycleMappingDelegate;
-import org.apache.maven.lifecycle.LifecyclePhaseNotFoundException;
 import org.apache.maven.lifecycle.NoGoalSpecifiedException;
-import org.apache.maven.model.Plugin;
-import org.apache.maven.plugin.MojoExecution;
-import org.apache.maven.project.MavenProject;
 
 import static java.util.Objects.requireNonNull;
 
@@ -62,7 +52,7 @@ import static java.util.Objects.requireNonNull;
  *     <li>{@code compiler:compile}</li>
  *     <li>{@code compile}</li>
  * </ol>
- * References #1-3 are equivalent, #4 executes only the compile goal and #5 executes all goals in the compile lifecycle.
+ * References #1-3 are equivalent, #4 executes only the 'compile' goal and #5 executes all goals in the 'compile' lifecycle.
  */
 public class MavenGoalReferenceResolver {
     private final MavenEnvironment environment;
@@ -114,10 +104,10 @@ public class MavenGoalReferenceResolver {
                 if (executionId != null) {
                     Log.warn("Ignoring executionId %s in %s", executionId, reference);
                 }
-                addPhaseGoals(components[0], goals);
+                goals.addAll(environment.phase(components[0]));
                 break;
             case 2:
-                addPrefixGoal(components[0], components[1], executionId, goals);
+                goals.add(environment.goal(components[0], components[1], executionId));
                 break;
             case 3:
                 goals.add(MavenGoal.create(components[0], components[1], components[2], executionId, environment));
@@ -139,53 +129,6 @@ public class MavenGoalReferenceResolver {
      * @throws Exception If not a valid phase.
      */
     public void assertValidPhase(String phase) throws Exception {
-        phaseToLifecycle(phase);
-    }
-
-    private void addPrefixGoal(String prefix, String goal, String executionId, List<MavenGoal> goals) throws Exception {
-        final Plugin plugin = environment.mojoDescriptorCreator().findPluginForPrefix(prefix, environment.session());
-        goals.add(MavenGoal.create(plugin.getGroupId(), plugin.getArtifactId(), goal, executionId, environment));
-    }
-
-    private void addPhaseGoals(String phase, List<MavenGoal> goals) throws Exception {
-        MavenProject project = environment.project();
-        MavenSession session = environment.session();
-        LifecycleMappingDelegate delegate = environment.standardLifecycleDelegate();
-        Lifecycle lifecycle = phaseToLifecycle(phase);
-        if (Arrays.binarySearch(DefaultLifecycles.STANDARD_LIFECYCLES, lifecycle.getId()) < 0) {
-            delegate = environment.lifecycleDelegates().get(lifecycle.getId());
-            if (delegate == null) {
-                delegate = environment.standardLifecycleDelegate();
-            }
-        }
-        // Collect the executions for this phase rather than using forEach() since toGoal() throws a checked exception
-        List<MojoExecution> executions = delegate.calculateLifecycleMappings(session, project, lifecycle, phase)
-                                                 .entrySet()
-                                                 .stream()
-                                                 .filter(e -> !e.getValue().isEmpty())
-                                                 .flatMap(e -> e.getValue().stream())
-                                                 .collect(Collectors.toList());
-        for (MojoExecution execution : executions) {
-            goals.add(toGoal(execution));
-        }
-    }
-
-    private Lifecycle phaseToLifecycle(String phase) throws Exception {
-        DefaultLifecycles defaultLifecycles = environment.defaultLifeCycles();
-        Lifecycle lifecycle = defaultLifecycles.get(phase);
-        if (lifecycle == null) {
-            throw new LifecyclePhaseNotFoundException("Unknown lifecycle phase \"" + phase
-                                                      + "\". You must specify a valid lifecycle phase" + " or a goal in the "
-                                                      + "format <plugin-prefix>:<goal> or "
-                                                      + "<plugin-group-id>:<plugin-artifact-id>[:<plugin-version>]:<goal>. "
-                                                      + "Available lifecycle phases are: "
-                                                      + defaultLifecycles.getLifecyclePhaseList() + ".", phase);
-        }
-        return lifecycle;
-    }
-
-    private MavenGoal toGoal(MojoExecution execution) throws Exception {
-        return MavenGoal.create(execution.getGroupId(), execution.getArtifactId(),
-                                execution.getGoal(), execution.getExecutionId(), environment);
+        environment.lifecycle(phase);
     }
 }

@@ -38,6 +38,7 @@ import org.apache.maven.lifecycle.DefaultLifecycles;
 import org.apache.maven.lifecycle.LifecycleMappingDelegate;
 import org.apache.maven.lifecycle.internal.DefaultLifecycleMappingDelegate;
 import org.apache.maven.lifecycle.internal.MojoDescriptorCreator;
+import org.apache.maven.lifecycle.internal.MojoExecutor;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -119,6 +120,12 @@ public class DevMojo extends AbstractMojo {
     private BuildPluginManager plugins;
 
     /**
+     * The Maven MojoExecutor component.
+     */
+    @Component
+    private MojoExecutor mojoExecutor;
+
+    /**
      * The Maven MojoDescriptorCreated component, used to resolve
      * plugin prefixes.
      */
@@ -177,7 +184,7 @@ public class DevMojo extends AbstractMojo {
         config.validate();
         if (resolve) {
             final MavenEnvironment env = new MavenEnvironment(project, session, mojoDescriptorCreator, defaultLifeCycles,
-                                                              standardDelegate, delegates, plugins);
+                                                              standardDelegate, delegates, plugins, mojoExecutor);
             final MavenGoalReferenceResolver resolver = new MavenGoalReferenceResolver(env);
             config.resolve(resolver);
         }
