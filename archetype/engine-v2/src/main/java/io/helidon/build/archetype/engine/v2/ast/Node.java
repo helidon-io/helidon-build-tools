@@ -310,7 +310,7 @@ public abstract class Node {
          * @param value attribute value
          * @return this builder
          */
-        public U attributes(String name, String value) {
+        public U attribute(String name, String value) {
             this.attributes.put(name, value);
             return (U) this;
         }

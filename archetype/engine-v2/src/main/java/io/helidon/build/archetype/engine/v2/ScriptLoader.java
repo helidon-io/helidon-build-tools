@@ -375,7 +375,7 @@ public class ScriptLoader {
 
         @Override
         public ValueBuilder value(String value) {
-            parent.attributes(qName, value);
+            parent.attribute(qName, value);
             return this;
         }
 

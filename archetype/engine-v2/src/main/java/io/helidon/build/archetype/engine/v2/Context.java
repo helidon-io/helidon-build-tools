@@ -18,18 +18,15 @@ package io.helidon.build.archetype.engine.v2;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import io.helidon.build.archetype.engine.v2.ast.Value;
-import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
 import io.helidon.build.common.GenericType;
-import io.helidon.build.common.PropertyEvaluator;
 
+import static io.helidon.build.common.PropertyEvaluator.evaluate;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -44,7 +41,6 @@ import static java.util.stream.Collectors.toList;
  */
 public final class Context {
 
-    private static final Map<String, String> NULL_MAP = Collections.emptyMap();
     private static final Path NULL_PATH = Path.of("");
 
     private final Map<String, Value> defaults = new HashMap<>();
@@ -53,11 +49,13 @@ public final class Context {
     private final Deque<String> inputs = new ArrayDeque<>();
 
     private Context(Path cwd, Map<String, String> externalValues, Map<String, String> externalDefaults) {
-        Objects.requireNonNull(externalDefaults, "externalDefaults is null");
-        Objects.requireNonNull(externalDefaults, "externalValues is null");
-        externalDefaults.forEach((k, v) -> defaults.put(k, new ExternalValue(v)));
-        externalValues.forEach((k, v) -> values.put(k, new ExternalValue(v)));
-        directories.push(cwd);
+        if (externalDefaults != null) {
+            externalDefaults.forEach((k, v) -> defaults.put(k, new ExternalValue(v)));
+        }
+        if (externalValues != null) {
+            externalValues.forEach((k, v) -> values.put(k, new ExternalValue(evaluate(v, externalValues::get))));
+        }
+        directories.push(cwd == null ? NULL_PATH : cwd);
     }
 
     /**
@@ -239,7 +237,10 @@ public final class Context {
      * @throws IllegalArgumentException if the string contains any unresolved variable
      */
     public String substituteVariables(String value) {
-        return PropertyEvaluator.evaluate(value, var -> {
+        if (value == null) {
+            return null;
+        }
+        return evaluate(value, var -> {
             Value val = lookup(var);
             if (val == null) {
                 throw new IllegalArgumentException("Unresolved variable: " + var);
@@ -267,7 +268,7 @@ public final class Context {
      * @return context
      */
     static Context create() {
-        return create(NULL_PATH, NULL_MAP, NULL_MAP);
+        return create(null, null, null);
     }
 
     /**
@@ -277,7 +278,7 @@ public final class Context {
      * @return context
      */
     public static Context create(Path cwd) {
-        return new Context(cwd, NULL_MAP, NULL_MAP);
+        return new Context(cwd, null, null);
     }
 
     /**
@@ -325,10 +326,18 @@ public final class Context {
         }
     }
 
+    /**
+     * A context value with no predefined type, parsed on the fly.
+     */
     private static final class ExternalValue extends ContextValue {
 
         private ExternalValue(String value) {
-            super(value, ValueTypes.STRING);
+            super(value.toLowerCase(), null);
+        }
+
+        @Override
+        public String asString() {
+            return (String) unwrap();
         }
 
         @Override

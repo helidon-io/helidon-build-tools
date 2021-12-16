@@ -17,14 +17,9 @@
 package io.helidon.build.archetype.engine.v2;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
-import io.helidon.build.archetype.engine.v2.ast.Input;
-import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
 
@@ -48,7 +43,7 @@ class TerminalInputResolverTest {
 
     @Test
     void testBooleanWithEmptyResponse() {
-        Block block = inputBoolean("boolean-input1", true);
+        Block block = inputBoolean("boolean-input1", true).build();
 
         Context context = prompt(block, "");
         Value value = context.lookup("boolean-input1");
@@ -60,7 +55,7 @@ class TerminalInputResolverTest {
 
     @Test
     void testBooleanWithEmptyResponse2() {
-        Block block = inputBoolean("boolean-input2", false);
+        Block block = inputBoolean("boolean-input2", false).build();
 
         Context context = prompt(block, "");
         Value value = context.lookup("boolean-input2");
@@ -72,7 +67,7 @@ class TerminalInputResolverTest {
 
     @Test
     void testInputBoolean() {
-        Block block = inputBoolean("boolean-input3", true);
+        Block block = inputBoolean("boolean-input3", true).build();
 
         Context context = prompt(block, "NO");
         Value value = context.lookup("boolean-input3");
@@ -86,7 +81,7 @@ class TerminalInputResolverTest {
     void testInputListWithEmptyResponse() {
         Block block = inputList("list-input1", List.of("value1"),
                 inputOption("option1", "value1"),
-                inputOption("option2", "value2"));
+                inputOption("option2", "value2")).build();
 
         Context context = prompt(block, "");
         Value value = context.lookup("list-input1");
@@ -100,7 +95,7 @@ class TerminalInputResolverTest {
     void testInputListWithEmptyResponseMultipleDefault() {
         Block block = inputList("list-input2", List.of("value1", "value2"),
                 inputOption("option1", "value1"),
-                inputOption("option2", "value2"));
+                inputOption("option2", "value2")).build();
 
         Context context = prompt(block, "");
         Value value = context.lookup("list-input2");
@@ -115,7 +110,7 @@ class TerminalInputResolverTest {
         Block block = inputList("list-input3", List.of(),
                 inputOption("option1", "value1"),
                 inputOption("option2", "value2"),
-                inputOption("option3", "value3"));
+                inputOption("option3", "value3")).build();
 
         Context context = prompt(block, "1 3");
         Value value = context.lookup("list-input3");
@@ -130,7 +125,7 @@ class TerminalInputResolverTest {
         Block block = inputList("list-input4", List.of(),
                 inputOption("option1", "value1"),
                 inputOption("option2", "value2"),
-                inputOption("option3", "value3"));
+                inputOption("option3", "value3")).build();
 
         Context context = prompt(block, "1 3 3 1");
         Value value = context.lookup("list-input4");
@@ -144,7 +139,7 @@ class TerminalInputResolverTest {
     void testInputEnumWithEmptyResponse() {
         Block block = inputEnum("enum-input1", "value1",
                 inputOption("option1", "value1"),
-                inputOption("option2", "value2"));
+                inputOption("option2", "value2")).build();
 
         Context context = prompt(block, "");
         Value value = context.lookup("enum-input1");
@@ -157,7 +152,7 @@ class TerminalInputResolverTest {
     @Test
     void testInputEnumWithSingleOptionAndDefault() {
         Block block = inputEnum("enum-input1", "value1",
-                inputOption("option1", "value1"));
+                inputOption("option1", "value1")).build();
 
         Context context = prompt(block, "2");
         Value value = context.lookup("enum-input1");
@@ -172,7 +167,7 @@ class TerminalInputResolverTest {
         Block block = inputEnum("enum-input2", "value3",
                 inputOption("option1", "value1"),
                 inputOption("option2", "value2"),
-                inputOption("option3", "value3"));
+                inputOption("option3", "value3")).build();
 
         Context context = prompt(block, "2");
         Value value = context.lookup("enum-input2");
@@ -184,7 +179,7 @@ class TerminalInputResolverTest {
 
     @Test
     void testInputTextWithEmptyResponseNoDefault() {
-        Block block = inputText("text-input1", null);
+        Block block = inputText("text-input1", null).build();
 
         Context context = prompt(block, "");
         Value value = context.lookup("text-input1");
@@ -194,7 +189,7 @@ class TerminalInputResolverTest {
 
     @Test
     void testInputTextWithEmptyResult() {
-        Block block = inputText("text-input2", "value1");
+        Block block = inputText("text-input2", "value1").build();
 
         Context context = prompt(block, "");
         Value value = context.lookup("text-input2");
@@ -206,7 +201,7 @@ class TerminalInputResolverTest {
 
     @Test
     void testInputText() {
-        Block block = inputText("text-input3", "value1");
+        Block block = inputText("text-input3", "value1").build();
 
         Context context = prompt(block, "not-value1");
         Value value = context.lookup("text-input3");
@@ -214,36 +209,6 @@ class TerminalInputResolverTest {
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.STRING));
         assertThat(value.asString(), is("not-value1"));
-    }
-
-    @Test
-    void testDefaultValueSubstitutions() {
-        Block block = inputText("text-input4", "${foo}");
-
-        Context context = Context.create();
-        context.put("foo", Value.create("bar"));
-        prompt(block, "", context);
-
-        Value value = context.lookup("text-input4");
-
-        assertThat(value, is(notNullValue()));
-        assertThat(value.type(), is(ValueTypes.STRING));
-        assertThat(value.asString(), is("bar"));
-    }
-
-    @Test
-    void testExternalDefaultValueSubstitutions() {
-        Block block = inputText("text-input5", "foo");
-
-        Context context = Context.create(Path.of(""), Map.of(), Map.of("text-input5", "${foo}"));
-        context.put("foo", Value.create("bar"));
-        prompt(block, "", context);
-
-        Value value = context.lookup("text-input5");
-
-        assertThat(value, is(notNullValue()));
-        assertThat(value.type(), is(ValueTypes.STRING));
-        assertThat(value.asString(), is("bar"));
     }
 
     private static Context prompt(Block block, String userInput) {

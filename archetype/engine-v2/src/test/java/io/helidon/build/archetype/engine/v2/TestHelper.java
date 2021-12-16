@@ -330,7 +330,7 @@ class TestHelper {
      * @param defaultValue default value
      * @return block builder
      */
-    static Block inputText(String name, String defaultValue, Block.Builder... children) {
+    static Block.Builder inputText(String name, String defaultValue, Block.Builder... children) {
         return inputBuilder(name, Block.Kind.TEXT, defaultValue, children);
     }
 
@@ -342,7 +342,7 @@ class TestHelper {
      * @param children     nested children
      * @return block builder
      */
-    static Block inputBoolean(String name, boolean defaultValue, Block.Builder... children) {
+    static Block.Builder inputBoolean(String name, boolean defaultValue, Block.Builder... children) {
         return inputBuilder(name, Block.Kind.BOOLEAN, String.valueOf(defaultValue), children);
     }
 
@@ -354,7 +354,7 @@ class TestHelper {
      * @param children     nested children
      * @return block builder
      */
-    static Block inputEnum(String name, String defaultValue, Block.Builder... children) {
+    static Block.Builder inputEnum(String name, String defaultValue, Block.Builder... children) {
         return inputBuilder(name, Block.Kind.ENUM, defaultValue, children);
     }
 
@@ -366,17 +366,17 @@ class TestHelper {
      * @param children     nested children
      * @return block builder
      */
-    static Block inputList(String name, List<String> defaultValue, Block.Builder... children) {
+    static Block.Builder inputList(String name, List<String> defaultValue, Block.Builder... children) {
         return inputBuilder(name, Block.Kind.LIST, String.join(",", defaultValue), children);
     }
 
-    private static Block inputBuilder(String name, Block.Kind kind, String defaultValue, Block.Builder... children) {
+    private static Block.Builder inputBuilder(String name, Block.Kind kind, String defaultValue, Block.Builder... children) {
         Block.Builder builder = Input.builder(null, null, kind)
                                      .attributes(inputAttributes(name, defaultValue, name));
         for (Block.Builder child : children) {
             builder.addChild(child);
         }
-        return builder.build();
+        return builder;
     }
 
     private static Block.Builder modelBuilder(String key, Block.Kind kind, int order, Block.Builder... children) {

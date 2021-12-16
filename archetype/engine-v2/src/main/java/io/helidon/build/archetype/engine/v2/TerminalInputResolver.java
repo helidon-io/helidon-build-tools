@@ -95,9 +95,6 @@ public class TerminalInputResolver extends InputResolver {
         }
         try {
             String defaultValue = defaultValue(input, context).asString();
-            if (defaultValue != null) {
-                defaultValue = context.substituteVariables(defaultValue);
-            }
             String defaultText = defaultValue != null ? BoldBlue.apply(defaultValue) : null;
             String response = prompt(input.label(), defaultText);
             if (response == null || response.trim().length() == 0) {
@@ -145,7 +142,8 @@ public class TerminalInputResolver extends InputResolver {
                 } else {
                     int index = Integer.parseInt(response.trim());
                     if (index > 0 && index <= input.options().size()) {
-                        context.push(input.name(), Value.create(input.options().get(index - 1).value()));
+                        String value = input.normalizeOptionValue(input.options().get(index - 1).value());
+                        context.push(input.name(), Value.create(value));
                         return VisitResult.CONTINUE;
                     }
                 }
