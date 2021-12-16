@@ -19,6 +19,8 @@ import io.helidon.build.archetype.engine.v2.ast.Value;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -168,5 +170,23 @@ class ContextTest {
         value = context.lookup("PARENT.foo.bar");
         assertThat(value, is(notNullValue()));
         assertThat(value.asString(), is("bar-value"));
+    }
+
+    @Test
+    void testExternalValuesSubstitution() {
+        Context context = Context.create(null, Map.of("foo", "foo", "bar", "${foo}"), null);
+        assertThat(context.lookup("bar").asString(), is("foo"));
+    }
+
+    @Test
+    void testExternalValueAlwaysLowerCase() {
+        Context context = Context.create(null, Map.of("foo", "FOO"), null);
+        assertThat(context.lookup("foo").asString(), is("foo"));
+    }
+
+    @Test
+    void testExternalDefaultAlwaysLowerCase() {
+        Context context = Context.create(null, null, Map.of("foo", "FOO"));
+        assertThat(context.defaultValue("foo").asString(), is("foo"));
     }
 }

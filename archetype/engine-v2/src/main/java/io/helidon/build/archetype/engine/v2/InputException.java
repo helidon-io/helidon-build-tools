@@ -17,16 +17,29 @@
 package io.helidon.build.archetype.engine.v2;
 
 /**
- * Unresolved input exception.
+ * Base input exception.
  */
-public final class UnresolvedInputException extends InputException {
+public abstract class InputException extends RuntimeException {
+
+    private final String inputPath;
 
     /**
      * Constructor.
      *
-     * @param inputPath The unresolved input path.
+     * @param message   message.
+     * @param inputPath input path
      */
-    public UnresolvedInputException(String inputPath) {
-        super("Unresolved input: " + inputPath, inputPath);
+    protected InputException(String message, String inputPath) {
+        super(message);
+        this.inputPath = inputPath;
+    }
+
+    /**
+     * Get the input path.
+     *
+     * @return The path.
+     */
+    public String inputPath() {
+        return inputPath;
     }
 }

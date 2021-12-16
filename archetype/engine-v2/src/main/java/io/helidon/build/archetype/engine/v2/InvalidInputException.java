@@ -17,16 +17,17 @@
 package io.helidon.build.archetype.engine.v2;
 
 /**
- * Unresolved input exception.
+ * Invalid input exception.
  */
-public final class UnresolvedInputException extends InputException {
+public final class InvalidInputException extends InputException {
 
     /**
      * Constructor.
      *
+     * @param value     input value
      * @param inputPath The unresolved input path.
      */
-    public UnresolvedInputException(String inputPath) {
-        super("Unresolved input: " + inputPath, inputPath);
+    public InvalidInputException(String value, String inputPath) {
+        super(String.format("Invalid input: %s='%s'", inputPath, value), inputPath);
     }
 }

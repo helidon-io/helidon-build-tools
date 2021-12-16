@@ -16,11 +16,15 @@
 
 package io.helidon.build.archetype.engine.v2;
 
+import java.util.stream.Collectors;
+
 import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Input.NamedInput;
 import io.helidon.build.archetype.engine.v2.ast.Input.Option;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
+import io.helidon.build.common.GenericType;
 
 /**
  * Input resolver.
@@ -46,11 +50,9 @@ public abstract class InputResolver implements Input.Visitor<Context> {
         if (value == null) {
             return null;
         }
+        input.validate(value, path);
         context.push(path);
-        if (input instanceof Input.Boolean) {
-            return value.asBoolean() ? VisitResult.CONTINUE : VisitResult.SKIP_SUBTREE;
-        }
-        return VisitResult.CONTINUE;
+        return input.visitValue(value);
     }
 
     /**
@@ -65,6 +67,16 @@ public abstract class InputResolver implements Input.Visitor<Context> {
         if (defaultValue == null) {
             defaultValue = input.defaultValue();
         }
+        if (defaultValue != null) {
+            GenericType<?> valueType = defaultValue.type();
+            if (valueType == ValueTypes.STRING) {
+                return Value.create(context.substituteVariables(defaultValue.asString()));
+            } else if (valueType == ValueTypes.STRING_LIST) {
+                return Value.create(defaultValue.asList().stream()
+                                                .map(context::substituteVariables)
+                                                .collect(Collectors.toList()));
+            }
+        }
         return defaultValue;
     }
 
@@ -75,13 +87,7 @@ public abstract class InputResolver implements Input.Visitor<Context> {
         }
         Value inputValue = context.lookup("PARENT." + lastVisited.name());
         if (inputValue != null) {
-            if (lastVisited instanceof Input.List) {
-                if (inputValue.asList().contains(option.value())) {
-                    return VisitResult.CONTINUE;
-                }
-            } else if (inputValue.asString().equals(option.value())) {
-                return VisitResult.SKIP_SIBLINGS;
-            }
+            return lastVisited.visitOption(inputValue, option);
         }
         return VisitResult.SKIP_SUBTREE;
     }
