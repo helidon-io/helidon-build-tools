@@ -20,6 +20,8 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import io.helidon.build.archetype.engine.v2.InvalidInputException;
+
 import static java.lang.Boolean.parseBoolean;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -278,6 +280,38 @@ public abstract class Input extends Block {
          */
         public abstract Value defaultValue();
 
+        /**
+         * Validate the given value against this input.
+         *
+         * @param value value
+         * @param path  input path
+         * @throws InvalidInputException if the value is invalid
+         */
+        @SuppressWarnings("unused")
+        public void validate(Value value, String path) throws InvalidInputException {
+        }
+
+        /**
+         * Compute the visit result for the given value.
+         *
+         * @param value value
+         * @return visit result
+         */
+        public VisitResult visitValue(Value value) {
+            return VisitResult.CONTINUE;
+        }
+
+        /**
+         * Compute the visit result for the given option.
+         *
+         * @param value  current value
+         * @param option option
+         * @return visit result
+         */
+        public VisitResult visitOption(Value value, Option option) {
+            return VisitResult.CONTINUE;
+        }
+
         @Override
         public String toString() {
             return "NamedInput{"
@@ -317,6 +351,13 @@ public abstract class Input extends Block {
         public String value() {
             return value;
         }
+
+        @Override
+        public String toString() {
+            return "InputOption{"
+                    + "value='" + value + '\''
+                    + '}';
+        }
     }
 
     /**
@@ -346,6 +387,16 @@ public abstract class Input extends Block {
         public <A> VisitResult acceptAfter(Input.Visitor<A> visitor, A arg) {
             return visitor.postVisitText(this, arg);
         }
+
+        @Override
+        public String toString() {
+            return "InputText{"
+                    + "name='" + name() + '\''
+                    + ", label='" + label() + '\''
+                    + ", optional=" + isOptional()
+                    + ", defaultValue='" + defaultValue + '\''
+                    + '}';
+        }
     }
 
     /**
@@ -366,6 +417,11 @@ public abstract class Input extends Block {
         }
 
         @Override
+        public VisitResult visitValue(Value value) {
+            return value.asBoolean() ? VisitResult.CONTINUE : VisitResult.SKIP_SUBTREE;
+        }
+
+        @Override
         public <A> VisitResult accept(Input.Visitor<A> visitor, A arg) {
             return visitor.visitBoolean(this, arg);
         }
@@ -373,6 +429,16 @@ public abstract class Input extends Block {
         @Override
         public <A> VisitResult acceptAfter(Input.Visitor<A> visitor, A arg) {
             return visitor.postVisitBoolean(this, arg);
+        }
+
+        @Override
+        public String toString() {
+            return "InputBoolean{"
+                    + "name='" + name() + '\''
+                    + ", label='" + label() + '\''
+                    + ", optional=" + isOptional()
+                    + ", defaultValue='" + defaultValue + '\''
+                    + '}';
         }
     }
 
@@ -434,7 +500,7 @@ public abstract class Input extends Block {
             java.util.List<Option> options = options();
             return IntStream.range(0, options.size())
                             .boxed()
-                            .filter(i -> optionNames.contains(options.get(0).value))
+                            .filter(i -> containsIgnoreCase(optionNames, options.get(0).value))
                             .collect(Collectors.toList());
         }
 
@@ -460,6 +526,14 @@ public abstract class Input extends Block {
         }
 
         @Override
+        public VisitResult visitOption(Value value, Option option) {
+            if (containsIgnoreCase(value.asList(), option.value)) {
+                return VisitResult.CONTINUE;
+            }
+            return VisitResult.SKIP_SUBTREE;
+        }
+
+        @Override
         public <A> VisitResult accept(Input.Visitor<A> visitor, A arg) {
             return visitor.visitList(this, arg);
         }
@@ -467,6 +541,25 @@ public abstract class Input extends Block {
         @Override
         public <A> VisitResult acceptAfter(Input.Visitor<A> visitor, A arg) {
             return visitor.postVisitList(this, arg);
+        }
+
+        @Override
+        public String toString() {
+            return "InputList{"
+                    + "name='" + name() + '\''
+                    + ", label='" + label() + '\''
+                    + ", optional=" + isOptional()
+                    + ", defaultValue='" + defaultValue + '\''
+                    + '}';
+        }
+
+        private static boolean containsIgnoreCase(java.util.List<String> values, String expected) {
+            for (String optionName : values) {
+                if (optionName.equalsIgnoreCase(expected)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -495,7 +588,7 @@ public abstract class Input extends Block {
             java.util.List<Option> options = options();
             return IntStream.range(0, options.size())
                             .boxed()
-                            .filter(i -> optionName.equals(options.get(0).value))
+                            .filter(i -> optionName.equalsIgnoreCase(options.get(i).value))
                             .findFirst()
                             .orElse(-1);
         }
@@ -506,6 +599,22 @@ public abstract class Input extends Block {
         }
 
         @Override
+        public void validate(Value value, String path) throws InvalidInputException {
+            String option = value.asString();
+            if (optionIndex(option) == -1) {
+                throw new InvalidInputException(option, path);
+            }
+        }
+
+        @Override
+        public VisitResult visitOption(Value value, Option option) {
+            if (value.asString().equalsIgnoreCase(option.value())) {
+                return VisitResult.SKIP_SIBLINGS;
+            }
+            return VisitResult.SKIP_SUBTREE;
+        }
+
+        @Override
         public <A> VisitResult accept(Input.Visitor<A> visitor, A arg) {
             return visitor.visitEnum(this, arg);
         }
@@ -513,6 +622,16 @@ public abstract class Input extends Block {
         @Override
         public <A> VisitResult acceptAfter(Input.Visitor<A> visitor, A arg) {
             return visitor.postVisitEnum(this, arg);
+        }
+
+        @Override
+        public String toString() {
+            return "InputEnum{"
+                    + "name='" + name() + '\''
+                    + ", label='" + label() + '\''
+                    + ", optional=" + isOptional()
+                    + ", defaultValue='" + defaultValue + '\''
+                    + '}';
         }
     }
 

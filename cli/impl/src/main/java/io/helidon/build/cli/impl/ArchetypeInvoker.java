@@ -41,6 +41,7 @@ import io.helidon.build.archetype.engine.v1.Maps;
 import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
 import io.helidon.build.archetype.engine.v2.BatchInputResolver;
 import io.helidon.build.archetype.engine.v2.InputResolver;
+import io.helidon.build.archetype.engine.v2.InvalidInputException;
 import io.helidon.build.archetype.engine.v2.InvocationException;
 import io.helidon.build.archetype.engine.v2.TerminalInputResolver;
 import io.helidon.build.archetype.engine.v2.UnresolvedInputException;
@@ -324,8 +325,7 @@ abstract class ArchetypeInvoker {
         private static final String PACKAGE_NAME_PROPERTY = "package";
         private static final String HELIDON_VERSION_PROPERTY = "helidon-version";
         private static final String BUILD_SYSTEM_PROPERTY = "build-system";
-        private static final String ARCHETYPE_BASE_PROPERTY = "base";
-        private static final String SUPPORTED_BUILD_SYSTEM = "maven"; // We only support one
+        private static final String ARCHETYPE_BASE_PROPERTY = "flavor.base";
 
         private V2Invoker(Builder builder) {
             super(builder);
@@ -399,8 +399,9 @@ abstract class ArchetypeInvoker {
             try {
                 return engine.generate(inputResolver, externalValues, externalDefaults, projectDirSupplier());
             } catch (InvocationException ie) {
-                if (ie.getCause() instanceof UnresolvedInputException) {
-                    UnresolvedInputException uie = (UnresolvedInputException) ie.getCause();
+                Throwable cause = ie.getCause();
+                if (cause instanceof UnresolvedInputException) {
+                    UnresolvedInputException uie = (UnresolvedInputException) cause;
                     String inputPath = uie.inputPath();
                     String option = optionName(inputPath);
                     if (option == null) {
@@ -408,6 +409,8 @@ abstract class ArchetypeInvoker {
                     } else {
                         throw new RequirementFailure("Missing required option: %s <value> or -D%s=<value>", option, inputPath);
                     }
+                } else if (cause instanceof InvalidInputException) {
+                    throw new RequirementFailure(cause.getMessage());
                 }
                 throw ie;
             }
