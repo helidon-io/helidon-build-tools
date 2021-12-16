@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 /**
  * String utility methods.
@@ -138,8 +139,8 @@ public class Strings {
     /**
      * Replace all white spaces by replacement string.
      *
-     * @param str           string
-     * @param replacement   new characters
+     * @param str         string
+     * @param replacement new characters
      * @return sanitized string
      */
     public static String replaceWhitespaces(String str, String replacement) {
@@ -153,8 +154,8 @@ public class Strings {
     /**
      * Sanitize given string with replacement keys and values.
      *
-     * @param str           string
-     * @param replacements  map containing old and new characters
+     * @param str          string
+     * @param replacements map containing old and new characters
      * @return sanitized string
      */
     public static String replaceAll(String str, String... replacements) {
@@ -168,6 +169,101 @@ public class Strings {
             str = str.replaceAll(replacements[i], replacements[i + 1]);
         }
         return str;
+    }
+
+    /**
+     * Count the amount of the symbols in the line that that match the predicate.
+     *
+     * @param line line
+     * @return amount of the symbols in the line that that match the predicate
+     */
+    public static int countWhile(Predicate<Character> predicate, String line) {
+        int result = 0;
+        for (char symbol : line.toCharArray()) {
+            if (predicate.test(symbol)) {
+                result++;
+            } else {
+                return result;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * <p>Compares two Strings, and returns the portion where they differ.
+     * More precisely, return the remainder of the second String,
+     * starting from where it's different from the first. This means that
+     * the difference between "abc" and "ab" is the empty String and not "c". </p>
+     *
+     * <p>For example,
+     * <pre>
+     * Strings.difference(null, null) = null
+     * Strings.difference("", "") = ""
+     * Strings.difference("", "abc") = "abc"
+     * Strings.difference("abc", "") = ""
+     * Strings.difference("abc", "abc") = ""
+     * Strings.difference("abc", "ab") = ""
+     * Strings.difference("ab", "abxyz") = "xyz"
+     * Strings.difference("abcde", "abxyz") = "xyz"
+     * Strings.difference("abcde", "xyz") = "xyz"
+     * </pre>
+     *
+     * @param str1 the first String, may be null
+     * @param str2 the second String, may be null
+     * @return the portion of str2 where it differs from str1; returns the
+     * empty String if they are equal
+     */
+    public static String difference(final String str1, final String str2) {
+        if (str1 == null) {
+            return str2;
+        }
+        if (str2 == null) {
+            return str1;
+        }
+        final int at = indexOfDifference(str1, str2);
+        if (at == -1) {
+            return "";
+        }
+        return str2.substring(at);
+    }
+
+    /**
+     * <p>Compares two CharSequences, and returns the index at which the
+     * CharSequences begin to differ.</p>
+     *
+     * <p>For example,
+     * <pre>
+     * Strings.indexOfDifference(null, null) = -1
+     * Strings.indexOfDifference("", "") = -1
+     * Strings.indexOfDifference("", "abc") = 0
+     * Strings.indexOfDifference("abc", "") = 0
+     * Strings.indexOfDifference("abc", "abc") = -1
+     * Strings.indexOfDifference("ab", "abxyz") = 2
+     * Strings.indexOfDifference("abcde", "abxyz") = 2
+     * Strings.indexOfDifference("abcde", "xyz") = 0
+     * </pre>
+     *
+     * @param cs1 the first CharSequence, may be null
+     * @param cs2 the second CharSequence, may be null
+     * @return the index where cs1 and cs2 begin to differ; -1 if they are equal
+     */
+    public static int indexOfDifference(final CharSequence cs1, final CharSequence cs2) {
+        if (cs1 == cs2) {
+            return -1;
+        }
+        if (cs1 == null || cs2 == null) {
+            return 0;
+        }
+        int i;
+        for (i = 0; i < cs1.length() && i < cs2.length(); ++i) {
+            if (cs1.charAt(i) != cs2.charAt(i)) {
+                break;
+            }
+        }
+        if (i < cs2.length() || i < cs1.length()) {
+            return i;
+        }
+        return -1;
     }
 
     private Strings() {

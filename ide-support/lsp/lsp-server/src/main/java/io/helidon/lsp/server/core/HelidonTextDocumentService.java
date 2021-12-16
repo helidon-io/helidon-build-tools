@@ -98,9 +98,15 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 public class HelidonTextDocumentService implements TextDocumentService {
 
     private static final Logger LOGGER = Logger.getLogger(HelidonTextDocumentService.class.getName());
-    private static final List<String> PROPS_FILE_PATTERN = Arrays.asList(
-            "microprofile-config.yaml", "microprofile-config.conf", "microprofile-config.json", "microprofile-config.properties",
-            "application.yaml", "application.conf", "application.json", "application.properties"
+    private static final List<String> PROPS_FILE_PATTERN = List.of(
+            "microprofile-config.yaml",
+            "microprofile-config.conf",
+            "microprofile-config.json",
+            "microprofile-config.properties",
+            "application.yaml",
+            "application.conf",
+            "application.json",
+            "application.properties"
     );
     private final LanguageServerContext languageServerContext;
     private final ConfigurationPropertiesService configurationPropertiesService;

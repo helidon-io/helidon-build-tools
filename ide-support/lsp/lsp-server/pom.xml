@@ -51,33 +51,13 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-properties</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-yaml</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.glassfish</groupId>
             <artifactId>javax.json</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.build-tools.common</groupId>
             <artifactId>helidon-build-common-maven</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -141,7 +121,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>io.helidon.lsp.server.HelidonLanguageServerLauncher</mainClass>
+                            <mainClass>io.helidon.lsp.server.HelidonLSPLauncher</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

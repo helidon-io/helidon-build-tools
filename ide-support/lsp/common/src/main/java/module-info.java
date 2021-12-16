@@ -18,6 +18,7 @@
  * Helidon LSP Common.
  */
 module io.helidon.lsp.common {
+    requires java.json;
     exports io.helidon.lsp.common;
     opens io.helidon.lsp.common to com.google.gson;
 }

@@ -22,13 +22,17 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import javax.json.Json;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonBuilderFactory;
+
 import io.helidon.lsp.common.Dependency;
 
-import com.google.gson.Gson;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.resolver.filter.CumulativeScopeArtifactFilter;
 import org.apache.maven.execution.MavenExecutionRequest;
@@ -56,7 +60,7 @@ import org.apache.maven.project.ProjectBuildingResult;
 public class DependencyMojo extends AbstractMojo {
 
     private static final String HOST = "127.0.0.1";
-    private static final Gson GSON = new Gson();
+    private final static JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of());
 
     /**
      * Scope to filter the dependencies.
@@ -139,7 +143,11 @@ public class DependencyMojo extends AbstractMojo {
                 Socket clientSocket = new Socket(HOST, port);
                 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
         ) {
-            out.println(GSON.toJson(dependencies));
+            JsonArrayBuilder arrayBuilder = JSON_FACTORY.createArrayBuilder();
+            for (Dependency dependency : dependencies) {
+                arrayBuilder.add(dependency.toJsonObject());
+            }
+            out.println(arrayBuilder.build().toString());
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }

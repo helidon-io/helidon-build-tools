@@ -19,17 +19,12 @@
  */
 module io.helidon.lsp.server {
     requires java.logging;
-    requires com.fasterxml.jackson.core;
-    requires com.fasterxml.jackson.databind;
-    requires com.fasterxml.jackson.dataformat.yaml;
     requires org.eclipse.lsp4j;
     requires org.eclipse.lsp4j.jsonrpc;
     requires io.helidon.build.common.maven;
     requires io.helidon.build.common;
     requires io.helidon.lsp.common;
-    requires io.helidon.config.metadata;
     requires java.json;
-    requires org.apache.commons.lang3;
     requires com.google.gson;
     requires helidon.archetype.engine.v2.json;
     opens io.helidon.lsp.server.service.config;

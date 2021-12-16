@@ -29,8 +29,6 @@ import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
-import io.helidon.config.metadata.ConfiguredOption;
-
 /**
  * Detailed information about configured type in Helidon application.
  */
@@ -242,7 +240,7 @@ public final class ConfiguredType {
         private final String type;
         private final boolean experimental;
         private final boolean optional;
-        private final ConfiguredOption.Kind kind;
+        private final ConfiguredOptionKind kind;
         private final List<AllowedValue> allowedValues;
         private final boolean provider;
         private final boolean merge;
@@ -258,7 +256,7 @@ public final class ConfiguredType {
                            String type,
                            boolean experimental,
                            boolean optional,
-                           ConfiguredOption.Kind kind,
+                           ConfiguredOptionKind kind,
                            boolean provider,
                            boolean merge,
                            List<AllowedValue> allowedValues) {
@@ -298,11 +296,11 @@ public final class ConfiguredType {
             );
         }
 
-        private static ConfiguredOption.Kind toKind(String kind) {
+        private static ConfiguredOptionKind toKind(String kind) {
             if (kind == null) {
-                return ConfiguredOption.Kind.VALUE;
+                return ConfiguredOptionKind.VALUE;
             }
-            return ConfiguredOption.Kind.valueOf(kind);
+            return ConfiguredOptionKind.valueOf(kind);
         }
 
         /**
@@ -414,7 +412,7 @@ public final class ConfiguredType {
          *
          * @return kind of the property.
          */
-        public ConfiguredOption.Kind kind() {
+        public ConfiguredOptionKind kind() {
             return kind;
         }
 

@@ -13,8 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.lsp.server.service.metadata;
 
 /**
- * Utility classes for the Helidon Language Server.
+ * Option kind.
  */
-package io.helidon.lsp.server.utils;
+public enum ConfiguredOptionKind {
+
+    /**
+     * Option is a single value (leaf node).
+     * Example: server port
+     */
+    VALUE,
+    /**
+     * Option is a list of values (either primitive, String or object nodes).
+     * Example: cipher suite in SSL, server sockets
+     */
+    LIST,
+    /**
+     * Option is a map of strings to primitive type or String.
+     * Example: tags in tracing, CDI configuration
+     */
+    MAP
+}

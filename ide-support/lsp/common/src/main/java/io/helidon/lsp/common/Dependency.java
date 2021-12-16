@@ -16,10 +16,18 @@
 
 package io.helidon.lsp.common;
 
+import java.util.Map;
+
+import javax.json.Json;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+
 /**
  * Information about maven dependency.
  */
 public class Dependency {
+
+    private final static JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of());
 
     private String groupId;
     private String artifactId;
@@ -105,5 +113,21 @@ public class Dependency {
      */
     public String path() {
         return path;
+    }
+
+    /**
+     * Create JsonObject from the current instance of this object.
+     *
+     * @return JsonObject
+     */
+    public JsonObject toJsonObject() {
+        return JSON_FACTORY.createObjectBuilder()
+                           .add("groupId", groupId)
+                           .add("artifactId", artifactId)
+                           .add("version", version)
+                           .add("type", type)
+                           .add("scope", scope)
+                           .add("path", path)
+                           .build();
     }
 }

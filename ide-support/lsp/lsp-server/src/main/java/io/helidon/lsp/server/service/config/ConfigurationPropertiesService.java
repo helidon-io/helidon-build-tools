@@ -30,10 +30,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.lsp.common.Dependency;
 import io.helidon.lsp.server.management.MavenSupport;
 import io.helidon.lsp.server.service.metadata.ConfigMetadata;
+import io.helidon.lsp.server.service.metadata.ConfiguredOptionKind;
 import io.helidon.lsp.server.service.metadata.ConfiguredType;
 import io.helidon.lsp.server.service.metadata.ContainerConfigMetadata;
 import io.helidon.lsp.server.service.metadata.MetadataProvider;
@@ -212,12 +212,12 @@ public class ConfigurationPropertiesService {
             int level,
             Map<String, ConfigMetadata> result
     ) {
-        if (property.kind() == ConfiguredOption.Kind.LIST) {
+        if (property.kind() == ConfiguredOptionKind.LIST) {
             processListProperty(property, properties, typesMap, level, result);
             return;
         }
 
-        if (property.kind() == ConfiguredOption.Kind.MAP) {
+        if (property.kind() == ConfiguredOptionKind.MAP) {
             processMapProperty(property, level, result);
             return;
         }

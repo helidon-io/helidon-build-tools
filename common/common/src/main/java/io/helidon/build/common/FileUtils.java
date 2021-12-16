@@ -923,4 +923,17 @@ public final class FileUtils {
         }
         return DF.format(size / (double) TB) + " GB";
     }
+
+    /**
+     * Get the text file content as a list of strings by its URI.
+     *
+     * @param fileUri file URI
+     * @return content of the file
+     * @throws IOException        IOException
+     * @throws URISyntaxException URISyntaxException
+     */
+    public static List<String> readAllLines(URI fileUri) throws IOException, URISyntaxException {
+        Path path = Paths.get(fileUri.getPath());
+        return Files.readAllLines(path);
+    }
 }

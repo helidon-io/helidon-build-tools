@@ -31,12 +31,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import io.helidon.build.common.Strings;
 import io.helidon.lsp.server.service.ContentManager;
 import io.helidon.lsp.server.service.TextDocumentHandler;
 import io.helidon.lsp.server.service.config.ConfigurationPropertiesService;
 import io.helidon.lsp.server.service.metadata.ConfigMetadata;
 
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.CompletionParams;
@@ -139,7 +139,7 @@ public class PropertiesTextDocumentHandler implements TextDocumentHandler {
                     CompletionItem item = new CompletionItem();
                     item.setKind(CompletionItemKind.Snippet);
                     item.setLabel(key);
-                    item.setInsertText(StringUtils.difference(baseForCompletion, key) + SEPARATOR);
+                    item.setInsertText(Strings.difference(baseForCompletion, key) + SEPARATOR);
                     item.setDocumentation(prepareInfoForKey(value));
                     item.setDetail(value.description());
                     item.setInsertTextFormat(InsertTextFormat.Snippet);

@@ -132,7 +132,6 @@
         <version.lib.groovy>2.4.16</version.lib.groovy>
         <version.lib.gson>2.8.9</version.lib.gson>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
-        <version.lib.helidon>3.0.2</version.lib.helidon>
         <version.lib.invoker>3.0.1</version.lib.invoker>
         <version.lib.jackson>2.11.0</version.lib.jackson>
         <version.lib.jandex>2.1.1.Final</version.lib.jandex>
@@ -871,11 +870,6 @@
                 <groupId>org.apache.maven.shared</groupId>
                 <artifactId>maven-invoker</artifactId>
                 <version>${version.lib.invoker}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.config</groupId>
-                <artifactId>helidon-config-metadata</artifactId>
-                <version>${version.lib.helidon}</version>
             </dependency>
             <dependency>
                 <groupId>org.mock-server</groupId>

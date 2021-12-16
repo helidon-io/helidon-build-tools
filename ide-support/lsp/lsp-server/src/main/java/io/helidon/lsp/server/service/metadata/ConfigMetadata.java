@@ -17,8 +17,6 @@ package io.helidon.lsp.server.service.metadata;
 
 import java.util.Set;
 
-import io.helidon.config.metadata.ConfiguredOption;
-
 /**
  * Configuration metadata for Helidon application.
  */
@@ -26,7 +24,7 @@ public abstract class ConfigMetadata {
 
     private final String key;
     private final String type;
-    private final ConfiguredOption.Kind kind;
+    private final ConfiguredOptionKind kind;
     private final String description;
     private final int level;
     private final Set<ConfigMetadata> content;
@@ -41,7 +39,7 @@ public abstract class ConfigMetadata {
      * @param level       level of metadata in hierarchy.
      * @param content     child metadata set.
      */
-    public ConfigMetadata(String key, String type, ConfiguredOption.Kind kind, String description, int level,
+    public ConfigMetadata(String key, String type, ConfiguredOptionKind kind, String description, int level,
                           Set<ConfigMetadata> content) {
         this.key = key;
         this.type = type;
@@ -54,9 +52,9 @@ public abstract class ConfigMetadata {
     /**
      * Kind of metadata.
      *
-     * @return ConfiguredOption.Kind object.
+     * @return ConfiguredOptionKind object.
      */
-    public ConfiguredOption.Kind kind() {
+    public ConfiguredOptionKind kind() {
         return kind;
     }
 

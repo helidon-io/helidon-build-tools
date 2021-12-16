@@ -32,11 +32,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.lsp.server.service.ContentManager;
 import io.helidon.lsp.server.service.TextDocumentHandler;
 import io.helidon.lsp.server.service.config.ConfigurationPropertiesService;
 import io.helidon.lsp.server.service.metadata.ConfigMetadata;
+import io.helidon.lsp.server.service.metadata.ConfiguredOptionKind;
 
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
@@ -147,13 +147,13 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
 
     private String suffixForInsertText(ConfigMetadata value) {
         if (value.kind() != null) {
-            if (value.kind() == ConfiguredOption.Kind.LIST) {
+            if (value.kind() == ConfiguredOptionKind.LIST) {
                 String indent = value.level() == 0 || value.level() == 1
                         ? ""
                         : String.format("%-" + ((value.level() - 1) * 2) + "s", "");
                 return "\n" + indent + "- ";
             }
-            if (value.kind() == ConfiguredOption.Kind.VALUE) {
+            if (value.kind() == ConfiguredOptionKind.VALUE) {
                 if (value.content() == null || value.content().size() == 0) {
                     return " ";
                 }

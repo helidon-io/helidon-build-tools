@@ -37,11 +37,11 @@ import org.eclipse.lsp4j.services.LanguageClient;
 /**
  * Launcher for Helidon language server.
  */
-public class HelidonLanguageServerLauncher {
+public class HelidonLSPLauncher {
 
-    private static final Logger LOGGER = Logger.getLogger(HelidonLanguageServerLauncher.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(HelidonLSPLauncher.class.getName());
 
-    private HelidonLanguageServerLauncher() {
+    private HelidonLSPLauncher() {
     }
 
     /**

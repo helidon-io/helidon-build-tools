@@ -30,7 +30,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.lsp.server.utils.FileUtils;
+import io.helidon.build.common.FileUtils;
 
 /**
  * Stores the last changes in the traceable project files.
@@ -39,9 +39,7 @@ public class ContentManager {
 
     private static final ContentManager INSTANCE = new ContentManager();
     private static final Logger LOGGER = Logger.getLogger(ContentManager.class.getName());
-
     private final Map<String, String> fileToTmpMap = new HashMap<>();
-    private final FileUtils fileUtils = FileUtils.instance();
     private final ReentrantLock lock = new ReentrantLock();
 
     private Path filesFolder;
@@ -79,7 +77,7 @@ public class ContentManager {
         LOGGER.finest("read() started with thread " + Thread.currentThread().getName());
         try {
             String tempFile = tempFile(fileName);
-            return fileUtils.getTextDocContentByURI(tempFile);
+            return FileUtils.readAllLines(new URI(tempFile));
         } finally {
             LOGGER.finest("read() finished with thread " + Thread.currentThread().getName());
             lock.unlock();
@@ -119,7 +117,7 @@ public class ContentManager {
         try {
             Path tmp = Files.createTempFile(filesFolder, "", Path.of(fileName).getFileName().toString());
             tmp.toFile().deleteOnExit();
-            List<String> content = fileUtils.getTextDocContentByURI(fileName);
+            List<String> content = FileUtils.readAllLines(new URI(fileName));
             Files.write(tmp, content);
             return tmp.toUri().toString();
         } catch (URISyntaxException | IOException e) {

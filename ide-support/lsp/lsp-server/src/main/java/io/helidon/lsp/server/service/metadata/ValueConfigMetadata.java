@@ -18,8 +18,6 @@ package io.helidon.lsp.server.service.metadata;
 import java.util.List;
 import java.util.Set;
 
-import io.helidon.config.metadata.ConfiguredOption;
-
 /**
  * Information about values.
  */
@@ -41,7 +39,7 @@ public class ValueConfigMetadata extends ConfigMetadata {
      * @param allowedValues allowedValues
      */
     public ValueConfigMetadata(String key, String defaultValue, String type, String description, int level,
-                               Set<ConfigMetadata> content, ConfiguredOption.Kind kind,
+                               Set<ConfigMetadata> content, ConfiguredOptionKind kind,
                                List<ConfiguredType.AllowedValue> allowedValues) {
         super(key, type, kind, description, level, content);
         this.defaultValue = defaultValue;

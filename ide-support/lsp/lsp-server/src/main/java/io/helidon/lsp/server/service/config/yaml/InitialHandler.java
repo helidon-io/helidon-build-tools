@@ -19,7 +19,7 @@ package io.helidon.lsp.server.service.config.yaml;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import io.helidon.lsp.server.utils.LspStringUtils;
+import io.helidon.build.common.Strings;
 
 class InitialHandler implements Handler {
 
@@ -57,7 +57,7 @@ class InitialHandler implements Handler {
                                  "Incorrect token value '" + token.value() + "' for token type " + token.type().name()))
             );
             tokens.add(keyToken);
-            int indent = LspStringUtils.indentSize(token.value());
+            int indent = Strings.countWhile(ch -> ch.equals(' ') || ch.equals('-'), token.value());
             return new LineResult(lineIndex, indent, tokens);
         }
         return null;

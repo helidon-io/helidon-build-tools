@@ -37,8 +37,8 @@
             <artifactId>org.eclipse.lsp4j</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.json</artifactId>
         </dependency>
     </dependencies>
 
