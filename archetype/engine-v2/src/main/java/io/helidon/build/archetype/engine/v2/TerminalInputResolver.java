@@ -142,7 +142,8 @@ public class TerminalInputResolver extends InputResolver {
                 } else {
                     int index = Integer.parseInt(response.trim());
                     if (index > 0 && index <= input.options().size()) {
-                        context.push(input.name(), Value.create(input.options().get(index - 1).value()));
+                        String value = input.normalizeOptionValue(input.options().get(index - 1).value());
+                        context.push(input.name(), Value.create(value));
                         return VisitResult.CONTINUE;
                     }
                 }

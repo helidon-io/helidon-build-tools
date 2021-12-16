@@ -245,7 +245,7 @@ public final class Context {
             if (val == null) {
                 throw new IllegalArgumentException("Unresolved variable: " + var);
             }
-            return String.valueOf(val.unwrap()).toLowerCase();
+            return String.valueOf(val.unwrap());
         });
     }
 

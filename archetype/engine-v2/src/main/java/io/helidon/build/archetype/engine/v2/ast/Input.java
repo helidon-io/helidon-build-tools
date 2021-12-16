@@ -312,6 +312,16 @@ public abstract class Input extends Block {
             return VisitResult.CONTINUE;
         }
 
+        /**
+         * Normalize the given value.
+         *
+         * @param value value
+         * @return normalized value
+         */
+        public String normalizeOptionValue(String value) {
+            return value;
+        }
+
         @Override
         public String toString() {
             return "NamedInput{"
@@ -466,6 +476,11 @@ public abstract class Input extends Block {
         public java.util.List<Option> options() {
             return options;
         }
+
+        @Override
+        public String normalizeOptionValue(String value) {
+            return value.toLowerCase();
+        }
     }
 
     /**
@@ -517,6 +532,7 @@ public abstract class Input extends Block {
                          .distinct()
                          .map(i -> options.get(i - 1))
                          .map(Input.Option::value)
+                         .map(this::normalizeOptionValue)
                          .collect(Collectors.toList());
         }
 

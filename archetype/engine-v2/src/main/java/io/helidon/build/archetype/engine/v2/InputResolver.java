@@ -70,10 +70,12 @@ public abstract class InputResolver implements Input.Visitor<Context> {
         if (defaultValue != null) {
             GenericType<?> valueType = defaultValue.type();
             if (valueType == ValueTypes.STRING) {
-                return Value.create(context.substituteVariables(defaultValue.asString()));
+                String value = context.substituteVariables(input.normalizeOptionValue(defaultValue.asString()));
+                return Value.create(value);
             } else if (valueType == ValueTypes.STRING_LIST) {
                 return Value.create(defaultValue.asList().stream()
                                                 .map(context::substituteVariables)
+                                                .map(input::normalizeOptionValue)
                                                 .collect(Collectors.toList()));
             }
         }
