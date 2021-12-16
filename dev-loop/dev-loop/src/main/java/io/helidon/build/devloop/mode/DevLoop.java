@@ -56,7 +56,6 @@ import static org.fusesource.jansi.Ansi.ansi;
  * A development loop that manages application lifecycle based on events from a {@link BuildLoop}.
  */
 public class DevLoop {
-    private static final int MAX_BUILD_WAIT_SECONDS = 5 * 60;
     private final boolean terminalMode;
     private final DevLoopMonitor monitor;
     private final BuildExecutor buildExecutor;
