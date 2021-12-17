@@ -48,7 +48,7 @@ System.out.println("YEAH");
         <step label="next">
             <help></help>
             <inputs>
-                <text name="project-name" label="Project Name" default="my-project"/>
+                <text name="project-name" label="Project Name" default="my-project" global="true"/>
                 <boolean name="option1" label="Option1">
                     <inputs />
                 </boolean>

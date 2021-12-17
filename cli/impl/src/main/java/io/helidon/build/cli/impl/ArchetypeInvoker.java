@@ -372,7 +372,7 @@ abstract class ArchetypeInvoker {
         private static final String PACKAGE_NAME_PROPERTY = "package";
         private static final String HELIDON_VERSION_PROPERTY = "helidon-version";
         private static final String BUILD_SYSTEM_PROPERTY = "build-system";
-        private static final String ARCHETYPE_BASE_PROPERTY = "flavor.base";
+        private static final String ARCHETYPE_BASE_PROPERTY = "base";
 
         private V2Invoker(Builder builder) {
             super(builder);

@@ -644,6 +644,17 @@
         </xs:attribute>
     </xs:attributeGroup>
 
+    <xs:attributeGroup name="global-group">
+        <xs:attribute name="global" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Indicate if the step or input is global.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+
     <xs:group name="directive-group">
         <xs:sequence>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
@@ -682,6 +693,7 @@
         <xs:attributeGroup ref="a:input-group"/>
         <xs:attributeGroup ref="a:label-group"/>
         <xs:attributeGroup ref="a:optional-group"/>
+        <xs:attributeGroup ref="a:global-group"/>
         <xs:attribute name="default" type="xs:string">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
@@ -701,6 +713,7 @@
         <xs:attributeGroup ref="a:input-group"/>
         <xs:attributeGroup ref="a:label-group"/>
         <xs:attributeGroup ref="a:optional-group"/>
+        <xs:attributeGroup ref="a:global-group"/>
         <xs:attribute name="default" type="xs:boolean">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
@@ -738,6 +751,7 @@
         <xs:attributeGroup ref="a:input-group"/>
         <xs:attributeGroup ref="a:label-group"/>
         <xs:attributeGroup ref="a:optional-group"/>
+        <xs:attributeGroup ref="a:global-group"/>
         <xs:attribute name="default" type="xs:string">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
@@ -773,6 +787,7 @@
             </xs:choice>
         </xs:sequence>
         <xs:attributeGroup ref="a:optional-group"/>
+        <xs:attributeGroup ref="a:global-group"/>
         <xs:attributeGroup ref="a:input-group"/>
         <xs:attributeGroup ref="a:label-group"/>
         <xs:attribute name="default" type="xs:string">

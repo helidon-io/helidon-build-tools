@@ -55,7 +55,7 @@ public class BatchInputResolver extends InputResolver {
         if (input.isOptional()) {
             Value defaultValue = defaultValue(input, context);
             if (defaultValue != null) {
-                context.push(input.name(), defaultValue);
+                context.push(input.name(), defaultValue, input.isGlobal());
                 if (input instanceof Input.Boolean && !defaultValue.asBoolean()) {
                     return VisitResult.SKIP_SUBTREE;
                 }

@@ -350,9 +350,9 @@ public final class InitOptions {
                     case "init_flavor":
                         return "${flavor}";
                     case "init_archetype":
-                        return "${flavor.base}";
+                        return "${base}";
                     case "init_build":
-                        return "${flavor.base.build-system}";
+                        return "${build-system}";
                     default:
                         return null;
                 }
