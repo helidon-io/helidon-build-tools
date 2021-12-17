@@ -45,12 +45,16 @@ import io.helidon.build.archetype.engine.v2.InvalidInputException;
 import io.helidon.build.archetype.engine.v2.InvocationException;
 import io.helidon.build.archetype.engine.v2.TerminalInputResolver;
 import io.helidon.build.archetype.engine.v2.UnresolvedInputException;
+import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
 import io.helidon.build.common.RequirementFailure;
 import io.helidon.build.common.VirtualFileSystem;
 import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
+import static io.helidon.build.cli.common.ProjectConfig.PROJECT_ARCHETYPE;
+import static io.helidon.build.cli.common.ProjectConfig.PROJECT_FLAVOR;
+import static io.helidon.build.cli.common.ProjectConfig.createProjectConfig;
 import static io.helidon.build.common.Requirements.require;
 import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 import static java.util.Collections.unmodifiableMap;
@@ -78,6 +82,7 @@ abstract class ArchetypeInvoker {
     private final InitOptions initOptions;
     private final Map<String, String> initProperties;
     private final Function<String, Path> projectDirSupplier;
+    private final UserConfig userConfig;
 
     private ArchetypeInvoker(Builder builder) {
         metadata = builder.metadata;
@@ -85,6 +90,7 @@ abstract class ArchetypeInvoker {
         initOptions = builder.initOptions;
         initProperties = unmodifiableMap(builder.initProperties);
         projectDirSupplier = builder.projectDirSupplier;
+        userConfig = builder.userConfig;
     }
 
     /**
@@ -112,6 +118,15 @@ abstract class ArchetypeInvoker {
      */
     protected InitOptions initOptions() {
         return initOptions;
+    }
+
+    /**
+     * Get the user config.
+     *
+     * @return UserConfig
+     */
+    protected UserConfig userConfig() {
+        return userConfig;
     }
 
     /**
@@ -166,6 +181,7 @@ abstract class ArchetypeInvoker {
         private InitOptions initOptions;
         private final Map<String, String> initProperties;
         private Function<String, Path> projectDirSupplier;
+        private UserConfig userConfig;
 
         private Builder() {
             initProperties = new HashMap<>();
@@ -216,6 +232,17 @@ abstract class ArchetypeInvoker {
         }
 
         /**
+         * Set the user config.
+         *
+         * @param config the config
+         * @return this builder
+         */
+        Builder userConfig(UserConfig config) {
+            this.userConfig = config;
+            return this;
+        }
+
+        /**
          * Set the project directory supplier.
          * <p>
          * The project directory supplier takes a project name and returns
@@ -237,8 +264,8 @@ abstract class ArchetypeInvoker {
          */
         ArchetypeInvoker build() {
             if (EngineVersion.V2.equals(initOptions.engineVersion())
-                    || initOptions.archetypePath() != null
-                    || toMavenVersion(initOptions.helidonVersion()).isGreaterThanOrEqualTo(HELIDON_V3)) {
+                || initOptions.archetypePath() != null
+                || toMavenVersion(initOptions.helidonVersion()).isGreaterThanOrEqualTo(HELIDON_V3)) {
                 return new V2Invoker(this);
             }
             return new V1Invoker(this);
@@ -261,8 +288,18 @@ abstract class ArchetypeInvoker {
 
         @Override
         Path invoke() throws IOException {
-            String helidonVersion = initOptions().helidonVersion();
-            Flavor flavor = initOptions().flavor();
+            InitOptions initOptions = initOptions();
+            String helidonVersion = initOptions.helidonVersion();
+
+            if (isInteractive()) {
+                // Select flavor interactively
+                String[] flavorOptions = new String[]{"SE", "MP"};
+                int flavorIndex = initOptions.flavor() == Flavor.SE ? 0 : 1;
+                flavorIndex = prompt("Helidon flavor", flavorOptions, flavorIndex);
+                initOptions.flavor(Flavor.valueOf(flavorOptions[flavorIndex]));
+            }
+
+            Flavor flavor = initOptions.flavor();
 
             // Gather archetype names
             ArchetypeBrowser browser = new ArchetypeBrowser(metadata(), flavor, helidonVersion);
@@ -277,6 +314,7 @@ abstract class ArchetypeInvoker {
                                                       .collect(Collectors.toList());
                 int archetypeIndex = prompt("Select archetype", descriptions, 0);
                 archetype = archetypes.get(archetypeIndex);
+                initOptions.archetypeName(archetype.name());
             } else {
                 // find the archetype that matches archetypeName
                 archetype = archetypes.stream()
@@ -284,6 +322,8 @@ abstract class ArchetypeInvoker {
                                       .findFirst()
                                       .orElse(null);
             }
+
+            initOptions.applyConfig(userConfig(), EngineVersion.V1);
 
             // Find jar and set up loader
             File jarFile = browser.archetypeJar(archetype).toFile();
@@ -309,6 +349,13 @@ abstract class ArchetypeInvoker {
 
             Path projectDir = projectDirSupplier().apply(initProperties.get("name"));
             engine.generate(projectDir.toFile());
+
+            // Create config file that includes feature information
+            ProjectConfig configFile = createProjectConfig(projectDir, helidonVersion);
+            configFile.property(PROJECT_FLAVOR, initOptions.flavor().toString());
+            configFile.property(PROJECT_ARCHETYPE, initOptions.archetypeName());
+            configFile.store();
+
             return projectDir;
         }
     }
@@ -334,6 +381,7 @@ abstract class ArchetypeInvoker {
         @Override
         Path invoke() {
             InitOptions initOptions = initOptions();
+            initOptions.applyConfig(userConfig(), EngineVersion.V2);
             Map<String, String> externalDefaults = new HashMap<>();
 
             // Initialize params with any properties passed on the command-line; options will take precedence

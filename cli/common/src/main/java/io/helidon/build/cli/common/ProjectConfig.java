@@ -29,6 +29,7 @@ import io.helidon.build.common.ConfigProperties;
 
 import static io.helidon.build.common.FileUtils.requireDirectory;
 import static io.helidon.build.common.FileUtils.requireExistent;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Class ProjectConfig.
@@ -59,6 +60,11 @@ public class ProjectConfig extends ConfigProperties {
      * Project's flavor.
      */
     public static final String PROJECT_FLAVOR = "project.flavor";
+
+    /**
+     * Project's archetype.
+     */
+    public static final String PROJECT_ARCHETYPE = "project.archetype";
 
     /**
      * Prefix for all feature properties.
@@ -135,6 +141,22 @@ public class ProjectConfig extends ConfigProperties {
      */
     public static boolean projectConfigExists(Path projectDir) {
         return Files.isRegularFile(toDotHelidon(projectDir));
+    }
+
+    /**
+     * Create a new project config, populated with the directory and helidon version. The instance is not stored.
+     *
+     * @param projectDir The project directory.
+     * @param helidonVersion The helidon version.
+     * @return The config.
+     */
+    public static ProjectConfig createProjectConfig(Path projectDir, String helidonVersion) {
+        final Path dotHelidon = toDotHelidon(projectDir);
+        ProjectConfig config = new ProjectConfig(dotHelidon);
+        config.projectDir(projectDir);
+        config.property(PROJECT_DIRECTORY, projectDir.toString());
+        config.property(HELIDON_VERSION, requireNonNull(helidonVersion));
+        return config;
     }
 
     /**
