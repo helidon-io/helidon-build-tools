@@ -54,7 +54,7 @@ public final class InitOptions {
     private String helidonVersion;
     private final BuildSystem build;
     private final BuildSystem buildOption;
-    private final String archetypeName;
+    private String archetypeName;
     private final String archetypeNameOption;
     private final String archetypePath;
     private final EngineVersion engineVersion;
@@ -218,6 +218,15 @@ public final class InitOptions {
      */
     String archetypeName() {
         return archetypeName;
+    }
+
+    /**
+     * Set the archetype name.
+     *
+     * @param name archetype name
+     */
+    void archetypeName(String name) {
+        archetypeName = name;
     }
 
     /**

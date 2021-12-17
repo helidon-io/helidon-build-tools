@@ -20,22 +20,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import io.helidon.build.archetype.engine.v1.Prompter;
-import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
-import io.helidon.build.cli.impl.ArchetypeInvoker.EngineVersion;
 import io.helidon.build.cli.impl.InitOptions.BuildSystem;
-import io.helidon.build.cli.impl.InitOptions.Flavor;
 import io.helidon.build.common.Log;
 import io.helidon.build.common.Requirements;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
 import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY;
-import static io.helidon.build.cli.common.ProjectConfig.PROJECT_DIRECTORY;
-import static io.helidon.build.cli.common.ProjectConfig.PROJECT_FLAVOR;
-import static io.helidon.build.cli.impl.ArchetypeInvoker.EngineVersion.V1;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightCyan;
 
@@ -101,29 +95,12 @@ public final class InitCommand extends BaseCommand {
                 .batch(batch)
                 .metadata(metadata)
                 .initOptions(initOptions)
+                .userConfig(config)
                 .initProperties(context.properties())
                 .projectDir(this::initProjectDir)
                 .build();
 
-        EngineVersion engineVersion = archetypeInvoker.engineVersion();
-        if (engineVersion == V1 && !batch) {
-            String[] flavorOptions = new String[]{"SE", "MP"};
-            int flavorIndex = initOptions.flavor() == Flavor.SE ? 0 : 1;
-            flavorIndex = prompt("Helidon flavor", flavorOptions, flavorIndex);
-            initOptions.flavor(Flavor.valueOf(flavorOptions[flavorIndex]));
-        }
-        initOptions.applyConfig(config, engineVersion);
-
         Path projectDir = archetypeInvoker.invoke();
-
-        if (engineVersion == V1) {
-            // Create config file that includes feature information
-            ProjectConfig configFile = projectConfig(projectDir);
-            configFile.property(PROJECT_DIRECTORY, projectDir.toString());
-            configFile.property(PROJECT_FLAVOR, initOptions.flavor().toString());
-            configFile.property(HELIDON_VERSION_PROPERTY, helidonVersion);
-            configFile.store();
-        }
 
         String dir = BoldBrightCyan.apply(projectDir);
         Prompter.displayLine("Switch directory to " + dir + " to use CLI");
