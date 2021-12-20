@@ -168,12 +168,16 @@ public class InputResolverTest {
 
     @Test
     void testGlobalInputs() {
-        Block.Builder scoped = inputEnum("scoped", "value1",
-                                         inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
-                                         inputOption("option2", "value2", output(model(modelList("colors", modelValue("blue"))))));
+        Block.Builder nestedScope = inputEnum("nested-scope", "value1",
+                                              inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
+                                              inputOption("option2", "value2", output(model(modelList("colors", modelValue("blue"))))));
+
+        Block.Builder scope = inputEnum("scope", "value1",
+                                         inputOption("option1", "value1", output(model(modelList("style", modelValue("plain"))))),
+                                         inputOption("option2", "value2", nestedScope));
 
         Block.Builder nestedGlobal = inputEnum("nested-global", "value1",
-                                               inputOption("option1", "value1", scoped))
+                                               inputOption("option1", "value1", scope))
                 .attribute("global", "true");
 
         Block global = inputEnum("global", "value1",
@@ -184,7 +188,8 @@ public class InputResolverTest {
         Context context = Context.create();
         context.put("global", Value.create("value1"));
         context.put("nested-global", Value.create("value1"));
-        context.put("scoped", Value.create("value2"));
+        context.put("scope", Value.create("value2"));
+        context.put("scope.nested-scope", Value.create("value2"));
         List<String> resolvedInputs = resolveInputs(global, context);
         assertThat(resolvedInputs.size(), is(1));
         assertThat(resolvedInputs, contains("blue"));
@@ -192,13 +197,13 @@ public class InputResolverTest {
 
     @Test
     void testInvalidGlobalInputs() {
-        Block.Builder scoped = inputEnum("scoped", "value1",
+        Block.Builder invalidGlobal = inputEnum("invalid-global", "value1",
                                          inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
                                          inputOption("option2", "value2", output(model(modelList("colors", modelValue("blue"))))))
                 .attribute("global", "true");
 
         Block.Builder nonGlobal = inputEnum("nested-global", "value1",
-                                               inputOption("option1", "value1", scoped));
+                                               inputOption("option1", "value1", invalidGlobal));
 
         Block global = inputEnum("global", "value1",
                                  inputOption("option1", "value1", nonGlobal))
@@ -211,7 +216,7 @@ public class InputResolverTest {
 
         InvocationException ex = assertThrows(InvocationException.class, () -> resolveInputs(global, context, null));
         assertThat(ex.getCause(), is(instanceOf(IllegalStateException.class)));
-        assertThat(ex.getCause().getMessage(), endsWith("input 'nested-global.scoped' cannot be global"));
+        assertThat(ex.getCause().getMessage(), endsWith("input 'nested-global.invalid-global' cannot be global"));
     }
 
     private static void resolveInputs(Block block, Context context, Model.Visitor<Context> modelVisitor) {
