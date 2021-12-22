@@ -21,9 +21,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +32,10 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.build.archetype.engine.v1.ArchetypeEngine;
-import io.helidon.build.archetype.engine.v1.Maps;
+import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
+import io.helidon.build.archetype.engine.v2.BatchInputResolver;
+import io.helidon.build.common.FileUtils;
+import io.helidon.build.common.Maps;
 
 import org.apache.maven.archetype.ArchetypeGenerationRequest;
 import org.apache.maven.archetype.ArchetypeGenerationResult;
@@ -58,6 +61,8 @@ import org.apache.maven.shared.transfer.project.NoFileAssignedException;
 import org.apache.maven.shared.transfer.project.install.ProjectInstaller;
 import org.apache.maven.shared.transfer.project.install.ProjectInstallerRequest;
 import org.codehaus.plexus.util.StringUtils;
+
+import static java.nio.file.FileSystems.newFileSystem;
 
 /**
  * {@code archetype:integration-test} mojo.
@@ -92,6 +97,7 @@ public class IntegrationTestMojo extends AbstractMojo {
     /**
      * Skip the integration test.
      */
+    @SuppressWarnings("FieldCanBeLocal")
     @Parameter(property = "archetype.test.skip")
     private boolean skip = false;
 
@@ -185,12 +191,7 @@ public class IntegrationTestMojo extends AbstractMojo {
         props.put("name", "test project");
 
         Path outputDir = projectGoal.getParent().resolve(props.getProperty("artifactId"));
-        if (Files.exists(outputDir)) {
-            Files.walk(outputDir)
-                 .sorted(Comparator.reverseOrder())
-                 .map(Path::toFile)
-                 .forEach(File::delete);
-        }
+        FileUtils.deleteDirectory(outputDir);
 
         if (mavenArchetypeCompatible) {
             mavenCompatGenerate(
@@ -201,9 +202,7 @@ public class IntegrationTestMojo extends AbstractMojo {
                     props,
                     outputDir.getParent());
         } else {
-            Files.createDirectories(outputDir);
-            props.put("maven", "true");
-            new ArchetypeEngine(archetypeFile, Maps.fromProperties(props)).generate(outputDir.toFile());
+            generate(archetypeFile.toPath(), props, outputDir);
         }
 
         List<String> goals = Files.readAllLines(projectGoal).stream()
@@ -214,13 +213,22 @@ public class IntegrationTestMojo extends AbstractMojo {
         }
     }
 
+    private void generate(Path archetypeFile, Properties props, Path outputDir) {
+        try {
+            FileSystem fileSystem = newFileSystem(archetypeFile, this.getClass().getClassLoader());
+            ArchetypeEngineV2 engine = new ArchetypeEngineV2(fileSystem);
+            engine.generate(new BatchInputResolver(), Maps.fromProperties(props), Map.of(), n -> outputDir);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
     private void mavenCompatGenerate(String archetypeGroupId,
                                      String archetypeArtifactId,
                                      String archetypeVersion,
                                      File archetypeFile,
                                      Properties properties,
-                                     Path basedir)
-            throws MojoExecutionException {
+                                     Path basedir) throws MojoExecutionException {
 
         // pre-install the archetype JAR so that the post-generate script can resolve it
         ProjectInstallerRequest projectInstallerRequest = new ProjectInstallerRequest().setProject(project);
@@ -322,6 +330,7 @@ public class IntegrationTestMojo extends AbstractMojo {
 
         FileLogger(File outputFile, Log log) throws IOException {
             this.log = log;
+            //noinspection ResultOfMethodCallIgnored
             outputFile.getParentFile().mkdirs();
             stream = new PrintStream(new FileOutputStream(outputFile));
         }

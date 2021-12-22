@@ -26,8 +26,8 @@ import io.helidon.build.common.VirtualFileSystem;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.archetype.engine.v2.TestHelper.readFile;
-import static io.helidon.build.archetype.engine.v2.TestHelper.unique;
-import static io.helidon.build.archetype.engine.v2.TestHelper.zip;
+import static io.helidon.build.common.FileUtils.unique;
+import static io.helidon.build.common.FileUtils.zip;
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;

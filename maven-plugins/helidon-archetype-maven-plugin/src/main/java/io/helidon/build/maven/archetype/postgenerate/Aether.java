@@ -197,6 +197,7 @@ final class Aether {
      * @param version    the version
      * @return artifact file
      */
+    @SuppressWarnings("SameParameterValue")
     File resolveArtifact(String groupId, String artifactId, String type, String version) {
         try {
             return repoSystem

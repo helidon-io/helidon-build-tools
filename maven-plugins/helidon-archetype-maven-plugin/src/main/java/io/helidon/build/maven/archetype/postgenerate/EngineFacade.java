@@ -18,24 +18,22 @@ package io.helidon.build.maven.archetype.postgenerate;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.function.Function;
 
 import org.apache.maven.archetype.ArchetypeGenerationRequest;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.maven.project.ProjectBuildingRequest;
-
-import static java.util.stream.Collectors.toMap;
 
 /**
  * A utility to download the Helidon archetype engine with Aether and invoke it.
@@ -70,6 +68,7 @@ public final class EngineFacade {
 
     private static void checkJavaVersion() {
         try {
+            //noinspection ConstantConditions,AccessStaticViaInstance
             if (Runtime.class.getMethod("version") != null
                     && Runtime.Version.class.getMethod("feature") != null
                     && Runtime.getRuntime().version().feature() < 11) {
@@ -87,10 +86,9 @@ public final class EngineFacade {
      *
      * @param request   archetype generation request
      * @param engineGAV Helidon archetype engine Maven coordinates
-     * @param propNames names of the archetype properties to pass to the Helidon archetype engine
      */
     @SuppressWarnings("unused")
-    public static void generate(ArchetypeGenerationRequest request, String engineGAV, List<String> propNames) {
+    public static void generate(ArchetypeGenerationRequest request, String engineGAV) {
         checkMavenVersion();
         checkJavaVersion();
 
@@ -113,38 +111,22 @@ public final class EngineFacade {
                            }).toArray(URL[]::new);
 
         URLClassLoader ecl = new URLClassLoader(urls, EngineFacade.class.getClassLoader());
+
         Properties archetypeProps = request.getProperties();
-        Map<String, String> props = new HashMap<>(propNames
-                .stream()
-                .collect(toMap(Function.identity(), archetypeProps::getProperty)));
-        props.put("maven", "true");
+        Map<String, String> props = new HashMap<>();
+        archetypeProps.stringPropertyNames().forEach(k -> props.put(k, archetypeProps.getProperty(k)));
 
         // resolve the archetype JAR from the local repository
         File archetypeFile = aether.resolveArtifact(request.getArchetypeGroupId(), request.getArchetypeArtifactId(),
                 "jar", request.getArchetypeVersion());
 
-        File projectDir = new File(request.getOutputDirectory() + "/" + request.getArtifactId());
-
-        // delete place place-holder pom
-        new File(projectDir, "pom.xml").delete();
-
         try {
-            Class<?> engineClass = ecl.loadClass("io.helidon.build.archetype.engine.v1.ArchetypeEngine");
-            Constructor<?> engineConstructor = engineClass.getConstructor(File.class, Map.class);
-            Object engine = engineConstructor.newInstance(archetypeFile, props);
-            Method method = engineClass.getDeclaredMethod("generate", File.class);
-            method.invoke(engine, projectDir);
-        } catch (InstantiationException
-                | IllegalAccessException
-                | NoSuchMethodException
-                | ClassNotFoundException ex) {
-            throw new IllegalStateException(ex);
-        } catch (InvocationTargetException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof RuntimeException) {
-                throw (RuntimeException) cause;
-            }
-            throw new RuntimeException(e.getCause());
+            FileSystem fileSystem = FileSystems.newFileSystem(archetypeFile.toPath(), EngineFacade.class.getClassLoader());
+            Path projectDir = Path.of(request.getOutputDirectory()).resolve(request.getArtifactId());
+            Files.delete(projectDir.resolve("pom.xml"));
+            new ReflectedEngine(ecl, fileSystem).generate(request.isInteractiveMode(), props, Map.of(), n -> projectDir);
+        } catch (IOException ioe) {
+            throw new IllegalStateException(ioe);
         }
     }
 }

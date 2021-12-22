@@ -56,6 +56,14 @@ public final class Invocation extends Node {
         return visitor.visitInvocation(this, arg);
     }
 
+    @Override
+    public String toString() {
+        return "Invocation{"
+                + "kind=" + kind
+                + ", src='" + src + '\''
+                + '}';
+    }
+
     /**
      * Invocation kind.
      */

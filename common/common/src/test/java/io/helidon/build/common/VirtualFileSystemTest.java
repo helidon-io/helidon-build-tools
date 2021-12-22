@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class VirtualFileSystemTest {
 
-    private static final boolean IS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
+    private static final boolean IS_WINDOWS = OSType.currentOS() == OSType.Windows;
     private static final Path ROOT = TestFiles.targetDir(VirtualFileSystemTest.class)
                                               .resolve("test-classes/vfs")
                                               .normalize();

@@ -18,6 +18,9 @@ package io.helidon.build.common;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
@@ -27,8 +30,10 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -37,7 +42,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -132,7 +139,7 @@ public final class FileUtils {
      * @return The absolute, normalized destination directory.
      * @throws IllegalArgumentException If the destination exists.
      */
-    @SuppressWarnings("CaughtExceptionImmediatelyRethrown")
+    @SuppressWarnings({"CaughtExceptionImmediatelyRethrown", "unused"})
     public static Path copyDirectory(Path source, Path destination) {
         requireNonExistent(destination);
         try (Stream<Path> stream = Files.walk(source)) {
@@ -286,6 +293,7 @@ public final class FileUtils {
      * @return The normalized, absolute path.
      * @throws IllegalArgumentException If the path exists.
      */
+    @SuppressWarnings("UnusedReturnValue")
     public static Path requireNonExistent(Path path) {
         if (Files.exists(requireNonNull(path))) {
             throw new IllegalArgumentException(path + " exists");
@@ -299,12 +307,15 @@ public final class FileUtils {
      *
      * @param fileOrDirectory The file or directory.
      * @return The file or directory.
-     * @throws IOException If an error occurs.
      */
-    public static Path delete(Path fileOrDirectory) throws IOException {
+    public static Path delete(Path fileOrDirectory) {
         if (Files.exists(fileOrDirectory)) {
             if (Files.isRegularFile(fileOrDirectory)) {
-                Files.delete(fileOrDirectory);
+                try {
+                    Files.delete(fileOrDirectory);
+                } catch (IOException ioe) {
+                    throw new UncheckedIOException(ioe);
+                }
             } else {
                 deleteDirectory(fileOrDirectory);
             }
@@ -317,9 +328,9 @@ public final class FileUtils {
      *
      * @param directory The directory.
      * @return The directory.
-     * @throws IOException If an error occurs.
      */
-    public static Path deleteDirectory(Path directory) throws IOException {
+    @SuppressWarnings("UnusedReturnValue")
+    public static Path deleteDirectory(Path directory) {
         if (Files.exists(directory)) {
             if (Files.isDirectory(directory)) {
                 try (Stream<Path> stream = Files.walk(directory)) {
@@ -327,10 +338,12 @@ public final class FileUtils {
                           .forEach(file -> {
                               try {
                                   Files.delete(file);
-                              } catch (IOException e) {
-                                  throw new UncheckedIOException(e);
+                              } catch (IOException ioe) {
+                                  throw new UncheckedIOException(ioe);
                               }
                           });
+                } catch (IOException ioe) {
+                    throw new UncheckedIOException(ioe);
                 }
             } else {
                 throw new IllegalArgumentException(directory + " is not a directory");
@@ -370,7 +383,7 @@ public final class FileUtils {
     /**
      * Returns the total size of all files in the given path, including subdirectories.
      *
-     * @param path The path. May be a file or directory.
+     * @param path The path. Can be a file or directory.
      * @return The size, in bytes.
      * @throws UncheckedIOException If an error occurs.
      */
@@ -425,6 +438,7 @@ public final class FileUtils {
      * @param file The file.
      * @return The last modified time.
      */
+    @SuppressWarnings("unused")
     public static long lastModifiedMillis(Path file) {
         return lastModifiedTime(file).to(TimeUnit.MILLISECONDS);
     }
@@ -444,7 +458,7 @@ public final class FileUtils {
     }
 
     /**
-     * Tests whether or not the given file has a modified time that is newer than the base time.
+     * Tests if the given file has a modified time that is newer than the base time.
      *
      * @param file     The file.
      * @param baseTime The base time. May be {@code null}.
@@ -460,7 +474,7 @@ public final class FileUtils {
     }
 
     /**
-     * Tests whether or not the given file has a modified time that is older than the base time.
+     * Tests if the given file has a modified time that is older than the base time.
      *
      * @param file     The file.
      * @param baseTime The base time. May be {@code null}.
@@ -476,7 +490,7 @@ public final class FileUtils {
     }
 
     /**
-     * Tests whether or not the given change time is newer than a base time.
+     * Tests if the given change time is newer than a base time.
      *
      * @param changeTime The time.
      * @param baseTime   The base time. May be {@code null}.
@@ -487,7 +501,7 @@ public final class FileUtils {
     }
 
     /**
-     * Tests whether or not the given change time is older than a base time.
+     * Tests if the given change time is older than a base time.
      *
      * @param changeTime The time.
      * @param baseTime   The base time. May be {@code null}.
@@ -515,7 +529,7 @@ public final class FileUtils {
      */
     public static Optional<Path> findExecutableInPath(String executableName) {
         return Arrays.stream(requireNonNull(System.getenv(PATH_VAR)).split(File.pathSeparator))
-                     .map(dir -> Paths.get(dir))
+                     .map(Paths::get)
                      .map(path -> path.resolve(executableName))
                      .filter(Files::isExecutable)
                      .findFirst();
@@ -616,7 +630,7 @@ public final class FileUtils {
     }
 
     /**
-     * Gets location of Java's home directory by checking the (@code java.home} property
+     * Gets location of Java's home directory by checking the {@code java.home} property
      * followed by the {@code JAVA_HOME} environment variable.
      *
      * @return Java's home directory.
@@ -632,11 +646,11 @@ public final class FileUtils {
 
     /**
      * Create a {@link Path} path under the given parent directory that does not already exist.
-     * Appends {@code -$i} to the given name until a non existing entry is found.
+     * Appends {@code -$i} to the given name until a non-existing entry is found.
      *
      * @param directory parent directory where to create the new directory
-     * @param name   the name of the entry to create
-     * @param suffix the suffix to append after {@code -$i}
+     * @param name      the name of the entry to create
+     * @param suffix    the suffix to append after {@code -$i}
      * @return Path
      */
     public static Path unique(Path directory, String name, String suffix) {
@@ -651,16 +665,68 @@ public final class FileUtils {
 
     /**
      * Create a {@link Path} path under the given parent directory that does not already exist.
-     * Appends {@code -$i} to the given name until a non existing entry is found.
+     * Appends {@code -$i} to the given name until a non-existing entry is found.
      *
      * @param directory parent directory where to create the new directory
-     * @param name   the name of the entry to create
+     * @param name      the name of the entry to create
      * @return Path
      */
     public static Path unique(Path directory, String name) {
         return unique(directory, name, "");
     }
 
+    /**
+     * Encode the content of the given file using base64 encoding.
+     *
+     * @param path file to encode
+     * @return base64 encoded string
+     */
+    public static String toBase64(Path path) {
+        try {
+            byte[] byteCode = Files.readAllBytes(path);
+            return new String(Base64.getEncoder().encode(byteCode), UTF_8);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    /**
+     * Zip a directory.
+     *
+     * @param zip       target file
+     * @param directory source directory
+     * @return zip file
+     */
+    public static Path zip(Path zip, Path directory) {
+        try {
+            Files.createDirectories(zip.getParent());
+            String uriPrefix = "jar:file:";
+            if (OSType.currentOS() == OSType.Windows) {
+                uriPrefix += "/";
+            }
+            URI uri = URI.create(uriPrefix + zip.toString().replace("\\", "/"));
+            try (FileSystem fs = FileSystems.newFileSystem(uri, Map.of("create", "true"))) {
+                Files.walk(directory)
+                     .sorted(Comparator.reverseOrder())
+                     .filter(p -> Files.isRegularFile(p) && !p.equals(zip))
+                     .forEach(p -> {
+                         try {
+                             Path target = fs.getPath(directory.relativize(p).toString());
+                             Path parent = target.getParent();
+                             if (parent != null) {
+                                 Files.createDirectories(parent);
+                             }
+                             Files.copy(p, target, REPLACE_EXISTING);
+                         } catch (IOException ioe) {
+                             throw new UncheckedIOException(ioe);
+                         }
+                     });
+            }
+            return zip;
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe);
+        }
+    }
 
     private FileUtils() {
     }

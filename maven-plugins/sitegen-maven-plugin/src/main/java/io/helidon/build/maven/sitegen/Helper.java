@@ -18,20 +18,16 @@ package io.helidon.build.maven.sitegen;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.FileSystem;
-import java.nio.file.FileSystemAlreadyExistsException;
-import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Collections;
 
+import io.helidon.build.common.URIs;
 import io.helidon.build.maven.sitegen.asciidoctor.AsciidocConverter;
 
 import org.slf4j.LoggerFactory;
@@ -67,34 +63,8 @@ public abstract class Helper {
             throw new IllegalStateException("resource not found: "
                     + resourcePath);
         }
-
         // convert URL to Path
-        URI templatesDirURI = templatesDirURL.toURI();
-        Path templatesDir;
-        switch (templatesDirURI.getScheme()) {
-            case "jar":
-                FileSystem fs;
-                try {
-                    fs = FileSystems.newFileSystem(
-                            templatesDirURI, Collections.emptyMap());
-                } catch (FileSystemAlreadyExistsException ex) {
-                    fs = FileSystems.getFileSystem(templatesDirURI);
-                }
-                String relativePath = templatesDirURI.getSchemeSpecificPart();
-                int idx = relativePath.indexOf("!");
-                if (idx > 0) {
-                    relativePath = relativePath.substring(idx + 1);
-                }
-                templatesDir = fs.getPath(relativePath);
-                break;
-            case "file":
-                templatesDir = Paths.get(templatesDirURI);
-                break;
-            default:
-                throw new IllegalStateException(templatesDirURI.toASCIIString()
-                        + " expecting jar: or file:");
-        }
-        return templatesDir;
+        return URIs.toPath(templatesDirURL.toURI());
     }
 
     /**
@@ -105,7 +75,7 @@ public abstract class Helper {
      * otherwise
      */
     public static String asString(Object obj) {
-        if (obj == null || !(obj instanceof String)) {
+        if (!(obj instanceof String)) {
             return null;
         } else {
             return (String) obj;
@@ -116,47 +86,39 @@ public abstract class Helper {
      * Copy static resources into the given output directory.
      *
      * @param resources the path to the resources
-     * @param outputdir the target output directory where to copy the files
+     * @param outputDir the target output directory where to copy the files
      * @throws IOException if an error occurred during processing
      */
-    public static void copyResources(Path resources, File outputdir)
+    public static void copyResources(Path resources, File outputDir)
             throws IOException {
 
         try {
-            Files.walkFileTree(resources, new FileVisitor<Path>() {
+            Files.walkFileTree(resources, new FileVisitor<>() {
                 @Override
-                public FileVisitResult preVisitDirectory(
-                        Path dir, BasicFileAttributes attrs) throws IOException {
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                     return FileVisitResult.CONTINUE;
                 }
 
                 @Override
-                public FileVisitResult visitFile(
-                        Path file, BasicFileAttributes attrs) throws IOException {
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     if (!Files.isDirectory(file)) {
-                        String targetRelativePath = resources
-                                .relativize(file).toString();
-                        Path targetPath = outputdir
-                                .toPath().resolve(targetRelativePath);
+                        String targetRelativePath = resources.relativize(file).toString();
+                        Path targetPath = outputDir.toPath().resolve(targetRelativePath);
                         Files.createDirectories(targetPath.getParent());
-                        LOGGER.debug("Copying static resource: {} to {}",
-                                targetRelativePath, targetPath.toString());
+                        LOGGER.debug("Copying static resource: {} to {}", targetRelativePath, targetPath);
                         Files.copy(file, targetPath, REPLACE_EXISTING);
                     }
                     return FileVisitResult.CONTINUE;
                 }
 
                 @Override
-                public FileVisitResult visitFileFailed(
-                        Path file, IOException ex) throws IOException {
-                    LOGGER.error("Error while copying static resource: {} - {}",
-                            file.getFileName(), ex.getMessage());
+                public FileVisitResult visitFileFailed(Path file, IOException ex) {
+                    LOGGER.error("Error while copying static resource: {} - {}", file.getFileName(), ex.getMessage());
                     return FileVisitResult.CONTINUE;
                 }
 
                 @Override
-                public FileVisitResult postVisitDirectory(
-                        Path dir, IOException exc) throws IOException {
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
                     return FileVisitResult.CONTINUE;
                 }
             });
@@ -167,7 +129,7 @@ public abstract class Helper {
     }
 
     /**
-     * Verify that a given {@code Object} is non null.
+     * Verify that a given {@code Object} is non-null.
      *
      * @param arg the {@code Object} instance to check
      * @param name the name of the instance used for the exception message
@@ -182,7 +144,7 @@ public abstract class Helper {
     }
 
     /**
-     * Verify that a given {@code String} is non null and non empty.
+     * Verify that a given {@code String} is non-null and non-empty.
      *
      * @param arg the {@code String} instance to check
      * @param name the name of the instance used for the exception message
@@ -195,7 +157,7 @@ public abstract class Helper {
     }
 
     /**
-     * Verify that a given {@code File} is non null and exists.
+     * Verify that a given {@code File} is non-null and exists.
      *
      * @param arg the @{code File} instance to check
      * @param name the name of the instance used for the exception message
@@ -212,7 +174,7 @@ public abstract class Helper {
     }
 
     /**
-     * Verify that a given {@code File} is non null, exists and is a file.
+     * Verify that a given {@code File} is non-null, exists and is a file.
      *
      * @param arg the @{code File} instance to check
      * @param name the name of the instance used for the exception message
@@ -227,7 +189,7 @@ public abstract class Helper {
     }
 
     /**
-     * Verify that a given {@code File} is non null, exists and is a directory.
+     * Verify that a given {@code File} is non-null, exists and is a directory.
      *
      * @param arg the @{code File} instance to check
      * @param name the name of the instance used for the exception message
@@ -268,13 +230,13 @@ public abstract class Helper {
     /**
      * Get the relative path for a given source file within the source directory.
      *
-     * @param sourcedir the source directory
+     * @param sourceDir the source directory
      * @param source the source file
      * @return the relative path of the source file
      */
-    public static String getRelativePath(File sourcedir, File source) {
-        return sourcedir.toPath().relativize(source.toPath()).toString()
-                // force UNIX style path on windows
+    public static String getRelativePath(File sourceDir, File source) {
+        return sourceDir.toPath().relativize(source.toPath()).toString()
+                // force UNIX style path on Windows
                 .replace("\\", "/");
     }
 }

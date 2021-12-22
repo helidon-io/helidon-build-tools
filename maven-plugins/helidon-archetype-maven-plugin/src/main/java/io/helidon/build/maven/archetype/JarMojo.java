@@ -23,83 +23,60 @@ import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
+import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
-
-import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor;
-import io.helidon.build.archetype.engine.v1.ArchetypeDescriptor.Property;
-import io.helidon.build.archetype.engine.v1.MustacheHelper.RawString;
 import io.helidon.build.common.SourcePath;
+import io.helidon.build.common.URIs;
+import io.helidon.build.maven.archetype.MustacheHelper.RawString;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.archiver.MavenArchiveConfiguration;
 import org.apache.maven.archiver.MavenArchiver;
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.Resource;
 import org.apache.maven.model.io.ModelReader;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.Component;
-import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.ArchiverException;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
 import org.codehaus.plexus.archiver.jar.ManifestException;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
+import org.codehaus.plexus.configuration.PlexusConfiguration;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
+import org.codehaus.plexus.util.xml.Xpp3DomWriter;
 
-import static io.helidon.build.archetype.engine.v1.MustacheHelper.MUSTACHE_EXT;
-import static io.helidon.build.archetype.engine.v1.MustacheHelper.renderMustacheTemplate;
+import static io.helidon.build.common.FileUtils.toBase64;
+import static io.helidon.build.maven.archetype.MustacheHelper.MUSTACHE_EXT;
+import static io.helidon.build.maven.archetype.MustacheHelper.renderMustacheTemplate;
+import static io.helidon.build.maven.archetype.Schema.RESOURCE_NAME;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.regex.Pattern.DOTALL;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
+import static org.apache.maven.plugins.annotations.LifecyclePhase.PACKAGE;
+import static org.apache.maven.plugins.annotations.ResolutionScope.COMPILE_PLUS_RUNTIME;
 
 /**
  * {@code archetype:jar} mojo.
  */
-@Mojo(name = "jar", defaultPhase = LifecyclePhase.PACKAGE,
-        requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
+@Mojo(name = "jar", defaultPhase = PACKAGE, requiresDependencyResolution = COMPILE_PLUS_RUNTIME)
 public class JarMojo extends AbstractMojo {
 
     private static final String ENGINE_GROUP_ID = MojoHelper.PLUGIN_GROUP_ID + ".archetype";
-    private static final String ENGINE_ARTIFACT_ID = "helidon-archetype-engine-v1";
-    private static final String ENGINE_VERSION = MojoHelper.PLUGIN_VERSION;
+    private static final String ENGINE_ARTIFACT_ID = "helidon-archetype-engine-v2";
     private static final String POST_SCRIPT_NAME = "archetype-post-generate.groovy";
     private static final String POST_SCRIPT_PKG = "io/helidon/build/maven/archetype/postgenerate";
-    private static final Pattern COPYRIGHT_HEADER = Pattern.compile("^(\\s?\\R)?\\/\\*.*\\*\\/(\\s?\\R)?", DOTALL);
-    private static final String SCHEMA_LANG = "http://www.w3.org/2001/XMLSchema";
-    private static final String ARCHETYPE_ROOT_ELEMENT = "archetype-script";
+    private static final Pattern COPYRIGHT_HEADER = Pattern.compile("^(\\s?\\R)?/\\*.*\\*/(\\s?\\R)?", DOTALL);
 
     /**
      * The Maven project this mojo executes on.
@@ -108,10 +85,15 @@ public class JarMojo extends AbstractMojo {
     private MavenProject project;
 
     /**
+     * The archetype source directory.
+     */
+    @Parameter(defaultValue = "${project.basedir}/src/main/archetype", readonly = true, required = true)
+    private File sourceDirectory;
+
+    /**
      * The project build output directory. (e.g. {@code target/})
      */
-    @Parameter(defaultValue = "${project.build.directory}",
-            readonly = true, required = true)
+    @Parameter(defaultValue = "${project.build.directory}", readonly = true, required = true)
     private File outputDirectory;
 
     /**
@@ -151,149 +133,52 @@ public class JarMojo extends AbstractMojo {
     private String outputTimestamp;
 
     /**
-     * Properties to use for pre-processing.
-     */
-    @Parameter
-    private Map<String, String> properties = Collections.emptyMap();
-
-    /**
-     * Include project properties for pre-processing.
-     */
-    @Parameter(defaultValue = "true")
-    private boolean includeProjectProperties;
-
-    /**
      * Indicate if the generated JAR should be compatible with the {@code maven-archetype-plugin}.
      */
     @Parameter(defaultValue = "true")
     private boolean mavenArchetypeCompatible;
 
+    /**
+     * Entrypoint configuration.
+     */
+    @Parameter
+    private PlexusConfiguration entrypoint;
+
     @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
-        Map<String, List<String>> resources = scanResources();
-        validateArchetypeScripts(resources);
-        Path archetypeDir = outputDirectory.toPath().resolve("archetype");
-        Path baseDir = project.getBasedir().toPath();
-
-        //TODO uncomment later
-//        if (mavenArchetypeCompatible) {
-//            processMavenCompat(archetypeDir, null);
-//        }
-
-        File jarFile = generateArchetypeJar(archetypeDir);
-        project.getArtifact().setFile(jarFile);
-    }
-
-    private void validateArchetypeScripts(Map<String, List<String>> resources) throws MojoExecutionException {
-        File schemaFile = getArchetypeSchemaFile();
-        if (schemaFile == null) {
-            return;
-        }
+    public void execute() throws MojoExecutionException {
         try {
-            SchemaFactory factory = SchemaFactory.newInstance(SCHEMA_LANG);
-            Schema schema = factory.newSchema(schemaFile);
-            Validator validator = schema.newValidator();
-
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            DocumentBuilder db = dbf.newDocumentBuilder();
-
-            for (Entry<String, List<String>> resourcesEntry : resources.entrySet()) {
-                for (String resource : resourcesEntry.getValue()) {
-                    if (FilenameUtils.getExtension(resource).equalsIgnoreCase("xml")) {
-                        File xmlFile = Path.of(resourcesEntry.getKey(), resource).toFile();
-                        Document doc = db.parse(xmlFile);
-                        if (doc.getDocumentElement().getNodeName().equals(ARCHETYPE_ROOT_ELEMENT)) {
-                            validator.validate(new StreamSource(xmlFile));
-                        }
-                    }
-                }
+            Path archetypeDir = outputDirectory.toPath().resolve("archetype");
+            Files.createDirectories(archetypeDir);
+            processSources(archetypeDir);
+            // TODO add an integration test to demonstrate how URI integration works
+            processEntryPoint(archetypeDir);
+            if (mavenArchetypeCompatible) {
+                processMavenCompat(archetypeDir);
             }
-        } catch (SAXException | IOException | ParserConfigurationException e) {
-            throw new MojoExecutionException(e.getMessage(), e);
+            File jarFile = generateArchetypeJar(archetypeDir);
+            project.getArtifact().setFile(jarFile);
+        } catch (IOException ioe) {
+            throw new MojoExecutionException(ioe.getMessage(), ioe);
         }
     }
 
-
-    private File getArchetypeSchemaFile() {
-        PluginDescriptor pluginDescriptor = (PluginDescriptor) getPluginContext().get("pluginDescriptor");
-        return pluginDescriptor.getArtifacts().stream()
-                        .filter(artifact -> artifact.getArtifactId().equals("helidon-archetype-engine-v2")
-                                && artifact.getClassifier().equals("schema-2.0")
-                                && artifact.getType().equals("xsd")
-                        ).findFirst().map(Artifact::getFile).orElse(null);
-    }
-
-    private static InputStream resolveResource(String path) {
-        InputStream is = JarMojo.class.getClassLoader().getResourceAsStream(path);
-        if (is == null) {
-            throw new IllegalStateException("Unable to resolve resource: " + path);
-        }
-        return is;
-    }
-
-    private static List<String> listResources(String path) throws IOException {
-        URL url = JarMojo.class.getClassLoader().getResource(path);
-        if (url == null) {
-            return Collections.emptyList();
-        }
-        if (url.getProtocol().equals("file")) {
-            try {
-                String[] result = new File(url.toURI()).list();
-                if (result == null) {
-                    return Collections.emptyList();
-                }
-                return Arrays.asList(result);
-            } catch (URISyntaxException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-        if (url.getProtocol().equals("jar")) {
-            String jarPath = url.getPath().substring(5, url.getPath().indexOf("!"));
-            JarFile jar = new JarFile(URLDecoder.decode(jarPath, UTF_8));
-            Enumeration<JarEntry> entries = jar.entries();
-            List<String> result = new ArrayList<>();
-            while (entries.hasMoreElements()) {
-                String name = entries.nextElement().getName();
-                if (name.startsWith(path)) {
-                    result.add(name);
-                }
-            }
-            return result;
-        }
-        throw new UnsupportedOperationException("Cannot list resources for URL " + url);
-    }
-
-    private void renderPostScript(Path archetypeDir, ArchetypeDescriptor desc) throws IOException {
+    private void renderPostScript(Path archetypeDir) throws IOException {
         // mustache scope
         Map<String, Object> scope = new HashMap<>();
 
         // base64 encoded byte code keyed by fully qualified class names
-        scope.put("classes", listResources(POST_SCRIPT_PKG)
-                .stream()
-                .filter(path -> path.endsWith(".class"))
-                .collect(toMap(path -> path.replace('/', '.')
-                                           .replace(".class", ""),
-                        path -> {
-                            try {
-                                byte[] byteCode = resolveResource(path).readAllBytes();
-                                String encodedByteCode = new String(Base64.getEncoder().encode(byteCode), UTF_8);
-                                // break line after 140 characters
-                                encodedByteCode = encodedByteCode.replaceAll("(.{100})", "$1\n");
-                                return new RawString(encodedByteCode);
-                            } catch (IOException ex) {
-                                throw new UncheckedIOException(ex);
-                            }
-                        })).entrySet());
+        Set<Map.Entry<String, RawString>> classes = postGenerateClasses()
+                .filter(path -> path.toString().endsWith(".class"))
+                .map(this::encodeClass)
+                .collect(toSet());
+
+        scope.put("classes", classes);
 
         // name of the properties to pass to the Helidon archetype engine
-        scope.put("propNames", desc.properties().stream()
-                                   .filter(Property::isExported)
-                                   .map(Property::id)
-                                   .collect(toList()));
+        scope.put("propNames", Map.of());
 
         // Helidon archetype engine GAV
-        scope.put("engineGAV", ENGINE_GROUP_ID + ":" + ENGINE_ARTIFACT_ID + ":" + ENGINE_VERSION);
+        scope.put("engineGAV", ENGINE_GROUP_ID + ":" + ENGINE_ARTIFACT_ID + ":" + MojoHelper.PLUGIN_VERSION);
 
         // The non mustache post generate script that contains the postGenerate function
         String postGenerateScript = new String(resolveResource(POST_SCRIPT_NAME).readAllBytes(), UTF_8);
@@ -309,86 +194,104 @@ public class JarMojo extends AbstractMojo {
                 scope);
     }
 
-    private void processMavenCompat(Path archetypeDir, Path archetypeDescriptor) throws MojoExecutionException {
-        try {
-            getLog().info("Processing maven-archetype-plugin compatibility");
+    private void processMavenCompat(Path archetypeDir) throws IOException {
+        getLog().info("Processing maven-archetype-plugin compatibility");
 
-            Path mavenArchetypeDescriptor = archetypeDir.resolve("META-INF/maven/archetype-metadata.xml");
+        Path mavenArchetypeDescriptor = archetypeDir.resolve("META-INF/maven/archetype-metadata.xml");
 
-            // create target/archetype/META-INF/maven
-            Files.createDirectories(mavenArchetypeDescriptor.getParent());
+        // create target/archetype/META-INF/maven
+        Files.createDirectories(mavenArchetypeDescriptor.getParent());
 
-            ArchetypeDescriptor desc = ArchetypeDescriptor.read(Files.newInputStream(archetypeDescriptor));
+        // create target/archetype/META-INF/maven/archetype-metadata.xml
+        try (BufferedWriter writer = Files.newBufferedWriter(mavenArchetypeDescriptor)) {
+            StringWriter sw = new StringWriter();
+            Xpp3Dom root = new Xpp3Dom("archetype-descriptor");
+            root.setAttribute("name", project.getArtifactId());
+            Xpp3DomWriter.write(writer, root);
+            writer.append(sw.toString());
+        }
 
-            // create target/archetype/META-INF/maven/archetype-metadata.xml
-            try (BufferedWriter writer = Files.newBufferedWriter(mavenArchetypeDescriptor)) {
-                StringWriter sw = new StringWriter();
-                DescriptorConverter.convert(desc, sw);
-                writer.append(sw.toString());
+        Path mavenArchetypePom = archetypeDir.resolve("archetype-resources/pom.xml");
+
+        // create target/archetype/archetype-resources
+        Files.createDirectories(mavenArchetypePom.getParent());
+
+        // create an empty file target/archetype/archetype-resources/pom.xml
+        if (!Files.exists(mavenArchetypePom)) {
+            Files.createFile(mavenArchetypePom);
+        }
+
+        renderPostScript(archetypeDir);
+    }
+
+    private void processEntryPoint(Path outputDir) throws MojoExecutionException, IOException {
+        if (entrypoint != null) {
+            Path main = outputDir.resolve("main.xml");
+            if (Files.exists(main)) {
+                throw new MojoExecutionException("Cannot generate custom entry-point, main.xml already exists");
             }
-
-            Path mavenArchetypePom = archetypeDir.resolve("archetype-resources/pom.xml");
-
-            // create target/archetype/archetype-resources
-            Files.createDirectories(mavenArchetypePom.getParent());
-
-            // create an empty file target/archetype/archetype-resources/pom.xml
-            if (!Files.exists(mavenArchetypePom)) {
-                Files.createFile(mavenArchetypePom);
-            }
-
-            renderPostScript(archetypeDir, desc);
-        } catch (IOException ex) {
-            throw new MojoExecutionException(ex.getMessage(), ex);
+            Converter.convert(entrypoint, main);
         }
     }
 
-    private File generateArchetypeJar(Path archetypeDir) throws MojoExecutionException {
-        //todo can be removed if processMavenCompat() will create the directory when it will be uncommented
-        try {
-            Files.createDirectories(archetypeDir);
-        } catch (IOException ex) {
-            throw new MojoExecutionException(ex.getMessage(), ex);
-        }
+    private File generateArchetypeJar(Path archetypeDir) throws MojoExecutionException, IOException {
         File jarFile = new File(outputDirectory, finalName + ".jar");
-
         MavenArchiver archiver = new MavenArchiver();
-        archiver.setCreatedBy("Helidon Archetype Plugin", "io.helidon.build-tools.archetype",
-                "helidon-archetype-maven-plugin");
+        archiver.setCreatedBy("Helidon Archetype Plugin", MojoHelper.PLUGIN_GROUP_ID, MojoHelper.PLUGIN_ARTIFACT_ID);
         archiver.setOutputFile(jarFile);
         archiver.setArchiver((JarArchiver) archivers.get("jar"));
         archiver.configureReproducible(outputTimestamp);
-
         try {
             archiver.getArchiver().addDirectory(archetypeDir.toFile());
             archiver.createArchive(session, project, archive);
-        } catch (IOException | DependencyResolutionRequiredException | ArchiverException | ManifestException e) {
+        } catch (DependencyResolutionRequiredException | ArchiverException | ManifestException e) {
             throw new MojoExecutionException("Error assembling archetype jar " + jarFile, e);
         }
         return jarFile;
     }
 
-    private Path findResource(Map<String, List<String>> resources, Path baseDir, String name) {
-        return resources.entrySet().stream()
-                        .filter(e -> e.getValue().contains(name))
-                        .map(e -> baseDir.resolve(e.getKey()).resolve(name))
-                        .findAny()
-                        .orElse(null);
+    private Stream<Path> postGenerateClasses() throws IOException {
+        try {
+            URL url = this.getClass().getClassLoader().getResource(JarMojo.POST_SCRIPT_PKG);
+            return url == null ? Stream.empty() : Files.walk(URIs.toPath(url.toURI()));
+        } catch (URISyntaxException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 
-    private Map<String, List<String>> scanResources() {
-        getLog().debug("Scanning project resources");
-        Map<String, List<String>> allResources = new HashMap<>();
-        for (Resource resource : project.getResources()) {
-            List<String> resources = SourcePath.scan(new File(resource.getDirectory())).stream()
-                                               .filter(p -> p.matches(resource.getIncludes(), resource.getExcludes()))
-                                               .map(p -> p.asString(false))
-                                               .collect(toList());
-            if (getLog().isDebugEnabled()) {
-                resources.forEach(r -> getLog().debug("Found resource: " + r));
-            }
-            allResources.put(resource.getDirectory(), resources);
+    private Map.Entry<String, RawString> encodeClass(Path classFile) {
+        String className = classFile.toString().substring(1).replace('/', '.').replace(".class", "");
+        return Map.entry(className, new RawString(toBase64(classFile).replaceAll("(.{100})", "$1\n")));
+    }
+
+    private void processSources(Path outputDir) {
+        Schema validator = new Schema(resolveResource(RESOURCE_NAME));
+        getLog().debug("Scanning source files");
+        Path sourceDir = sourceDirectory.toPath();
+        SourcePath.scan(sourceDir).stream()
+                  .map(p -> p.asString(false))
+                  .forEach(file -> {
+                      if (getLog().isDebugEnabled()) {
+                          getLog().debug("Found source file: " + file);
+                      }
+                      if (FilenameUtils.getExtension(file).equalsIgnoreCase("xml")) {
+                          validator.validate(sourceDir.resolve(file));
+                      }
+                      try {
+                          Path target = outputDir.resolve(file);
+                          Files.createDirectories(target.getParent());
+                          Files.copy(sourceDir.resolve(file), target, REPLACE_EXISTING);
+                      } catch (IOException ioe) {
+                          throw new UncheckedIOException(ioe);
+                      }
+                  });
+    }
+
+    private InputStream resolveResource(String path) {
+        InputStream is = this.getClass().getClassLoader().getResourceAsStream(path);
+        if (is == null) {
+            throw new IllegalStateException("Unable to resolve resource: " + path);
         }
-        return allResources;
+        return is;
     }
 }

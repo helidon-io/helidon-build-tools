@@ -18,6 +18,8 @@ package io.helidon.build.archetype.engine.v1;
 import java.io.File;
 import java.io.IOException;
 
+import io.helidon.build.common.Maps;
+
 /**
  * Helidon archetype engine v1 main class.
  */
