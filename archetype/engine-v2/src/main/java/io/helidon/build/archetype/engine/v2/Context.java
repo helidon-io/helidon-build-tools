@@ -144,24 +144,28 @@ public final class Context {
      * Push the given input path.
      *
      * @param path input path
+     * @param global true if the input is global
      */
-    public void push(String path) {
-        inputs.push(path);
+    public void push(String path, boolean global) {
+        if (!global) {
+            inputs.push(path);
+        }
     }
 
     /**
      * Push a new input value.
      *
-     * @param name  input name
+     * @param name input name
      * @param value value
+     * @param global true if the input is global
      */
-    public void push(String name, Value value) {
+    public void push(String name, Value value, boolean global) {
         String path = path(name);
         if (value != null) {
             values.put(path, new ContextValue(value, false));
-            inputs.push(path);
+            push(path, global);
         } else if (values.get(path) != null) {
-            inputs.push(path);
+            push(path, global);
         }
     }
 

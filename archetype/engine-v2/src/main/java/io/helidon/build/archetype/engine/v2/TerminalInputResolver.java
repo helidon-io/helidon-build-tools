@@ -63,7 +63,7 @@ public class TerminalInputResolver extends InputResolver {
                 String question = String.format("%s (yes/no)", Bold.apply(input.label()));
                 String response = prompt(question, defaultText);
                 if (response == null || response.trim().length() == 0) {
-                    context.push(input.name(), defaultValue);
+                    context.push(input.name(), defaultValue, input.isGlobal());
                     return VisitResult.CONTINUE;
                 }
                 boolean value;
@@ -79,7 +79,7 @@ public class TerminalInputResolver extends InputResolver {
                     default:
                         continue;
                 }
-                context.push(input.name(), Value.create(value));
+                context.push(input.name(), Value.create(value), input.isGlobal());
                 return VisitResult.CONTINUE;
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -98,9 +98,9 @@ public class TerminalInputResolver extends InputResolver {
             String defaultText = defaultValue != null ? BoldBlue.apply(defaultValue) : null;
             String response = prompt(input.label(), defaultText);
             if (response == null || response.trim().length() == 0) {
-                context.push(input.name(), Value.create(defaultValue));
+                context.push(input.name(), Value.create(defaultValue), input.isGlobal());
             } else {
-                context.push(input.name(), Value.create(response));
+                context.push(input.name(), Value.create(response), input.isGlobal());
             }
             return VisitResult.CONTINUE;
         } catch (IOException e) {
@@ -121,7 +121,7 @@ public class TerminalInputResolver extends InputResolver {
 
                 // skip prompting if there is only one option with a default value
                 if (input.options().size() == 1 && defaultIndex >= 0) {
-                    context.push(input.name(), defaultValue);
+                    context.push(input.name(), defaultValue, input.isGlobal());
                     return VisitResult.CONTINUE;
                 }
 
@@ -136,14 +136,14 @@ public class TerminalInputResolver extends InputResolver {
                 lastLabel = input.label();
                 if ((response == null || response.trim().length() == 0)) {
                     if (defaultIndex >= 0) {
-                        context.push(input.name(), defaultValue);
+                        context.push(input.name(), defaultValue, input.isGlobal());
                         return VisitResult.CONTINUE;
                     }
                 } else {
                     int index = Integer.parseInt(response.trim());
                     if (index > 0 && index <= input.options().size()) {
                         String value = input.normalizeOptionValue(input.options().get(index - 1).value());
-                        context.push(input.name(), Value.create(value));
+                        context.push(input.name(), Value.create(value), input.isGlobal());
                         return VisitResult.CONTINUE;
                     }
                 }
@@ -179,11 +179,11 @@ public class TerminalInputResolver extends InputResolver {
                 lastLabel = input.label();
                 if (response == null || response.trim().length() == 0) {
                     if (!defaultIndexes.isEmpty()) {
-                        context.push(input.name(), defaultValue);
+                        context.push(input.name(), defaultValue, input.isGlobal());
                         return VisitResult.CONTINUE;
                     }
                 } else {
-                    context.push(input.name(), Value.create(input.parseResponse(response)));
+                    context.push(input.name(), Value.create(input.parseResponse(response)), input.isGlobal());
                     return VisitResult.CONTINUE;
                 }
             } catch (NumberFormatException | IndexOutOfBoundsException e) {

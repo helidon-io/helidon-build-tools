@@ -248,11 +248,13 @@ public abstract class Input extends Block {
 
         private final String name;
         private final boolean optional;
+        private final boolean global;
 
         private NamedInput(Input.Builder builder) {
             super(builder);
             this.name = builder.attribute("name", true);
             this.optional = parseBoolean(builder.attribute("optional", false));
+            this.global = parseBoolean(builder.attribute("global", false));
         }
 
         /**
@@ -271,6 +273,15 @@ public abstract class Input extends Block {
          */
         public boolean isOptional() {
             return optional;
+        }
+
+        /**
+         * Test if this input is global.
+         *
+         * @return {@code true} if global, {@code false} otherwise
+         */
+        public boolean isGlobal() {
+            return global;
         }
 
         /**
@@ -327,6 +338,7 @@ public abstract class Input extends Block {
             return "NamedInput{"
                     + "name='" + name + '\''
                     + ", optional=" + optional
+                    + ", global=" + global
                     + '}';
         }
     }
@@ -404,6 +416,7 @@ public abstract class Input extends Block {
                     + "name='" + name() + '\''
                     + ", label='" + label() + '\''
                     + ", optional=" + isOptional()
+                    + ", global=" + isGlobal()
                     + ", defaultValue='" + defaultValue + '\''
                     + '}';
         }
@@ -447,6 +460,7 @@ public abstract class Input extends Block {
                     + "name='" + name() + '\''
                     + ", label='" + label() + '\''
                     + ", optional=" + isOptional()
+                    + ", global=" + isGlobal()
                     + ", defaultValue='" + defaultValue + '\''
                     + '}';
         }
@@ -565,6 +579,7 @@ public abstract class Input extends Block {
                     + "name='" + name() + '\''
                     + ", label='" + label() + '\''
                     + ", optional=" + isOptional()
+                    + ", global=" + isGlobal()
                     + ", defaultValue='" + defaultValue + '\''
                     + '}';
         }
@@ -646,6 +661,7 @@ public abstract class Input extends Block {
                     + "name='" + name() + '\''
                     + ", label='" + label() + '\''
                     + ", optional=" + isOptional()
+                    + ", global=" + isGlobal()
                     + ", defaultValue='" + defaultValue + '\''
                     + '}';
         }

@@ -15,11 +15,11 @@
  */
 package io.helidon.build.archetype.engine.v2;
 
+import java.util.Map;
+
 import io.helidon.build.archetype.engine.v2.ast.Value;
 
 import org.junit.jupiter.api.Test;
-
-import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -34,7 +34,7 @@ class ContextTest {
     @Test
     void testLookup() {
         Context context = Context.create();
-        context.push("foo", Value.create("foo-value"));
+        context.push("foo", Value.create("foo-value"), false);
 
         Value value;
 
@@ -61,9 +61,9 @@ class ContextTest {
     @Test
     void testLookupInScope() {
         Context context = Context.create();
-        context.push("foo", Value.TRUE);
-        context.push("bar", Value.TRUE);
-        context.push("color", Value.create("blue"));
+        context.push("foo", Value.TRUE, false);
+        context.push("bar", Value.TRUE, false);
+        context.push("color", Value.create("blue"), false);
         context.pop();
         Value value = context.lookup("color");
         assertThat(value, is(notNullValue()));
@@ -101,8 +101,8 @@ class ContextTest {
     @Test
     void testRelativeLookup() {
         Context context = Context.create();
-        context.push("foo", Value.create("foo-value"));
-        context.push("bar", Value.create("bar-value"));
+        context.push("foo", Value.create("foo-value"), false);
+        context.push("bar", Value.create("bar-value"), false);
 
         Value value;
 
@@ -139,8 +139,8 @@ class ContextTest {
     @Test
     void testPopInput() {
         Context context = Context.create();
-        context.push("foo", Value.create("foo-value"));
-        context.push("bar", Value.create("bar-value"));
+        context.push("foo", Value.create("foo-value"), false);
+        context.push("bar", Value.create("bar-value"), false);
         context.pop();
 
         Value value;

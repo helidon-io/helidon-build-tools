@@ -39,26 +39,32 @@ public abstract class InputResolver implements Input.Visitor<Context> {
     /**
      * Invoked for every named input visit.
      *
-     * @param input   input
+     * @param input input
      * @param context context
      * @return visit result if a value already exists, {@code null} otherwise
      */
     protected VisitResult onVisitInput(NamedInput input, Context context) {
         lastVisited = input;
+        boolean global = input.isGlobal();
         String path = context.path(input.name());
+        if (global) {
+            if (!path.equals(input.name())) {
+                throw new IllegalStateException("Invalid state, input '" + path + "' cannot be global");
+            }
+        }
         Value value = context.get(path);
         if (value == null) {
             return null;
         }
         input.validate(value, path);
-        context.push(path);
+        context.push(path, global);
         return input.visitValue(value);
     }
 
     /**
      * Compute the default value for an input.
      *
-     * @param input   input
+     * @param input input
      * @param context context
      * @return default value or {@code null} if none
      */
@@ -96,8 +102,10 @@ public abstract class InputResolver implements Input.Visitor<Context> {
 
     @Override
     public VisitResult postVisitAny(Input input, Context context) {
-        if (!(input instanceof Option)) {
-            context.pop();
+        if (input instanceof NamedInput) {
+            if (!((NamedInput) input).isGlobal()) {
+                context.pop();
+            }
         }
         return VisitResult.CONTINUE;
     }

@@ -54,7 +54,7 @@ public final class InitOptions {
     private String helidonVersion;
     private final BuildSystem build;
     private final BuildSystem buildOption;
-    private final String archetypeName;
+    private String archetypeName;
     private final String archetypeNameOption;
     private final String archetypePath;
     private final EngineVersion engineVersion;
@@ -221,6 +221,15 @@ public final class InitOptions {
     }
 
     /**
+     * Set the archetype name.
+     *
+     * @param name archetype name
+     */
+    void archetypeName(String name) {
+        archetypeName = name;
+    }
+
+    /**
      * Get the project name. May have been updated from user config.
      *
      * @return project name
@@ -341,9 +350,9 @@ public final class InitOptions {
                     case "init_flavor":
                         return "${flavor}";
                     case "init_archetype":
-                        return "${flavor.base}";
+                        return "${base}";
                     case "init_build":
-                        return "${flavor.base.build-system}";
+                        return "${build-system}";
                     default:
                         return null;
                 }
