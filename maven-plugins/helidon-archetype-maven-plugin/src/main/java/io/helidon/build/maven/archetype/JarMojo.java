@@ -34,7 +34,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.build.common.SourcePath;
-import io.helidon.build.common.URIs;
 import io.helidon.build.maven.archetype.MustacheHelper.RawString;
 
 import org.apache.commons.io.FilenameUtils;
@@ -58,6 +57,7 @@ import org.codehaus.plexus.configuration.PlexusConfiguration;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.Xpp3DomWriter;
 
+import static io.helidon.build.common.FileUtils.pathOf;
 import static io.helidon.build.common.FileUtils.toBase64;
 import static io.helidon.build.maven.archetype.MustacheHelper.MUSTACHE_EXT;
 import static io.helidon.build.maven.archetype.MustacheHelper.renderMustacheTemplate;
@@ -257,7 +257,7 @@ public class JarMojo extends AbstractMojo {
     private Stream<Path> postGenerateClasses() throws IOException {
         try {
             URL url = this.getClass().getClassLoader().getResource(JarMojo.POST_SCRIPT_PKG);
-            return url == null ? Stream.empty() : Files.walk(URIs.toPath(url.toURI()));
+            return url == null ? Stream.empty() : Files.walk(pathOf(url.toURI()));
         } catch (URISyntaxException ex) {
             throw new IllegalStateException(ex);
         }

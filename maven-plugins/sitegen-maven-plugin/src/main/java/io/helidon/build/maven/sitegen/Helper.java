@@ -27,11 +27,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 
-import io.helidon.build.common.URIs;
 import io.helidon.build.maven.sitegen.asciidoctor.AsciidocConverter;
 
 import org.slf4j.LoggerFactory;
 
+import static io.helidon.build.common.FileUtils.pathOf;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
@@ -64,7 +64,7 @@ public abstract class Helper {
                     + resourcePath);
         }
         // convert URL to Path
-        return URIs.toPath(templatesDirURL.toURI());
+        return pathOf(templatesDirURL.toURI());
     }
 
     /**

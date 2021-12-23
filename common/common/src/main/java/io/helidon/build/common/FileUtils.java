@@ -19,8 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -737,14 +737,27 @@ public final class FileUtils {
      * Get the path for the given URI.
      *
      * @param uri         uri
+     * @return Path
+     */
+    public static Path pathOf(URI uri) {
+        return pathOf(uri, FileUtils.class.getClassLoader());
+    }
+
+    /**
+     * Get the path for the given URI.
+     *
+     * @param uri         uri
      * @param classLoader class-loader
      * @return Path
      */
     public static Path pathOf(URI uri, ClassLoader classLoader) {
+        if ("file".equals(uri.getScheme())) {
+            return FileSystems.getDefault().provider().getPath(uri);
+        }
         FileSystem fileSystem;
         try {
             fileSystem = newFileSystem(uri, FS_ENV, classLoader);
-        } catch (FileAlreadyExistsException ex) {
+        } catch (FileSystemAlreadyExistsException ex) {
             fileSystem = getFileSystem(uri);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
