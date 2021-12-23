@@ -30,10 +30,6 @@
     <name>Helidon Archetype Maven Plugin</name>
     <packaging>maven-plugin</packaging>
 
-    <properties>
-        <version.lib.invoker-groovy>2.4.16</version.lib.invoker-groovy>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.apache.maven</groupId>
@@ -124,6 +120,32 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/postgenerate/*.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>compile-postgenerate</id>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/postgenerate/*.java</include>
+                            </includes>
+                            <target>8</target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
@@ -164,7 +186,8 @@
                 <artifactId>maven-invoker-plugin</artifactId>
                 <configuration>
                     <properties>
-                        <io.helidon.mvn.local.repository>${project.build.directory}/it-repo</io.helidon.mvn.local.repository>
+                        <io.helidon.mvn.local.repository>${project.build.directory}/it-repo
+                        </io.helidon.mvn.local.repository>
                     </properties>
                     <streamLogs>true</streamLogs>
                 </configuration>

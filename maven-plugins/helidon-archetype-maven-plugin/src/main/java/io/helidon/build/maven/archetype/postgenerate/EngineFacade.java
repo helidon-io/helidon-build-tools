@@ -18,6 +18,7 @@ package io.helidon.build.maven.archetype.postgenerate;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -25,6 +26,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +36,8 @@ import org.apache.maven.archetype.ArchetypeGenerationRequest;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.maven.project.ProjectBuildingRequest;
+
+import static java.util.Collections.emptyMap;
 
 /**
  * A utility to download the Helidon archetype engine with Aether and invoke it.
@@ -68,10 +72,13 @@ public final class EngineFacade {
 
     private static void checkJavaVersion() {
         try {
-            //noinspection ConstantConditions,AccessStaticViaInstance
-            if (Runtime.class.getMethod("version") != null
-                    && Runtime.Version.class.getMethod("feature") != null
-                    && Runtime.getRuntime().version().feature() < 11) {
+            // using reflection to run on Java 8
+            Method versionMethod = Runtime.class.getMethod("version");
+            Runtime runtime = Runtime.getRuntime();
+            Object version = versionMethod.invoke(runtime);
+            Method featureMethod = version.getClass().getMethod("feature");
+            Object feature = featureMethod.invoke(version);
+            if (feature instanceof Integer && (int) feature < 11) {
                 throw new IllegalStateException();
             }
         } catch (NoSuchMethodException | IllegalStateException ex) {
@@ -122,9 +129,9 @@ public final class EngineFacade {
 
         try {
             FileSystem fileSystem = FileSystems.newFileSystem(archetypeFile.toPath(), EngineFacade.class.getClassLoader());
-            Path projectDir = Path.of(request.getOutputDirectory()).resolve(request.getArtifactId());
+            Path projectDir = Paths.get(request.getOutputDirectory()).resolve(request.getArtifactId());
             Files.delete(projectDir.resolve("pom.xml"));
-            new ReflectedEngine(ecl, fileSystem).generate(request.isInteractiveMode(), props, Map.of(), n -> projectDir);
+            new ReflectedEngine(ecl, fileSystem).generate(request.isInteractiveMode(), props, emptyMap(), n -> projectDir);
         } catch (IOException ioe) {
             throw new IllegalStateException(ioe);
         }
