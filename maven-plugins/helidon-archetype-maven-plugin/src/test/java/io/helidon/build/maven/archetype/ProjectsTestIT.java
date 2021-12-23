@@ -36,42 +36,46 @@ final class ProjectsTestIT {
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
     void test1(String basedir) throws IOException {
-        Path outputDir = Path.of(basedir).resolve("target/test-classes/projects/it1/project");
-        assertThat(Files.exists(outputDir), is(true));
-        Path shape = outputDir.resolve("src/main/java")
-                              .resolve(TEST_PKG_DIR)
-                              .resolve("Shape.java");
-        assertThat(Files.exists(shape), is(true));
-        assertThat(Files.lines(shape)
-                        .filter(line -> line.contains("System.out.println(\"circle\");"))
-                        .count(), is(1L));
+        runTest(basedir, "circle");
     }
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
     void test2(String basedir) throws IOException {
-        Path outputDir = Path.of(basedir).resolve("target/test-classes/projects/it1/project");
-        assertThat(Files.exists(outputDir), is(true));
-        Path shape = outputDir.resolve("src/main/java")
-                              .resolve(TEST_PKG_DIR)
-                              .resolve("Shape.java");
-        assertThat(Files.exists(shape), is(true));
-        assertThat(Files.lines(shape)
-                        .filter(line -> line.contains("System.out.println(\"triangle\");"))
-                        .count(), is(1L));
+        runTest(basedir, "triangle");
     }
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
     void test3(String basedir) throws IOException {
-        Path outputDir = Path.of(basedir).resolve("target/test-classes/projects/it1/project");
+        runTest(basedir, "square");
+    }
+
+    @ParameterizedTest
+    @ConfigurationParameterSource("basedir")
+    void test4(String basedir) throws IOException {
+        runTest(basedir, "module1", "square");
+        runTest(basedir, "module2", "rectangle");
+        runTest(basedir, "module3", "triangle");
+    }
+
+    private static void runTest(String basedir, String expected) throws IOException {
+        runTest(basedir, null, expected);
+    }
+
+    private static void runTest(String basedir, String prefix, String expected) throws IOException {
+        Path outputDir = Path.of(basedir);
+        if (prefix != null) {
+            outputDir = outputDir.resolve(prefix);
+        }
+        outputDir = outputDir.resolve("target/test-classes/projects/it1/project");
         assertThat(Files.exists(outputDir), is(true));
         Path shape = outputDir.resolve("src/main/java")
                               .resolve(TEST_PKG_DIR)
                               .resolve("Shape.java");
         assertThat(Files.exists(shape), is(true));
         assertThat(Files.lines(shape)
-                        .filter(line -> line.contains("System.out.println(\"square\");"))
+                        .filter(line -> line.contains("System.out.println(\"" + expected + "\");"))
                         .count(), is(1L));
     }
 }

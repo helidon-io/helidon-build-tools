@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -43,6 +44,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.FileSystems.getFileSystem;
+import static java.nio.file.FileSystems.newFileSystem;
 import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.Objects.requireNonNull;
@@ -51,6 +54,8 @@ import static java.util.Objects.requireNonNull;
  * File utilities.
  */
 public final class FileUtils {
+
+    private static final Map<String, String> FS_ENV = Map.of("create", "true");
 
     /**
      * The working directory.
@@ -705,7 +710,7 @@ public final class FileUtils {
                 uriPrefix += "/";
             }
             URI uri = URI.create(uriPrefix + zip.toString().replace("\\", "/"));
-            try (FileSystem fs = FileSystems.newFileSystem(uri, Map.of("create", "true"))) {
+            try (FileSystem fs = FileSystems.newFileSystem(uri, FS_ENV)) {
                 Files.walk(directory)
                      .sorted(Comparator.reverseOrder())
                      .filter(p -> Files.isRegularFile(p) && !p.equals(zip))
@@ -726,6 +731,30 @@ public final class FileUtils {
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
         }
+    }
+
+    /**
+     * Get the path for the given URI.
+     *
+     * @param uri         uri
+     * @param classLoader class-loader
+     * @return Path
+     */
+    public static Path pathOf(URI uri, ClassLoader classLoader) {
+        FileSystem fileSystem;
+        try {
+            fileSystem = newFileSystem(uri, FS_ENV, classLoader);
+        } catch (FileAlreadyExistsException ex) {
+            fileSystem = getFileSystem(uri);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+        String spec = uri.getSchemeSpecificPart();
+        int index = spec.indexOf("!/");
+        if (index == -1) {
+            return fileSystem.getPath("/");
+        }
+        return fileSystem.getPath(spec.substring(index + 1));
     }
 
     private FileUtils() {

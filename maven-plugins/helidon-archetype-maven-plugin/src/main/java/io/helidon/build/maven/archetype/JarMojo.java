@@ -26,9 +26,11 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.build.common.SourcePath;
@@ -40,6 +42,7 @@ import org.apache.maven.archiver.MavenArchiveConfiguration;
 import org.apache.maven.archiver.MavenArchiver;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Dependency;
 import org.apache.maven.model.io.ModelReader;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -72,8 +75,6 @@ import static org.apache.maven.plugins.annotations.ResolutionScope.COMPILE_PLUS_
 @Mojo(name = "jar", defaultPhase = PACKAGE, requiresDependencyResolution = COMPILE_PLUS_RUNTIME)
 public class JarMojo extends AbstractMojo {
 
-    private static final String ENGINE_GROUP_ID = MojoHelper.PLUGIN_GROUP_ID + ".archetype";
-    private static final String ENGINE_ARTIFACT_ID = "helidon-archetype-engine-v2";
     private static final String POST_SCRIPT_NAME = "archetype-post-generate.groovy";
     private static final String POST_SCRIPT_PKG = "io/helidon/build/maven/archetype/postgenerate";
     private static final Pattern COPYRIGHT_HEADER = Pattern.compile("^(\\s?\\R)?/\\*.*\\*/(\\s?\\R)?", DOTALL);
@@ -150,7 +151,6 @@ public class JarMojo extends AbstractMojo {
             Path archetypeDir = outputDirectory.toPath().resolve("archetype");
             Files.createDirectories(archetypeDir);
             processSources(archetypeDir);
-            // TODO add an integration test to demonstrate how URI integration works
             processEntryPoint(archetypeDir);
             if (mavenArchetypeCompatible) {
                 processMavenCompat(archetypeDir);
@@ -177,8 +177,12 @@ public class JarMojo extends AbstractMojo {
         // name of the properties to pass to the Helidon archetype engine
         scope.put("propNames", Map.of());
 
-        // Helidon archetype engine GAV
-        scope.put("engineGAV", ENGINE_GROUP_ID + ":" + ENGINE_ARTIFACT_ID + ":" + MojoHelper.PLUGIN_VERSION);
+        // dependencies
+        List<String> dependencies = project.getDependencies().stream()
+                                      .filter(d -> !"test".equals(d.getScope()) && !d.isOptional())
+                                      .map(this::coordinates)
+                                      .collect(Collectors.toList());
+        scope.put("dependencies", dependencies);
 
         // The non mustache post generate script that contains the postGenerate function
         String postGenerateScript = new String(resolveResource(POST_SCRIPT_NAME).readAllBytes(), UTF_8);
@@ -293,5 +297,16 @@ public class JarMojo extends AbstractMojo {
             throw new IllegalStateException("Unable to resolve resource: " + path);
         }
         return is;
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private String coordinates(Dependency d) {
+        String coords = d.getGroupId() + ":" + d.getArtifactId() + ":" + d.getType();
+        String classifier = d.getClassifier();
+        if (classifier != null) {
+            coords += ":" + classifier;
+        }
+        coords += ":" + d.getVersion();
+        return coords;
     }
 }

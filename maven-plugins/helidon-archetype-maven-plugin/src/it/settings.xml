@@ -32,6 +32,7 @@
                     </releases>
                     <snapshots>
                         <enabled>true</enabled>
+                        <checksumPolicy>ignore</checksumPolicy>
                     </snapshots>
                 </repository>
             </repositories>
@@ -44,6 +45,7 @@
                     </releases>
                     <snapshots>
                         <enabled>true</enabled>
+                        <checksumPolicy>ignore</checksumPolicy>
                     </snapshots>
                 </pluginRepository>
             </pluginRepositories>

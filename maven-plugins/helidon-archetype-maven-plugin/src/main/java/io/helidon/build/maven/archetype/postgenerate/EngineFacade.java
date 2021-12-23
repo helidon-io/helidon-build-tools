@@ -85,10 +85,10 @@ public final class EngineFacade {
      * Generate a project.
      *
      * @param request   archetype generation request
-     * @param engineGAV Helidon archetype engine Maven coordinates
+     * @param dependencies Maven coordinates to resolve for running the engine
      */
     @SuppressWarnings("unused")
-    public static void generate(ArchetypeGenerationRequest request, String engineGAV) {
+    public static void generate(ArchetypeGenerationRequest request, List<String> dependencies) {
         checkMavenVersion();
         checkJavaVersion();
 
@@ -100,7 +100,7 @@ public final class EngineFacade {
         // resolve the helidon engine libs from remote repository
 
         // create a class-loader with the engine dependencies
-        URL[] urls = aether.resolveDependencies(engineGAV)
+        URL[] urls = aether.resolveDependencies(dependencies)
                            .stream()
                            .map(f -> {
                                try {

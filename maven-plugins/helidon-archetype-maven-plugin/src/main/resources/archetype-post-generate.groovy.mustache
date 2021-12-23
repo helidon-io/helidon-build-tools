@@ -24,8 +24,12 @@ def classes = [
 {{/classes}}
 ]
 
-// Helidon archetype engine GAV
-def engineGAV = '{{engineGAV}}'
+// archetype dependencies
+def dependencies = [
+{{#dependencies}}
+'{{.}}',
+{{/dependencies}}
+]
 
 {{postGenerateScript}}
-postGenerate(classes, request, engineGAV)
+postGenerate(classes, request, dependencies)

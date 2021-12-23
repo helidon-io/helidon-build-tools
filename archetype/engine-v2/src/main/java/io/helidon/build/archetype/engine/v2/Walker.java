@@ -15,6 +15,7 @@
  */
 package io.helidon.build.archetype.engine.v2;
 
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -30,6 +31,8 @@ import io.helidon.build.archetype.engine.v2.ast.Invocation;
 import io.helidon.build.archetype.engine.v2.ast.Node;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Script;
+
+import static io.helidon.build.common.FileUtils.pathOf;
 
 /**
  * Block walker.
@@ -128,6 +131,19 @@ public final class Walker<A> {
         accept(block, arg, false);
     }
 
+    private Path resolveScript(Invocation invocation) {
+        String src = invocation.src();
+        if (src != null) {
+            return pathResolver.apply(invocation).resolve(src);
+        } else {
+            String url = invocation.url();
+            if (url == null) {
+                throw new IllegalArgumentException("Invocation has no 'src' or 'url' attribute");
+            }
+            return pathOf(URI.create(url), this.getClass().getClassLoader());
+        }
+    }
+
     private class DelegateVisitor implements Node.Visitor<A> {
 
         private final Node.Visitor<A> delegate;
@@ -153,7 +169,7 @@ public final class Walker<A> {
             if (result == VisitResult.SKIP_SUBTREE || result == VisitResult.TERMINATE) {
                 return result;
             }
-            Script script = ScriptLoader.load(pathResolver.apply(invocation).resolve(invocation.src()));
+            Script script = ScriptLoader.load(resolveScript(invocation));
             if (invocation.kind() == Invocation.Kind.EXEC) {
                 stack.push(script.wrap(Block.Kind.INVOKE_DIR));
             } else {

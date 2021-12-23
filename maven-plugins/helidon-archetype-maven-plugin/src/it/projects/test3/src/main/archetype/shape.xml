@@ -26,6 +26,7 @@
                 <option value="circle" label="Circle"/>
                 <option value="triangle" label="Triangle" />
                 <option value="square" label="Square" />
+                <option value="rectangle" label="Rectangle" />
             </enum>
             <text name="package" label="Java package"/>
             <text name="groupId" label="Project groupId"/>
