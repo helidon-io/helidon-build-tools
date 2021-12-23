@@ -37,12 +37,16 @@ final class MavenFileResolver {
     /**
      * System property to control the maven local repository location.
      */
-    static final String LOCAL_REPO_PROPERTY = "io.helidon.mvn.local.repository";
+    static final String LOCAL_REPO_PROPERTY = "io.helidon.build.common.maven.url.localRepo";
+
+    /**
+     * {@code true} if the current OS is {@code Windows}.
+     */
+    static final boolean IS_WINDOWS = System.getProperty("os.name", "unknown")
+                                            .toLowerCase(Locale.ENGLISH)
+                                            .contains("win");
 
     private static final Map<String, String> FS_ENV = Map.of("create", "true");
-    private static final boolean IS_WINDOWS = System.getProperty("os.name", "unknown")
-                                                    .toLowerCase(Locale.ENGLISH)
-                                                    .contains("win");
 
     private final Path localRepo;
 

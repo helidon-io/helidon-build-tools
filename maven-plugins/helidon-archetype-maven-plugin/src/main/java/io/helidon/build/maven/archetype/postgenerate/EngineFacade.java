@@ -48,6 +48,7 @@ public final class EngineFacade {
     private EngineFacade() {
     }
 
+    private static final String MAVEN_URL_REPO_PROPERTY = "io.helidon.build.common.maven.url.localRepo";
     private static final String MAVEN_CORE_POM_PROPERTIES = "META-INF/maven/org.apache.maven/maven-core/pom.properties";
 
     private static String getMavenVersion() {
@@ -104,7 +105,8 @@ public final class EngineFacade {
         List<ArtifactRepository> remoteRepos = mavenRequest.getRemoteRepositories();
         Aether aether = new Aether(localRepo, remoteRepos, mavenRequest.getActiveProfileIds());
 
-        // resolve the helidon engine libs from remote repository
+        // enable mvn:// URL support
+        System.setProperty(MAVEN_URL_REPO_PROPERTY, localRepo.getAbsolutePath());
 
         // create a class-loader with the engine dependencies
         URL[] urls = aether.resolveDependencies(dependencies)

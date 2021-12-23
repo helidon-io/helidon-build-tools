@@ -37,18 +37,15 @@ import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+
+import static io.helidon.build.common.maven.url.MavenFileResolver.IS_WINDOWS;
 
 /**
  * File system provider to support {@code mvn://} URIs.
  */
 public final class MavenFileSystemProvider extends FileSystemProvider {
-
-    private static final boolean IS_WINDOWS = System.getProperty("os.name", "unknown")
-                                                    .toLowerCase(Locale.ENGLISH)
-                                                    .contains("win");
 
     private final Map<Path, FileSystem> filesystems = new HashMap<>();
     private final MavenFileResolver resolver;
@@ -71,6 +68,11 @@ public final class MavenFileSystemProvider extends FileSystemProvider {
 
     @Override
     public FileSystem newFileSystem(URI uri, Map<String, ?> env) throws IOException {
+        MavenURLParser parser = new MavenURLParser(uri.toString());
+        String type = parser.type();
+        if(!("jar".equals(type) || "zip".equals(type))) {
+            throw new IllegalArgumentException("Unsupported artifact type: " + type);
+        }
         Path path = resolver.resolveArtifact(uri);
         synchronized (filesystems) {
             ensureFile(path);
@@ -122,17 +124,15 @@ public final class MavenFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
-    public SeekableByteChannel newByteChannel(Path path,
-                                              Set<? extends OpenOption> options, FileAttribute<?>... attrs)
+    public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs)
             throws IOException {
 
         return path.getFileSystem().provider().newByteChannel(path, options, attrs);
     }
 
     @Override
-    public DirectoryStream<Path> newDirectoryStream(Path dir,
-                                                    DirectoryStream.Filter<? super Path> filter) throws IOException {
-
+    public DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter)
+            throws IOException {
         return dir.getFileSystem().provider().newDirectoryStream(dir, filter);
     }
 
@@ -182,9 +182,8 @@ public final class MavenFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
-    public <A extends BasicFileAttributes> A readAttributes(Path path,
-                                                            Class<A> type,
-                                                            LinkOption... options) throws IOException {
+    public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options)
+            throws IOException {
 
         return path.getFileSystem().provider().readAttributes(path, type, options);
     }

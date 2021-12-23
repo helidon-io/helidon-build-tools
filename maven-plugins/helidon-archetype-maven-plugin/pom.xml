@@ -185,10 +185,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-invoker-plugin</artifactId>
                 <configuration>
-                    <properties>
-                        <io.helidon.mvn.local.repository>${project.build.directory}/it-repo
-                        </io.helidon.mvn.local.repository>
-                    </properties>
                     <streamLogs>true</streamLogs>
                 </configuration>
                 <executions>

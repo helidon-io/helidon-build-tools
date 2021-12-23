@@ -56,6 +56,8 @@ import static java.util.Objects.requireNonNull;
 public final class FileUtils {
 
     private static final Map<String, String> FS_ENV = Map.of("create", "true");
+    private static final boolean IS_WINDOWS = OSType.currentOS() == OSType.Windows;
+
 
     /**
      * The working directory.
@@ -696,6 +698,26 @@ public final class FileUtils {
     }
 
     /**
+     * Create a new zip file system.
+     *
+     * @param zip zip file
+     * @return file system
+     */
+    public static FileSystem newZipFileSystem(Path zip) {
+        String uriPrefix = "jar:file:";
+        if (IS_WINDOWS) {
+            uriPrefix += "/";
+        }
+        URI uri = URI.create(uriPrefix + zip.toString().replace("\\", "/"));
+        try {
+            Files.createDirectories(zip.getParent());
+            return FileSystems.newFileSystem(uri, FS_ENV);
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe);
+        }
+    }
+
+    /**
      * Zip a directory.
      *
      * @param zip       target file
@@ -704,29 +726,22 @@ public final class FileUtils {
      */
     public static Path zip(Path zip, Path directory) {
         try {
-            Files.createDirectories(zip.getParent());
-            String uriPrefix = "jar:file:";
-            if (OSType.currentOS() == OSType.Windows) {
-                uriPrefix += "/";
-            }
-            URI uri = URI.create(uriPrefix + zip.toString().replace("\\", "/"));
-            try (FileSystem fs = FileSystems.newFileSystem(uri, FS_ENV)) {
-                Files.walk(directory)
-                     .sorted(Comparator.reverseOrder())
-                     .filter(p -> Files.isRegularFile(p) && !p.equals(zip))
-                     .forEach(p -> {
-                         try {
-                             Path target = fs.getPath(directory.relativize(p).toString());
-                             Path parent = target.getParent();
-                             if (parent != null) {
-                                 Files.createDirectories(parent);
-                             }
-                             Files.copy(p, target, REPLACE_EXISTING);
-                         } catch (IOException ioe) {
-                             throw new UncheckedIOException(ioe);
+            FileSystem fs = newZipFileSystem(zip);
+            Files.walk(directory)
+                 .sorted(Comparator.reverseOrder())
+                 .filter(p -> Files.isRegularFile(p) && !p.equals(zip))
+                 .forEach(p -> {
+                     try {
+                         Path target = fs.getPath(directory.relativize(p).toString());
+                         Path parent = target.getParent();
+                         if (parent != null) {
+                             Files.createDirectories(parent);
                          }
-                     });
-            }
+                         Files.copy(p, target, REPLACE_EXISTING);
+                     } catch (IOException ioe) {
+                         throw new UncheckedIOException(ioe);
+                     }
+                 });
             return zip;
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
@@ -736,7 +751,7 @@ public final class FileUtils {
     /**
      * Get the path for the given URI.
      *
-     * @param uri         uri
+     * @param uri uri
      * @return Path
      */
     public static Path pathOf(URI uri) {
