@@ -70,7 +70,7 @@ public final class MavenFileSystemProvider extends FileSystemProvider {
     public FileSystem newFileSystem(URI uri, Map<String, ?> env) throws IOException {
         MavenURLParser parser = new MavenURLParser(uri.toString());
         String type = parser.type();
-        if(!("jar".equals(type) || "zip".equals(type))) {
+        if (!("jar".equals(type) || "zip".equals(type))) {
             throw new IllegalArgumentException("Unsupported artifact type: " + type);
         }
         Path path = resolver.resolveArtifact(uri);
