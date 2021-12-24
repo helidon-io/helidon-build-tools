@@ -16,10 +16,9 @@
 
 package io.helidon.build.common.maven.url;
 
-import io.helidon.build.common.maven.url.MavenURLParser;
-import org.junit.jupiter.api.Test;
-
 import java.net.MalformedURLException;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;

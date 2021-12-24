@@ -42,7 +42,6 @@ class MavenFileSystemProviderTest {
 
     private static final String ARTIFACT_DIR = "com/example/test-artifact/1.2.3";
     private static final String ZIP_ARTIFACT_FILE = "test-artifact-1.2.3.zip";
-    private static final String JAR_ARTIFACT_FILE = "test-artifact-1.2.3.jar";
 
     private static Path localRepo;
 
@@ -54,7 +53,6 @@ class MavenFileSystemProviderTest {
         Path artifact = localRepo.resolve(ARTIFACT_DIR).resolve(ZIP_ARTIFACT_FILE);
         Files.createDirectories(artifact.getParent());
         zip(artifact, targetDir.resolve("test-classes/test-artifact"));
-        Files.copy(artifact, localRepo.resolve(ARTIFACT_DIR).resolve(JAR_ARTIFACT_FILE));
     }
 
     @Test

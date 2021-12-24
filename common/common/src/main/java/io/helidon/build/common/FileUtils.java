@@ -725,8 +725,7 @@ public final class FileUtils {
      * @return zip file
      */
     public static Path zip(Path zip, Path directory) {
-        try {
-            FileSystem fs = newZipFileSystem(zip);
+        try (FileSystem fs = newZipFileSystem(zip)) {
             Files.walk(directory)
                  .sorted(Comparator.reverseOrder())
                  .filter(p -> Files.isRegularFile(p) && !p.equals(zip))
