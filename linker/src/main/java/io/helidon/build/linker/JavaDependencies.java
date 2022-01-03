@@ -17,12 +17,15 @@
 package io.helidon.build.linker;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.module.ModuleDescriptor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.spi.ToolProvider;
@@ -30,10 +33,12 @@ import java.util.stream.Stream;
 
 import io.helidon.build.common.InputStreams;
 import io.helidon.build.common.Log;
-import io.helidon.build.linker.util.Constants;
 import io.helidon.build.linker.util.JavaRuntime;
 
 import static io.helidon.build.common.InputStreams.toPrintStream;
+import static io.helidon.build.linker.util.Constants.EOL;
+import static io.helidon.build.linker.util.Constants.EXCLUDED_MODULES;
+import static io.helidon.build.linker.util.Constants.JDEPS_REQUIRES_MISSING_DEPS_OPTION;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -49,11 +54,11 @@ public final class JavaDependencies {
     private static final String JAVA_BASE_MODULE_NAME = "java.base";
     private static final Set<String> KNOWN_SPLIT_PACKAGES = Set.of("javax.annotation", "javax.activation");
     private static final Map<String, BiConsumer<String, Jar>> PREFIX_HANDLERS = Map.of(
-        "split package", JavaDependencies::split,
-        "not found", JavaDependencies::ignore,
-        "unnamed module", JavaDependencies::ignore,
-        "jdk8internals", JavaDependencies::debug,
-        "JDK removed internal API", JavaDependencies::debug
+            "split package", JavaDependencies::split,
+            "not found", JavaDependencies::ignore,
+            "unnamed module", JavaDependencies::ignore,
+            "jdk8internals", JavaDependencies::debug,
+            "JDK removed internal API", JavaDependencies::debug
     );
 
     private final JavaRuntime javaHome;
@@ -81,9 +86,17 @@ public final class JavaDependencies {
     private Set<String> collect(Stream<Jar> jars) {
         jars.forEach(jar -> {
             if (jar.hasModuleDescriptor()) {
-                addModule(jar);
+                addModule(jar.moduleDescriptor());
             } else {
-                addJar(jar);
+                Optional<Jar.Entry> moduleInfo = jar.entries()
+                                                    .filter(it -> it.getName().endsWith("/module-info.class"))
+                                                    .findFirst();
+
+                if (moduleInfo.isPresent()) {
+                    addModule(moduleInfo.get());
+                } else {
+                    addJar(jar);
+                }
             }
         });
 
@@ -100,8 +113,15 @@ public final class JavaDependencies {
         }
     }
 
-    private void addModule(Jar module) {
-        final ModuleDescriptor descriptor = module.moduleDescriptor();
+    private void addModule(Jar.Entry entry) {
+        try {
+            addModule(ModuleDescriptor.read(entry.data()));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private void addModule(ModuleDescriptor descriptor) {
         Log.info("  checking module %s", descriptor.name());
         descriptor.requires()
                   .stream()
@@ -121,7 +141,7 @@ public final class JavaDependencies {
             args.add(MULTI_RELEASE_ARG);
             args.add(javaHome.featureVersion());
         }
-        if (Constants.JDEPS_REQUIRES_MISSING_DEPS_OPTION) {
+        if (JDEPS_REQUIRES_MISSING_DEPS_OPTION) {
             args.add(IGNORE_MISSING_DEPS_ARG);
         }
         args.add(LIST_DEPS_ARG);
@@ -133,7 +153,7 @@ public final class JavaDependencies {
             throw new RuntimeException("Could not collect dependencies of " + jar);
         }
 
-        Arrays.stream(InputStreams.toString(out).split(Constants.EOL))
+        Arrays.stream(InputStreams.toString(out).split(EOL))
               .map(String::trim)
               .filter(line -> !line.isEmpty())
               .forEach(line -> handleJdepsResultLine(line, jar));
@@ -151,7 +171,7 @@ public final class JavaDependencies {
             }
             if (!line.contains(":") && line.contains("/")) {
                 handleJdepsResultLine(line.split("/")[0], jar);
-            } else if (!Constants.EXCLUDED_MODULES.contains(line)) {
+            } else if (!EXCLUDED_MODULES.contains(line)) {
                 throw new IllegalStateException("Unhandled dependency: " + toString(line, jar));
             }
         }
