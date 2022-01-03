@@ -16,6 +16,8 @@
 
 package io.helidon.build.common.ansi;
 
+import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -148,7 +150,7 @@ public class AnsiConsoleInstaller {
     }
 
     /**
-     * Returns whether or not this process is a child of another Helidon process.
+     * Indicates if this process is a child of another Helidon process.
      *
      * @return {@code true} if this process is a child of another Helidon process.
      */
@@ -157,7 +159,7 @@ public class AnsiConsoleInstaller {
     }
 
     /**
-     * Returns whether or not Ansi escapes are enabled. Calls {@link #install()}.
+     * Indicates if Ansi escapes are enabled. Calls {@link #install()}.
      *
      * @return {@code true} if enabled.
      */
@@ -167,7 +169,7 @@ public class AnsiConsoleInstaller {
     }
 
     /**
-     * Returns whether or not Ansi escapes are enabled. Calls {@link #install()}.
+     * Indicates if Ansi escapes are enabled. Calls {@link #install()}.
      *
      * @return {@code true} if enabled.
      */
@@ -195,27 +197,49 @@ public class AnsiConsoleInstaller {
     }
 
     private static ConsoleType installedConsoleType(ConsoleType desiredType) {
-        final String systemOutClass = System.out.getClass().getName();
-        if (systemOutClass.startsWith(JANSI_PACKAGE_PREFIX)) {
-            // We have a Jansi type installed, check if it is the type that strips escapes
-            if (systemOutClass.equals(JANSI_STRIP_STREAM_CLASS_NAME)) {
-                if (desiredType != ConsoleType.STRIP_ANSI) {
-                    Log.preInitDebug("Desired = %s, but Ansi escapes will be stripped by system streams.", desiredType);
+        final PrintStream systemOut = System.out;
+        final Class<? extends PrintStream> systemOutclass = systemOut.getClass();
+        final String systemOutClassName = systemOutclass.getName();
+        ConsoleType installedType;
+        if (systemOutClassName.startsWith(JANSI_PACKAGE_PREFIX)) {
+            if (systemOutClassName.equals(JANSI_STRIP_STREAM_CLASS_NAME)) {
+                try {
+                    // jansi 2.x always use AnsiPrintStream, but has a mode flag
+                    String mode = systemOutclass.getMethod("getMode").invoke(systemOut).toString();
+                    if (mode.equalsIgnoreCase("strip")) {
+                        installedType = ConsoleType.STRIP_ANSI;
+                    } else if (mode.equalsIgnoreCase("force")) {
+                        installedType = ConsoleType.ANSI;
+                    } else {
+                        installedType = ConsoleType.DEFAULT;
+                    }
+                } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                    // jansi 1.x uses AnsiPrintStream only for stripping
+                    installedType = ConsoleType.STRIP_ANSI;
                 }
-                return ConsoleType.STRIP_ANSI;
             } else {
-                if (desiredType != ConsoleType.ANSI) {
-                    Log.preInitDebug("Desired = %s, but Ansi escapes should be supported by system streams.", desiredType);
-                }
-                return ConsoleType.ANSI;
+                installedType = ConsoleType.ANSI;
             }
         } else {
-            if (desiredType != ConsoleType.DEFAULT) {
-                Log.preInitDebug("Desired = %s, but System.out not a Jansi type (%s) ao Ansi escapes should not be stripped",
-                                 desiredType, systemOutClass);
-            }
-            return ConsoleType.DEFAULT;
+            installedType = ConsoleType.DEFAULT;
         }
+        if (desiredType != installedType) {
+            switch (installedType) {
+                case STRIP_ANSI:
+                    Log.preInitDebug("Desired = %s, but Ansi escapes will be stripped by system streams.", desiredType);
+                    break;
+                case ANSI:
+                    Log.preInitDebug("Desired = %s, but Ansi escapes should be supported by system streams.", desiredType);
+                    break;
+                case DEFAULT:
+                    Log.preInitDebug("Desired = %s, but System.out not a Jansi type (%s) ao Ansi escapes should not be stripped",
+                            desiredType, systemOutClassName);
+                    break;
+                default:
+                    // do nothing
+            }
+        }
+        return installedType;
     }
 
     private AnsiConsoleInstaller() {
