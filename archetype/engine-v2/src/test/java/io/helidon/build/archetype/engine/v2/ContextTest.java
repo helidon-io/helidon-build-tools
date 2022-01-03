@@ -177,16 +177,4 @@ class ContextTest {
         Context context = Context.create(null, Map.of("foo", "foo", "bar", "${foo}"), null);
         assertThat(context.lookup("bar").asString(), is("foo"));
     }
-
-    @Test
-    void testExternalValueAlwaysLowerCase() {
-        Context context = Context.create(null, Map.of("foo", "FOO"), null);
-        assertThat(context.lookup("foo").asString(), is("foo"));
-    }
-
-    @Test
-    void testExternalDefaultAlwaysLowerCase() {
-        Context context = Context.create(null, null, Map.of("foo", "FOO"));
-        assertThat(context.defaultValue("foo").asString(), is("foo"));
-    }
 }

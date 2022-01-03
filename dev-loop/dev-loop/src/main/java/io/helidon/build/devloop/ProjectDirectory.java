@@ -93,11 +93,7 @@ public class ProjectDirectory {
      * @throws UncheckedIOException if an error occurs.
      */
     public void delete() {
-        try {
-            FileUtils.deleteDirectory(directory);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        FileUtils.deleteDirectory(directory);
     }
 
     /**

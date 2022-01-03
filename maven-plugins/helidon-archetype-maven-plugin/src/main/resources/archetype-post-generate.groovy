@@ -15,7 +15,7 @@
 */
 
 @SuppressWarnings(['GrPackage', 'unused'])
-def postGenerate(Map<String, String> classes, request, String engineGAV, List<String> propNames) {
+def postGenerate(Map<String, String> classes, request, List<String> dependencies) {
 
     // The parent class-loader is the class-loader used to run the maven-archetype-plugin, it does not have the Helidon
     // archetype engine classes loaded because it does not depend on the Helidon archetype engine (duh).
@@ -44,7 +44,7 @@ def postGenerate(Map<String, String> classes, request, String engineGAV, List<St
         def aClass = gcl.loadClass("io.helidon.build.maven.archetype.postgenerate.EngineFacade")
         def method = aClass.getMethods().find { ("generate" == it.getName()) }
         try {
-            method.invoke(null, request, engineGAV, propNames)
+            method.invoke(null, request, dependencies)
         } catch (java.lang.reflect.InvocationTargetException ex) {
             throw ex.getCause();
         }

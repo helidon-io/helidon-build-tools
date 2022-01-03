@@ -34,7 +34,7 @@
         <module>ansi</module>
         <module>maven</module>
         <module>maven-plugin</module>
-        <module>maven-url-handler</module>
+        <module>maven-url-support</module>
         <module>test-utils</module>
         <module>xml</module>
         <module>markdown</module>

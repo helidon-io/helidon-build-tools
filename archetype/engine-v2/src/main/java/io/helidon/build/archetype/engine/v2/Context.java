@@ -336,7 +336,7 @@ public final class Context {
     private static final class ExternalValue extends ContextValue {
 
         private ExternalValue(String value) {
-            super(value.toLowerCase(), null);
+            super(value, null);
         }
 
         @Override
@@ -346,6 +346,8 @@ public final class Context {
 
         @Override
         public Boolean asBoolean() {
+            // TODO supports all forms of boolean string representation
+            // See TerminalInputResolver
             return Boolean.valueOf((String) unwrap());
         }
 

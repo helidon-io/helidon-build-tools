@@ -73,7 +73,7 @@ class BuildRootTestIT {
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
-    void testFileRemovedDetected(String basedir) throws IOException {
+    void testFileRemovedDetected(String basedir) {
         final BuildRoot sourceDir = sourceDirectory(basedir);
         final Path sourceFile = new ArrayList<>(sourceDir.list()).get(0).path();
 
@@ -105,7 +105,7 @@ class BuildRootTestIT {
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
-    void testMultipleChangesDetected(String basedir) throws IOException {
+    void testMultipleChangesDetected(String basedir) {
         final BuildRoot sourceDir = sourceDirectory(basedir);
         final List<BuildFile> sources = new ArrayList<>(sourceDir.list());
         assertThat(sources.size(), is(greaterThanOrEqualTo(2)));

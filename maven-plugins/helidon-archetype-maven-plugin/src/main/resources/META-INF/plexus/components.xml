@@ -46,32 +46,5 @@
                 </lifecycles>
             </configuration>
         </component>
-        <component>
-            <role>org.apache.maven.artifact.handler.ArtifactHandler</role>
-            <role-hint>helidon-archetype-catalog</role-hint>
-            <implementation>org.apache.maven.artifact.handler.DefaultArtifactHandler</implementation>
-            <configuration>
-                <extension>zip</extension>
-                <type>helidon-archetype-catalog</type>
-                <addedToClasspath>false</addedToClasspath>
-            </configuration>
-        </component>
-        <component>
-            <role>org.apache.maven.lifecycle.mapping.LifecycleMapping</role>
-            <role-hint>helidon-archetype-catalog</role-hint>
-            <implementation>org.apache.maven.lifecycle.mapping.DefaultLifecycleMapping</implementation>
-            <configuration>
-                <lifecycles>
-                    <lifecycle>
-                        <id>default</id>
-                        <phases>
-                            <package>io.helidon.build-tools:helidon-archetype-maven-plugin:catalog</package>
-                            <install>org.apache.maven.plugins:maven-install-plugin:install</install>
-                            <deploy>org.apache.maven.plugins:maven-deploy-plugin:deploy</deploy>
-                        </phases>
-                    </lifecycle>
-                </lifecycles>
-            </configuration>
-        </component>
     </components>
 </component-set>

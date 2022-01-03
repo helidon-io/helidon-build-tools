@@ -106,9 +106,8 @@ public final class JavaRuntime implements ResourceContainer {
      * May not be {@code null}.
      * @param replaceExisting {@code true} if the directory can be deleted if already present.
      * @return The directory.
-     * @throws IOException If an error occurs.
      */
-    public static Path prepareJriDirectory(Path jriDirectory, Path mainJar, boolean replaceExisting) throws IOException {
+    public static Path prepareJriDirectory(Path jriDirectory, Path mainJar, boolean replaceExisting) {
         if (jriDirectory == null) {
             final String jarName = fileName(requireNonNull(mainJar));
             final String dirName = jarName.substring(0, jarName.lastIndexOf('.')) + JRI_DIR_SUFFIX;

@@ -20,18 +20,18 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
 
-    <context>
+    <presets>
         <text path="default.project.name">myproject</text>
         <text path="default.group.id">io.helidon.examples</text>
         <text path="default.artifact.id">helidon-bare-se</text>
         <text path="default.project.version">1.0-SNAPSHOT</text>
         <text path="default.package.name">io.helidon.examples.bare.se</text>
         <text path="default.helidon.version">2.3.3</text>
-    </context>
+    </p>
 
     <step label="Customize Project">
 
-        <input>
+        <inputs>
             <text name="project.name"
                   label="Project name"
                   optional="true"
@@ -67,6 +67,6 @@
                   optional="true"
                   default="${default.helidon.version}"
             />
-        </input>
+        </inputs>
     </step>
 </archetype-script>

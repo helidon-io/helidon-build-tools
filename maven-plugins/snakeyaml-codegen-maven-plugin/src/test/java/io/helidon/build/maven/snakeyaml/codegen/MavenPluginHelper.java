@@ -27,8 +27,7 @@ import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
 
 /**
- *
- * @author rgrecour
+ * Maven plugin helper.
  */
 public final class MavenPluginHelper extends AbstractMojoTestCase {
 
