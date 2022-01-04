@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,6 +122,17 @@ public class Value {
     public <U> U as(GenericType<U> type) {
         Objects.requireNonNull(type, "type is null");
         if (!this.type.equals(type)) {
+            if (this.type == ValueTypes.STRING_LIST && type == ValueTypes.STRING) {
+                StringBuilder b = new StringBuilder();
+                List<String> list = (List<String>) value;
+                list.forEach(v -> {
+                    if (b.length() > 0) {
+                        b.append(',');
+                    }
+                    b.append(v);
+                });
+                return (U) b.toString();
+            }
             throw new ValueTypeException(this.type, type);
         }
         return (U) value;

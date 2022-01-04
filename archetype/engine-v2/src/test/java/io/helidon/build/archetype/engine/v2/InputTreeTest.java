@@ -15,12 +15,7 @@
  */
 package io.helidon.build.archetype.engine.v2;
 
-import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.util.Map;
-
-import io.helidon.build.archetype.engine.v2.ast.Script;
-import io.helidon.build.common.VirtualFileSystem;
 
 import org.junit.jupiter.api.Test;
 
@@ -31,23 +26,26 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
 /**
- * Unit test for class {@link InputPermutations}.
+ * Unit test for class {@link InputTree}.
  */
-class InputPermutationsTest {
+class InputTreeTest {
 
     @Test
     void testSomething() {
-        InputPermutations collector = create("e2e");
+        InputTree collector = create("e2e");
+        //   InputPermutations collector = create(Path.of("/Users/batsatt/dev/helidon/archetypes-v2")); // TODO REMOVE
         assertThat(collector, is(not(nullValue())));
     }
 
-    private InputPermutations create(String testDir) {
+    private InputTree create(String testDir) {
         Path targetDir = targetDir(this.getClass());
         Path sourceDir = targetDir.resolve("test-classes/" + testDir);
-        FileSystem fs = VirtualFileSystem.create(sourceDir);
-        Path cwd = fs.getPath("/");
-        Context context = Context.create(cwd, Map.of(), Map.of());
-        Script script = ScriptLoader.load(cwd.resolve("main.xml"));
-        return InputPermutations.create(script, context);
+        return create(sourceDir);
+    }
+
+    private InputTree create(Path sourceDir) {
+        return InputTree.builder()
+                        .archetypePath(sourceDir)
+                        .build();
     }
 }

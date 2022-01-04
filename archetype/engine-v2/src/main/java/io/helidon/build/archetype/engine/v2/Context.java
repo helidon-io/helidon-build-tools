@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,6 +141,14 @@ public final class Context {
     }
 
     /**
+     * Remove a value by input path.
+     * @param path input path
+     */
+    public void remove(String path) {
+        values.remove(path);
+    }
+
+    /**
      * Push the given input path.
      *
      * @param path input path
@@ -231,6 +239,14 @@ public final class Context {
             path = name;
         }
         return path;
+    }
+
+    /**
+     * Returns the current input path.
+     * @return input path
+     */
+    public String path() {
+        return inputs.peek();
     }
 
     /**
