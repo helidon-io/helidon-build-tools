@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
@@ -524,21 +523,15 @@ public class Metadata {
         args.add(Config.buildVersion());
         args.add("--maxAttempts");
         args.add(Integer.toString(maxAttempts));
-        Consumer<String> stdOut = null;
         if (debugPlugin) {
             // Force debug even if log is not at debug level
             args.add("--debug");
-            stdOut = Log::info;
         }
         try {
-            Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS, stdOut);
+            Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS, Log::info);
         } catch (Plugins.PluginFailed e) {
             throw new UpdateFailed(e);
         }
-    }
-
-    private static void info(String line) {
-        Log.info(line);
     }
 
     private MavenVersion readLatestVersion() {
