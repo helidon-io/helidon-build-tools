@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ public interface RichTextStyle {
     };
 
     /**
-     * Returns a style composed from the given styles, or {@link #NONE} if empty.
+     * Returns a style composed of the given styles, or {@link #NONE} if empty.
      *
      * @param styles The styles.
      * @return The style.
@@ -113,7 +113,7 @@ public interface RichTextStyle {
         /**
          * Create a new instance initialized with the given objects and function.
          *
-         * @param function function function used to map each object to a style
+         * @param function function used to map each object to a style
          * @param objects  objects to be mapped as style
          */
         @SafeVarargs

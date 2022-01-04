@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,10 @@
  */
 package io.helidon.build.common.ansi;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import io.helidon.build.common.Log;
 import io.helidon.build.common.RichText;
@@ -32,10 +27,8 @@ import io.helidon.build.common.RichTextStyle;
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.Ansi.Attribute;
 import org.fusesource.jansi.Ansi.Color;
-import org.fusesource.jansi.AnsiOutputStream;
 
 import static io.helidon.build.common.ansi.AnsiTextProvider.ANSI_ENABLED;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -50,11 +43,29 @@ public class AnsiTextStyle implements RichTextStyle {
     private static final AnsiTextStyle FAINT = new Emphasis(Attribute.INTENSITY_FAINT);
     private static final StyleList BOLD_ITALIC = new StyleList(BOLD).add(ITALIC);
     private static final AnsiTextStyle NEGATIVE = new Emphasis(Attribute.NEGATIVE_ON);
-    private static final String ANSI_ESCAPE_BEGIN = "\033[";
     private static final Map<String, RichTextStyle> STYLES = stylesByName();
-    private static final Lock STRIP_LOCK = new ReentrantReadWriteLock().writeLock();
-    private static final ByteArrayOutputStream STRIP_BYTES = new ByteArrayOutputStream();
-    private static final AnsiOutputStream STRIP = new AnsiOutputStream(STRIP_BYTES);
+
+    private static final char ESC_CH1 = '\033';
+    private static final char ESC_CH2 = '[';
+    private static final char CMD_CH2 = ']';
+    private static final char BEL = 7;
+    private static final char ST_CH2 = '\\';
+    private static final char CHARSET0_CH2 = '(';
+    private static final char CHARSET1_CH2 = ')';
+    private static final String ANSI_ESCAPE_BEGIN = "" + ESC_CH1 + ESC_CH2;
+
+    private enum AnsiState {
+        ESC1,
+        ESC2,
+        NEXT_ARG,
+        STR_ARG_END,
+        INT_ARG_END,
+        CMD,
+        CMD_END,
+        CMD_PARAM,
+        ST,
+        CHARSET
+    }
 
     /**
      * Return all styles, by name.
@@ -225,6 +236,7 @@ public class AnsiTextStyle implements RichTextStyle {
      *
      * @return The names.
      */
+    @SuppressWarnings("unused")
     public static List<String> emphasisNames() {
         return List.of("italic", "bold", "faint", "plain", "underline", "strikethrough", "negative", "conceal", "blink");
     }
@@ -242,7 +254,7 @@ public class AnsiTextStyle implements RichTextStyle {
     }
 
     /**
-     * Returns a style composed from the given attributes, or {@link #none} if empty.
+     * Returns a style composed of the given attributes, or {@link #none} if empty.
      *
      * @param attributes The attributes.
      * @return The style.
@@ -258,7 +270,7 @@ public class AnsiTextStyle implements RichTextStyle {
     }
 
     /**
-     * Tests whether or not the given text contains an Ansi escape sequence.
+     * Tests if the given text contains an Ansi escape sequence.
      *
      * @param text The text.
      * @return {@code true} if an Ansi escape sequence found.
@@ -274,19 +286,136 @@ public class AnsiTextStyle implements RichTextStyle {
      * @return The stripped string.
      */
     public static String strip(String input) {
-        STRIP_LOCK.lock();
-        try {
-            STRIP_BYTES.reset();
-            STRIP.write(input.getBytes(UTF_8));
-            // Using new String(toByteArray(), UTF_8) here would result in 2 copies of the bytes, since
-            // the String constructors always create their own copy; by using toString(UTF_8) we avoid a copy
-            // and it is still safe to reuse our stream.
-            return STRIP_BYTES.toString(UTF_8); // always copies
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        } finally {
-            STRIP_LOCK.unlock();
+        AnsiState state = AnsiState.ESC1;
+        StringBuilder sb = new StringBuilder();
+        char[] buffer = new char[100];
+        int pos = 0;
+        int index;
+        for (index = 0; index < input.length(); index++) {
+            char c = input.charAt(index);
+            switch (state) {
+                case ESC1:
+                    if (c == ESC_CH1) {
+                        buffer[pos++] = c;
+                        state = AnsiState.ESC2;
+                    } else {
+                        sb.append(c);
+                    }
+                    break;
+
+                case ESC2:
+                    buffer[pos++] = c;
+                    if (c == ESC_CH2) {
+                        state = AnsiState.NEXT_ARG;
+                    } else if (c == CMD_CH2) {
+                        state = AnsiState.CMD;
+                    } else if (c == CHARSET0_CH2) {
+                        state = AnsiState.CHARSET;
+                    } else if (c == CHARSET1_CH2) {
+                        state = AnsiState.CHARSET;
+                    } else {
+                        sb.append(buffer, 0, pos);
+                        pos = 0;
+                        state = AnsiState.ESC1;
+                    }
+                    break;
+
+                case NEXT_ARG:
+                    buffer[pos++] = c;
+                    if ('"' == c) {
+                        state = AnsiState.STR_ARG_END;
+                    } else if ('0' <= c && c <= '9') {
+                        state = AnsiState.INT_ARG_END;
+                    } else if (c != ';' && c != '?' && c != '=') {
+                        pos = 0;
+                        state = AnsiState.ESC1;
+                    }
+                    break;
+
+                case INT_ARG_END:
+                    buffer[pos++] = c;
+                    if (!('0' <= c && c <= '9')) {
+                        if (c == ';') {
+                            state = AnsiState.NEXT_ARG;
+                        } else {
+                            pos = 0;
+                            state = AnsiState.ESC1;
+                        }
+                    }
+                    break;
+
+                case STR_ARG_END:
+                    buffer[pos++] = c;
+                    if ('"' != c) {
+                        if (c == ';') {
+                            state = AnsiState.NEXT_ARG;
+                        } else {
+                            pos = 0;
+                            state = AnsiState.ESC1;
+                        }
+                    }
+                    break;
+
+                case CMD:
+                    buffer[pos++] = c;
+                    if ('0' <= c && c <= '9') {
+                        state = AnsiState.CMD_END;
+                    } else {
+                        sb.append(buffer, 0, pos);
+                        pos = 0;
+                        state = AnsiState.ESC1;
+                    }
+                    break;
+
+                case CMD_END:
+                    buffer[pos++] = c;
+                    if (';' == c) {
+                        state = AnsiState.CMD_PARAM;
+                    } else if (!('0' <= c && c <= '9')) {
+                        // oops, did not expect this
+                        sb.append(buffer, 0, pos);
+                        pos = 0;
+                        state = AnsiState.ESC1;
+                    }
+                    break;
+
+                case CMD_PARAM:
+                    buffer[pos++] = c;
+                    if (BEL == c) {
+                        pos = 0;
+                        state = AnsiState.ESC1;
+                    } else if (ESC_CH1 == c) {
+                        state = AnsiState.ST;
+                    }
+                    break;
+
+                case ST:
+                    buffer[pos++] = c;
+                    if (ST_CH2 == c) {
+                        pos = 0;
+                        state = AnsiState.ESC1;
+                    } else {
+                        state = AnsiState.CMD_PARAM;
+                    }
+                    break;
+
+                case CHARSET:
+                    pos = 0;
+                    state = AnsiState.ESC1;
+                    break;
+
+                default:
+                    break;
+            }
+
+            // Is it just too long?
+            if (index >= buffer.length) {
+                sb.append(buffer, 0, pos);
+                pos = 0;
+                state = AnsiState.ESC1;
+            }
         }
+        return sb.toString();
     }
 
 
@@ -354,11 +483,13 @@ public class AnsiTextStyle implements RichTextStyle {
             String textColorBright = background ? textColor : textColor + "!";
             String backgroundColorBright = background ? backgroundColor + "!" : backgroundColor;
 
+            //noinspection DuplicatedCode
             String plain = RichTextStyle.of(backgroundColor, textColor).apply(example);
             String italic = RichTextStyle.of(backgroundColor, textColor, "italic").apply(example);
             String bold = RichTextStyle.of(backgroundColor, textColor, "bold").apply(example);
             String italicBold = RichTextStyle.of(backgroundColor, textColor, "ITALIC").apply(example);
 
+            //noinspection DuplicatedCode
             String plainBright = RichTextStyle.of(backgroundColorBright, textColorBright).apply(example);
             String italicBright = RichTextStyle.of(backgroundColorBright, textColorBright, "italic").apply(example);
             String boldBright = RichTextStyle.of(backgroundColorBright, textColorBright, "bold").apply(example);
