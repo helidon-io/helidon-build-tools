@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,23 +18,20 @@
 -->
 <project>
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
-        <groupId>io.helidon.build-tools</groupId>
-        <artifactId>helidon-build-tools-project</artifactId>
+        <groupId>io.helidon.build-tools.cli</groupId>
+        <artifactId>helidon-cli-project</artifactId>
         <version>3.0.0-SNAPSHOT</version>
     </parent>
-    <groupId>io.helidon.build-tools.cli</groupId>
-    <artifactId>helidon-cli-project</artifactId>
+
+    <groupId>io.helidon.build-tools.cli.tests</groupId>
+    <artifactId>helidon-cli-tests</artifactId>
+    <version>3.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>Helidon Command Line Interface Project</name>
 
     <modules>
-        <module>harness</module>
-        <module>codegen</module>
-        <module>common</module>
-        <module>impl</module>
-        <module>plugin</module>
-        <module>tests</module>
+        <module>functional</module>
     </modules>
 
 </project>
