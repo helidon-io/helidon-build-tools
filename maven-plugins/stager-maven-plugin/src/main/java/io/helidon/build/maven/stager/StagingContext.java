@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,6 +82,7 @@ interface StagingContext {
      * @param msg message, can use format
      * @param args message arguments
      */
+    @SuppressWarnings("unused")
     void logWarning(String msg, Object... args);
 
     /**
@@ -90,6 +91,7 @@ interface StagingContext {
      * @param msg message, can use format
      * @param args message arguments
      */
+    @SuppressWarnings("unused")
     void logError(String msg, Object... args);
 
     /**
@@ -98,5 +100,15 @@ interface StagingContext {
      * @param msg message, can use format
      * @param args message arguments
      */
+    @SuppressWarnings("unused")
     void logDebug(String msg, Object... args);
+
+    /**
+     * Lookup a property.
+     * @param name property name
+     * @return property value or {@code null}
+     */
+    default String property(String name) {
+        return null;
+    }
 }

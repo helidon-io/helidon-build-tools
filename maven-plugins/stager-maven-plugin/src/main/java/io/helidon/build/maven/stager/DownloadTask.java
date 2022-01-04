@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,21 @@ final class DownloadTask extends StagingTask {
      */
     private static final byte[] BUFFER = new byte[8 * 1024];
 
+    /**
+     * Constant for the readTimeout property.
+     */
+    static final String READ_TIMEOUT_PROP = "stager.readTimeout";
+
+    /**
+     * Constant for the connectTimeout property.
+     */
+    static final String CONNECT_TIMEOUT_PROP = "stager.connectTimeout";
+
+    /**
+     * Constant for the maxRetries property.
+     */
+    static final String MAX_RETRIES = "stager.maxRetries";
+
     static final String ELEMENT_NAME = "download";
 
     private final String url;
@@ -69,7 +84,7 @@ final class DownloadTask extends StagingTask {
         context.logInfo("Downloading %s to %s", resolvedUrl, resolvedTarget);
         Path targetFile = dir.resolve(resolvedTarget);
         Files.createDirectories(targetFile.getParent());
-        try (BufferedInputStream bis = new BufferedInputStream(open(resolvedUrl))) {
+        try (BufferedInputStream bis = new BufferedInputStream(open(resolvedUrl, context))) {
             try (FileOutputStream fos = new FileOutputStream(targetFile.toFile())) {
                 int n;
                 while ((n = bis.read(BUFFER, 0, BUFFER.length)) >= 0) {
@@ -87,9 +102,20 @@ final class DownloadTask extends StagingTask {
                 + '}';
     }
 
-    private InputStream open(URL url) throws IOException {
-        return NetworkConnection.builder()
-                                .url(url)
-                                .open();
+    private InputStream open(URL url, StagingContext context) throws IOException {
+        NetworkConnection.Builder builder = NetworkConnection.builder().url(url);
+        String readTimeout = context.property(READ_TIMEOUT_PROP);
+        if (readTimeout != null) {
+            builder.readTimeout(Integer.parseInt(readTimeout));
+        }
+        String connectTimeout = context.property(CONNECT_TIMEOUT_PROP);
+        if (connectTimeout != null) {
+            builder.connectTimeout(Integer.parseInt(connectTimeout));
+        }
+        String maxRetries = context.property(MAX_RETRIES);
+        if (maxRetries != null) {
+            builder.maxRetries(Integer.parseInt(maxRetries));
+        }
+        return builder.open();
     }
 }
