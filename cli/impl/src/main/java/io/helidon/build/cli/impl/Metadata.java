@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
@@ -90,7 +91,7 @@ public class Metadata {
     private final long updateFrequencyMillis;
     private final boolean debugPlugin;
     private final Map<Path, Long> lastChecked;
-    private final AtomicReference<RuntimeException> latestVersionFailure;
+    private final AtomicReference<Throwable> latestVersionFailure;
     private final AtomicReference<MavenVersion> latestVersion;
 
     private Metadata(Builder builder) {
@@ -109,6 +110,7 @@ public class Metadata {
      *
      * @return The url.
      */
+    @SuppressWarnings("unused")
     public String url() {
         return url;
     }
@@ -139,8 +141,9 @@ public class Metadata {
      * Returns the latest Helidon version.
      *
      * @return The version.
+     * @throws UpdateFailed if the metadata update failed
      */
-    public MavenVersion latestVersion() {
+    public MavenVersion latestVersion() throws UpdateFailed {
         return latestVersion(false);
     }
 
@@ -149,10 +152,11 @@ public class Metadata {
      *
      * @param quiet If info messages should be suppressed.
      * @return The version.
+     * @throws UpdateFailed if the metadata update failed
      */
-    public MavenVersion latestVersion(boolean quiet) {
+    public MavenVersion latestVersion(boolean quiet) throws UpdateFailed {
         // If we fail, we only want to do so once per command, so we cache any failure
-        RuntimeException initialFailure = latestVersionFailure.get();
+        Throwable initialFailure = latestVersionFailure.get();
         if (initialFailure == null) {
             try {
                 if (checkForUpdates(null, latestVersionFile, quiet)) {
@@ -161,12 +165,15 @@ public class Metadata {
                     latestVersion.set(readLatestVersion());
                 }
                 return latestVersion.get();
-            } catch (RuntimeException e) {
+            } catch (UpdateFailed | RuntimeException e) {
                 latestVersionFailure.set(e);
                 throw e;
             }
         } else {
-            throw initialFailure;
+            if (initialFailure instanceof UpdateFailed) {
+                throw (UpdateFailed) initialFailure;
+            }
+            throw (RuntimeException) initialFailure;
         }
     }
 
@@ -176,8 +183,9 @@ public class Metadata {
      * @param helidonVersion The version.
      * @param quiet          If info messages should be suppressed.
      * @return The version.
+     * @throws UpdateFailed if the metadata update failed
      */
-    public MavenVersion cliPluginVersion(MavenVersion helidonVersion, boolean quiet) {
+    public MavenVersion cliPluginVersion(MavenVersion helidonVersion, boolean quiet) throws UpdateFailed {
         return cliPluginVersion(helidonVersion, toMavenVersion(Config.buildVersion()), quiet);
     }
 
@@ -188,8 +196,11 @@ public class Metadata {
      * @param thisCliVersion This CLI version.
      * @param quiet          If info messages should be suppressed.
      * @return The version.
+     * @throws UpdateFailed if the metadata update failed
      */
-    public MavenVersion cliPluginVersion(MavenVersion helidonVersion, MavenVersion thisCliVersion, boolean quiet) {
+    public MavenVersion cliPluginVersion(MavenVersion helidonVersion,
+                                         MavenVersion thisCliVersion,
+                                         boolean quiet) throws UpdateFailed {
 
         // Create a map from CLI version to CLI plugin versions, including latest
 
@@ -226,19 +237,21 @@ public class Metadata {
      * @param helidonVersion The version.
      * @param quiet          If info messages should be suppressed.
      * @return The properties.
+     * @throws UpdateFailed if the metadata update failed
      */
-    public MavenVersion cliVersionOf(MavenVersion helidonVersion, boolean quiet) {
+    public MavenVersion cliVersionOf(MavenVersion helidonVersion, boolean quiet) throws UpdateFailed {
         return toMavenVersion(requiredProperty(helidonVersion, CLI_VERSION_PROPERTY, quiet));
     }
 
     /**
-     * Checks whether or not there is a more recent CLI version available and returns the version if so.
+     * Checks if there is a more recent CLI version available and returns the version if so.
      *
      * @param thisCliVersion The version of this CLI.
      * @param quiet          If info messages should be suppressed.
      * @return A valid CLI version if a more recent CLI is available.
+     * @throws UpdateFailed if the metadata update failed
      */
-    public Optional<MavenVersion> checkForCliUpdate(MavenVersion thisCliVersion, boolean quiet) {
+    public Optional<MavenVersion> checkForCliUpdate(MavenVersion thisCliVersion, boolean quiet) throws UpdateFailed {
         final MavenVersion latestHelidonVersion = latestVersion(quiet);
         final MavenVersion latestCliVersion = cliVersionOf(latestHelidonVersion, quiet);
         if (latestCliVersion.isGreaterThan(thisCliVersion)) {
@@ -254,9 +267,11 @@ public class Metadata {
      * @param latestHelidonVersion The latest Helidon version.
      * @param sinceCliVersion      The CLI version to start with.
      * @return The notes, in sorted order.
+     * @throws UpdateFailed if the metadata update failed
      */
     public Map<MavenVersion, String> cliReleaseNotesOf(MavenVersion latestHelidonVersion,
-                                                       MavenVersion sinceCliVersion) {
+                                                       MavenVersion sinceCliVersion) throws UpdateFailed {
+
         requireNonNull(latestHelidonVersion, "latestHelidonVersion must not be null");
         requireNonNull(sinceCliVersion, "sinceCliVersion must not be null");
         final ConfigProperties props = propertiesOf(latestHelidonVersion, true);
@@ -278,8 +293,9 @@ public class Metadata {
      *
      * @param helidonVersion The version.
      * @return The properties.
+     * @throws UpdateFailed if the metadata update failed
      */
-    public ConfigProperties propertiesOf(String helidonVersion) {
+    public ConfigProperties propertiesOf(String helidonVersion) throws UpdateFailed {
         return propertiesOf(toMavenVersion(helidonVersion));
     }
 
@@ -288,8 +304,9 @@ public class Metadata {
      *
      * @param helidonVersion The version.
      * @return The properties.
+     * @throws UpdateFailed if the metadata update failed
      */
-    public ConfigProperties propertiesOf(MavenVersion helidonVersion) {
+    public ConfigProperties propertiesOf(MavenVersion helidonVersion) throws UpdateFailed {
         return propertiesOf(helidonVersion, false);
     }
 
@@ -299,8 +316,9 @@ public class Metadata {
      * @param helidonVersion The version.
      * @param quiet          If info messages should be suppressed.
      * @return The properties.
+     * @throws UpdateFailed if the metadata update failed
      */
-    public ConfigProperties propertiesOf(MavenVersion helidonVersion, boolean quiet) {
+    public ConfigProperties propertiesOf(MavenVersion helidonVersion, boolean quiet) throws UpdateFailed {
         return new ConfigProperties(versionedFile(helidonVersion, METADATA_FILE_NAME, quiet));
     }
 
@@ -309,8 +327,9 @@ public class Metadata {
      *
      * @param helidonVersion The version.
      * @return The catalog.
+     * @throws UpdateFailed if the metadata update failed
      */
-    public ArchetypeCatalog catalogOf(String helidonVersion) {
+    public ArchetypeCatalog catalogOf(String helidonVersion) throws UpdateFailed  {
         return catalogOf(toMavenVersion(helidonVersion));
     }
 
@@ -319,8 +338,9 @@ public class Metadata {
      *
      * @param helidonVersion The version.
      * @return The catalog.
+     * @throws UpdateFailed if the metadata update failed
      */
-    public ArchetypeCatalog catalogOf(MavenVersion helidonVersion) {
+    public ArchetypeCatalog catalogOf(MavenVersion helidonVersion) throws UpdateFailed {
         try {
             return ArchetypeCatalog.read(versionedFile(helidonVersion, CATALOG_FILE_NAME, false));
         } catch (IOException ex) {
@@ -333,8 +353,9 @@ public class Metadata {
      *
      * @param helidonVersion The version.
      * @return The directory.
+     * @throws UpdateFailed if the metadata update failed
      */
-    public Path directoryOf(MavenVersion helidonVersion) {
+    public Path directoryOf(MavenVersion helidonVersion) throws UpdateFailed {
         final Path versionDir = rootDir.resolve(requireNonNull(helidonVersion).toString());
         final Path checkFile = versionDir.resolve(LAST_UPDATE_FILE_NAME);
         checkForUpdates(helidonVersion, checkFile, false);
@@ -346,14 +367,19 @@ public class Metadata {
      *
      * @param catalogEntry The catalog entry.
      * @return The path to the archetype jar.
+     * @throws UpdateFailed if the metadata update failed
      */
-    public Path archetypeOf(ArchetypeCatalog.ArchetypeEntry catalogEntry) {
+    public Path archetypeOf(ArchetypeCatalog.ArchetypeEntry catalogEntry) throws UpdateFailed {
         final MavenVersion helidonVersion = toMavenVersion(catalogEntry.version());
         final String fileName = catalogEntry.artifactId() + "-" + helidonVersion + JAR_SUFFIX;
         return versionedFile(helidonVersion, fileName, false);
     }
 
-    private String requiredProperty(MavenVersion helidonVersion, String propertyName, boolean quiet) {
+    @SuppressWarnings("SameParameterValue")
+    private String requiredProperty(MavenVersion helidonVersion,
+                                    String propertyName,
+                                    boolean quiet) throws UpdateFailed {
+
         ConfigProperties properties = propertiesOf(helidonVersion, quiet);
         return Requirements.requireNonNull(properties.property(propertyName), "missing " + propertyName);
     }
@@ -396,18 +422,22 @@ public class Metadata {
     }
 
     @SuppressWarnings("ConstantConditions")
-    private Path versionedFile(MavenVersion helidonVersion, String fileName, boolean quiet) {
+    private Path versionedFile(MavenVersion helidonVersion, String fileName, boolean quiet) throws UpdateFailed {
         final Path versionDir = rootDir.resolve(requireNonNull(helidonVersion).toString());
         final Path checkFile = versionDir.resolve(LAST_UPDATE_FILE_NAME);
         checkForUpdates(helidonVersion, checkFile, quiet);
         return requireFile(requireHelidonVersionDir(versionDir).resolve(fileName));
     }
 
-    private boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, boolean quiet) {
+    private boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, boolean quiet) throws UpdateFailed  {
         return checkForUpdates(helidonVersion, checkFile, System.currentTimeMillis(), quiet);
     }
 
-    boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, long currentTimeMillis, boolean quiet) {
+    boolean checkForUpdates(MavenVersion helidonVersion,
+                            Path checkFile,
+                            long currentTimeMillis,
+                            boolean quiet) throws UpdateFailed {
+
         if (isStale(checkFile, currentTimeMillis)) {
             update(helidonVersion, quiet);
             return true;
@@ -471,7 +501,7 @@ public class Metadata {
         }
     }
 
-    private void update(MavenVersion helidonVersion, boolean quiet) {
+    private void update(MavenVersion helidonVersion, boolean quiet) throws UpdateFailed {
         final boolean logInfo = Log.isDebug() || !quiet;
         final int maxAttempts = quiet ? 1 : PLUGIN_MAX_ATTEMPTS;
         final List<String> args = new ArrayList<>();
@@ -494,11 +524,17 @@ public class Metadata {
         args.add(Config.buildVersion());
         args.add("--maxAttempts");
         args.add(Integer.toString(maxAttempts));
+        Consumer<String> stdOut = null;
         if (debugPlugin) {
             // Force debug even if log is not at debug level
             args.add("--debug");
+            stdOut = Log::info;
         }
-        Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS, Metadata::info);
+        try {
+            Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS, stdOut);
+        } catch (Plugins.PluginFailed e) {
+            throw new UpdateFailed(e);
+        }
     }
 
     private static void info(String line) {
@@ -516,6 +552,17 @@ public class Metadata {
             throw new IllegalStateException("No version in " + latestVersionFile);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
+        }
+    }
+
+    /**
+     * Update failed checked exception.
+     * This is a checked exception by design to ensure a proper error handling.
+     */
+    public static class UpdateFailed extends Exception {
+
+        private UpdateFailed(Plugins.PluginFailed ex) {
+            super(ex.getMessage(), ex);
         }
     }
 

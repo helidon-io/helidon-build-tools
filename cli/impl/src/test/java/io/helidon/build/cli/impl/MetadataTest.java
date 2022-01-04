@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,7 @@ import static io.helidon.build.cli.impl.TestMetadata.TestVersion.RC1;
 import static io.helidon.build.cli.impl.TestMetadata.TestVersion.RC2;
 import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC1;
 import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC2;
+import static io.helidon.build.common.Unchecked.unchecked;
 import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -81,7 +82,7 @@ public class MetadataTest extends MetadataTestBase {
     }
 
     @Test
-    void smokeTest() {
+    void smokeTest() throws Exception {
         assertInitialLatestVersionRequestPerformsUpdate(DEFAULT_UPDATE_FREQUENCY, HOURS, VERSION_RC1, NO_ETAG, false);
 
         // Check properties. Should not perform update.
@@ -147,7 +148,7 @@ public class MetadataTest extends MetadataTestBase {
     }
 
     @Test
-    void testCheckForCliUpdate() {
+    void testCheckForCliUpdate() throws Exception {
 
         // Setup with RC2 as latest
 
@@ -183,7 +184,7 @@ public class MetadataTest extends MetadataTestBase {
     }
 
     @Test
-    void testCliPluginVersion() {
+    void testCliPluginVersion() throws Exception {
 
         // Setup with RC2 as latest
 
@@ -249,7 +250,7 @@ public class MetadataTest extends MetadataTestBase {
 
 
     @Test
-    void testReleaseNotes() {
+    void testReleaseNotes() throws Exception {
         meta = newDefaultInstance();
         MavenVersion helidonVersion = MAVEN_VERSION_RC2;
 
@@ -268,7 +269,7 @@ public class MetadataTest extends MetadataTestBase {
         assertThat(notes.get(keys.get(2)), containsString("Performance"));
         assertThat(notes.get(keys.get(3)), containsString("DB archetype"));
 
-        // Check from latest version (RC1)
+        // Check from the latest version (RC1)
 
         notes = meta.cliReleaseNotesOf(helidonVersion, meta.latestVersion());
         assertThat(notes, is(not(nullValue())));
@@ -345,7 +346,7 @@ public class MetadataTest extends MetadataTestBase {
     }
 
     @Test
-    void testZipIsNotDownloadedWhenEtagMatches() {
+    void testZipIsNotDownloadedWhenEtagMatches() throws Exception {
         startMetadataTestServer(TestVersion.RC1);
 
         // Make the initial latestVersion call and validate the result
@@ -365,9 +366,9 @@ public class MetadataTest extends MetadataTestBase {
     }
 
     @Test
-    void testUpdateWhenLatestChanges() {
+    void testUpdateWhenLatestChanges() throws Exception {
 
-        // Setup test server with latest set to RC2
+        // Setup test server with the latest set to RC2
 
         startMetadataTestServer(RC2);
 
@@ -395,12 +396,12 @@ public class MetadataTest extends MetadataTestBase {
     }
 
     @Test
-    void testCatalogUpdatesWhenUnseenVersionRequested() {
+    void testCatalogUpdatesWhenUnseenVersionRequested() throws Exception {
         startMetadataTestServer(RC2);
 
         // Make the initial catalog request and validate the result
 
-        final Runnable request = () -> catalogRequest(VERSION_RC2, true);
+        final Runnable request = unchecked(() -> catalogRequest(VERSION_RC2, true));
         assertInitialRequestPerformsUpdate(request, DEFAULT_UPDATE_FREQUENCY, HOURS, VERSION_RC2, RC2_ETAG, false);
 
         // Now request the catalog again and make sure we do no updates

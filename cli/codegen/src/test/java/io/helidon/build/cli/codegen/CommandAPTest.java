@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import io.helidon.build.cli.codegen.CompilerHelper.JavaSourceFromString;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.cli.codegen.Unchecked.unchecked;
+import static io.helidon.build.common.Unchecked.unchecked;
 import static io.helidon.build.common.Strings.normalizeNewLines;
 import static io.helidon.build.common.Strings.read;
 import static java.nio.file.Files.list;

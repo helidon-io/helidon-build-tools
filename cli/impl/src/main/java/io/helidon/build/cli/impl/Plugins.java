@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import static java.util.Objects.requireNonNull;
  * Utility to execute plugins.
  */
 public class Plugins {
+
     private static final String EOL = System.lineSeparator();
     private static final AtomicReference<Path> PLUGINS_JAR = new AtomicReference<>();
     private static final String JAR_NAME_PREFIX = "cli-plugins-";
@@ -101,27 +102,30 @@ public class Plugins {
      * @param pluginName     The plugin name.
      * @param pluginArgs     The plugin args.
      * @param maxWaitSeconds The maximum number of seconds to wait for completion.
+     * @throws PluginFailed if the execution fails
      */
     public static void execute(String pluginName,
                                List<String> pluginArgs,
-                               int maxWaitSeconds) {
-        execute(pluginName, pluginArgs, maxWaitSeconds, Plugins::devNull);
+                               int maxWaitSeconds) throws PluginFailed {
+
+        execute(pluginName, pluginArgs, maxWaitSeconds, null);
     }
 
     /**
      * Execute a plugin.
      * If executing inside a native executable, the plugin execution is done by spawning a Java process using the
-     * bundled plugin JAR file. Otherwise the execute is done in the current JVM.
+     * bundled plugin JAR file. Otherwise, the execution is done in the current JVM.
      *
      * @param pluginName     The plugin name.
      * @param pluginArgs     The plugin args.
      * @param maxWaitSeconds If spawned, the maximum number of seconds to wait for completion.
      * @param stdOut         The std out consumer.
+     * @throws PluginFailed if the execution fails
      */
     public static void execute(String pluginName,
                                List<String> pluginArgs,
                                int maxWaitSeconds,
-                               Consumer<String> stdOut) {
+                               Consumer<String> stdOut) throws PluginFailed {
 
         if (ImageInfo.inImageRuntimeCode()) {
             spawned(pluginName, pluginArgs, maxWaitSeconds, stdOut);
@@ -130,16 +134,21 @@ public class Plugins {
         }
     }
 
+    private static List<String> pluginArgs(String pluginName, List<String> pluginArgs) {
+        List<String> args = new ArrayList<>();
+        args.add(requireNonNull(pluginName));
+        if (Log.isDebug() && !pluginArgs.contains("--debug")) {
+            args.add("--debug");
+        } else if (Log.isVerbose() && !pluginArgs.contains("--verbose")) {
+            args.add("--verbose");
+        }
+        args.addAll(pluginArgs);
+        return args;
+    }
+
     private static void embedded(String pluginName, List<String> pluginArgs, Consumer<String> stdOut) {
         try {
-            List<String> command = new ArrayList<>();
-            command.add(requireNonNull(pluginName));
-            if (Log.isDebug()) {
-                command.add("--debug");
-            } else if (Log.isVerbose()) {
-                command.add("--verbose");
-            }
-            command.addAll(pluginArgs);
+            List<String> command = pluginArgs(pluginName, pluginArgs);
             Plugin.execute(command.toArray(new String[0]), stdOut);
         } catch (Plugin.Failed ex) {
             if (ex.getCause() != null) {
@@ -155,7 +164,7 @@ public class Plugins {
     private static void spawned(String pluginName,
                                 List<String> pluginArgs,
                                 int maxWaitSeconds,
-                                Consumer<String> stdOut) {
+                                Consumer<String> stdOut) throws PluginFailed {
 
         // Create the command
         final List<String> command = new ArrayList<>();
@@ -168,13 +177,7 @@ public class Plugins {
         command.addAll(Proxies.javaProxyArgs());
         command.add("-jar");
         command.add(pluginJar().toString());
-        command.add(requireNonNull(pluginName));
-        if (Log.isDebug()) {
-            command.add("--debug");
-        } else if (Log.isVerbose()) {
-            command.add("--verbose");
-        }
-        command.addAll(pluginArgs);
+        command.addAll(pluginArgs(pluginName, pluginArgs));
 
         // Create the process builder
 
@@ -198,7 +201,7 @@ public class Plugins {
             if (containsUnsupportedClassVersionError(stdErr)) {
                 unsupportedJavaVersion();
             } else {
-                throw new PluginFailed(String.join(EOL, error.monitor().output()));
+                throw new PluginFailedUnchecked(String.join(EOL, error.monitor().output()));
             }
         } catch (ProcessMonitor.ProcessTimeoutException error) {
             throw new PluginFailed(pluginName + TIMED_OUT_SUFFIX);
@@ -212,6 +215,19 @@ public class Plugins {
     }
 
     /**
+     * Plugin failure unchecked exception.
+     * This is a runtime exception used when the error has already been logged.
+     *
+     * @see PluginFailed for the checked variant
+     */
+    public static class PluginFailedUnchecked extends RuntimeException {
+
+        private PluginFailedUnchecked(String message) {
+            super(message);
+        }
+    }
+
+    /**
      * Plugin failure.
      */
     public static class PluginFailed extends RuntimeException {
@@ -220,19 +236,16 @@ public class Plugins {
         }
 
         private PluginFailed(Throwable cause) {
-            super(cause);
+            super(cause.getMessage(), cause);
         }
 
-        private PluginFailed(String message, Exception cause) {
+        private PluginFailed(String message, Throwable cause) {
             super(message, cause);
         }
     }
 
     private static boolean containsUnsupportedClassVersionError(List<String> stdErr) {
         return stdErr.stream().anyMatch(line -> line.contains(UNSUPPORTED_CLASS_VERSION_ERROR));
-    }
-
-    private static void devNull(String line) {
     }
 
     private Plugins() {

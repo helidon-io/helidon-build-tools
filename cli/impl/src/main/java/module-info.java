@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ module io.helidon.build.cli.impl {
     requires io.helidon.build.common.ansi;
     requires io.helidon.build.common;
     requires io.helidon.build.common.maven;
-    requires io.helidon.cli.common;
+    requires io.helidon.build.cli.common;
     requires io.helidon.build.devloop.common;
     provides io.helidon.build.cli.harness.CommandRegistry
             with io.helidon.build.cli.impl.HelidonRegistry;

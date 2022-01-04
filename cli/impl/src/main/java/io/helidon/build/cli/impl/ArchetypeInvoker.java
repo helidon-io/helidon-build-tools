@@ -48,6 +48,7 @@ import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
 import io.helidon.build.common.Maps;
 import io.helidon.build.common.RequirementFailure;
+import io.helidon.build.common.Requirements;
 import io.helidon.build.common.VirtualFileSystem;
 import io.helidon.build.common.maven.MavenVersion;
 
@@ -76,6 +77,9 @@ abstract class ArchetypeInvoker {
      * The first Helidon version that uses the archetype engine V2.
      */
     private static final MavenVersion HELIDON_V3 = toMavenVersion("3.0.0");
+
+
+    private static final String HELIDON_VERSION_NOT_FOUND = "$(red Helidon version) $(RED %s) $(red not found.)";
 
     private final Metadata metadata;
     private final boolean batch;
@@ -160,6 +164,7 @@ abstract class ArchetypeInvoker {
      *
      * @return EngineVersion
      */
+    @SuppressWarnings("unused")
     abstract EngineVersion engineVersion();
 
     /**
@@ -470,8 +475,10 @@ abstract class ArchetypeInvoker {
         }
 
         private FileSystem archetype() {
+            InitOptions initOptions = initOptions();
+            MavenVersion helidonVersion = toMavenVersion(initOptions.helidonVersion());
             try {
-                String archetypePath = initOptions().archetypePath();
+                String archetypePath = initOptions.archetypePath();
                 if (archetypePath != null) {
                     Path archetype = Path.of(archetypePath);
                     if (Files.isDirectory(archetype)) {
@@ -480,8 +487,11 @@ abstract class ArchetypeInvoker {
                     return FileSystems.newFileSystem(archetype, this.getClass().getClassLoader());
                 }
                 // TODO this is subject to changes depending on how the archetype bundling
-                Path archetype = metadata().directoryOf(toMavenVersion(initOptions().helidonVersion()));
+                Path archetype = metadata().directoryOf(helidonVersion);
                 return VirtualFileSystem.create(archetype);
+            } catch (Metadata.UpdateFailed | Plugins.PluginFailed e) {
+                Requirements.failed(HELIDON_VERSION_NOT_FOUND, helidonVersion);
+                return null;
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }

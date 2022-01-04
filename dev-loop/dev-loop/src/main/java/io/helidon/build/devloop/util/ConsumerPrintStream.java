@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
-
-import com.google.common.base.Charsets;
 
 /**
  * A {@code PrintStream} that writes lines to a {@code Consumer<String>}.
  */
 public class ConsumerPrintStream extends PrintStream {
-    private static final Charset ENCODING = Charsets.UTF_8;
+    private static final Charset ENCODING = StandardCharsets.UTF_8;
     private static final int LINE_FEED = 10;
     private static final int CARRIAGE_RETURN = 13;
     private static final int NONE = -1;

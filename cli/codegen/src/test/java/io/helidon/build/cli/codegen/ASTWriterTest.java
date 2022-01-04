@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import io.helidon.build.cli.codegen.AST.MethodBody;
 import io.helidon.build.cli.codegen.AST.MethodDeclaration;
 import io.helidon.build.cli.codegen.AST.MethodInvocation;
 import io.helidon.build.cli.codegen.TypeInfo.CompositeTypeInfo;
-import io.helidon.build.cli.codegen.Unchecked.CheckedConsumer;
+import io.helidon.build.common.Unchecked.CheckedConsumer;
 
 import com.acme.TestClass1;
 import org.junit.jupiter.api.Test;
