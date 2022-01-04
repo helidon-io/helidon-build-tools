@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,6 +95,12 @@ public class JLinkImageMojo extends AbstractMojo {
     private List<String> defaultArgs;
 
     /**
+     * Additional arguments to use when invoking {@code jlink}.
+     */
+    @Parameter(property = "jlink.image.additionalJlinkArgs")
+    private List<String> additionalJlinkArgs;
+
+    /**
      * Additional modules to use when starting the application.
      */
     @Parameter(property = "jlink.image.additionalModules")
@@ -136,6 +142,7 @@ public class JLinkImageMojo extends AbstractMojo {
                                                 .defaultJvmOptions(defaultJvmOptions)
                                                 .defaultArgs(defaultArgs)
                                                 .defaultDebugOptions(defaultDebugOptions)
+                                                .additionalJlinkArgs(additionalJlinkArgs)
                                                 .additionalModules(additionalModules)
                                                 .cds(addClassDataSharingArchive)
                                                 .stripDebug(stripDebug)

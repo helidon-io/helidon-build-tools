@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -170,25 +170,28 @@ public final class Linker {
     private void buildJlinkArguments() {
 
         // On JDK 9, jlink insists on a --module-path so give it the jmods directory
-
-        addArgument("--module-path", config.jdk().jmodsDir());
+        jlinkArgs.add("--module-path");
+        jlinkArgs.add(config.jdk().jmodsDir().normalize().toString());
 
         // Tell jlink which jdk modules to include
-
-        addArgument("--add-modules", String.join(",", javaDependencies));
+        jlinkArgs.add("--add-modules");
+        jlinkArgs.add(String.join(",", javaDependencies));
 
         // Tell jlink the directory in which to create and write the JRI
-
-        addArgument("--output", config.jriDirectory());
+        jlinkArgs.add("--output");
+        jlinkArgs.add(config.jriDirectory().normalize().toString());
 
         // Tell jlink to strip out unnecessary stuff
-
         if (config.stripDebug()) {
-            addArgument("--strip-debug");
+            jlinkArgs.add("--strip-debug");
         }
-        addArgument("--no-header-files");
-        addArgument("--no-man-pages");
-        addArgument("--compress", "2");
+        jlinkArgs.add("--no-header-files");
+        jlinkArgs.add("--no-man-pages");
+        jlinkArgs.add("--compress");
+        jlinkArgs.add("2");
+
+        // user provided args
+        jlinkArgs.addAll(config.additionalJlinkArgs());
     }
 
     private void buildJri() {
@@ -381,18 +384,5 @@ public final class Linker {
 
     private Path jriDirectory() {
         return fromWorking(config.jriDirectory());
-    }
-
-    private void addArgument(String argument) {
-        jlinkArgs.add(argument);
-    }
-
-    private void addArgument(String argument, Path path) {
-        addArgument(argument, path.normalize().toString());
-    }
-
-    private void addArgument(String argument, String value) {
-        jlinkArgs.add(argument);
-        jlinkArgs.add(value);
     }
 }

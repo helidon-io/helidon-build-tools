@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ public final class Configuration {
     private final List<String> defaultJvm;
     private final List<String> defaultArgs;
     private final List<String> defaultDebug;
+    private final List<String> additionalJlinkArgs;
     private final Set<String> additionalModules;
     private final Path jriDirectory;
     private final boolean verbose;
@@ -70,6 +71,7 @@ public final class Configuration {
         this.defaultArgs = builder.defaultArgs;
         this.defaultDebug = builder.defaultDebug;
         this.additionalModules = builder.additionalModules;
+        this.additionalJlinkArgs = builder.additionalJlinkArgs;
         this.jriDirectory = builder.jriDirectory;
         this.verbose = builder.verbose;
         this.stripDebug = builder.stripDebug;
@@ -133,6 +135,15 @@ public final class Configuration {
     }
 
     /**
+     * Returns the additional arguments to use when invoking {@code jlink}.
+     *
+     * @return The arguments.
+     */
+    public List<String> additionalJlinkArgs() {
+        return additionalJlinkArgs;
+    }
+
+    /**
      * Returns modules to use when starting the application.
      *
      * @return the additional modules.
@@ -142,7 +153,7 @@ public final class Configuration {
     }
 
     /**
-     * Returns whether or not to create a CDS archive.
+     * Returns whether to create a CDS archive.
      *
      * @return {@code true} if a CDS archive should be created.
      */
@@ -151,7 +162,7 @@ public final class Configuration {
     }
 
     /**
-     * Returns whether or not to test the start script.
+     * Returns whether to test the start script.
      *
      * @return {@code true} if the start script should be tested.
      */
@@ -160,7 +171,7 @@ public final class Configuration {
     }
 
     /**
-     * Returns whether or not to log detail messages.
+     * Returns whether to log detail messages.
      *
      * @return {@code true} if detail messages should be logged.
      */
@@ -169,7 +180,7 @@ public final class Configuration {
     }
 
     /**
-     * Returns whether or not to strip debug information from JDK classes.
+     * Returns whether to strip debug information from JDK classes.
      *
      * @return {@code true} if debug information should be stripped.
      */
@@ -189,6 +200,7 @@ public final class Configuration {
     /**
      * A {@link Configuration} builder.
      */
+    @SuppressWarnings("UnusedReturnValue")
     public static final class Builder {
         static final String DEFAULT_DEBUG = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005";
         static final int DEFAULT_MAX_APP_START_SECONDS = 1000;
@@ -197,6 +209,7 @@ public final class Configuration {
         private List<String> defaultJvm;
         private List<String> defaultArgs;
         private List<String> defaultDebug;
+        private List<String> additionalJlinkArgs;
         private Set<String> additionalModules;
         private Path jriDirectory;
         private boolean replace;
@@ -211,6 +224,7 @@ public final class Configuration {
             defaultJvm = emptyList();
             defaultArgs = emptyList();
             defaultDebug = List.of(DEFAULT_DEBUG);
+            additionalJlinkArgs = emptyList();
             additionalModules = emptySet();
             maxAppStartSeconds = DEFAULT_MAX_APP_START_SECONDS;
             cds = true;
@@ -247,6 +261,8 @@ public final class Configuration {
                         defaultDebugOptions(argAt(++i, args));
                     } else if (arg.equalsIgnoreCase("--defaultArgs")) {
                         defaultArgs(argAt(++i, args));
+                    } else if (arg.equalsIgnoreCase("--additionalJlinkArgs")) {
+                        additionalJlinkArgs(argAt(++i, args));
                     } else if (arg.equalsIgnoreCase("--additionalModules")) {
                         additionalModules(argAt(++i, args));
                     } else if (arg.equalsIgnoreCase("--maxAppStartSeconds")) {
@@ -358,6 +374,30 @@ public final class Configuration {
         }
 
         /**
+         * Sets additional arguments to use when invoking {@code jlink}.
+         *
+         * @param args The args.
+         * @return The builder.
+         */
+        public Builder additionalJlinkArgs(String args) {
+            additionalJlinkArgs(toList(args));
+            return this;
+        }
+
+        /**
+         * Sets additional arguments to use when invoking {@code jlink}.
+         *
+         * @param args The args.
+         * @return The builder.
+         */
+        public Builder additionalJlinkArgs(List<String> args) {
+            if (isValid(args)) {
+                this.additionalJlinkArgs = split(args);
+            }
+            return this;
+        }
+
+        /**
          * Sets default arguments to use when starting the application.
          *
          * @param modules The modules.
@@ -394,7 +434,7 @@ public final class Configuration {
         }
 
         /**
-         * Sets whether or not to delete the {@code jriDirectory} if it exists. Defaults to {@code false}.
+         * Sets whether to delete the {@code jriDirectory} if it exists. Defaults to {@code false}.
          *
          * @param replace {@code true} if the directory should be deleted if present.
          * @return The builder.
@@ -405,7 +445,7 @@ public final class Configuration {
         }
 
         /**
-         * Sets whether or not to build a CDS archive. Defaults to {@code true}.
+         * Sets whether to build a CDS archive. Defaults to {@code true}.
          *
          * @param cds {@code true} if a CDS archive should be created.
          * @return The builder.
@@ -416,7 +456,7 @@ public final class Configuration {
         }
 
         /**
-         * Sets whether or not to test the start script. Defaults to {@code true}.
+         * Sets whether to test the start script. Defaults to {@code true}.
          *
          * @param test {@code true} if the start script should be tested.
          * @return The builder.
@@ -427,7 +467,7 @@ public final class Configuration {
         }
 
         /**
-         * Sets whether or not to log detail messages.
+         * Sets whether to log detail messages.
          *
          * @param verbose {@code true} if detail messages should be created.
          * @return The builder.
@@ -449,7 +489,7 @@ public final class Configuration {
         }
 
         /**
-         * Sets whether or not to strip debug information from JDK classes.
+         * Sets whether to strip debug information from JDK classes.
          *
          * @param stripDebug {@code true} if debug information should be stripped.
          * @return The builder.
