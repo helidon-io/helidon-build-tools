@@ -24,16 +24,18 @@ import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.Input;
+import io.helidon.build.archetype.engine.v2.ast.Input.NamedInput;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Position;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
@@ -45,7 +47,7 @@ import static io.helidon.build.common.PropertyEvaluator.evaluate;
 import static java.util.Objects.requireNonNull;
 
 /**
- * TODO: Describe
+ * Collapses an archetype into a tree containing only the inputs.
  */
 public class InputTree {
     private final Node root;
@@ -58,9 +60,12 @@ public class InputTree {
         return root;
     }
 
+    public void print() {
+        root.print();
+    }
+
     private InputTree(Builder builder) {
         this.root = builder.root();
-        root.print(); // TODO REMOVE
     }
 
     /*
@@ -114,10 +119,10 @@ public class InputTree {
     */
 
     public static abstract class Node {
-        private static final AtomicInteger ID = new AtomicInteger();
+        private final int id;
+        private final int depth;
         private final Path script;
         private final Position position;
-        private final int id;
         private final String path;
         private final Kind kind;
         private final Node parent;
@@ -131,8 +136,9 @@ public class InputTree {
             TEXT,
         }
 
-        Node(Node parent, String path, Kind kind, Path script, Position position) {
-            this.id = ID.getAndIncrement();
+        Node(int id, int depth, Node parent, String path, Kind kind, Path script, Position position) {
+            this.id = id;
+            this.depth = depth;
             this.script = script;
             this.position = position;
             this.path = path;
@@ -146,6 +152,10 @@ public class InputTree {
 
         int id() {
             return id;
+        }
+
+        int depth() {
+            return depth;
         }
 
         Path script() {
@@ -172,6 +182,11 @@ public class InputTree {
             children.add(child);
         }
 
+        void removeChild(Node child) {
+            if (!children.remove(child)) {
+                throw new IllegalStateException();
+            }
+        }
         List<Node> children() {
             return children;
         }
@@ -197,7 +212,7 @@ public class InputTree {
         }
 
         protected String toString(String type, String value) {
-            return String.format("%d %s '%s' from %s, line %s", id(), type, value, script(),position().lineNumber());
+            return String.format("%d %s '%s' from %s, line %s", id(), type, value, script(), position().lineNumber());
         }
     }
 
@@ -257,15 +272,33 @@ public class InputTree {
 
     public static class InputNode extends Node {
 
-        InputNode(Node parent, Kind kind, String path, Path script, Position position) {
-            super(parent, path, kind, script, position);
+        InputNode(int id, int depth, Node parent, Kind kind, String path, Path script, Position position) {
+            super(id, depth, parent, path, kind, script, position);
         }
 
         @Override
         PermutationIndex createPermutationIndex() {
-            // Just children
-            return new PermutationIndex(children().size());
+            Optional<Node> presets = children().stream().filter(n -> n.kind() == Kind.PRESETS).findFirst();
+            if (presets.isPresent()) {
+                PresetNode preset = (PresetNode) presets.get();
+                // TODO
+                return new PermutationIndex(children().size());
+            } else {
+
+                // No preset, so all children
+                return new PermutationIndex(children().size());
+            }
         }
+/* TODO
+
+        static class PresetIndex extends PermutationIndex {
+             private final PresetNode presets;
+             PresetIndex(PresetNode presets, int child) {
+
+                 this.presets = presets;
+             }
+        }
+*/
 
         @Override
         void collect(PermutationState state, Map<String, String> values) {
@@ -289,8 +322,8 @@ public class InputTree {
     public static class ListNode extends InputNode {
         private final List<String> defaults;
 
-        ListNode(Node parent, String path, List<String> defaults, Path script, Position position) {
-            super(parent, Kind.LIST, path, script, position);
+        ListNode(int id, int depth,Node parent, String path, List<String> defaults, Path script, Position position) {
+            super(id, depth, parent, Kind.LIST, path, script, position);
             this.defaults = defaults;
         }
 
@@ -318,7 +351,6 @@ public class InputTree {
                 // TODO ADD permutations!
 
                 return new ListPermutations(permutations);
-
             }
 
             ListPermutations(List<List<String>> permutations) {
@@ -364,8 +396,8 @@ public class InputTree {
     public static class ValueNode extends Node {
         private final String value;
 
-        ValueNode(Node parent, Kind kind, String path, String value, Path script, Position position) {
-            super(parent, path, kind, script, position);
+        ValueNode(int id, int depth,Node parent, Kind kind, String path, String value, Path script, Position position) {
+            super(id, depth, parent, path, kind, script, position);
             this.value = value;
         }
 
@@ -401,8 +433,8 @@ public class InputTree {
     public static class PresetNode extends Node {
         private final Map<String, String> presets;
 
-        PresetNode(Node parent, String path, Path script, Position position) {
-            super(parent, path, Kind.PRESETS, script, position);
+        PresetNode(int id, int depth, Node parent, String path, Path script, Position position) {
+            super(id, depth, parent, path, Kind.PRESETS, script, position);
             this.presets = new LinkedHashMap<>();
         }
 
@@ -449,9 +481,11 @@ public class InputTree {
     public static class Builder {
         private static final String MAIN_FILE = "main.xml";
         private final Deque<Node> nodes;
+        private int nextId;
         private Path archetypePath;
         private String entryPoint;
         private Node root;
+        private int presetDepth = -1;
 
         public Builder archetypePath(Path archetypePath) {
             this.archetypePath = archetypePath;
@@ -471,8 +505,40 @@ public class InputTree {
             Script script = ScriptLoader.load(cwd.resolve(scriptName));
 
             Walker.walk(new AllInputs(this), script, context);
+            prune(); // Remove any nodes for which presets exist
             return new InputTree(this);
         }
+
+        void prune() {
+            List<Node> matching = new ArrayList<>();
+            findPresetMatchingNodes(root, new HashMap<>(), matching);
+            matching.forEach(removeMe -> {
+                Node parent = removeMe.parent();
+                parent.removeChild(removeMe);
+            });
+        }
+
+        void findPresetMatchingNodes(Node node, Map<String, String> presets, List<Node> matching) {
+            if (node.depth() < presetDepth) {
+                presets.clear();
+                presetDepth = -1;
+            }
+            if (node.kind() == Node.Kind.PRESETS) {
+                Map<String, String> current = ((PresetNode) node).presets();
+                presets.putAll(current);
+                if (presetDepth < 0) {
+                    presetDepth = node.depth();
+                }
+            } else if (presets.containsKey(node.path())) {
+                matching.add(node);
+            } else {
+                for (Node child : node.children()) {
+                    findPresetMatchingNodes(child, presets, matching);
+                }
+            }
+        }
+
+
 
         private FileSystem fileSystem() {
             if (Files.isDirectory(archetypePath)) {
@@ -497,40 +563,43 @@ public class InputTree {
             return nodes.peek();
         }
 
-        void pushPresets(String path, Path script, Position position) {
-            push(new PresetNode(current(), path, script, position));
-        }
-
         void pushInput(Node.Kind kind, String path, Path script, Position position) {
-            Node parent = current();
-            if (parent == null && root != null) {
-                parent = root;
-            }
-            push(new InputNode(parent, kind, path, script, position));
+            Node parent = parent();
+            push(new InputNode(nextId++, nodes.size(), parent, kind, path, script, position));
         }
 
         void pushInputList(String path, List<String> defaults, Path script, Position position) {
+            Node parent = parent();
+            push(new ListNode(nextId++, nodes.size(), parent, path, defaults, script, position));
+        }
+
+        void pushPresets(String path, Path script, Position position) {
+            Node parent = parent();
+            push(new PresetNode(nextId++, nodes.size(), parent, path, script, position));
+        }
+
+        void pushValue(String value, Path script, Position position) {
+            Node parent = requireNonNull(parent());
+            push(new ValueNode(nextId++, nodes.size(), parent, parent.kind(), parent.path(), value, script, position));
+        }
+
+        Node parent() {
             Node parent = current();
             if (parent == null && root != null) {
                 parent = root;
             }
-            push(new ListNode(parent, path, defaults, script, position));
+            return parent;
         }
 
-        void pushValue(String value, Path script, Position position) {
-            Node parent = requireNonNull(current());
-            push(new ValueNode(parent, parent.kind(), parent.path(), value, script, position));
-        }
-
-        Node pop() {
-            return nodes.pop();
-        }
-
-        private void push(Node node) {
+        void push(Node node) {
             if (root == null) {
                 root = node;
             }
             nodes.push(node);
+        }
+
+        void pop() {
+            nodes.pop();
         }
     }
 
@@ -570,8 +639,7 @@ public class InputTree {
                 ctx.popCwd();
                 return VisitResult.CONTINUE;
             } else if (block.kind() == Block.Kind.PRESETS) {
-                PresetNode presets = (PresetNode) builder.pop();
-                presets.paths().forEach(ctx::remove);
+                builder.pop();
             }
             return super.postVisitBlock(block, ctx);
         }
@@ -589,7 +657,7 @@ public class InputTree {
                 this.builder = builder;
             }
 
-            String push(Input.NamedInput input, Context context) {
+            String push(NamedInput input, Context context) {
                 String path = context.path(input.name());
                 if (!input.isGlobal()) {
                     context.push(path, false);
@@ -599,10 +667,6 @@ public class InputTree {
 
             @Override
             public VisitResult visitBoolean(Input.Boolean input, Context context) {
-                VisitResult result = onVisitInput(input, context);
-                if (result != null) {
-                    return result;
-                }
                 String path = push(input, context);
                 builder.pushInput(Node.Kind.BOOLEAN, path, input.scriptPath(), input.position());
                 builder.pushValue("no", input.scriptPath(), input.position());
@@ -612,10 +676,6 @@ public class InputTree {
 
             @Override
             public VisitResult visitText(Input.Text input, Context context) {
-                VisitResult result = onVisitInput(input, context);
-                if (result != null) {
-                    return result;
-                }
                 Value defaultValue = defaultValue(input, context);
                 String value;
                 if (defaultValue == null) {
@@ -631,10 +691,6 @@ public class InputTree {
 
             @Override
             public VisitResult visitEnum(Input.Enum input, Context context) {
-                VisitResult result = onVisitInput(input, context);
-                if (result != null) {
-                    return result;
-                }
                 String path = push(input, context);
                 builder.pushInput(Node.Kind.ENUM, path, input.scriptPath(), input.position());
                 return VisitResult.CONTINUE;
@@ -642,10 +698,6 @@ public class InputTree {
 
             @Override
             public VisitResult visitList(Input.List input, Context context) {
-                VisitResult result = onVisitInput(input, context);
-                if (result != null) {
-                    return result;
-                }
                 String path = push(input, context);
                 builder.pushInputList(path, input.defaultValue().asList(), input.scriptPath(), input.position());
                 return VisitResult.CONTINUE;

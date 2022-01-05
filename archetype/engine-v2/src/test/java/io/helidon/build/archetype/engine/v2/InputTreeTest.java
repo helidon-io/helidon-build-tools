@@ -32,9 +32,10 @@ class InputTreeTest {
 
     @Test
     void testSomething() {
-        InputTree collector = create("e2e");
+        InputTree tree = create("e2e");
+        tree.print();
         //   InputPermutations collector = create(Path.of("/Users/batsatt/dev/helidon/archetypes-v2")); // TODO REMOVE
-        assertThat(collector, is(not(nullValue())));
+        assertThat(tree, is(not(nullValue())));
     }
 
     private InputTree create(String testDir) {
