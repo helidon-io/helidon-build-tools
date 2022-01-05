@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.build.cli.plugin;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import static io.helidon.build.cli.plugin.Style.style;
 import static java.util.Objects.requireNonNull;
@@ -26,12 +27,12 @@ import static java.util.Objects.requireNonNull;
  * Simple logging.
  */
 class Log {
+    private static final AtomicReference<Consumer<String>> OUT = new AtomicReference<>(System.out::println);
     private static final AtomicReference<Verbosity> VERBOSITY = new AtomicReference<>(Verbosity.NORMAL);
     private static final String EOL = System.getProperty("line.separator");
     private static final String DEBUG_STYLE = "italic";
     private static final String WARN_STYLE = "YELLOW";
     private static final String ERROR_STYLE = "red";
-
 
     /**
      * Verbosity levels.
@@ -96,7 +97,25 @@ class Log {
     }
 
     /**
-     * Returns whether or not debug messages will be written.
+     * Get the output.
+     *
+     * @return consumer of string
+     */
+    static Consumer<String> output() {
+        return OUT.get();
+    }
+
+    /**
+     * Sets the output consumer.
+     *
+     * @param outputConsumer The output consumer.
+     */
+    static void output(Consumer<String> outputConsumer) {
+        OUT.set(outputConsumer);
+    }
+
+    /**
+     * Returns whether debug messages will be written.
      *
      * @return {@code true} if enabled.
      */
@@ -105,7 +124,7 @@ class Log {
     }
 
     /**
-     * Returns whether or not verbose messages will be written.
+     * Returns whether verbose messages will be written.
      *
      * @return {@code true} if enabled.
      */
@@ -117,7 +136,7 @@ class Log {
      * Log a message if debug is enabled.
      *
      * @param message The message.
-     * @param args The message args.
+     * @param args    The message args.
      */
     static void debug(String message, Object... args) {
         if (isDebug()) {
@@ -129,8 +148,9 @@ class Log {
      * Log a message if verbose is enabled.
      *
      * @param message The message.
-     * @param args The message args.
+     * @param args    The message args.
      */
+    @SuppressWarnings("unused")
     static void verbose(String message, Object... args) {
         if (isVerbose()) {
             log(message, args);
@@ -140,6 +160,7 @@ class Log {
     /**
      * Log an empty message.
      */
+    @SuppressWarnings("unused")
     static void info() {
         log("");
     }
@@ -148,7 +169,7 @@ class Log {
      * Log a message.
      *
      * @param message The message.
-     * @param args The message args.
+     * @param args    The message args.
      */
     static void info(String message, Object... args) {
         log(message, args);
@@ -158,8 +179,9 @@ class Log {
      * Log a warning message.
      *
      * @param message The message.
-     * @param args The message args.
+     * @param args    The message args.
      */
+    @SuppressWarnings("unused")
     static void warn(String message, Object... args) {
         log(style(WARN_STYLE, message, args));
     }
@@ -168,9 +190,10 @@ class Log {
      * Log a warning message with associated throwable.
      *
      * @param thrown The throwable.
-     * @param msg Message to be logged.
-     * @param args Format string arguments.
+     * @param msg    Message to be logged.
+     * @param args   Format string arguments.
      */
+    @SuppressWarnings("unused")
     static void warn(Throwable thrown, String msg, Object... args) {
         log(thrown, style(WARN_STYLE, msg, args));
     }
@@ -179,7 +202,7 @@ class Log {
      * Log an error message.
      *
      * @param message The message.
-     * @param args The message args.
+     * @param args    The message args.
      */
     static void error(String message, Object... args) {
         log(style(ERROR_STYLE, message, args));
@@ -189,26 +212,33 @@ class Log {
      * Log an error message with associated throwable.
      *
      * @param thrown The throwable.
-     * @param msg Message to be logged.
-     * @param args Format string arguments.
+     * @param msg    Message to be logged.
+     * @param args   Format string arguments.
      */
+    @SuppressWarnings("unused")
     static void error(Throwable thrown, String msg, Object... args) {
         log(thrown, style(ERROR_STYLE, msg, args));
     }
 
     private static void log(String message, Object... args) {
         if (message != null) {
-            System.out.println(String.format(message, args));
+            Consumer<String> consumer = OUT.get();
+            if (consumer != null) {
+                consumer.accept(String.format(message, args));
+            }
         }
     }
 
     private static void log(Throwable thrown, String message, Object... args) {
-        final String trace = toStackTrace(thrown);
-        String msg = message == null ? "" : String.format(message, args);
-        if (trace != null) {
-            msg += (msg + EOL + trace);
+        Consumer<String> consumer = OUT.get();
+        if (consumer != null) {
+            final String trace = toStackTrace(thrown);
+            String msg = message == null ? "" : String.format(message, args);
+            if (trace != null) {
+                msg += (msg + EOL + trace);
+            }
+            consumer.accept(msg);
         }
-        System.out.println(msg);
     }
 
     private static String toStackTrace(Throwable thrown) {
