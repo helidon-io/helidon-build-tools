@@ -215,7 +215,7 @@ public class FunctionalTest {
         args.add("--name", name);
         Arguments arguments = toArguments(jarCliPath, buildArgs(args), -1);
         Application cli = localPlatform.launch("java", arguments, Console.of(console));
-        TimeUnit.SECONDS.sleep(2);
+        waitForGeneratedProject();
 
         if (startApp) {
             testGeneratedProject();
@@ -247,6 +247,7 @@ public class FunctionalTest {
         writeToConsole(console, System.lineSeparator());
         writeToConsole(console, packageName == null ? System.lineSeparator() : packageName);
         writeToConsole(console, "n");
+        waitForGeneratedProject();
 
         if (startApp) {
             testGeneratedProject();
@@ -282,7 +283,7 @@ public class FunctionalTest {
     }
 
     private void waitForApplication(int port) throws Exception {
-        long timeout = 15 * 1000;
+        long timeout = 20 * 1000;
         long now = System.currentTimeMillis();
         URL url = new URL("http://localhost:" + port + "/health");
 
@@ -304,6 +305,19 @@ public class FunctionalTest {
                 conn.disconnect();
             }
         } while (responseCode != 200);
+    }
+
+    private void waitForGeneratedProject() throws InterruptedException {
+        long timeout = 5 * 1000;
+        long now = System.currentTimeMillis();
+
+        while (!Path.of(workDir.toString(), CUSTOM_PROJECT, "pom.xml").toFile().exists()) {
+            TimeUnit.MILLISECONDS.sleep(500);
+
+            if ((System.currentTimeMillis() - now) > timeout) {
+                Assertions.fail("Generated project is not created");
+            }
+        }
     }
 
     private Arguments toArguments(String appJarPath, List<String> javaArgs, int port) {
