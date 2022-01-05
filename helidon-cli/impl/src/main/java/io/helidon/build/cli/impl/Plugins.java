@@ -122,7 +122,7 @@ public class Plugins {
      * @param pluginName     The plugin name.
      * @param pluginArgs     The plugin args.
      * @param maxWaitSeconds If spawned, the maximum number of seconds to wait for completion.
-     * @param stdOut         The std out consumer.
+     * @param stdOut         The print stream to consume the output
      * @throws PluginFailed if the execution fails
      */
     public static void execute(String pluginName,
@@ -230,9 +230,12 @@ public class Plugins {
     }
 
     /**
-     * Plugin failure.
+     * Plugin failure checked exception.
+     * This is a checked exception by design to ensure a proper error handling.
+     *
+     * @see PluginFailedUnchecked for the unchecked variant
      */
-    public static class PluginFailed extends RuntimeException {
+    public static class PluginFailed extends Exception {
         private PluginFailed(String message) {
             super(message);
         }
