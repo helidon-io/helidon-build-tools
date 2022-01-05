@@ -24,7 +24,6 @@ import com.oracle.bedrock.runtime.options.Console;
 import com.oracle.bedrock.runtime.options.WorkingDirectory;
 import io.helidon.build.common.FileUtils;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
 import io.helidon.webclient.WebClient;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
@@ -54,8 +53,8 @@ public class FunctionalTest {
 
     private static String jarCliPath = System.getProperty("jar.cli.path", "please-set-cli.jar.path");
     private static final LocalPlatform localPlatform = LocalPlatform.get();
-    private static final Path ARCHETYPE_PATH = FileUtils.requireDirectory(pathOf(
-                    requireNonNull(FunctionalTest.class.getClassLoader().getResource("cli-data"))));
+    private static final String RESSOURCE_PATH = FileUtils.requireDirectory(pathOf(
+                    requireNonNull(FunctionalTest.class.getClassLoader().getResource("cli-data")))).toString();
     private static final String CUSTOM_GROUP_ID = "mygroupid";
     private static final String CUSTOM_ARTIFACT_ID = "myartifactid";
     private static final String CUSTOM_PROJECT = "myproject";
@@ -216,7 +215,7 @@ public class FunctionalTest {
         args.add("--name", name);
         Arguments arguments = toArguments(jarCliPath, buildArgs(args), -1);
         Application cli = localPlatform.launch("java", arguments, Console.of(console));
-        waitForCli(console);
+        TimeUnit.SECONDS.sleep(2);
 
         if (startApp) {
             testGeneratedProject();
@@ -267,7 +266,6 @@ public class FunctionalTest {
                 .build();
 
         webClient.get()
-                .accept(MediaType.APPLICATION_JSON)
                 .path("/health")
                 .request()
                 .thenAccept(it -> MatcherAssert.assertThat("HTTP response", it.status(), CoreMatchers.is(Http.Status.OK_200)))
@@ -281,23 +279,6 @@ public class FunctionalTest {
         console.getInputWriter().println(obj);
         console.getInputWriter().flush();
         TimeUnit.MILLISECONDS.sleep(200);
-    }
-
-    private void waitForCli(PipedApplicationConsole console) throws Exception {
-        long timeout = 5 * 1000;
-        long now = System.currentTimeMillis();
-
-        while (true) {
-            TimeUnit.MILLISECONDS.sleep(500);
-
-            if (console.getOutputReader().ready()) {
-                break;
-            }
-
-            if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("CLI is not ready");
-            }
-        }
     }
 
     private void waitForApplication(int port) throws Exception {
@@ -343,7 +324,7 @@ public class FunctionalTest {
                 "--project",
                 workDir.resolve(CUSTOM_PROJECT).toString(),
                 "--archetype-path",
-                ARCHETYPE_PATH.resolve("3.0.0/cli-data.zip").toString(),
+                Path.of(RESSOURCE_PATH, "3.0.0", "cli-data.zip").toString(),
                 "--engine-version",
                 "v2"));
         if (additionalArgs != null) {
