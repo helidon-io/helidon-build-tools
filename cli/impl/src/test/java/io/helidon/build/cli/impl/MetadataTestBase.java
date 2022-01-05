@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.build.cli.impl.Metadata.UpdateFailed;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 
 import io.helidon.build.common.CapturingLogWriter;
@@ -35,6 +36,7 @@ import static io.helidon.build.common.FileUtils.ensureDirectory;
 import static io.helidon.build.common.FileUtils.requireDirectory;
 import static io.helidon.build.common.FileUtils.requireFile;
 import static io.helidon.build.common.FileUtils.unique;
+import static io.helidon.build.common.Unchecked.unchecked;
 import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -102,6 +104,7 @@ public class MetadataTestBase {
      *
      * @param latestVersion The version to return from "/latest"
      */
+    @SuppressWarnings("SameParameterValue")
     protected void startMetadataTestServer(TestVersion latestVersion) {
         startMetadataTestServer(latestVersion, false);
     }
@@ -112,6 +115,7 @@ public class MetadataTestBase {
      * @param verbose       {@code true} if the server should be verbose.
      * @param latestVersion The version to return from "/latest"
      */
+    @SuppressWarnings("SameParameterValue")
     protected void startMetadataTestServer(TestVersion latestVersion, boolean verbose) {
         testServer = new MetadataTestServer(latestVersion, verbose).start();
         useBaseUrl(testServer.url());
@@ -157,7 +161,8 @@ public class MetadataTestBase {
                                                                    String expectedVersion,
                                                                    String expectedEtag,
                                                                    boolean latestFileExists) {
-        final Runnable request = () -> firstLatestVersionRequest(expectedVersion, !latestFileExists);
+
+        final Runnable request = unchecked(() -> firstLatestVersionRequest(expectedVersion, !latestFileExists));
         assertInitialRequestPerformsUpdate(request, updateFrequency, updateFrequencyUnits,
                 expectedVersion, expectedEtag, latestFileExists);
     }
@@ -187,7 +192,7 @@ public class MetadataTestBase {
         String zipUriPath = expectedVersion + "/" + TestMetadata.CLI_DATA_FILE_NAME;
         String lastUpdatePath = expectedVersion + File.separator + LAST_UPDATE_FILE_NAME;
 
-        // Check expected latest file and version directory existence
+        // Check expected the latest file and version directory existence
 
         assertThat(Files.exists(latestFile), is(latestFileExists));
         assertThat(Files.exists(versionDir), is(false));
@@ -222,8 +227,9 @@ public class MetadataTestBase {
      *
      * @param expectedVersion expected Helidon version
      * @param expectUpdate    {@code true} if a metadata update is expected, {@code false otherwise}
+     * @throws UpdateFailed if the metadata update failed
      */
-    protected void firstLatestVersionRequest(String expectedVersion, boolean expectUpdate) {
+    protected void firstLatestVersionRequest(String expectedVersion, boolean expectUpdate) throws UpdateFailed {
         String staleType = expectUpdate ? "(not found)" : "(zero delay)";
         latestVersion = meta.latestVersion();
         assertThat(latestVersion, is(not(nullValue())));
@@ -240,8 +246,10 @@ public class MetadataTestBase {
      *
      * @param version      Helidon version
      * @param expectUpdate {@code true} if a metadata update is expected, {@code false otherwise}
+     * @throws UpdateFailed if the metadata update failed
      */
-    protected void catalogRequest(String version, boolean expectUpdate) {
+    @SuppressWarnings("SameParameterValue")
+    protected void catalogRequest(String version, boolean expectUpdate) throws UpdateFailed {
         String staleType = expectUpdate ? "(not found)" : "is false";
         String staleFilePath = version + File.separator + LAST_UPDATE_FILE_NAME;
         meta.catalogOf(version);

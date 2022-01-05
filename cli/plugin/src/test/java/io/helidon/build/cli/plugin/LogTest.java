@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.helidon.build.devloop {
-    exports io.helidon.build.devloop;
+package io.helidon.build.cli.plugin;
 
-    requires maven.resolver.provider;
-    // requires maven.settings;
-    requires maven.settings.builder;
-    requires org.apache.maven.resolver;
-    requires org.apache.maven.resolver.impl;
-    requires org.apache.maven.resolver.spi;
-    // requires maven.model.builder;
-    requires maven.core;
-    requires maven.model;
+import org.junit.jupiter.api.Test;
+
+import java.util.function.Consumer;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
+/**
+ * Tests {@link Log}.
+ */
+class LogTest {
+
+    @Test
+    void testNullOutput() {
+        Consumer<String> original = Log.output();
+        try {
+            Log.output(null);
+            Log.info("hello");
+        } catch (Throwable ex) {
+            fail(ex);
+        } finally {
+            Log.output(original);
+        }
+    }
 }

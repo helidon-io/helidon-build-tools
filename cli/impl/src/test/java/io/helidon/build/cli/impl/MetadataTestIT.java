@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import static io.helidon.build.cli.impl.TestMetadata.HELIDON_BARE_SE;
 import static io.helidon.build.cli.impl.TestMetadata.LAST_UPDATE_FILE_NAME;
 import static io.helidon.build.cli.impl.TestMetadata.LATEST_FILE_NAME;
 import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC2;
+import static io.helidon.build.common.Unchecked.unchecked;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -45,7 +46,7 @@ import static org.hamcrest.Matchers.nullValue;
 /**
  * Integration test for class {@link Metadata} using {@code helidon.io} default url.
  */
-public class MetadataIT extends MetadataTestBase {
+public class MetadataTestIT extends MetadataTestBase {
 
     static final String RC2_LAST_UPDATE = VERSION_RC2 + File.separator + LAST_UPDATE_FILE_NAME;
 
@@ -60,11 +61,11 @@ public class MetadataIT extends MetadataTestBase {
     }
 
     @Test
-    void smokeTestRc2() {
+    void smokeTestRc2() throws Exception {
 
         // Do the initial catalog request for RC2
 
-        final Runnable request = () -> catalogRequest(VERSION_RC2, true);
+        final Runnable request = unchecked(() -> catalogRequest(VERSION_RC2, true));
         assertInitialRequestPerformsUpdate(request, 24, HOURS, VERSION_RC2, "", false);
 
         // Check latest version. Should not perform update.
