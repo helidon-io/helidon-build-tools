@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import io.helidon.build.util.SystemLogWriter;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import static io.helidon.build.util.Log.Level.DEBUG;
 import static io.helidon.build.util.Log.Level.ERROR;
 import static io.helidon.build.util.Log.Level.INFO;
 import static io.helidon.build.util.Log.Level.VERBOSE;
@@ -77,7 +76,7 @@ public final class CommandContext {
         /**
          * Create a new instance.
          *
-         * @param lookup function used to lookup the internal options
+         * @param lookup function used to look up the internal options
          */
         public InternalOptions(BiFunction<String, String, String> lookup) {
             this.lookup = lookup != null ? lookup : (v1, v2) -> v2;
@@ -94,7 +93,7 @@ public final class CommandContext {
         public static final String RICH_TEXT_DEFAULT_VALUE = "true";
 
         /**
-         * Returns whether or not rich text should be disabled.
+         * Returns whether rich text should be disabled.
          *
          * @return {@code true} if rich text should not be used (equivalent to {@code --plain} option).
          */
@@ -102,6 +101,8 @@ public final class CommandContext {
             return !Boolean.parseBoolean(lookup.apply(RICH_TEXT_KEY, RICH_TEXT_DEFAULT_VALUE));
         }
     }
+
+    private static final String LOG_LEVEL_PROPERTY = "log.level";
 
     private final AtomicReference<DefaultLogWriter> logWriter = new AtomicReference<>();
     private final CommandRegistry registry;
@@ -203,6 +204,7 @@ public final class CommandContext {
          *
          * @return failure, may be {@code null}
          */
+        @SuppressWarnings("unused")
         public Throwable failure() {
             return failure;
         }
@@ -326,6 +328,7 @@ public final class CommandContext {
      * @param message error message
      * @return exit action.
      */
+    @SuppressWarnings("unused")
     public ExitAction exitAction(ExitStatus status, String message) {
         if (status.isWorse(exitAction.status)) {
             exitAction = new ExitAction(status, message);
@@ -339,6 +342,7 @@ public final class CommandContext {
      * @param error error
      * @return exit action.
      */
+    @SuppressWarnings("unused")
     public ExitAction exitAction(Throwable error) {
         exitAction = new ExitAction(error);
         return exitAction;
@@ -420,23 +424,26 @@ public final class CommandContext {
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
     void verbosity(Verbosity verbosity) {
         this.verbosity = verbosity;
+        Level level;
         switch (verbosity) {
             case DEBUG: {
-                logWriter().level(DEBUG);
+                level = Level.DEBUG;
                 break;
             }
             case VERBOSE: {
-                logWriter().level(VERBOSE);
+                level = VERBOSE;
                 break;
             }
             case NORMAL: {
-                logWriter().level(INFO);
+                level = (INFO);
                 break;
             }
             default: {
                 throw new RuntimeException("unknown verbosity: " + verbosity);
             }
         }
+        logWriter().level(level);
+        System.setProperty(LOG_LEVEL_PROPERTY, level.name());
     }
 
     /**
@@ -504,7 +511,7 @@ public final class CommandContext {
     /**
      * CommandContext builder.
      *
-     * @param <T> builder sub-class type
+     * @param <T> builder subclass type
      */
     public abstract static class Builder<T extends Builder<T>> {
 

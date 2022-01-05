@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,8 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -41,7 +37,6 @@ import io.helidon.build.util.Proxies;
 import org.graalvm.nativeimage.ImageInfo;
 
 import static io.helidon.build.cli.impl.CommandRequirements.unsupportedJavaVersion;
-import static io.helidon.build.util.Constants.EOL;
 import static io.helidon.build.util.PrintStreams.STDOUT;
 import static java.util.Objects.requireNonNull;
 
@@ -50,6 +45,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class Plugins {
 
+    private static final String EOL = System.lineSeparator();
     private static final AtomicReference<Path> PLUGINS_JAR = new AtomicReference<>();
     private static final String JAR_NAME_PREFIX = "cli-plugins-";
     private static final String JAR_NAME_SUFFIX = ".jar";
@@ -126,7 +122,7 @@ public class Plugins {
      * @param pluginName     The plugin name.
      * @param pluginArgs     The plugin args.
      * @param maxWaitSeconds If spawned, the maximum number of seconds to wait for completion.
-     * @param stdOut         The print stream to consume the output
+     * @param stdOut         The std out consumer.
      * @throws PluginFailed if the execution fails
      */
     public static void execute(String pluginName,
@@ -157,12 +153,9 @@ public class Plugins {
                                  List<String> pluginArgs,
                                  PrintStream stdOut) throws PluginFailed {
 
-        PrintStream origStdOut = System.out;
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
         try {
-            System.setOut(new PrintStream(os));
             List<String> command = pluginArgs(pluginName, pluginArgs);
-            Plugin.execute(command.toArray(new String[0]));
+            Plugin.execute(command.toArray(new String[0]), stdOut::println);
         } catch (Plugin.Failed ex) {
             if (ex.getCause() != null) {
                 throw new PluginFailed(ex.getCause());
@@ -172,17 +165,7 @@ public class Plugins {
         } catch (Exception ex) {
             throw new PluginFailed(ex);
         } finally {
-            System.setOut(origStdOut);
-        }
-        ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                stdOut.println(line);
-            }
             stdOut.flush();
-        } catch (IOException ex) {
-            throw new PluginFailed(ex);
         }
     }
 
@@ -247,13 +230,9 @@ public class Plugins {
     }
 
     /**
-     * Plugin failure checked exception.
-     * This is a checked exception by design to ensure a proper error handling.
-     *
-     * @see PluginFailedUnchecked for the unchecked variant
+     * Plugin failure.
      */
-    public static class PluginFailed extends Exception {
-
+    public static class PluginFailed extends RuntimeException {
         private PluginFailed(String message) {
             super(message);
         }

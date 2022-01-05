@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package io.helidon.build.cli.plugin;
 
+import java.util.function.Consumer;
+
 /**
  * An abstract CLI plugin.
  */
@@ -27,7 +29,7 @@ public abstract class Plugin {
      */
     public static void main(String[] args) {
         try {
-            execute(args);
+            execute(args, System.out::println);
         } catch (IllegalArgumentException | Failed e) {
             fail(e.getMessage());
         } catch (Throwable e) {
@@ -39,10 +41,12 @@ public abstract class Plugin {
      * Execute the plugin without the system exit.
      *
      * @param args The arguments
+     * @param logConsumer The log output consumer.
      * @throws Exception if an error occurs
      */
-    public static void execute(String[] args) throws Exception {
+    public static void execute(String[] args, Consumer<String> logConsumer) throws Exception {
         if (args.length > 0) {
+            Log.output(logConsumer);
             final Plugin plugin = Plugin.newInstance(args[0]);
             plugin.parse(args).execute();
         }
@@ -70,7 +74,7 @@ public abstract class Plugin {
     }
 
     /**
-     * Returns an new instance from the given name, where the class name is constructed by
+     * Returns a new instance from the given name, where the class name is constructed by
      * prepending this package name.
      *
      * @param simpleClassName The unqualified plugin class name.
