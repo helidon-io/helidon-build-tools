@@ -119,7 +119,7 @@ public class InputTree {
     */
 
     public static abstract class Node {
-        private final int id;
+        private int id; // Allow prune() to fix this to avoid sparse arrays
         private final int depth;
         private final Path script;
         private final Position position;
@@ -187,6 +187,7 @@ public class InputTree {
                 throw new IllegalStateException();
             }
         }
+
         List<Node> children() {
             return children;
         }
@@ -196,6 +197,10 @@ public class InputTree {
         abstract void collect(PermutationState state, Map<String, String> values);
 
         abstract boolean isValue();
+
+        private void id(int id) {
+            this.id = id;
+        }
 
         void print() {
             print(this, 0);
@@ -322,7 +327,7 @@ public class InputTree {
     public static class ListNode extends InputNode {
         private final List<String> defaults;
 
-        ListNode(int id, int depth,Node parent, String path, List<String> defaults, Path script, Position position) {
+        ListNode(int id, int depth, Node parent, String path, List<String> defaults, Path script, Position position) {
             super(id, depth, parent, Kind.LIST, path, script, position);
             this.defaults = defaults;
         }
@@ -396,7 +401,7 @@ public class InputTree {
     public static class ValueNode extends Node {
         private final String value;
 
-        ValueNode(int id, int depth,Node parent, Kind kind, String path, String value, Path script, Position position) {
+        ValueNode(int id, int depth, Node parent, Kind kind, String path, String value, Path script, Position position) {
             super(id, depth, parent, path, kind, script, position);
             this.value = value;
         }
@@ -512,10 +517,21 @@ public class InputTree {
         void prune() {
             List<Node> matching = new ArrayList<>();
             findPresetMatchingNodes(root, new HashMap<>(), matching);
-            matching.forEach(removeMe -> {
-                Node parent = removeMe.parent();
-                parent.removeChild(removeMe);
-            });
+            if (!matching.isEmpty()) {
+                matching.forEach(removeMe -> {
+                    Node parent = removeMe.parent();
+                    parent.removeChild(removeMe);
+                });
+                nextId = 0;
+                updateId(root);
+            }
+        }
+
+        void updateId(Node node) {
+            node.id(nextId++);
+            for (Node child : node.children()) {
+                updateId(child);
+            }
         }
 
         void findPresetMatchingNodes(Node node, Map<String, String> presets, List<Node> matching) {
@@ -537,7 +553,6 @@ public class InputTree {
                 }
             }
         }
-
 
 
         private FileSystem fileSystem() {
