@@ -435,7 +435,7 @@ public final class CommandContext {
                 break;
             }
             case NORMAL: {
-                level = (INFO);
+                level = INFO;
                 break;
             }
             default: {
