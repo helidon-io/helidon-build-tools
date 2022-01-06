@@ -24,6 +24,7 @@ import io.helidon.build.archetype.engine.v2.InputTree.Node;
 import io.helidon.build.archetype.engine.v2.InputTree.PresetNode;
 import io.helidon.build.archetype.engine.v2.InputTree.ValueNode;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
@@ -153,7 +154,6 @@ class InputTreeTest {
     @Test
     void testBoolean() {
         InputTree tree = create("input-tree");
-        tree.print(); // TODO REMOVE
         assertThat(tree, is(not(nullValue())));
         assertThat(tree.size(), is(13));
 
@@ -233,8 +233,8 @@ class InputTreeTest {
         ));
     }
 
-    @Test
-    void printV2() { // TODO Disable since it requires system dependent path
+    @Test @Disabled  // enabled for local testing
+    void printV2() {
         Path sourceDir = Path.of("/Users/batsatt/dev/helidon/archetypes-v2");
         InputTree tree = create(sourceDir);
         tree.print();
