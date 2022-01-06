@@ -44,7 +44,7 @@ A given plugin executions should be excluded when:
 
 Plugin executions may require prior executions in the life-cycle, however the extension does not invalidate cached
  executions based on the life-cycle order. I.e. if an execution has differences and is planned for execution, all
- sub-sequent executions are still eligible for fast-forwarding.
+ subsequent executions are still eligible for fast-forwarding.
 
 The states of modules with inter-project dependencies rely on the dependency graph for indirect state invalidation.
  A module that requires another must declare a dependency, otherwise it will fast-forward even if the required module
@@ -60,18 +60,18 @@ This plugin does not provide any goal at the moment.
 
 ### Configuration
 
-| Property | Type | Default<br/>Value | Description |
-| --- | --- | --- | --- |
-| skip | Boolean | `false` | Disables build cache |
-| projectFilesExcludes | List | `[]` | Project files excludes patterns |
-| buildFilesExcludes | List | `[]` | Build files excludes patterns |
-| enableChecksums | Boolean | `false` | Enables combined checksums for the project files |
-| includeAllChecksums | Boolean | `false` | Enables individual checksums for all project files |
-| archiveFile | File | `null` | Path a `.tar` file |
-| loadArchive | Boolean | `false` | Loads the cache from the archive file |
-| saveArchive | Boolean | `false` | Saves the cache to the archive file |
-| executionsExcludes | List | `[]` | Execution exclude patterns |
-| executionsIncludes | List | `[*]` | Execution include patterns |
+| Property             | Type    | Default<br/>Value | Description                                        |
+|----------------------|---------|-------------------|----------------------------------------------------|
+| skip                 | Boolean | `false`           | Disables build cache                               |
+| projectFilesExcludes | List    | `[]`              | Project files excludes patterns                    |
+| buildFilesExcludes   | List    | `[]`              | Build files excludes patterns                      |
+| enableChecksums      | Boolean | `false`           | Enables combined checksums for the project files   |
+| includeAllChecksums  | Boolean | `false`           | Enables individual checksums for all project files |
+| archiveFile          | File    | `null`            | Path a `.tar` file                                 |
+| loadArchive          | Boolean | `false`           | Loads the cache from the archive file              |
+| saveArchive          | Boolean | `false`           | Saves the cache to the archive file                |
+| executionsExcludes   | List    | `[]`              | Execution exclude patterns                         |
+| executionsIncludes   | List    | `[*]`             | Execution include patterns                         |
 
 All parameters  are mapped to user properties of the form `cache.PROPERTY`. List parameters are passed as comma
  separated values.

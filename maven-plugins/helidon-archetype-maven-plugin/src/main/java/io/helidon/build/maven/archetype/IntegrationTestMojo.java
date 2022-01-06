@@ -26,6 +26,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -164,8 +165,9 @@ public class IntegrationTestMojo extends AbstractMojo {
             throw new MojoFailureException("Archetype not found");
         }
 
+        Path testProjects = testProjectsDirectory.toPath();
         try {
-            List<Path> projectGoals = Files.walk(testProjectsDirectory.toPath())
+            List<Path> projectGoals = Files.walk(testProjects)
                                            .filter((p) -> p.endsWith("goal.txt"))
                                            .collect(Collectors.toList());
             if (projectGoals.isEmpty()) {
@@ -173,8 +175,20 @@ public class IntegrationTestMojo extends AbstractMojo {
                 return;
             }
 
+            List<String> errors = new LinkedList<>();
             for (Path goal : projectGoals) {
-                processIntegrationTest(goal, archetypeFile);
+                Path itProject = testProjects.relativize(goal.getParent());
+                try {
+                    getLog().info("Processing Archetype IT project: " + itProject);
+                    processIntegrationTest(goal, archetypeFile);
+                } catch (Throwable ex) {
+                    getLog().error(ex);
+                    errors.add(String.format("Test error: project=%s, error=%s", itProject, ex.getMessage()));
+                }
+            }
+            if (!errors.isEmpty()) {
+                errors.forEach(getLog()::error);
+                throw new MojoExecutionException("Integration test failed with error(s)");
             }
         } catch (IOException ex) {
             throw new MojoFailureException(ex.getMessage(), ex);
@@ -182,8 +196,6 @@ public class IntegrationTestMojo extends AbstractMojo {
     }
 
     private void processIntegrationTest(Path projectGoal, File archetypeFile) throws IOException, MojoExecutionException {
-        getLog().info("Processing Archetype IT project: " + projectGoal.getParent().toString());
-
         Properties props = new Properties();
         try (InputStream in = Files.newInputStream(projectGoal.getParent().resolve("archetype.properties"))) {
             props.load(in);

@@ -25,7 +25,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 
+import com.github.mustachejava.Binding;
+import com.github.mustachejava.Code;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.DefaultMustacheVisitor;
 import com.github.mustachejava.Mustache;
@@ -34,6 +38,8 @@ import com.github.mustachejava.MustacheFactory;
 import com.github.mustachejava.MustacheVisitor;
 import com.github.mustachejava.TemplateContext;
 import com.github.mustachejava.codes.ValueCode;
+import com.github.mustachejava.reflect.SimpleObjectHandler;
+import com.github.mustachejava.util.Wrapper;
 
 /**
  * Mustache helper.
@@ -116,7 +122,52 @@ public abstract class MustacheHelper {
         }
     }
 
+
+    private static final class ObjectHandler extends SimpleObjectHandler {
+
+        @Override
+        public Binding createBinding(String name, TemplateContext tc, Code code) {
+            return scopes -> find(name, null).call(scopes);
+        }
+
+        @Override
+        public Wrapper find(String name, List<Object> ignore) {
+            return scopes -> {
+                ListIterator<Object> it = scopes.listIterator(scopes.size());
+                while (it.hasPrevious()) {
+                    Object scope = it.previous();
+                    Object result = null;
+                    if (scope instanceof Map) {
+                        result = ((Map<?, ?>) scope).get(name);
+                    } else if (scope instanceof Map.Entry) {
+                        switch (name) {
+                            case("key"):
+                                result = ((Map.Entry<?, ?>) scope).getKey();
+                                break;
+                            case("value"):
+                                result = ((Map.Entry<?, ?>) scope).getValue();
+                                break;
+                            default:
+                        }
+                    }
+                    if (result != null) {
+                        if (result instanceof Map) {
+                            return ((Map<?, ?>) result).entrySet();
+                        }
+                        return result;
+                    }
+                }
+                return null;
+            };
+        }
+    }
+
     private static final class MustacheFactoryImpl extends DefaultMustacheFactory {
+
+        MustacheFactoryImpl() {
+            super.oh = new ObjectHandler();
+        }
+
         @Override
         public MustacheVisitor createMustacheVisitor() {
             return new DefaultMustacheVisitor(this) {
@@ -126,7 +177,6 @@ public abstract class MustacheHelper {
                         @Override
                         public Writer execute(Writer writer, List<Object> scopes) {
                             try {
-                                // TODO use a custom object handle that does not use reflection
                                 final Object object = get(scopes);
                                 if (object instanceof NotEncoded) {
                                     writer.write(oh.stringify(object));
