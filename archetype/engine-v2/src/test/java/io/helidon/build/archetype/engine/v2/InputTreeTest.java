@@ -16,11 +16,13 @@
 package io.helidon.build.archetype.engine.v2;
 
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.InputTree.Node;
+import io.helidon.build.archetype.engine.v2.InputTree.Node.Kind;
 import io.helidon.build.archetype.engine.v2.InputTree.PresetNode;
 import io.helidon.build.archetype.engine.v2.InputTree.ValueNode;
 
@@ -30,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -50,10 +53,10 @@ class InputTreeTest {
         assertThat(root, is(not(nullValue())));
         List<Node> children = root.children();
         assertThat(children.size(), is(4));
-        assertThat(children.get(0).kind(), is(Node.Kind.PRESETS));
-        assertThat(children.get(1).kind(), is(Node.Kind.ENUM));
-        assertThat(children.get(2).kind(), is(Node.Kind.BOOLEAN));
-        assertThat(children.get(3).kind(), is(Node.Kind.BOOLEAN));
+        assertThat(children.get(0).kind(), is(Kind.PRESETS));
+        assertThat(children.get(1).kind(), is(Kind.ENUM));
+        assertThat(children.get(2).kind(), is(Kind.BOOLEAN));
+        assertThat(children.get(3).kind(), is(Kind.BOOLEAN));
     }
 
     @Test
@@ -70,9 +73,9 @@ class InputTreeTest {
         Node preset = children.get(0);
         children = preset.children();
         assertThat(children.size(), is(3));
-        assertThat(children.get(0).kind(), is(Node.Kind.ENUM));
-        assertThat(children.get(1).kind(), is(Node.Kind.BOOLEAN));
-        assertThat(children.get(2).kind(), is(Node.Kind.BOOLEAN));
+        assertThat(children.get(0).kind(), is(Kind.ENUM));
+        assertThat(children.get(1).kind(), is(Kind.BOOLEAN));
+        assertThat(children.get(2).kind(), is(Kind.BOOLEAN));
     }
 
     @Test
@@ -88,19 +91,19 @@ class InputTreeTest {
         Node root = tree.root();
         assertThat(root, is(not(nullValue())));
         assertThat(root.id(), is(0));
-        assertThat(root.kind(), is(Node.Kind.ROOT));
+        assertThat(root.kind(), is(Kind.ROOT));
 
-        List<Node> presets = collect(tree, Node.Kind.PRESETS);
+        List<Node> presets = collect(tree, Kind.PRESETS);
         assertThat(presets.size(), is(1));
         assertThat(presets.get(0).id(), is(1));
 
-        assertContains(tree, Node.Kind.VALUE, "choice");
-        assertContains(tree, Node.Kind.TEXT, "choice.foo");
-        assertContains(tree, Node.Kind.VALUE, "choice.foo");
+        assertContains(tree, Kind.VALUE, "choice");
+        assertContains(tree, Kind.TEXT, "choice.foo");
+        assertContains(tree, Kind.VALUE, "choice.foo");
 
-        assertContains(tree, Node.Kind.VALUE, "include");
-        assertContains(tree, Node.Kind.BOOLEAN, "include2");
-        assertContains(tree, Node.Kind.VALUE, "include2.y");
+        assertContains(tree, Kind.VALUE, "include");
+        assertContains(tree, Kind.BOOLEAN, "include2");
+        assertContains(tree, Kind.VALUE, "include2.y");
 
         assertContainsValue(tree, "choice", "bar");
         assertContainsValue(tree, "choice.bar", "a-bar");
@@ -165,20 +168,20 @@ class InputTreeTest {
         Node root = tree.root();
         assertThat(root, is(not(nullValue())));
         assertThat(root.id(), is(0));
-        assertThat(root.kind(), is(Node.Kind.ROOT));
+        assertThat(root.kind(), is(Kind.ROOT));
 
-        List<Node> presets = collect(tree, Node.Kind.PRESETS);
+        List<Node> presets = collect(tree, Kind.PRESETS);
         assertThat(presets.size(), is(1));
         assertThat(presets.get(0).id(), is(1));
 
-        assertDoesNotContain(tree, Node.Kind.VALUE, "foo");
-        assertDoesNotContain(tree, Node.Kind.TEXT, "choice.foo");
-        assertDoesNotContain(tree, Node.Kind.VALUE, "choice.foo");
+        assertDoesNotContain(tree, Kind.VALUE, "foo");
+        assertDoesNotContain(tree, Kind.TEXT, "choice.foo");
+        assertDoesNotContain(tree, Kind.VALUE, "choice.foo");
 
         assertDoesNotContainValue(tree, "include", "no");
 
         assertDoesNotContainValue(tree, "include2", "yes");
-        assertDoesNotContain(tree, Node.Kind.BOOLEAN, "include2.y");
+        assertDoesNotContain(tree, Kind.BOOLEAN, "include2.y");
 
         assertContainsValue(tree, "choice", "bar");
         assertContainsValue(tree, "choice.bar", "a-bar");
@@ -195,17 +198,17 @@ class InputTreeTest {
         assertThat(tree.size(), is(13));
 
         String path = "include";
-        List<Node> nodes = collect(tree, Node.Kind.BOOLEAN, path);
+        List<Node> nodes = collect(tree, Kind.BOOLEAN, path);
         assertThat(nodes.size(), is(1));
         assertChildrenAreValues(nodes.get(0), 1, path, List.of("yes"));
 
         path = "include.yes";
-        nodes = collect(tree, Node.Kind.BOOLEAN, path);
+        nodes = collect(tree, Kind.BOOLEAN, path);
         assertThat(nodes.size(), is(1));
         assertChildrenAreValues(nodes.get(0), 2, path, List.of("yes", "no"));
 
         path = "include2";
-        nodes = collect(tree, Node.Kind.BOOLEAN, path);
+        nodes = collect(tree, Kind.BOOLEAN, path);
         assertThat(nodes.size(), is(1));
         assertChildrenAreValues(nodes.get(0), 1, path, List.of("no"));
     }
@@ -217,7 +220,7 @@ class InputTreeTest {
         assertThat(tree.size(), is(52));
 
         String path = "theme.base";
-        List<Node> nodes = collect(tree, Node.Kind.ENUM, path);
+        List<Node> nodes = collect(tree, Kind.ENUM, path);
         assertThat(nodes.size(), is(2));
         assertChildrenAreValues(nodes.get(0), 2, path, List.of("custom", "rainbow"));
         assertChildrenAreValues(nodes.get(1), 2, path, List.of("custom", "2d"));
@@ -230,7 +233,7 @@ class InputTreeTest {
         assertThat(tree.size(), is(52));
 
         String path = "theme.base.colors";
-        List<Node> nodes = collect(tree, Node.Kind.LIST, path);
+        List<Node> nodes = collect(tree, Kind.LIST, path);
         assertThat(nodes.size(), is(1));
         Node input = nodes.get(0);
         assertChildrenAreValues(input, 15, path, List.of(
@@ -247,7 +250,7 @@ class InputTreeTest {
         assertThat(tree.size(), is(13));
 
         String path = "choice.bar";
-        List<Node> nodes = collect(tree, Node.Kind.TEXT, path);
+        List<Node> nodes = collect(tree, Kind.TEXT, path);
         assertThat(nodes.size(), is(1));
         assertChildrenAreValues(nodes.get(0), 1, path, List.of("a-bar"));
     }
@@ -258,7 +261,7 @@ class InputTreeTest {
         assertThat(tree, is(not(nullValue())));
         assertThat(tree.size(), is(52));
         String path = "theme.base";
-        List<Node> nodes = collect(tree, Node.Kind.PRESETS, path);
+        List<Node> nodes = collect(tree, Kind.PRESETS, path);
         assertThat(nodes.size(), is(2));
         assertPresetsContains(nodes.get(0), Map.of(
                 "theme.base.colors", "red,orange,yellow,green,blue,indigo,violet",
@@ -279,6 +282,32 @@ class InputTreeTest {
         tree.print();
     }
 
+    @Test
+    void testCollect() {
+        InputTree tree = create("input-tree");
+        Map<String, String> permutation = new LinkedHashMap<>();
+        List<Node> inputNodes = collectInputs(tree);
+        assertThat(inputNodes.size(), is(6));
+        tree.collect(permutation);
+        assertThat(permutation.isEmpty(), is(false));
+        assertThat(permutation.size(), is(lessThanOrEqualTo(inputNodes.size())));
+        assertThat(permutation.get("choice"), is("bar"));
+        assertThat(permutation.get("include"), is("yes"));
+        assertThat(permutation.get("include.yes"), is("yes"));
+        assertThat(permutation.get("include2"), is("no"));
+        assertThat(permutation.get("choice.bar"), is("a-bar"));
+
+        Node include = inputNodes.get(4);
+        assertThat(include.path(), is("include.yes"));
+        include.index().next();
+        tree.collect(permutation);
+        assertThat(permutation.get("choice"), is("bar"));
+        assertThat(permutation.get("include"), is("yes"));
+        assertThat(permutation.get("include.yes"), is("no"));
+        assertThat(permutation.get("include2"), is("no"));
+        assertThat(permutation.get("choice.bar"), is("a-bar"));
+    }
+
     private static InputTree create(String testDir) {
         return create(sourceDir(testDir));
     }
@@ -294,33 +323,37 @@ class InputTreeTest {
                         .build();
     }
 
-    static void assertContains(InputTree tree, Node.Kind kind, String path) {
+    static void assertContains(InputTree tree, Kind kind, String path) {
         tree.stream().filter(n -> n.kind() == kind && n.path().equals(path)).findFirst().orElseThrow();
     }
 
-    static List<Node> collect(InputTree tree, Node.Kind kind) {
+    static List<Node> collect(InputTree tree, Kind kind) {
         return tree.stream().filter(n -> n.kind() == kind).collect(Collectors.toList());
     }
 
-    static List<Node> collect(InputTree tree, Node.Kind kind, String path) {
+    static List<Node> collectInputs(InputTree tree) {
+        return tree.stream().filter(n -> n.kind() != Kind.ROOT && n.kind() != Kind.VALUE).collect(Collectors.toList());
+    }
+
+    static List<Node> collect(InputTree tree, Kind kind, String path) {
         return tree.stream().filter(n -> n.kind() == kind && n.path().equals(path)).collect(Collectors.toList());
     }
 
     static void assertContainsValue(InputTree tree, String path, String value) {
         tree.stream()
-            .filter(n -> n.kind() == Node.Kind.VALUE
+            .filter(n -> n.kind() == Kind.VALUE
                          && n.path().equals(path) &&
                          ((ValueNode) n).value().equals(value))
             .findFirst().orElseThrow();
     }
 
-    static void assertDoesNotContain(InputTree tree, Node.Kind kind, String path) {
+    static void assertDoesNotContain(InputTree tree, Kind kind, String path) {
         assertThat(tree.stream().anyMatch(n -> n.kind() == kind && n.path().equals(path)), is(false));
     }
 
     static void assertDoesNotContainValue(InputTree tree, String path, String value) {
         boolean found = tree.stream()
-                            .anyMatch(n -> n.kind() == Node.Kind.VALUE
+                            .anyMatch(n -> n.kind() == Kind.VALUE
                                            && n.path().equals(path) &&
                                            ((ValueNode) n).value().equals(value));
         assertThat(found, is(false));
@@ -334,7 +367,7 @@ class InputTreeTest {
         for (int i = 0; i < expectedValues.size(); i++) {
             Node node = values.get(i);
             String expectedValue = expectedValues.get(i);
-            assertThat(node.kind(), is(Node.Kind.VALUE));
+            assertThat(node.kind(), is(Kind.VALUE));
             assertThat(node.path(), is(expectedPath));
             ValueNode valueNode = (ValueNode) node;
             assertThat(valueNode.value(), is(not(nullValue())));
@@ -344,7 +377,7 @@ class InputTreeTest {
 
     static void assertPresetsContains(Node input, Map<String, String> expectedValues) {
         assertThat(input, is(not(nullValue())));
-        assertThat(input.kind(), is(Node.Kind.PRESETS));
+        assertThat(input.kind(), is(Kind.PRESETS));
         PresetNode presetNode = (PresetNode) input;
         Map<String, String> presets = presetNode.presets();
         assertThat(presets, is(not(nullValue())));
