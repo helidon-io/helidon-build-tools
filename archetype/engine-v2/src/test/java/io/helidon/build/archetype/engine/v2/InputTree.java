@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.helidon.build.archetype.engine.v2.InputTree.Node.Kind;
 import io.helidon.build.archetype.engine.v2.ast.Block;
@@ -69,6 +70,14 @@ public class InputTree {
             addNodes(root);
         }
         return allNodes;
+    }
+
+    public Stream<Node> stream() {
+        return asList().stream();
+    }
+
+    public int size() {
+        return nodeCount;
     }
 
     public void print() {
@@ -527,11 +536,19 @@ public class InputTree {
     public static class Builder {
         private static final String MAIN_FILE = "main.xml";
         private final Deque<Node> nodes;
+        private final Node root;
         private int nextId;
         private Path archetypePath;
         private String entryPoint;
-        private Node root;
         private int presetDepth = -1;
+        private boolean prune;
+        private boolean verbose;
+
+        private Builder() {
+            nodes = new ArrayDeque<>();
+            root = new Root(nextId++);
+            prune = true;
+        }
 
         public Builder archetypePath(Path archetypePath) {
             this.archetypePath = archetypePath;
@@ -543,6 +560,16 @@ public class InputTree {
             return this;
         }
 
+        public Builder prunePresets(boolean prunePresets) {
+            this.prune = prunePresets;
+            return this;
+        }
+
+        public Builder verbose(boolean verbose) {
+            this.verbose = verbose;
+            return this;
+        }
+
         public InputTree build() {
             String scriptName = entryPoint == null ? MAIN_FILE : entryPoint;
             FileSystem fs = fileSystem();
@@ -551,12 +578,26 @@ public class InputTree {
             Script script = ScriptLoader.load(cwd.resolve(scriptName));
 
             Walker.walk(new AllInputs(this), script, context);
-            prune(); // Remove any nodes for which presets exist
+
+            if (verbose) {
+                root.print();
+                if (prune) {
+                    prune();
+                    System.out.println();
+                    System.out.println("PRUNED");
+                    System.out.println();
+                    root.print();
+                }
+            } else if (prune) {
+                prune();
+            }
             return new InputTree(this);
         }
 
+        /**
+         * Remove any nodes for which presets exist.
+         */
         void prune() {
-            root.print();
             Map<Node, String> matching = new LinkedHashMap<>();
             findPresetInputNodes(root, new HashMap<>(), matching, 0);
             if (!matching.isEmpty()) {
@@ -623,11 +664,6 @@ public class InputTree {
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-        }
-
-        Builder() {
-            nodes = new ArrayDeque<>();
-            root = new Root(nextId++);
         }
 
         Node root() {
