@@ -36,6 +36,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -214,7 +215,8 @@ public class FunctionalTest {
         args.add("--package", packageName);
         args.add("--name", name);
         Arguments arguments = toArguments(jarCliPath, buildArgs(args), -1);
-        Application cli = localPlatform.launch("java", arguments, Console.of(console));
+        Application app = localPlatform.launch("java", arguments, Console.of(console));
+        CliApplication cli = new CliApplication(app, console);
         waitForGeneratedProject();
 
         if (startApp) {
@@ -235,35 +237,36 @@ public class FunctionalTest {
 
         PipedApplicationConsole console = new PipedApplicationConsole();
         Arguments arguments = toArguments(jarCliPath, buildArgs(null), -1);
-        Application cli = localPlatform.launch("java", arguments, Console.of(console));
+        Application app = localPlatform.launch("java", arguments, Console.of(console));
+        CliApplication cli = new CliApplication(app, console);
         TimeUnit.SECONDS.sleep(2);
 
-        writeToConsole(console, version == null ? HELIDON_VERSION : version);
-        writeToConsole(console, flavor);
-        writeToConsole(console, archetype);
-        writeToConsole(console, name == null ? System.lineSeparator() : name);
-        writeToConsole(console, groupId == null ? System.lineSeparator() : groupId);
-        writeToConsole(console, artifactId == null ? System.lineSeparator() : artifactId);
-        writeToConsole(console, System.lineSeparator());
-        writeToConsole(console, packageName == null ? System.lineSeparator() : packageName);
-        writeToConsole(console, "n");
+        cli.writeInput(version == null ? HELIDON_VERSION : version);
+        cli.writeInput(flavor);
+        cli.writeInput(archetype);
+        cli.writeInput(name == null ? System.lineSeparator() : name);
+        cli.writeInput(groupId == null ? System.lineSeparator() : groupId);
+        cli.writeInput(artifactId == null ? System.lineSeparator() : artifactId);
+        cli.writeInput(System.lineSeparator());
+        cli.writeInput(packageName == null ? System.lineSeparator() : packageName);
+        cli.writeInput("n");
         waitForGeneratedProject();
 
         if (startApp) {
             testGeneratedProject();
         }
-
         cli.close();
     }
 
     private void testGeneratedProject() throws Exception {
         int port = localPlatform.getAvailablePorts().next();
         Arguments args = toArguments(jarCliPath, new ArrayList<>(List.of("dev")), port);
-        Application dev = localPlatform.launch("java", args, WorkingDirectory.at(workDir.resolve(CUSTOM_PROJECT)));
-        waitForApplication(port);
+        Application app = localPlatform.launch("java", args, WorkingDirectory.at(workDir.resolve(CUSTOM_PROJECT)));
+        DevApplication dev = new DevApplication(app, port);
+        dev.waitForApplication();
 
         WebClient webClient = WebClient.builder()
-                .baseUri("http://localhost:" + port)
+                .baseUri(dev.getBaseUrl())
                 .build();
 
         webClient.get()
@@ -274,37 +277,6 @@ public class FunctionalTest {
                 .get();
 
         dev.close();
-    }
-
-    private void writeToConsole(PipedApplicationConsole console, Object obj) throws Exception {
-        console.getInputWriter().println(obj);
-        console.getInputWriter().flush();
-        TimeUnit.MILLISECONDS.sleep(200);
-    }
-
-    private void waitForApplication(int port) throws Exception {
-        long timeout = 20 * 1000;
-        long now = System.currentTimeMillis();
-        URL url = new URL("http://localhost:" + port + "/health");
-
-        HttpURLConnection conn = null;
-        int responseCode;
-        do {
-            Thread.sleep(500);
-            if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Application failed to start");
-            }
-            try {
-                conn = (HttpURLConnection) url.openConnection();
-                conn.setConnectTimeout(500);
-                responseCode = conn.getResponseCode();
-            } catch (Exception ex) {
-                responseCode = -1;
-            }
-            if (conn != null) {
-                conn.disconnect();
-            }
-        } while (responseCode != 200);
     }
 
     private void waitForGeneratedProject() throws InterruptedException {
@@ -347,8 +319,16 @@ public class FunctionalTest {
         return args;
     }
 
+    static Path pathOf(URL u) {
+        try {
+            return Path.of(u.toURI());
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     static class ArgList<E> extends LinkedList<E> {
-        
+
         public void add(E key, E value) {
             if (value == null) {
                 return;
@@ -358,11 +338,74 @@ public class FunctionalTest {
         }
     }
 
-    static Path pathOf(URL u) {
-        try {
-            return Path.of(u.toURI());
-        } catch (URISyntaxException e) {
-            throw new IllegalStateException(e);
+    static class CliApplication  {
+
+        Application application;
+        PipedApplicationConsole console;
+
+        CliApplication(Application application, PipedApplicationConsole console) {
+            this.application = application;
+            this.console = console;
+        }
+
+        void writeInput(Object obj) throws Exception {
+            this.console.getInputWriter().println(obj);
+            this.console.getInputWriter().flush();
+            TimeUnit.MILLISECONDS.sleep(200);
+        }
+
+        void close() throws InterruptedException {
+            application.close();
+            while (application.isOperational()) {
+                TimeUnit.MILLISECONDS.sleep(500);
+            }
+        }
+
+    }
+
+    static class DevApplication {
+        Application application;
+        int port;
+
+        DevApplication(Application application, int port) {
+            this.application = application;
+            this.port = port;
+        }
+
+        void waitForApplication() throws Exception {
+            long timeout = 20 * 1000;
+            long now = System.currentTimeMillis();
+            URL url = new URL("http://localhost:" + port + "/health");
+
+            HttpURLConnection conn = null;
+            int responseCode;
+            do {
+                Thread.sleep(500);
+                if ((System.currentTimeMillis() - now) > timeout) {
+                    Assertions.fail("Application failed to start");
+                }
+                try {
+                    conn = (HttpURLConnection) url.openConnection();
+                    conn.setConnectTimeout(500);
+                    responseCode = conn.getResponseCode();
+                } catch (Exception ex) {
+                    responseCode = -1;
+                }
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            } while (responseCode != 200);
+        }
+
+        URL getBaseUrl() throws MalformedURLException {
+            return new URL("http://localhost:" + this.port);
+        }
+
+        void close() throws InterruptedException {
+            application.close();
+            while (application.isOperational()) {
+                TimeUnit.MILLISECONDS.sleep(500);
+            }
         }
     }
 
