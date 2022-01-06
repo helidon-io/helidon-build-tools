@@ -49,21 +49,37 @@ import static io.helidon.build.common.PropertyEvaluator.evaluate;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Collapses an archetype into a tree containing only the inputs.
+ * Collapses an archetype into a tree containing only the inputs, primarily to support
+ * generating input permutations.
  */
 public class InputTree {
     private final Node root;
     private final int nodeCount;
     private List<Node> allNodes;
 
+    /**
+     * Returns a new builder.
+     *
+     * @return The builder.
+     */
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * Returns the root node.
+     *
+     * @return The root.
+     */
     public Node root() {
         return root;
     }
 
+    /**
+     * Returns the tree flattened into a list, in depth-first order.
+     *
+     * @return The list.
+     */
     public List<Node> asList() {
         if (allNodes == null) {
             allNodes = new ArrayList<>(nodeCount);
@@ -72,14 +88,27 @@ public class InputTree {
         return allNodes;
     }
 
+    /**
+     * Returns the tree as a stream, in depth-first order.
+     *
+     * @return The stream.
+     */
     public Stream<Node> stream() {
         return asList().stream();
     }
 
+    /**
+     * Returns the number of nodes in the tree.
+     *
+     * @return The count.
+     */
     public int size() {
         return nodeCount;
     }
 
+    /**
+     * Prints the tree to standard out.
+     */
     public void print() {
         root.print();
     }
@@ -533,6 +562,9 @@ public class InputTree {
         }
     }
 
+    /**
+     * Builder.
+     */
     public static class Builder {
         private static final String MAIN_FILE = "main.xml";
         private final Deque<Node> nodes;
@@ -543,33 +575,77 @@ public class InputTree {
         private int presetDepth = -1;
         private boolean prune;
         private boolean verbose;
+        private boolean movePresetSiblings;
 
         private Builder() {
             nodes = new ArrayDeque<>();
             root = new Root(nextId++);
             prune = true;
+            movePresetSiblings = true;
         }
 
+        /**
+         * Set the required archetype path.
+         *
+         * @param archetypePath The path.
+         * @return This instance, for chaining.
+         */
         public Builder archetypePath(Path archetypePath) {
             this.archetypePath = archetypePath;
             return this;
         }
 
+        /**
+         * Set the entry point file name. Defaults to "main.xml".
+         *
+         * @param entryPointFileName The file name.
+         * @return This instance, for chaining.
+         */
         public Builder entryPointFile(String entryPointFileName) {
             this.entryPoint = entryPointFileName;
             return this;
         }
 
+        /**
+         * Remove nodes that match preset values. Default is {@code true}.
+         * Intended to support testing.
+         *
+         * @param prunePresets {@code false} if preset nodes should be removed.
+         * @return This instance, for chaining.
+         */
         public Builder prunePresets(boolean prunePresets) {
             this.prune = prunePresets;
             return this;
         }
 
+        /**
+         * Move PRESET siblings to children. Default is {@code true}.
+         * Intended to support testing.
+         *
+         * @param movePresetSiblings {@code false} if siblings should not be moved.
+         * @return This instance, for chaining.
+         */
+        public Builder movePresetSiblings(boolean movePresetSiblings) {
+            this.movePresetSiblings = movePresetSiblings;
+            return this;
+        }
+
+        /**
+         * Set to print the tree.
+         *
+         * @param verbose {@code true} if the tree should be printed.
+         * @return This instance, for chaining.
+         */
         public Builder verbose(boolean verbose) {
             this.verbose = verbose;
             return this;
         }
 
+        /**
+         * Build the tree.
+         *
+         * @return The tree.
+         */
         public InputTree build() {
             String scriptName = entryPoint == null ? MAIN_FILE : entryPoint;
             FileSystem fs = fileSystem();
@@ -581,15 +657,16 @@ public class InputTree {
 
             if (verbose) {
                 root.print();
-                if (prune) {
-                    prune();
-                    System.out.println();
-                    System.out.println("PRUNED");
-                    System.out.println();
-                    root.print();
-                }
-            } else if (prune) {
+            }
+            if (prune) {
                 prune();
+            }
+            if (movePresetSiblings) {
+                movePresetSiblings();
+            }
+            if (verbose && (prune || movePresetSiblings)) {
+                System.out.printf("%nUPDATED%n%n");
+                root.print();
             }
             return new InputTree(this);
         }
@@ -629,6 +706,31 @@ public class InputTree {
             }
         }
 
+        void movePresetSiblings() {
+            List<Node> presets = addPresets(root, new ArrayList<>());
+            for (Node preset : presets) {
+                Node parent = preset.parent();
+                List<Node> siblings = new ArrayList<>(parent.children());
+                for (Node sibling : siblings) {
+                    if (sibling != preset) {
+                        preset.addChild(sibling);
+                        parent.removeChild(sibling);
+                        sibling.parent(preset);
+                    }
+                }
+            }
+        }
+
+        List<Node> addPresets(Node node, List<Node> presets) {
+            if (node.kind() == Kind.PRESETS) {
+                presets.add(node);
+            }
+            for (Node child : node.children()) {
+                addPresets(child, presets);
+            }
+            return presets;
+        }
+
         void updateId(Node node) {
             node.id(nextId++);
             for (Node child : node.children()) {
@@ -656,6 +758,7 @@ public class InputTree {
         }
 
         private FileSystem fileSystem() {
+            requireNonNull(archetypePath, "archetypePath is required");
             if (Files.isDirectory(archetypePath)) {
                 return VirtualFileSystem.create(archetypePath);
             }
@@ -827,7 +930,7 @@ public class InputTree {
             @Override
             public VisitResult postVisitAny(Input input, Context context) {
                 switch (input.kind()) {
-                    case BOOLEAN:  {
+                    case BOOLEAN: {
                         Node parent = builder.current().parent();
                         builder.addValue(parent, "no", input.scriptPath(), input.position());
                     }

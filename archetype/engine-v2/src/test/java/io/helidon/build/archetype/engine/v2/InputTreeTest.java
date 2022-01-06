@@ -39,6 +39,43 @@ import static org.hamcrest.Matchers.nullValue;
 class InputTreeTest {
 
     @Test
+    void testPresetSiblingsNotMoved() {
+        InputTree tree = InputTree.builder()
+                                  .archetypePath(sourceDir("input-tree"))
+                                  .movePresetSiblings(false)
+                                  .build();
+
+        assertThat(tree, is(not(nullValue())));
+        Node root = tree.root();
+        assertThat(root, is(not(nullValue())));
+        List<Node> children = root.children();
+        assertThat(children.size(), is(4));
+        assertThat(children.get(0).kind(), is(Node.Kind.PRESETS));
+        assertThat(children.get(1).kind(), is(Node.Kind.ENUM));
+        assertThat(children.get(2).kind(), is(Node.Kind.BOOLEAN));
+        assertThat(children.get(3).kind(), is(Node.Kind.BOOLEAN));
+    }
+
+    @Test
+    void testPresetSiblingsMoved() {
+        InputTree tree = InputTree.builder()
+                                  .archetypePath(sourceDir("input-tree"))
+                                  .build();
+
+        assertThat(tree, is(not(nullValue())));
+        Node root = tree.root();
+        assertThat(root, is(not(nullValue())));
+        List<Node> children = root.children();
+        assertThat(children.size(), is(1));
+        Node preset = children.get(0);
+        children = preset.children();
+        assertThat(children.size(), is(3));
+        assertThat(children.get(0).kind(), is(Node.Kind.ENUM));
+        assertThat(children.get(1).kind(), is(Node.Kind.BOOLEAN));
+        assertThat(children.get(2).kind(), is(Node.Kind.BOOLEAN));
+    }
+
+    @Test
     void testUnpruned() {
         InputTree tree = InputTree.builder()
                                   .archetypePath(sourceDir("input-tree"))
@@ -77,49 +114,49 @@ class InputTreeTest {
     void testPruned() {
         InputTree tree = InputTree.builder()
                                   .archetypePath(sourceDir("input-tree"))
+                                  .verbose(false)
                                   .build();
         /*
 
         UNPRUNED
 
-        0 ROOT
-        |   1 PRESETS '{choice=bar, include=true, include2=false}' from main.xml:24
-        |   2 ENUM 'choice' from main.xml:30
-        |   |   3 VALUE 'choice' = 'foo' from main.xml:31                   REMOVED
-        |   |   |   4 TEXT 'choice.foo' from foo.xml:25                     REMOVED
-        |   |   |   |   5 VALUE 'choice.foo' = 'a-foo' from foo.xml:25      REMOVED
-        |   |   6 VALUE 'choice' = 'bar' from main.xml:34
-        |   |   |   7 TEXT 'choice.bar' from bar.xml:25
-        |   |   |   |   8 VALUE 'choice.bar' = 'a-bar' from bar.xml:25
-        |   9 BOOLEAN 'include' from main.xml:38
-        |   |   10 VALUE 'include' = 'yes' from main.xml:38
-        |   |   |   11 BOOLEAN 'include.yes' from main.xml:40
-        |   |   |   |   12 VALUE 'include.yes' = 'yes' from main.xml:40
-        |   |   |   |   13 VALUE 'include.yes' = 'no' from main.xml:40
-        |   |   14 VALUE 'include' = 'no' from main.xml:38                  REMOVED
-        |   15 BOOLEAN 'include2' from main.xml:43
-        |   |   16 VALUE 'include2' = 'yes' from main.xml:43                REMOVED
-        |   |   |   17 BOOLEAN 'include2.y' from main.xml:45                REMOVED
-        |   |   |   |   18 VALUE 'include2.y' = 'yes' from main.xml:45      REMOVED
-        |   |   |   |   19 VALUE 'include2.y' = 'no' from main.xml:45       REMOVED
-        |   |   20 VALUE 'include2' = 'no' from main.xml:43
+            0 ROOT
+            |   1 PRESETS '{choice=bar, include=true, include2=false}' from main.xml:24
+            |   |   2 ENUM 'choice' from main.xml:30
+            |   |   |   3 VALUE 'choice' = 'foo' from main.xml:31                REMOVED
+            |   |   |   |   4 TEXT 'choice.foo' from foo.xml:25                  REMOVED
+            |   |   |   |   |   5 VALUE 'choice.foo' = 'a-foo' from foo.xml:25   REMOVED
+            |   |   |   6 VALUE 'choice' = 'bar' from main.xml:34
+            |   |   |   |   7 TEXT 'choice.bar' from bar.xml:25
+            |   |   |   |   |   8 VALUE 'choice.bar' = 'a-bar' from bar.xml:25
+            |   |   9 BOOLEAN 'include' from main.xml:38
+            |   |   |   10 VALUE 'include' = 'yes' from main.xml:38
+            |   |   |   |   11 BOOLEAN 'include.yes' from main.xml:40
+            |   |   |   |   |   12 VALUE 'include.yes' = 'yes' from main.xml:40
+            |   |   |   |   |   13 VALUE 'include.yes' = 'no' from main.xml:40
+            |   |   |   14 VALUE 'include' = 'no' from main.xml:38               REMOVED
+            |   |   15 BOOLEAN 'include2' from main.xml:43
+            |   |   |   16 VALUE 'include2' = 'yes' from main.xml:43             REMOVED
+            |   |   |   |   17 BOOLEAN 'include2.y' from main.xml:45             REMOVED
+            |   |   |   |   |   18 VALUE 'include2.y' = 'yes' from main.xml:45   REMOVED
+            |   |   |   |   |   19 VALUE 'include2.y' = 'no' from main.xml:45    REMOVED
+            |   |   |   20 VALUE 'include2' = 'no' from main.xml:43
 
         PRUNED
 
-        0 ROOT
-        |   1 PRESETS '{choice=bar, include=true, include2=false}' from main.xml:24
-        |   2 ENUM 'choice' from main.xml:30
-        |   |   3 VALUE 'choice' = 'bar' from main.xml:34
-        |   |   |   4 TEXT 'choice.bar' from bar.xml:25
-        |   |   |   |   5 VALUE 'choice.bar' = 'a-bar' from bar.xml:25
-        |   6 BOOLEAN 'include' from main.xml:38
-        |   |   7 VALUE 'include' = 'yes' from main.xml:38
-        |   |   |   8 BOOLEAN 'include.yes' from main.xml:40
-        |   |   |   |   9 VALUE 'include.yes' = 'yes' from main.xml:40
-        |   |   |   |   10 VALUE 'include.yes' = 'no' from main.xml:40
-        |   11 BOOLEAN 'include2' from main.xml:43
-        |   |   12 VALUE 'include2' = 'no' from main.xml:43
-
+            0 ROOT
+            |   1 PRESETS '{choice=bar, include=true, include2=false}' from main.xml:24
+            |   |   2 ENUM 'choice' from main.xml:30
+            |   |   |   3 VALUE 'choice' = 'bar' from main.xml:34
+            |   |   |   |   4 TEXT 'choice.bar' from bar.xml:25
+            |   |   |   |   |   5 VALUE 'choice.bar' = 'a-bar' from bar.xml:25
+            |   |   6 BOOLEAN 'include' from main.xml:38
+            |   |   |   7 VALUE 'include' = 'yes' from main.xml:38
+            |   |   |   |   8 BOOLEAN 'include.yes' from main.xml:40
+            |   |   |   |   |   9 VALUE 'include.yes' = 'yes' from main.xml:40
+            |   |   |   |   |   10 VALUE 'include.yes' = 'no' from main.xml:40
+            |   |   11 BOOLEAN 'include2' from main.xml:43
+            |   |   |   12 VALUE 'include2' = 'no' from main.xml:43
          */
 
         assertThat(tree, is(not(nullValue())));
@@ -233,7 +270,9 @@ class InputTreeTest {
         ));
     }
 
-    @Test @Disabled  // enabled for local testing
+    @Test
+    @Disabled
+        // enabled for local testing
     void printV2() {
         Path sourceDir = Path.of("/Users/batsatt/dev/helidon/archetypes-v2");
         InputTree tree = create(sourceDir);
