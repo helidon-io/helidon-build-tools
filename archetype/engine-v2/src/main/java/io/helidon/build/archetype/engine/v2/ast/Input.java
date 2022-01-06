@@ -454,6 +454,17 @@ public abstract class Input extends Block {
             return visitor.postVisitBoolean(this, arg);
         }
 
+        public static boolean valueOf(String input) {
+            switch (input.trim().toLowerCase()) {
+                case "y":
+                case "yes":
+                case "true":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         @Override
         public String toString() {
             return "InputBoolean{"

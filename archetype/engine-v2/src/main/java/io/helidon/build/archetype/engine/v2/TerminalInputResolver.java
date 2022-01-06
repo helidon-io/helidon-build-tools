@@ -51,7 +51,7 @@ public class TerminalInputResolver extends InputResolver {
 
     @Override
     public VisitResult visitBoolean(Input.Boolean input, Context context) {
-        VisitResult result = onVisitInput(input, context);
+        VisitResult result =    onVisitInput(input, context);
         if (result != null) {
             return result;
         }

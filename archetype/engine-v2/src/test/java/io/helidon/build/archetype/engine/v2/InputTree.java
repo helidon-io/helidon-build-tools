@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.build.archetype.engine.v2.InputTree.Node.Kind;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.Input;
@@ -51,6 +52,8 @@ import static java.util.Objects.requireNonNull;
  */
 public class InputTree {
     private final Node root;
+    private final int nodeCount;
+    private List<Node> allNodes;
 
     public static Builder builder() {
         return new Builder();
@@ -60,12 +63,26 @@ public class InputTree {
         return root;
     }
 
+    public List<Node> asList() {
+        if (allNodes == null) {
+            allNodes = new ArrayList<>(nodeCount);
+            addNodes(root);
+        }
+        return allNodes;
+    }
+
     public void print() {
         root.print();
     }
 
     private InputTree(Builder builder) {
         this.root = builder.root();
+        this.nodeCount = builder.nextId;
+    }
+
+    private void addNodes(Node node) {
+        allNodes.add(node);
+        node.children().forEach(this::addNodes);
     }
 
     /*
@@ -119,28 +136,28 @@ public class InputTree {
     */
 
     public static abstract class Node {
-        private int id; // Allow prune() to fix this to avoid sparse arrays
-        private final int depth;
+        private int id;      // non-final to allow prune() to fix this to avoid sparse arrays
+        private Node parent; // non-final to allow preset siblings to become children
         private final Path script;
-        private final Position position;
+        private final int line;
         private final String path;
         private final Kind kind;
-        private final Node parent;
         private final List<Node> children;
 
         enum Kind {
+            ROOT,
             PRESETS,
             BOOLEAN,
             ENUM,
             LIST,
             TEXT,
+            VALUE
         }
 
-        Node(int id, int depth, Node parent, String path, Kind kind, Path script, Position position) {
+        Node(int id, Node parent, String path, Kind kind, Path script, int line) {
             this.id = id;
-            this.depth = depth;
             this.script = script;
-            this.position = position;
+            this.line = line;
             this.path = path;
             this.kind = kind;
             this.parent = parent;
@@ -154,16 +171,12 @@ public class InputTree {
             return id;
         }
 
-        int depth() {
-            return depth;
-        }
-
         Path script() {
             return script;
         }
 
-        Position position() {
-            return position;
+        int line() {
+            return line;
         }
 
         String path() {
@@ -202,6 +215,10 @@ public class InputTree {
             this.id = id;
         }
 
+        private void parent(Node parent) {
+            this.parent = parent;
+        }
+
         void print() {
             print(this, 0);
         }
@@ -216,8 +233,21 @@ public class InputTree {
             }
         }
 
-        protected String toString(String type, String value) {
-            return String.format("%d %s '%s' from %s, line %s", id(), type, value, script(), position().lineNumber());
+        protected String toString(Object value) {
+            String path = path();
+            if (path == null) {
+                if (value == null) {
+                    return String.format("%d %s from %s:%s", id(), kind(), script(), line());
+                } else {
+                    return String.format("%d %s '%s' from %s:%s", id(), kind(), value, script(), line());
+                }
+            } else {
+                if (value == null) {
+                    return String.format("%d %s '%s' from %s:%s", id(), kind(), path, script(), line());
+                } else {
+                    return String.format("%d %s '%s' = '%s' from %s:%s", id(), kind(), path, value, script(), line());
+                }
+            }
         }
     }
 
@@ -277,8 +307,8 @@ public class InputTree {
 
     public static class InputNode extends Node {
 
-        InputNode(int id, int depth, Node parent, Kind kind, String path, Path script, Position position) {
-            super(id, depth, parent, path, kind, script, position);
+        InputNode(int id, Node parent, Kind kind, String path, Path script, int line) {
+            super(id, parent, path, kind, script, line);
         }
 
         @Override
@@ -320,15 +350,26 @@ public class InputTree {
 
         @Override
         public String toString() {
-            return toString(kind().name(), path());
+            return toString(null);
+        }
+    }
+
+    public static class Root extends InputNode {
+        Root(int id) {
+            super(id, null, Kind.ROOT, "", Path.of("/"), 0);
+        }
+
+        @Override
+        public String toString() {
+            return id() + " ROOT";
         }
     }
 
     public static class ListNode extends InputNode {
         private final List<String> defaults;
 
-        ListNode(int id, int depth, Node parent, String path, List<String> defaults, Path script, Position position) {
-            super(id, depth, parent, Kind.LIST, path, script, position);
+        ListNode(int id, Node parent, String path, List<String> defaults, Path script, int line) {
+            super(id, parent, Kind.LIST, path, script, line);
             this.defaults = defaults;
         }
 
@@ -401,8 +442,8 @@ public class InputTree {
     public static class ValueNode extends Node {
         private final String value;
 
-        ValueNode(int id, int depth, Node parent, Kind kind, String path, String value, Path script, Position position) {
-            super(id, depth, parent, path, kind, script, position);
+        ValueNode(int id, Node parent, String path, String value, Path script, int line) {
+            super(id, parent, path, Kind.VALUE, script, line);
             this.value = value;
         }
 
@@ -431,15 +472,15 @@ public class InputTree {
 
         @Override
         public String toString() {
-            return toString("VALUE", value());
+            return toString(value());
         }
     }
 
     public static class PresetNode extends Node {
         private final Map<String, String> presets;
 
-        PresetNode(int id, int depth, Node parent, String path, Path script, Position position) {
-            super(id, depth, parent, path, Kind.PRESETS, script, position);
+        PresetNode(int id, Node parent, String path, Path script, int line) {
+            super(id, parent, path, Kind.PRESETS, script, line);
             this.presets = new LinkedHashMap<>();
         }
 
@@ -479,7 +520,7 @@ public class InputTree {
 
         @Override
         public String toString() {
-            return toString("PRESETS", presets().toString());
+            return toString(presets().toString());
         }
     }
 
@@ -515,12 +556,32 @@ public class InputTree {
         }
 
         void prune() {
-            List<Node> matching = new ArrayList<>();
-            findPresetMatchingNodes(root, new HashMap<>(), matching);
+            root.print();
+            Map<Node, String> matching = new LinkedHashMap<>();
+            findPresetInputNodes(root, new HashMap<>(), matching, 0);
             if (!matching.isEmpty()) {
-                matching.forEach(removeMe -> {
-                    Node parent = removeMe.parent();
-                    parent.removeChild(removeMe);
+                matching.forEach((node, value) -> {
+                    Kind kind = node.kind();
+                    if (kind == Kind.BOOLEAN || kind == Kind.ENUM) {
+                        // Remove all children except matching
+                        List<Node> children = new ArrayList<>(node.children());
+                        for (Node child : children) {
+                            boolean keep;
+                            String childValue = ((ValueNode) child).value();
+                            if (kind == Kind.BOOLEAN) {
+                                keep = Input.Boolean.valueOf(childValue) == Input.Boolean.valueOf(value);
+                            } else {
+                                keep = childValue.equals(value);
+                            }
+                            if (!keep) {
+                                node.removeChild(child);
+                            }
+                        }
+                    } else {
+                        // Remove node itself
+                        Node parent = node.parent();
+                        parent.removeChild(node);
+                    }
                 });
                 nextId = 0;
                 updateId(root);
@@ -534,26 +595,24 @@ public class InputTree {
             }
         }
 
-        void findPresetMatchingNodes(Node node, Map<String, String> presets, List<Node> matching) {
-            if (node.depth() < presetDepth) {
+        void findPresetInputNodes(Node node, Map<String, String> presets, Map<Node, String> matching, int depth) {
+            if (depth < presetDepth) {
                 presets.clear();
                 presetDepth = -1;
             }
-            if (node.kind() == Node.Kind.PRESETS) {
+            if (node.kind() == Kind.PRESETS) {
                 Map<String, String> current = ((PresetNode) node).presets();
                 presets.putAll(current);
                 if (presetDepth < 0) {
-                    presetDepth = node.depth();
+                    presetDepth = depth;
                 }
-            } else if (presets.containsKey(node.path())) {
-                matching.add(node);
-            } else {
-                for (Node child : node.children()) {
-                    findPresetMatchingNodes(child, presets, matching);
-                }
+            } else if (node.kind() != Kind.VALUE && presets.containsKey(node.path())) {
+                matching.put(node, presets.get(node.path()));
+            }
+            for (Node child : node.children()) {
+                findPresetInputNodes(child, presets, matching, depth + 1);
             }
         }
-
 
         private FileSystem fileSystem() {
             if (Files.isDirectory(archetypePath)) {
@@ -568,6 +627,7 @@ public class InputTree {
 
         Builder() {
             nodes = new ArrayDeque<>();
+            root = new Root(nextId++);
         }
 
         Node root() {
@@ -578,39 +638,42 @@ public class InputTree {
             return nodes.peek();
         }
 
-        void pushInput(Node.Kind kind, String path, Path script, Position position) {
+        Node pushInput(Kind kind, String path, Path script, Position position) {
             Node parent = parent();
-            push(new InputNode(nextId++, nodes.size(), parent, kind, path, script, position));
+            return push(new InputNode(nextId++, parent, kind, path, script, position.lineNumber()));
         }
 
         void pushInputList(String path, List<String> defaults, Path script, Position position) {
             Node parent = parent();
-            push(new ListNode(nextId++, nodes.size(), parent, path, defaults, script, position));
+            push(new ListNode(nextId++, parent, path, defaults, script, position.lineNumber()));
         }
 
         void pushPresets(String path, Path script, Position position) {
             Node parent = parent();
-            push(new PresetNode(nextId++, nodes.size(), parent, path, script, position));
+            push(new PresetNode(nextId++, parent, path, script, position.lineNumber()));
         }
 
         void pushValue(String value, Path script, Position position) {
             Node parent = requireNonNull(parent());
-            push(new ValueNode(nextId++, nodes.size(), parent, parent.kind(), parent.path(), value, script, position));
+            push(new ValueNode(nextId++, parent, parent.path(), value, script, position.lineNumber()));
+        }
+
+        void addValue(Node parent, String value, Path script, Position position) {
+            // Adds self to parent
+            new ValueNode(nextId++, parent, parent.path(), value, script, position.lineNumber());
         }
 
         Node parent() {
             Node parent = current();
-            if (parent == null && root != null) {
+            if (parent == null) {
                 parent = root;
             }
             return parent;
         }
 
-        void push(Node node) {
-            if (root == null) {
-                root = node;
-            }
+        Node push(Node node) {
             nodes.push(node);
+            return node;
         }
 
         void pop() {
@@ -683,9 +746,9 @@ public class InputTree {
             @Override
             public VisitResult visitBoolean(Input.Boolean input, Context context) {
                 String path = push(input, context);
-                builder.pushInput(Node.Kind.BOOLEAN, path, input.scriptPath(), input.position());
-                builder.pushValue("no", input.scriptPath(), input.position());
+                Node node = builder.pushInput(Kind.BOOLEAN, path, input.scriptPath(), input.position());
                 builder.pushValue("yes", input.scriptPath(), input.position());
+// TODO REMOVE                builder.addValue(node, "no", input.scriptPath(), input.position());
                 return VisitResult.CONTINUE;
             }
 
@@ -699,7 +762,7 @@ public class InputTree {
                     value = defaultValue.asString();
                 }
                 String path = push(input, context);
-                builder.pushInput(Node.Kind.TEXT, path, input.scriptPath(), input.position());
+                builder.pushInput(Kind.TEXT, path, input.scriptPath(), input.position());
                 builder.pushValue(value, input.scriptPath(), input.position());
                 return VisitResult.CONTINUE;
             }
@@ -707,7 +770,7 @@ public class InputTree {
             @Override
             public VisitResult visitEnum(Input.Enum input, Context context) {
                 String path = push(input, context);
-                builder.pushInput(Node.Kind.ENUM, path, input.scriptPath(), input.position());
+                builder.pushInput(Kind.ENUM, path, input.scriptPath(), input.position());
                 return VisitResult.CONTINUE;
             }
 
@@ -728,15 +791,12 @@ public class InputTree {
             @Override
             public VisitResult postVisitAny(Input input, Context context) {
                 switch (input.kind()) {
-                    case BOOLEAN: {
-                        // pop 3 // TODO: can collapse?
-                        builder.pop();
-                        builder.pop();
-                        builder.pop();
-                        break;
+                    case BOOLEAN:  {
+                        Node parent = builder.current().parent();
+                        builder.addValue(parent, "no", input.scriptPath(), input.position());
                     }
                     case TEXT: {
-                        // pop 2 // TODO: can collapse?
+                        // pop 2
                         builder.pop();
                         builder.pop();
                         break;

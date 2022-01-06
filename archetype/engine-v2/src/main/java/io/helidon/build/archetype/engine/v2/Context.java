@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.common.GenericType;
 
@@ -138,14 +139,6 @@ public final class Context {
      */
     public Value get(String path) {
         return values.get(path);
-    }
-
-    /**
-     * Remove a value by input path.
-     * @param path input path
-     */
-    public void remove(String path) {
-        values.remove(path);
     }
 
     /**
@@ -362,7 +355,7 @@ public final class Context {
 
         @Override
         public Boolean asBoolean() {
-            return Boolean.valueOf((String) unwrap());
+            return Input.Boolean.valueOf((String) unwrap());
         }
 
         @Override

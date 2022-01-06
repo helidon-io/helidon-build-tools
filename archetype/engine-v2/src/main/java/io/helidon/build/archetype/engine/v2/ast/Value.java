@@ -132,6 +132,8 @@ public class Value {
                     b.append(v);
                 });
                 return (U) b.toString();
+            } else if (this.type == ValueTypes.BOOLEAN && type == ValueTypes.STRING) {
+                return (U) value.toString();
             }
             throw new ValueTypeException(this.type, type);
         }
