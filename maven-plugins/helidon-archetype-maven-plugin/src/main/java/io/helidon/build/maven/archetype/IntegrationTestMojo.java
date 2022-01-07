@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,6 +38,7 @@ import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
 import io.helidon.build.archetype.engine.v2.BatchInputResolver;
 import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.Maps;
+import io.helidon.build.common.SubstitutionVariables;
 
 import org.apache.maven.archetype.ArchetypeGenerationRequest;
 import org.apache.maven.archetype.ArchetypeGenerationResult;
@@ -202,6 +204,13 @@ public class IntegrationTestMojo extends AbstractMojo {
         }
         props.put("name", "test project");
 
+        // substitute all variable references
+        Map<String, String> propsMap = Maps.fromProperties(props);
+        SubstitutionVariables propsVariables = SubstitutionVariables.of(propsMap);
+        for (Entry<String, String> entry : propsMap.entrySet()) {
+            props.setProperty(entry.getKey(), propsVariables.resolve(entry.getValue()));
+        }
+
         Path outputDir = projectGoal.getParent().resolve(props.getProperty("artifactId"));
         FileUtils.deleteDirectory(outputDir);
 
@@ -298,7 +307,7 @@ public class IntegrationTestMojo extends AbstractMojo {
 
             if (!properties.isEmpty()) {
                 Properties props = new Properties();
-                for (Map.Entry<String, String> entry : properties.entrySet()) {
+                for (Entry<String, String> entry : properties.entrySet()) {
                     if (entry.getValue() != null) {
                         props.setProperty(entry.getKey(), entry.getValue());
                     }

@@ -375,7 +375,6 @@ abstract class ArchetypeInvoker {
         private static final String GROUP_ID_PROPERTY = "groupId";
         private static final String ARTIFACT_ID_PROPERTY = "artifactId";
         private static final String PACKAGE_NAME_PROPERTY = "package";
-        private static final String HELIDON_VERSION_PROPERTY = "helidon-version";
         private static final String BUILD_SYSTEM_PROPERTY = "build-system";
         private static final String ARCHETYPE_BASE_PROPERTY = "base";
 
@@ -391,10 +390,6 @@ abstract class ArchetypeInvoker {
 
             // Initialize params with any properties passed on the command-line; options will take precedence
             Map<String, String> externalValues = new HashMap<>(initProperties());
-
-            // We've already got helidon version, don't prompt again. Note that this will not override
-            // any "helidon.version" command-line property as that is already set in InitOptions
-            externalValues.put(HELIDON_VERSION_PROPERTY, initOptions.helidonVersion());
 
             // Ensure that flavor is lower case if present.
             externalValues.computeIfPresent(FLAVOR_PROPERTY, (key, value) -> value.toLowerCase());
@@ -448,6 +443,7 @@ abstract class ArchetypeInvoker {
                 externalValues.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
             }
 
+            //noinspection ConstantConditions
             ArchetypeEngineV2 engine = new ArchetypeEngineV2(archetype());
             try {
                 return engine.generate(inputResolver, externalValues, externalDefaults, projectDirSupplier());
@@ -503,8 +499,6 @@ abstract class ArchetypeInvoker {
                     return "--flavor";
                 case BUILD_SYSTEM_PROPERTY:
                     return "--build";
-                case HELIDON_VERSION_PROPERTY:
-                    return "--version";
                 case ARCHETYPE_BASE_PROPERTY:
                     return "--archetype";
                 case GROUP_ID_PROPERTY:
