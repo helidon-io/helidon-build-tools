@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.InputTree.Node;
 import io.helidon.build.archetype.engine.v2.InputTree.Node.Kind;
+import io.helidon.build.archetype.engine.v2.InputTree.PermutationIndex;
 import io.helidon.build.archetype.engine.v2.InputTree.PresetNode;
 import io.helidon.build.archetype.engine.v2.InputTree.ValueNode;
 
@@ -274,7 +275,8 @@ class InputTreeTest {
     }
 
     @Test
-    @Disabled // used only for local testing
+    @Disabled
+        // used only for local testing
     void testCollectV2() {
         Path sourceDir = Path.of("/Users/batsatt/dev/helidon/archetypes-v2");
         InputTree tree = create(sourceDir);
@@ -307,24 +309,106 @@ class InputTreeTest {
     }
 
     @Test
-    void testCollectList() {
-        InputTree tree = create("e2e");
+    void testPermutationIndex() {
+        PermutationIndex index = new PermutationIndex(2);
+        assertThat(index.completed(), is(false));
+        assertThat(index.current(), is(0));
+
+        assertThat(index.next(), is(false));
+        assertThat(index.completed(), is(false));
+        assertThat(index.current(), is(1));
+
+        assertThat(index.next(), is(true));
+        assertThat(index.completed(), is(true));
+        assertThat(index.current(), is(0));
+    }
+
+    @Test
+    void testCollectListWithDefault() {
+        InputTree tree = InputTree.builder()
+                                  .archetypePath(sourceDir("input-tree"))
+                                  .entryPointFile("list1.xml")
+                                  .build();
+
+        Node list = tree.root().children().get(0);
+        assertThat(list.path(), is("colors"));
+        PermutationIndex index = list.index();
+
         Map<String, String> permutation = new LinkedHashMap<>();
         tree.collect(permutation);
-        assertThat(permutation.get("theme.base.colors"), is("red,green,blue"));
+        assertThat(permutation.get("colors"), is("red,yellow"));
+        assertThat(index.completed(), is(false));
 
-        List<Node> inputNodes = collectInputs(tree);
-        Node list = inputNodes.get(4);
-        assertThat(list.path(), is("theme.base.colors"));
-
-        list.index().next();
+        assertThat(index.next(), is(false));
         tree.collect(permutation);
-        assertThat(permutation.containsKey("theme.base.colors"), is(false));
+        assertThat(permutation.containsKey("colors"), is(false));
+        assertThat(index.completed(), is(false));
 
-        list.index().next();
+        assertThat(index.next(), is(false));
         tree.collect(permutation);
-        assertThat(permutation.get("theme.base.colors"), is("red,orange,yellow,green,blue,indigo,violet,pink,light-pink,"
-                                                            + "cyan,light-salmon,coral,tomato,lemon,khaki"));
+        assertThat(permutation.get("colors"), is("red"));
+        assertThat(index.completed(), is(false));
+
+        assertThat(index.next(), is(false));
+        tree.collect(permutation);
+        assertThat(permutation.get("colors"), is("orange"));
+        assertThat(index.completed(), is(false));
+
+        assertThat(index.next(), is(false));
+        tree.collect(permutation);
+        assertThat(permutation.get("colors"), is("yellow"));
+        assertThat(index.completed(), is(false));
+
+        assertThat(index.next(), is(false));
+        tree.collect(permutation);
+        assertThat(permutation.get("colors"), is("red,orange,yellow"));
+        assertThat(index.completed(), is(false));
+
+        // Wrap to default
+        assertThat(index.next(), is(true));
+        assertThat(index.current(), is(0));
+        tree.collect(permutation);
+        assertThat(permutation.get("colors"), is("red,yellow"));
+        assertThat(index.completed(), is(true));
+    }
+
+    @Test
+    void testCollectListNoDefault() {
+        InputTree tree = InputTree.builder()
+                                  .archetypePath(sourceDir("input-tree"))
+                                  .entryPointFile("list2.xml")
+                                  .build();
+        tree.print();
+        Node list = tree.root().children().get(0);
+        assertThat(list.path(), is("colors"));
+        PermutationIndex index = list.index();
+        Map<String, String> permutation = new LinkedHashMap<>();
+
+        tree.collect(permutation);
+        assertThat(permutation.containsKey("colors"), is(false));
+        assertThat(index.completed(), is(false));
+
+        assertThat(index.next(), is(false));
+        tree.collect(permutation);
+        assertThat(permutation.get("colors"), is("red"));
+        assertThat(index.completed(), is(false));
+
+        assertThat(index.next(), is(false));
+        tree.collect(permutation);
+        assertThat(permutation.get("colors"), is("orange"));
+        assertThat(index.completed(), is(false));
+
+        assertThat(index.next(), is(false));
+        tree.collect(permutation);
+        assertThat(permutation.get("colors"), is("red,orange"));
+        assertThat(index.completed(), is(false));
+
+        // Wrap to first
+        assertThat(index.next(), is(true));
+        assertThat(index.current(), is(0));
+        tree.collect(permutation);
+        assertThat(permutation.containsKey("colors"), is(false));
+        assertThat(index.completed(), is(true));
     }
 
     @Test

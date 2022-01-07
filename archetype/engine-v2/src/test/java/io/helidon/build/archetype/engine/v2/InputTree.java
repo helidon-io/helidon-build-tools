@@ -329,16 +329,16 @@ public class InputTree {
     }
 
     public static class PermutationIndex {
-        private final int permutations;
+        private final int maxIndex;
         private int current;
         private boolean completed;
 
         PermutationIndex(int permutationCount) {
-            this.permutations = permutationCount;
+            this.maxIndex = permutationCount-1;
         }
 
         int permutations() {
-            return permutations;
+            return maxIndex;
         }
 
         void reset() {
@@ -347,8 +347,8 @@ public class InputTree {
         }
 
         boolean next() {
-            if (++current >= permutations) {
-                current = 0;
+            current++;
+            if (current > maxIndex) {
                 completed = true;
                 return true;
             }
@@ -356,6 +356,10 @@ public class InputTree {
         }
 
         int current() {
+            if (current > maxIndex) {
+                current = 0;
+                completed = true;
+            }
             return current;
         }
 
@@ -418,16 +422,29 @@ public class InputTree {
         }
 
         static class ListPermutations extends PermutationIndex {
-            private static final int MAX_PERMUTATIONS = 5;
             private final List<String> valuesAsString;
 
             static ListPermutations create(List<String> values, List<String> defaults) {
-                List<List<String>> permutations = new ArrayList<>();
-                permutations.add(defaults);
-                permutations.add(List.of());
-                permutations.add(values);
 
-                // TODO ADD permutations! See https://www.baeldung.com/java-array-permutations
+                // To be complete, we would generate all possible combinations of the list of values (not permutations, since
+                // we don't care about order). We *could* do that, but the number grows large when the list is large
+                // (see https://www.baeldung.com/java-combinations-algorithm for example implementations). Since the total
+                // permutations of the tree is exponential, we need to reduce where we can.
+
+                // So we take a pragmatic approach that should cover most cases we care about:
+                //
+                // 1. the default item(s), if any
+                // 2. no items
+                // 3. each individual item
+                // 4. all items
+
+                List<List<String>> permutations = new ArrayList<>();
+                if (defaults != null && !defaults.isEmpty()) {
+                    permutations.add(defaults);
+                }
+                permutations.add(List.of());
+                values.forEach(v -> permutations.add(List.of(v)));
+                permutations.add(values);
 
                 return new ListPermutations(permutations);
             }
