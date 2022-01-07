@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -395,7 +394,7 @@ public class InputTree {
         @Override
         public void collect(Map<String, String> values) {
             values.clear();
-            super.collect(values);
+            children().forEach(child -> child.collect(values));
         }
 
         @Override
@@ -420,21 +419,23 @@ public class InputTree {
 
         static class ListPermutations extends PermutationIndex {
             private static final int MAX_PERMUTATIONS = 5;
-            private final List<String> permutations;
+            private final List<String> valuesAsString;
 
             static ListPermutations create(List<String> values, List<String> defaults) {
-                List<String> permutations = new ArrayList<>();
-                permutations.add(asString(defaults));
-                permutations.add(asString(values));
+                List<List<String>> permutations = new ArrayList<>();
+                permutations.add(defaults);
+                permutations.add(List.of());
+                permutations.add(values);
 
                 // TODO ADD permutations! See https://www.baeldung.com/java-array-permutations
 
                 return new ListPermutations(permutations);
             }
 
-            ListPermutations(List<String> permutations) {
+            ListPermutations(List<List<String>> permutations) {
                 super(permutations.size());
-                this.permutations = permutations;
+                this.valuesAsString = new ArrayList<>(permutations.size());
+                permutations.forEach(permutation -> valuesAsString.add(asString(permutation)));
             }
 
             static int factorial(int n) {
@@ -454,14 +455,14 @@ public class InputTree {
         public void collect(Map<String, String> values) {
             ListPermutations index = (ListPermutations) index();
             int current = index.current();
-            String permutation = index.permutations.get(current);
-
-            // TODO unless we can find a way to know that the existing values have NOT changed,
-            //      we have to do substitution on each pass. We could implement some pre-parsed
-            //      variant to do this faster though.
-            String value = evaluate(permutation, values);
-            values.put(path(), value);
-            super.collect(values);
+            String permutation = index.valuesAsString.get(current);
+            if (permutation.length() > 0) {
+                // TODO unless we can find a way to know that the existing values have NOT changed,
+                //      we have to do substitution on each pass. We could implement some pre-parsed
+                //      variant to do this faster though.
+                String value = evaluate(permutation, values);
+                values.put(path(), value);
+            }
         }
 
         private static String asString(List<String> values) {
@@ -500,7 +501,7 @@ public class InputTree {
             //      we have to do substitution on each pass. We could implement some pre-parsed
             //      variant to do this faster though.
             values.put(path(), evaluate(value, values));
-            super.collect(values);
+            children().forEach(child -> child.collect(values));
         }
 
         @Override
@@ -547,17 +548,11 @@ public class InputTree {
                 values.put(key, value);
             });
 
-            // TODO: is PresetNode the ONLY one for which ALL children should be visited?
-
             children().forEach(child -> child.collect(values));
         }
 
         void add(String path, String value) {
             presets.put(path, value);
-        }
-
-        Set<String> paths() {
-            return presets.keySet();
         }
 
         @Override

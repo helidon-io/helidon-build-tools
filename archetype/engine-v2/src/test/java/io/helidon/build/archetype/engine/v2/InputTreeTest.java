@@ -274,12 +274,57 @@ class InputTreeTest {
     }
 
     @Test
-    @Disabled
-        // enabled for local testing
-    void printV2() {
+    @Disabled // used only for local testing
+    void testCollectV2() {
         Path sourceDir = Path.of("/Users/batsatt/dev/helidon/archetypes-v2");
         InputTree tree = create(sourceDir);
-        tree.print();
+        Map<String, String> permutation = new LinkedHashMap<>();
+        tree.collect(permutation);
+        assertThat(permutation.size(), is(8));
+        assertThat(permutation.get("flavor"), is("se"));
+        assertThat(permutation.get("base"), is("bare"));
+        assertThat(permutation.get("build-system"), is("maven"));
+        assertThat(permutation.get("name"), is("myproject"));
+        assertThat(permutation.get("groupId"), is("com.examples"));
+        assertThat(permutation.get("artifactId"), is("myproject"));
+        assertThat(permutation.get("version"), is("1.0-SNAPSHOT"));
+        assertThat(permutation.get("package"), is("com.example.myproject"));
+
+        List<Node> inputNodes = collectInputs(tree);
+        Node input = inputNodes.get(1);
+        assertThat(input.path(), is("base"));
+        input.index().next();
+        tree.collect(permutation);
+        assertThat(permutation.size(), is(8));
+        assertThat(permutation.get("flavor"), is("se"));
+        assertThat(permutation.get("base"), is("quickstart"));
+        assertThat(permutation.get("build-system"), is("maven"));
+        assertThat(permutation.get("name"), is("myproject"));
+        assertThat(permutation.get("groupId"), is("com.examples"));
+        assertThat(permutation.get("artifactId"), is("myproject"));
+        assertThat(permutation.get("version"), is("1.0-SNAPSHOT"));
+        assertThat(permutation.get("package"), is("com.example.myproject"));
+    }
+
+    @Test
+    void testCollectList() {
+        InputTree tree = create("e2e");
+        Map<String, String> permutation = new LinkedHashMap<>();
+        tree.collect(permutation);
+        assertThat(permutation.get("theme.base.colors"), is("red,green,blue"));
+
+        List<Node> inputNodes = collectInputs(tree);
+        Node list = inputNodes.get(4);
+        assertThat(list.path(), is("theme.base.colors"));
+
+        list.index().next();
+        tree.collect(permutation);
+        assertThat(permutation.containsKey("theme.base.colors"), is(false));
+
+        list.index().next();
+        tree.collect(permutation);
+        assertThat(permutation.get("theme.base.colors"), is("red,orange,yellow,green,blue,indigo,violet,pink,light-pink,"
+                                                            + "cyan,light-salmon,coral,tomato,lemon,khaki"));
     }
 
     @Test
@@ -297,9 +342,9 @@ class InputTreeTest {
         assertThat(permutation.get("include2"), is("no"));
         assertThat(permutation.get("choice.bar"), is("a-bar"));
 
-        Node include = inputNodes.get(4);
-        assertThat(include.path(), is("include.yes"));
-        include.index().next();
+        Node input = inputNodes.get(4);
+        assertThat(input.path(), is("include.yes"));
+        input.index().next();
         tree.collect(permutation);
         assertThat(permutation.get("choice"), is("bar"));
         assertThat(permutation.get("include"), is("yes"));
