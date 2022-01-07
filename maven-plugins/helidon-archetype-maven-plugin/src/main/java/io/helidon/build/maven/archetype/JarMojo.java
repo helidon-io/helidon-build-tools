@@ -26,6 +26,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -268,10 +269,11 @@ public class JarMojo extends AbstractMojo {
         return Map.entry(className, new RawString(toBase64(classFile).replaceAll("(.{100})", "$1\n")));
     }
 
-    private void processSources(Path outputDir) {
+    private void processSources(Path outputDir) throws MojoExecutionException {
         Schema validator = new Schema(resolveResource(RESOURCE_NAME));
         getLog().debug("Scanning source files");
         Path sourceDir = sourceDirectory.toPath();
+        List<String> errors = new LinkedList<>();
         SourcePath.scan(sourceDir).stream()
                   .map(p -> p.asString(false))
                   .forEach(file -> {
@@ -279,7 +281,13 @@ public class JarMojo extends AbstractMojo {
                           getLog().debug("Found source file: " + file);
                       }
                       if (FilenameUtils.getExtension(file).equalsIgnoreCase("xml")) {
-                          validator.validate(sourceDir.resolve(file));
+                          try {
+                              validator.validate(sourceDir.resolve(file));
+                          } catch (Schema.ValidationException ex) {
+                              errors.add(String.format("Schema validation error: file=%s, position=%s:%s, error=%s",
+                                      file, ex.lineNo(), ex.colNo(), ex.getMessage()));
+                              return;
+                          }
                       }
                       try {
                           Path target = outputDir.resolve(file);
@@ -289,6 +297,10 @@ public class JarMojo extends AbstractMojo {
                           throw new UncheckedIOException(ioe);
                       }
                   });
+        if (!errors.isEmpty()) {
+            errors.forEach(getLog()::error);
+            throw new MojoExecutionException("Schema validation failed");
+        }
     }
 
     private InputStream resolveResource(String path) {

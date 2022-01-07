@@ -63,19 +63,19 @@ final class ProjectsTestIT {
         runTest(basedir, null, expected);
     }
 
-    private static void runTest(String basedir, String prefix, String expected) throws IOException {
+    private static void runTest(String basedir, String prefix, String shape) throws IOException {
         Path outputDir = Path.of(basedir);
         if (prefix != null) {
             outputDir = outputDir.resolve(prefix);
         }
-        outputDir = outputDir.resolve("target/test-classes/projects/it1/project");
+        outputDir = outputDir.resolve("target/test-classes/projects/it1/" + shape + "-project");
         assertThat(Files.exists(outputDir), is(true));
-        Path shape = outputDir.resolve("src/main/java")
+        Path shapeClass = outputDir.resolve("src/main/java")
                               .resolve(TEST_PKG_DIR)
                               .resolve("Shape.java");
-        assertThat(Files.exists(shape), is(true));
-        assertThat(Files.lines(shape)
-                        .filter(line -> line.contains("System.out.println(\"" + expected + "\");"))
+        assertThat(Files.exists(shapeClass), is(true));
+        assertThat(Files.lines(shapeClass)
+                        .filter(line -> line.contains("System.out.println(\"" + shape + "\");"))
                         .count(), is(1L));
     }
 }

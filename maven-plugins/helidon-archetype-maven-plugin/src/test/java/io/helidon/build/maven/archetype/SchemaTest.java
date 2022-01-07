@@ -40,7 +40,7 @@ class SchemaTest {
 
     @Test
     void testValidateNegative() {
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        RuntimeException ex = assertThrows(Schema.ValidationException.class,
                 () -> VALIDATOR.validate(() -> resource("shapes.xml")));
         assertThat(ex.getCause(), is(instanceOf(SAXParseException.class)));
     }

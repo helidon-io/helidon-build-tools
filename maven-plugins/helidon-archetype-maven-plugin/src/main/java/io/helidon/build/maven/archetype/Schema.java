@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 package io.helidon.build.maven.archetype;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
@@ -32,7 +32,9 @@ import javax.xml.validation.Validator;
 
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
+import static io.helidon.build.common.Unchecked.unchecked;
 import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
 
 /**
@@ -64,6 +66,7 @@ class Schema {
 
     /**
      * Create a new validator.
+     *
      * @param is schema input stream, must be non {@code null}
      */
     Schema(InputStream is) {
@@ -82,14 +85,9 @@ class Schema {
      *
      * @param file file to validate
      */
+    @SuppressWarnings("unchecked")
     void validate(Path file) {
-        validate(() -> {
-            try {
-                return Files.newInputStream(file);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        });
+        validate(unchecked(() -> Files.newInputStream(file)));
     }
 
     /**
@@ -97,7 +95,7 @@ class Schema {
      *
      * @param supplier input stream supplier
      */
-    void validate(Supplier<InputStream> supplier) {
+    void validate(Supplier<InputStream> supplier) throws ValidationException {
         try {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
@@ -106,8 +104,43 @@ class Schema {
             if (doc.getDocumentElement().getNodeName().equals(ROOT_ELEMENT)) {
                 validator.validate(new StreamSource(supplier.get()));
             }
+        } catch (SAXParseException ex) {
+            throw new ValidationException(ex);
         } catch (SAXException | IOException | ParserConfigurationException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Validation exception.
+     */
+    static final class ValidationException extends RuntimeException {
+
+        private final int lineNo;
+        private final int colNo;
+
+        private ValidationException(SAXParseException cause) {
+            super(cause.getMessage(), cause);
+            lineNo = cause.getLineNumber();
+            colNo = cause.getColumnNumber();
+        }
+
+        /**
+         * Get the column number.
+         *
+         * @return column number
+         */
+        public int colNo() {
+            return colNo;
+        }
+
+        /**
+         * Get the line number.
+         *
+         * @return line number
+         */
+        public int lineNo() {
+            return lineNo;
         }
     }
 }

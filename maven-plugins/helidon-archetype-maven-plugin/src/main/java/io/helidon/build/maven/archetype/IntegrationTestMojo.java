@@ -26,8 +26,10 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,6 +38,7 @@ import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
 import io.helidon.build.archetype.engine.v2.BatchInputResolver;
 import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.Maps;
+import io.helidon.build.common.SubstitutionVariables;
 
 import org.apache.maven.archetype.ArchetypeGenerationRequest;
 import org.apache.maven.archetype.ArchetypeGenerationResult;
@@ -164,8 +167,9 @@ public class IntegrationTestMojo extends AbstractMojo {
             throw new MojoFailureException("Archetype not found");
         }
 
+        Path testProjects = testProjectsDirectory.toPath();
         try {
-            List<Path> projectGoals = Files.walk(testProjectsDirectory.toPath())
+            List<Path> projectGoals = Files.walk(testProjects)
                                            .filter((p) -> p.endsWith("goal.txt"))
                                            .collect(Collectors.toList());
             if (projectGoals.isEmpty()) {
@@ -173,8 +177,20 @@ public class IntegrationTestMojo extends AbstractMojo {
                 return;
             }
 
+            List<String> errors = new LinkedList<>();
             for (Path goal : projectGoals) {
-                processIntegrationTest(goal, archetypeFile);
+                Path itProject = testProjects.relativize(goal.getParent());
+                try {
+                    getLog().info("Processing Archetype IT project: " + itProject);
+                    processIntegrationTest(goal, archetypeFile);
+                } catch (Throwable ex) {
+                    getLog().error(ex);
+                    errors.add(String.format("Test error: project=%s, error=%s", itProject, ex.getMessage()));
+                }
+            }
+            if (!errors.isEmpty()) {
+                errors.forEach(getLog()::error);
+                throw new MojoExecutionException("Integration test failed with error(s)");
             }
         } catch (IOException ex) {
             throw new MojoFailureException(ex.getMessage(), ex);
@@ -182,13 +198,18 @@ public class IntegrationTestMojo extends AbstractMojo {
     }
 
     private void processIntegrationTest(Path projectGoal, File archetypeFile) throws IOException, MojoExecutionException {
-        getLog().info("Processing Archetype IT project: " + projectGoal.getParent().toString());
-
         Properties props = new Properties();
         try (InputStream in = Files.newInputStream(projectGoal.getParent().resolve("archetype.properties"))) {
             props.load(in);
         }
         props.put("name", "test project");
+
+        // substitute all variable references
+        Map<String, String> propsMap = Maps.fromProperties(props);
+        SubstitutionVariables propsVariables = SubstitutionVariables.of(propsMap);
+        for (Entry<String, String> entry : propsMap.entrySet()) {
+            props.setProperty(entry.getKey(), propsVariables.resolve(entry.getValue()));
+        }
 
         Path outputDir = projectGoal.getParent().resolve(props.getProperty("artifactId"));
         FileUtils.deleteDirectory(outputDir);
@@ -286,7 +307,7 @@ public class IntegrationTestMojo extends AbstractMojo {
 
             if (!properties.isEmpty()) {
                 Properties props = new Properties();
-                for (Map.Entry<String, String> entry : properties.entrySet()) {
+                for (Entry<String, String> entry : properties.entrySet()) {
                     if (entry.getValue() != null) {
                         props.setProperty(entry.getKey(), entry.getValue());
                     }
