@@ -274,9 +274,9 @@ class InputTreeTest {
         ));
     }
 
+    // used only for local testing
     @Test
     @Disabled
-        // used only for local testing
     void testCollectV2() {
         Path sourceDir = Path.of("/Users/batsatt/dev/helidon/archetypes-v2");
         InputTree tree = create(sourceDir);
@@ -316,6 +316,14 @@ class InputTreeTest {
 
         assertThat(index.next(), is(false));
         assertThat(index.completed(), is(false));
+        assertThat(index.current(), is(1));
+
+        assertThat(index.next(), is(true));
+        assertThat(index.completed(), is(true));
+        assertThat(index.current(), is(0));
+
+        assertThat(index.next(), is(true));
+        assertThat(index.completed(), is(true));
         assertThat(index.current(), is(1));
 
         assertThat(index.next(), is(true));

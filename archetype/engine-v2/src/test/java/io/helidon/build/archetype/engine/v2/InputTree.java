@@ -350,9 +350,8 @@ public class InputTree {
             current++;
             if (current > maxIndex) {
                 completed = true;
-                return true;
             }
-            return false;
+            return completed;
         }
 
         int current() {
