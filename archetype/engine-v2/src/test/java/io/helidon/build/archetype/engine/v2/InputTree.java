@@ -48,7 +48,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Collapses an archetype into a tree containing only the inputs, primarily to support
- * generating input permutations.
+ * generating input combinations.
  */
 public class InputTree {
     private final Node root;
@@ -112,11 +112,12 @@ public class InputTree {
     }
 
     /**
-     * Collect the current permutation.
-     * @param permutation where to add the permutation
+     * Collect the current combination.
+     *
+     * @param combination where to add the combination
      */
-    public void collect(Map<String, String> permutation) {
-        root.collect(permutation);
+    public void collect(Map<String, String> combination) {
+        root.collect(combination);
     }
 
     private InputTree(Builder builder) {
@@ -129,19 +130,8 @@ public class InputTree {
         node.children().forEach(this::addNodes);
     }
 
-    /*
+    /* TODO REMOVE
 
-        public int permutations() {
-            int permutations = inputs.get(0).size();
-            for (int i = 1; i < inputCount; i++) {
-                permutations *= inputs.get(i).size();
-            }
-            return permutations;
-        }
-
-        public boolean hasNext() {
-            return !firstInput.completed();
-        }
 
         public Map<String, String> next() {
 
@@ -187,7 +177,7 @@ public class InputTree {
         private final String path;
         private final Kind kind;
         private final List<Node> children;
-        private PermutationIndex index;
+        private NodeIndex index;
 
         enum Kind {
             ROOT,
@@ -250,25 +240,40 @@ public class InputTree {
             return children;
         }
 
-        PermutationIndex index() {
+        NodeIndex index() {
             if (index == null) {
-                index = createPermutationIndex();
+                index = createIndex();
             }
             return index;
         }
 
-        protected abstract PermutationIndex createPermutationIndex();
+        protected abstract NodeIndex createIndex();
 
         public void collect(Map<String, String> values) {
             if (!children.isEmpty()) {
-                PermutationIndex index = index();
+                NodeIndex index = index();
                 int current = index.current();
                 Node child = children.get(current);
                 child.collect(values);
             }
         }
 
-        abstract boolean isValue();
+        /**
+         * Recurse to find the current non-value leaf node.
+         *
+         * @return The leaf node.
+         */
+        Node findLeafNode() {
+            if (!children.isEmpty()) {
+                int index = index().current();
+                return children.get(index).findLeafNode();
+            }
+            if (kind() == Kind.VALUE) {
+                return parent();
+            } else {
+                return this;
+            }
+        }
 
         private void id(int id) {
             this.id = id;
@@ -310,35 +315,22 @@ public class InputTree {
         }
     }
 
-    public static class PermutationState {
-        private final List<PermutationIndex> states;
-
-        PermutationState(Node root) {
-            this.states = new ArrayList<>();
-            initState(root);
-        }
-
-        private void initState(Node node) {
-            states.add(node.id(), node.createPermutationIndex());
-            node.children().forEach(this::initState);
-        }
-
-        PermutationIndex get(int nodeId) {
-            return states.get(nodeId);
-        }
-    }
-
-    public static class PermutationIndex {
+    public static class NodeIndex {
         private final int maxIndex;
         private int current;
         private boolean completed;
 
-        PermutationIndex(int permutationCount) {
-            this.maxIndex = permutationCount-1;
+        NodeIndex(int combinationCount) {
+            this.maxIndex = combinationCount - 1;
         }
 
-        int permutations() {
-            return maxIndex;
+        /**
+         * Returns the number of values this index can be used to retrieve.
+         *
+         * @return The count.
+         */
+        int size() {
+            return maxIndex + 1;
         }
 
         void reset() {
@@ -365,6 +357,13 @@ public class InputTree {
         boolean completed() {
             return completed;
         }
+
+        boolean willComplete() {
+            if (completed) {
+                return true;
+            }
+            return current >= maxIndex;
+        }
     }
 
     public static class InputNode extends Node {
@@ -374,13 +373,8 @@ public class InputTree {
         }
 
         @Override
-        protected PermutationIndex createPermutationIndex() {
-            return new PermutationIndex(children().size());
-        }
-
-        @Override
-        boolean isValue() {
-            return false;
+        protected NodeIndex createIndex() {
+            return new NodeIndex(children().size());
         }
 
         @Override
@@ -389,9 +383,14 @@ public class InputTree {
         }
     }
 
-    public static class Root extends InputNode {
+    public static class Root extends Node {
         Root(int id) {
-            super(id, null, Kind.ROOT, "", Path.of("/"), 0);
+            super(id, null, null, Kind.ROOT, Path.of("/"), 0);
+        }
+
+        @Override
+        protected NodeIndex createIndex() {
+            return new NodeIndex(1);
         }
 
         @Override
@@ -415,20 +414,20 @@ public class InputTree {
         }
 
         @Override
-        protected PermutationIndex createPermutationIndex() {
+        protected NodeIndex createIndex() {
             List<String> values = children().stream().map(c -> ((ValueNode) c).value()).collect(Collectors.toList());
-            return ListPermutations.create(values, defaults);
+            return ListIndex.create(values, defaults);
         }
 
-        static class ListPermutations extends PermutationIndex {
+        static class ListIndex extends NodeIndex {
             private final List<String> valuesAsString;
 
-            static ListPermutations create(List<String> values, List<String> defaults) {
+            static ListIndex create(List<String> values, List<String> defaults) {
 
                 // To be complete, we would generate all possible combinations of the list of values (not permutations, since
                 // we don't care about order). We *could* do that, but the number grows large when the list is large
                 // (see https://www.baeldung.com/java-combinations-algorithm for example implementations). Since the total
-                // permutations of the tree is exponential, we need to reduce where we can.
+                // combinations of the tree is exponential, we need to reduce where we can.
 
                 // So we take a pragmatic approach that should cover most cases we care about:
                 //
@@ -437,21 +436,21 @@ public class InputTree {
                 // 3. each individual item
                 // 4. all items
 
-                List<List<String>> permutations = new ArrayList<>();
+                List<List<String>> combinations = new ArrayList<>();
                 if (defaults != null && !defaults.isEmpty()) {
-                    permutations.add(defaults);
+                    combinations.add(defaults);
                 }
-                permutations.add(List.of());
-                values.forEach(v -> permutations.add(List.of(v)));
-                permutations.add(values);
+                combinations.add(List.of());
+                values.forEach(v -> combinations.add(List.of(v)));
+                combinations.add(values);
 
-                return new ListPermutations(permutations);
+                return new ListIndex(combinations);
             }
 
-            ListPermutations(List<List<String>> permutations) {
-                super(permutations.size());
-                this.valuesAsString = new ArrayList<>(permutations.size());
-                permutations.forEach(permutation -> valuesAsString.add(asString(permutation)));
+            ListIndex(List<List<String>> combinations) {
+                super(combinations.size());
+                this.valuesAsString = new ArrayList<>(combinations.size());
+                combinations.forEach(combination -> valuesAsString.add(asString(combination)));
             }
 
             static int factorial(int n) {
@@ -463,20 +462,15 @@ public class InputTree {
         }
 
         @Override
-        boolean isValue() {
-            return false;
-        }
-
-        @Override
         public void collect(Map<String, String> values) {
-            ListPermutations index = (ListPermutations) index();
+            ListIndex index = (ListIndex) index();
             int current = index.current();
-            String permutation = index.valuesAsString.get(current);
-            if (permutation.length() > 0) {
+            String combination = index.valuesAsString.get(current);
+            if (combination.length() > 0) {
                 // TODO unless we can find a way to know that the existing values have NOT changed,
                 //      we have to do substitution on each pass. We could implement some pre-parsed
                 //      variant to do this faster though.
-                String value = evaluate(permutation, values);
+                String value = evaluate(combination, values);
                 values.put(path(), value);
             }
         }
@@ -506,23 +500,18 @@ public class InputTree {
         }
 
         @Override
-        protected PermutationIndex createPermutationIndex() {
-            return new PermutationIndex(1);
+        protected NodeIndex createIndex() {
+            return new NodeIndex(1);
         }
 
         @Override
         public void collect(Map<String, String> values) {
-            // We can ignore the index since we have only one permutation
+            // We can ignore the index since we have only one combination
             // TODO unless we can find a way to know that the existing values have NOT changed,
             //      we have to do substitution on each pass. We could implement some pre-parsed
             //      variant to do this faster though.
             values.put(path(), evaluate(value, values));
             children().forEach(child -> child.collect(values));
-        }
-
-        @Override
-        boolean isValue() {
-            return true;
         }
 
         @Override
@@ -544,18 +533,13 @@ public class InputTree {
         }
 
         @Override
-        protected PermutationIndex createPermutationIndex() {
-            return new PermutationIndex(1);
-        }
-
-        @Override
-        boolean isValue() {
-            return true;
+        protected NodeIndex createIndex() {
+            return new NodeIndex(1);
         }
 
         @Override
         public void collect(Map<String, String> values) {
-            // We can ignore the index since we have only one permutation
+            // We can ignore the index since we have only one combination
             // TODO unless we can find a way to know that the existing values have NOT changed,
             //      we have to do substitution on each pass. We could implement some pre-parsed
             //      variant to do this faster though.

@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.InputTree.Node;
 import io.helidon.build.archetype.engine.v2.InputTree.Node.Kind;
-import io.helidon.build.archetype.engine.v2.InputTree.PermutationIndex;
+import io.helidon.build.archetype.engine.v2.InputTree.NodeIndex;
 import io.helidon.build.archetype.engine.v2.InputTree.PresetNode;
 import io.helidon.build.archetype.engine.v2.InputTree.ValueNode;
 
@@ -280,55 +280,70 @@ class InputTreeTest {
     void testCollectV2() {
         Path sourceDir = Path.of("/Users/batsatt/dev/helidon/archetypes-v2");
         InputTree tree = create(sourceDir);
-        Map<String, String> permutation = new LinkedHashMap<>();
-        tree.collect(permutation);
-        assertThat(permutation.size(), is(8));
-        assertThat(permutation.get("flavor"), is("se"));
-        assertThat(permutation.get("base"), is("bare"));
-        assertThat(permutation.get("build-system"), is("maven"));
-        assertThat(permutation.get("name"), is("myproject"));
-        assertThat(permutation.get("groupId"), is("com.examples"));
-        assertThat(permutation.get("artifactId"), is("myproject"));
-        assertThat(permutation.get("version"), is("1.0-SNAPSHOT"));
-        assertThat(permutation.get("package"), is("com.example.myproject"));
+        Map<String, String> combination = new LinkedHashMap<>();
+        tree.collect(combination);
+        assertThat(combination.size(), is(8));
+        assertThat(combination.get("flavor"), is("se"));
+        assertThat(combination.get("base"), is("bare"));
+        assertThat(combination.get("build-system"), is("maven"));
+        assertThat(combination.get("name"), is("myproject"));
+        assertThat(combination.get("groupId"), is("com.examples"));
+        assertThat(combination.get("artifactId"), is("myproject"));
+        assertThat(combination.get("version"), is("1.0-SNAPSHOT"));
+        assertThat(combination.get("package"), is("com.example.myproject"));
 
         List<Node> inputNodes = collectInputs(tree);
         Node input = inputNodes.get(1);
         assertThat(input.path(), is("base"));
         input.index().next();
-        tree.collect(permutation);
-        assertThat(permutation.size(), is(8));
-        assertThat(permutation.get("flavor"), is("se"));
-        assertThat(permutation.get("base"), is("quickstart"));
-        assertThat(permutation.get("build-system"), is("maven"));
-        assertThat(permutation.get("name"), is("myproject"));
-        assertThat(permutation.get("groupId"), is("com.examples"));
-        assertThat(permutation.get("artifactId"), is("myproject"));
-        assertThat(permutation.get("version"), is("1.0-SNAPSHOT"));
-        assertThat(permutation.get("package"), is("com.example.myproject"));
+        tree.collect(combination);
+        assertThat(combination.size(), is(8));
+        assertThat(combination.get("flavor"), is("se"));
+        assertThat(combination.get("base"), is("quickstart"));
+        assertThat(combination.get("build-system"), is("maven"));
+        assertThat(combination.get("name"), is("myproject"));
+        assertThat(combination.get("groupId"), is("com.examples"));
+        assertThat(combination.get("artifactId"), is("myproject"));
+        assertThat(combination.get("version"), is("1.0-SNAPSHOT"));
+        assertThat(combination.get("package"), is("com.example.myproject"));
     }
 
     @Test
-    void testPermutationIndex() {
-        PermutationIndex index = new PermutationIndex(2);
+    void testNodeIndex() {
+        NodeIndex index = new NodeIndex(2);
+        assertThat(index.willComplete(), is(false));
         assertThat(index.completed(), is(false));
         assertThat(index.current(), is(0));
 
+        assertThat(index.willComplete(), is(false));
         assertThat(index.next(), is(false));
         assertThat(index.completed(), is(false));
         assertThat(index.current(), is(1));
 
+        assertThat(index.willComplete(), is(true));
         assertThat(index.next(), is(true));
         assertThat(index.completed(), is(true));
         assertThat(index.current(), is(0));
 
+        assertThat(index.willComplete(), is(true));
         assertThat(index.next(), is(true));
         assertThat(index.completed(), is(true));
         assertThat(index.current(), is(1));
 
+        assertThat(index.willComplete(), is(true));
         assertThat(index.next(), is(true));
         assertThat(index.completed(), is(true));
         assertThat(index.current(), is(0));
+    }
+
+    @Test
+    void testRootIndexSize() {
+        InputTree tree = InputTree.builder()
+                                  .archetypePath(sourceDir("input-tree"))
+                                  .entryPointFile("list1.xml")
+                                  .build();
+        NodeIndex index = tree.root().index();
+        assertThat(index.size(), is(1));
     }
 
     @Test
@@ -340,43 +355,43 @@ class InputTreeTest {
 
         Node list = tree.root().children().get(0);
         assertThat(list.path(), is("colors"));
-        PermutationIndex index = list.index();
+        NodeIndex index = list.index();
 
-        Map<String, String> permutation = new LinkedHashMap<>();
-        tree.collect(permutation);
-        assertThat(permutation.get("colors"), is("red,yellow"));
+        Map<String, String> combination = new LinkedHashMap<>();
+        tree.collect(combination);
+        assertThat(combination.get("colors"), is("red,yellow"));
         assertThat(index.completed(), is(false));
 
         assertThat(index.next(), is(false));
-        tree.collect(permutation);
-        assertThat(permutation.containsKey("colors"), is(false));
+        tree.collect(combination);
+        assertThat(combination.containsKey("colors"), is(false));
         assertThat(index.completed(), is(false));
 
         assertThat(index.next(), is(false));
-        tree.collect(permutation);
-        assertThat(permutation.get("colors"), is("red"));
+        tree.collect(combination);
+        assertThat(combination.get("colors"), is("red"));
         assertThat(index.completed(), is(false));
 
         assertThat(index.next(), is(false));
-        tree.collect(permutation);
-        assertThat(permutation.get("colors"), is("orange"));
+        tree.collect(combination);
+        assertThat(combination.get("colors"), is("orange"));
         assertThat(index.completed(), is(false));
 
         assertThat(index.next(), is(false));
-        tree.collect(permutation);
-        assertThat(permutation.get("colors"), is("yellow"));
+        tree.collect(combination);
+        assertThat(combination.get("colors"), is("yellow"));
         assertThat(index.completed(), is(false));
 
         assertThat(index.next(), is(false));
-        tree.collect(permutation);
-        assertThat(permutation.get("colors"), is("red,orange,yellow"));
+        tree.collect(combination);
+        assertThat(combination.get("colors"), is("red,orange,yellow"));
         assertThat(index.completed(), is(false));
 
         // Wrap to default
         assertThat(index.next(), is(true));
         assertThat(index.current(), is(0));
-        tree.collect(permutation);
-        assertThat(permutation.get("colors"), is("red,yellow"));
+        tree.collect(combination);
+        assertThat(combination.get("colors"), is("red,yellow"));
         assertThat(index.completed(), is(true));
     }
 
@@ -389,60 +404,60 @@ class InputTreeTest {
         tree.print();
         Node list = tree.root().children().get(0);
         assertThat(list.path(), is("colors"));
-        PermutationIndex index = list.index();
-        Map<String, String> permutation = new LinkedHashMap<>();
+        NodeIndex index = list.index();
+        Map<String, String> combination = new LinkedHashMap<>();
 
-        tree.collect(permutation);
-        assertThat(permutation.containsKey("colors"), is(false));
+        tree.collect(combination);
+        assertThat(combination.containsKey("colors"), is(false));
         assertThat(index.completed(), is(false));
 
         assertThat(index.next(), is(false));
-        tree.collect(permutation);
-        assertThat(permutation.get("colors"), is("red"));
+        tree.collect(combination);
+        assertThat(combination.get("colors"), is("red"));
         assertThat(index.completed(), is(false));
 
         assertThat(index.next(), is(false));
-        tree.collect(permutation);
-        assertThat(permutation.get("colors"), is("orange"));
+        tree.collect(combination);
+        assertThat(combination.get("colors"), is("orange"));
         assertThat(index.completed(), is(false));
 
         assertThat(index.next(), is(false));
-        tree.collect(permutation);
-        assertThat(permutation.get("colors"), is("red,orange"));
+        tree.collect(combination);
+        assertThat(combination.get("colors"), is("red,orange"));
         assertThat(index.completed(), is(false));
 
         // Wrap to first
         assertThat(index.next(), is(true));
         assertThat(index.current(), is(0));
-        tree.collect(permutation);
-        assertThat(permutation.containsKey("colors"), is(false));
+        tree.collect(combination);
+        assertThat(combination.containsKey("colors"), is(false));
         assertThat(index.completed(), is(true));
     }
 
     @Test
     void testCollect() {
         InputTree tree = create("input-tree");
-        Map<String, String> permutation = new LinkedHashMap<>();
+        Map<String, String> combination = new LinkedHashMap<>();
         List<Node> inputNodes = collectInputs(tree);
         assertThat(inputNodes.size(), is(6));
-        tree.collect(permutation);
-        assertThat(permutation.isEmpty(), is(false));
-        assertThat(permutation.size(), is(lessThanOrEqualTo(inputNodes.size())));
-        assertThat(permutation.get("choice"), is("bar"));
-        assertThat(permutation.get("include"), is("yes"));
-        assertThat(permutation.get("include.yes"), is("yes"));
-        assertThat(permutation.get("include2"), is("no"));
-        assertThat(permutation.get("choice.bar"), is("a-bar"));
+        tree.collect(combination);
+        assertThat(combination.isEmpty(), is(false));
+        assertThat(combination.size(), is(lessThanOrEqualTo(inputNodes.size())));
+        assertThat(combination.get("choice"), is("bar"));
+        assertThat(combination.get("include"), is("yes"));
+        assertThat(combination.get("include.yes"), is("yes"));
+        assertThat(combination.get("include2"), is("no"));
+        assertThat(combination.get("choice.bar"), is("a-bar"));
 
         Node input = inputNodes.get(4);
         assertThat(input.path(), is("include.yes"));
         input.index().next();
-        tree.collect(permutation);
-        assertThat(permutation.get("choice"), is("bar"));
-        assertThat(permutation.get("include"), is("yes"));
-        assertThat(permutation.get("include.yes"), is("no"));
-        assertThat(permutation.get("include2"), is("no"));
-        assertThat(permutation.get("choice.bar"), is("a-bar"));
+        tree.collect(combination);
+        assertThat(combination.get("choice"), is("bar"));
+        assertThat(combination.get("include"), is("yes"));
+        assertThat(combination.get("include.yes"), is("no"));
+        assertThat(combination.get("include2"), is("no"));
+        assertThat(combination.get("choice.bar"), is("a-bar"));
     }
 
     private static InputTree create(String testDir) {
