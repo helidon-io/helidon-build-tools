@@ -120,6 +120,7 @@ public class InputTree {
         root.collect(combination);
     }
 
+
     private InputTree(Builder builder) {
         this.root = builder.root();
         this.nodeCount = builder.nextId;
@@ -129,45 +130,6 @@ public class InputTree {
         allNodes.add(node);
         node.children().forEach(this::addNodes);
     }
-
-    /* TODO REMOVE
-
-
-        public Map<String, String> next() {
-
-            // Update the result with the next value for the current input
-
-            InputIterator iterator = inputs.get(currentInput);
-            String value = iterator.next();
-            result.put(iterator.path(), value);
-
-            // Did we wrap?
-
-            if (iterator.wrapped()) {
-
-                // Yes. Are we at the first input?
-
-                if (currentInput > 0) {
-
-                    // No, so move up until we reach an iterator that did not wrap
-                    // Note that this will terminate since we know that the first
-                    // iterator did not wrap
-
-                    do {
-                        currentInput--;
-                    } while (currentInput >= 0 && !inputs.get(currentInput).wrapped());
-                }
-
-            } else {
-
-                // No, start over at the end
-
-                currentInput = lastInput;
-            }
-
-            return immutableResult;
-        }
-    */
 
     public static abstract class Node {
         private int id;      // non-final to allow prune() to fix this to avoid sparse arrays
@@ -359,10 +321,7 @@ public class InputTree {
         }
 
         boolean willComplete() {
-            if (completed) {
-                return true;
-            }
-            return current >= maxIndex;
+            return completed || current + 1 > maxIndex;
         }
     }
 

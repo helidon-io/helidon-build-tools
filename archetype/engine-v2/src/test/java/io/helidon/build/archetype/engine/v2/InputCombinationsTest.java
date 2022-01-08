@@ -18,7 +18,9 @@ package io.helidon.build.archetype.engine.v2;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
@@ -26,6 +28,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for class {@link InputCombinations}.
@@ -37,6 +40,7 @@ class InputCombinationsTest {
         Iterator<Map<String, String>> iter = InputCombinations.builder()
                                                               .archetypePath(sourceDir("input-tree"))
                                                               .entryPointFile("list2.xml")
+                                                              .verbose(true)
                                                               .build()
                                                               .iterator();
         assertThat(iter, is(not(nullValue())));
@@ -61,9 +65,27 @@ class InputCombinationsTest {
         assertThat(values.size(), is(1));
         assertThat(values.get("colors"), is("red,orange"));
 
-// TODO!!        assertThat(iter.hasNext(), is(false));
-//        Exception e = assertThrows(NoSuchElementException.class, iter::next);
-//        assertThat(e.getMessage().contains("list2.xml"), is(true));
+        assertThat(iter.hasNext(), is(false));
+        Exception e = assertThrows(NoSuchElementException.class, iter::next);
+        assertThat(e.getMessage().contains("list2.xml"), is(true));
+    }
+
+    // used only for local testing
+    @Test
+    @Disabled
+    void testCollectV2() {
+        Path sourceDir = Path.of("/Users/batsatt/dev/helidon/archetypes-v2");
+        int iteration = 0;
+        for (Map<String, String> combination : InputCombinations.builder()
+                                                                .archetypePath(sourceDir)
+                                                                .verbose(true)
+                                                                .build()) {
+            System.out.println("Iteration " + iteration + " -----------------------------");
+            System.out.println();
+            combination.forEach((k, v) -> System.out.println(k + " = " + v));
+            System.out.println();
+            iteration++;
+        }
     }
 
     private static Path sourceDir(String testDirName) {

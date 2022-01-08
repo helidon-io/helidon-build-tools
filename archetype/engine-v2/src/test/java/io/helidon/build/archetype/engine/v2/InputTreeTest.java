@@ -311,26 +311,21 @@ class InputTreeTest {
     @Test
     void testNodeIndex() {
         NodeIndex index = new NodeIndex(2);
-        assertThat(index.willComplete(), is(false));
         assertThat(index.completed(), is(false));
         assertThat(index.current(), is(0));
 
-        assertThat(index.willComplete(), is(false));
         assertThat(index.next(), is(false));
         assertThat(index.completed(), is(false));
         assertThat(index.current(), is(1));
 
-        assertThat(index.willComplete(), is(true));
         assertThat(index.next(), is(true));
         assertThat(index.completed(), is(true));
         assertThat(index.current(), is(0));
 
-        assertThat(index.willComplete(), is(true));
         assertThat(index.next(), is(true));
         assertThat(index.completed(), is(true));
         assertThat(index.current(), is(1));
 
-        assertThat(index.willComplete(), is(true));
         assertThat(index.next(), is(true));
         assertThat(index.completed(), is(true));
         assertThat(index.current(), is(0));

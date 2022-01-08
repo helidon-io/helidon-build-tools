@@ -57,12 +57,14 @@ public class InputCombinations implements Iterable<Map<String, String>> {
         private final Map<String, String> immutableCombinations;
         private int iterations;
         private Node leafNode;
+        private Node nextParent;
 
         private CombinationsIterator(InputTree tree) {
             this.root = tree.root();
             this.combinations = new LinkedHashMap<>();
             this.immutableCombinations = Collections.unmodifiableMap(combinations);
             this.leafNode = root.findLeafNode();
+            this.nextParent = nextParent(leafNode);
         }
 
         @Override
@@ -73,29 +75,39 @@ public class InputCombinations implements Iterable<Map<String, String>> {
         @Override
         public Map<String, String> next() {
             if (hasNext()) {
+                iterations++;
 
-                // Is this our first time through?
-
-                if (iterations++ > 0) {
-
-                    // No, advance the leaf node. Did we complete it?
-
-                    if (leafNode.index().next()) {
-
-                        // Yes. Walk parents until we find one that is not complete and advance it.
-
-                        Node parent = incompleteParent(leafNode);
-                        parent.index().next();
-
-                        // Update the leaf node
-
-                        leafNode = parent.findLeafNode();
-                    }
-                }
-
-                // Collect and return
+                // Collect
 
                 root.collect(combinations);
+
+                // Advance the leaf node. Did we complete it?
+
+                if (leafNode.index().next()) {
+
+                    // Yes. Advance parents until we find one that is not complete, if any
+
+                    while (nextParent.index().next()) {
+
+                        // Did we complete the root?
+
+                        if (nextParent == root) {
+
+                            // Yes, so we're done
+
+                            return immutableCombinations;
+                        }
+
+                        // No, so move to the next parent
+
+                        nextParent = nextParent(nextParent);
+                    }
+
+                    // Update the leaf node
+
+                    leafNode = nextParent.findLeafNode();
+                }
+
                 return immutableCombinations;
 
             } else {
@@ -112,12 +124,17 @@ public class InputCombinations implements Iterable<Map<String, String>> {
             return iterations;
         }
 
-        static Node incompleteParent(Node from) {
-            Node parent = from.parent();
-            while (parent.index().completed()) {
-                parent = parent.parent();
+        Node nextParent(Node node) {
+            Node parent = node.parent();
+            while (true) {
+                if (parent == root) {
+                    return parent;
+                } else if (parent.kind() != Node.Kind.VALUE && !parent.index().completed()) {
+                    return parent;
+                } else {
+                    parent = parent.parent();
+                }
             }
-            return parent;
         }
     }
 
@@ -150,6 +167,17 @@ public class InputCombinations implements Iterable<Map<String, String>> {
          */
         public Builder entryPointFile(String entryPointFileName) {
             builder.entryPointFile(entryPointFileName);
+            return this;
+        }
+
+        /**
+         * Set to print the tree.
+         *
+         * @param verbose {@code true} if the tree should be printed.
+         * @return This instance, for chaining.
+         */
+        public Builder verbose(boolean verbose) {
+            builder.verbose(verbose);
             return this;
         }
 
