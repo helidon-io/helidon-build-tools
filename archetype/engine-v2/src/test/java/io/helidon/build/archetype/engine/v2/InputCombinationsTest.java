@@ -16,7 +16,9 @@
 package io.helidon.build.archetype.engine.v2;
 
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -75,17 +77,43 @@ class InputCombinationsTest {
     @Disabled
     void testCollectV2() {
         Path sourceDir = Path.of("/Users/batsatt/dev/helidon/archetypes-v2");
+        Map<String, String> firstExpected = Map.of(
+                "flavor", "se",
+                "base", "bare",
+                "build-system", "maven",
+                "name", "myproject",
+                "groupId", "com.examples",
+                "artifactId", "myproject",
+                "version", "1.0-SNAPSHOT",
+                "package", "com.example.myproject"
+        );
+        List<Map<String, String>> expected = List.of(
+                firstExpected,
+                nextExpected(firstExpected, Map.of("base", "quickstart")),
+                nextExpected(firstExpected, Map.of("base", "database")),
+                nextExpected(firstExpected, Map.of("flavor", "mp", "base", "bare")),
+                nextExpected(firstExpected, Map.of("flavor", "mp", "base", "quickstart")),
+                nextExpected(firstExpected, Map.of("flavor", "mp", "base", "database"))
+        );
+
         int iteration = 0;
         for (Map<String, String> combination : InputCombinations.builder()
                                                                 .archetypePath(sourceDir)
-                                                                .verbose(true)
+                                                                .verbose(false)
                                                                 .build()) {
-            System.out.println("Iteration " + iteration + " -----------------------------");
-            System.out.println();
+            System.out.printf("Iteration %d -----------------------------%n%n", iteration);
             combination.forEach((k, v) -> System.out.println(k + " = " + v));
             System.out.println();
+
+            assertThat(combination, is(expected.get(iteration)));
             iteration++;
         }
+    }
+
+    static Map<String, String> nextExpected(Map<String, String> base, Map<String, String> updates) {
+        Map<String, String> result = new HashMap<>(base);
+        result.putAll(updates);
+        return result;
     }
 
     private static Path sourceDir(String testDirName) {
