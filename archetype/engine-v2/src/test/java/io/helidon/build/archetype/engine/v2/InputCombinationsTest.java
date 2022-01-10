@@ -111,7 +111,7 @@ class InputCombinationsTest {
                                                           .archetypePath(sourceDir("e2e"))
                                                           .verbose(false)
                                                           .build();
-        Map<String, String> expected0 = Map.of(
+        Map<String, String> colors = Map.of(
                 "theme", "colors",
                 "theme.base", "custom",
                 "theme.base.style", "modern",
@@ -120,7 +120,7 @@ class InputCombinationsTest {
                 "name", "my-project"
         );
 
-        Map<String, String> expected1 = Map.of(
+        Map<String, String> shapes = Map.of(
                 "theme", "shapes",
                 "theme.base", "custom",
                 "theme.base.style", "modern",
@@ -128,7 +128,7 @@ class InputCombinationsTest {
                 "theme.base.shapes", "circle,triangle",
                 "name", "my-project"
         );
-        Map<String, String> expected2 = Map.of(
+        Map<String, String> shapes2d = Map.of(
                 "theme", "shapes",
                 "theme.base", "2d",
                 "theme.base.style", "modern",
@@ -137,47 +137,47 @@ class InputCombinationsTest {
                 "name", "my-project"
         );
         List<Map<String, String>> expected = List.of(
-                expected0,
-                nextExpected(expected0, Map.of(), "theme.base.colors"),
-                nextExpected(expected0, Map.of("theme.base.colors", "red")),
-                nextExpected(expected0, Map.of("theme.base.colors", "orange")),
-                nextExpected(expected0, Map.of("theme.base.colors", "yellow")),
-                nextExpected(expected0, Map.of("theme.base.colors", "green")),
-                nextExpected(expected0, Map.of("theme.base.colors", "blue")),
-                nextExpected(expected0, Map.of("theme.base.colors", "indigo")),
-                nextExpected(expected0, Map.of("theme.base.colors", "violet")),
-                nextExpected(expected0, Map.of("theme.base.colors", "pink")),
-                nextExpected(expected0, Map.of("theme.base.colors", "light-pink")),
-                nextExpected(expected0, Map.of("theme.base.colors", "cyan")),
-                nextExpected(expected0, Map.of("theme.base.colors", "light-salmon")),
-                nextExpected(expected0, Map.of("theme.base.colors", "coral")),
-                nextExpected(expected0, Map.of("theme.base.colors", "tomato")),
-                nextExpected(expected0, Map.of("theme.base.colors", "lemon")),
-                nextExpected(expected0, Map.of("theme.base.colors", "khaki")),
-                nextExpected(expected0, Map.of("theme.base.colors", "red,orange,yellow,green,blue,indigo,violet,"
+                colors,
+                nextExpected(colors, Map.of(), "theme.base.colors"),
+                nextExpected(colors, Map.of("theme.base.colors", "red")),
+                nextExpected(colors, Map.of("theme.base.colors", "orange")),
+                nextExpected(colors, Map.of("theme.base.colors", "yellow")),
+                nextExpected(colors, Map.of("theme.base.colors", "green")),
+                nextExpected(colors, Map.of("theme.base.colors", "blue")),
+                nextExpected(colors, Map.of("theme.base.colors", "indigo")),
+                nextExpected(colors, Map.of("theme.base.colors", "violet")),
+                nextExpected(colors, Map.of("theme.base.colors", "pink")),
+                nextExpected(colors, Map.of("theme.base.colors", "light-pink")),
+                nextExpected(colors, Map.of("theme.base.colors", "cyan")),
+                nextExpected(colors, Map.of("theme.base.colors", "light-salmon")),
+                nextExpected(colors, Map.of("theme.base.colors", "coral")),
+                nextExpected(colors, Map.of("theme.base.colors", "tomato")),
+                nextExpected(colors, Map.of("theme.base.colors", "lemon")),
+                nextExpected(colors, Map.of("theme.base.colors", "khaki")),
+                nextExpected(colors, Map.of("theme.base.colors", "red,orange,yellow,green,blue,indigo,violet,"
                                                                     + "pink,light-pink,cyan,light-salmon,coral,tomato,"
                                                                     + "lemon,khaki")),
 
-                nextExpected(expected0, Map.of("theme.base.style", "classic")),
-                nextExpected(expected0, Map.of("theme.base", "rainbow",
+                nextExpected(colors, Map.of("theme.base.style", "classic")),
+                nextExpected(colors, Map.of("theme.base", "rainbow",
                                                "theme.base.colors", "red,orange,yellow,green,blue,indigo,violet",
                                                "theme.base.palette-name", "Rainbow")),
-                nextExpected(expected0, Map.of("theme.base", "rainbow",
+                nextExpected(colors, Map.of("theme.base", "rainbow",
                                                "theme.base.colors", "red,orange,yellow,green,blue,indigo,violet",
                                                "theme.base.palette-name", "Rainbow",
                                                "theme.base.style", "classic")),
-                expected1,
-                nextExpected(expected1, Map.of(), "theme.base.shapes"),
-                nextExpected(expected1, Map.of("theme.base.shapes", "circle")),
-                nextExpected(expected1, Map.of("theme.base.shapes", "triangle")),
-                nextExpected(expected1, Map.of("theme.base.shapes", "rectangle")),
-                nextExpected(expected1, Map.of("theme.base.shapes", "arrow")),
-                nextExpected(expected1, Map.of("theme.base.shapes", "donut")),
-                nextExpected(expected1, Map.of("theme.base.shapes", "circle,triangle,rectangle,arrow,donut")),
-                nextExpected(expected1, Map.of("theme.base.style", "classic")),
+                shapes,
+                nextExpected(shapes, Map.of(), "theme.base.shapes"),
+                nextExpected(shapes, Map.of("theme.base.shapes", "circle")),
+                nextExpected(shapes, Map.of("theme.base.shapes", "triangle")),
+                nextExpected(shapes, Map.of("theme.base.shapes", "rectangle")),
+                nextExpected(shapes, Map.of("theme.base.shapes", "arrow")),
+                nextExpected(shapes, Map.of("theme.base.shapes", "donut")),
+                nextExpected(shapes, Map.of("theme.base.shapes", "circle,triangle,rectangle,arrow,donut")),
+                nextExpected(shapes, Map.of("theme.base.style", "classic")),
 
-                expected2,
-                nextExpected(expected2, Map.of("theme.base.style", "classic"))
+                shapes2d,
+                nextExpected(shapes2d, Map.of("theme.base.style", "classic"))
         );
 
         assertExpected(combinations, expected);
