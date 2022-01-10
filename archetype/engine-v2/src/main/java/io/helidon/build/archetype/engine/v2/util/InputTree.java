@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -59,6 +60,7 @@ import static java.util.Objects.requireNonNull;
  * generating input combinations.
  */
 public class InputTree {
+    private final BiFunction<List<String>, List<String>, List<List<String>>> listCombiner;
     private final Node root;
     private final int nodeCount;
     private List<Node> allNodes;
@@ -130,6 +132,7 @@ public class InputTree {
 
 
     private InputTree(Builder builder) {
+        this.listCombiner = builder.listCombiner;
         this.root = builder.root();
         this.nodeCount = builder.nextId;
     }
@@ -412,51 +415,53 @@ public class InputTree {
 
     public static class ListNode extends InputNode {
         private final List<String> defaults;
+        private final BiFunction<List<String>, List<String>, List<List<String>>> combiner;
 
-        ListNode(int id, Node parent, String path, List<String> defaults, Path script, int line) {
+        ListNode(int id, Node parent, String path, List<String> defaults, Path script, int line,
+                 BiFunction<List<String>, List<String>, List<List<String>>> combiner) {
             super(id, parent, Kind.LIST, path, script, line);
             this.defaults = defaults;
+            this.combiner = combiner;
         }
 
         @Override
         protected NodeIndex createIndex() {
             List<String> values = children().stream().map(c -> ((ValueNode) c).value()).collect(Collectors.toList());
-            return ListIndex.create(values, defaults);
+            return new ListIndex(combiner.apply(values, defaults));
         }
 
         static class ListIndex extends NodeIndex {
             private final List<String> valuesAsString;
-
-            static ListIndex create(List<String> values, List<String> defaults) {
-
-                // To be complete, we would generate all possible combinations of the list of values (not permutations, since
-                // we don't care about order). We *could* do that, but the number grows large when the list is large
-                // (see https://www.baeldung.com/java-combinations-algorithm for example implementations). Since the total
-                // combinations of the tree is exponential, we need to reduce where we can.
-
-                // So we take a pragmatic approach that should cover most cases we care about:
-                //
-                // 1. the default item(s), if any
-                // 2. no items
-                // 3. each individual item
-                // 4. all items
-
-                List<List<String>> combinations = new ArrayList<>();
-                if (defaults != null && !defaults.isEmpty()) {
-                    combinations.add(defaults);
-                }
-                combinations.add(List.of());
-                values.forEach(v -> combinations.add(List.of(v)));
-                combinations.add(values);
-
-                return new ListIndex(combinations);
-            }
 
             ListIndex(List<List<String>> combinations) {
                 super(combinations.size());
                 this.valuesAsString = new ArrayList<>(combinations.size());
                 combinations.forEach(combination -> valuesAsString.add(asString(combination)));
             }
+        }
+
+        static List<List<String>> defaultListCombinations(List<String> listValues, List<String> defaults) {
+
+            // To be complete, we would generate all possible combinations of the list of values (not permutations, since
+            // we don't care about order). We *could* do that, but the number grows large when the list is large
+            // (see https://www.baeldung.com/java-combinations-algorithm for example implementations). Since the total
+            // combinations of the tree is exponential, we need to reduce where we can.
+
+            // So we take a pragmatic approach that should cover most cases we care about:
+            //
+            // 1. the default item(s), if any
+            // 2. no items
+            // 3. each individual item
+            // 4. all items
+
+            List<List<String>> combinations = new ArrayList<>();
+            if (defaults != null && !defaults.isEmpty()) {
+                combinations.add(defaults);
+            }
+            combinations.add(List.of());
+            listValues.forEach(v -> combinations.add(List.of(v)));
+            combinations.add(listValues);
+            return combinations;
         }
 
         @Override
@@ -573,12 +578,24 @@ public class InputTree {
         private boolean prune;
         private boolean verbose;
         private boolean movePresetSiblings;
+        private BiFunction<List<String>, List<String>, List<List<String>>> listCombiner;
 
         private Builder() {
             nodes = new ArrayDeque<>();
             root = new Root(nextId++);
             prune = true;
             movePresetSiblings = true;
+        }
+
+        /**
+         * Sets the list combiner used to produce the set of combinations of the given list and its defaults (if any).
+         *
+         * @param listCombiner The list combiner.
+         * @return This instance, for chaining.
+         */
+        public Builder listCombiner(BiFunction<List<String>, List<String>, List<List<String>>> listCombiner) {
+            this.listCombiner = listCombiner;
+            return this;
         }
 
         /**
@@ -644,7 +661,11 @@ public class InputTree {
          * @return The tree.
          */
         public InputTree build() {
+            if (listCombiner == null) {
+                listCombiner = ListNode::defaultListCombinations;
+            }
             String scriptName = entryPoint == null ? MAIN_FILE : entryPoint;
+
             FileSystem fs = fileSystem();
             Path cwd = fs.getPath("/");
             Context context = Context.create(cwd, Map.of(), Map.of());
@@ -781,7 +802,7 @@ public class InputTree {
 
         void pushInputList(String path, List<String> defaults, Path script, Position position) {
             Node parent = parent();
-            push(new ListNode(nextId++, parent, path, defaults, script, position.lineNumber()));
+            push(new ListNode(nextId++, parent, path, defaults, script, position.lineNumber(), listCombiner));
         }
 
         void pushPresets(String path, Path script, Position position) {

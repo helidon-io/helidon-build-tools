@@ -454,6 +454,11 @@ public abstract class Input extends Block {
             return visitor.postVisitBoolean(this, arg);
         }
 
+        /**
+         * Returns the boolean value of the given input.
+         * @param input The input.
+         * @return {@code true} if input is "y", "yes" or "true".
+         */
         public static boolean valueOf(String input) {
             switch (input.trim().toLowerCase()) {
                 case "y":
