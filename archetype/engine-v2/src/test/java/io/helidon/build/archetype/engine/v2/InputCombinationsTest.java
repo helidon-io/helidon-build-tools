@@ -108,7 +108,7 @@ class InputCombinationsTest {
     void testCollectE2e() {
         InputCombinations combinations = InputCombinations.builder()
                                                           .archetypePath(sourceDir("e2e"))
-                                                          .verbose(true)
+                                                          .verbose(false)
                                                           .build();
         Map<String, String> colors = Map.of(
                 "theme", "colors",
@@ -116,6 +116,24 @@ class InputCombinationsTest {
                 "theme.base.style", "modern",
                 "theme.base.palette-name", "My Palette",
                 "theme.base.colors", "red,green,blue",
+                "name", "my-project"
+        );
+
+        Map<String, String> colorsClassic = Map.of(
+                "theme", "colors",
+                "theme.base", "custom",
+                "theme.base.style", "classic",
+                "theme.base.palette-name", "My Palette",
+                "theme.base.colors", "red,green,blue",
+                "name", "my-project"
+        );
+
+        Map<String, String> colorsRainbow = Map.of(
+                "theme", "colors",
+                "theme.base", "rainbow",
+                "theme.base.style", "modern",
+                "theme.base.palette-name", "Rainbow",
+                "theme.base.colors", "red,orange,yellow,green,blue,indigo,violet",
                 "name", "my-project"
         );
 
@@ -127,6 +145,17 @@ class InputCombinationsTest {
                 "theme.base.shapes", "circle,triangle",
                 "name", "my-project"
         );
+
+
+        Map<String, String> shapesClassic = Map.of(
+                "theme", "shapes",
+                "theme.base", "custom",
+                "theme.base.style", "classic",
+                "theme.base.library-name", "My Shapes",
+                "theme.base.shapes", "circle,triangle",
+                "name", "my-project"
+        );
+
         Map<String, String> shapes2d = Map.of(
                 "theme", "shapes",
                 "theme.base", "2d",
@@ -157,14 +186,31 @@ class InputCombinationsTest {
                                                                     + "pink,light-pink,cyan,light-salmon,coral,tomato,"
                                                                     + "lemon,khaki")),
 
-                nextExpected(colors, Map.of("theme.base.style", "classic")),
-                nextExpected(colors, Map.of("theme.base", "rainbow",
-                                               "theme.base.colors", "red,orange,yellow,green,blue,indigo,violet",
-                                               "theme.base.palette-name", "Rainbow")),
-                nextExpected(colors, Map.of("theme.base", "rainbow",
-                                               "theme.base.colors", "red,orange,yellow,green,blue,indigo,violet",
-                                               "theme.base.palette-name", "Rainbow",
-                                               "theme.base.style", "classic")),
+                colorsClassic,
+                nextExpected(colorsClassic, Map.of(), "theme.base.colors"),
+                nextExpected(colorsClassic, Map.of("theme.base.colors", "red")),
+                nextExpected(colorsClassic, Map.of("theme.base.colors", "orange")),
+                nextExpected(colorsClassic, Map.of("theme.base.colors", "yellow")),
+                nextExpected(colorsClassic, Map.of("theme.base.colors", "green")),
+                nextExpected(colorsClassic, Map.of("theme.base.colors", "blue")),
+                nextExpected(colorsClassic, Map.of("theme.base.colors", "indigo")),
+                nextExpected(colorsClassic, Map.of("theme.base.colors", "violet")),
+                nextExpected(colorsClassic, Map.of("theme.base.colors", "pink")),
+                nextExpected(colorsClassic, Map.of("theme.base.colors", "light-pink")),
+                nextExpected(colorsClassic, Map.of("theme.base.colors", "cyan")),
+                nextExpected(colorsClassic, Map.of("theme.base.colors", "light-salmon")),
+                nextExpected(colorsClassic, Map.of("theme.base.colors", "coral")),
+                nextExpected(colorsClassic, Map.of("theme.base.colors", "tomato")),
+                nextExpected(colorsClassic, Map.of("theme.base.colors", "lemon")),
+                nextExpected(colorsClassic, Map.of("theme.base.colors", "khaki")),
+                nextExpected(colorsClassic, Map.of("theme.base.colors", "red,orange,yellow,green,blue,indigo,violet,"
+                                                                 + "pink,light-pink,cyan,light-salmon,coral,tomato,"
+                                                                 + "lemon,khaki")),
+
+
+                colorsRainbow,
+                nextExpected(colorsRainbow, Map.of("theme.base.style", "classic")),
+
                 shapes,
                 nextExpected(shapes, Map.of(), "theme.base.shapes"),
                 nextExpected(shapes, Map.of("theme.base.shapes", "circle")),
@@ -173,7 +219,15 @@ class InputCombinationsTest {
                 nextExpected(shapes, Map.of("theme.base.shapes", "arrow")),
                 nextExpected(shapes, Map.of("theme.base.shapes", "donut")),
                 nextExpected(shapes, Map.of("theme.base.shapes", "circle,triangle,rectangle,arrow,donut")),
-                nextExpected(shapes, Map.of("theme.base.style", "classic")),
+
+                shapesClassic,
+                nextExpected(shapesClassic, Map.of(), "theme.base.shapes"),
+                nextExpected(shapesClassic, Map.of("theme.base.shapes", "circle")),
+                nextExpected(shapesClassic, Map.of("theme.base.shapes", "triangle")),
+                nextExpected(shapesClassic, Map.of("theme.base.shapes", "rectangle")),
+                nextExpected(shapesClassic, Map.of("theme.base.shapes", "arrow")),
+                nextExpected(shapesClassic, Map.of("theme.base.shapes", "donut")),
+                nextExpected(shapesClassic, Map.of("theme.base.shapes", "circle,triangle,rectangle,arrow,donut")),
 
                 shapes2d,
                 nextExpected(shapes2d, Map.of("theme.base.style", "classic"))

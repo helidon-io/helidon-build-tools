@@ -34,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class InputCombinations implements Iterable<Map<String, String>> {
     private final InputTree tree;
+    private final boolean verbose;
 
     /**
      * Returns a new builder.
@@ -44,18 +45,20 @@ public class InputCombinations implements Iterable<Map<String, String>> {
         return new Builder();
     }
 
-    private InputCombinations(InputTree tree) {
+    private InputCombinations(InputTree tree, boolean verbose) {
         this.tree = tree;
+        this.verbose = verbose;
     }
 
     @NotNull
     @Override
     public Iterator<Map<String, String>> iterator() {
-        return new CombinationsIterator(tree);
+        return new CombinationsIterator(tree, verbose);
     }
 
     private static class CombinationsIterator implements Iterator<Map<String, String>> {
         private final Node root;
+        private final boolean verbose;
         private final Map<String, String> combinations;
         private final Map<String, String> immutableCombinations;
         private final List<Node> currentInputs;
@@ -63,12 +66,16 @@ public class InputCombinations implements Iterable<Map<String, String>> {
         private int currentIndex;
         private Node currentLeafNode;
 
-        private CombinationsIterator(InputTree tree) {
+        private CombinationsIterator(InputTree tree, boolean verbose) {
             this.root = tree.root();
+            this.verbose = verbose;
             this.combinations = new LinkedHashMap<>();
             this.immutableCombinations = Collections.unmodifiableMap(combinations);
             this.currentInputs = root.collectCurrentInputs(new ArrayList<>());
             this.currentLeafNode = getLeafInput();
+            if (verbose) {
+                printCurrentInputs("Initial");
+            }
         }
 
         @Override
@@ -131,6 +138,9 @@ public class InputCombinations implements Iterable<Map<String, String>> {
         private void updateCurrentInputs() {
             root.collectCurrentInputs(currentInputs);
             currentLeafNode = getLeafInput();
+            if (verbose) {
+                printCurrentInputs("Current");
+            }
         }
 
         private Node advanceIncompleteParent() {
@@ -139,11 +149,29 @@ public class InputCombinations implements Iterable<Map<String, String>> {
                 NodeIndex parentIndex = parent.index();
                 if (!parentIndex.completed()) {
                     if (!parentIndex.next()) {
+
+                        // Reset all children
+                        for (int j = currentIndex; j > i; j--) {
+                            currentInputs.get(j).index().reset();
+                        }
                         return parent;
                     }
                 }
             }
             return null;
+        }
+
+        private void printCurrentInputs(String stage) {
+            System.out.printf("%n%s inputs ---------------- %n%n", stage);
+            for (int i = 0; i < currentInputs.size(); i++) {
+                Node node = currentInputs.get(i);
+                NodeIndex index = node.index();
+                int current = index.current();
+                int size = index.size();
+                boolean completed = index.completed();
+                System.out.printf("%d %s (%d of %d) %s%n", i, completed, current, size, node);
+            }
+            System.out.println();
         }
     }
 
@@ -152,6 +180,7 @@ public class InputCombinations implements Iterable<Map<String, String>> {
      */
     public static class Builder {
         private final InputTree.Builder builder;
+        private boolean verbose;
 
         Builder() {
             builder = InputTree.builder();
@@ -187,6 +216,7 @@ public class InputCombinations implements Iterable<Map<String, String>> {
          */
         public Builder verbose(boolean verbose) {
             builder.verbose(verbose);
+            this.verbose = verbose;
             return this;
         }
 
@@ -196,7 +226,7 @@ public class InputCombinations implements Iterable<Map<String, String>> {
          * @return The instance.
          */
         public InputCombinations build() {
-            return new InputCombinations(builder.build());
+            return new InputCombinations(builder.build(), verbose);
         }
     }
 }
