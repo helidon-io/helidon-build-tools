@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
@@ -49,7 +48,6 @@ import io.helidon.build.cli.impl.InitOptions.Flavor;
 import io.helidon.build.common.Maps;
 import io.helidon.build.common.RequirementFailure;
 import io.helidon.build.common.Requirements;
-import io.helidon.build.common.VirtualFileSystem;
 import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
@@ -261,6 +259,11 @@ abstract class ArchetypeInvoker {
             return this;
         }
 
+        private boolean isHelidonV3() {
+            String rawVersion = initOptions.helidonVersion().replace("-SNAPSHOT", "");
+            return toMavenVersion(rawVersion).isGreaterThanOrEqualTo(HELIDON_V3);
+        }
+
         /**
          * Build the invoker instance.
          *
@@ -268,9 +271,7 @@ abstract class ArchetypeInvoker {
          * otherwise {@link V2Invoker}
          */
         ArchetypeInvoker build() {
-            if (EngineVersion.V2.equals(initOptions.engineVersion())
-                || initOptions.archetypePath() != null
-                || toMavenVersion(initOptions.helidonVersion()).isGreaterThanOrEqualTo(HELIDON_V3)) {
+            if (EngineVersion.V2.equals(initOptions.engineVersion()) || isHelidonV3()) {
                 return new V2Invoker(this);
             }
             return new V1Invoker(this);
@@ -471,20 +472,10 @@ abstract class ArchetypeInvoker {
         }
 
         private FileSystem archetype() {
-            InitOptions initOptions = initOptions();
-            MavenVersion helidonVersion = toMavenVersion(initOptions.helidonVersion());
+            String helidonVersion = initOptions().helidonVersion();
             try {
-                String archetypePath = initOptions.archetypePath();
-                if (archetypePath != null) {
-                    Path archetype = Path.of(archetypePath);
-                    if (Files.isDirectory(archetype)) {
-                        return VirtualFileSystem.create(archetype);
-                    }
-                    return FileSystems.newFileSystem(archetype, this.getClass().getClassLoader());
-                }
-                // TODO this is subject to changes depending on how the archetype bundling
-                Path archetype = metadata().directoryOf(helidonVersion);
-                return VirtualFileSystem.create(archetype);
+                Path archetype = metadata().archetypeV2Of(helidonVersion);
+                return FileSystems.newFileSystem(archetype, this.getClass().getClassLoader());
             } catch (Metadata.UpdateFailed | Plugins.PluginFailed e) {
                 Requirements.failed(HELIDON_VERSION_NOT_FOUND, helidonVersion);
                 return null;

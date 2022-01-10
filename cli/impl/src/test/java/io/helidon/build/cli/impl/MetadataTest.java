@@ -120,7 +120,7 @@ public class MetadataTest extends MetadataTestBase {
         // Check archetype. Should not perform update.
 
         logged.clear();
-        Path archetypeJar = meta.archetypeOf(entriesById.get("helidon-bare-se"));
+        Path archetypeJar = meta.archetypeV1Of(entriesById.get("helidon-bare-se"));
         assertThat(archetypeJar, is(not(nullValue())));
         assertThat(Files.exists(archetypeJar), is(true));
         assertThat(archetypeJar.getFileName().toString(), is("helidon-bare-se-2.0.0-RC1.jar"));

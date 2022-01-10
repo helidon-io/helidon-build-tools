@@ -82,7 +82,7 @@ class ArchetypeBrowser {
      */
     Path archetypeJar(ArchetypeCatalog.ArchetypeEntry archetype) {
         try {
-            return metadata.archetypeOf(archetype);
+            return metadata.archetypeV1Of(archetype);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

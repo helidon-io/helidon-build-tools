@@ -348,29 +348,28 @@ public class Metadata {
     }
 
     /**
-     * Get the cache directory for the given helidon version.
-     *
-     * @param helidonVersion The version.
-     * @return The directory.
-     * @throws UpdateFailed if the metadata update failed
-     */
-    public Path directoryOf(MavenVersion helidonVersion) throws UpdateFailed {
-        final Path versionDir = rootDir.resolve(requireNonNull(helidonVersion).toString());
-        final Path checkFile = versionDir.resolve(LAST_UPDATE_FILE_NAME);
-        checkForUpdates(helidonVersion, checkFile, false);
-        return requireHelidonVersionDir(versionDir);
-    }
-
-    /**
-     * Returns the path to the archetype jar for the given catalog entry.
+     * Returns the path to the archetype V1 jar for the given catalog entry.
      *
      * @param catalogEntry The catalog entry.
      * @return The path to the archetype jar.
      * @throws UpdateFailed if the metadata update failed
      */
-    public Path archetypeOf(ArchetypeCatalog.ArchetypeEntry catalogEntry) throws UpdateFailed {
+    public Path archetypeV1Of(ArchetypeCatalog.ArchetypeEntry catalogEntry) throws UpdateFailed {
         final MavenVersion helidonVersion = toMavenVersion(catalogEntry.version());
         final String fileName = catalogEntry.artifactId() + "-" + helidonVersion + JAR_SUFFIX;
+        return versionedFile(helidonVersion, fileName, false);
+    }
+
+    /**
+     * Returns the path to the archetype V2 jar for the given version.
+     *
+     * @param version The version.
+     * @return The path to the archetype jar.
+     * @throws UpdateFailed if the metadata update failed
+     */
+    public Path archetypeV2Of(String version) throws UpdateFailed {
+        final MavenVersion helidonVersion = toMavenVersion(version);
+        final String fileName = "helidon-" + helidonVersion + JAR_SUFFIX;
         return versionedFile(helidonVersion, fileName, false);
     }
 

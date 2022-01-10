@@ -157,6 +157,12 @@ public class IntegrationTestMojo extends AbstractMojo {
             return;
         }
 
+        // support -DskipTests
+        String skipTests = session.getUserProperties().getProperty("skipTests");
+        if (skipTests != null && !"false".equalsIgnoreCase(skipTests)) {
+            return;
+        }
+
         if (!testProjectsDirectory.exists()) {
             getLog().warn("No Archetype IT projects: root 'projects' directory not found.");
             return;
