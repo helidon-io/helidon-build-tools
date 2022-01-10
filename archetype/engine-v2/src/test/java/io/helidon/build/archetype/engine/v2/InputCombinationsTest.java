@@ -166,7 +166,7 @@ class InputCombinationsTest {
                 nextExpected(expected1, Map.of("theme.base.shapes", "arrow")),
                 nextExpected(expected1, Map.of("theme.base.shapes", "donut")),
                 nextExpected(expected1, Map.of("theme.base.shapes", "circle,triangle,rectangle,arrow,donut")),
-                nextExpected(expected0, Map.of("theme.base.style", "classic"))
+                nextExpected(expected1, Map.of("theme.base.style", "classic"))
 
                 // TODO 2d!
         );

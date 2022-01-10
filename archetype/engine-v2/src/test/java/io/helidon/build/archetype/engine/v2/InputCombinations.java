@@ -59,6 +59,7 @@ public class InputCombinations implements Iterable<Map<String, String>> {
         private int iterations;
         private List<Node> siblings;
         private int siblingIndex;
+        private boolean lastWasParent;
         private Node currentNode;
         private Node nextNode;
 
@@ -109,6 +110,11 @@ public class InputCombinations implements Iterable<Map<String, String>> {
                     // Find the next node we want to step through
 
                     currentNode = findNextNode(nextNode);
+
+                    if (lastWasParent) {
+                        // Find the parent of the leaf node
+                        nextNode = findNextNode(nextNode.findLeafNode());
+                    }
                 }
 
                 return immutableCombinations;
@@ -146,14 +152,6 @@ public class InputCombinations implements Iterable<Map<String, String>> {
 
         Node nextNode(Node node) {
 
-            // TODO: THIS IS A HACK, REMOVE checkSiblings!
-/*
-            boolean checkSiblings = true;
-            if (node.index().completed() && node.id() == 1) {
-                checkSiblings = false;
-            }
-*/
-
             // Do we have siblings?
 
             if (siblings != null) {
@@ -163,6 +161,7 @@ public class InputCombinations implements Iterable<Map<String, String>> {
                 while (--siblingIndex >= 0) {
                     Node sibling = siblings.get(siblingIndex);
                     if (!sibling.index().completed()) {
+                        lastWasParent = false;
                         return sibling;
                     }
                 }
@@ -178,6 +177,7 @@ public class InputCombinations implements Iterable<Map<String, String>> {
         }
 
         Node nextParent(Node node) {
+            lastWasParent = true;
             // Find the first non VALUE parent that is not completed
             Node parent = node.parent();
             while (true) {
