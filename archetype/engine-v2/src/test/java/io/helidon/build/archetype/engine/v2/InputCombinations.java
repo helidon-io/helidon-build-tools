@@ -16,6 +16,7 @@
 package io.helidon.build.archetype.engine.v2;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -24,6 +25,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 import io.helidon.build.archetype.engine.v2.InputTree.Node;
+import io.helidon.build.archetype.engine.v2.InputTree.NodeIndex;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -56,19 +58,17 @@ public class InputCombinations implements Iterable<Map<String, String>> {
         private final Node root;
         private final Map<String, String> combinations;
         private final Map<String, String> immutableCombinations;
+        private final List<Node> currentInputs;
         private int iterations;
-        private List<Node> siblings;
-        private int siblingIndex;
-        private boolean lastWasParent;
-        private Node currentNode;
-        private Node nextNode;
+        private int currentIndex;
+        private Node currentLeafNode;
 
         private CombinationsIterator(InputTree tree) {
             this.root = tree.root();
             this.combinations = new LinkedHashMap<>();
             this.immutableCombinations = Collections.unmodifiableMap(combinations);
-            this.currentNode = findNextNode(root);
-            this.nextNode = nextNode(currentNode);
+            this.currentInputs = root.collectCurrentInputs(new ArrayList<>());
+            this.currentLeafNode = getLeafInput();
         }
 
         @Override
@@ -85,36 +85,26 @@ public class InputCombinations implements Iterable<Map<String, String>> {
 
                 root.collect(combinations);
 
-                // Advance the leaf node. Did we complete it?
+                // Advance the current leaf node. Did we complete it?
 
-                if (currentNode.index().next()) {
+                if (currentLeafNode.index().next()) {
 
-                    // Yes. Advance upwards until we find one that is not complete, if any
+                    // Yes. Advance up parent chain until we find one that is not complete, if any
 
-                    while (nextNode.index().next()) {
+                    Node nextParent = advanceIncompleteParent();
 
-                        // Did we complete the root?
+                    // Are we done?
 
-                        if (nextNode == root) {
+                    if (nextParent == null) {
 
-                            // Yes, so we're done
+                        // Yep
 
-                            return immutableCombinations;
-                        }
-
-                        // No, so move to the next sibling or parent
-
-                        nextNode = nextNode(nextNode);
+                        return immutableCombinations;
                     }
 
-                    // Find the next node we want to step through
+                    // No, so update current inputs
 
-                    currentNode = findNextNode(nextNode);
-
-                    if (lastWasParent) {
-                        // Find the parent of the leaf node
-                        nextNode = findNextNode(nextNode.findLeafNode());
-                    }
+                    updateCurrentInputs();
                 }
 
                 return immutableCombinations;
@@ -133,62 +123,27 @@ public class InputCombinations implements Iterable<Map<String, String>> {
             return iterations;
         }
 
-        Node findNextNode(Node current) {
-            Node leaf = current.findLeafNode();
-            if (leaf != current) {
-
-                // If the leaf has siblings, we want to walk them
-
-                Node parent = leaf.parent();
-                List<Node> siblings = parent.children();
-                if (siblings.size() > 1) {
-                    this.siblings = siblings;
-                    this.siblingIndex = this.siblings.size() - 1;
-                    return siblings.get(siblingIndex);
-                }
-            }
-            return leaf;
+        private Node getLeafInput() {
+            currentIndex = currentInputs.size() - 1;
+            return currentInputs.get(currentIndex);
         }
 
-        Node nextNode(Node node) {
+        private void updateCurrentInputs() {
+            root.collectCurrentInputs(currentInputs);
+            currentLeafNode = getLeafInput();
+        }
 
-            // Do we have siblings?
-
-            if (siblings != null) {
-
-                // Yes, find the next sibling (in reverse order) that is not completed, if any
-
-                while (--siblingIndex >= 0) {
-                    Node sibling = siblings.get(siblingIndex);
-                    if (!sibling.index().completed()) {
-                        lastWasParent = false;
-                        return sibling;
+        private Node advanceIncompleteParent() {
+            for (int i = currentIndex - 1; i >= 0; i--) {
+                Node parent = currentInputs.get(i);
+                NodeIndex parentIndex = parent.index();
+                if (!parentIndex.completed()) {
+                    if (!parentIndex.next()) {
+                        return parent;
                     }
                 }
-
-                // Done with siblings, find a parent
-
-                siblings = null;
             }
-
-            // Otherwise, find the first non VALUE parent that is not completed
-
-            return nextParent(node);
-        }
-
-        Node nextParent(Node node) {
-            lastWasParent = true;
-            // Find the first non VALUE parent that is not completed
-            Node parent = node.parent();
-            while (true) {
-                if (parent == root) {
-                    return parent;
-                } else if (parent.kind() != Node.Kind.VALUE && !parent.index().completed()) {
-                    return parent;
-                } else {
-                    parent = parent.parent();
-                }
-            }
+            return null;
         }
     }
 

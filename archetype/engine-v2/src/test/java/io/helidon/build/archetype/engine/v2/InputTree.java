@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -228,12 +229,54 @@ public class InputTree {
         Node findLeafNode() {
             if (!children.isEmpty()) {
                 int index = index().current();
-                return children.get(index).findLeafNode();
+                Node nextChild = children.get(index);
+                return nextChild.findLeafNode();
             }
-            if (kind() == Kind.VALUE) {
+            if (isValue()) {
                 return parent();
             } else {
                 return this;
+            }
+        }
+
+        /**
+         * Returns {@code true} if the kind is {@code VALUE}
+         *
+         * @return {@code true} if value.
+         */
+        boolean isValue() {
+            return kind == Kind.VALUE;
+        }
+
+        List<Node> collectCurrentInputs(List<Node> inputs) {
+            inputs.clear();
+            Node leaf = findLeafNode();
+            collectParentInputs(leaf, inputs);
+            collectLeafInputs(leaf, inputs);
+            return inputs;
+        }
+
+        private void collectParentInputs(Node node, List<Node> inputs) {
+            while (true) {
+                Node parent = node.parent();
+                if (parent == null) {
+                    break;
+                } else if (!parent.isValue()){
+                    inputs.add(parent);
+                }
+                node = parent;
+            }
+            Collections.reverse(inputs);
+        }
+
+        private void collectLeafInputs(Node leaf, List<Node> inputs) {
+            inputs.add(leaf);
+            // Add any siblings
+            Node parent = leaf.parent();
+            for (Node sibling : parent.children()) {
+                if (sibling != leaf && !sibling.isValue()) {
+                    inputs.add(sibling);
+                }
             }
         }
 
@@ -674,26 +717,6 @@ public class InputTree {
                 }
             }
         }
-
-/* TODO REMOVE
-        void moveValueChildren() {
-            List<Node> values = collect(root, Kind.VALUE, new ArrayList<>());
-            for (Node value : values) {
-                int childCount = value.children().size();
-                if (childCount > 1) {
-                    List<Node> children = new ArrayList<>(value.children());
-                    Node parent = children.get(0);
-                    for (int i = 1; i < childCount; i++) {
-                         Node child = children.get(i);
-                         parent.addChild(child);
-                         value.removeChild(child);
-                         child.parent(parent);
-                         parent = child;
-                    }
-                }
-            }
-        }
-*/
 
         List<Node> collect(Node node, Kind kind, List<Node> nodes) {
             if (node.kind() == kind) {

@@ -105,11 +105,10 @@ class InputCombinationsTest {
     }
 
     @Test
-    @Disabled // TODO enable when passing
     void testCollectE2e() {
         InputCombinations combinations = InputCombinations.builder()
                                                           .archetypePath(sourceDir("e2e"))
-                                                          .verbose(false)
+                                                          .verbose(true)
                                                           .build();
         Map<String, String> colors = Map.of(
                 "theme", "colors",
