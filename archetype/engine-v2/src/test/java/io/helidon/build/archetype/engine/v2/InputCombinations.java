@@ -243,6 +243,5 @@ public class InputCombinations implements Iterable<Map<String, String>> {
         public InputCombinations build() {
             return new InputCombinations(builder.build());
         }
-
     }
 }

@@ -128,6 +128,14 @@ class InputCombinationsTest {
                 "theme.base.shapes", "circle,triangle",
                 "name", "my-project"
         );
+        Map<String, String> expected2 = Map.of(
+                "theme", "shapes",
+                "theme.base", "2d",
+                "theme.base.style", "modern",
+                "theme.base.library-name", "2D Shapes",
+                "theme.base.shapes", "circle,triangle,rectangle",
+                "name", "my-project"
+        );
         List<Map<String, String>> expected = List.of(
                 expected0,
                 nextExpected(expected0, Map.of(), "theme.base.colors"),
@@ -166,9 +174,10 @@ class InputCombinationsTest {
                 nextExpected(expected1, Map.of("theme.base.shapes", "arrow")),
                 nextExpected(expected1, Map.of("theme.base.shapes", "donut")),
                 nextExpected(expected1, Map.of("theme.base.shapes", "circle,triangle,rectangle,arrow,donut")),
-                nextExpected(expected1, Map.of("theme.base.style", "classic"))
+                nextExpected(expected1, Map.of("theme.base.style", "classic")),
 
-                // TODO 2d!
+                expected2,
+                nextExpected(expected2, Map.of("theme.base.style", "classic"))
         );
 
         assertExpected(combinations, expected);

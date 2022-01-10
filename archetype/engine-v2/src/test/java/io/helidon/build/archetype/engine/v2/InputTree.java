@@ -319,10 +319,6 @@ public class InputTree {
         boolean completed() {
             return completed;
         }
-
-        boolean willComplete() {
-            return completed || current + 1 > maxIndex;
-        }
     }
 
     public static class InputNode extends Node {
