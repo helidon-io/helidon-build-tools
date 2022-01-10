@@ -146,7 +146,7 @@ class InputTreeTest {
             |   |   |   |   |   19 VALUE 'include2.y' = 'no' from main.xml:45    REMOVED
             |   |   |   20 VALUE 'include2' = 'no' from main.xml:43
 
-        PRUNED
+        UPDATED
 
             0 ROOT
             |   1 PRESETS '{choice=bar, include=true, include2=false}' from main.xml:24

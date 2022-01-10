@@ -16,6 +16,7 @@
 package io.helidon.build.archetype.engine.v2;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -77,6 +78,10 @@ class InputCombinationsTest {
     @Disabled
     void testCollectV2() {
         Path sourceDir = Path.of("/Users/batsatt/dev/helidon/archetypes-v2");
+        InputCombinations combinations = InputCombinations.builder()
+                                                          .archetypePath(sourceDir)
+                                                          .verbose(false)
+                                                          .build();
         Map<String, String> firstExpected = Map.of(
                 "flavor", "se",
                 "base", "bare",
@@ -96,23 +101,94 @@ class InputCombinationsTest {
                 nextExpected(firstExpected, Map.of("flavor", "mp", "base", "database"))
         );
 
+        assertExpected(combinations, expected);
+    }
+
+    @Test
+    @Disabled // TODO enable when passing
+    void testCollectE2e() {
+        InputCombinations combinations = InputCombinations.builder()
+                                                          .archetypePath(sourceDir("e2e"))
+                                                          .verbose(false)
+                                                          .build();
+        Map<String, String> expected0 = Map.of(
+                "theme", "colors",
+                "theme.base", "custom",
+                "theme.base.style", "modern",
+                "theme.base.palette-name", "My Palette",
+                "theme.base.colors", "red,green,blue",
+                "name", "my-project"
+        );
+
+        Map<String, String> expected1 = Map.of(
+                "theme", "shapes",
+                "theme.base", "custom",
+                "theme.base.style", "modern",
+                "theme.base.library-name", "My Shapes",
+                "theme.base.shapes", "circle,triangle",
+                "name", "my-project"
+        );
+        List<Map<String, String>> expected = List.of(
+                expected0,
+                nextExpected(expected0, Map.of(), "theme.base.colors"),
+                nextExpected(expected0, Map.of("theme.base.colors", "red")),
+                nextExpected(expected0, Map.of("theme.base.colors", "orange")),
+                nextExpected(expected0, Map.of("theme.base.colors", "yellow")),
+                nextExpected(expected0, Map.of("theme.base.colors", "green")),
+                nextExpected(expected0, Map.of("theme.base.colors", "blue")),
+                nextExpected(expected0, Map.of("theme.base.colors", "indigo")),
+                nextExpected(expected0, Map.of("theme.base.colors", "violet")),
+                nextExpected(expected0, Map.of("theme.base.colors", "pink")),
+                nextExpected(expected0, Map.of("theme.base.colors", "light-pink")),
+                nextExpected(expected0, Map.of("theme.base.colors", "cyan")),
+                nextExpected(expected0, Map.of("theme.base.colors", "light-salmon")),
+                nextExpected(expected0, Map.of("theme.base.colors", "coral")),
+                nextExpected(expected0, Map.of("theme.base.colors", "tomato")),
+                nextExpected(expected0, Map.of("theme.base.colors", "lemon")),
+                nextExpected(expected0, Map.of("theme.base.colors", "khaki")),
+                nextExpected(expected0, Map.of("theme.base.colors", "red,orange,yellow,green,blue,indigo,violet,"
+                                                                    + "pink,light-pink,cyan,light-salmon,coral,tomato,"
+                                                                    + "lemon,khaki")),
+
+                nextExpected(expected0, Map.of("theme.base.style", "classic")),
+                nextExpected(expected0, Map.of("theme.base", "rainbow",
+                                               "theme.base.colors", "red,orange,yellow,green,blue,indigo,violet",
+                                               "theme.base.palette-name", "Rainbow")),
+                nextExpected(expected0, Map.of("theme.base", "rainbow",
+                                               "theme.base.colors", "red,orange,yellow,green,blue,indigo,violet",
+                                               "theme.base.palette-name", "Rainbow",
+                                               "theme.base.style", "classic")),
+                expected1,
+                nextExpected(expected1, Map.of(), "theme.base.shapes"),
+                nextExpected(expected1, Map.of("theme.base.shapes", "circle")),
+                nextExpected(expected1, Map.of("theme.base.shapes", "triangle")),
+                nextExpected(expected1, Map.of("theme.base.shapes", "rectangle")),
+                nextExpected(expected1, Map.of("theme.base.shapes", "arrow")),
+                nextExpected(expected1, Map.of("theme.base.shapes", "donut")),
+                nextExpected(expected1, Map.of("theme.base.shapes", "circle,triangle,rectangle,arrow,donut")),
+                nextExpected(expected0, Map.of("theme.base.style", "classic"))
+
+                // TODO 2d!
+        );
+
+        assertExpected(combinations, expected);
+    }
+
+    static void assertExpected(InputCombinations combinations, List<Map<String, String>> expected) {
         int iteration = 0;
-        for (Map<String, String> combination : InputCombinations.builder()
-                                                                .archetypePath(sourceDir)
-                                                                .verbose(false)
-                                                                .build()) {
+        for (Map<String, String> combination : combinations) {
             System.out.printf("Iteration %d -----------------------------%n%n", iteration);
             combination.forEach((k, v) -> System.out.println(k + " = " + v));
             System.out.println();
-
-            assertThat(combination, is(expected.get(iteration)));
+            assertThat("iteration " + iteration, combination, is(expected.get(iteration)));
             iteration++;
         }
     }
 
-    static Map<String, String> nextExpected(Map<String, String> base, Map<String, String> updates) {
+    static Map<String, String> nextExpected(Map<String, String> base, Map<String, String> updates, String... removals) {
         Map<String, String> result = new HashMap<>(base);
         result.putAll(updates);
+        Arrays.stream(removals).forEach(result::remove);
         return result;
     }
 

@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -56,15 +57,17 @@ public class InputCombinations implements Iterable<Map<String, String>> {
         private final Map<String, String> combinations;
         private final Map<String, String> immutableCombinations;
         private int iterations;
-        private Node leafNode;
-        private Node nextParent;
+        private List<Node> siblings;
+        private int siblingIndex;
+        private Node currentNode;
+        private Node nextNode;
 
         private CombinationsIterator(InputTree tree) {
             this.root = tree.root();
             this.combinations = new LinkedHashMap<>();
             this.immutableCombinations = Collections.unmodifiableMap(combinations);
-            this.leafNode = root.findLeafNode();
-            this.nextParent = nextParent(leafNode);
+            this.currentNode = findNextNode(root);
+            this.nextNode = nextNode(currentNode);
         }
 
         @Override
@@ -83,29 +86,29 @@ public class InputCombinations implements Iterable<Map<String, String>> {
 
                 // Advance the leaf node. Did we complete it?
 
-                if (leafNode.index().next()) {
+                if (currentNode.index().next()) {
 
-                    // Yes. Advance parents until we find one that is not complete, if any
+                    // Yes. Advance upwards until we find one that is not complete, if any
 
-                    while (nextParent.index().next()) {
+                    while (nextNode.index().next()) {
 
                         // Did we complete the root?
 
-                        if (nextParent == root) {
+                        if (nextNode == root) {
 
                             // Yes, so we're done
 
                             return immutableCombinations;
                         }
 
-                        // No, so move to the next parent
+                        // No, so move to the next sibling or parent
 
-                        nextParent = nextParent(nextParent);
+                        nextNode = nextNode(nextNode);
                     }
 
-                    // Update the leaf node
+                    // Find the next node we want to step through
 
-                    leafNode = nextParent.findLeafNode();
+                    currentNode = findNextNode(nextNode);
                 }
 
                 return immutableCombinations;
@@ -124,7 +127,58 @@ public class InputCombinations implements Iterable<Map<String, String>> {
             return iterations;
         }
 
+        Node findNextNode(Node current) {
+            Node leaf = current.findLeafNode();
+            if (leaf != current) {
+
+                // If the leaf has siblings, we want to walk them
+
+                Node parent = leaf.parent();
+                List<Node> siblings = parent.children();
+                if (siblings.size() > 1) {
+                    this.siblings = siblings;
+                    this.siblingIndex = this.siblings.size() - 1;
+                    return siblings.get(siblingIndex);
+                }
+            }
+            return leaf;
+        }
+
+        Node nextNode(Node node) {
+
+            // TODO: THIS IS A HACK, REMOVE checkSiblings!
+/*
+            boolean checkSiblings = true;
+            if (node.index().completed() && node.id() == 1) {
+                checkSiblings = false;
+            }
+*/
+
+            // Do we have siblings?
+
+            if (siblings != null) {
+
+                // Yes, find the next sibling (in reverse order) that is not completed, if any
+
+                while (--siblingIndex >= 0) {
+                    Node sibling = siblings.get(siblingIndex);
+                    if (!sibling.index().completed()) {
+                        return sibling;
+                    }
+                }
+
+                // Done with siblings, find a parent
+
+                siblings = null;
+            }
+
+            // Otherwise, find the first non VALUE parent that is not completed
+
+            return nextParent(node);
+        }
+
         Node nextParent(Node node) {
+            // Find the first non VALUE parent that is not completed
             Node parent = node.parent();
             while (true) {
                 if (parent == root) {

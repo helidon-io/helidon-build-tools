@@ -665,7 +665,7 @@ public class InputTree {
         }
 
         void movePresetSiblings() {
-            List<Node> presets = addPresets(root, new ArrayList<>());
+            List<Node> presets = collect(root, Kind.PRESETS, new ArrayList<>());
             for (Node preset : presets) {
                 Node parent = preset.parent();
                 List<Node> siblings = new ArrayList<>(parent.children());
@@ -679,14 +679,34 @@ public class InputTree {
             }
         }
 
-        List<Node> addPresets(Node node, List<Node> presets) {
-            if (node.kind() == Kind.PRESETS) {
-                presets.add(node);
+/* TODO REMOVE
+        void moveValueChildren() {
+            List<Node> values = collect(root, Kind.VALUE, new ArrayList<>());
+            for (Node value : values) {
+                int childCount = value.children().size();
+                if (childCount > 1) {
+                    List<Node> children = new ArrayList<>(value.children());
+                    Node parent = children.get(0);
+                    for (int i = 1; i < childCount; i++) {
+                         Node child = children.get(i);
+                         parent.addChild(child);
+                         value.removeChild(child);
+                         child.parent(parent);
+                         parent = child;
+                    }
+                }
+            }
+        }
+*/
+
+        List<Node> collect(Node node, Kind kind, List<Node> nodes) {
+            if (node.kind() == kind) {
+                nodes.add(node);
             }
             for (Node child : node.children()) {
-                addPresets(child, presets);
+                collect(child, kind, nodes);
             }
-            return presets;
+            return nodes;
         }
 
         void updateId(Node node) {
