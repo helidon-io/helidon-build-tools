@@ -142,7 +142,7 @@ public class InputTree {
         node.children().forEach(this::addNodes);
     }
 
-    public static abstract class Node {
+    public abstract static class Node {
         private int id;      // non-final to allow prune() to fix this to avoid sparse arrays
         private Node parent; // non-final to allow preset siblings to become children
         private final Path script;
@@ -152,13 +152,37 @@ public class InputTree {
         private final List<Node> children;
         private NodeIndex index;
 
+        /**
+         * The node kind.
+         */
         public enum Kind {
+            /**
+             * Root node.
+             */
             ROOT,
+            /**
+             * Presets node.
+             */
             PRESETS,
+            /**
+             * Boolean node.
+             */
             BOOLEAN,
+            /**
+             * Enum node.
+             */
             ENUM,
+            /**
+             * List node.
+             */
             LIST,
+            /**
+             * Text node.
+             */
             TEXT,
+            /**
+             * Value node.
+             */
             VALUE
         }
 
@@ -175,26 +199,56 @@ public class InputTree {
             }
         }
 
+        /**
+         * Returns the node id.
+         *
+         * @return The id.
+         */
         public int id() {
             return id;
         }
 
+        /**
+         * Returns the script path.
+         *
+         * @return The path.
+         */
         public Path script() {
             return script;
         }
 
+        /**
+         * Returns the line number in the script at which this node was defined.
+         *
+         * @return The line number.
+         */
         public int line() {
             return line;
         }
 
+        /**
+         * Returns the input path.
+         *
+         * @return The path.
+         */
         public String path() {
             return path;
         }
 
+        /**
+         * Returns the node kind.
+         *
+         * @return The kind.
+         */
         public Kind kind() {
             return kind;
         }
 
+        /**
+         * Returns the node parent.
+         *
+         * @return The parent. Will be {@code null} if this is the root node.
+         */
         public Node parent() {
             return parent;
         }
@@ -209,10 +263,20 @@ public class InputTree {
             }
         }
 
+        /**
+         * Returns the child nodes.
+         *
+         * @return The child nodes.
+         */
         public List<Node> children() {
             return children;
         }
 
+        /**
+         * Returns the node index.
+         *
+         * @return The index.
+         */
         public NodeIndex index() {
             if (index == null) {
                 index = createIndex();
@@ -222,6 +286,11 @@ public class InputTree {
 
         protected abstract NodeIndex createIndex();
 
+        /**
+         * Collect the values of this node and its children.
+         *
+         * @param values Where to collect the values.
+         */
         public void collect(Map<String, String> values) {
             if (!children.isEmpty()) {
                 NodeIndex index = index();
@@ -250,7 +319,7 @@ public class InputTree {
         }
 
         /**
-         * Returns {@code true} if the kind is {@code VALUE}
+         * Returns {@code true} if the kind is {@code VALUE}.
          *
          * @return {@code true} if value.
          */
@@ -969,21 +1038,25 @@ public class InputTree {
             @Override
             public VisitResult postVisitAny(Input input, Context context) {
                 switch (input.kind()) {
-                    case BOOLEAN: {
+                    case BOOLEAN:
                         Node parent = builder.current().parent();
                         builder.addValue(parent, "no", input.scriptPath(), input.position());
-                    }
-                    case TEXT: {
                         // pop 2
                         builder.pop();
                         builder.pop();
                         break;
-                    }
+                    case TEXT:
+                        // pop 2
+                        builder.pop();
+                        builder.pop();
+                        break;
                     case ENUM:
                     case LIST:
-                    case OPTION: {
+                    case OPTION:
                         builder.pop();
-                    }
+                        break;
+                    default:
+                        throw new IllegalStateException("unknown kind: " + input.kind());
                 }
                 return super.postVisitAny(input, context);
             }
