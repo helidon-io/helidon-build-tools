@@ -37,7 +37,6 @@ import io.helidon.build.archetype.engine.v2.InputResolver;
 import io.helidon.build.archetype.engine.v2.ScriptLoader;
 import io.helidon.build.archetype.engine.v2.VisitorAdapter;
 import io.helidon.build.archetype.engine.v2.Walker;
-import io.helidon.build.archetype.engine.v2.util.InputTree.Node.Kind;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.Input;
@@ -47,6 +46,9 @@ import io.helidon.build.archetype.engine.v2.ast.Position;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
+import io.helidon.build.archetype.engine.v2.util.InputTree.Node.Kind;
+import io.helidon.build.common.GenericType;
 import io.helidon.build.common.VirtualFileSystem;
 
 import static io.helidon.build.common.PropertyEvaluator.evaluate;
@@ -266,7 +268,7 @@ public class InputTree {
                 Node parent = node.parent();
                 if (parent == null) {
                     break;
-                } else if (!parent.isValue()){
+                } else if (!parent.isValue()) {
                     inputs.add(parent);
                 }
                 node = parent;
@@ -454,13 +456,6 @@ public class InputTree {
                 super(combinations.size());
                 this.valuesAsString = new ArrayList<>(combinations.size());
                 combinations.forEach(combination -> valuesAsString.add(asString(combination)));
-            }
-
-            static int factorial(int n) {
-                if (n == 0) {
-                    return 1;
-                }
-                return n * factorial(n - 1);
             }
         }
 
@@ -837,8 +832,30 @@ public class InputTree {
             ctx.put(path, value);
 
             PresetNode presets = (PresetNode) builder.current();
-            presets.add(path, value.asString());
+            presets.add(path, asString(value));
             return VisitResult.CONTINUE;
+        }
+
+        private static String asString(Value value) {
+            GenericType<?> type = value.type();
+            if (type == ValueTypes.STRING) {
+                return value.asString();
+            } else if (type == ValueTypes.BOOLEAN) {
+                return value.asBoolean().toString();
+            } else if (type == ValueTypes.INT) {
+                return value.asInt().toString();
+            } else if (type == ValueTypes.STRING_LIST) {
+                List<String> list = value.asList();
+                StringBuilder b = new StringBuilder();
+                list.forEach(v -> {
+                    if (b.length() > 0) {
+                        b.append(',');
+                    }
+                    b.append(v);
+                });
+                return b.toString();
+            }
+            throw new IllegalStateException("unknown type: " + type);
         }
 
         @Override
@@ -889,7 +906,6 @@ public class InputTree {
                 String path = push(input, context);
                 Node node = builder.pushInput(Kind.BOOLEAN, path, input.scriptPath(), input.position());
                 builder.pushValue("yes", input.scriptPath(), input.position());
-// TODO REMOVE                builder.addValue(node, "no", input.scriptPath(), input.position());
                 return VisitResult.CONTINUE;
             }
 

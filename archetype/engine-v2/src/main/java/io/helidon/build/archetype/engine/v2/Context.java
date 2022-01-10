@@ -345,7 +345,7 @@ public final class Context {
     private static final class ExternalValue extends ContextValue {
 
         private ExternalValue(String value) {
-            super(value.toLowerCase(), null);
+            super(value, null);
         }
 
         @Override

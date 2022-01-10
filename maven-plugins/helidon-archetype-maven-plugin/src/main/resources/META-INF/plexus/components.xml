@@ -1,6 +1,6 @@
 <!--
 
-    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -39,33 +39,6 @@
                             <process-test-resources>org.apache.maven.plugins:maven-resources-plugin:testResources</process-test-resources>
                             <package>io.helidon.build-tools:helidon-archetype-maven-plugin:jar</package>
                             <integration-test>io.helidon.build-tools:helidon-archetype-maven-plugin:integration-test</integration-test>
-                            <install>org.apache.maven.plugins:maven-install-plugin:install</install>
-                            <deploy>org.apache.maven.plugins:maven-deploy-plugin:deploy</deploy>
-                        </phases>
-                    </lifecycle>
-                </lifecycles>
-            </configuration>
-        </component>
-        <component>
-            <role>org.apache.maven.artifact.handler.ArtifactHandler</role>
-            <role-hint>helidon-archetype-catalog</role-hint>
-            <implementation>org.apache.maven.artifact.handler.DefaultArtifactHandler</implementation>
-            <configuration>
-                <extension>zip</extension>
-                <type>helidon-archetype-catalog</type>
-                <addedToClasspath>false</addedToClasspath>
-            </configuration>
-        </component>
-        <component>
-            <role>org.apache.maven.lifecycle.mapping.LifecycleMapping</role>
-            <role-hint>helidon-archetype-catalog</role-hint>
-            <implementation>org.apache.maven.lifecycle.mapping.DefaultLifecycleMapping</implementation>
-            <configuration>
-                <lifecycles>
-                    <lifecycle>
-                        <id>default</id>
-                        <phases>
-                            <package>io.helidon.build-tools:helidon-archetype-maven-plugin:catalog</package>
                             <install>org.apache.maven.plugins:maven-install-plugin:install</install>
                             <deploy>org.apache.maven.plugins:maven-deploy-plugin:deploy</deploy>
                         </phases>

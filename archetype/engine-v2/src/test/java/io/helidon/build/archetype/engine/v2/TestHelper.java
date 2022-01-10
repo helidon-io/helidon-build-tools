@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,19 +26,13 @@ import io.helidon.build.common.Strings;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
-import java.net.URI;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -47,35 +41,6 @@ import static org.hamcrest.core.IsNull.notNullValue;
  * Test helper.
  */
 class TestHelper {
-
-    private static final boolean IS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
-
-    /**
-     * Create a unique path.
-     *
-     * @param parent parent
-     * @param name   name
-     * @return directory
-     */
-    static Path unique(Path parent, String name) {
-        return unique(parent, name, "");
-    }
-
-    /**
-     * Create a unique path.
-     *
-     * @param parent parent
-     * @param name   name
-     * @param suffix suffix, must be non {@code null}
-     * @return directory
-     */
-    static Path unique(Path parent, String name, String suffix) {
-        Path path = parent.resolve(name + suffix);
-        for (int i = 1; Files.exists(path); i++) {
-            path = parent.resolve(name + "-" + i + suffix);
-        }
-        return path;
-    }
 
     /**
      * Read the content of a file as a string.
@@ -86,39 +51,6 @@ class TestHelper {
      */
     static String readFile(Path file) throws IOException {
         return Strings.normalizeNewLines(Files.readString(file));
-    }
-
-    /**
-     * Zip a directory.
-     *
-     * @param zip       target file
-     * @param directory source directory
-     * @throws IOException if an IO error occurs
-     */
-    static void zip(Path zip, Path directory) throws IOException {
-        Files.createDirectories(zip.getParent());
-        String uriPrefix = "jar:file:";
-        if (IS_WINDOWS) {
-            uriPrefix += "/";
-        }
-        URI uri = URI.create(uriPrefix + zip.toString().replace("\\", "/"));
-        try (FileSystem fs = FileSystems.newFileSystem(uri, Map.of("create", "true"))) {
-            Files.walk(directory)
-                 .sorted(Comparator.reverseOrder())
-                 .filter(Files::isRegularFile)
-                 .forEach(p -> {
-                     try {
-                         Path target = fs.getPath(directory.relativize(p).toString());
-                         Path parent = target.getParent();
-                         if (parent != null) {
-                             Files.createDirectories(parent);
-                         }
-                         Files.copy(p, target, REPLACE_EXISTING);
-                     } catch (IOException ioe) {
-                         throw new UncheckedIOException(ioe);
-                     }
-                 });
-        }
     }
 
     /**

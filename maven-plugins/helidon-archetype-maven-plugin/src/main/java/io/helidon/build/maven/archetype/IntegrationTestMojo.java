@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,18 +21,24 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.build.archetype.engine.v1.ArchetypeEngine;
-import io.helidon.build.archetype.engine.v1.Maps;
+import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
+import io.helidon.build.archetype.engine.v2.BatchInputResolver;
+import io.helidon.build.common.FileUtils;
+import io.helidon.build.common.Maps;
+import io.helidon.build.common.SubstitutionVariables;
 
 import org.apache.maven.archetype.ArchetypeGenerationRequest;
 import org.apache.maven.archetype.ArchetypeGenerationResult;
@@ -58,6 +64,8 @@ import org.apache.maven.shared.transfer.project.NoFileAssignedException;
 import org.apache.maven.shared.transfer.project.install.ProjectInstaller;
 import org.apache.maven.shared.transfer.project.install.ProjectInstallerRequest;
 import org.codehaus.plexus.util.StringUtils;
+
+import static java.nio.file.FileSystems.newFileSystem;
 
 /**
  * {@code archetype:integration-test} mojo.
@@ -92,6 +100,7 @@ public class IntegrationTestMojo extends AbstractMojo {
     /**
      * Skip the integration test.
      */
+    @SuppressWarnings("FieldCanBeLocal")
     @Parameter(property = "archetype.test.skip")
     private boolean skip = false;
 
@@ -148,6 +157,12 @@ public class IntegrationTestMojo extends AbstractMojo {
             return;
         }
 
+        // support -DskipTests
+        String skipTests = session.getUserProperties().getProperty("skipTests");
+        if (skipTests != null && !"false".equalsIgnoreCase(skipTests)) {
+            return;
+        }
+
         if (!testProjectsDirectory.exists()) {
             getLog().warn("No Archetype IT projects: root 'projects' directory not found.");
             return;
@@ -158,8 +173,9 @@ public class IntegrationTestMojo extends AbstractMojo {
             throw new MojoFailureException("Archetype not found");
         }
 
+        Path testProjects = testProjectsDirectory.toPath();
         try {
-            List<Path> projectGoals = Files.walk(testProjectsDirectory.toPath())
+            List<Path> projectGoals = Files.walk(testProjects)
                                            .filter((p) -> p.endsWith("goal.txt"))
                                            .collect(Collectors.toList());
             if (projectGoals.isEmpty()) {
@@ -167,8 +183,20 @@ public class IntegrationTestMojo extends AbstractMojo {
                 return;
             }
 
+            List<String> errors = new LinkedList<>();
             for (Path goal : projectGoals) {
-                processIntegrationTest(goal, archetypeFile);
+                Path itProject = testProjects.relativize(goal.getParent());
+                try {
+                    getLog().info("Processing Archetype IT project: " + itProject);
+                    processIntegrationTest(goal, archetypeFile);
+                } catch (Throwable ex) {
+                    getLog().error(ex);
+                    errors.add(String.format("Test error: project=%s, error=%s", itProject, ex.getMessage()));
+                }
+            }
+            if (!errors.isEmpty()) {
+                errors.forEach(getLog()::error);
+                throw new MojoExecutionException("Integration test failed with error(s)");
             }
         } catch (IOException ex) {
             throw new MojoFailureException(ex.getMessage(), ex);
@@ -176,21 +204,21 @@ public class IntegrationTestMojo extends AbstractMojo {
     }
 
     private void processIntegrationTest(Path projectGoal, File archetypeFile) throws IOException, MojoExecutionException {
-        getLog().info("Processing Archetype IT project: " + projectGoal.getParent().toString());
-
         Properties props = new Properties();
         try (InputStream in = Files.newInputStream(projectGoal.getParent().resolve("archetype.properties"))) {
             props.load(in);
         }
         props.put("name", "test project");
 
-        Path outputDir = projectGoal.getParent().resolve(props.getProperty("artifactId"));
-        if (Files.exists(outputDir)) {
-            Files.walk(outputDir)
-                 .sorted(Comparator.reverseOrder())
-                 .map(Path::toFile)
-                 .forEach(File::delete);
+        // substitute all variable references
+        Map<String, String> propsMap = Maps.fromProperties(props);
+        SubstitutionVariables propsVariables = SubstitutionVariables.of(propsMap);
+        for (Entry<String, String> entry : propsMap.entrySet()) {
+            props.setProperty(entry.getKey(), propsVariables.resolve(entry.getValue()));
         }
+
+        Path outputDir = projectGoal.getParent().resolve(props.getProperty("artifactId"));
+        FileUtils.deleteDirectory(outputDir);
 
         if (mavenArchetypeCompatible) {
             mavenCompatGenerate(
@@ -201,9 +229,7 @@ public class IntegrationTestMojo extends AbstractMojo {
                     props,
                     outputDir.getParent());
         } else {
-            Files.createDirectories(outputDir);
-            props.put("maven", "true");
-            new ArchetypeEngine(archetypeFile, Maps.fromProperties(props)).generate(outputDir.toFile());
+            generate(archetypeFile.toPath(), props, outputDir);
         }
 
         List<String> goals = Files.readAllLines(projectGoal).stream()
@@ -214,13 +240,22 @@ public class IntegrationTestMojo extends AbstractMojo {
         }
     }
 
+    private void generate(Path archetypeFile, Properties props, Path outputDir) {
+        try {
+            FileSystem fileSystem = newFileSystem(archetypeFile, this.getClass().getClassLoader());
+            ArchetypeEngineV2 engine = new ArchetypeEngineV2(fileSystem);
+            engine.generate(new BatchInputResolver(), Maps.fromProperties(props), Map.of(), n -> outputDir);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
     private void mavenCompatGenerate(String archetypeGroupId,
                                      String archetypeArtifactId,
                                      String archetypeVersion,
                                      File archetypeFile,
                                      Properties properties,
-                                     Path basedir)
-            throws MojoExecutionException {
+                                     Path basedir) throws MojoExecutionException {
 
         // pre-install the archetype JAR so that the post-generate script can resolve it
         ProjectInstallerRequest projectInstallerRequest = new ProjectInstallerRequest().setProject(project);
@@ -278,7 +313,7 @@ public class IntegrationTestMojo extends AbstractMojo {
 
             if (!properties.isEmpty()) {
                 Properties props = new Properties();
-                for (Map.Entry<String, String> entry : properties.entrySet()) {
+                for (Entry<String, String> entry : properties.entrySet()) {
                     if (entry.getValue() != null) {
                         props.setProperty(entry.getKey(), entry.getValue());
                     }
@@ -322,6 +357,7 @@ public class IntegrationTestMojo extends AbstractMojo {
 
         FileLogger(File outputFile, Log log) throws IOException {
             this.log = log;
+            //noinspection ResultOfMethodCallIgnored
             outputFile.getParentFile().mkdirs();
             stream = new PrintStream(new FileOutputStream(outputFile));
         }

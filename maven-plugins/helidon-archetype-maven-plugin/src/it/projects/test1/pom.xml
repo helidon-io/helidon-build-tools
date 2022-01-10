@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,23 +16,28 @@
     limitations under the License.
 
 -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon.build-tools.archetype.tests</groupId>
-    <artifactId>parent</artifactId>
+    <artifactId>test-archetype1</artifactId>
     <version>@project.version@</version>
-    <name>Parent</name>
-    <packaging>pom</packaging>
+    <name>Test Archetype 1</name>
+    <packaging>helidon-archetype</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <modules>
-        <module>archetype1</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.build-tools.archetype</groupId>
+            <artifactId>helidon-archetype-engine-v2</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <plugin>

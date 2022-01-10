@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.build.maven.archetype.postgenerate;
 
 import java.io.File;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.maven.artifact.repository.ArtifactRepository;
@@ -197,6 +198,7 @@ final class Aether {
      * @param version    the version
      * @return artifact file
      */
+    @SuppressWarnings("SameParameterValue")
     File resolveArtifact(String groupId, String artifactId, String type, String version) {
         try {
             return repoSystem
@@ -230,5 +232,19 @@ final class Aether {
         } catch (DependencyResolutionException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    /**
+     * Resolve transitive dependencies of the given GAVs.
+     *
+     * @param coords list of GAV (groupId:artifactId:version)
+     * @return list of files
+     */
+    List<File> resolveDependencies(List<String> coords) {
+        List<File> files = new LinkedList<>();
+        for (String gav : coords) {
+            files.addAll(resolveDependencies(gav));
+        }
+        return files;
     }
 }

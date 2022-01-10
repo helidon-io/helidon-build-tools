@@ -914,8 +914,8 @@ E.g. for `quickstart-se`:
             </dependency>
             <!-- mvn:// URL support -->
             <dependency>
-                <groupId>io.helidon.build-tools.archetype</groupId>
-                <artifactId>helidon-archetype-maven-url-handler</artifactId>
+                <groupId>io.helidon.build-tools.common</groupId>
+                <artifactId>helidon-build-common-maven-url-support</artifactId>
             </dependency>
         </dependencies>
     </dependencies>

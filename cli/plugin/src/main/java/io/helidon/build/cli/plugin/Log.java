@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,6 +97,15 @@ class Log {
     }
 
     /**
+     * Get the output.
+     *
+     * @return consumer of string
+     */
+    static Consumer<String> output() {
+        return OUT.get();
+    }
+
+    /**
      * Sets the output consumer.
      *
      * @param outputConsumer The output consumer.
@@ -106,7 +115,7 @@ class Log {
     }
 
     /**
-     * Returns whether or not debug messages will be written.
+     * Returns whether debug messages will be written.
      *
      * @return {@code true} if enabled.
      */
@@ -115,7 +124,7 @@ class Log {
     }
 
     /**
-     * Returns whether or not verbose messages will be written.
+     * Returns whether verbose messages will be written.
      *
      * @return {@code true} if enabled.
      */
@@ -127,7 +136,7 @@ class Log {
      * Log a message if debug is enabled.
      *
      * @param message The message.
-     * @param args The message args.
+     * @param args    The message args.
      */
     static void debug(String message, Object... args) {
         if (isDebug()) {
@@ -139,8 +148,9 @@ class Log {
      * Log a message if verbose is enabled.
      *
      * @param message The message.
-     * @param args The message args.
+     * @param args    The message args.
      */
+    @SuppressWarnings("unused")
     static void verbose(String message, Object... args) {
         if (isVerbose()) {
             log(message, args);
@@ -150,6 +160,7 @@ class Log {
     /**
      * Log an empty message.
      */
+    @SuppressWarnings("unused")
     static void info() {
         log("");
     }
@@ -158,7 +169,7 @@ class Log {
      * Log a message.
      *
      * @param message The message.
-     * @param args The message args.
+     * @param args    The message args.
      */
     static void info(String message, Object... args) {
         log(message, args);
@@ -168,8 +179,9 @@ class Log {
      * Log a warning message.
      *
      * @param message The message.
-     * @param args The message args.
+     * @param args    The message args.
      */
+    @SuppressWarnings("unused")
     static void warn(String message, Object... args) {
         log(style(WARN_STYLE, message, args));
     }
@@ -178,9 +190,10 @@ class Log {
      * Log a warning message with associated throwable.
      *
      * @param thrown The throwable.
-     * @param msg Message to be logged.
-     * @param args Format string arguments.
+     * @param msg    Message to be logged.
+     * @param args   Format string arguments.
      */
+    @SuppressWarnings("unused")
     static void warn(Throwable thrown, String msg, Object... args) {
         log(thrown, style(WARN_STYLE, msg, args));
     }
@@ -189,7 +202,7 @@ class Log {
      * Log an error message.
      *
      * @param message The message.
-     * @param args The message args.
+     * @param args    The message args.
      */
     static void error(String message, Object... args) {
         log(style(ERROR_STYLE, message, args));
@@ -199,26 +212,33 @@ class Log {
      * Log an error message with associated throwable.
      *
      * @param thrown The throwable.
-     * @param msg Message to be logged.
-     * @param args Format string arguments.
+     * @param msg    Message to be logged.
+     * @param args   Format string arguments.
      */
+    @SuppressWarnings("unused")
     static void error(Throwable thrown, String msg, Object... args) {
         log(thrown, style(ERROR_STYLE, msg, args));
     }
 
     private static void log(String message, Object... args) {
         if (message != null) {
-            OUT.get().accept(String.format(message, args));
+            Consumer<String> consumer = OUT.get();
+            if (consumer != null) {
+                consumer.accept(String.format(message, args));
+            }
         }
     }
 
     private static void log(Throwable thrown, String message, Object... args) {
-        final String trace = toStackTrace(thrown);
-        String msg = message == null ? "" : String.format(message, args);
-        if (trace != null) {
-            msg += (msg + EOL + trace);
+        Consumer<String> consumer = OUT.get();
+        if (consumer != null) {
+            final String trace = toStackTrace(thrown);
+            String msg = message == null ? "" : String.format(message, args);
+            if (trace != null) {
+                msg += (msg + EOL + trace);
+            }
+            consumer.accept(msg);
         }
-        OUT.get().accept(msg);
     }
 
     private static String toStackTrace(Throwable thrown) {

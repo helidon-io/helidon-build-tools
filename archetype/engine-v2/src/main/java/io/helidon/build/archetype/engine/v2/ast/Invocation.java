@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,13 @@ public final class Invocation extends Node {
 
     private final Kind kind;
     private final String src;
+    private final String url;
 
     private Invocation(Builder builder) {
         super(builder);
         this.kind = Objects.requireNonNull(builder.kind, "kind is null");
         this.src = builder.attribute("src", false);
+        this.url = builder.attribute("url", false);
     }
 
     /**
@@ -40,6 +42,15 @@ public final class Invocation extends Node {
      */
     public String src() {
         return src;
+    }
+
+    /**
+     * Get the url.
+     *
+     * @return url
+     */
+    public String url() {
+        return url;
     }
 
     /**
@@ -54,6 +65,14 @@ public final class Invocation extends Node {
     @Override
     public <A> VisitResult accept(Node.Visitor<A> visitor, A arg) {
         return visitor.visitInvocation(this, arg);
+    }
+
+    @Override
+    public String toString() {
+        return "Invocation{"
+                + "kind=" + kind
+                + ", src='" + src + '\''
+                + '}';
     }
 
     /**

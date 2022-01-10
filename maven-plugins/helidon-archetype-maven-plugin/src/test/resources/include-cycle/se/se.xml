@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
 
     <step label="Application Type">
-        <input>
+        <inputs>
             <enum name="base" label="Select archetype">
                 <option value="quickstart"
                         label="Sample Helidon SE project that includes multiple REST operations">
@@ -36,7 +36,7 @@
                     <exec src="bare/bare-se.xml"/>
                 </option>
             </enum>
-        </input>
+        </inputs>
         <exec src="../common/customize-project.xml"/>
     </step>
 </archetype-script>

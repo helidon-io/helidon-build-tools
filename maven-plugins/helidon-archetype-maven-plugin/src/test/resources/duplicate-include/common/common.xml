@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
 
 
-    <input>
+    <inputs>
         <list name="build-system"
               label="Select a build system">
             <option value="maven" label="Apache Maven">
@@ -36,7 +36,7 @@
             </option>
             <option value="gradle" label="Gradle"/>
         </list>
-    </input>
+    </inputs>
 
     <exec src="security/security.xml"/>
     <exec src="readme.xml"/>

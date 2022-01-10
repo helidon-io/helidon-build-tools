@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,13 +52,21 @@ public class BatchInputResolver extends InputResolver {
         if (result != null) {
             return result;
         }
+        Value defaultValue = defaultValue(input, context);
         if (input.isOptional()) {
-            Value defaultValue = defaultValue(input, context);
             if (defaultValue != null) {
                 context.push(input.name(), defaultValue, input.isGlobal());
                 if (input instanceof Input.Boolean && !defaultValue.asBoolean()) {
                     return VisitResult.SKIP_SUBTREE;
                 }
+                return VisitResult.CONTINUE;
+            }
+        } else if (input instanceof Input.Enum){
+            // skip prompting if there is only one option with a default value
+            Input.Enum enumInput = (Input.Enum) input;
+            int defaultIndex = enumInput.optionIndex(defaultValue.asString());
+            if (enumInput.options().size() == 1 && defaultIndex >= 0) {
+                context.push(input.name(), defaultValue, input.isGlobal());
                 return VisitResult.CONTINUE;
             }
         }

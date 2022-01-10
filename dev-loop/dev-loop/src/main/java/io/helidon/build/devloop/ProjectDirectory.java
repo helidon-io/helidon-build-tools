@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,11 +93,7 @@ public class ProjectDirectory {
      * @throws UncheckedIOException if an error occurs.
      */
     public void delete() {
-        try {
-            FileUtils.deleteDirectory(directory);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        FileUtils.deleteDirectory(directory);
     }
 
     /**

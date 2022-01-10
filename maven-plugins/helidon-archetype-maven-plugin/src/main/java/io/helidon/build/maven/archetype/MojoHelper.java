@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,7 @@
 package io.helidon.build.maven.archetype;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
-
-import io.helidon.build.archetype.engine.v1.Maps;
-
-import org.apache.maven.project.MavenProject;
 
 /**
  * Maven mojo helper class.
@@ -52,32 +46,6 @@ final class MojoHelper {
     static final String PLUGIN_VERSION = getPluginVersion();
 
     private MojoHelper() {
-    }
-
-    /**
-     * Make a properties map to be used as a mustache scope object.
-     *
-     * @param properties               base properties to include
-     * @param includeProjectProperties {@code true} if project properties should be included
-     * @param project                  maven project to get the project properties, {@code project.*} properties are emulated
-     * @return Properties map
-     */
-    static Map<String, String> templateProperties(Map<String, String> properties,
-                                                  boolean includeProjectProperties,
-                                                  MavenProject project) {
-
-        Map<String, String> props = new HashMap<>();
-        props.putAll(properties);
-        if (includeProjectProperties) {
-            Properties projectProperties = project.getProperties();
-            props.putAll(Maps.fromProperties(projectProperties));
-            props.put("project.groupId", project.getGroupId());
-            props.put("project.artifactId", project.getArtifactId());
-            props.put("project.version", project.getVersion());
-            props.put("project.name", project.getName());
-            props.put("project.description", project.getDescription());
-        }
-        return props;
     }
 
     /**

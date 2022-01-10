@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ class BuildRootTestIT {
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
-    void testFileRemovedDetected(String basedir) throws IOException {
+    void testFileRemovedDetected(String basedir) {
         final BuildRoot sourceDir = sourceDirectory(basedir);
         final Path sourceFile = new ArrayList<>(sourceDir.list()).get(0).path();
 
@@ -105,7 +105,7 @@ class BuildRootTestIT {
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
-    void testMultipleChangesDetected(String basedir) throws IOException {
+    void testMultipleChangesDetected(String basedir) {
         final BuildRoot sourceDir = sourceDirectory(basedir);
         final List<BuildFile> sources = new ArrayList<>(sourceDir.list());
         assertThat(sources.size(), is(greaterThanOrEqualTo(2)));

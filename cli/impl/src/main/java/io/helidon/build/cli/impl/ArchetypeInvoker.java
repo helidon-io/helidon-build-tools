@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
@@ -37,7 +36,6 @@ import io.helidon.build.archetype.engine.v1.ArchetypeEngine;
 import io.helidon.build.archetype.engine.v1.ArchetypeLoader;
 import io.helidon.build.archetype.engine.v1.FlowNodeControllers;
 import io.helidon.build.archetype.engine.v1.FlowNodeControllers.FlowNodeController;
-import io.helidon.build.archetype.engine.v1.Maps;
 import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
 import io.helidon.build.archetype.engine.v2.BatchInputResolver;
 import io.helidon.build.archetype.engine.v2.InputResolver;
@@ -47,8 +45,9 @@ import io.helidon.build.archetype.engine.v2.TerminalInputResolver;
 import io.helidon.build.archetype.engine.v2.UnresolvedInputException;
 import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
+import io.helidon.build.common.Maps;
 import io.helidon.build.common.RequirementFailure;
-import io.helidon.build.common.VirtualFileSystem;
+import io.helidon.build.common.Requirements;
 import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
@@ -76,6 +75,9 @@ abstract class ArchetypeInvoker {
      * The first Helidon version that uses the archetype engine V2.
      */
     private static final MavenVersion HELIDON_V3 = toMavenVersion("3.0.0");
+
+
+    private static final String HELIDON_VERSION_NOT_FOUND = "$(red Helidon version) $(RED %s) $(red not found.)";
 
     private final Metadata metadata;
     private final boolean batch;
@@ -160,6 +162,7 @@ abstract class ArchetypeInvoker {
      *
      * @return EngineVersion
      */
+    @SuppressWarnings("unused")
     abstract EngineVersion engineVersion();
 
     /**
@@ -256,6 +259,11 @@ abstract class ArchetypeInvoker {
             return this;
         }
 
+        private boolean isHelidonV3() {
+            String rawVersion = initOptions.helidonVersion().replace("-SNAPSHOT", "");
+            return toMavenVersion(rawVersion).isGreaterThanOrEqualTo(HELIDON_V3);
+        }
+
         /**
          * Build the invoker instance.
          *
@@ -263,9 +271,7 @@ abstract class ArchetypeInvoker {
          * otherwise {@link V2Invoker}
          */
         ArchetypeInvoker build() {
-            if (EngineVersion.V2.equals(initOptions.engineVersion())
-                || initOptions.archetypePath() != null
-                || toMavenVersion(initOptions.helidonVersion()).isGreaterThanOrEqualTo(HELIDON_V3)) {
+            if (EngineVersion.V2.equals(initOptions.engineVersion()) || isHelidonV3()) {
                 return new V2Invoker(this);
             }
             return new V1Invoker(this);
@@ -370,7 +376,6 @@ abstract class ArchetypeInvoker {
         private static final String GROUP_ID_PROPERTY = "groupId";
         private static final String ARTIFACT_ID_PROPERTY = "artifactId";
         private static final String PACKAGE_NAME_PROPERTY = "package";
-        private static final String HELIDON_VERSION_PROPERTY = "helidon-version";
         private static final String BUILD_SYSTEM_PROPERTY = "build-system";
         private static final String ARCHETYPE_BASE_PROPERTY = "base";
 
@@ -386,10 +391,6 @@ abstract class ArchetypeInvoker {
 
             // Initialize params with any properties passed on the command-line; options will take precedence
             Map<String, String> externalValues = new HashMap<>(initProperties());
-
-            // We've already got helidon version, don't prompt again. Note that this will not override
-            // any "helidon.version" command-line property as that is already set in InitOptions
-            externalValues.put(HELIDON_VERSION_PROPERTY, initOptions.helidonVersion());
 
             // Ensure that flavor is lower case if present.
             externalValues.computeIfPresent(FLAVOR_PROPERTY, (key, value) -> value.toLowerCase());
@@ -443,6 +444,7 @@ abstract class ArchetypeInvoker {
                 externalValues.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
             }
 
+            //noinspection ConstantConditions
             ArchetypeEngineV2 engine = new ArchetypeEngineV2(archetype());
             try {
                 return engine.generate(inputResolver, externalValues, externalDefaults, projectDirSupplier());
@@ -470,18 +472,13 @@ abstract class ArchetypeInvoker {
         }
 
         private FileSystem archetype() {
+            String helidonVersion = initOptions().helidonVersion();
             try {
-                String archetypePath = initOptions().archetypePath();
-                if (archetypePath != null) {
-                    Path archetype = Path.of(archetypePath);
-                    if (Files.isDirectory(archetype)) {
-                        return VirtualFileSystem.create(archetype);
-                    }
-                    return FileSystems.newFileSystem(archetype, this.getClass().getClassLoader());
-                }
-                // TODO this is subject to changes depending on how the archetype bundling
-                Path archetype = metadata().directoryOf(toMavenVersion(initOptions().helidonVersion()));
-                return VirtualFileSystem.create(archetype);
+                Path archetype = metadata().archetypeV2Of(helidonVersion);
+                return FileSystems.newFileSystem(archetype, this.getClass().getClassLoader());
+            } catch (Metadata.UpdateFailed | Plugins.PluginFailed e) {
+                Requirements.failed(HELIDON_VERSION_NOT_FOUND, helidonVersion);
+                return null;
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }
@@ -493,8 +490,6 @@ abstract class ArchetypeInvoker {
                     return "--flavor";
                 case BUILD_SYSTEM_PROPERTY:
                     return "--build";
-                case HELIDON_VERSION_PROPERTY:
-                    return "--version";
                 case ARCHETYPE_BASE_PROPERTY:
                     return "--archetype";
                 case GROUP_ID_PROPERTY:

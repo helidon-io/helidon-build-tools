@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,7 +114,7 @@ public final class MergedModel {
          * Sort the nested values.
          */
         protected void sort() {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("model node does not support 'sort'");
         }
 
         /**
@@ -124,7 +124,7 @@ public final class MergedModel {
          * @return the merged node
          */
         protected Node add(Node node) {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("model node does not support 'add'");
         }
     }
 

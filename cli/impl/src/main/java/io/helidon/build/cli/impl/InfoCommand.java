@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -160,7 +160,11 @@ public final class InfoCommand extends BaseCommand {
         log("User Config", userConfigProps, maxWidth);
         log("Project Config", projectProps, maxWidth);
         log("General", buildProps, maxWidth);
-        Plugins.execute("GetInfo", pluginArgs(maxWidth), 5, Log::info);
+        try {
+            Plugins.execute("GetInfo", pluginArgs(maxWidth), 5, Log::info);
+        } catch (Plugins.PluginFailed e) {
+            Log.error(e, "Unable to get system info");
+        }
         log("Metadata", metaProps, maxWidth);
         log("System Properties", systemProps, maxWidth);
         log("Environment Variables", envVars, maxWidth);

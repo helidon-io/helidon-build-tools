@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,8 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.archetype.engine.v2.TestHelper.load;
 import static io.helidon.build.archetype.engine.v2.TestHelper.readFile;
-import static io.helidon.build.archetype.engine.v2.TestHelper.unique;
+import static io.helidon.build.common.FileUtils.unique;
+import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -116,7 +117,7 @@ class OutputGeneratorTest {
         Script script = load(path);
         Path scriptPath = script.scriptPath();
         String dirname = scriptPath.getFileName().toString().replaceAll(".xml", "");
-        Path target = TestFiles.targetDir(OutputGeneratorTest.class);
+        Path target = targetDir(OutputGeneratorTest.class);
         Path outputDir = unique(target.resolve("generator-ut/"), dirname);
         Context context = Context.create(script.scriptPath().getParent());
         initializer.accept(context);

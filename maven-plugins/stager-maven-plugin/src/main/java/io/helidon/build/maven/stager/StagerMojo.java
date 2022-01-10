@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -49,7 +51,7 @@ import org.eclipse.aether.resolution.ArtifactResult;
 /**
  * {@code stager:stage} mojo.
  */
-@Mojo(name = "stage", defaultPhase = LifecyclePhase.PACKAGE, requiresProject = true)
+@Mojo(name = "stage", defaultPhase = LifecyclePhase.PACKAGE)
 public class StagerMojo extends AbstractMojo {
 
     /**
@@ -63,6 +65,12 @@ public class StagerMojo extends AbstractMojo {
      */
     @Component
     private RepositorySystem repoSystem;
+
+    /**
+     * The current Maven session.
+     */
+    @Parameter(defaultValue = "${session}", readonly = true)
+    private MavenSession session;
 
     /**
      * The current repository/network configuration of Maven.
@@ -100,13 +108,38 @@ public class StagerMojo extends AbstractMojo {
     @Parameter(defaultValue = "false", property = "stager.dryRun")
     private boolean dryRun;
 
+    /**
+     * {@code readTimeout} configuration (in ms) for the download task.
+     */
+    @Parameter(defaultValue = "-1", property = DownloadTask.READ_TIMEOUT_PROP)
+    private int readTimeout;
+
+    /**
+     * {@code connectTimeout} configuration (in ms) for the download task.
+     */
+    @Parameter(defaultValue = "-1", property = DownloadTask.CONNECT_TIMEOUT_PROP)
+    private int connectTimeout;
+
+    /**
+     * {@code maxRetries} configuration for the download task.
+     */
+    @Parameter(defaultValue = "-1", property = DownloadTask.MAX_RETRIES)
+    private int maxRetries;
+
     @Override
     public void execute() throws MojoExecutionException {
         if (directories == null) {
             return;
         }
-        StagingContext context = new StagingContextImpl(baseDirectory, outputDirectory, getLog(), repoSystem,
-                repoSession, remoteRepos, archiverManager);
+        StagingContext context = new StagingContextImpl(
+                baseDirectory,
+                outputDirectory,
+                getLog(),
+                repoSystem,
+                repoSession,
+                remoteRepos,
+                archiverManager,
+                this::resolveProperty);
         Path dir = outputDirectory.toPath();
 
         StagingElementFactory factory;
@@ -126,8 +159,44 @@ public class StagerMojo extends AbstractMojo {
         }
     }
 
+    private String resolveProperty(String name) {
+        if (name == null || name.isEmpty()) {
+            return null;
+        }
+        switch (name) {
+            case DownloadTask.READ_TIMEOUT_PROP:
+                if (readTimeout >= 0) {
+                    return String.valueOf(readTimeout);
+                }
+                break;
+            case DownloadTask.CONNECT_TIMEOUT_PROP:
+                if (connectTimeout >= 0) {
+                    return String.valueOf(connectTimeout);
+                }
+                break;
+            case DownloadTask.MAX_RETRIES:
+                if (maxRetries >= 0) {
+                    return String.valueOf(maxRetries);
+                }
+                break;
+            default:
+                Object value = session.getCurrentProject().getProperties().get(name);
+                if (value == null) {
+                    value = session.getUserProperties().get(name);
+                }
+                if (value == null) {
+                    value = session.getSystemProperties().getProperty(name);
+                }
+                if (value instanceof String) {
+                    return (String) value;
+                }
+                return null;
+        }
+        return null;
+    }
+
     /**
-     * Custom staging element factory that wraps the staging tasks to overrides the execution to do a no-op.
+     * Custom staging element factory that wraps the staging tasks to override the execution to do a no-op.
      */
     private final class DryRunStagingElementFactory extends StagingElementFactory {
 
@@ -213,6 +282,7 @@ public class StagerMojo extends AbstractMojo {
         private final RepositorySystemSession repoSession;
         private final List<RemoteRepository> remoteRepos;
         private final ArchiverManager archiverManager;
+        private final Function<String, String> propertyResolver;
 
         StagingContextImpl(File baseDir,
                            File outputDir,
@@ -220,7 +290,8 @@ public class StagerMojo extends AbstractMojo {
                            RepositorySystem repoSystem,
                            RepositorySystemSession repoSession,
                            List<RemoteRepository> remoteRepos,
-                           ArchiverManager archiverManager) {
+                           ArchiverManager archiverManager,
+                           Function<String, String> propertyResolver) {
 
             this.baseDir = baseDir;
             this.outputDir = outputDir;
@@ -228,13 +299,19 @@ public class StagerMojo extends AbstractMojo {
             this.repoSystem = repoSystem;
             this.repoSession = repoSession;
             this.remoteRepos = remoteRepos;
+            this.propertyResolver = propertyResolver;
             this.archiverManager = Objects.requireNonNull(archiverManager, "archiverManager is null");
+        }
+
+        @Override
+        public String property(String name) {
+            return propertyResolver.apply(name);
         }
 
         @Override
         public void unpack(Path archive, Path target, String excludes, String includes) {
             File archiveFile = archive.toFile();
-            UnArchiver unArchiver = null;
+            UnArchiver unArchiver;
             try {
                 unArchiver = archiverManager.getUnArchiver(archiveFile);
             } catch (NoSuchArchiverException ex) {
@@ -295,7 +372,7 @@ public class StagerMojo extends AbstractMojo {
             request.setArtifact(new DefaultArtifact(gav.groupId(), gav.artifactId(), gav.classifier(),
                     gav.type(), gav.version()));
             request.setRepositories(remoteRepos);
-            ArtifactResult result = null;
+            ArtifactResult result;
             try {
                 result = repoSystem.resolveArtifact(repoSession, request);
             } catch (ArtifactResolutionException ex) {

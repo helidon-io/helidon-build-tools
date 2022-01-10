@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,24 +18,26 @@ package io.helidon.build.maven.archetype.postgenerate;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.function.Function;
 
 import org.apache.maven.archetype.ArchetypeGenerationRequest;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.maven.project.ProjectBuildingRequest;
 
-import static java.util.stream.Collectors.toMap;
+import static java.util.Collections.emptyMap;
 
 /**
  * A utility to download the Helidon archetype engine with Aether and invoke it.
@@ -46,6 +48,7 @@ public final class EngineFacade {
     private EngineFacade() {
     }
 
+    private static final String MAVEN_URL_REPO_PROPERTY = "io.helidon.build.common.maven.url.localRepo";
     private static final String MAVEN_CORE_POM_PROPERTIES = "META-INF/maven/org.apache.maven/maven-core/pom.properties";
 
     private static String getMavenVersion() {
@@ -70,9 +73,13 @@ public final class EngineFacade {
 
     private static void checkJavaVersion() {
         try {
-            if (Runtime.class.getMethod("version") != null
-                    && Runtime.Version.class.getMethod("feature") != null
-                    && Runtime.getRuntime().version().feature() < 11) {
+            // using reflection to run on Java 8
+            Method versionMethod = Runtime.class.getMethod("version");
+            Runtime runtime = Runtime.getRuntime();
+            Object version = versionMethod.invoke(runtime);
+            Method featureMethod = version.getClass().getMethod("feature");
+            Object feature = featureMethod.invoke(version);
+            if (feature instanceof Integer && (int) feature < 11) {
                 throw new IllegalStateException();
             }
         } catch (NoSuchMethodException | IllegalStateException ex) {
@@ -86,11 +93,10 @@ public final class EngineFacade {
      * Generate a project.
      *
      * @param request   archetype generation request
-     * @param engineGAV Helidon archetype engine Maven coordinates
-     * @param propNames names of the archetype properties to pass to the Helidon archetype engine
+     * @param dependencies Maven coordinates to resolve for running the engine
      */
     @SuppressWarnings("unused")
-    public static void generate(ArchetypeGenerationRequest request, String engineGAV, List<String> propNames) {
+    public static void generate(ArchetypeGenerationRequest request, List<String> dependencies) {
         checkMavenVersion();
         checkJavaVersion();
 
@@ -99,10 +105,11 @@ public final class EngineFacade {
         List<ArtifactRepository> remoteRepos = mavenRequest.getRemoteRepositories();
         Aether aether = new Aether(localRepo, remoteRepos, mavenRequest.getActiveProfileIds());
 
-        // resolve the helidon engine libs from remote repository
+        // enable mvn:// URL support
+        System.setProperty(MAVEN_URL_REPO_PROPERTY, localRepo.getAbsolutePath());
 
         // create a class-loader with the engine dependencies
-        URL[] urls = aether.resolveDependencies(engineGAV)
+        URL[] urls = aether.resolveDependencies(dependencies)
                            .stream()
                            .map(f -> {
                                try {
@@ -113,38 +120,22 @@ public final class EngineFacade {
                            }).toArray(URL[]::new);
 
         URLClassLoader ecl = new URLClassLoader(urls, EngineFacade.class.getClassLoader());
+
         Properties archetypeProps = request.getProperties();
-        Map<String, String> props = new HashMap<>(propNames
-                .stream()
-                .collect(toMap(Function.identity(), archetypeProps::getProperty)));
-        props.put("maven", "true");
+        Map<String, String> props = new HashMap<>();
+        archetypeProps.stringPropertyNames().forEach(k -> props.put(k, archetypeProps.getProperty(k)));
 
         // resolve the archetype JAR from the local repository
         File archetypeFile = aether.resolveArtifact(request.getArchetypeGroupId(), request.getArchetypeArtifactId(),
                 "jar", request.getArchetypeVersion());
 
-        File projectDir = new File(request.getOutputDirectory() + "/" + request.getArtifactId());
-
-        // delete place place-holder pom
-        new File(projectDir, "pom.xml").delete();
-
         try {
-            Class<?> engineClass = ecl.loadClass("io.helidon.build.archetype.engine.v1.ArchetypeEngine");
-            Constructor<?> engineConstructor = engineClass.getConstructor(File.class, Map.class);
-            Object engine = engineConstructor.newInstance(archetypeFile, props);
-            Method method = engineClass.getDeclaredMethod("generate", File.class);
-            method.invoke(engine, projectDir);
-        } catch (InstantiationException
-                | IllegalAccessException
-                | NoSuchMethodException
-                | ClassNotFoundException ex) {
-            throw new IllegalStateException(ex);
-        } catch (InvocationTargetException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof RuntimeException) {
-                throw (RuntimeException) cause;
-            }
-            throw new RuntimeException(e.getCause());
+            FileSystem fileSystem = FileSystems.newFileSystem(archetypeFile.toPath(), EngineFacade.class.getClassLoader());
+            Path projectDir = Paths.get(request.getOutputDirectory()).resolve(request.getArtifactId());
+            Files.delete(projectDir.resolve("pom.xml"));
+            new ReflectedEngine(ecl, fileSystem).generate(request.isInteractiveMode(), props, emptyMap(), n -> projectDir);
+        } catch (IOException ioe) {
+            throw new IllegalStateException(ioe);
         }
     }
 }

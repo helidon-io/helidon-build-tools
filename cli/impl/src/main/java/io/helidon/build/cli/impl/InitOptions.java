@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,6 @@ public final class InitOptions {
     private final BuildSystem buildOption;
     private String archetypeName;
     private final String archetypeNameOption;
-    private final String archetypePath;
     private final EngineVersion engineVersion;
     private final Flavor flavorOption;
     private final String projectNameOption;
@@ -105,7 +104,6 @@ public final class InitOptions {
             @KeyValue(name = "artifactid", description = "Project's artifact ID") String artifactId,
             @KeyValue(name = "package", description = "Project's package name") String packageName,
             @KeyValue(name = "name", description = "Project's name") String projectName,
-            @KeyValue(name = "archetype-path", description = "Archetype path", visible = false) String archetypePath,
             @KeyValue(name = "engine-version", description = "Archetype engine version", visible = false) String engineVersion) {
 
         this.buildOption = build;
@@ -113,7 +111,6 @@ public final class InitOptions {
         this.helidonVersion = version;
         this.archetypeNameOption = archetypeName;
         this.archetypeName = archetypeName == null ? DEFAULT_ARCHETYPE_NAME : archetypeName;
-        this.archetypePath = archetypePath;
         this.engineVersion = getEngineVersion(engineVersion);
         this.flavorOption = flavor;
         this.flavor = flavor == null ? Flavor.valueOf(DEFAULT_FLAVOR) : flavor;
@@ -299,15 +296,6 @@ public final class InitOptions {
      */
     String packageNameOption() {
         return packageNameOption;
-    }
-
-    /**
-     * Get the archetype path.
-     *
-     * @return archetype path
-     */
-    String archetypePath() {
-        return archetypePath;
     }
 
     /**
