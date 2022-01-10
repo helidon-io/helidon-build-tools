@@ -539,9 +539,9 @@ public class InputTree {
             int current = index.current();
             String combination = index.valuesAsString.get(current);
             if (combination.length() > 0) {
-                // TODO unless we can find a way to know that the existing values have NOT changed,
-                //      we have to do substitution on each pass. We could implement some pre-parsed
-                //      variant to do this faster though.
+                // Unless we can find a way to know that the existing values have NOT changed,
+                // we have to do substitution on each pass. We could implement some pre-parsed
+                // variant to do this faster though.
                 String value = evaluate(combination, values);
                 values.put(path(), value);
             }
@@ -579,9 +579,7 @@ public class InputTree {
         @Override
         public void collect(Map<String, String> values) {
             // We can ignore the index since we have only one combination
-            // TODO unless we can find a way to know that the existing values have NOT changed,
-            //      we have to do substitution on each pass. We could implement some pre-parsed
-            //      variant to do this faster though.
+
             values.put(path(), evaluate(value, values));
             children().forEach(child -> child.collect(values));
         }
@@ -612,9 +610,10 @@ public class InputTree {
         @Override
         public void collect(Map<String, String> values) {
             // We can ignore the index since we have only one combination
-            // TODO unless we can find a way to know that the existing values have NOT changed,
-            //      we have to do substitution on each pass. We could implement some pre-parsed
-            //      variant to do this faster though.
+
+            // Unless we can find a way to know that the existing values have NOT changed,
+            // we have to do substitution on each pass. We could implement some pre-parsed
+            // variant to do this faster though.
             presets.keySet().forEach(key -> {
                 String value = evaluate(presets.get(key), values);
                 values.put(key, value);
