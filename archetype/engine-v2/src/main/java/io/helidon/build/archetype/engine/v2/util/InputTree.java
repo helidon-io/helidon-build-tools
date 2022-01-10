@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.archetype.engine.v2;
+package io.helidon.build.archetype.engine.v2.util;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -32,7 +32,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.build.archetype.engine.v2.InputTree.Node.Kind;
+import io.helidon.build.archetype.engine.v2.Context;
+import io.helidon.build.archetype.engine.v2.InputResolver;
+import io.helidon.build.archetype.engine.v2.ScriptLoader;
+import io.helidon.build.archetype.engine.v2.VisitorAdapter;
+import io.helidon.build.archetype.engine.v2.Walker;
+import io.helidon.build.archetype.engine.v2.util.InputTree.Node.Kind;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.Input;
@@ -142,7 +147,7 @@ public class InputTree {
         private final List<Node> children;
         private NodeIndex index;
 
-        enum Kind {
+        public enum Kind {
             ROOT,
             PRESETS,
             BOOLEAN,
@@ -165,27 +170,27 @@ public class InputTree {
             }
         }
 
-        int id() {
+        public int id() {
             return id;
         }
 
-        Path script() {
+        public Path script() {
             return script;
         }
 
-        int line() {
+        public int line() {
             return line;
         }
 
-        String path() {
+        public String path() {
             return path;
         }
 
-        Kind kind() {
+        public Kind kind() {
             return kind;
         }
 
-        Node parent() {
+        public Node parent() {
             return parent;
         }
 
@@ -199,11 +204,11 @@ public class InputTree {
             }
         }
 
-        List<Node> children() {
+        public List<Node> children() {
             return children;
         }
 
-        NodeIndex index() {
+        public NodeIndex index() {
             if (index == null) {
                 index = createIndex();
             }
@@ -320,7 +325,7 @@ public class InputTree {
         }
     }
 
-    public static class NodeIndex {
+    static class NodeIndex {
         private final int maxIndex;
         private int current;
         private boolean completed;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.archetype.engine.v2;
+package io.helidon.build.archetype.engine.v2.util;
 
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
@@ -21,11 +21,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import io.helidon.build.archetype.engine.v2.InputTree.Node;
-import io.helidon.build.archetype.engine.v2.InputTree.Node.Kind;
-import io.helidon.build.archetype.engine.v2.InputTree.NodeIndex;
-import io.helidon.build.archetype.engine.v2.InputTree.PresetNode;
-import io.helidon.build.archetype.engine.v2.InputTree.ValueNode;
+import io.helidon.build.archetype.engine.v2.util.InputTree.Node;
+import io.helidon.build.archetype.engine.v2.util.InputTree.Node.Kind;
+import io.helidon.build.archetype.engine.v2.util.InputTree.NodeIndex;
+import io.helidon.build.archetype.engine.v2.util.InputTree.PresetNode;
+import io.helidon.build.archetype.engine.v2.util.InputTree.ValueNode;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

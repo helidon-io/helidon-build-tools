@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.archetype.engine.v2;
+package io.helidon.build.archetype.engine.v2.util;
 
 import java.nio.file.Path;
 import java.util.Arrays;

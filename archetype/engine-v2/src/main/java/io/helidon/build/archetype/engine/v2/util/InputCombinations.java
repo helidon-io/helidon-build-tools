@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.archetype.engine.v2;
+package io.helidon.build.archetype.engine.v2.util;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -24,13 +24,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import io.helidon.build.archetype.engine.v2.InputTree.Node;
-import io.helidon.build.archetype.engine.v2.InputTree.NodeIndex;
+import io.helidon.build.archetype.engine.v2.util.InputTree.Node;
+import io.helidon.build.archetype.engine.v2.util.InputTree.NodeIndex;
 
-import org.jetbrains.annotations.NotNull;
 
 /**
- * An iterator over the combinations of input present in an archetype.
+ * An iterator over the combinations of inputs present in an archetype.
  */
 public class InputCombinations implements Iterable<Map<String, String>> {
     private final InputTree tree;
@@ -50,7 +49,6 @@ public class InputCombinations implements Iterable<Map<String, String>> {
         this.verbose = verbose;
     }
 
-    @NotNull
     @Override
     public Iterator<Map<String, String>> iterator() {
         return new CombinationsIterator(tree, verbose);

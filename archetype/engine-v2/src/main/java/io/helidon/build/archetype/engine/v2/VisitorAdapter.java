@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import io.helidon.build.archetype.engine.v2.ast.Output;
  *
  * @param <A> visitor argument type
  */
-class VisitorAdapter<A> implements Node.Visitor<A>, Block.Visitor<A> {
+public class VisitorAdapter<A> implements Node.Visitor<A>, Block.Visitor<A> {
 
     private final Input.Visitor<A> inputVisitor;
     private final Output.Visitor<A> outputVisitor;
@@ -42,7 +42,7 @@ class VisitorAdapter<A> implements Node.Visitor<A>, Block.Visitor<A> {
      * @param outputVisitor output visitor
      * @param modelVisitor  model visitor
      */
-    VisitorAdapter(Input.Visitor<A> inputVisitor, Output.Visitor<A> outputVisitor, Model.Visitor<A> modelVisitor) {
+    protected VisitorAdapter(Input.Visitor<A> inputVisitor, Output.Visitor<A> outputVisitor, Model.Visitor<A> modelVisitor) {
         this.inputVisitor = inputVisitor;
         this.outputVisitor = outputVisitor;
         this.modelVisitor = modelVisitor;
