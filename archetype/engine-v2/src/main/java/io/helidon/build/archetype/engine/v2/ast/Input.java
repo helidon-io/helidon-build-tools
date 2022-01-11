@@ -80,7 +80,7 @@ public abstract class Input extends Block {
          * Visit a boolean input.
          *
          * @param input input
-         * @param arg   visitor argument
+         * @param arg visitor argument
          * @return result
          */
         default VisitResult visitBoolean(Boolean input, A arg) {
@@ -91,7 +91,7 @@ public abstract class Input extends Block {
          * Visit a boolean input after traversing the nested nodes.
          *
          * @param input input
-         * @param arg   visitor argument
+         * @param arg visitor argument
          * @return result
          */
         default VisitResult postVisitBoolean(Boolean input, A arg) {
@@ -102,7 +102,7 @@ public abstract class Input extends Block {
          * Visit a text input.
          *
          * @param input input
-         * @param arg   visitor argument
+         * @param arg visitor argument
          * @return result
          */
         default VisitResult visitText(Text input, A arg) {
@@ -113,7 +113,7 @@ public abstract class Input extends Block {
          * Visit a text input after traversing the nested nodes.
          *
          * @param input input
-         * @param arg   visitor argument
+         * @param arg visitor argument
          * @return result
          */
         default VisitResult postVisitText(Text input, A arg) {
@@ -124,7 +124,7 @@ public abstract class Input extends Block {
          * Visit an option.
          *
          * @param option option
-         * @param arg    visitor argument
+         * @param arg visitor argument
          * @return result
          */
         default VisitResult visitOption(Option option, A arg) {
@@ -135,7 +135,7 @@ public abstract class Input extends Block {
          * Visit an option after traversing the nested nodes.
          *
          * @param option option
-         * @param arg    visitor argument
+         * @param arg visitor argument
          * @return result
          */
         default VisitResult postVisitOption(Option option, A arg) {
@@ -146,7 +146,7 @@ public abstract class Input extends Block {
          * Visit an enum input.
          *
          * @param input input
-         * @param arg   visitor argument
+         * @param arg visitor argument
          * @return result
          */
         default VisitResult visitEnum(Enum input, A arg) {
@@ -157,7 +157,7 @@ public abstract class Input extends Block {
          * Visit an enum input after traversing the nested nodes.
          *
          * @param input input
-         * @param arg   visitor argument
+         * @param arg visitor argument
          * @return result
          */
         default VisitResult postVisitEnum(Enum input, A arg) {
@@ -168,7 +168,7 @@ public abstract class Input extends Block {
          * Visit a list input.
          *
          * @param input input
-         * @param arg   visitor argument
+         * @param arg visitor argument
          * @return result
          */
         default VisitResult visitList(List input, A arg) {
@@ -179,7 +179,7 @@ public abstract class Input extends Block {
          * Visit a list input after traversing the nested nodes.
          *
          * @param input input
-         * @param arg   visitor argument
+         * @param arg visitor argument
          * @return result
          */
         default VisitResult postVisitList(List input, A arg) {
@@ -190,7 +190,7 @@ public abstract class Input extends Block {
          * Visit any input.
          *
          * @param input input
-         * @param arg   visitor argument
+         * @param arg visitor argument
          * @return result
          */
         @SuppressWarnings("unused")
@@ -202,7 +202,7 @@ public abstract class Input extends Block {
          * Visit any input after traversing the nested nodes.
          *
          * @param input input
-         * @param arg   visitor argument
+         * @param arg visitor argument
          * @return result
          */
         @SuppressWarnings("unused")
@@ -215,8 +215,8 @@ public abstract class Input extends Block {
      * Visit this input.
      *
      * @param visitor visitor
-     * @param arg     visitor argument
-     * @param <A>     visitor argument type
+     * @param arg visitor argument
+     * @param <A> visitor argument type
      * @return result
      */
     public abstract <A> VisitResult accept(Visitor<A> visitor, A arg);
@@ -225,8 +225,8 @@ public abstract class Input extends Block {
      * Visit this input after traversing the nested nodes.
      *
      * @param visitor visitor
-     * @param arg     visitor argument
-     * @param <A>     visitor argument type
+     * @param arg visitor argument
+     * @param <A> visitor argument type
      * @return result
      */
     public abstract <A> VisitResult acceptAfter(Visitor<A> visitor, A arg);
@@ -295,7 +295,7 @@ public abstract class Input extends Block {
          * Validate the given value against this input.
          *
          * @param value value
-         * @param path  input path
+         * @param path input path
          * @throws InvalidInputException if the value is invalid
          */
         @SuppressWarnings("unused")
@@ -315,7 +315,7 @@ public abstract class Input extends Block {
         /**
          * Compute the visit result for the given option.
          *
-         * @param value  current value
+         * @param value current value
          * @param option option
          * @return visit result
          */
@@ -336,10 +336,10 @@ public abstract class Input extends Block {
         @Override
         public String toString() {
             return "NamedInput{"
-                    + "name='" + name + '\''
-                    + ", optional=" + optional
-                    + ", global=" + global
-                    + '}';
+                   + "name='" + name + '\''
+                   + ", optional=" + optional
+                   + ", global=" + global
+                   + '}';
         }
     }
 
@@ -377,8 +377,8 @@ public abstract class Input extends Block {
         @Override
         public String toString() {
             return "InputOption{"
-                    + "value='" + value + '\''
-                    + '}';
+                   + "value='" + value + '\''
+                   + '}';
         }
     }
 
@@ -413,12 +413,12 @@ public abstract class Input extends Block {
         @Override
         public String toString() {
             return "InputText{"
-                    + "name='" + name() + '\''
-                    + ", label='" + label() + '\''
-                    + ", optional=" + isOptional()
-                    + ", global=" + isGlobal()
-                    + ", defaultValue='" + defaultValue + '\''
-                    + '}';
+                   + "name='" + name() + '\''
+                   + ", label='" + label() + '\''
+                   + ", optional=" + isOptional()
+                   + ", global=" + isGlobal()
+                   + ", defaultValue='" + defaultValue + '\''
+                   + '}';
         }
     }
 
@@ -456,16 +456,37 @@ public abstract class Input extends Block {
 
         /**
          * Returns the boolean value of the given input.
+         *
          * @param input The input.
          * @return {@code true} if input is "y", "yes" or "true".
          */
         public static boolean valueOf(String input) {
+            return valueOf(input, false);
+        }
+
+        /**
+         * Returns the boolean value of the given input.
+         *
+         * @param input The input.
+         * @param strict {@code true} if an exception should be thrown if the value is not one of
+         * "y", "yes", "true", "n", "no", or "false". If {@code false}, any unknown value is treated
+         * as false.
+         * @return The boolean value.
+         */
+        public static boolean valueOf(String input, boolean strict) {
             switch (input.trim().toLowerCase()) {
                 case "y":
                 case "yes":
                 case "true":
                     return true;
+                case "n":
+                case "no":
+                case "false":
+                    return false;
                 default:
+                    if (strict) {
+                        throw new IllegalArgumentException(input + " is not boolean");
+                    }
                     return false;
             }
         }
@@ -473,12 +494,12 @@ public abstract class Input extends Block {
         @Override
         public String toString() {
             return "InputBoolean{"
-                    + "name='" + name() + '\''
-                    + ", label='" + label() + '\''
-                    + ", optional=" + isOptional()
-                    + ", global=" + isGlobal()
-                    + ", defaultValue='" + defaultValue + '\''
-                    + '}';
+                   + "name='" + name() + '\''
+                   + ", label='" + label() + '\''
+                   + ", optional=" + isOptional()
+                   + ", global=" + isGlobal()
+                   + ", defaultValue='" + defaultValue + '\''
+                   + '}';
         }
     }
 
@@ -592,12 +613,12 @@ public abstract class Input extends Block {
         @Override
         public String toString() {
             return "InputList{"
-                    + "name='" + name() + '\''
-                    + ", label='" + label() + '\''
-                    + ", optional=" + isOptional()
-                    + ", global=" + isGlobal()
-                    + ", defaultValue='" + defaultValue + '\''
-                    + '}';
+                   + "name='" + name() + '\''
+                   + ", label='" + label() + '\''
+                   + ", optional=" + isOptional()
+                   + ", global=" + isGlobal()
+                   + ", defaultValue='" + defaultValue + '\''
+                   + '}';
         }
 
         private static boolean containsIgnoreCase(java.util.List<String> values, String expected) {
@@ -674,12 +695,12 @@ public abstract class Input extends Block {
         @Override
         public String toString() {
             return "InputEnum{"
-                    + "name='" + name() + '\''
-                    + ", label='" + label() + '\''
-                    + ", optional=" + isOptional()
-                    + ", global=" + isGlobal()
-                    + ", defaultValue='" + defaultValue + '\''
-                    + '}';
+                   + "name='" + name() + '\''
+                   + ", label='" + label() + '\''
+                   + ", optional=" + isOptional()
+                   + ", global=" + isGlobal()
+                   + ", defaultValue='" + defaultValue + '\''
+                   + '}';
         }
     }
 
@@ -687,8 +708,8 @@ public abstract class Input extends Block {
      * Create a new input block builder.
      *
      * @param scriptPath script path
-     * @param position   position
-     * @param blockKind  block kind
+     * @param position position
+     * @param blockKind block kind
      * @return builder
      */
     public static Builder builder(Path scriptPath, Position position, Kind blockKind) {

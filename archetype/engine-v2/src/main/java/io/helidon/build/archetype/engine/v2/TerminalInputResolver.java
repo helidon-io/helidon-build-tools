@@ -51,7 +51,7 @@ public class TerminalInputResolver extends InputResolver {
 
     @Override
     public VisitResult visitBoolean(Input.Boolean input, Context context) {
-        VisitResult result =    onVisitInput(input, context);
+        VisitResult result = onVisitInput(input, context);
         if (result != null) {
             return result;
         }
@@ -67,17 +67,10 @@ public class TerminalInputResolver extends InputResolver {
                     return VisitResult.CONTINUE;
                 }
                 boolean value;
-                switch (response.trim().toLowerCase()) {
-                    case "y":
-                    case "yes":
-                        value = true;
-                        break;
-                    case "n":
-                    case "no":
-                        value = false;
-                        break;
-                    default:
-                        continue;
+                try {
+                    value = Input.Boolean.valueOf(response, true);
+                } catch (Exception e) {
+                    continue;
                 }
                 context.push(input.name(), Value.create(value), input.isGlobal());
                 return VisitResult.CONTINUE;
