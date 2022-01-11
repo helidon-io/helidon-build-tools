@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.common.GenericType;
 
@@ -234,6 +235,14 @@ public final class Context {
     }
 
     /**
+     * Returns the current input path.
+     * @return input path
+     */
+    public String path() {
+        return inputs.peek();
+    }
+
+    /**
      * Substitute the context variables within the given string.
      *
      * @param value string to process
@@ -346,9 +355,7 @@ public final class Context {
 
         @Override
         public Boolean asBoolean() {
-            // TODO supports all forms of boolean string representation
-            // See TerminalInputResolver
-            return Boolean.valueOf((String) unwrap());
+            return Input.Boolean.valueOf((String) unwrap());
         }
 
         @Override
