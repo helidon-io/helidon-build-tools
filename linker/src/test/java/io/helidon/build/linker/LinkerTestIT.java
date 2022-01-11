@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import io.helidon.build.common.test.utils.ConfigurationParameterSource;
 import io.helidon.build.linker.util.Constants;
 import io.helidon.build.linker.util.JavaRuntime;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -120,6 +121,7 @@ class LinkerTestIT {
     }
 
     @Tag("mp")
+    @Disabled("https://github.com/oracle/helidon-build-tools/issues/537")
     @Order(4)
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
@@ -137,6 +139,27 @@ class LinkerTestIT {
         requireDirectory(jri);
         assertApplication(jri, mainJar.getFileName().toString());
         assertCdsArchive(jri, true);
+        assertScript(jri);
+        assertHelidonJri(jri);
+    }
+
+    @Tag("mp")
+    @Order(5)
+    @ParameterizedTest
+    @ConfigurationParameterSource("basedir")
+    void testQuickstartMpNoCds(String basedir) throws Exception {
+        Path mainJar = Path.of(basedir).resolve("target/quickstart-mp.jar");
+        Path targetDir = mainJar.getParent();
+        Configuration config = Configuration.builder()
+                                            .jriDirectory(targetDir.resolve("mp-jri"))
+                                            .mainJar(mainJar)
+                                            .replace(true)
+                                            .cds(false)
+                                            .build();
+        Path jri = Linker.linker(config).link();
+
+        requireDirectory(jri);
+        assertApplication(jri, mainJar.getFileName().toString());
         assertScript(jri);
         assertHelidonJri(jri);
     }

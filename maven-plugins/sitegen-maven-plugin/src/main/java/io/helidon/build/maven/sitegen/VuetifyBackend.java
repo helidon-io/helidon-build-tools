@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,9 @@ import io.helidon.build.maven.sitegen.freemarker.FreemarkerEngine;
 import io.helidon.build.maven.sitegen.freemarker.TemplateSession;
 import io.helidon.config.Config;
 
+import static io.helidon.build.maven.sitegen.Helper.loadResourceDirAsPath;
+import static io.helidon.build.maven.sitegen.asciidoctor.AsciidocPageRenderer.ADOC_EXT;
+
 /**
  * A backend implementation for vuetifyjs.
  * @see <a href="https://vuetifyjs.com">https://vuetifyjs.com</a>
@@ -69,11 +72,9 @@ public class VuetifyBackend extends Backend {
         this.navigation = navigation;
         this.homePage = homePage;
         this.releases = releases == null ? Collections.emptyList() : releases;
-        this.pageRenderers = Map.of(
-                AsciidocPageRenderer.ADOC_EXT, new AsciidocPageRenderer(BACKEND_NAME)
-        );
+        this.pageRenderers = Map.of(ADOC_EXT, new AsciidocPageRenderer(BACKEND_NAME));
         try {
-            staticResources = Helper.loadResourceDirAsPath(STATIC_RESOURCES);
+            staticResources = loadResourceDirAsPath(STATIC_RESOURCES);
         } catch (URISyntaxException | IOException ex) {
             throw new IllegalStateException(ex);
         }
@@ -118,15 +119,15 @@ public class VuetifyBackend extends Backend {
 
     @Override
     public void generate(RenderingContext ctx) {
-        File pagesdir = new File(ctx.getOutputdir(), "pages");
+        File pagesDir = new File(ctx.getOutputdir(), "pages");
         try {
-            Files.createDirectories(pagesdir.toPath());
+            Files.createDirectories(pagesDir.toPath());
         } catch (IOException ex) {
             throw new RenderingException(ex.getMessage(), ex);
         }
 
         // render all pages
-        ctx.processPages(pagesdir, "js");
+        ctx.processPages(pagesDir, "js");
 
         // copy declared assets
         ctx.copyStaticAssets();
@@ -145,11 +146,11 @@ public class VuetifyBackend extends Backend {
         // resolve navigation routes
         List<String> navRouteEntries = resolvedNavigation != null
                  ? resolvedNavigation.getItems().stream()
-                .filter((item) -> item.isGroup())
+                .filter(VuetifyNavigation.Item::isGroup)
                 .flatMap((item) -> item.asGroup().getItems().stream())
-                .filter((groupItem) -> groupItem.isSubGroup())
+                .filter(VuetifyNavigation.Item::isSubGroup)
                 .flatMap((groupItem) -> groupItem.asSubGroup().getItems().stream())
-                .filter((subGroupItem) -> subGroupItem.isLink())
+                .filter(VuetifyNavigation.Item::isLink)
                 .map((subGroupItem) -> ctx.getPageForRoute(
                         subGroupItem.asLink()
                             .getHref())
@@ -224,6 +225,7 @@ public class VuetifyBackend extends Backend {
          * @param theme a {@code Map<String, String>} representing theme options
          * @return the {@link Builder} instance
          */
+        @SuppressWarnings("unused")
         public Builder theme(Map<String, String> theme){
             put(THEME_PROP, theme);
             return this;
