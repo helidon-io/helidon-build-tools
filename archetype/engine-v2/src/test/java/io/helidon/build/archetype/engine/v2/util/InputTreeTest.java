@@ -455,6 +455,38 @@ class InputTreeTest {
         assertThat(combination.get("choice.bar"), is("a-bar"));
     }
 
+    @Test
+    void testSubstitutions() {
+        InputTree tree = InputTree.builder()
+                                  .archetypePath(sourceDir("input-tree"))
+                                  .entryPointFile("substitutions.xml")
+                                  .verbose(true)
+                                  .build();
+        Map<String, String> combination = new LinkedHashMap<>();
+        List<Node> nodes = tree.asList();
+        tree.collect(combination);
+        assertThat(combination.size(), is(5));
+        assertThat(combination.get("foo"), is("a-foo"));
+        assertThat(combination.get("bar"), is("a-bar"));
+        assertThat(combination.get("preset"), is("a-foo-a-bar"));
+        assertThat(combination.get("text"), is("a-foo-a-bar"));
+        assertThat(combination.get("list-things"), is("a-foo"));
+
+        Node list = nodes.get(4);
+        assertThat(list.kind(), is(Kind.LIST));
+        NodeIndex index = list.index();
+        index.next(); // Skip empty list-things
+        index.next();
+
+        tree.collect(combination);
+        assertThat(combination.size(), is(5));
+        assertThat(combination.get("foo"), is("a-foo"));
+        assertThat(combination.get("bar"), is("a-bar"));
+        assertThat(combination.get("preset"), is("a-foo-a-bar"));
+        assertThat(combination.get("text"), is("a-foo-a-bar"));
+        assertThat(combination.get("list-things"), is("a-bar"));
+    }
+
     private static InputTree create(String testDir) {
         return create(sourceDir(testDir));
     }

@@ -934,15 +934,7 @@ public class InputTree {
             } else if (type == ValueTypes.INT) {
                 return value.asInt().toString();
             } else if (type == ValueTypes.STRING_LIST) {
-                List<String> list = value.asList();
-                StringBuilder b = new StringBuilder();
-                list.forEach(v -> {
-                    if (b.length() > 0) {
-                        b.append(',');
-                    }
-                    b.append(v);
-                });
-                return b.toString();
+                return ListNode.asString(value.asList());
             }
             throw new IllegalStateException("unknown type: " + type);
         }
