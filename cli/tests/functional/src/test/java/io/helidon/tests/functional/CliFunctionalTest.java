@@ -50,12 +50,10 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
-public class FunctionalTest {
+public class CliFunctionalTest {
 
     private static String jarCliPath = System.getProperty("jar.cli.path", "please-set-cli.jar.path");
     private static final LocalPlatform localPlatform = LocalPlatform.get();
-    private static final String RESSOURCE_PATH = FileUtils.requireDirectory(pathOf(
-                    requireNonNull(FunctionalTest.class.getClassLoader().getResource("cli-data")))).toString();
     private static final String CUSTOM_GROUP_ID = "mygroupid";
     private static final String CUSTOM_ARTIFACT_ID = "myartifactid";
     private static final String CUSTOM_PROJECT = "myproject";
@@ -180,7 +178,7 @@ public class FunctionalTest {
     @ParameterizedTest
     @CsvSource({"1,1", "1,2", "1,3", "2,1", "2,2", "2,3"})
     void customProjectNameInteractiveTest(String flavor, String archetype) throws Exception {
-        runInteractiveTest(flavor, CUSTOM_PROJECT, archetype, null, null, null, null, false);
+        runInteractiveTest(flavor, null, archetype, null, null, null, CUSTOM_PROJECT, false);
         Assertions.assertTrue(workDir.resolve(CUSTOM_PROJECT).toFile().exists());
     }
 
@@ -239,7 +237,7 @@ public class FunctionalTest {
         Arguments arguments = toArguments(jarCliPath, buildArgs(null), -1);
         Application app = localPlatform.launch("java", arguments, Console.of(console));
         CliApplication cli = new CliApplication(app, console);
-        TimeUnit.SECONDS.sleep(2);
+        TimeUnit.SECONDS.sleep(3);
 
         cli.writeInput(version == null ? HELIDON_VERSION : version);
         cli.writeInput(flavor);
@@ -280,7 +278,7 @@ public class FunctionalTest {
     }
 
     private void waitForGeneratedProject() throws InterruptedException {
-        long timeout = 5 * 1000;
+        long timeout = 10 * 1000;
         long now = System.currentTimeMillis();
 
         while (!Path.of(workDir.toString(), CUSTOM_PROJECT, "pom.xml").toFile().exists()) {
@@ -308,23 +306,11 @@ public class FunctionalTest {
         List<String> args = new LinkedList<>(List.of(
                 "init",
                 "--project",
-                workDir.resolve(CUSTOM_PROJECT).toString(),
-                "--archetype-path",
-                Path.of(RESSOURCE_PATH, "3.0.0", "cli-data.zip").toString(),
-                "--engine-version",
-                "v2"));
+                workDir.resolve(CUSTOM_PROJECT).toString()));
         if (additionalArgs != null) {
             args.addAll(additionalArgs);
         }
         return args;
-    }
-
-    static Path pathOf(URL u) {
-        try {
-            return Path.of(u.toURI());
-        } catch (URISyntaxException e) {
-            throw new IllegalStateException(e);
-        }
     }
 
     static class ArgList<E> extends LinkedList<E> {
@@ -373,7 +359,7 @@ public class FunctionalTest {
         }
 
         void waitForApplication() throws Exception {
-            long timeout = 20 * 1000;
+            long timeout = 25 * 1000;
             long now = System.currentTimeMillis();
             URL url = new URL("http://localhost:" + port + "/health");
 
