@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2021 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,14 +38,14 @@ fi
 # shellcheck disable=SC2046
 readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
-source ${WS_DIR}/etc/scripts/pipeline-env.sh
-export PATH=/tools/graalvm-ce-java11-20.2.0/bin:${PATH}
+source "${WS_DIR}"/etc/scripts/pipeline-env.sh
+export PATH=/tools/graalvm-ce-java17-21.3.0/bin:${PATH}
 
 if [ "${1}" = "--release" ] ; then
     # get maven version
-    MVN_VERSION=$(mvn ${MAVEN_ARGS} \
+    MVN_VERSION=$(mvn "${MAVEN_ARGS}" \
         -q \
-        -f ${WS_DIR}/pom.xml \
+        -f "${WS_DIR}"/pom.xml \
         -Dexec.executable="echo" \
         -Dexec.args="\${project.version}" \
         --non-recursive \
@@ -53,11 +53,11 @@ if [ "${1}" = "--release" ] ; then
 
     # strip qualifier
     readonly VERSION="${MVN_VERSION%-*}"
-    git fetch origin refs/tags/${VERSION}:refs/tags/${VERSION}
-    git checkout refs/tags/${VERSION}
+    git fetch origin refs/tags/"${VERSION}":refs/tags/"${VERSION}"
+    git checkout refs/tags/"${VERSION}"
 fi
 
-mvn ${MAVEN_ARGS} -f ${WS_DIR}/helidon-cli/impl/pom.xml \
+mvn "${MAVEN_ARGS}" -f "${WS_DIR}"/helidon-cli/impl/pom.xml \
     clean install \
     -DskipTests \
     -Pnative-image \

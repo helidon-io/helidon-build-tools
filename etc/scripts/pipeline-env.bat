@@ -1,5 +1,5 @@
 @REM
-@REM Copyright (c) 2020 Oracle and/or its affiliates.
+@REM Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 @REM
 @REM Licensed under the Apache License, Version 2.0 (the "License");
 @REM you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 if "%JENKINS_HOME%"=="" exit 0
 
-set JAVA_HOME=C:\tools\graalvm-ce-java11-20.2.0
+set JAVA_HOME=C:\tools\graalvm-ce-java17-21.3.0
 set MAVEN_HOME=C:\tools\apache-maven-3.6.3
 set PATH=%MAVEN_HOME%\bin;%JAVA_HOME%\bin;%PATH%
 

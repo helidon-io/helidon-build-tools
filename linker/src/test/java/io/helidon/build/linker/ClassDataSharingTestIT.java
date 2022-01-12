@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import io.helidon.build.common.test.utils.ConfigurationParameterSource;
 import io.helidon.build.common.test.utils.TestLogLevel;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -54,6 +55,7 @@ class ClassDataSharingTestIT {
     }
 
     @Tag("mp")
+    @Disabled("https://github.com/oracle/helidon-build-tools/issues/537")
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
     void testQuickstartMp(String basedir) throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.asciidoctor.ast.Block;
 import org.asciidoctor.ast.StructuralNode;
 import org.asciidoctor.extension.BlockProcessor;
 import org.asciidoctor.extension.Contexts;
@@ -43,26 +42,20 @@ public class PillarsBlockProcessor extends BlockProcessor {
      */
     public PillarsBlockProcessor() {
         super("PILLARS", CONFIG);
-        setConfigFinalized();
     }
 
     @Override
-    public Object process(StructuralNode parent,
-                          Reader reader,
-                          Map<String, Object> attributes) {
-
+    public Object process(StructuralNode parent, Reader reader, Map<String, Object> attributes) {
         Map<Object, Object> opts = new HashMap<>();
         // means it can have nested blocks
         opts.put("content_model", "compound");
         // create an empty block with context "pillars"
-        Block block = this.createBlock(parent, "pillars",
-                Collections.emptyList(), attributes, opts);
-        return block;
+        return this.createBlock(parent, "pillars", Collections.emptyList(), attributes, opts);
     }
 
     /**
      * Create a block processor configuration.
-     * @param blockType the type of block
+     * @param blockTypes the types of block
      * @return map
      */
     private static Map<String, Object> createConfig(String... blockTypes){

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ import static io.helidon.build.cli.codegen.AST.Values.valueRef;
         "io.helidon.build.cli.harness.Command",
         "io.helidon.build.cli.harness.CommandFragment",
 })
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
+@SupportedSourceVersion(SourceVersion.RELEASE_17)
 public class CommandAP extends AbstractProcessor {
 
     private static final String REGISTRY_SERVICE_FILE = "META-INF/services/io.helidon.build.cli.harness.CommandRegistry";
@@ -213,26 +213,7 @@ public class CommandAP extends AbstractProcessor {
                 .modifiers(PUBLIC, FINAL)
                 .superClass(metaModel.paramInfoType())
                 .type(typeInfo)
-                .body(ClassBody
-                        .builder()
-                        .field(FieldDeclaration
-                                .builder()
-                                .javadoc("Parameters.")
-                                .modifiers(PUBLIC, STATIC, FINAL)
-                                .type(ParameterInfo[].class)
-                                .name("PARAMS")
-                                .value(arrayLiteral(ParameterInfo[].class,
-                                        metaModel.params()
-                                                 .stream()
-                                                 .map(CommandAP::paramValue)
-                                                 .toArray(Value[]::new))))
-                        .field(FieldDeclaration
-                                .builder()
-                                .javadoc("Singleton instance.")
-                                .modifiers(PUBLIC, STATIC, FINAL)
-                                .type(typeInfo)
-                                .name("INSTANCE")
-                                .value(constructorInvocation(typeInfo)))
+                .body(paramsClass(typeInfo, metaModel)
                         .constructor(ConstructorDeclaration
                                 .builder()
                                 .modifiers(PRIVATE)
@@ -263,7 +244,7 @@ public class CommandAP extends AbstractProcessor {
     /**
      * Create a command model class declaration.
      *
-     * @param metaModel command meta-model
+     * @param metaModel command metamodel
      * @return ClassDeclaration
      */
     static ClassDeclaration commandModel(CommandMetaModel<ElementInfo> metaModel) {
@@ -274,26 +255,7 @@ public class CommandAP extends AbstractProcessor {
                 .modifiers(PUBLIC, FINAL)
                 .superClass(CommandModel.class)
                 .type(typeInfo)
-                .body(ClassBody
-                        .builder()
-                        .field(FieldDeclaration
-                                .builder()
-                                .javadoc("Parameters.")
-                                .modifiers(PUBLIC, STATIC, FINAL)
-                                .type(ParameterInfo[].class)
-                                .name("PARAMS")
-                                .value(arrayLiteral(ParameterInfo[].class,
-                                        metaModel.params()
-                                                 .stream()
-                                                 .map(CommandAP::paramValue)
-                                                 .toArray(Value[]::new))))
-                        .field(FieldDeclaration
-                                .builder()
-                                .javadoc("Singleton instance.")
-                                .modifiers(PUBLIC, STATIC, FINAL)
-                                .type(typeInfo)
-                                .name("INSTANCE")
-                                .value(constructorInvocation(typeInfo)))
+                .body(paramsClass(typeInfo, metaModel)
                         .field(FieldDeclaration
                                 .builder()
                                 .javadoc("Command name.")
@@ -341,7 +303,7 @@ public class CommandAP extends AbstractProcessor {
     /**
      * Create a command registry class declaration.
      *
-     * @param metaModel command line meta-model
+     * @param metaModel command line metamodel
      * @return ClassDeclaration
      */
     static ClassDeclaration commandRegistry(CLIMetaModel<ElementInfo> metaModel) {
@@ -398,9 +360,31 @@ public class CommandAP extends AbstractProcessor {
                 .build();
     }
 
+    private static ClassBody.Builder paramsClass(TypeInfo typeInfo, MetaModel.ParametersMetaModel<?, ?> metaModel) {
+        return ClassBody
+                .builder()
+                .field(FieldDeclaration
+                        .builder()
+                        .javadoc("Parameters.")
+                        .modifiers(PUBLIC, STATIC, FINAL)
+                        .type(ParameterInfo[].class)
+                        .name("PARAMS")
+                        .value(arrayLiteral(ParameterInfo[].class,
+                                metaModel.params()
+                                         .stream()
+                                         .map(CommandAP::paramValue)
+                                         .toArray(Value[]::new))))
+                .field(FieldDeclaration
+                        .builder()
+                        .javadoc("Singleton instance.")
+                        .modifiers(PUBLIC, STATIC, FINAL)
+                        .type(typeInfo)
+                        .name("INSTANCE")
+                        .value(constructorInvocation(typeInfo)));
+    }
+
     private static Value paramValue(ParameterMetaModel param) {
-        if (param instanceof MetaModel.KeyValuesMetaModel) {
-            KeyValuesMetaModel<?> model = (KeyValuesMetaModel<?>) param;
+        if (param instanceof KeyValuesMetaModel<?> model) {
             KeyValues annotation = model.annotation();
             return ConstructorInvocation
                     .builder()
@@ -412,8 +396,7 @@ public class CommandAP extends AbstractProcessor {
                     .arg(booleanLiteral(annotation.required()))
                     .build();
         }
-        if (param instanceof MetaModel.FlagMetaModel) {
-            FlagMetaModel model = (FlagMetaModel) param;
+        if (param instanceof FlagMetaModel model) {
             Flag annotation = model.annotation();
             return ConstructorInvocation
                     .builder()
@@ -424,8 +407,7 @@ public class CommandAP extends AbstractProcessor {
                     .arg(booleanLiteral(annotation.visible()))
                     .build();
         }
-        if (param instanceof MetaModel.KeyValueMetaModel) {
-            KeyValueMetaModel<?> model = (KeyValueMetaModel<?>) param;
+        if (param instanceof KeyValueMetaModel<?> model) {
             TypeInfo annotatedType = model.annotatedType();
             KeyValue annotation = model.annotation();
             return ConstructorInvocation
@@ -440,8 +422,7 @@ public class CommandAP extends AbstractProcessor {
                     .arg(booleanLiteral(annotation.visible()))
                     .build();
         }
-        if (param instanceof MetaModel.ArgumentMetaModel) {
-            ArgumentMetaModel<?> model = (ArgumentMetaModel<?>) param;
+        if (param instanceof ArgumentMetaModel<?> model) {
             Option.Argument annotation = model.annotation();
             return ConstructorInvocation
                     .builder()
@@ -493,8 +474,7 @@ public class CommandAP extends AbstractProcessor {
         Iterator<ParameterMetaModel> it = params.iterator();
         for (int i = 0; it.hasNext(); i++) {
             ParameterMetaModel param = it.next();
-            if (param instanceof MetaModel.FragmentMetaModel) {
-                FragmentMetaModel<?> fragment = (FragmentMetaModel<?>) param;
+            if (param instanceof FragmentMetaModel<?> fragment) {
                 resolvedParams.add(MethodInvocation
                         .builder()
                         .method(refCast(fragmentInfoType(fragment), arrayValueRef("PARAMS", i)), "resolve")

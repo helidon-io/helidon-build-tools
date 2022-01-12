@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,6 @@ public interface Validator {
     /**
      * Validate copyright of the file.
      *
-     *
      * @param file the file request
      * @param path path of the file
      * @throws io.helidon.build.maven.enforcer.RuleFailureException (such as copyright year should be 2019, 2021, but was 2019)
@@ -60,6 +59,7 @@ public interface Validator {
     interface ValidatorConfig {
         /**
          * A new builder.
+         *
          * @return new fluent API builder
          */
         static Builder builder() {
@@ -106,6 +106,11 @@ public interface Validator {
             private Builder() {
             }
 
+            /**
+             * Build the validator config.
+             *
+             * @return new instance
+             */
             public ValidatorConfig build() {
                 return new ValidatorConfigImpl(this);
             }
@@ -143,6 +148,12 @@ public interface Validator {
                 return this;
             }
 
+            /**
+             * Set the current year.
+             *
+             * @param currentYear the current year
+             * @return updated builder
+             */
             public Builder currentYear(String currentYear) {
                 this.currentYear = currentYear;
                 return this;

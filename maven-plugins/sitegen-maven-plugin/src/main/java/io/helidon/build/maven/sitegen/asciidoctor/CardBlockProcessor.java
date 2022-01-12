@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.build.maven.sitegen.asciidoctor;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -33,13 +34,12 @@ import org.asciidoctor.extension.Reader;
  */
 public class CardBlockProcessor extends BlockProcessor {
 
-    private static final Logger LOGGER = Logger.getLogger(
-            CardBlockProcessor.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(CardBlockProcessor.class.getName());
 
     /**
      * Marker text for generated block links.
      */
-    public static final String BLOCKLINK_TEXT = "@@blocklink@@";
+    public static final String BLOCK_LINK_TEXT = "@@blocklink@@";
 
     /**
      * This block is of type open (delimited by --).
@@ -51,21 +51,16 @@ public class CardBlockProcessor extends BlockProcessor {
      */
     public CardBlockProcessor() {
         super("CARD", CONFIG);
-        setConfigFinalized();
     }
 
     @Override
-    public Object process(StructuralNode parent,
-                          Reader reader,
-                          Map<String, Object> attributes) {
-
+    public Object process(StructuralNode parent, Reader reader, Map<String, Object> attributes) {
         Map<Object, Object> opts = new HashMap<>();
         // means it can have nested blocks
         opts.put("content_model", "compound");
 
         // create a block with context "card", and put the parsed content into it
-        Block block = this.createBlock(parent, "card", reader.readLines(),
-                attributes, opts);
+        Block block = this.createBlock(parent, "card", reader.readLines(), attributes, opts);
 
         // if the link attribute is present
         // add a link into the content with a marker as text
@@ -74,15 +69,15 @@ public class CardBlockProcessor extends BlockProcessor {
             String linkPhrase;
             String linkType = (String) attributes.get("link-type");
             if (linkType == null || linkType.equals("xref")) {
-                linkPhrase = "<<" + link + "," + BLOCKLINK_TEXT + ">>";
+                linkPhrase = "<<" + link + "," + BLOCK_LINK_TEXT + ">>";
             } else if (linkType.equals("url")) {
-                linkPhrase = "link:" + link + "[" + BLOCKLINK_TEXT + "]";
+                linkPhrase = "link:" + link + "[" + BLOCK_LINK_TEXT + "]";
             } else {
                 linkPhrase = null;
                 LOGGER.warning(link);
             }
             if (linkPhrase != null){
-                parseContent(block, Arrays.asList(linkPhrase));
+                parseContent(block, List.of(linkPhrase));
                 // trigger rendering for the nested content here to trigger the
                 // converter so that the converter can catch the generated
                 // phrase node and add it as an attribute named _link to the
@@ -95,7 +90,7 @@ public class CardBlockProcessor extends BlockProcessor {
 
     /**
      * Create a block processor configuration.
-     * @param blockType the type of block
+     * @param blockTypes the types of block
      * @return map
      */
     private static Map<String, Object> createConfig(String... blockTypes){
