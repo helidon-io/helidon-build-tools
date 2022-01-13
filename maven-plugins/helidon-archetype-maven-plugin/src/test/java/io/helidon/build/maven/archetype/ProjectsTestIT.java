@@ -18,11 +18,15 @@ package io.helidon.build.maven.archetype;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
+
 import org.junit.jupiter.params.ParameterizedTest;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
 
 /**
@@ -36,46 +40,101 @@ final class ProjectsTestIT {
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
     void test1(String basedir) throws IOException {
-        runTest(basedir, "circle");
+        Path projectDir = projectsDir(basedir);
+        assertProjectCount(projectDir, 3);
+        assertProjectShape(projectDir, "circle");
+        assertProjectShape(projectDir, "triangle");
+        assertProjectShape(projectDir, "square");
     }
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
     void test2(String basedir) throws IOException {
-        runTest(basedir, "triangle");
+        Path projectDir = projectsDir(basedir);
+        assertProjectCount(projectDir, 2);
+        assertProjectShape(projectDir, "circle");
+        assertProjectShape(projectDir, "square");
     }
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
     void test3(String basedir) throws IOException {
-        runTest(basedir, "square");
+        Path projectDir = projectsDir(basedir);
+        assertProjectCount(projectDir, 1);
+        assertProjectShape(projectDir, "rectangle");
     }
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
     void test4(String basedir) throws IOException {
-        runTest(basedir, "module1", "square");
-        runTest(basedir, "module2", "rectangle");
-        runTest(basedir, "module3", "triangle");
+        Path projectDir = projectsDir(basedir, "module1");
+        assertProjectCount(projectDir, 2);
+        assertProjectShape(projectDir, "triangle");
+        assertProjectShape(projectDir, "rectangle");
+
+        projectDir = projectsDir(basedir, "module2");
+        assertProjectCount(projectDir, 1);
+        assertProjectShape(projectDir, "triangle");
+
+        projectDir = projectsDir(basedir, "module3");
+        assertProjectCount(projectDir, 1);
+        assertProjectShape(projectDir, "rectangle");
     }
 
-    private static void runTest(String basedir, String expected) throws IOException {
-        runTest(basedir, null, expected);
+    private static Path projectsDir(String baseDir) {
+        return projectsDir(baseDir, null);
     }
 
-    private static void runTest(String basedir, String prefix, String shape) throws IOException {
-        Path outputDir = Path.of(basedir);
+    private static Path projectsDir(String baseDir, String prefix) {
+        Path projectsDir = Path.of(baseDir);
         if (prefix != null) {
-            outputDir = outputDir.resolve(prefix);
+            projectsDir = projectsDir.resolve(prefix);
         }
-        outputDir = outputDir.resolve("target/test-classes/projects/it1/" + shape + "-project");
+        projectsDir = projectsDir.resolve("target/projects");
+        assertThat(Files.exists(projectsDir), is(true));
+        return projectsDir;
+    }
+
+    private static void assertProjectCount(Path projectsDir, int expectedCount) throws IOException {
+        int projectCount = 0;
+        for (Path projectDir : Files.newDirectoryStream(projectsDir)) {
+            assertThat(Files.isDirectory(projectDir), is(true));
+            assertThat(projectDir.getFileName().toString(), endsWith("-project"));
+            projectCount++;
+        }
+        assertThat(projectCount, is(expectedCount));
+    }
+
+    private static void assertProjectShape(Path projectsDir, String shape) throws IOException {
+        // Check project directory
+        Path outputDir = projectsDir.resolve(shape + "-project");
         assertThat(Files.exists(outputDir), is(true));
-        Path shapeClass = outputDir.resolve("src/main/java")
-                              .resolve(TEST_PKG_DIR)
-                              .resolve("Shape.java");
-        assertThat(Files.exists(shapeClass), is(true));
-        assertThat(Files.lines(shapeClass)
-                        .filter(line -> line.contains("System.out.println(\"" + shape + "\");"))
-                        .count(), is(1L));
+
+        // Check pom file
+        Path pomFile = outputDir.resolve("pom.xml");
+        assertContains(pomFile, List.of(
+                "<groupId>io.helidon.build.maven.archetype.tests</groupId>",
+                "<artifactId>" + shape + "-project</artifactId>",
+                "<version>0.1-SNAPSHOT</version>",
+                "<name>" + shape + "-project</name>"
+        ));
+
+        // Check source file
+        Path shapeSourceFile = outputDir.resolve("src/main/java")
+                                        .resolve(TEST_PKG_DIR)
+                                        .resolve("Shape.java");
+        assertContains(shapeSourceFile, List.of(
+                "System.out.println(\"" + shape + "\");"
+        ));
+    }
+
+    private static void assertContains(Path file, List<String> expected) throws IOException {
+        assertThat(Files.exists(file), is(true));
+        List<String> lines = Files.lines(file).collect(Collectors.toList());
+        for (String expectedLine : expected) {
+            assertThat(lines.stream()
+                            .filter(line -> line.contains(expectedLine))
+                            .count(), is(1L));
+        }
     }
 }

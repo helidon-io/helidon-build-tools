@@ -16,11 +16,16 @@
 package io.helidon.build.archetype.engine.v2.util;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+import io.helidon.build.archetype.engine.v2.InvocationException;
 import io.helidon.build.archetype.engine.v2.util.InputTree.Node;
 import io.helidon.build.archetype.engine.v2.util.InputTree.Node.Kind;
 import io.helidon.build.archetype.engine.v2.util.InputTree.NodeIndex;
@@ -36,6 +41,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for class {@link InputTree}.
@@ -257,6 +263,30 @@ class InputTreeTest {
     }
 
     @Test
+    void testTextNoDefault() {
+        InputTree.Builder builder = InputTree.builder()
+                                             .archetypePath(sourceDir("input-tree"))
+                                             .entryPointFile("text-no-default.xml");
+        InvocationException e = assertThrows(InvocationException.class, builder::build);
+        assertThat(e.getCause().getMessage(), is("Unresolved input: text 'foo' requires a default value"));
+    }
+
+    @Test
+    void testOptionalTextNoDefault() {
+        InputTree tree = InputTree.builder()
+                                  .archetypePath(sourceDir("input-tree"))
+                                  .entryPointFile("optional-text-no-default.xml")
+                                  .build();
+        assertThat(tree.size(), is(3));
+        List<Node> nodes = collect(tree, Kind.VALUE, "foo");
+        assertThat(nodes.size(), is(1));
+        Node value = nodes.get(0);
+        Map<String, String> combinations = new HashMap<>();
+        value.collect(combinations);
+        assertThat(combinations.size(), is(0));
+    }
+
+    @Test
     void testPresets() {
         InputTree tree = create("e2e");
         assertThat(tree, is(not(nullValue())));
@@ -426,6 +456,45 @@ class InputTreeTest {
         assertThat(index.current(), is(0));
         tree.collect(combination);
         assertThat(combination.containsKey("colors"), is(false));
+        assertThat(index.completed(), is(true));
+    }
+
+    @Test
+    void testCollectListWithCombiner() {
+        BiFunction<List<String>, List<String>, List<List<String>>> combiner = (values, defaultValue) -> {
+            List<List<String>> result = new ArrayList<>();
+            result.add(values);
+            List<String> reversed = new ArrayList<>(values);
+            Collections.reverse(reversed);
+            result.add(reversed);
+            return result;
+        };
+
+        InputTree tree = InputTree.builder()
+                                  .archetypePath(sourceDir("input-tree"))
+                                  .entryPointFile("list2.xml")
+                                  .listCombiner(combiner)
+                                  .build();
+        tree.print();
+        Node list = tree.root().children().get(0);
+        assertThat(list.path(), is("colors"));
+        NodeIndex index = list.index();
+        Map<String, String> combination = new LinkedHashMap<>();
+
+        tree.collect(combination);
+        assertThat(combination.get("colors"), is("red,orange"));
+        assertThat(index.completed(), is(false));
+
+        assertThat(index.next(), is(false));
+        tree.collect(combination);
+        assertThat(combination.get("colors"), is("orange,red"));
+        assertThat(index.completed(), is(false));
+
+        // Wrap to first
+        assertThat(index.next(), is(true));
+        assertThat(index.current(), is(0));
+        tree.collect(combination);
+        assertThat(combination.get("colors"), is("red,orange"));
         assertThat(index.completed(), is(true));
     }
 

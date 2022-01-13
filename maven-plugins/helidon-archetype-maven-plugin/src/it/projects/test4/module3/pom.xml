@@ -44,6 +44,14 @@
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
                 <version>${project.version}</version>
                 <configuration>
+                    <generateCombinations>false</generateCombinations>
+                    <externalValues>
+                        <package>io.helidon.build.maven.archetype.tests</package>
+                        <groupId>io.helidon.build.maven.archetype.tests</groupId>
+                        <artifactId>rectangle-project</artifactId>
+                        <version>0.1-SNAPSHOT</version>
+                        <shape>rectangle</shape>
+                    </externalValues>
                     <mavenArchetypeCompatible>false</mavenArchetypeCompatible>
                     <entrypoint>
                         <exec url="mvn://io.helidon.build-tools.archetype.tests:test-archetype1:${project.version}!/main.xml"/>
