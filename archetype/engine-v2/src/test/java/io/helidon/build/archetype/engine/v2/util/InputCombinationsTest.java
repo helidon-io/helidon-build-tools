@@ -77,13 +77,14 @@ class InputCombinationsTest {
     @Test
     @Disabled
     void testCollectV2() {
-        Path sourceDir = Path.of("/Users/batsatt/dev/helidon/archetypes-v2");
+        Path sourceDir = Path.of("/Users/batsatt/dev/helidon/archetypes/helidon/src/main/archetype");
         InputCombinations combinations = InputCombinations.builder()
                                                           .archetypePath(sourceDir)
+                                                          .entryPointFile("flavor.xml")
                                                           .verbose(false)
                                                           .build();
         Map<String, String> firstExpected = Map.of(
-                "flavor", "se",
+                "flavor", "SE",
                 "base", "bare",
                 "build-system", "maven",
                 "name", "myproject",
@@ -96,9 +97,9 @@ class InputCombinationsTest {
                 firstExpected,
                 nextExpected(firstExpected, Map.of("base", "quickstart")),
                 nextExpected(firstExpected, Map.of("base", "database")),
-                nextExpected(firstExpected, Map.of("flavor", "mp", "base", "bare")),
-                nextExpected(firstExpected, Map.of("flavor", "mp", "base", "quickstart")),
-                nextExpected(firstExpected, Map.of("flavor", "mp", "base", "database"))
+                nextExpected(firstExpected, Map.of("flavor", "MP", "base", "bare")),
+                nextExpected(firstExpected, Map.of("flavor", "MP", "base", "quickstart")),
+                nextExpected(firstExpected, Map.of("flavor", "MP", "base", "database"))
         );
 
         assertExpected(combinations, expected);
@@ -183,8 +184,8 @@ class InputCombinationsTest {
                 nextExpected(colors, Map.of("theme.base.colors", "lemon")),
                 nextExpected(colors, Map.of("theme.base.colors", "khaki")),
                 nextExpected(colors, Map.of("theme.base.colors", "red,orange,yellow,green,blue,indigo,violet,"
-                                                                    + "pink,light-pink,cyan,light-salmon,coral,tomato,"
-                                                                    + "lemon,khaki")),
+                                                                 + "pink,light-pink,cyan,light-salmon,coral,tomato,"
+                                                                 + "lemon,khaki")),
 
                 colorsClassic,
                 nextExpected(colorsClassic, Map.of(), "theme.base.colors"),
@@ -204,8 +205,8 @@ class InputCombinationsTest {
                 nextExpected(colorsClassic, Map.of("theme.base.colors", "lemon")),
                 nextExpected(colorsClassic, Map.of("theme.base.colors", "khaki")),
                 nextExpected(colorsClassic, Map.of("theme.base.colors", "red,orange,yellow,green,blue,indigo,violet,"
-                                                                 + "pink,light-pink,cyan,light-salmon,coral,tomato,"
-                                                                 + "lemon,khaki")),
+                                                                        + "pink,light-pink,cyan,light-salmon,coral,tomato,"
+                                                                        + "lemon,khaki")),
 
 
                 colorsRainbow,

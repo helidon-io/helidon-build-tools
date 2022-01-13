@@ -157,6 +157,12 @@ public class IntegrationTestMojo extends AbstractMojo {
     private Map<String, String> externalValues;
 
     /**
+     * External defaults to use when generating archetypes.
+     */
+    @Parameter(property = "archetype.test.externalDefaults")
+    private Map<String, String> externalDefaults;
+
+    /**
      * Whether to generate input combinations.
      */
     @Parameter(property = "archetype.test.generateCombinations", defaultValue = "true")
@@ -198,17 +204,18 @@ public class IntegrationTestMojo extends AbstractMojo {
 
         String testName = project.getFile().toPath().getParent().getFileName().toString();
         try {
-            if (!externalValues.isEmpty()) {
-                processIntegrationTest(testName, externalValues, archetypeFile);
-            }
             if (generateCombinations) {
                 InputCombinations combinations = InputCombinations.builder()
                                                                   .archetypePath(archetypeFile.toPath())
+                                                                  .externalValues(externalValues)
+                                                                  .externalDefaults(externalDefaults)
                                                                   .build();
                 int combinationNumber = 1;
                 for (Map<String, String> combination : combinations) {
                     processIntegrationTest(testName + ", combination " + combinationNumber++, combination, archetypeFile);
                 }
+            } else {
+                processIntegrationTest(testName, externalValues, archetypeFile);
             }
 
         } catch (IOException e) {
@@ -281,7 +288,7 @@ public class IntegrationTestMojo extends AbstractMojo {
         int maxLen = 0;
         for (Map map : maps) {
             for (Object key : map.keySet()) {
-                final int len = key.toString().length();
+                int len = key.toString().length();
                 if (len > maxLen) {
                     maxLen = len;
                 }

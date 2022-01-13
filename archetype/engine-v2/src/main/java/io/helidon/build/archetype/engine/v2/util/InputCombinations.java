@@ -208,6 +208,28 @@ public class InputCombinations implements Iterable<Map<String, String>> {
         }
 
         /**
+         * Set external values.
+         *
+         * @param externalValues The values.
+         * @return This instance, for chaining.
+         */
+        public Builder externalValues(Map<String, String> externalValues) {
+            builder.externalValues(externalValues);
+            return this;
+        }
+
+        /**
+         * Set external defaults.
+         *
+         * @param externalDefaults The values.
+         * @return This instance, for chaining.
+         */
+        public Builder externalDefaults(Map<String, String> externalDefaults) {
+            builder.externalDefaults(externalDefaults);
+            return this;
+        }
+
+        /**
          * Sets the list combiner used to produce the set of combinations of the given list and its defaults (if any).
          *
          * @param listCombiner The list combiner.

@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -521,15 +522,21 @@ public class InputTree {
             //
             // 1. the default item(s), if any
             // 2. no items
-            // 3. each individual item
+            // 3. each individual item unless it is the default
             // 4. all items
 
             List<List<String>> combinations = new ArrayList<>();
-            if (defaults != null && !defaults.isEmpty()) {
+            int defaultCount = defaults == null ? 0 : defaults.size();
+            if (defaultCount > 0) {
                 combinations.add(defaults);
             }
             combinations.add(List.of());
-            listValues.forEach(v -> combinations.add(List.of(v)));
+            String singleDefaultValue = defaultCount == 1 ? defaults.get(0) : null;
+            listValues.forEach(v -> {
+                if (!v.equals(singleDefaultValue)) {
+                    combinations.add(List.of(v));
+                }
+            });
             combinations.add(listValues);
             return combinations;
         }
@@ -653,12 +660,38 @@ public class InputTree {
         private boolean verbose;
         private boolean movePresetSiblings;
         private BiFunction<List<String>, List<String>, List<List<String>>> listCombiner;
+        private Map<String, String> externalValues;
+        private Map<String, String> externalDefaults;
 
         private Builder() {
             nodes = new ArrayDeque<>();
             root = new Root(nextId++);
             prune = true;
             movePresetSiblings = true;
+            externalValues = Map.of();
+            externalDefaults = Map.of();
+        }
+
+        /**
+         * Set external values.
+         *
+         * @param externalValues The values.
+         * @return This instance, for chaining.
+         */
+        public Builder externalValues(Map<String, String> externalValues) {
+            this.externalValues = requireNonNull(externalValues);
+            return this;
+        }
+
+        /**
+         * Set external defaults.
+         *
+         * @param externalDefaults The values.
+         * @return This instance, for chaining.
+         */
+        public Builder externalDefaults(Map<String, String> externalDefaults) {
+            this.externalDefaults = requireNonNull(externalDefaults);
+            return this;
         }
 
         /**
@@ -668,7 +701,7 @@ public class InputTree {
          * @return This instance, for chaining.
          */
         public Builder listCombiner(BiFunction<List<String>, List<String>, List<List<String>>> listCombiner) {
-            this.listCombiner = listCombiner;
+            this.listCombiner = requireNonNull(listCombiner);
             return this;
         }
 
@@ -679,7 +712,7 @@ public class InputTree {
          * @return This instance, for chaining.
          */
         public Builder archetypePath(Path archetypePath) {
-            this.archetypePath = archetypePath;
+            this.archetypePath = requireNonNull(archetypePath);
             return this;
         }
 
@@ -690,7 +723,7 @@ public class InputTree {
          * @return This instance, for chaining.
          */
         public Builder entryPointFile(String entryPointFileName) {
-            this.entryPoint = entryPointFileName;
+            this.entryPoint = requireNonNull(entryPointFileName);
             return this;
         }
 
@@ -738,6 +771,12 @@ public class InputTree {
             if (listCombiner == null) {
                 listCombiner = ListNode::defaultListCombinations;
             }
+
+            if (!externalValues.isEmpty()) {
+                PresetNode presets = (PresetNode) pushPresets("$-externalValues", Path.of("/"), Position.of(0, 0));
+                externalValues.forEach(presets::add);
+            }
+
             String scriptName = entryPoint == null ? MAIN_FILE : entryPoint;
 
             FileSystem fs = fileSystem();
@@ -837,7 +876,13 @@ public class InputTree {
             }
             if (node.kind() == Kind.PRESETS) {
                 Map<String, String> current = ((PresetNode) node).presets();
-                presets.putAll(current);
+                current.forEach((k, v) -> {
+                    if (presets.containsKey(k)) {
+                        throw new IllegalStateException("preset '" + k + "' is set twice");
+                    } else {
+                        presets.put(k, v);
+                    }
+                });
                 if (presetDepth < 0) {
                     presetDepth = depth;
                 }
@@ -879,9 +924,9 @@ public class InputTree {
             push(new ListNode(nextId++, parent, path, defaults, script, position.lineNumber(), listCombiner));
         }
 
-        void pushPresets(String path, Path script, Position position) {
+        Node pushPresets(String path, Path script, Position position) {
             Node parent = parent();
-            push(new PresetNode(nextId++, parent, path, script, position.lineNumber()));
+            return push(new PresetNode(nextId++, parent, path, script, position.lineNumber()));
         }
 
         void pushValue(String value, Path script, Position position) {
@@ -892,6 +937,10 @@ public class InputTree {
         void addValue(Node parent, String value, Path script, Position position) {
             // Adds self to parent
             new ValueNode(nextId++, parent, parent.path(), value, script, position.lineNumber());
+        }
+
+        String externalDefault(String path) {
+            return externalDefaults.get(path);
         }
 
         Node parent() {
@@ -998,14 +1047,17 @@ public class InputTree {
 
             @Override
             public VisitResult visitText(Input.Text input, Context context) {
-                String defaultValue = input.defaultValue().asString();
+                String path = context.path(input.name());
+                String defaultValue = builder.externalDefault(path);
+                if (defaultValue == null) {
+                    defaultValue = input.defaultValue().asString();
+                }
                 if (defaultValue == null) {
                     if (!input.isOptional()) {
-                        String path = context.path(input.name());
                         throw new UnresolvedInputException("text '" + path + "' requires a default value");
                     }
                 }
-                String path = push(input, context);
+                push(input, context);
                 builder.pushInput(Kind.TEXT, path, input.scriptPath(), input.position());
                 builder.pushValue(defaultValue, input.scriptPath(), input.position());
                 return VisitResult.CONTINUE;
@@ -1020,8 +1072,18 @@ public class InputTree {
 
             @Override
             public VisitResult visitList(Input.List input, Context context) {
-                String path = push(input, context);
-                builder.pushInputList(path, input.defaultValue().asList(), input.scriptPath(), input.position());
+                String path = context.path(input.name());
+                List<String> defaultValues;
+                String defaultValue = builder.externalDefault(path);
+                if (defaultValue == null) {
+                    defaultValues = input.defaultValue().asList();
+                } else {
+                    defaultValues = Arrays.stream(defaultValue.split(","))
+                                          .filter(v -> !v.isEmpty())
+                                          .collect(Collectors.toList());
+                }
+                path = push(input, context);
+                builder.pushInputList(path, defaultValues, input.scriptPath(), input.position());
                 return VisitResult.CONTINUE;
             }
 
