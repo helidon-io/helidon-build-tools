@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import freemarker.template.TemplateModelException;
 import freemarker.template.Version;
 import org.asciidoctor.ast.ContentNode;
 import org.asciidoctor.ast.Document;
-import org.asciidoctor.internal.RubyAttributesMapDecorator;
+import org.asciidoctor.jruby.internal.RubyAttributesMapDecorator;
 
 /**
  * A Freemarker {@code ObjectMapper} to wrap and unwrap objects to and
@@ -42,14 +42,13 @@ public class ObjectWrapper extends DefaultObjectWrapper {
     @Override
     public TemplateModel wrap(Object obj) throws TemplateModelException {
         if (obj == null) {
-            return super.wrap(obj);
+            return super.wrap(null);
         }
         if (obj instanceof ContentNode) {
             return new ContentNodeHashModel(this, (ContentNode) obj);
         }
         if (obj instanceof RubyAttributesMapDecorator) {
-            return new ContentNodeAttributesModel(this,
-                    (RubyAttributesMapDecorator) obj);
+            return new ContentNodeAttributesModel(this, (RubyAttributesMapDecorator) obj);
         }
         if (obj instanceof Document){
             return new SimpleObjectModel(obj);
