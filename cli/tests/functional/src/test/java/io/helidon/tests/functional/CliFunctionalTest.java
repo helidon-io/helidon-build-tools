@@ -187,9 +187,18 @@ public class CliFunctionalTest {
         Assertions.assertTrue(Files.readString(pom).contains(expected));
     }
 
-    private void checkPackageName() {
+    private void checkPackageName() throws Exception {
+        long timeout = 60 * 60 * 1000;
+        long now = System.currentTimeMillis();
         Path packageInfo = Path.of(workDir.toString(), CUSTOM_PROJECT, "src", "main", "java", "custom", "pack", "name", "package-info.java");
-        Assertions.assertTrue(packageInfo.toFile().exists());
+
+        while (!packageInfo.toFile().exists()) {
+            TimeUnit.MILLISECONDS.sleep(500);
+
+            if ((System.currentTimeMillis() - now) > timeout) {
+                Assertions.fail("Custom package name is not found");
+            }
+        }
     }
 
     private void runBatchTest(String flavor,
@@ -278,7 +287,7 @@ public class CliFunctionalTest {
     }
 
     private void waitForGeneratedProject() throws InterruptedException {
-        long timeout = 10 * 1000;
+        long timeout = 60 * 60 * 1000;
         long now = System.currentTimeMillis();
 
         while (!Path.of(workDir.toString(), CUSTOM_PROJECT, "pom.xml").toFile().exists()) {
@@ -359,7 +368,7 @@ public class CliFunctionalTest {
         }
 
         void waitForApplication() throws Exception {
-            long timeout = 25 * 1000;
+            long timeout = 3600 * 1000;
             long now = System.currentTimeMillis();
             URL url = new URL("http://localhost:" + port + "/health");
 
