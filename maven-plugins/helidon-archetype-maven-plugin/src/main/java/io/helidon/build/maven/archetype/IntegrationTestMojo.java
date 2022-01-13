@@ -60,6 +60,7 @@ import org.apache.maven.shared.transfer.project.install.ProjectInstaller;
 import org.apache.maven.shared.transfer.project.install.ProjectInstallerRequest;
 import org.codehaus.plexus.util.StringUtils;
 
+import static io.helidon.build.common.Strings.padding;
 import static java.nio.file.FileSystems.newFileSystem;
 
 /**
@@ -161,11 +162,21 @@ public class IntegrationTestMojo extends AbstractMojo {
     @Parameter(property = "archetype.test.generateCombinations", defaultValue = "true")
     private boolean generateCombinations;
 
+    /**
+     * Invoker environment variables.
+     */
+    @Parameter(property = "archetype.test.invokerEnvVars")
+    private Map<String, String> invokerEnvVars;
+
     @Component
     private ProjectInstaller installer;
 
+    private Log log;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+        log = getLog();
+
         if (skip) {
             return;
         }
@@ -194,7 +205,7 @@ public class IntegrationTestMojo extends AbstractMojo {
                 InputCombinations combinations = InputCombinations.builder()
                                                                   .archetypePath(archetypeFile.toPath())
                                                                   .build();
-                int combinationNumber = 0;
+                int combinationNumber = 1;
                 for (Map<String, String> combination : combinations) {
                     processIntegrationTest(testName + ", combination " + combinationNumber++, combination, archetypeFile);
                 }
@@ -210,7 +221,8 @@ public class IntegrationTestMojo extends AbstractMojo {
                                         Map<String, String> externalValues,
                                         File archetypeFile) throws IOException, MojoExecutionException {
 
-        getLog().info("Processing Archetype IT project: " + testDescription);
+        logTestDescription(testDescription, externalValues);
+
         Properties props = new Properties();
         props.putAll(externalValues);
 
@@ -220,12 +232,13 @@ public class IntegrationTestMojo extends AbstractMojo {
         }
 
         Path ourProjectDir = project.getFile().toPath();
-        Path projectsDir =  ourProjectDir.getParent().resolve("target/projects");
+        Path projectsDir = ourProjectDir.getParent().resolve("target/projects");
         FileUtils.ensureDirectory(projectsDir);
         Path outputDir = projectsDir.resolve(props.getProperty("artifactId"));
         FileUtils.deleteDirectory(outputDir);
 
         if (mavenArchetypeCompatible) {
+            log.info("Generating project using Maven archetype");
             mavenCompatGenerate(
                     project.getGroupId(),
                     project.getArtifactId(),
@@ -234,11 +247,49 @@ public class IntegrationTestMojo extends AbstractMojo {
                     props,
                     outputDir.getParent());
         } else {
+            log.info("Generating project using Helidon archetype engine");
             generate(archetypeFile.toPath(), props, outputDir);
         }
 
         invokePostArchetypeGenerationGoals(outputDir.toFile());
     }
+
+    private void logTestDescription(String testDescription, Map<String, String> externalValues) {
+        log.info("");
+        log.info("-------------------------------------");
+        log.info("PROCESSING ARCHETYPE INTEGRATION TEST");
+        log.info("-------------------------------------");
+        log.info("");
+        log.info("Test: " + testDescription);
+        int maxKeyWidth = maxKeyWidth(externalValues);
+        logGeneratorInputs("externalValues", externalValues, maxKeyWidth);
+        log.info("");
+    }
+
+    private void logGeneratorInputs(String label, Map<String, String> inputs, int maxKeyWidth) {
+        log.info("");
+        log.info(label + ":");
+        log.info("");
+        inputs.forEach((key, value) -> {
+            String padding = padding(" ", maxKeyWidth, key);
+            log.info("    " + key + padding + " = " + value);
+        });
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static int maxKeyWidth(Map... maps) {
+        int maxLen = 0;
+        for (Map map : maps) {
+            for (Object key : map.keySet()) {
+                final int len = key.toString().length();
+                if (len > maxLen) {
+                    maxLen = len;
+                }
+            }
+        }
+        return maxLen;
+    }
+
 
     private void generate(Path archetypeFile, Properties props, Path outputDir) {
         try {
@@ -302,8 +353,9 @@ public class IntegrationTestMojo extends AbstractMojo {
                 .setBatchMode(true)
                 .setShowErrors(true)
                 .setDebug(debug)
-// TODO REMOVE  .addShellEnvironment("MAVEN_DEBUG_OPTS", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8002")
                 .setShowVersion(showVersion);
+
+        invokerEnvVars.forEach(request::addShellEnvironment);
 
         if (logger != null) {
             request.setErrorHandler(logger);
