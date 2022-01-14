@@ -583,7 +583,7 @@ class InputTreeTest {
                                   .entryPointFile("list2.xml")
                                   .externalDefaults(Map.of("colors", "orange"))
                                   .build();
-        tree.print();
+
         Node list = tree.root().children().get(0);
         assertThat(list.path(), is("colors"));
         NodeIndex index = list.index();
