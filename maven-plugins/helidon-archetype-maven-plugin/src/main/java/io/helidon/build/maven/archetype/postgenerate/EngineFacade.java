@@ -124,6 +124,8 @@ public final class EngineFacade {
         Properties archetypeProps = request.getProperties();
         Map<String, String> props = new HashMap<>();
         archetypeProps.stringPropertyNames().forEach(k -> props.put(k, archetypeProps.getProperty(k)));
+        Properties userProps = request.getProjectBuildingRequest().getUserProperties();
+        userProps.stringPropertyNames().forEach(k -> props.putIfAbsent(k, userProps.getProperty(k)));
 
         // resolve the archetype JAR from the local repository
         File archetypeFile = aether.resolveArtifact(request.getArchetypeGroupId(), request.getArchetypeArtifactId(),
@@ -133,7 +135,8 @@ public final class EngineFacade {
             FileSystem fileSystem = FileSystems.newFileSystem(archetypeFile.toPath(), EngineFacade.class.getClassLoader());
             Path projectDir = Paths.get(request.getOutputDirectory()).resolve(request.getArtifactId());
             Files.delete(projectDir.resolve("pom.xml"));
-            new ReflectedEngine(ecl, fileSystem).generate(request.isInteractiveMode(), props, emptyMap(), n -> projectDir);
+            boolean interactiveMode = !"false".equals(System.getProperty("interactiveMode"));
+            new ReflectedEngine(ecl, fileSystem).generate(interactiveMode, props, emptyMap(), n -> projectDir);
         } catch (IOException ioe) {
             throw new IllegalStateException(ioe);
         }

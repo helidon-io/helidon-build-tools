@@ -41,7 +41,14 @@ public class TerminalInputResolver extends InputResolver {
     private String lastLabel;
 
     /**
-     * Create a new prompter.
+     * Create an interactive input resolver.
+     */
+    public TerminalInputResolver() {
+        this.in = System.in;
+    }
+
+    /**
+     * Create a new interactive input resolver.
      *
      * @param in input stream to use for reading user input
      */
