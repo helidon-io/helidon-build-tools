@@ -308,12 +308,16 @@ class InputTreeTest {
     @Test
     @Disabled
     void testCollectV2() {
-        Path sourceDir = Path.of("/Users/batsatt/dev/helidon/archetypes-v2");
-        InputTree tree = create(sourceDir);
+        Path sourceDir = Path.of("/Users/batsatt/dev/helidon/archetypes/helidon/src/main/archetype");
+        InputTree tree = InputTree.builder()
+                                  .archetypePath(sourceDir)
+                                  .entryPointFile("flavor.xml")
+                                  .build();
+
         Map<String, String> combination = new LinkedHashMap<>();
         tree.collect(combination);
         assertThat(combination.size(), is(8));
-        assertThat(combination.get("flavor"), is("se"));
+        assertThat(combination.get("flavor"), is("SE"));
         assertThat(combination.get("base"), is("bare"));
         assertThat(combination.get("build-system"), is("maven"));
         assertThat(combination.get("name"), is("myproject"));
@@ -328,7 +332,7 @@ class InputTreeTest {
         input.index().next();
         tree.collect(combination);
         assertThat(combination.size(), is(8));
-        assertThat(combination.get("flavor"), is("se"));
+        assertThat(combination.get("flavor"), is("SE"));
         assertThat(combination.get("base"), is("quickstart"));
         assertThat(combination.get("build-system"), is("maven"));
         assertThat(combination.get("name"), is("myproject"));
@@ -554,6 +558,62 @@ class InputTreeTest {
         assertThat(combination.get("preset"), is("a-foo-a-bar"));
         assertThat(combination.get("text"), is("a-foo-a-bar"));
         assertThat(combination.get("list-things"), is("a-bar"));
+    }
+
+    @Test
+    void testCollectExternalValues() {
+        InputTree tree = InputTree.builder()
+                                  .archetypePath(sourceDir("input-tree"))
+                                  .entryPointFile("list2.xml")
+                                  .externalValues(Map.of("colors", "orange"))
+                                  .verbose(true)
+                                  .build();
+        Map<String, String> combination = new LinkedHashMap<>();
+        List<Node> inputNodes = collectInputs(tree);
+        assertThat(inputNodes.size(), is(1));
+        tree.collect(combination);
+        assertThat(combination.size(), is(1));
+        assertThat(combination.get("colors"), is("orange"));
+    }
+
+    @Test
+    void testExternalDefaults() {
+        InputTree tree = InputTree.builder()
+                                  .archetypePath(sourceDir("input-tree"))
+                                  .entryPointFile("list2.xml")
+                                  .externalDefaults(Map.of("colors", "orange"))
+                                  .build();
+
+        Node list = tree.root().children().get(0);
+        assertThat(list.path(), is("colors"));
+        NodeIndex index = list.index();
+        Map<String, String> combination = new LinkedHashMap<>();
+
+        tree.collect(combination);
+        assertThat(combination.get("colors"), is("orange"));
+        assertThat(index.completed(), is(false));
+
+        assertThat(index.next(), is(false));
+        tree.collect(combination);
+        assertThat(combination.containsKey("colors"), is(false));
+        assertThat(index.completed(), is(false));
+
+        assertThat(index.next(), is(false));
+        tree.collect(combination);
+        assertThat(combination.get("colors"), is("red"));
+        assertThat(index.completed(), is(false));
+
+        assertThat(index.next(), is(false));
+        tree.collect(combination);
+        assertThat(combination.get("colors"), is("red,orange"));
+        assertThat(index.completed(), is(false));
+
+        // Wrap to first
+        assertThat(index.next(), is(true));
+        assertThat(index.current(), is(0));
+        tree.collect(combination);
+        assertThat(combination.get("colors"), is("orange"));
+        assertThat(index.completed(), is(true));
     }
 
     private static InputTree create(String testDir) {
