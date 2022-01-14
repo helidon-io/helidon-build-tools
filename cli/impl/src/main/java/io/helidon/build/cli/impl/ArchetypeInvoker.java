@@ -271,7 +271,7 @@ abstract class ArchetypeInvoker {
          * otherwise {@link V2Invoker}
          */
         ArchetypeInvoker build() {
-            if (EngineVersion.V2.equals(initOptions.engineVersion()) || isHelidonV3()) {
+            if (isHelidonV3()) {
                 return new V2Invoker(this);
             }
             return new V1Invoker(this);

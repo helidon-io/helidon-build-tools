@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -142,13 +142,6 @@ public interface CommandInvoker {
     UserConfig config();
 
     /**
-     * Get the engine version.
-     *
-     * @return engine version, never {@code null}
-     */
-    ArchetypeInvoker.EngineVersion engineVersion();
-
-    /**
      * Invoke the init command.
      *
      * @return invocation result
@@ -266,13 +259,11 @@ public interface CommandInvoker {
         private final Path workDir;
         private final UserConfig config;
         private final String helidonVersion;
-        private final ArchetypeInvoker.EngineVersion engineVersion;
         private final boolean buildProject;
 
         private InvokerImpl(Builder builder) {
             buildProject = builder.buildProject;
             helidonVersion = builder.helidonVersion;
-            engineVersion = builder.engineVersion;
             input = builder.input;
             metadataUrl = builder.metadataUrl;
             flavor = builder.flavor == null ? DEFAULT_FLAVOR : builder.flavor;
@@ -361,11 +352,6 @@ public interface CommandInvoker {
         }
 
         @Override
-        public ArchetypeInvoker.EngineVersion engineVersion() {
-            return engineVersion;
-        }
-
-        @Override
         public InvocationResult invokeInit() throws Exception {
             List<String> args = new ArrayList<>();
             args.add("init");
@@ -396,8 +382,6 @@ public interface CommandInvoker {
             args.add(projectName);
             args.add("--project");
             args.add(projectDir.toString());
-            args.add("--engine-version");
-            args.add(engineVersion.toString());
             String[] argsArray = args.toArray(new String[]{});
             System.out.print("Executing with args ");
             args.forEach(a -> System.out.print(a + " "));
@@ -561,11 +545,6 @@ public interface CommandInvoker {
         }
 
         @Override
-        public ArchetypeInvoker.EngineVersion engineVersion() {
-            return delegate.engineVersion();
-        }
-
-        @Override
         public InvocationResult invokeInit() throws Exception {
             return delegate.invokeInit();
         }
@@ -649,7 +628,6 @@ public interface CommandInvoker {
         private Path workDir;
         private File input;
         private String helidonVersion;
-        private ArchetypeInvoker.EngineVersion engineVersion;
         private boolean buildProject;
 
         /**
@@ -804,9 +782,5 @@ public interface CommandInvoker {
             return new InvokerImpl(this).invokeInit();
         }
 
-        public Builder engineVersion(ArchetypeInvoker.EngineVersion version) {
-            this.engineVersion = version;
-            return this;
-        }
     }
 }
