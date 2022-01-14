@@ -79,7 +79,8 @@ public class AnsiConsoleInstaller {
             AnsiConsole.systemInstall();
             ConsoleType installedType = installedConsoleType(desiredType);
             CONSOLE_TYPE.set(installedType);
-            ENABLED.set(installedType == ConsoleType.ANSI);
+            ENABLED.set(installedType == ConsoleType.ANSI
+                        || installedType == ConsoleType.DEFAULT);
         }
         return ENABLED.get();
     }
@@ -232,8 +233,8 @@ public class AnsiConsoleInstaller {
                     Log.preInitDebug("Desired = %s, but Ansi escapes should be supported by system streams.", desiredType);
                     break;
                 case DEFAULT:
-                    Log.preInitDebug("Desired = %s, but System.out not a Jansi type (%s) ao Ansi escapes should not be stripped",
-                            desiredType, systemOutClassName);
+                    Log.preInitDebug("Desired = %s, but System.out not a Jansi type (%s) so Ansi escapes should not be stripped",
+                                     desiredType, systemOutClassName);
                     break;
                 default:
                     // do nothing
