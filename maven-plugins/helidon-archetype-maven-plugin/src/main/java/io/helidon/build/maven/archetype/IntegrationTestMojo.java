@@ -157,12 +157,15 @@ public class IntegrationTestMojo extends AbstractMojo {
     private Map<String, String> externalValues;
 
     /**
+<<<<<<< HEAD
      * External defaults to use when generating archetypes.
      */
     @Parameter(property = "archetype.test.externalDefaults")
     private Map<String, String> externalDefaults;
 
     /**
+=======
+>>>>>>> master
      * Whether to generate input combinations.
      */
     @Parameter(property = "archetype.test.generateCombinations", defaultValue = "true")
