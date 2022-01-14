@@ -34,6 +34,7 @@ import io.helidon.build.archetype.engine.v2.BatchInputResolver;
 import io.helidon.build.archetype.engine.v2.util.InputCombinations;
 import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.Maps;
+import io.helidon.build.common.ansi.AnsiConsoleInstaller;
 
 import org.apache.maven.archetype.ArchetypeGenerationRequest;
 import org.apache.maven.archetype.ArchetypeGenerationResult;
@@ -61,6 +62,9 @@ import org.apache.maven.shared.transfer.project.install.ProjectInstallerRequest;
 import org.codehaus.plexus.util.StringUtils;
 
 import static io.helidon.build.common.Strings.padding;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Italic;
 import static java.nio.file.FileSystems.newFileSystem;
 
 /**
@@ -68,6 +72,7 @@ import static java.nio.file.FileSystems.newFileSystem;
  */
 @Mojo(name = "integration-test")
 public class IntegrationTestMojo extends AbstractMojo {
+    private static final String SEP = AnsiConsoleInstaller.areAnsiEscapesEnabled() ? " " : "  =  ";
 
     /**
      * Archetype generate to invoke Maven compatible archetypes.
@@ -157,15 +162,12 @@ public class IntegrationTestMojo extends AbstractMojo {
     private Map<String, String> externalValues;
 
     /**
-<<<<<<< HEAD
      * External defaults to use when generating archetypes.
      */
     @Parameter(property = "archetype.test.externalDefaults")
     private Map<String, String> externalDefaults;
 
     /**
-=======
->>>>>>> master
      * Whether to generate input combinations.
      */
     @Parameter(property = "archetype.test.generateCombinations", defaultValue = "true")
@@ -208,6 +210,7 @@ public class IntegrationTestMojo extends AbstractMojo {
         String testName = project.getFile().toPath().getParent().getFileName().toString();
         try {
             if (generateCombinations) {
+                logCombinationsInput(testName);
                 InputCombinations combinations = InputCombinations.builder()
                                                                   .archetypePath(archetypeFile.toPath())
                                                                   .externalValues(externalValues)
@@ -264,26 +267,41 @@ public class IntegrationTestMojo extends AbstractMojo {
         invokePostArchetypeGenerationGoals(outputDir.toFile());
     }
 
+    private void logCombinationsInput(String testName) {
+        log.info("");
+        log.info("--------------------------------------");
+        log.info("GENERATING ARCHETYPE TEST COMBINATIONS");
+        log.info("--------------------------------------");
+        log.info("");
+        log.info(Bold.apply("Test: ") + BoldBlue.apply(testName));
+        int maxKeyWidth = maxKeyWidth(externalValues, externalDefaults);
+        logInputs("externalValues", externalValues, maxKeyWidth);
+        logInputs("externalDefaults", externalDefaults, maxKeyWidth);
+    }
+
     private void logTestDescription(String testDescription, Map<String, String> externalValues) {
         log.info("");
         log.info("-------------------------------------");
         log.info("PROCESSING ARCHETYPE INTEGRATION TEST");
         log.info("-------------------------------------");
         log.info("");
-        log.info("Test: " + testDescription);
+        log.info(Bold.apply("Test: ") + BoldBlue.apply(testDescription));
         int maxKeyWidth = maxKeyWidth(externalValues);
-        logGeneratorInputs("externalValues", externalValues, maxKeyWidth);
+        logInputs("externalValues", externalValues, maxKeyWidth);
         log.info("");
     }
 
-    private void logGeneratorInputs(String label, Map<String, String> inputs, int maxKeyWidth) {
+    private void logInputs(String label, Map<String, String> inputs, int maxKeyWidth) {
+        boolean empty = inputs.isEmpty();
         log.info("");
-        log.info(label + ":");
-        log.info("");
-        inputs.forEach((key, value) -> {
-            String padding = padding(" ", maxKeyWidth, key);
-            log.info("    " + key + padding + " = " + value);
-        });
+        log.info(Bold.apply(label) + ":" + (empty ? Italic.apply(" [none]") : ""));
+        if (!empty) {
+            log.info("");
+            inputs.forEach((key, value) -> {
+                String padding = padding(" ", maxKeyWidth, key);
+                log.info("    " + Italic.apply(key) + padding + SEP + BoldBlue.apply(value));
+            });
+        }
     }
 
     @SuppressWarnings("rawtypes")
@@ -299,7 +317,6 @@ public class IntegrationTestMojo extends AbstractMojo {
         }
         return maxLen;
     }
-
 
     private void generate(Path archetypeFile, Properties props, Path outputDir) {
         try {
