@@ -19,26 +19,21 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
 import io.helidon.build.archetype.engine.v2.BatchInputResolver;
+import io.helidon.build.archetype.engine.v2.util.InputCombinations;
 import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.Maps;
-import io.helidon.build.common.SubstitutionVariables;
 
 import org.apache.maven.archetype.ArchetypeGenerationRequest;
 import org.apache.maven.archetype.ArchetypeGenerationResult;
@@ -65,6 +60,7 @@ import org.apache.maven.shared.transfer.project.install.ProjectInstaller;
 import org.apache.maven.shared.transfer.project.install.ProjectInstallerRequest;
 import org.codehaus.plexus.util.StringUtils;
 
+import static io.helidon.build.common.Strings.padding;
 import static java.nio.file.FileSystems.newFileSystem;
 
 /**
@@ -148,11 +144,39 @@ public class IntegrationTestMojo extends AbstractMojo {
     @Parameter(defaultValue = "true")
     private boolean mavenArchetypeCompatible;
 
+    /**
+     * The goal to use when building archetypes.
+     */
+    @Parameter(property = "archetype.test.testGoal", defaultValue = "package")
+    private String testGoal;
+
+    /**
+     * External values to use when generating archetypes.
+     */
+    @Parameter(property = "archetype.test.externalValues")
+    private Map<String, String> externalValues;
+
+    /**
+     * Whether to generate input combinations.
+     */
+    @Parameter(property = "archetype.test.generateCombinations", defaultValue = "true")
+    private boolean generateCombinations;
+
+    /**
+     * Invoker environment variables.
+     */
+    @Parameter(property = "archetype.test.invokerEnvVars")
+    private Map<String, String> invokerEnvVars;
+
     @Component
     private ProjectInstaller installer;
 
+    private Log log;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+        log = getLog();
+
         if (skip) {
             return;
         }
@@ -163,64 +187,58 @@ public class IntegrationTestMojo extends AbstractMojo {
             return;
         }
 
-        if (!testProjectsDirectory.exists()) {
-            getLog().warn("No Archetype IT projects: root 'projects' directory not found.");
-            return;
-        }
-
         File archetypeFile = project.getArtifact().getFile();
         if (archetypeFile == null) {
             throw new MojoFailureException("Archetype not found");
         }
 
-        Path testProjects = testProjectsDirectory.toPath();
-        try {
-            List<Path> projectGoals = Files.walk(testProjects)
-                                           .filter((p) -> p.endsWith("goal.txt"))
-                                           .collect(Collectors.toList());
-            if (projectGoals.isEmpty()) {
-                getLog().warn("No projects directory with goal.txt found");
-                return;
-            }
+        if (!generateCombinations && externalValues.isEmpty()) {
+            throw new MojoExecutionException("Either generateCombinations must be true or externalValues must be provided");
+        }
 
-            List<String> errors = new LinkedList<>();
-            for (Path goal : projectGoals) {
-                Path itProject = testProjects.relativize(goal.getParent());
-                try {
-                    getLog().info("Processing Archetype IT project: " + itProject);
-                    processIntegrationTest(goal, archetypeFile);
-                } catch (Throwable ex) {
-                    getLog().error(ex);
-                    errors.add(String.format("Test error: project=%s, error=%s", itProject, ex.getMessage()));
+        String testName = project.getFile().toPath().getParent().getFileName().toString();
+        try {
+            if (!externalValues.isEmpty()) {
+                processIntegrationTest(testName, externalValues, archetypeFile);
+            }
+            if (generateCombinations) {
+                InputCombinations combinations = InputCombinations.builder()
+                                                                  .archetypePath(archetypeFile.toPath())
+                                                                  .build();
+                int combinationNumber = 1;
+                for (Map<String, String> combination : combinations) {
+                    processIntegrationTest(testName + ", combination " + combinationNumber++, combination, archetypeFile);
                 }
             }
-            if (!errors.isEmpty()) {
-                errors.forEach(getLog()::error);
-                throw new MojoExecutionException("Integration test failed with error(s)");
-            }
-        } catch (IOException ex) {
-            throw new MojoFailureException(ex.getMessage(), ex);
+
+        } catch (IOException e) {
+            getLog().error(e);
+            throw new MojoExecutionException("Integration test failed with error(s)");
         }
     }
 
-    private void processIntegrationTest(Path projectGoal, File archetypeFile) throws IOException, MojoExecutionException {
+    private void processIntegrationTest(String testDescription,
+                                        Map<String, String> externalValues,
+                                        File archetypeFile) throws IOException, MojoExecutionException {
+
+        logTestDescription(testDescription, externalValues);
+
         Properties props = new Properties();
-        try (InputStream in = Files.newInputStream(projectGoal.getParent().resolve("archetype.properties"))) {
-            props.load(in);
-        }
-        props.put("name", "test project");
+        props.putAll(externalValues);
 
-        // substitute all variable references
-        Map<String, String> propsMap = Maps.fromProperties(props);
-        SubstitutionVariables propsVariables = SubstitutionVariables.of(propsMap);
-        for (Entry<String, String> entry : propsMap.entrySet()) {
-            props.setProperty(entry.getKey(), propsVariables.resolve(entry.getValue()));
+        // REMOVE this when https://github.com/oracle/helidon-build-tools/issues/590 is fixed.
+        if (!externalValues.containsKey("name")) {
+            props.put("name", "TODO-remove-me");
         }
 
-        Path outputDir = projectGoal.getParent().resolve(props.getProperty("artifactId"));
+        Path ourProjectDir = project.getFile().toPath();
+        Path projectsDir = ourProjectDir.getParent().resolve("target/projects");
+        FileUtils.ensureDirectory(projectsDir);
+        Path outputDir = projectsDir.resolve(props.getProperty("artifactId"));
         FileUtils.deleteDirectory(outputDir);
 
         if (mavenArchetypeCompatible) {
+            log.info("Generating project using Maven archetype");
             mavenCompatGenerate(
                     project.getGroupId(),
                     project.getArtifactId(),
@@ -229,16 +247,49 @@ public class IntegrationTestMojo extends AbstractMojo {
                     props,
                     outputDir.getParent());
         } else {
+            log.info("Generating project using Helidon archetype engine");
             generate(archetypeFile.toPath(), props, outputDir);
         }
 
-        List<String> goals = Files.readAllLines(projectGoal).stream()
-                                  .flatMap(g -> Stream.of(g.split(" ")))
-                                  .collect(Collectors.toList());
-        if (!goals.isEmpty()) {
-            invokePostArchetypeGenerationGoals(goals, outputDir.toFile());
-        }
+        invokePostArchetypeGenerationGoals(outputDir.toFile());
     }
+
+    private void logTestDescription(String testDescription, Map<String, String> externalValues) {
+        log.info("");
+        log.info("-------------------------------------");
+        log.info("PROCESSING ARCHETYPE INTEGRATION TEST");
+        log.info("-------------------------------------");
+        log.info("");
+        log.info("Test: " + testDescription);
+        int maxKeyWidth = maxKeyWidth(externalValues);
+        logGeneratorInputs("externalValues", externalValues, maxKeyWidth);
+        log.info("");
+    }
+
+    private void logGeneratorInputs(String label, Map<String, String> inputs, int maxKeyWidth) {
+        log.info("");
+        log.info(label + ":");
+        log.info("");
+        inputs.forEach((key, value) -> {
+            String padding = padding(" ", maxKeyWidth, key);
+            log.info("    " + key + padding + " = " + value);
+        });
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static int maxKeyWidth(Map... maps) {
+        int maxLen = 0;
+        for (Map map : maps) {
+            for (Object key : map.keySet()) {
+                final int len = key.toString().length();
+                if (len > maxLen) {
+                    maxLen = len;
+                }
+            }
+        }
+        return maxLen;
+    }
+
 
     private void generate(Path archetypeFile, Properties props, Path outputDir) {
         try {
@@ -285,54 +336,51 @@ public class IntegrationTestMojo extends AbstractMojo {
                 ArchetypeNotConfigured anc = (ArchetypeNotConfigured) result.getCause();
                 throw new MojoExecutionException(
                         "Missing required properties in archetype.properties: "
-                                + StringUtils.join(anc.getMissingProperties().iterator(), ", "), anc);
+                        + StringUtils.join(anc.getMissingProperties().iterator(), ", "), anc);
             }
             throw new MojoExecutionException(result.getCause().getMessage(), result.getCause());
         }
     }
 
-    private void invokePostArchetypeGenerationGoals(List<String> goals, File basedir)
-            throws IOException, MojoExecutionException {
+    private void invokePostArchetypeGenerationGoals(File basedir) throws IOException, MojoExecutionException {
 
         FileLogger logger = setupBuildLogger(basedir);
 
-        if (!goals.isEmpty()) {
-            getLog().info("Invoking post-archetype-generation goals: " + goals);
-            InvocationRequest request = new DefaultInvocationRequest()
-                    .setBaseDirectory(basedir)
-                    .setGoals(goals)
-                    .setBatchMode(true)
-                    .setShowErrors(true)
-                    .setDebug(debug)
-                    .setShowVersion(showVersion);
+        getLog().info("Invoking post-archetype-generation goal: " + testGoal);
+        InvocationRequest request = new DefaultInvocationRequest()
+                .setBaseDirectory(basedir)
+                .setGoals(List.of(testGoal))
+                .setBatchMode(true)
+                .setShowErrors(true)
+                .setDebug(debug)
+                .setShowVersion(showVersion);
 
-            if (logger != null) {
-                request.setErrorHandler(logger);
-                request.setOutputHandler(logger);
-            }
+        invokerEnvVars.forEach(request::addShellEnvironment);
 
-            if (!properties.isEmpty()) {
-                Properties props = new Properties();
-                for (Entry<String, String> entry : properties.entrySet()) {
-                    if (entry.getValue() != null) {
-                        props.setProperty(entry.getKey(), entry.getValue());
-                    }
+        if (logger != null) {
+            request.setErrorHandler(logger);
+            request.setOutputHandler(logger);
+        }
+
+        if (!properties.isEmpty()) {
+            Properties props = new Properties();
+            for (Entry<String, String> entry : properties.entrySet()) {
+                if (entry.getValue() != null) {
+                    props.setProperty(entry.getKey(), entry.getValue());
                 }
-                request.setProperties(props);
             }
+            request.setProperties(props);
+        }
 
-            try {
-                InvocationResult result = invoker.execute(request);
-                getLog().info("Post-archetype-generation invoker exit code: " + result.getExitCode());
-                if (result.getExitCode() != 0) {
-                    throw new MojoExecutionException("Execution failure: exit code = " + result.getExitCode(),
-                            result.getExecutionException());
-                }
-            } catch (MavenInvocationException ex) {
-                throw new MojoExecutionException(ex.getMessage(), ex);
+        try {
+            InvocationResult result = invoker.execute(request);
+            getLog().info("Post-archetype-generation invoker exit code: " + result.getExitCode());
+            if (result.getExitCode() != 0) {
+                throw new MojoExecutionException("Execution failure: exit code = " + result.getExitCode(),
+                                                 result.getExecutionException());
             }
-        } else {
-            getLog().info("No post-archetype-generation goals to invoke.");
+        } catch (MavenInvocationException ex) {
+            throw new MojoExecutionException(ex.getMessage(), ex);
         }
     }
 

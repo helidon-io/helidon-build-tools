@@ -26,12 +26,11 @@
                 <option value="circle" label="Circle"/>
                 <option value="triangle" label="Triangle" />
                 <option value="square" label="Square" />
-                <option value="rectangle" label="Rectangle" />
             </enum>
-            <text name="package" label="Java package"/>
-            <text name="groupId" label="Project groupId"/>
-            <text name="artifactId" label="Project artifactId"/>
-            <text name="version" label="Project version"/>
+            <text name="package" label="Java package" default="io.helidon.build.maven.archetype.tests"/>
+            <text name="groupId" label="Project groupId" default="io.helidon.build.maven.archetype.tests"/>
+            <text name="artifactId" label="Project artifactId" default="${shape}-project"/>
+            <text name="version" label="Project version" default="0.1-SNAPSHOT"/>
             <output>
                 <transformation id="packaged">
                     <replace regex="__pkg__" replacement="${package/\./\/}"/>

@@ -36,6 +36,7 @@ import java.util.stream.Stream;
 import io.helidon.build.archetype.engine.v2.Context;
 import io.helidon.build.archetype.engine.v2.InputResolver;
 import io.helidon.build.archetype.engine.v2.ScriptLoader;
+import io.helidon.build.archetype.engine.v2.UnresolvedInputException;
 import io.helidon.build.archetype.engine.v2.VisitorAdapter;
 import io.helidon.build.archetype.engine.v2.Walker;
 import io.helidon.build.archetype.engine.v2.ast.Block;
@@ -564,6 +565,10 @@ public class InputTree {
 
         ValueNode(int id, Node parent, String path, String value, Path script, int line) {
             super(id, parent, path, Kind.VALUE, script, line);
+            // Allow null values for text as a way to represent optionals with no default; these will not be collected
+            if (parent.kind() != Kind.TEXT) {
+                requireNonNull(value);
+            }
             this.value = value;
         }
 
@@ -579,8 +584,9 @@ public class InputTree {
         @Override
         public void collect(Map<String, String> values) {
             // We can ignore the index since we have only one combination
-
-            values.put(path(), evaluate(value, values));
+            if (value != null) {
+                values.put(path(), evaluate(value, values));
+            }
             children().forEach(child -> child.collect(values));
         }
 
@@ -992,16 +998,16 @@ public class InputTree {
 
             @Override
             public VisitResult visitText(Input.Text input, Context context) {
-                Value defaultValue = defaultValue(input, context);
-                String value;
+                String defaultValue = input.defaultValue().asString();
                 if (defaultValue == null) {
-                    value = TEXT;
-                } else {
-                    value = defaultValue.asString();
+                    if (!input.isOptional()) {
+                        String path = context.path(input.name());
+                        throw new UnresolvedInputException("text '" + path + "' requires a default value");
+                    }
                 }
                 String path = push(input, context);
                 builder.pushInput(Kind.TEXT, path, input.scriptPath(), input.position());
-                builder.pushValue(value, input.scriptPath(), input.position());
+                builder.pushValue(defaultValue, input.scriptPath(), input.position());
                 return VisitResult.CONTINUE;
             }
 

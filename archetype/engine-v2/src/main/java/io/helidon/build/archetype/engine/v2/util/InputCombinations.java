@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.function.BiFunction;
 
 import io.helidon.build.archetype.engine.v2.util.InputTree.Node;
 import io.helidon.build.archetype.engine.v2.util.InputTree.NodeIndex;
@@ -203,6 +204,17 @@ public class InputCombinations implements Iterable<Map<String, String>> {
          */
         public Builder entryPointFile(String entryPointFileName) {
             builder.entryPointFile(entryPointFileName);
+            return this;
+        }
+
+        /**
+         * Sets the list combiner used to produce the set of combinations of the given list and its defaults (if any).
+         *
+         * @param listCombiner The list combiner.
+         * @return This instance, for chaining.
+         */
+        public Builder listCombiner(BiFunction<List<String>, List<String>, List<List<String>>> listCombiner) {
+            builder.listCombiner(listCombiner);
             return this;
         }
 
