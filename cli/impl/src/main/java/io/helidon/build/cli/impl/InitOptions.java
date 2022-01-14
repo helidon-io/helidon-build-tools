@@ -56,7 +56,6 @@ public final class InitOptions {
     private final BuildSystem buildOption;
     private String archetypeName;
     private final String archetypeNameOption;
-    private final EngineVersion engineVersion;
     private final Flavor flavorOption;
     private final String projectNameOption;
     private final String groupIdOption;
@@ -103,15 +102,13 @@ public final class InitOptions {
             @KeyValue(name = "groupid", description = "Project's group ID") String groupId,
             @KeyValue(name = "artifactid", description = "Project's artifact ID") String artifactId,
             @KeyValue(name = "package", description = "Project's package name") String packageName,
-            @KeyValue(name = "name", description = "Project's name") String projectName,
-            @KeyValue(name = "engine-version", description = "Archetype engine version", visible = false) String engineVersion) {
+            @KeyValue(name = "name", description = "Project's name") String projectName) {
 
         this.buildOption = build;
         this.build = build == null ? BuildSystem.MAVEN : build;
         this.helidonVersion = version;
         this.archetypeNameOption = archetypeName;
         this.archetypeName = archetypeName == null ? DEFAULT_ARCHETYPE_NAME : archetypeName;
-        this.engineVersion = getEngineVersion(engineVersion);
         this.flavorOption = flavor;
         this.flavor = flavor == null ? Flavor.valueOf(DEFAULT_FLAVOR) : flavor;
         this.projectNameOption = projectName;
@@ -125,15 +122,6 @@ public final class InitOptions {
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.packageName = packageName;
-    }
-
-    private EngineVersion getEngineVersion(String version) {
-        if (version == null) {
-            return null;
-        }
-        return version.equalsIgnoreCase("v2")
-                ? EngineVersion.V2
-                : EngineVersion.V1;
     }
 
     /**
@@ -296,15 +284,6 @@ public final class InitOptions {
      */
     String packageNameOption() {
         return packageNameOption;
-    }
-
-    /**
-     * Get the archetype engine version.
-     *
-     * @return engine version, may be null.
-     */
-    EngineVersion engineVersion() {
-        return engineVersion;
     }
 
     /**
