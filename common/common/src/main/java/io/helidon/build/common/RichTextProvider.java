@@ -63,7 +63,7 @@ public interface RichTextProvider {
          * The loaded provider.
          */
         public static final RichTextProvider INSTANCE =
-                ServiceLoader.load(RichTextProvider.class)
+                ServiceLoader.load(RichTextProvider.class, RichTextProvider.class.getClassLoader())
                              .findFirst()
                              .orElse(DefaultProvider.INSTANCE);
     }

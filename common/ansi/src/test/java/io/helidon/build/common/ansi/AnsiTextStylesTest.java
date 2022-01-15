@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ class AnsiTextStylesTest {
         for (AnsiTextStyles function : AnsiTextStyles.values()) {
             String example = function.apply("example");
             assertThat(AnsiTextStyle.isStyled(example), is(enabled));
-            Log.info("%22s [ %s ]", function, example);
+            Log.info("%23s [ %s ]", function, example);
             String name = function.name().toLowerCase();
             String styleName;
             if (name.equals("plain") || name.equals("bold") || name.equals("italic")) {

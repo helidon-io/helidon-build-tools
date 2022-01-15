@@ -64,6 +64,7 @@ import org.codehaus.plexus.util.StringUtils;
 import static io.helidon.build.common.Strings.padding;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Cyan;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Italic;
 import static java.nio.file.FileSystems.newFileSystem;
 
@@ -72,7 +73,7 @@ import static java.nio.file.FileSystems.newFileSystem;
  */
 @Mojo(name = "integration-test")
 public class IntegrationTestMojo extends AbstractMojo {
-    private static final String SEP = AnsiConsoleInstaller.areAnsiEscapesEnabled() ? " " : "  =  ";
+    private static final String SEP = AnsiConsoleInstaller.areAnsiEscapesEnabled() ? "  " : "  =  ";
 
     /**
      * Archetype generate to invoke Maven compatible archetypes.
@@ -270,7 +271,7 @@ public class IntegrationTestMojo extends AbstractMojo {
     private void logCombinationsInput(String testName) {
         log.info("");
         log.info("--------------------------------------");
-        log.info("GENERATING ARCHETYPE TEST COMBINATIONS");
+        log.info("Generating Archetype Test Combinations");
         log.info("--------------------------------------");
         log.info("");
         log.info(Bold.apply("Test: ") + BoldBlue.apply(testName));
@@ -282,7 +283,7 @@ public class IntegrationTestMojo extends AbstractMojo {
     private void logTestDescription(String testDescription, Map<String, String> externalValues) {
         log.info("");
         log.info("-------------------------------------");
-        log.info("PROCESSING ARCHETYPE INTEGRATION TEST");
+        log.info("Processing Archetype Integration Test");
         log.info("-------------------------------------");
         log.info("");
         log.info(Bold.apply("Test: ") + BoldBlue.apply(testDescription));
@@ -299,7 +300,7 @@ public class IntegrationTestMojo extends AbstractMojo {
             log.info("");
             inputs.forEach((key, value) -> {
                 String padding = padding(" ", maxKeyWidth, key);
-                log.info("    " + Italic.apply(key) + padding + SEP + BoldBlue.apply(value));
+                log.info("    " + Cyan.apply(key) + padding + SEP + BoldBlue.apply(value));
             });
         }
     }
