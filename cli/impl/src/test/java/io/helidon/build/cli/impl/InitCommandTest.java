@@ -82,7 +82,7 @@ public class InitCommandTest extends InitCommandTestBase {
     @Test
     public void testInteractiveSe() throws Exception {
         commandInvoker()
-                .input("input.txt")
+                .input(getClass().getResource("input.txt"))
                 .invokeInit()
                 .validateProject();
     }
@@ -90,7 +90,7 @@ public class InitCommandTest extends InitCommandTestBase {
     @Test
     public void testInteractiveMp() throws Exception {
         commandInvoker()
-                .input("input.txt")
+                .input(getClass().getResource("input.txt"))
                 .flavor("MP")
                 .invokeInit()
                 .validateProject();

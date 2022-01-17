@@ -18,11 +18,9 @@ package io.helidon.tests.functional;
 
 import com.oracle.bedrock.runtime.Application;
 import com.oracle.bedrock.runtime.LocalPlatform;
-import com.oracle.bedrock.runtime.console.PipedApplicationConsole;
 import com.oracle.bedrock.runtime.options.Arguments;
-import com.oracle.bedrock.runtime.options.Console;
 import com.oracle.bedrock.runtime.options.WorkingDirectory;
-import io.helidon.build.common.FileUtils;
+import io.helidon.build.cli.impl.CommandInvoker;
 import io.helidon.common.http.Http;
 import io.helidon.webclient.WebClient;
 import org.hamcrest.CoreMatchers;
@@ -37,7 +35,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,8 +44,6 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import static java.util.Objects.requireNonNull;
 
 public class CliFunctionalTest {
 
@@ -79,13 +74,13 @@ public class CliFunctionalTest {
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void batchTest(String flavor, String archetype) throws Exception {
-        runBatchTest(flavor, HELIDON_VERSION, archetype, null, null, null, null, true);
+        runBatchTest(flavor, HELIDON_VERSION, archetype, null, null, null, CUSTOM_PROJECT, true);
     }
 
     @ParameterizedTest
-    @CsvSource({"1,1", "1,2", "1,3", "2,1", "2,2", "2,3"})
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void interactiveTest(String flavor, String archetype) throws Exception {
-        runInteractiveTest(flavor, null, archetype, null, null, null, null, true);
+        runInteractiveTest(flavor, null, archetype, null, null, null, CUSTOM_PROJECT, true);
     }
 
     @ParameterizedTest
@@ -97,14 +92,20 @@ public class CliFunctionalTest {
             "mp,database,2.3.0",
             "mp,quickstart,2.3.0"})
     void batchVersionTest(String flavor, String archetype, String version) throws Exception {
-        runBatchTest(flavor, version, archetype, null, null, null, null, false);
+        runBatchTest(flavor, version, archetype, null, null, null, CUSTOM_PROJECT, false);
         checkIntoPom("2.3.0");
     }
 
     @ParameterizedTest
-    @CsvSource({"1,1,2.3.0", "1,2,2.3.0", "1,3,2.3.0", "2,1,2.3.0", "2,2,2.3.0", "2,3,2.3.0"})
+    @CsvSource({
+            "se,bare,2.3.0",
+            "se,database,2.3.0",
+            "se,quickstart,2.3.0",
+            "mp,bare,2.3.0",
+            "mp,database,2.3.0",
+            "mp,quickstart,2.3.0"})
     void interactiveVersionTest(String flavor, String archetype, String version) throws Exception {
-        runInteractiveTest(flavor, null, null, null, version, null, archetype, false);
+        runInteractiveTest(flavor, version, archetype, null, null, null, CUSTOM_PROJECT, false);
         checkIntoPom("2.3.0");
     }
 
@@ -118,7 +119,7 @@ public class CliFunctionalTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"1,1", "1,2", "1,3", "2,1", "2,2", "2,3"})
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void interactiveAllTest(String flavor, String archetype) throws Exception {
         runInteractiveTest(flavor, "2.3.0", archetype, CUSTOM_GROUP_ID, CUSTOM_ARTIFACT_ID, CUSTOM_PACKAGE_NAME, CUSTOM_PROJECT, false);
         checkIntoPom("2.3.0");
@@ -129,42 +130,42 @@ public class CliFunctionalTest {
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customPackageNameBatchTest(String flavor, String archetype) throws Exception {
-        runBatchTest(flavor, HELIDON_VERSION, archetype, null, null, CUSTOM_PACKAGE_NAME, null, false);
+        runBatchTest(flavor, HELIDON_VERSION, archetype, null, null, CUSTOM_PACKAGE_NAME, CUSTOM_PROJECT, false);
         checkPackageName();
     }
 
     @ParameterizedTest
-    @CsvSource({"1,1", "1,2", "1,3", "2,1", "2,2", "2,3"})
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customPackageNameInteractiveTest(String flavor, String archetype) throws Exception {
-        runInteractiveTest(flavor, null, archetype, null, null, CUSTOM_PACKAGE_NAME, null, false);
+        runInteractiveTest(flavor, null, archetype, null, null, CUSTOM_PACKAGE_NAME, CUSTOM_PROJECT, false);
         checkPackageName();
     }
 
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customGroupIdBatchTest(String flavor, String archetype) throws Exception {
-        runBatchTest(flavor, HELIDON_VERSION, archetype, CUSTOM_GROUP_ID, null, null, null, false);
+        runBatchTest(flavor, HELIDON_VERSION, archetype, CUSTOM_GROUP_ID, null, null, CUSTOM_PROJECT, false);
         checkIntoPom(CUSTOM_GROUP_ID);
     }
 
     @ParameterizedTest
-    @CsvSource({"1,1", "1,2", "1,3", "2,1", "2,2", "2,3"})
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customGroupIdInteractiveTest(String flavor, String archetype) throws Exception {
-        runInteractiveTest(flavor, null, archetype, CUSTOM_GROUP_ID, null, null, null, false);
+        runInteractiveTest(flavor, null, archetype, CUSTOM_GROUP_ID, null, null, CUSTOM_PROJECT, false);
         checkIntoPom(CUSTOM_GROUP_ID);
     }
 
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customArtifactIdBatchTest(String flavor, String archetype) throws Exception {
-        runBatchTest(flavor, HELIDON_VERSION, archetype, null, CUSTOM_ARTIFACT_ID, null, null, false);
-        checkIntoPom(CUSTOM_ARTIFACT_ID);
+        runBatchTest(flavor, HELIDON_VERSION, archetype, null, CUSTOM_ARTIFACT_ID, null, CUSTOM_PROJECT, false);
+        checkIntoPom(CUSTOM_PROJECT);
     }
 
     @ParameterizedTest
-    @CsvSource({"1,1", "1,2", "1,3", "2,1", "2,2", "2,3"})
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customArtifactIdInteractiveTest(String flavor, String archetype) throws Exception {
-        runInteractiveTest(flavor, null, archetype, CUSTOM_ARTIFACT_ID, null, null, null, false);
+        runInteractiveTest(flavor, null, archetype, CUSTOM_ARTIFACT_ID, null, null, CUSTOM_PROJECT, false);
         checkIntoPom(CUSTOM_ARTIFACT_ID);
     }
 
@@ -176,7 +177,7 @@ public class CliFunctionalTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"1,1", "1,2", "1,3", "2,1", "2,2", "2,3"})
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customProjectNameInteractiveTest(String flavor, String archetype) throws Exception {
         runInteractiveTest(flavor, null, archetype, null, null, null, CUSTOM_PROJECT, false);
         Assertions.assertTrue(workDir.resolve(CUSTOM_PROJECT).toFile().exists());
@@ -201,6 +202,14 @@ public class CliFunctionalTest {
         }
     }
 
+    private CommandInvoker.Builder commandInvoker(String version) {
+        return CommandInvoker.builder()
+                .helidonVersion(version)
+                .metadataUrl("https://helidon.io/cli-data")
+                .workDir(workDir)
+                .buildProject(true);
+    }
+
     private void runBatchTest(String flavor,
                               String version,
                               String archetype,
@@ -209,28 +218,18 @@ public class CliFunctionalTest {
                               String packageName,
                               String name,
                               boolean startApp) throws Exception {
-
-        PipedApplicationConsole console = new PipedApplicationConsole();
-        ArgList<String> args = new ArgList<>();
-        args.add("--batch");
-        args.add("--build", "maven");
-        args.add("--version", version);
-        args.add("--flavor", flavor);
-        args.add("--archetype", archetype);
-        args.add("--groupid", groupId);
-        args.add("--artifactid", artifactId);
-        args.add("--package", packageName);
-        args.add("--name", name);
-        Arguments arguments = toArguments(jarCliPath, buildArgs(args), -1);
-        Application app = localPlatform.launch("java", arguments, Console.of(console));
-        CliApplication cli = new CliApplication(app, console);
-        waitForGeneratedProject();
+        commandInvoker(version)
+                .flavor(flavor)
+                .archetypeName(archetype)
+                .groupId(groupId)
+                .artifactId(artifactId)
+                .packageName(packageName)
+                .projectName(name)
+                .invokeInit();
 
         if (startApp) {
             testGeneratedProject();
         }
-
-        cli.close();
     }
 
     private void runInteractiveTest(String flavor,
@@ -241,28 +240,19 @@ public class CliFunctionalTest {
                                     String packageName,
                                     String name,
                                     boolean startApp) throws Exception {
-
-        PipedApplicationConsole console = new PipedApplicationConsole();
-        Arguments arguments = toArguments(jarCliPath, buildArgs(null), -1);
-        Application app = localPlatform.launch("java", arguments, Console.of(console));
-        CliApplication cli = new CliApplication(app, console);
-        TimeUnit.SECONDS.sleep(3);
-
-        cli.writeInput(version == null ? HELIDON_VERSION : version);
-        cli.writeInput(flavor);
-        cli.writeInput(archetype);
-        cli.writeInput(name == null ? System.lineSeparator() : name);
-        cli.writeInput(groupId == null ? System.lineSeparator() : groupId);
-        cli.writeInput(artifactId == null ? System.lineSeparator() : artifactId);
-        cli.writeInput(System.lineSeparator());
-        cli.writeInput(packageName == null ? System.lineSeparator() : packageName);
-        cli.writeInput("n");
-        waitForGeneratedProject();
+        commandInvoker(version)
+                .flavor(flavor)
+                .archetypeName(archetype)
+                .groupId(groupId)
+                .artifactId(artifactId)
+                .packageName(packageName)
+                .projectName(name)
+                .input(getClass().getResource("input.txt"))
+                .invokeInit();
 
         if (startApp) {
             testGeneratedProject();
         }
-        cli.close();
     }
 
     private void testGeneratedProject() throws Exception {
@@ -286,19 +276,6 @@ public class CliFunctionalTest {
         dev.close();
     }
 
-    private void waitForGeneratedProject() throws InterruptedException {
-        long timeout = 60 * 60 * 1000;
-        long now = System.currentTimeMillis();
-
-        while (!Path.of(workDir.toString(), CUSTOM_PROJECT, "pom.xml").toFile().exists()) {
-            TimeUnit.MILLISECONDS.sleep(500);
-
-            if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Generated project is not created");
-            }
-        }
-    }
-
     private Arguments toArguments(String appJarPath, List<String> javaArgs, int port) {
         List<String> args = new LinkedList<>();
         if (port != -1) {
@@ -311,53 +288,6 @@ public class CliFunctionalTest {
         return Arguments.of(args);
     }
 
-    private List<String> buildArgs(List<String> additionalArgs) {
-        List<String> args = new LinkedList<>(List.of(
-                "init",
-                "--project",
-                workDir.resolve(CUSTOM_PROJECT).toString()));
-        if (additionalArgs != null) {
-            args.addAll(additionalArgs);
-        }
-        return args;
-    }
-
-    static class ArgList<E> extends LinkedList<E> {
-
-        public void add(E key, E value) {
-            if (value == null) {
-                return;
-            }
-            this.add(key);
-            this.add(value);
-        }
-    }
-
-    static class CliApplication  {
-
-        Application application;
-        PipedApplicationConsole console;
-
-        CliApplication(Application application, PipedApplicationConsole console) {
-            this.application = application;
-            this.console = console;
-        }
-
-        void writeInput(Object obj) throws Exception {
-            this.console.getInputWriter().println(obj);
-            this.console.getInputWriter().flush();
-            TimeUnit.MILLISECONDS.sleep(200);
-        }
-
-        void close() throws InterruptedException {
-            application.close();
-            while (application.isOperational()) {
-                TimeUnit.MILLISECONDS.sleep(500);
-            }
-        }
-
-    }
-
     static class DevApplication {
         Application application;
         int port;
@@ -368,7 +298,7 @@ public class CliFunctionalTest {
         }
 
         void waitForApplication() throws Exception {
-            long timeout = 3600 * 1000;
+            long timeout = 20 * 1000;
             long now = System.currentTimeMillis();
             URL url = new URL("http://localhost:" + port + "/health");
 

@@ -721,11 +721,11 @@ public interface CommandInvoker {
         /**
          * Set the batch input file.
          *
-         * @param inputFileName input file
+         * @param inputFileUrl input file
          * @return this builder
          */
-        public Builder input(String inputFileName) {
-            URL url = Objects.requireNonNull(getClass().getResource(inputFileName), inputFileName + "not found");
+        public Builder input(URL inputFileUrl) {
+            URL url = Objects.requireNonNull(inputFileUrl, inputFileUrl + "not found");
             this.input = new File(url.getFile());
             return this;
         }
