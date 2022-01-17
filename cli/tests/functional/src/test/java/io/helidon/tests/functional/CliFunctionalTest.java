@@ -49,11 +49,11 @@ public class CliFunctionalTest {
 
     private static String jarCliPath = System.getProperty("jar.cli.path", "please-set-cli.jar.path");
     private static final LocalPlatform localPlatform = LocalPlatform.get();
+    private static final String HELIDON_VERSION = System.getProperty("helidon.test.version", "please-set-helidon-test-version");
     private static final String CUSTOM_GROUP_ID = "mygroupid";
     private static final String CUSTOM_ARTIFACT_ID = "myartifactid";
     private static final String CUSTOM_PROJECT = "myproject";
     private static final String CUSTOM_PACKAGE_NAME = "custom.pack.name";
-    private static final String HELIDON_VERSION = "2.4.0";
     private static Path workDir;
 
     @BeforeAll
@@ -189,7 +189,7 @@ public class CliFunctionalTest {
     }
 
     private void checkPackageName() throws Exception {
-        long timeout = 60 * 60 * 1000;
+        long timeout = 360 * 1000;
         long now = System.currentTimeMillis();
         Path packageInfo = Path.of(workDir.toString(), CUSTOM_PROJECT, "src", "main", "java", "custom", "pack", "name", "package-info.java");
 
@@ -298,7 +298,7 @@ public class CliFunctionalTest {
         }
 
         void waitForApplication() throws Exception {
-            long timeout = 20 * 1000;
+            long timeout = 60 * 1000;
             long now = System.currentTimeMillis();
             URL url = new URL("http://localhost:" + port + "/health");
 
