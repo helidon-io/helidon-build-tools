@@ -36,6 +36,8 @@ import static io.helidon.build.common.ansi.AnsiTextStyles.BoldRed;
  * Prompter that uses CLI for input/output.
  */
 public class TerminalInputResolver extends InputResolver {
+    private static final String ENTER_SELECTION = Bold.apply("Enter selection");
+    private static final String ENTER_LIST_SELECTION = ENTER_SELECTION + " (one or more numbers separated by spaces)";
 
     private final InputStream in;
     private String lastLabel;
@@ -96,7 +98,7 @@ public class TerminalInputResolver extends InputResolver {
         try {
             String defaultValue = defaultValue(input, context).asString();
             String defaultText = defaultValue != null ? BoldBlue.apply(defaultValue) : null;
-            String response = prompt(input.label(), defaultText);
+            String response = prompt(Bold.apply(input.label()), defaultText);
             if (response == null || response.trim().length() == 0) {
                 context.push(input.name(), Value.create(defaultValue), input.isGlobal());
             } else {
@@ -132,7 +134,7 @@ public class TerminalInputResolver extends InputResolver {
                         ? BoldBlue.apply(String.format("%s", defaultIndex + 1))
                         : null;
 
-                String response = prompt("Enter selection", defaultText);
+                String response = prompt(ENTER_SELECTION, defaultText);
                 lastLabel = input.label();
                 if ((response == null || response.trim().length() == 0)) {
                     if (defaultIndex >= 0) {
@@ -163,7 +165,6 @@ public class TerminalInputResolver extends InputResolver {
         }
         while (true) {
             try {
-                String question = "Enter selection (one or more numbers separated by the spaces)";
                 printLabel(input);
                 printOptions(input);
 
@@ -174,7 +175,7 @@ public class TerminalInputResolver extends InputResolver {
                         defaultIndexes.stream().map(i -> (i + 1) + "").collect(Collectors.joining(", "))))
                         : null;
 
-                String response = prompt(question, defaultText);
+                String response = prompt(ENTER_LIST_SELECTION, defaultText);
 
                 lastLabel = input.label();
                 if (response == null || response.trim().length() == 0) {
@@ -218,7 +219,7 @@ public class TerminalInputResolver extends InputResolver {
         String promptText = defaultText != null
                 ? String.format("%s (default: %s): ", prompt, defaultText)
                 : String.format("%s: ", prompt);
-        System.out.print(Bold.apply(promptText));
+        System.out.print(promptText);
         System.out.flush();
         return new BufferedReader(new InputStreamReader(in)).readLine();
     }

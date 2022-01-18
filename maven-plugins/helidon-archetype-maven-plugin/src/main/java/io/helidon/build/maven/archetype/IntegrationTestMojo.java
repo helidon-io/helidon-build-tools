@@ -183,6 +183,7 @@ public class IntegrationTestMojo extends AbstractMojo {
     @Component
     private ProjectInstaller installer;
 
+    private int combinationNumber;
     private Log log;
 
     @Override
@@ -204,10 +205,6 @@ public class IntegrationTestMojo extends AbstractMojo {
             throw new MojoFailureException("Archetype not found");
         }
 
-        if (!generateCombinations && externalValues.isEmpty()) {
-            throw new MojoExecutionException("Either generateCombinations must be true or externalValues must be provided");
-        }
-
         String testName = project.getFile().toPath().getParent().getFileName().toString();
         try {
             if (generateCombinations) {
@@ -217,9 +214,9 @@ public class IntegrationTestMojo extends AbstractMojo {
                                                                   .externalValues(externalValues)
                                                                   .externalDefaults(externalDefaults)
                                                                   .build();
-                int combinationNumber = 1;
                 for (Map<String, String> combination : combinations) {
-                    processIntegrationTest(testName + ", combination " + combinationNumber++, combination, archetypeFile);
+                    combinationNumber++;
+                    processIntegrationTest(testName, combination, archetypeFile);
                 }
             } else {
                 processIntegrationTest(testName, externalValues, archetypeFile);
@@ -231,28 +228,30 @@ public class IntegrationTestMojo extends AbstractMojo {
         }
     }
 
-    private void processIntegrationTest(String testDescription,
+    private void processIntegrationTest(String testName,
                                         Map<String, String> externalValues,
                                         File archetypeFile) throws IOException, MojoExecutionException {
 
-        logTestDescription(testDescription, externalValues);
+        logTestDescription(testName, externalValues);
 
         Properties props = new Properties();
         props.putAll(externalValues);
 
         // REMOVE this when https://github.com/oracle/helidon-build-tools/issues/590 is fixed.
         if (!externalValues.containsKey("name")) {
-            props.put("name", "TODO-remove-me");
+            props.put("name", "myproject");
         }
 
         Path ourProjectDir = project.getFile().toPath();
         Path projectsDir = ourProjectDir.getParent().resolve("target/projects");
         FileUtils.ensureDirectory(projectsDir);
-        Path outputDir = projectsDir.resolve(props.getProperty("artifactId"));
+        String projectName = props.getProperty("artifactId");
+        Path outputDir = projectsDir.resolve(projectName);
         FileUtils.deleteDirectory(outputDir);
 
         if (mavenArchetypeCompatible) {
-            log.info("Generating project using Maven archetype");
+            log.info("Generating project '" + projectName + "' using Maven archetype");
+            System.setProperty("interactiveMode", "false");
             mavenCompatGenerate(
                     project.getGroupId(),
                     project.getArtifactId(),
@@ -261,7 +260,7 @@ public class IntegrationTestMojo extends AbstractMojo {
                     props,
                     outputDir.getParent());
         } else {
-            log.info("Generating project using Helidon archetype engine");
+            log.info("Generating project '" + projectName + "' using Helidon archetype engine");
             generate(archetypeFile.toPath(), props, outputDir);
         }
 
@@ -280,13 +279,17 @@ public class IntegrationTestMojo extends AbstractMojo {
         logInputs("externalDefaults", externalDefaults, maxKeyWidth);
     }
 
-    private void logTestDescription(String testDescription, Map<String, String> externalValues) {
+    private void logTestDescription(String testName, Map<String, String> externalValues) {
+        String testDescription = Bold.apply("Test: ") + BoldBlue.apply(testName);
+        if (combinationNumber > 0) {
+            testDescription += BoldBlue.apply(", combination " + combinationNumber);
+        }
         log.info("");
         log.info("-------------------------------------");
         log.info("Processing Archetype Integration Test");
         log.info("-------------------------------------");
         log.info("");
-        log.info(Bold.apply("Test: ") + BoldBlue.apply(testDescription));
+        log.info(testDescription);
         int maxKeyWidth = maxKeyWidth(externalValues);
         logInputs("externalValues", externalValues, maxKeyWidth);
         log.info("");
