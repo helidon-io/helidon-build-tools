@@ -303,7 +303,7 @@ public class CliFunctionalTest {
         }
 
         void waitForApplication() throws Exception {
-            long timeout = 60 * 1000;
+            long timeout = 360 * 1000;
             long now = System.currentTimeMillis();
             URL url = new URL("http://localhost:" + port + "/health");
 
