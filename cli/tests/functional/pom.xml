@@ -27,7 +27,6 @@
 
     <groupId>io.helidon.build-tools.cli.tests.functional</groupId>
     <artifactId>helidon-cli-functional</artifactId>
-    <version>3.0.0-SNAPSHOT</version>
     <name>Helidon Command Line Interface Functional Tests</name>
 
     <properties>
@@ -82,15 +81,23 @@
         <dependency>
             <groupId>io.helidon.build-tools.cli</groupId>
             <artifactId>helidon-cli-impl</artifactId>
-            <version>3.0.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.build-tools.common</groupId>
             <artifactId>helidon-build-common-test-utils</artifactId>
-            <version>3.0.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
         </dependency>
     </dependencies>
 

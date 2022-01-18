@@ -28,6 +28,7 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -57,8 +58,12 @@ public class CliFunctionalTest {
     private static Path workDir;
 
     @BeforeAll
-    static void setup() throws IOException {
+    static void setup() {
         jarCliPath = Paths.get(jarCliPath).normalize().toString();
+    }
+
+    @BeforeEach
+    public void createWorkspace() throws IOException {
         workDir = Files.createTempDirectory("generated");
     }
 
@@ -326,11 +331,8 @@ public class CliFunctionalTest {
             return new URL("http://localhost:" + this.port);
         }
 
-        void close() throws InterruptedException {
+        void close() {
             application.close();
-            while (application.isOperational()) {
-                TimeUnit.MILLISECONDS.sleep(500);
-            }
         }
     }
 
