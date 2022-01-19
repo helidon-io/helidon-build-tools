@@ -20,9 +20,14 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step label="optional-no-default" optional="true">
+    <step label="Step1" if="true">
         <inputs>
-            <text name="foo" label="Default is not required" optional="true"/>
+            <text name="duplicate" label="Duplicate"/>
+        </inputs>
+    </step>
+    <step label="Step2" if="false">
+        <inputs>
+            <text name="duplicate" label="Duplicate"/>
         </inputs>
     </step>
 </archetype-script>

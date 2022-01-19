@@ -29,12 +29,15 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.build.archetype.engine.v2.util.ArchetypeValidator;
 import io.helidon.build.common.SourcePath;
+import io.helidon.build.common.VirtualFileSystem;
 import io.helidon.build.maven.archetype.MustacheHelper.RawString;
 
 import org.apache.commons.io.FilenameUtils;
@@ -79,6 +82,7 @@ public class JarMojo extends AbstractMojo {
     private static final String POST_SCRIPT_NAME = "archetype-post-generate.groovy";
     private static final String POST_SCRIPT_PKG = "io/helidon/build/maven/archetype/postgenerate";
     private static final Pattern COPYRIGHT_HEADER = Pattern.compile("^(\\s?\\R)?/\\*.*\\*/(\\s?\\R)?", DOTALL);
+    private static final String MAVEN_URL_REPO_PROPERTY = "io.helidon.build.common.maven.url.localRepo";
 
     /**
      * The Maven project this mojo executes on.
@@ -146,6 +150,8 @@ public class JarMojo extends AbstractMojo {
     @Parameter
     private PlexusConfiguration entrypoint;
 
+    private final Schema schema = new Schema(resolveResource(RESOURCE_NAME));
+
     @Override
     public void execute() throws MojoExecutionException {
         try {
@@ -153,6 +159,7 @@ public class JarMojo extends AbstractMojo {
             Files.createDirectories(archetypeDir);
             processSources(archetypeDir);
             processEntryPoint(archetypeDir);
+            validateEntryPoint(archetypeDir);
             if (mavenArchetypeCompatible) {
                 processMavenCompat(archetypeDir);
             }
@@ -180,9 +187,9 @@ public class JarMojo extends AbstractMojo {
 
         // dependencies
         List<String> dependencies = project.getDependencies().stream()
-                                      .filter(d -> !"test".equals(d.getScope()) && !d.isOptional())
-                                      .map(this::coordinates)
-                                      .collect(Collectors.toList());
+                                           .filter(d -> !"test".equals(d.getScope()) && !d.isOptional())
+                                           .map(this::coordinates)
+                                           .collect(Collectors.toList());
         scope.put("dependencies", dependencies);
 
         // The non mustache post generate script that contains the postGenerate function
@@ -236,6 +243,17 @@ public class JarMojo extends AbstractMojo {
                 throw new MojoExecutionException("Cannot generate custom entry-point, main.xml already exists");
             }
             Converter.convert(entrypoint, main);
+            validateSchema(outputDir, "main.xml").ifPresent(getLog()::error);
+        }
+    }
+
+    private void validateEntryPoint(Path outputDir) throws MojoExecutionException {
+        System.setProperty(MAVEN_URL_REPO_PROPERTY, session.getLocalRepository().getBasedir());
+        Path script = VirtualFileSystem.create(outputDir).getPath("/").resolve("main.xml");
+        List<String> errors = ArchetypeValidator.validate(script);
+        if (!errors.isEmpty()) {
+            errors.forEach(getLog()::error);
+            throw new MojoExecutionException("Validation failed");
         }
     }
 
@@ -270,7 +288,6 @@ public class JarMojo extends AbstractMojo {
     }
 
     private void processSources(Path outputDir) throws MojoExecutionException {
-        Schema validator = new Schema(resolveResource(RESOURCE_NAME));
         getLog().debug("Scanning source files");
         Path sourceDir = sourceDirectory.toPath();
         List<String> errors = new LinkedList<>();
@@ -281,13 +298,7 @@ public class JarMojo extends AbstractMojo {
                           getLog().debug("Found source file: " + file);
                       }
                       if (FilenameUtils.getExtension(file).equalsIgnoreCase("xml")) {
-                          try {
-                              validator.validate(sourceDir.resolve(file));
-                          } catch (Schema.ValidationException ex) {
-                              errors.add(String.format("Schema validation error: file=%s, position=%s:%s, error=%s",
-                                      file, ex.lineNo(), ex.colNo(), ex.getMessage()));
-                              return;
-                          }
+                          validateSchema(sourceDir, file).ifPresent(errors::add);
                       }
                       try {
                           Path target = outputDir.resolve(file);
@@ -300,6 +311,20 @@ public class JarMojo extends AbstractMojo {
         if (!errors.isEmpty()) {
             errors.forEach(getLog()::error);
             throw new MojoExecutionException("Schema validation failed");
+        }
+    }
+
+    private Optional<String> validateSchema(Path sourceDir, String filename) {
+        try {
+            schema.validate(sourceDir.resolve(filename));
+            return Optional.empty();
+        } catch (Schema.ValidationException ex) {
+            return Optional.of(
+                    String.format("Schema validation error: file=%s, position=%s:%s, error=%s",
+                            filename,
+                            ex.lineNo(),
+                            ex.colNo(),
+                            ex.getMessage()));
         }
     }
 

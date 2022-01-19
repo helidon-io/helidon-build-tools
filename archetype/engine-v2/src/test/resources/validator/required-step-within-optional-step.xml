@@ -20,9 +20,26 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step label="optional-no-default" optional="true">
+    <step label="optional-step" optional="true">
         <inputs>
-            <text name="foo" label="Default is not required" optional="true"/>
+            <enum name="choice" label="Choose" optional="true" default="foo">
+                <option value="foo" label="Foo">
+                    <step label="required-step">
+                        <inputs>
+                            <text name="required" label="Default is required" default="ok"/>
+                        </inputs>
+                    </step>
+                </option>
+                <option value="bar" label="Bar">
+                    <inputs>
+                        <list name="colors" label="Select colors" default="red,yellow" optional="true">
+                            <option value="red" label="Red"/>
+                            <option value="orange" label="Orange"/>
+                            <option value="yellow" label="Yellow"/>
+                        </list>
+                    </inputs>
+                </option>
+            </enum>
         </inputs>
     </step>
 </archetype-script>

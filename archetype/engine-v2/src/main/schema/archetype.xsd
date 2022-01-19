@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -423,7 +423,7 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:attributeGroup name="path-group">
+    <xs:attributeGroup name="preset-attribute-group">
         <xs:attribute name="path" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
@@ -481,6 +481,14 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="resolvable" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Indicate if a preset path can be resolved to an input.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:attributeGroup>
 
     <xs:complexType name="presets-type">
@@ -501,7 +509,7 @@
                     </xs:annotation>
                     <xs:simpleContent>
                         <xs:extension base="xs:boolean">
-                            <xs:attributeGroup ref="a:path-group"/>
+                            <xs:attributeGroup ref="a:preset-attribute-group"/>
                         </xs:extension>
                     </xs:simpleContent>
                 </xs:complexType>
@@ -516,7 +524,7 @@
                     </xs:annotation>
                     <xs:simpleContent>
                         <xs:extension base="xs:string">
-                            <xs:attributeGroup ref="a:path-group"/>
+                            <xs:attributeGroup ref="a:preset-attribute-group"/>
                         </xs:extension>
                     </xs:simpleContent>
                 </xs:complexType>
@@ -531,7 +539,7 @@
                     </xs:annotation>
                     <xs:simpleContent>
                         <xs:extension base="xs:string">
-                            <xs:attributeGroup ref="a:path-group"/>
+                            <xs:attributeGroup ref="a:preset-attribute-group"/>
                         </xs:extension>
                     </xs:simpleContent>
                 </xs:complexType>
@@ -551,7 +559,7 @@
                             </xs:simpleType>
                         </xs:element>
                     </xs:sequence>
-                    <xs:attributeGroup ref="a:path-group"/>
+                    <xs:attributeGroup ref="a:preset-attribute-group"/>
                 </xs:complexType>
             </xs:element>
         </xs:choice>

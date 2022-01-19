@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
@@ -71,38 +70,6 @@ class InputCombinationsTest {
         assertThat(iter.hasNext(), is(false));
         Exception e = assertThrows(NoSuchElementException.class, iter::next);
         assertThat(e.getMessage().contains("list2.xml"), is(true));
-    }
-
-    // used only for local testing
-    @Test
-    @Disabled
-    void testCollectV2() {
-        Path sourceDir = Path.of("/Users/batsatt/dev/helidon/archetypes/helidon/src/main/archetype");
-        InputCombinations combinations = InputCombinations.builder()
-                                                          .archetypePath(sourceDir)
-                                                          .entryPointFile("flavor.xml")
-                                                          .verbose(false)
-                                                          .build();
-        Map<String, String> firstExpected = Map.of(
-                "flavor", "SE",
-                "base", "bare",
-                "build-system", "maven",
-                "name", "myproject",
-                "groupId", "com.examples",
-                "artifactId", "myproject",
-                "version", "1.0-SNAPSHOT",
-                "package", "com.example.myproject"
-        );
-        List<Map<String, String>> expected = List.of(
-                firstExpected,
-                nextExpected(firstExpected, Map.of("base", "quickstart")),
-                nextExpected(firstExpected, Map.of("base", "database")),
-                nextExpected(firstExpected, Map.of("flavor", "MP", "base", "bare")),
-                nextExpected(firstExpected, Map.of("flavor", "MP", "base", "quickstart")),
-                nextExpected(firstExpected, Map.of("flavor", "MP", "base", "database"))
-        );
-
-        assertExpected(combinations, expected);
     }
 
     @Test

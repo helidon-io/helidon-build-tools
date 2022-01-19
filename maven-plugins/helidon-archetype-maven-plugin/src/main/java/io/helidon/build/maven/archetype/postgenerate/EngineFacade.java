@@ -49,6 +49,7 @@ public final class EngineFacade {
     }
 
     private static final String MAVEN_URL_REPO_PROPERTY = "io.helidon.build.common.maven.url.localRepo";
+
     private static final String MAVEN_CORE_POM_PROPERTIES = "META-INF/maven/org.apache.maven/maven-core/pom.properties";
 
     private static String getMavenVersion() {

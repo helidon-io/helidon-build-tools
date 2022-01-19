@@ -32,7 +32,6 @@ import io.helidon.build.archetype.engine.v2.util.InputTree.NodeIndex;
 import io.helidon.build.archetype.engine.v2.util.InputTree.PresetNode;
 import io.helidon.build.archetype.engine.v2.util.InputTree.ValueNode;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
@@ -302,44 +301,6 @@ class InputTreeTest {
                 "theme.base.shapes", "circle,triangle,rectangle",
                 "theme.base.library-name", "2D Shapes"
         ));
-    }
-
-    // used only for local testing
-    @Test
-    @Disabled
-    void testCollectV2() {
-        Path sourceDir = Path.of("/Users/batsatt/dev/helidon/archetypes/helidon/src/main/archetype");
-        InputTree tree = InputTree.builder()
-                                  .archetypePath(sourceDir)
-                                  .entryPointFile("flavor.xml")
-                                  .build();
-
-        Map<String, String> combination = new LinkedHashMap<>();
-        tree.collect(combination);
-        assertThat(combination.size(), is(8));
-        assertThat(combination.get("flavor"), is("SE"));
-        assertThat(combination.get("base"), is("bare"));
-        assertThat(combination.get("build-system"), is("maven"));
-        assertThat(combination.get("name"), is("myproject"));
-        assertThat(combination.get("groupId"), is("com.examples"));
-        assertThat(combination.get("artifactId"), is("myproject"));
-        assertThat(combination.get("version"), is("1.0-SNAPSHOT"));
-        assertThat(combination.get("package"), is("com.example.myproject"));
-
-        List<Node> inputNodes = collectInputs(tree);
-        Node input = inputNodes.get(1);
-        assertThat(input.path(), is("base"));
-        input.index().next();
-        tree.collect(combination);
-        assertThat(combination.size(), is(8));
-        assertThat(combination.get("flavor"), is("SE"));
-        assertThat(combination.get("base"), is("quickstart"));
-        assertThat(combination.get("build-system"), is("maven"));
-        assertThat(combination.get("name"), is("myproject"));
-        assertThat(combination.get("groupId"), is("com.examples"));
-        assertThat(combination.get("artifactId"), is("myproject"));
-        assertThat(combination.get("version"), is("1.0-SNAPSHOT"));
-        assertThat(combination.get("package"), is("com.example.myproject"));
     }
 
     @Test
@@ -635,6 +596,7 @@ class InputTreeTest {
         tree.stream().filter(n -> n.kind() == kind && n.path().equals(path)).findFirst().orElseThrow();
     }
 
+    @SuppressWarnings("SameParameterValue")
     static List<Node> collect(InputTree tree, Kind kind) {
         return tree.stream().filter(n -> n.kind() == kind).collect(Collectors.toList());
     }
