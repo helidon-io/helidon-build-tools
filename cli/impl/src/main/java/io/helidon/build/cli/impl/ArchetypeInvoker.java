@@ -45,6 +45,7 @@ import io.helidon.build.archetype.engine.v2.TerminalInputResolver;
 import io.helidon.build.archetype.engine.v2.UnresolvedInputException;
 import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
+import io.helidon.build.common.Log;
 import io.helidon.build.common.Maps;
 import io.helidon.build.common.RequirementFailure;
 import io.helidon.build.common.Requirements;
@@ -372,7 +373,6 @@ abstract class ArchetypeInvoker {
     static class V2Invoker extends ArchetypeInvoker {
 
         private static final String FLAVOR_PROPERTY = "flavor";
-        private static final String PROJECT_NAME_PROPERTY = "name";
         private static final String GROUP_ID_PROPERTY = "groupId";
         private static final String ARTIFACT_ID_PROPERTY = "artifactId";
         private static final String PACKAGE_NAME_PROPERTY = "package";
@@ -409,16 +409,17 @@ abstract class ArchetypeInvoker {
             if (initOptions.archetypeNameOption() != null) {
                 externalValues.put(ARCHETYPE_BASE_PROPERTY, initOptions.archetypeNameOption());
             }
+
+            // Warn if name provided on command-line
+            if (initOptions.projectNameOption() != null) {
+                Log.warn("--name option is not used in Helidon 3.x");
+            }
+
             InputResolver inputResolver;
             if (isInteractive()) {
                 inputResolver = new TerminalInputResolver(System.in);
 
-                // Set remaining command-line options as params and user config as defaults
-                if (initOptions.projectNameOption() != null) {
-                    externalValues.put(PROJECT_NAME_PROPERTY, initOptions.projectNameOption());
-                } else {
-                    externalDefaults.put(PROJECT_NAME_PROPERTY, initOptions.projectName());
-                }
+                // Set remaining command-line options as external values and user config as external defaults
                 if (initOptions.groupIdOption() != null) {
                     externalValues.put(GROUP_ID_PROPERTY, initOptions.groupIdOption());
                 } else {
@@ -437,8 +438,7 @@ abstract class ArchetypeInvoker {
             } else {
                 inputResolver = new BatchInputResolver();
 
-                // Batch mode, so pass merged init options as params
-                externalValues.put(PROJECT_NAME_PROPERTY, initOptions.projectName());
+                // Batch mode, so pass merged init options as external values
                 externalValues.put(GROUP_ID_PROPERTY, initOptions.groupId());
                 externalValues.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
                 externalValues.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
@@ -498,8 +498,6 @@ abstract class ArchetypeInvoker {
                     return "--artifactId";
                 case PACKAGE_NAME_PROPERTY:
                     return "--package";
-                case PROJECT_NAME_PROPERTY:
-                    return "--name";
                 default:
                     return null;
             }

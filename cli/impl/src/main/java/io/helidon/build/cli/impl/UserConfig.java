@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,14 +74,17 @@ public class UserConfig {
                     + "#  init_archetype  the name of the selected archetype, e.g. \"quickstart\"\n"
                     + "#  init_build      the selected build type, e.g. \"maven\", converted to lowercase\n"
                     + "\n"
-                    + DEFAULT_PROJECT_NAME_KEY + "=" + DEFAULT_PROJECT_NAME_DEFAULT_VALUE + "\n"
                     + DEFAULT_GROUP_ID_KEY + "=" + DEFAULT_GROUP_ID_DEFAULT_VALUE + "\n"
                     + DEFAULT_ARTIFACT_ID_KEY + "=" + DEFAULT_ARTIFACT_DEFAULT_VALUE + "\n"
                     + DEFAULT_PACKAGE_NAME_KEY + "=" + DEFAULT_PACKAGE_NAME_DEFAULT_VALUE + "\n"
+                    + DEFAULT_PROJECT_NAME_KEY + "=" + DEFAULT_PROJECT_NAME_DEFAULT_VALUE + "\n"
                     + "\n"
-                    + "# When using the init command and a project with the same name already exists,\n"
-                    + "# this value controls whether it should fail or if the name should be made unique \n"
-                    + "# by appending a unique digit, e.g. \"quickstart-se-1\".\n"
+                    + "# NOTE: Starting in Helidon 3.0.0, " + DEFAULT_PROJECT_NAME_KEY + " is ignored and\n"
+                    + "#       " + DEFAULT_ARTIFACT_ID_KEY + " is used instead to name project directories.\n"
+                    + "\n"
+                    + "# When using the init command and a project with the same name/artifactId already\n"
+                    + "# exists, this value controls whether it should fail or if the name should be made\n"
+                    + "# unique by appending a unique digit, e.g. \"quickstart-se-1\".\n"
                     + "\n"
                     + FAIL_ON_PROJECT_NAME_COLLISION_KEY + "=" + FAIL_ON_PROJECT_NAME_COLLISION_DEFAULT_VALUE + "\n"
                     + "\n"

@@ -44,7 +44,7 @@ class ArchetypeEngineV2Test {
                 Map.of(
                         "theme", "colors",
                         "theme.base", "rainbow"),
-                Map.of("name", "foo"));
+                Map.of("artifactId", "foo"));
         assertThat(outputDir.getFileName().toString(), startsWith("foo"));
     }
 
@@ -53,7 +53,7 @@ class ArchetypeEngineV2Test {
         Path outputDir = e2eDir("testProjectName", Map.of(
                 "theme", "colors",
                 "theme.base", "rainbow",
-                "name", "foo"));
+                "artifactId", "foo"));
         assertThat(outputDir.getFileName().toString(), startsWith("foo"));
     }
 
@@ -166,7 +166,7 @@ class ArchetypeEngineV2Test {
                 Map.of(
                         "theme", "colors",
                         "theme.base", "rainbow"),
-                Map.of("name", "not-bar"));
+                Map.of("artifactId", "not-bar"));
         assertThat(outputDir.getFileName().toString(), startsWith("not-bar"));
     }
 
@@ -175,7 +175,7 @@ class ArchetypeEngineV2Test {
         Path outputDir = e2eZip("testProjectNameZip", Map.of(
                 "theme", "colors",
                 "theme.base", "rainbow",
-                "name", "bar"));
+                "artifactId", "bar"));
         assertThat(outputDir.getFileName().toString(), startsWith("bar"));
     }
 

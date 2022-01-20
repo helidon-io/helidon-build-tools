@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,11 +22,11 @@
 
     <step optional="true" label="Customize Project">
         <inputs>
-            <text name="name" label="Project name" optional="true" default="my-project"/>
+            <text name="artifactId" label="Project artifactId" optional="true" default="my-project"/>
         </inputs>
         <output>
             <model>
-                <value key="name">${name}</value>
+                <value key="artifactId">${artifactId}</value>
             </model>
         </output>
     </step>

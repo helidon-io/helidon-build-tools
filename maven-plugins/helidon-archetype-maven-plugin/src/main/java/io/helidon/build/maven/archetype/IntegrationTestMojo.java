@@ -237,11 +237,6 @@ public class IntegrationTestMojo extends AbstractMojo {
         Properties props = new Properties();
         props.putAll(externalValues);
 
-        // REMOVE this when https://github.com/oracle/helidon-build-tools/issues/590 is fixed.
-        if (!externalValues.containsKey("name")) {
-            props.put("name", "myproject");
-        }
-
         Path ourProjectDir = project.getFile().toPath();
         Path projectsDir = ourProjectDir.getParent().resolve("target/projects");
         FileUtils.ensureDirectory(projectsDir);
