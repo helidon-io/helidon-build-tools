@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -53,6 +54,8 @@ public class GraalNativeMojo extends AbstractMojo {
     private static final String EXEC_MODE_MAIN_CLASS = "main";
     private static final String EXEC_MODE_JAR = "jar";
     private static final String EXEC_MODE_JAR_WITH_CP = "jar-cp";
+    private static final String PATH_ENV_VAR = "PATH";
+    private static final String JAVA_HOME_ENV_VAR = "JAVA_HOME";
 
     /**
      * {@code true} if running on WINDOWS.
@@ -477,7 +480,7 @@ public class GraalNativeMojo extends AbstractMojo {
             getLog().debug(
                     "graalvm.home not set,looking in the PATH environment");
 
-            String sysPath = System.getenv("PATH");
+            String sysPath = System.getenv(PATH_ENV_VAR);
             if (Strings.isNotValid(sysPath)) {
                 throw new MojoExecutionException(
                         "PATH environment variable is unset or empty");
@@ -489,8 +492,21 @@ public class GraalNativeMojo extends AbstractMojo {
                     return cmd;
                 }
             }
+
+            String javaHome = System.getenv(JAVA_HOME_ENV_VAR);
+            if (Strings.isValid(javaHome)) {
+                Path binDir = Path.of(javaHome).resolve("bin");
+                if (Files.isDirectory(binDir)) {
+                    File cmd = findCmd(binDir.toFile(), NATIVE_IMAGE_CMD);
+                    if (cmd != null) {
+                        getLog().debug("Found " + NATIVE_IMAGE_CMD + ": " + cmd);
+                        return cmd;
+                    }
+                }
+            }
+
             throw new MojoExecutionException(NATIVE_IMAGE_CMD
-                    + " not found in the PATH environment");
+                    + " not found in the PATH or JAVA_HOME environment");
         }
 
         getLog().debug(
