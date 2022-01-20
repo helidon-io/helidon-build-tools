@@ -29,10 +29,6 @@
     <artifactId>helidon-cli-functional</artifactId>
     <name>Helidon Command Line Interface Functional Tests</name>
 
-    <properties>
-        <jarCliPath>${project.basedir}/../../impl/target/helidon.jar</jarCliPath>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.build-tools.cli</groupId>
@@ -108,7 +104,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <systemPropertyVariables>
-                        <jar.cli.path>${jarCliPath}</jar.cli.path>
+                        <!-- version should be upgraded to 3.0.0 once released-->
                         <helidon.test.version>2.4.0</helidon.test.version>
                     </systemPropertyVariables>
                 </configuration>

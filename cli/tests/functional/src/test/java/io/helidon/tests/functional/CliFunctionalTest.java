@@ -19,7 +19,6 @@ package io.helidon.tests.functional;
 import com.oracle.bedrock.runtime.Application;
 import com.oracle.bedrock.runtime.LocalPlatform;
 import com.oracle.bedrock.runtime.options.Arguments;
-import com.oracle.bedrock.runtime.options.WorkingDirectory;
 import io.helidon.build.cli.impl.CommandInvoker;
 import io.helidon.common.http.Http;
 import io.helidon.webclient.WebClient;
@@ -28,7 +27,6 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -39,31 +37,25 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 public class CliFunctionalTest {
 
-    private static String jarCliPath = System.getProperty("jar.cli.path", "please-set-cli.jar.path");
-    private static final LocalPlatform localPlatform = LocalPlatform.get();
     private static final String HELIDON_VERSION = System.getProperty("helidon.test.version", "please-set-helidon-test-version");
     private static final String CUSTOM_GROUP_ID = "mygroupid";
     private static final String CUSTOM_ARTIFACT_ID = "myartifactid";
     private static final String CUSTOM_PROJECT = "myproject";
     private static final String CUSTOM_PACKAGE_NAME = "custom.pack.name";
     private static Path workDir;
+    private static final Logger LOGGER = Logger.getLogger(CliFunctionalTest.class.getName());
 
     @BeforeAll
-    static void setup() {
-        jarCliPath = Paths.get(jarCliPath).normalize().toString();
-    }
-
-    @BeforeEach
-    public void createWorkspace() throws IOException {
+    static void setup() throws IOException {
         workDir = Files.createTempDirectory("generated");
     }
 
@@ -79,13 +71,13 @@ public class CliFunctionalTest {
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void batchTest(String flavor, String archetype) throws Exception {
-        runBatchTest(flavor, HELIDON_VERSION, archetype, null, null, null, CUSTOM_PROJECT, true);
+        runBatchTest(flavor, HELIDON_VERSION, archetype, null, null, null, null, true);
     }
 
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void interactiveTest(String flavor, String archetype) throws Exception {
-        runInteractiveTest(flavor, null, archetype, null, null, null, CUSTOM_PROJECT, true);
+        runInteractiveTest(flavor, null, archetype, null, null, null, null, true);
     }
 
     @ParameterizedTest
@@ -97,7 +89,7 @@ public class CliFunctionalTest {
             "mp,database,2.3.0",
             "mp,quickstart,2.3.0"})
     void batchVersionTest(String flavor, String archetype, String version) throws Exception {
-        runBatchTest(flavor, version, archetype, null, null, null, CUSTOM_PROJECT, false);
+        runBatchTest(flavor, version, archetype, null, null, null, null, false);
         checkIntoPom("2.3.0");
     }
 
@@ -110,7 +102,7 @@ public class CliFunctionalTest {
             "mp,database,2.3.0",
             "mp,quickstart,2.3.0"})
     void interactiveVersionTest(String flavor, String archetype, String version) throws Exception {
-        runInteractiveTest(flavor, version, archetype, null, null, null, CUSTOM_PROJECT, false);
+        runInteractiveTest(flavor, version, archetype, null, null, null, null, false);
         checkIntoPom("2.3.0");
     }
 
@@ -119,8 +111,6 @@ public class CliFunctionalTest {
     void batchAllTest(String flavor, String archetype) throws Exception {
         runBatchTest(flavor, "2.3.0", archetype, CUSTOM_GROUP_ID, CUSTOM_ARTIFACT_ID, CUSTOM_PACKAGE_NAME, CUSTOM_PROJECT, false);
         checkIntoPom("2.3.0");
-        checkIntoPom(CUSTOM_GROUP_ID);
-        checkPackageName();
     }
 
     @ParameterizedTest
@@ -128,82 +118,62 @@ public class CliFunctionalTest {
     void interactiveAllTest(String flavor, String archetype) throws Exception {
         runInteractiveTest(flavor, "2.3.0", archetype, CUSTOM_GROUP_ID, CUSTOM_ARTIFACT_ID, CUSTOM_PACKAGE_NAME, CUSTOM_PROJECT, false);
         checkIntoPom("2.3.0");
-        checkIntoPom(CUSTOM_GROUP_ID);
-        checkPackageName();
     }
 
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customPackageNameBatchTest(String flavor, String archetype) throws Exception {
-        runBatchTest(flavor, HELIDON_VERSION, archetype, null, null, CUSTOM_PACKAGE_NAME, CUSTOM_PROJECT, false);
-        checkPackageName();
+        runBatchTest(flavor, HELIDON_VERSION, archetype, null, null, CUSTOM_PACKAGE_NAME, null, false);
     }
 
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customPackageNameInteractiveTest(String flavor, String archetype) throws Exception {
-        runInteractiveTest(flavor, null, archetype, null, null, CUSTOM_PACKAGE_NAME, CUSTOM_PROJECT, false);
-        checkPackageName();
+        runInteractiveTest(flavor, null, archetype, null, null, CUSTOM_PACKAGE_NAME, null, false);
     }
 
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customGroupIdBatchTest(String flavor, String archetype) throws Exception {
-        runBatchTest(flavor, HELIDON_VERSION, archetype, CUSTOM_GROUP_ID, null, null, CUSTOM_PROJECT, false);
-        checkIntoPom(CUSTOM_GROUP_ID);
+        runBatchTest(flavor, HELIDON_VERSION, archetype, CUSTOM_GROUP_ID, null, null, null, false);
     }
 
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customGroupIdInteractiveTest(String flavor, String archetype) throws Exception {
-        runInteractiveTest(flavor, null, archetype, CUSTOM_GROUP_ID, null, null, CUSTOM_PROJECT, false);
-        checkIntoPom(CUSTOM_GROUP_ID);
+        runInteractiveTest(flavor, null, archetype, CUSTOM_GROUP_ID, null, null, null, false);
     }
 
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customArtifactIdBatchTest(String flavor, String archetype) throws Exception {
-        runBatchTest(flavor, HELIDON_VERSION, archetype, null, CUSTOM_ARTIFACT_ID, null, CUSTOM_PROJECT, false);
-        checkIntoPom(CUSTOM_PROJECT);
+        runBatchTest(flavor, HELIDON_VERSION, archetype, null, CUSTOM_ARTIFACT_ID, null, null, false);
     }
 
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customArtifactIdInteractiveTest(String flavor, String archetype) throws Exception {
-        runInteractiveTest(flavor, null, archetype, CUSTOM_ARTIFACT_ID, null, null, CUSTOM_PROJECT, false);
-        checkIntoPom(CUSTOM_ARTIFACT_ID);
+        runInteractiveTest(flavor, null, archetype, CUSTOM_ARTIFACT_ID, null, null, null, false);
     }
 
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customProjectNameBatchTest(String flavor, String archetype) throws Exception {
         runBatchTest(flavor, HELIDON_VERSION, archetype, null, null, null, CUSTOM_PROJECT, false);
-        Assertions.assertTrue(workDir.resolve(CUSTOM_PROJECT).toFile().exists());
     }
 
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customProjectNameInteractiveTest(String flavor, String archetype) throws Exception {
         runInteractiveTest(flavor, null, archetype, null, null, null, CUSTOM_PROJECT, false);
-        Assertions.assertTrue(workDir.resolve(CUSTOM_PROJECT).toFile().exists());
     }
 
     private void checkIntoPom(String expected) throws IOException {
-        Path pom = Path.of(workDir.toString(), CUSTOM_PROJECT, "pom.xml");
-        Assertions.assertTrue(Files.readString(pom).contains(expected));
-    }
-
-    private void checkPackageName() throws Exception {
-        long timeout = 360 * 1000;
-        long now = System.currentTimeMillis();
-        Path packageInfo = Path.of(workDir.toString(), CUSTOM_PROJECT, "src", "main", "java", "custom", "pack", "name", "package-info.java");
-
-        while (!packageInfo.toFile().exists()) {
-            TimeUnit.MILLISECONDS.sleep(500);
-
-            if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Custom package name is not found");
-            }
+        try (Stream<Path> paths = Files.walk(workDir)) {
+            AtomicReference<Path> pom = new AtomicReference<>();
+            paths.filter(p -> p.toString().endsWith("pom.xml"))
+                    .findFirst().ifPresent(pom::set);
+            Assertions.assertTrue(Files.readString(pom.get()).contains(expected));
         }
     }
 
@@ -211,8 +181,7 @@ public class CliFunctionalTest {
         return CommandInvoker.builder()
                 .helidonVersion(version)
                 .metadataUrl("https://helidon.io/cli-data")
-                .workDir(workDir)
-                .buildProject(true);
+                .workDir(workDir);
     }
 
     private void runBatchTest(String flavor,
@@ -224,13 +193,15 @@ public class CliFunctionalTest {
                               String name,
                               boolean startApp) throws Exception {
         commandInvoker(version)
+                .buildProject(startApp)
                 .flavor(flavor)
                 .archetypeName(archetype)
                 .groupId(groupId)
                 .artifactId(artifactId)
                 .packageName(packageName)
                 .projectName(name)
-                .invokeInit();
+                .invokeInit()
+                .validateProject();
 
         if (startApp) {
             testGeneratedProject();
@@ -246,6 +217,7 @@ public class CliFunctionalTest {
                                     String name,
                                     boolean startApp) throws Exception {
         commandInvoker(version)
+                .buildProject(startApp)
                 .flavor(flavor)
                 .archetypeName(archetype)
                 .groupId(groupId)
@@ -253,7 +225,8 @@ public class CliFunctionalTest {
                 .packageName(packageName)
                 .projectName(name)
                 .input(getClass().getResource("input.txt"))
-                .invokeInit();
+                .invokeInit()
+                .validateProject();
 
         if (startApp) {
             testGeneratedProject();
@@ -261,14 +234,21 @@ public class CliFunctionalTest {
     }
 
     private void testGeneratedProject() throws Exception {
+        LocalPlatform localPlatform = LocalPlatform.get();
         int port = localPlatform.getAvailablePorts().next();
-        Arguments args = toArguments(jarCliPath, new ArrayList<>(List.of("dev")), port);
-        Application app = localPlatform.launch("java", args, WorkingDirectory.at(workDir.resolve(CUSTOM_PROJECT)));
-        DevApplication dev = new DevApplication(app, port);
-        dev.waitForApplication();
+        AtomicReference<String> jarPath = new AtomicReference<>();
+        try (Stream<Path> paths = Files.walk(workDir)) {
+            paths.filter(p -> p.toString().endsWith(".jar"))
+                    .map(String::valueOf)
+                    .findFirst().ifPresent(jarPath::set);
+        }
+        Arguments args = toArguments(jarPath.get(), port);
+        Application app = localPlatform.launch("java", args);
+        HelidonApplication helidonApp = new HelidonApplication(app, port);
+        helidonApp.waitForApplicationUp();
 
         WebClient webClient = WebClient.builder()
-                .baseUri(dev.getBaseUrl())
+                .baseUri(helidonApp.getBaseUrl())
                 .build();
 
         webClient.get()
@@ -278,61 +258,79 @@ public class CliFunctionalTest {
                 .toCompletableFuture()
                 .get();
 
-        dev.close();
+        helidonApp.stop();
     }
 
-    private Arguments toArguments(String appJarPath, List<String> javaArgs, int port) {
+    private Arguments toArguments(String appJarPath, int port) {
         List<String> args = new LinkedList<>();
-        if (port != -1) {
-            javaArgs.add("--app-jvm-args");
-            javaArgs.add("-Dserver.port=" + port);
-        }
+        args.add("-Dserver.port=" + port);
         args.add("-jar");
         args.add(appJarPath);
-        args.addAll(javaArgs);
         return Arguments.of(args);
     }
 
-    static class DevApplication {
+    static class HelidonApplication {
         Application application;
         int port;
 
-        DevApplication(Application application, int port) {
+        HelidonApplication(Application application, int port) {
             this.application = application;
             this.port = port;
         }
 
-        void waitForApplication() throws Exception {
-            long timeout = 360 * 1000;
-            long now = System.currentTimeMillis();
-            URL url = new URL("http://localhost:" + port + "/health");
-
-            HttpURLConnection conn = null;
-            int responseCode;
-            do {
-                Thread.sleep(500);
-                if ((System.currentTimeMillis() - now) > timeout) {
-                    Assertions.fail("Application failed to start");
-                }
-                try {
-                    conn = (HttpURLConnection) url.openConnection();
-                    conn.setConnectTimeout(500);
-                    responseCode = conn.getResponseCode();
-                } catch (Exception ex) {
-                    responseCode = -1;
-                }
-                if (conn != null) {
-                    conn.disconnect();
-                }
-            } while (responseCode != 200);
+        URL getHealthUrl() throws MalformedURLException {
+            return new URL("http://localhost:" + this.port + "/health");
         }
 
         URL getBaseUrl() throws MalformedURLException {
             return new URL("http://localhost:" + this.port);
         }
 
-        void close() {
+        void waitForApplicationDown() throws Exception {
+            waitForApplication(false);
+        }
+
+        void waitForApplicationUp() throws Exception {
+            waitForApplication(true);
+        }
+
+        private void waitForApplication(boolean toBeUp) throws Exception {
+            long timeout = 60 * 60 * 1000;
+            long now = System.currentTimeMillis();
+            String operation = (toBeUp ? "start" : "stop");
+            URL url = getHealthUrl();
+            LOGGER.info("Waiting for application to " + operation);
+
+            HttpURLConnection conn = null;
+            int responseCode;
+            do {
+                Thread.sleep(500);
+                if ((System.currentTimeMillis() - now) > timeout) {
+                    Assertions.fail("Application failed to " + operation);
+                }
+                try {
+                    conn = (HttpURLConnection) url.openConnection();
+                    conn.setConnectTimeout(500);
+                    responseCode = conn.getResponseCode();
+                    if (toBeUp && responseCode != 200) {
+                        LOGGER.info("Waiting for application to " + operation + ": Bad health response  " + responseCode);
+                    }
+                } catch (Exception ex) {
+                    if (toBeUp) {
+                        LOGGER.info("Waiting for application to " + operation + ": Unable to connect to " + url.toString() + ": " + ex);
+                    }
+                    responseCode = -1;
+                }
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            } while ((toBeUp && responseCode != 200) || (!toBeUp && responseCode != -1));
+            LOGGER.info("Application " + operation + " successful" );
+        }
+
+        void stop() throws Exception {
             application.close();
+            waitForApplicationDown();
         }
     }
 
