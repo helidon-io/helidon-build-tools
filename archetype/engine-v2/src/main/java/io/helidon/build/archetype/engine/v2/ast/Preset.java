@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,12 @@ public final class Preset extends Block {
 
     private final Value value;
     private final String path;
+    private final boolean resolvable;
 
     private Preset(Builder builder) {
         super(builder);
         this.path = builder.attribute("path", true);
+        this.resolvable = !"false".equalsIgnoreCase(builder.attribute("resolvable", false));
         Block.Kind kind = builder.kind();
         switch (kind) {
             case BOOLEAN:
@@ -49,6 +51,15 @@ public final class Preset extends Block {
             default:
                 throw new IllegalArgumentException("Unknown preset kind: " + kind);
         }
+    }
+
+    /**
+     * Test if this preset can be resolved.
+     *
+     * @return {@code true} if it can be resolved, {@code false} otherwise
+     */
+    public boolean isResolvable() {
+        return resolvable;
     }
 
     /**

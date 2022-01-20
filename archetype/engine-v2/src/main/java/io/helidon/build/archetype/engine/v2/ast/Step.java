@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.build.archetype.engine.v2.ast;
 
 import java.nio.file.Path;
 
+import static java.lang.Boolean.parseBoolean;
+
 /**
  * Step.
  */
@@ -25,11 +27,13 @@ public class Step extends Block {
 
     private final String label;
     private final String help;
+    private final boolean optional;
 
     private Step(Builder builder) {
         super(builder);
         label = builder.attribute("label", false);
         help = builder.attribute("help", false);
+        optional = parseBoolean(builder.attribute("optional", false));
     }
 
     /**
@@ -50,6 +54,15 @@ public class Step extends Block {
         return help;
     }
 
+    /**
+     * Test if this step is optional.
+     *
+     * @return {@code true} if optional, {@code false} otherwise
+     */
+    public boolean isOptional() {
+        return optional;
+    }
+
     @Override
     public <A> VisitResult accept(Visitor<A> visitor, A arg) {
         return visitor.visitStep(this, arg);
@@ -58,6 +71,14 @@ public class Step extends Block {
     @Override
     public <A> VisitResult acceptAfter(Visitor<A> visitor, A arg) {
         return visitor.postVisitStep(this, arg);
+    }
+
+    @Override
+    public String toString() {
+        return "Step{"
+                + "label='" + label() + '\''
+                + ", optional=" + isOptional()
+                + '}';
     }
 
     /**

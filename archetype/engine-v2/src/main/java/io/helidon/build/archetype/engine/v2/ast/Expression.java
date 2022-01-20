@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,7 +117,7 @@ public final class Expression {
             } else if (token.variable != null) {
                 value = resolver.apply(token.variable);
                 if (value == null) {
-                    throw new UnresolvedVariableException("Unresolved variable: " + token.variable);
+                    throw new UnresolvedVariableException(token.variable);
                 }
             } else {
                 throw new IllegalStateException("Invalid token");
@@ -132,8 +132,20 @@ public final class Expression {
      */
     public static final class UnresolvedVariableException extends RuntimeException {
 
-        private UnresolvedVariableException(String message) {
-            super(message);
+        private final String variable;
+
+        private UnresolvedVariableException(String variable) {
+            super("Unresolved variable: " + variable);
+            this.variable = variable;
+        }
+
+        /**
+         * Get the unresolved variable name.
+         *
+         * @return variable name
+         */
+        public String variable() {
+            return variable;
         }
     }
 
