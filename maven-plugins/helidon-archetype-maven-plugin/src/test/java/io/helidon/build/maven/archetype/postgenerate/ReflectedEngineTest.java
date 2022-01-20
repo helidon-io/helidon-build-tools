@@ -44,7 +44,7 @@ class ReflectedEngineTest {
         Path outputDir = targetDir.resolve("reflected-engine-ut");
         FileSystem fs = VirtualFileSystem.create(sourceDir);
         ReflectedEngine engine = new ReflectedEngine(this.getClass().getClassLoader(), fs);
-        Map<String, String> externalValues = Map.of("color", "red", "name", "testGenerate");
+        Map<String, String> externalValues = Map.of("color", "red", "artifactId", "testGenerate");
         Path projectDir = engine.generate(false, externalValues, Map.of(), n -> unique(outputDir, n));
         assertThat(Files.exists(projectDir.resolve("color.txt")), is(true));
         assertThat(normalizeNewLines(readString(projectDir.resolve("color.txt"))), is("red\n"));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import static java.util.Objects.requireNonNull;
 public class ArchetypeEngineV2 {
 
     private static final String ENTRYPOINT = "main.xml";
-    private static final String PROJECT_NAME = "name";
+    private static final String ARTIFACT_ID = "artifactId";
 
     private final Path cwd;
 
@@ -66,8 +66,8 @@ public class ArchetypeEngineV2 {
         context.ensureEmptyInputs();
 
         // resolve output directory
-        String projectName = requireNonNull(context.lookup(PROJECT_NAME), "project name is null").asString();
-        Path directory = directorySupplier.apply(projectName);
+        String artifactId = requireNonNull(context.lookup(ARTIFACT_ID), ARTIFACT_ID + " is null").asString();
+        Path directory = directorySupplier.apply(artifactId);
 
         // resolve model  (full traversal)
         MergedModel model = MergedModel.resolveModel(script, context);

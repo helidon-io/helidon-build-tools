@@ -117,7 +117,7 @@ class InputCombinationsTest {
                 "theme.base.style", "modern",
                 "theme.base.palette-name", "My Palette",
                 "theme.base.colors", "red,green,blue",
-                "name", "my-project"
+                "artifactId", "my-project"
         );
 
         Map<String, String> colorsClassic = Map.of(
@@ -126,7 +126,7 @@ class InputCombinationsTest {
                 "theme.base.style", "classic",
                 "theme.base.palette-name", "My Palette",
                 "theme.base.colors", "red,green,blue",
-                "name", "my-project"
+                "artifactId", "my-project"
         );
 
         Map<String, String> colorsRainbow = Map.of(
@@ -135,7 +135,7 @@ class InputCombinationsTest {
                 "theme.base.style", "modern",
                 "theme.base.palette-name", "Rainbow",
                 "theme.base.colors", "red,orange,yellow,green,blue,indigo,violet",
-                "name", "my-project"
+                "artifactId", "my-project"
         );
 
         Map<String, String> shapes = Map.of(
@@ -144,7 +144,7 @@ class InputCombinationsTest {
                 "theme.base.style", "modern",
                 "theme.base.library-name", "My Shapes",
                 "theme.base.shapes", "circle,triangle",
-                "name", "my-project"
+                "artifactId", "my-project"
         );
 
 
@@ -154,7 +154,7 @@ class InputCombinationsTest {
                 "theme.base.style", "classic",
                 "theme.base.library-name", "My Shapes",
                 "theme.base.shapes", "circle,triangle",
-                "name", "my-project"
+                "artifactId", "my-project"
         );
 
         Map<String, String> shapes2d = Map.of(
@@ -163,7 +163,7 @@ class InputCombinationsTest {
                 "theme.base.style", "modern",
                 "theme.base.library-name", "2D Shapes",
                 "theme.base.shapes", "circle,triangle,rectangle",
-                "name", "my-project"
+                "artifactId", "my-project"
         );
         List<Map<String, String>> expected = List.of(
                 colors,
