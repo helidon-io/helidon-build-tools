@@ -18,7 +18,6 @@ package io.helidon.tests.functional;
 
 import io.helidon.build.cli.impl.CommandInvoker;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -28,9 +27,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
 
 public class CliFunctionalTest {
 
@@ -77,7 +73,6 @@ public class CliFunctionalTest {
             "mp,quickstart,2.3.0"})
     void batchVersionTest(String flavor, String archetype, String version) throws Exception {
         runBatchTest(flavor, version, archetype, null, null, null, null, false);
-        checkIntoPom("2.3.0");
     }
 
     @ParameterizedTest
@@ -90,21 +85,18 @@ public class CliFunctionalTest {
             "mp,quickstart,2.3.0"})
     void interactiveVersionTest(String flavor, String archetype, String version) throws Exception {
         runInteractiveTest(flavor, version, archetype, null, null, null, null, false);
-        checkIntoPom("2.3.0");
     }
 
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void batchAllTest(String flavor, String archetype) throws Exception {
         runBatchTest(flavor, "2.3.0", archetype, CUSTOM_GROUP_ID, CUSTOM_ARTIFACT_ID, CUSTOM_PACKAGE_NAME, CUSTOM_PROJECT, false);
-        checkIntoPom("2.3.0");
     }
 
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void interactiveAllTest(String flavor, String archetype) throws Exception {
         runInteractiveTest(flavor, "2.3.0", archetype, CUSTOM_GROUP_ID, CUSTOM_ARTIFACT_ID, CUSTOM_PACKAGE_NAME, CUSTOM_PROJECT, false);
-        checkIntoPom("2.3.0");
     }
 
     @ParameterizedTest
@@ -153,16 +145,6 @@ public class CliFunctionalTest {
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customProjectNameInteractiveTest(String flavor, String archetype) throws Exception {
         runInteractiveTest(flavor, null, archetype, null, null, null, CUSTOM_PROJECT, false);
-    }
-
-    private void checkIntoPom(String expected) throws IOException {
-        try (Stream<Path> paths = Files.walk(workDir)) {
-            AtomicReference<Path> pom = new AtomicReference<>();
-            paths.filter(p -> p.toString().endsWith("pom.xml"))
-                    .findFirst().ifPresent(pom::set);
-            Objects.requireNonNull(pom.get(), "File pom.xml was not found.");
-            Assertions.assertTrue(Files.readString(pom.get()).contains(expected));
-        }
     }
 
     private CommandInvoker.Builder commandInvoker(String version) {

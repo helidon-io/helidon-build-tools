@@ -443,6 +443,12 @@ public interface CommandInvoker {
 
             // Project Name
             assertThat(model.getName(), is(projectName));
+
+            if (helidonVersion != null) {
+                // Project Version
+                assertThat(model.getParent().getVersion(), is(helidonVersion));
+            }
+
             return this;
         }
 
