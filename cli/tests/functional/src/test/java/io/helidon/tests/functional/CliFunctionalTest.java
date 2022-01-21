@@ -16,14 +16,7 @@
 
 package io.helidon.tests.functional;
 
-import com.oracle.bedrock.runtime.Application;
-import com.oracle.bedrock.runtime.LocalPlatform;
-import com.oracle.bedrock.runtime.options.Arguments;
 import io.helidon.build.cli.impl.CommandInvoker;
-import io.helidon.common.http.Http;
-import io.helidon.webclient.WebClient;
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,17 +25,11 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 public class CliFunctionalTest {
@@ -53,7 +40,6 @@ public class CliFunctionalTest {
     private static final String CUSTOM_PROJECT = "myproject";
     private static final String CUSTOM_PACKAGE_NAME = "custom.pack.name";
     private static Path workDir;
-    private static final Logger LOGGER = Logger.getLogger(CliFunctionalTest.class.getName());
 
     @BeforeAll
     static void setup() throws IOException {
@@ -204,10 +190,6 @@ public class CliFunctionalTest {
                 .projectName(name)
                 .invokeInit()
                 .validateProject();
-
-        if (startApp) {
-            testGeneratedProject();
-        }
     }
 
     private void runInteractiveTest(String flavor,
@@ -229,112 +211,7 @@ public class CliFunctionalTest {
                 .input(getClass().getResource("input.txt"))
                 .invokeInit()
                 .validateProject();
-
-        if (startApp) {
-            testGeneratedProject();
-        }
     }
 
-    private void testGeneratedProject() throws Exception {
-        LocalPlatform localPlatform = LocalPlatform.get();
-        int port = localPlatform.getAvailablePorts().next();
-        AtomicReference<String> jarPath = new AtomicReference<>();
-        try (Stream<Path> paths = Files.walk(workDir)) {
-            paths.filter(p -> p.toString().endsWith(".jar"))
-                    .map(String::valueOf)
-                    .findFirst().ifPresent(jarPath::set);
-        }
-        Objects.requireNonNull(jarPath.get(), "Jar file was not found.");
-        Arguments args = toArguments(jarPath.get(), port);
-        Application app = localPlatform.launch("java", args);
-        HelidonApplication helidonApp = new HelidonApplication(app, port);
-        helidonApp.waitForApplicationUp();
-
-        WebClient webClient = WebClient.builder()
-                .baseUri(helidonApp.getBaseUrl())
-                .build();
-
-        webClient.get()
-                .path("/health")
-                .request()
-                .thenAccept(it -> MatcherAssert.assertThat("HTTP response", it.status(), CoreMatchers.is(Http.Status.OK_200)))
-                .toCompletableFuture()
-                .get();
-
-        helidonApp.stop();
-    }
-
-    private Arguments toArguments(String appJarPath, int port) {
-        List<String> args = new LinkedList<>();
-        args.add("-Dserver.port=" + port);
-        args.add("-jar");
-        args.add(appJarPath);
-        return Arguments.of(args);
-    }
-
-    static class HelidonApplication {
-        Application application;
-        int port;
-
-        HelidonApplication(Application application, int port) {
-            this.application = application;
-            this.port = port;
-        }
-
-        URL getHealthUrl() throws MalformedURLException {
-            return new URL("http://localhost:" + this.port + "/health");
-        }
-
-        URL getBaseUrl() throws MalformedURLException {
-            return new URL("http://localhost:" + this.port);
-        }
-
-        void waitForApplicationDown() throws Exception {
-            waitForApplication(false);
-        }
-
-        void waitForApplicationUp() throws Exception {
-            waitForApplication(true);
-        }
-
-        private void waitForApplication(boolean toBeUp) throws Exception {
-            long timeout = 10 * 60 * 1000;
-            long now = System.currentTimeMillis();
-            String operation = (toBeUp ? "start" : "stop");
-            URL url = getHealthUrl();
-            LOGGER.info("Waiting for application to " + operation);
-
-            HttpURLConnection conn = null;
-            int responseCode;
-            do {
-                Thread.sleep(500);
-                if ((System.currentTimeMillis() - now) > timeout) {
-                    Assertions.fail("Application failed to " + operation);
-                }
-                try {
-                    conn = (HttpURLConnection) url.openConnection();
-                    conn.setConnectTimeout(500);
-                    responseCode = conn.getResponseCode();
-                    if (toBeUp && responseCode != 200) {
-                        LOGGER.info("Waiting for application to " + operation + ": Bad health response  " + responseCode);
-                    }
-                } catch (Exception ex) {
-                    if (toBeUp) {
-                        LOGGER.info("Waiting for application to " + operation + ": Unable to connect to " + url.toString() + ": " + ex);
-                    }
-                    responseCode = -1;
-                }
-                if (conn != null) {
-                    conn.disconnect();
-                }
-            } while ((toBeUp && responseCode != 200) || (!toBeUp && responseCode != -1));
-            LOGGER.info("Application " + operation + " successful" );
-        }
-
-        void stop() throws Exception {
-            application.close();
-            waitForApplicationDown();
-        }
-    }
 
 }
