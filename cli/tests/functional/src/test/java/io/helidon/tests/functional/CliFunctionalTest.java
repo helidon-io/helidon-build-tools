@@ -40,6 +40,7 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -173,6 +174,7 @@ public class CliFunctionalTest {
             AtomicReference<Path> pom = new AtomicReference<>();
             paths.filter(p -> p.toString().endsWith("pom.xml"))
                     .findFirst().ifPresent(pom::set);
+            Objects.requireNonNull(pom.get(), "File pom.xml was not found.");
             Assertions.assertTrue(Files.readString(pom.get()).contains(expected));
         }
     }
@@ -242,6 +244,7 @@ public class CliFunctionalTest {
                     .map(String::valueOf)
                     .findFirst().ifPresent(jarPath::set);
         }
+        Objects.requireNonNull(jarPath.get(), "Jar file was not found.");
         Arguments args = toArguments(jarPath.get(), port);
         Application app = localPlatform.launch("java", args);
         HelidonApplication helidonApp = new HelidonApplication(app, port);
@@ -295,7 +298,7 @@ public class CliFunctionalTest {
         }
 
         private void waitForApplication(boolean toBeUp) throws Exception {
-            long timeout = 60 * 60 * 1000;
+            long timeout = 10 * 60 * 1000;
             long now = System.currentTimeMillis();
             String operation = (toBeUp ? "start" : "stop");
             URL url = getHealthUrl();
