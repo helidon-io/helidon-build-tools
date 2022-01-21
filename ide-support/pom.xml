@@ -24,6 +24,7 @@
         <artifactId>helidon-build-tools-project</artifactId>
         <version>3.0.0-M2-SNAPSHOT</version>
     </parent>
+    <version>3.0.0-SNAPSHOT</version>
     <groupId>io.helidon.ide-support</groupId>
     <artifactId>helidon-ide-support-project</artifactId>
     <packaging>pom</packaging>

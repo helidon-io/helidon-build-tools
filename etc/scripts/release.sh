@@ -34,7 +34,7 @@ DESCRIPTION: Helidon Release Script
 
 USAGE:
 
-$(basename ${0}) [ --build-number=N ] CMD
+$(basename "${0}") [ --build-number=N ] CMD
 
   --version=V
         Override the version to use.
@@ -95,20 +95,20 @@ fi
 # shellcheck disable=SC2046
 readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
-source ${WS_DIR}/etc/scripts/pipeline-env.sh
+source "${WS_DIR}"/etc/scripts/pipeline-env.sh
+
+# get current maven version
+# shellcheck disable=SC2086
+readonly MVN_VERSION=$(mvn ${MAVEN_ARGS} \
+    -q \
+    -f "${WS_DIR}"/pom.xml \
+    -Dexec.executable="echo" \
+    -Dexec.args="\${project.version}" \
+    --non-recursive \
+    org.codehaus.mojo:exec-maven-plugin:1.3.1:exec)
 
 # Resolve FULL_VERSION
 if [ -z "${VERSION+x}" ]; then
-
-    # get maven version
-    MVN_VERSION=$(mvn ${MAVEN_ARGS} \
-        -q \
-        -f ${WS_DIR}/pom.xml \
-        -Dexec.executable="echo" \
-        -Dexec.args="\${project.version}" \
-        --non-recursive \
-        org.codehaus.mojo:exec-maven-plugin:1.3.1:exec)
-
     # strip qualifier
     readonly VERSION="${MVN_VERSION%-*}"
     readonly FULL_VERSION="${VERSION}"
@@ -117,15 +117,35 @@ else
 fi
 
 export FULL_VERSION
-printf "\n%s: FULL_VERSION=%s\n\n" "$(basename ${0})" "${FULL_VERSION}"
+printf "\n%s: FULL_VERSION=%s\n\n" "$(basename "${0}")" "${FULL_VERSION}"
+
+osgi_version(){
+  # shellcheck disable=SC2001
+  local major_minor_micro=$(echo "${1}" | sed 's/\([0-9]\{1,\}\)\.\([0-9]\{1,\}\)\.\([0-9]\{1,\}\)\(.*\)/\1.\2.\3/g')
+  if [[ "${1}" =~ -SNAPSHOT$ ]] ; then echo "${major_minor_micro}-SNAPSHOT" ; else echo "${major_minor_micro}" ; fi
+}
 
 update_version(){
     # Update version
-    mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml versions:set versions:set-property \
+    # shellcheck disable=SC2086
+    mvn ${MAVEN_ARGS} -f "${WS_DIR}"/pom.xml versions:set versions:set-property \
         -DgenerateBackupPoms="false" \
         -DnewVersion="${FULL_VERSION}" \
         -Dproperty="helidon.version" \
-        -DprocessAllModules="true"
+        -DprocessFromLocalAggregationRoot="false"
+
+    local current_osgi_version
+    current_osgi_version="$(osgi_version "${MVN_VERSION}")"
+    local new_osgi_version
+    new_osgi_version="$(osgi_version "${FULL_VERSION}")"
+
+    # shellcheck disable=SC2044
+    for pom in $(find ide-support -name "pom.xml") ; do
+      # shellcheck disable=SC2002
+      # shellcheck disable=SC2140
+      cat "${pom}" | sed s@"<version>${current_osgi_version}</version>"@"<version>${new_osgi_version}</version>"@g > "${pom}.tmp"
+      mv "${pom}".tmp "${pom}"
+    done
 }
 
 release_build(){
@@ -146,10 +166,13 @@ release_build(){
 
     # Create the nexus staging repository
     local STAGING_DESC="Helidon Build Tools v${FULL_VERSION}"
+
+    # shellcheck disable=SC2086
     mvn ${MAVEN_ARGS} nexus-staging:rc-open \
         -DstagingProfileId="6026dab46eed94" \
         -DstagingDescription="${STAGING_DESC}"
     # shellcheck disable=SC2155
+    # shellcheck disable=SC2086
     export STAGING_REPO_ID=$(mvn ${MAVEN_ARGS} nexus-staging:rc-list | \
         grep -E "^[0-9:,]*[ ]?\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
         awk '{print $2" "$3}' | \
@@ -158,11 +181,13 @@ release_build(){
     echo "Nexus staging repository ID: ${STAGING_REPO_ID}"
 
     # Perform deployment
+    # shellcheck disable=SC2086
     mvn ${MAVEN_ARGS} clean deploy -Prelease,ide-support -DskipTests \
         -DstagingRepositoryId="${STAGING_REPO_ID}" \
         -DretryFailedDeploymentCount="10"
 
     # Close the nexus staging repository
+    # shellcheck disable=SC2086
     mvn ${MAVEN_ARGS} nexus-staging:rc-close \
         -DstagingRepositoryId="${STAGING_REPO_ID}" \
         -DstagingDescription="${STAGING_DESC}"
