@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import io.helidon.build.util.SubstitutionVariables;
 
 import static io.helidon.build.cli.impl.ArchetypeBrowser.ARCHETYPE_NOT_FOUND;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
+import static io.helidon.build.cli.impl.CommonOptions.assertSupportedVersion;
 import static io.helidon.build.cli.impl.Prompter.prompt;
 import static io.helidon.build.util.ProjectConfig.PROJECT_DIRECTORY;
 import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
@@ -144,6 +145,7 @@ public final class InitCommand extends BaseCommand {
         if (helidonVersion == null) {
             try {
                 helidonVersion = defaultHelidonVersion();
+                assertSupportedVersion(helidonVersion);
                 Log.info("Using Helidon version " + helidonVersion);
             } catch (Exception e) {
                 // If in batch mode we cannot proceed
@@ -152,6 +154,7 @@ public final class InitCommand extends BaseCommand {
                 }
             }
         } else {
+            assertSupportedVersion(helidonVersion);
             Log.info("Using Helidon version " + helidonVersion);
         }
 
@@ -160,6 +163,7 @@ public final class InitCommand extends BaseCommand {
             if (helidonVersion == null) {
                 //noinspection ConstantConditions
                 helidonVersion = prompt("Helidon version", helidonVersion);
+                assertSupportedVersion(helidonVersion);
             }
             String[] flavorOptions = new String[]{"SE", "MP"};
             int flavorIndex = prompt("Helidon flavor", flavorOptions, flavor == Flavor.SE ? 0 : 1);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import io.helidon.build.cli.harness.Option;
 import io.helidon.build.cli.harness.Option.KeyValue;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
+import io.helidon.build.util.Requirements;
 import io.helidon.build.util.Strings;
 import io.helidon.build.util.StyleFunction;
 
@@ -37,6 +38,7 @@ import static io.helidon.build.cli.harness.GlobalOptions.PLAIN_FLAG_DESCRIPTION;
 import static io.helidon.build.cli.harness.GlobalOptions.PLAIN_FLAG_NAME;
 import static io.helidon.build.cli.harness.GlobalOptions.VERBOSE_FLAG_DESCRIPTION;
 import static io.helidon.build.cli.harness.GlobalOptions.VERBOSE_FLAG_NAME;
+import static io.helidon.build.cli.impl.Metadata.HELIDON_3;
 import static io.helidon.build.util.FileUtils.WORKING_DIR;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
 
@@ -159,6 +161,14 @@ final class CommonOptions {
             // already logged
         } catch (Exception e) {
             Log.debug("check for updates failed: %s", e.toString());
+        }
+    }
+
+    static void assertSupportedVersion(String helidonVersion) {
+        MavenVersion version = MavenVersion.toMavenVersion(helidonVersion);
+        if (version.isGreaterThanOrEqualTo(HELIDON_3)) {
+            Requirements.failed("This version of the CLI does not support Helidon 3.x, please see "
+                                + "%s to update.", UPDATE_URL);
         }
     }
 
