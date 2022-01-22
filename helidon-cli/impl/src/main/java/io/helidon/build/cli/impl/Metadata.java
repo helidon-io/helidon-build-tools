@@ -49,6 +49,7 @@ import static io.helidon.build.util.FileUtils.lastModifiedTime;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
 import static io.helidon.build.util.PrintStreams.DEVNULL;
 import static io.helidon.build.util.PrintStreams.STDOUT;
+import static java.lang.Character.isDigit;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -187,6 +188,36 @@ public class Metadata {
             }
             throw (RuntimeException) initialFailure;
         }
+    }
+
+    /**
+     * Returns the latest pre 3.x Helidon version.
+     * @return The version.
+     * @throws UpdateFailed If the metadata updated failed.
+     */
+    public MavenVersion latestSupportedVersion() throws UpdateFailed {
+        MavenVersion latest = latestVersion.get();
+        if (latest == null) {
+            latest = latestVersion(true);
+        }
+
+        // Is latest Helidon 3.x or later?
+
+        if (latest.isGreaterThanOrEqualTo(HELIDON_3)) {
+
+            // Yes, and we don't support that, so try to find the latest supported version
+
+            Log.debug("Latest version %s is unsupported, searching for a supported version", latest);
+            Optional<MavenVersion> latestSupported = findLatestSupportedVersion();
+            if (latestSupported.isPresent()) {
+                latest = latestSupported.get();
+                Log.debug("Returning latest supported version: %s", latest);
+            } else {
+                // We did not find a supported version, so just return the latest one and let the init command fail
+                Log.debug("Did not find a supported version, returning latest: %s", latest);
+            }
+        }
+        return latest;
     }
 
     /**
@@ -538,11 +569,7 @@ public class Metadata {
             final List<String> lines = Files.readAllLines(latestVersionFile, UTF_8);
             for (String line : lines) {
                 if (!line.isEmpty()) {
-                    MavenVersion latest = toMavenVersion(line.trim());
-                    if (latest.isGreaterThanOrEqualTo(HELIDON_3)) {
-                        return findLatestSupportedVersion(latest);
-                    }
-                    return latest;
+                    return toMavenVersion(line.trim());
                 }
             }
             throw new IllegalStateException("No version in " + latestVersionFile);
@@ -551,26 +578,16 @@ public class Metadata {
         }
     }
 
-    private MavenVersion findLatestSupportedVersion(MavenVersion latest) {
+    private Optional<MavenVersion> findLatestSupportedVersion() {
         try {
-            Optional<MavenVersion> latestSupported = Files.list(rootDir())
-                                                          .filter(Files::isDirectory)
-                                                          .map(dir -> dir.getFileName().toString())
-                                                          .filter(dirName -> Character.isDigit(dirName.charAt(0))
-                                                                             && dirName.contains("."))
-                                                          .map(MavenVersion::toMavenVersion)
-                                                          .filter(version -> version.isLessThan(HELIDON_3))
-                                                          .max(Comparator.naturalOrder());
-            if (latestSupported.isPresent()) {
-                MavenVersion result = latestSupported.get();
-                Log.debug("Returning latest supported version: %s", result);
-                return result;
-            }
-
-            // We did not find a supported version, so just return the latest one and let the init command fail
-            Log.debug("Did not find a supported version, returning latest: %s", latest);
-            return latest;
-
+            return Files.list(rootDir)
+                        .filter(Files::isDirectory)
+                        .map(dir -> dir.getFileName().toString())
+                        .filter(dirName -> isDigit(dirName.charAt(0)) && dirName.contains("."))
+                        .filter(dirName -> Files.exists(rootDir.resolve(dirName).resolve(METADATA_FILE_NAME)))
+                        .map(MavenVersion::toMavenVersion)
+                        .filter(version -> version.isLessThan(HELIDON_3))
+                        .max(Comparator.naturalOrder());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

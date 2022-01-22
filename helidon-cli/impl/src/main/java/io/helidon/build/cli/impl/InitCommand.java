@@ -141,30 +141,28 @@ public final class InitCommand extends BaseCommand {
     @Override
     protected void invoke(CommandContext context) throws Exception {
 
-        // Attempt to find default Helidon version if none provided
+        // Get Helidon version even if not provided
         if (helidonVersion == null) {
-            try {
+            if (context.properties().containsKey(HELIDON_VERSION_PROPERTY)) {
+                helidonVersion = context.properties().getProperty(HELIDON_VERSION_PROPERTY);
+            } else if (batch) {
                 helidonVersion = defaultHelidonVersion();
-                assertSupportedVersion(helidonVersion);
                 Log.info("Using Helidon version " + helidonVersion);
-            } catch (Exception e) {
-                // If in batch mode we cannot proceed
-                if (batch) {
-                    throw e;
+            } else {
+                String defaultHelidonVersion = null;
+                try {
+                    defaultHelidonVersion = defaultHelidonVersion();
+                } catch (Exception ignored) {
+                    // ignore default version lookup error
+                    // since we always prompt in interactive
                 }
+                helidonVersion = prompt("Helidon version", defaultHelidonVersion);
             }
-        } else {
-            assertSupportedVersion(helidonVersion);
-            Log.info("Using Helidon version " + helidonVersion);
         }
+        assertSupportedVersion(helidonVersion);
 
-        // Need Helidon version and flavor to proceed
+        // Need flavor to proceed
         if (!batch) {
-            if (helidonVersion == null) {
-                //noinspection ConstantConditions
-                helidonVersion = prompt("Helidon version", helidonVersion);
-                assertSupportedVersion(helidonVersion);
-            }
             String[] flavorOptions = new String[]{"SE", "MP"};
             int flavorIndex = prompt("Helidon flavor", flavorOptions, flavor == Flavor.SE ? 0 : 1);
             flavor = Flavor.valueOf(flavorOptions[flavorIndex]);
@@ -307,7 +305,7 @@ public final class InitCommand extends BaseCommand {
         String version = System.getProperty(HELIDON_VERSION_PROPERTY);
         if (version == null) {
             try {
-                version = metadata.latestVersion(true).toString();
+                version = metadata.latestSupportedVersion().toString();
                 Log.debug("Latest Helidon version found: %s", version);
             } catch (Metadata.UpdateFailed e) {
                 Log.info(e.getMessage());

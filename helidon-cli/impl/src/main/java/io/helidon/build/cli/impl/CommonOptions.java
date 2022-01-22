@@ -167,8 +167,8 @@ final class CommonOptions {
     static void assertSupportedVersion(String helidonVersion) {
         MavenVersion version = MavenVersion.toMavenVersion(helidonVersion);
         if (version.isGreaterThanOrEqualTo(HELIDON_3)) {
-            Requirements.failed("This version of the CLI does not support Helidon 3.x, please see "
-                                + "%s to update.", UPDATE_URL);
+            Requirements.failed("This version of the CLI does not support Helidon 3.x.%n"
+                                + "Please see %s to update.", UPDATE_URL);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.build.cli.impl;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -34,23 +35,34 @@ class Prompter {
     private Prompter() {
     }
 
+    private static String doPrompt(String prompt, String defaultAnswer) {
+        try {
+            String styledDefaultAnswer = BoldBlue.apply(String.format("%s", defaultAnswer));
+            String styledPrompt = Bold.apply(prompt);
+            String fullPrompt = String.format("%s (default: %s): ", styledPrompt, styledDefaultAnswer);
+            System.out.print(fullPrompt);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            String response = reader.readLine();
+            if (response != null) {
+                response = response.trim();
+                if (response.isEmpty()) {
+                    response = null;
+                }
+            }
+            return response;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     static String prompt(String question, Optional<String> defaultResponse) {
         return prompt(question, defaultResponse.orElse(null));
     }
 
     static String prompt(String question, String defaultResponse) {
-        try {
-            String def = BoldBlue.apply(defaultResponse);
-            String q = defaultResponse != null
-                    ? String.format("%s (Default: %s): ", question, def)
-                    : String.format("%s: ", question);
-            System.out.print(Bold.apply(q));
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            String response = reader.readLine();
-            return response == null || response.length() == 0 ? defaultResponse : response.trim();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        String response = doPrompt(question, defaultResponse);
+        return response == null ? defaultResponse : response;
     }
 
     static int prompt(String question, List<String> options, int defaultOption) {
@@ -65,42 +77,28 @@ class Prompter {
                 String o = BoldBlue.apply(String.format("  (%d) %s ", i + 1, options[i]));
                 System.out.println(o);
             }
-            String def = BoldBlue.apply(String.format("%d", defaultOption + 1));
-            String q = String.format("Enter selection (Default: %s): ", def);
-            System.out.print(Bold.apply(q));
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            String response = reader.readLine();
-            if (response == null || response.trim().length() == 0) {
+            String response = doPrompt("Enter selection", Integer.toString(defaultOption + 1));
+            if (response == null) {
                 return defaultOption;
             }
-            int option = Integer.parseInt(response.trim());
+            int option = Integer.parseInt(response);
             if (option <= 0 || option > options.length) {
                 return prompt(question, options, defaultOption);
             }
             return option - 1;
         } catch (NumberFormatException e) {
             return prompt(question, options, defaultOption);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
     static boolean promptYesNo(String question, boolean defaultOption) {
-        try {
-            String def = BoldBlue.apply(defaultOption ? "y" : "n");
-            String q = String.format("%s (Default: %s): ", question, def);
-            System.out.print(Bold.apply(q));
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            String response = reader.readLine();
-            if (response == null || response.trim().length() == 0) {
-                return defaultOption;
-            }
-            response = response.trim().toLowerCase();
-            return response.equals("y") || response.equals("n")
-                    ? response.equals("y") : promptYesNo(question, defaultOption);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        String response = doPrompt(question, defaultOption ? "y" : "n");
+        if (response == null) {
+            return defaultOption;
         }
+        response = response.toLowerCase();
+        return response.equals("y") || response.equals("n")
+                ? response.equals("y") : promptYesNo(question, defaultOption);
     }
 
 
