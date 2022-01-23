@@ -23,6 +23,7 @@ import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import static io.helidon.build.util.StyleFunction.Bold;
 import static io.helidon.build.util.StyleFunction.BoldBlue;
@@ -31,27 +32,25 @@ import static io.helidon.build.util.StyleFunction.BoldBlue;
  * Class Prompter.
  */
 class Prompter {
+    private static final Predicate<String> NO_VALIDATION = input -> true;
 
-    private Prompter() {
-    }
-
-    private static String doPrompt(String prompt, String defaultAnswer) {
-        try {
-            String styledDefaultAnswer = BoldBlue.apply(String.format("%s", defaultAnswer));
-            String styledPrompt = Bold.apply(prompt);
-            String fullPrompt = String.format("%s (default: %s): ", styledPrompt, styledDefaultAnswer);
-            System.out.print(fullPrompt);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            String response = reader.readLine();
-            if (response != null) {
-                response = response.trim();
-                if (response.isEmpty()) {
-                    response = null;
+    static String prompt(String prompt, String defaultAnswer, Predicate<String> validator) {
+        while (true) {
+            try {
+                String styledDefaultAnswer = BoldBlue.apply(String.format("%s", defaultAnswer));
+                String styledPrompt = Bold.apply(prompt);
+                String fullPrompt = String.format("%s (default: %s): ", styledPrompt, styledDefaultAnswer);
+                System.out.print(fullPrompt);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+                String response = reader.readLine();
+                if (response == null || response.trim().isEmpty()) {
+                    return defaultAnswer;
+                } else if (validator.test(response)) {
+                    return response;
                 }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
-            return response;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
     }
 
@@ -61,8 +60,7 @@ class Prompter {
     }
 
     static String prompt(String question, String defaultResponse) {
-        String response = doPrompt(question, defaultResponse);
-        return response == null ? defaultResponse : response;
+        return prompt(question, defaultResponse, NO_VALIDATION);
     }
 
     static int prompt(String question, List<String> options, int defaultOption) {
@@ -71,34 +69,28 @@ class Prompter {
 
     static int prompt(String question, String[] options, int defaultOption) {
         Objects.checkIndex(defaultOption, options.length);
-        try {
-            System.out.println(Bold.apply(question));
-            for (int i = 0; i < options.length; i++) {
-                String o = BoldBlue.apply(String.format("  (%d) %s ", i + 1, options[i]));
-                System.out.println(o);
-            }
-            String response = doPrompt("Enter selection", Integer.toString(defaultOption + 1));
-            if (response == null) {
-                return defaultOption;
-            }
-            int option = Integer.parseInt(response);
-            if (option <= 0 || option > options.length) {
-                return prompt(question, options, defaultOption);
-            }
-            return option - 1;
-        } catch (NumberFormatException e) {
-            return prompt(question, options, defaultOption);
+        System.out.println(Bold.apply(question));
+        for (int i = 0; i < options.length; i++) {
+            String o = BoldBlue.apply(String.format("  (%d) %s ", i + 1, options[i]));
+            System.out.println(o);
         }
+        String defaultResponse = Integer.toString(defaultOption + 1);
+        String response = prompt("Enter selection", defaultResponse, input -> {
+            try {
+                int option = Integer.parseInt(input);
+                return option > 0 && option <= options.length;
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        });
+        return Integer.parseInt(response) - 1;
     }
 
     static boolean promptYesNo(String question, boolean defaultOption) {
-        String response = doPrompt(question, defaultOption ? "y" : "n");
-        if (response == null) {
-            return defaultOption;
-        }
-        response = response.toLowerCase();
-        return response.equals("y") || response.equals("n")
-                ? response.equals("y") : promptYesNo(question, defaultOption);
+        String defaultResponse = defaultOption ? "y" : "n";
+        String response = prompt(question, defaultResponse,
+                                 input -> input.equalsIgnoreCase("y") || input.equalsIgnoreCase("n"));
+        return response.equalsIgnoreCase("y");
     }
 
 
@@ -113,5 +105,8 @@ class Prompter {
         String[] flavorOptions = new String[]{"SE", "MP"};
         int flavorIndex = prompt("Helidon flavor", flavorOptions, 0);
         System.out.println("Response is '" + flavorOptions[flavorIndex] + "'");
+    }
+
+    private Prompter() {
     }
 }
