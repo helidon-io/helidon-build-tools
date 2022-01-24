@@ -60,7 +60,7 @@ public final class InitCommand extends BaseCommand {
     private static final String HELIDON_RELEASES_URL = "https://github.com/oracle/helidon/releases";
     private static final String VERSION_LOOKUP_FAILED = "$(italic Cannot lookup version, please specify with --version option.)";
     private static final String HELIDON_3_MESSAGE = "$(italic,yellow This version of the CLI does not support Helidon 3.x.)%n"
-                                                    + "Please see $(blue %s) to update.";
+                                                    + "Please see $(blue %s) to upgrade.";
     private static final String VERSION_NOT_FOUND_MESSAGE = "$(italic Helidon version $(red %s) not found.";
     private static final String AVAILABLE_VERSIONS_MESSAGE = "Please see $(blue %s) for available versions.";
 
@@ -150,10 +150,11 @@ public final class InitCommand extends BaseCommand {
     @Override
     protected void invoke(CommandContext context) throws Exception {
 
-        // Get Helidon version even if not provided
+        // Make sure we have a valid Helidon version
         if (helidonVersion == null) {
             if (context.properties().containsKey(HELIDON_VERSION_PROPERTY)) {
                 helidonVersion = context.properties().getProperty(HELIDON_VERSION_PROPERTY);
+                assertSupportedVersion(helidonVersion);
             } else if (batch) {
                 helidonVersion = defaultHelidonVersion();
                 Log.info("Using Helidon version " + helidonVersion);
@@ -167,8 +168,9 @@ public final class InitCommand extends BaseCommand {
                 }
                 helidonVersion = prompt("Helidon version", defaultHelidonVersion, this::isSupportedVersion);
             }
+        } else {
+            assertSupportedVersion(helidonVersion);
         }
-        assertSupportedVersion(helidonVersion);
 
         // Need flavor to proceed
         if (!batch) {
@@ -342,9 +344,10 @@ public final class InitCommand extends BaseCommand {
 
     private boolean isSupportedVersion(MavenVersion version, boolean notFoundIsError) {
         try {
-            metadata.catalogOf(version, true);
+            metadata.assertVersionisAvailable(version);
             return true;
         } catch (IllegalArgumentException | Metadata.UpdateFailed e) {
+            Log.debug(e.getMessage());
             if (notFoundIsError) {
                 Log.error(VERSION_NOT_FOUND_MESSAGE, version);
             } else {

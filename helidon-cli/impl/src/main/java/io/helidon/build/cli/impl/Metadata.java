@@ -384,23 +384,22 @@ public class Metadata {
      * @throws UpdateFailed if the metadata update failed
      */
     public ArchetypeCatalog catalogOf(MavenVersion helidonVersion) throws UpdateFailed {
-        return catalogOf(helidonVersion, false);
-    }
-
-    /**
-     * Returns the catalog for the given Helidon version.
-     *
-     * @param helidonVersion The version.
-     * @param quiet If info messages should be suppressed.
-     * @return The catalog.
-     * @throws UpdateFailed if the metadata update failed
-     */
-    public ArchetypeCatalog catalogOf(MavenVersion helidonVersion, boolean quiet) throws UpdateFailed {
         try {
-            return ArchetypeCatalog.read(versionedFile(helidonVersion, CATALOG_FILE_NAME, quiet));
+            return ArchetypeCatalog.read(versionedFile(helidonVersion, CATALOG_FILE_NAME, false));
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
+    }
+
+    /**
+     * Asserts that the given Helidon version is available.
+     *
+     * @param helidonVersion The version.
+     * @throws UpdateFailed if the metadata update failed.
+     * @throws IllegalArgumentException if the version is not available.
+     */
+    public void assertVersionisAvailable(MavenVersion helidonVersion) throws UpdateFailed {
+        versionedFile(helidonVersion, CATALOG_FILE_NAME, true);
     }
 
     /**

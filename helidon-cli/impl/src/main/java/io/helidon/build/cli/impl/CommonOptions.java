@@ -45,10 +45,11 @@ import static io.helidon.build.util.MavenVersion.toMavenVersion;
  */
 @CommandFragment
 final class CommonOptions {
+
     /**
      * Where to look for CLI update information.
      */
-    public static final String UPDATE_URL = "https://github.com/oracle/helidon-build-tools/blob/master/cli/CHANGELOG.md";
+    public static final String UPDATE_URL = "https://github.com/oracle/helidon/blob/master/HELIDON-CLI.md";
 
     private final boolean verbose;
     private final boolean debug;
@@ -151,7 +152,7 @@ final class CommonOptions {
                     Log.info(releaseNotes, StyleFunction.Italic, StyleFunction.Plain);
                     Log.info();
                 }
-                Log.info("Please see $(blue %s) to update.", UPDATE_URL);
+                Log.info("Please see $(blue %s) to upgrade.", UPDATE_URL);
                 Log.info();
             } else {
                 Log.debug("no update available");
