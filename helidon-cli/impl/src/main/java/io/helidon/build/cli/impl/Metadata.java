@@ -79,6 +79,11 @@ public class Metadata {
      */
     public static final MavenVersion HELIDON_3 = toMavenVersion("3.0.0-SNAPSHOT");
 
+    /**
+     * The last known Helidon 2.x release version.
+     */
+    public static final MavenVersion LAST_KNOWN_HELIDON_2_RELEASE = toMavenVersion("2.4.1");
+
     private static final String LATEST_VERSION_FILE_NAME = "latest";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     private static final String METADATA_FILE_NAME = "metadata.properties";
@@ -192,6 +197,7 @@ public class Metadata {
 
     /**
      * Returns the latest pre 3.x Helidon version.
+     *
      * @return The version.
      * @throws UpdateFailed If the metadata updated failed.
      */
@@ -208,14 +214,8 @@ public class Metadata {
             // Yes, and we don't support that, so try to find the latest supported version
 
             Log.debug("Latest version %s is unsupported, searching for a supported version", latest);
-            Optional<MavenVersion> latestSupported = findLatestSupportedVersion();
-            if (latestSupported.isPresent()) {
-                latest = latestSupported.get();
-                Log.debug("Returning latest supported version: %s", latest);
-            } else {
-                // We did not find a supported version, so just return the latest one and let the init command fail
-                Log.debug("Did not find a supported version, returning latest: %s", latest);
-            }
+            latest = findLatestSupportedVersion();
+            Log.debug("Returning latest supported version: %s", latest);
         }
         return latest;
     }
@@ -590,7 +590,7 @@ public class Metadata {
         }
     }
 
-    private Optional<MavenVersion> findLatestSupportedVersion() {
+    private MavenVersion findLatestSupportedVersion() {
         try {
             return Files.list(rootDir)
                         .filter(Files::isDirectory)
@@ -599,7 +599,8 @@ public class Metadata {
                         .filter(dirName -> Files.exists(rootDir.resolve(dirName).resolve(METADATA_FILE_NAME)))
                         .map(MavenVersion::toMavenVersion)
                         .filter(version -> version.isLessThan(HELIDON_3))
-                        .max(Comparator.naturalOrder());
+                        .max(Comparator.naturalOrder())
+                        .orElse(LAST_KNOWN_HELIDON_2_RELEASE);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
