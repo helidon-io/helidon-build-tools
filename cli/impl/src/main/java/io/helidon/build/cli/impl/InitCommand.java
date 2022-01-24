@@ -26,11 +26,13 @@ import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.impl.InitOptions.BuildSystem;
 import io.helidon.build.common.Log;
-import io.helidon.build.common.Requirements;
+import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
 import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
+import static io.helidon.build.common.Requirements.failed;
+import static io.helidon.build.common.Requirements.require;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightCyan;
 
 /**
@@ -38,6 +40,10 @@ import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightCyan;
  */
 @Command(name = "init", description = "Generate a new project")
 public final class InitCommand extends BaseCommand {
+    private static final String HELIDON_RELEASES_URL = "https://github.com/oracle/helidon/releases";
+    private static final String VERSION_LOOKUP_FAILED = "$(italic Cannot lookup version, please specify with --version option.)";
+    private static final String VERSION_NOT_FOUND_MESSAGE = "$(italic Helidon version $(red %s) not found.";
+    private static final String AVAILABLE_VERSIONS_MESSAGE = "Please see $(blue %s) for available versions.";
 
     private final CommonOptions commonOptions;
     private final InitOptions initOptions;
@@ -62,18 +68,19 @@ public final class InitCommand extends BaseCommand {
         if (initOptions.build() == BuildSystem.MAVEN) {
             requireMinimumMavenVersion();
         } else {
-            Requirements.failed("$(red Gradle is not yet supported.)");
+            failed("$(red Gradle is not yet supported.)");
         }
     }
 
     @Override
     protected void invoke(CommandContext context) throws Exception {
 
-        // Get Helidon version even if not provided
+        // Make sure we have a valid Helidon version
         String helidonVersion = initOptions.helidonVersion();
         if (helidonVersion == null) {
             if (context.properties().containsKey(HELIDON_VERSION_PROPERTY)) {
                 helidonVersion = context.properties().getProperty(HELIDON_VERSION_PROPERTY);
+                assertSupportedVersion(helidonVersion);
             } else if (batch) {
                 helidonVersion = defaultHelidonVersion();
                 Log.info("Using Helidon version " + helidonVersion);
@@ -82,12 +89,13 @@ public final class InitCommand extends BaseCommand {
                 try {
                     defaultHelidonVersion = defaultHelidonVersion();
                 } catch (Exception ignored) {
-                    // ignore default version lookup error
-                    // since we always prompt in interactive
+                    // ignore default version lookup error since we always prompt in interactive
                 }
-                helidonVersion = prompt("Helidon version", defaultHelidonVersion);
+                helidonVersion = prompt("Helidon version", defaultHelidonVersion, this::isSupportedVersion);
             }
             initOptions.helidonVersion(helidonVersion);
+        } else {
+            assertSupportedVersion(helidonVersion);
         }
 
         ArchetypeInvoker archetypeInvoker = ArchetypeInvoker
@@ -130,7 +138,7 @@ public final class InitCommand extends BaseCommand {
         }
         if (Files.exists(projectDir)) {
             if (projectDirSpecified || config.failOnProjectNameCollision()) {
-                Requirements.failed("$(red Directory $(plain %s) already exists)", projectDir);
+                failed("$(red Directory $(plain %s) already exists)", projectDir);
             }
             Log.info();
             Log.info("$(italic,yellow Directory $(plain %s) already exists, generating unique name)", projectDir);
@@ -141,7 +149,7 @@ public final class InitCommand extends BaseCommand {
                     return newProjectDir;
                 }
             }
-            Requirements.failed("Too many existing directories named %s-NN", projectName);
+            failed("Too many existing directories named %s-NN", projectName);
         }
         return projectDir;
     }
@@ -151,18 +159,53 @@ public final class InitCommand extends BaseCommand {
         String version = System.getProperty(HELIDON_VERSION_PROPERTY);
         if (version == null) {
             try {
-                version = metadata.latestVersion(true).toString();
+                version = metadata.latestVersion().toString();
                 Log.debug("Latest Helidon version found: %s", version);
             } catch (Metadata.UpdateFailed e) {
                 Log.info(e.getMessage());
-                Requirements.failed("$(italic Cannot lookup version, please specify with --version option.)");
+                failed(VERSION_LOOKUP_FAILED);
             } catch (Plugins.PluginFailedUnchecked e) {
-                Requirements.failed("$(italic Cannot lookup version, please specify with --version option.)");
+                failed(VERSION_LOOKUP_FAILED);
             } catch (Exception e) {
                 Log.info("$(italic,red %s)", e.getMessage());
-                Requirements.failed("$(italic Cannot lookup version, please specify with --version option.)");
+                failed(VERSION_LOOKUP_FAILED);
             }
         }
         return version;
+    }
+
+    private boolean isSupportedVersion(String helidonVersion) {
+        MavenVersion version = MavenVersion.toMavenVersion(helidonVersion);
+        return isSupportedVersion(version, false);
+    }
+
+    private boolean isSupportedVersion(MavenVersion version, boolean notFoundIsError) {
+        try {
+            metadata.assertVersionIsAvailable(version);
+            return true;
+        } catch (IllegalArgumentException | Metadata.UpdateFailed e) {
+            Log.debug(e.getMessage());
+            if (notFoundIsError) {
+                Log.error(VERSION_NOT_FOUND_MESSAGE, version);
+            } else {
+                Log.info();
+                Log.info(VERSION_NOT_FOUND_MESSAGE, version);
+                Log.info(AVAILABLE_VERSIONS_MESSAGE, HELIDON_RELEASES_URL);
+                Log.info();
+            }
+            return false;
+        } catch (Plugins.PluginFailedUnchecked e) {
+            failed(VERSION_LOOKUP_FAILED);
+        } catch (Exception e) {
+            Log.info("$(italic,red %s)", e.getMessage());
+            failed(VERSION_LOOKUP_FAILED);
+        }
+
+        return false;
+    }
+
+    private void assertSupportedVersion(String helidonVersion) {
+        MavenVersion version = MavenVersion.toMavenVersion(helidonVersion);
+        require(isSupportedVersion(version, true), AVAILABLE_VERSIONS_MESSAGE, HELIDON_RELEASES_URL);
     }
 }
