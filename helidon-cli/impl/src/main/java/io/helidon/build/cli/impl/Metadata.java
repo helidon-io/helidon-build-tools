@@ -80,7 +80,7 @@ public class Metadata {
     public static final MavenVersion HELIDON_3 = toMavenVersion("3.0.0-SNAPSHOT");
 
     /**
-     * The last known Helidon 2.x release version.
+     * The last known Helidon 2.x release version. Update this when possible!
      */
     public static final MavenVersion LAST_KNOWN_HELIDON_2_RELEASE = toMavenVersion("2.4.1");
 
