@@ -32,44 +32,6 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.build-tools.cli</groupId>
-            <artifactId>helidon-cli-common</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.oracle.bedrock</groupId>
-            <artifactId>bedrock-testing-support</artifactId>
-            <version>${version.lib.bedrock}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.oracle.bedrock</groupId>
-            <artifactId>bedrock-runtime-maven</artifactId>
-            <version>${version.lib.bedrock}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-params</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.build-tools.cli</groupId>
             <artifactId>helidon-cli-impl</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
@@ -82,9 +44,18 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.build-tools.common</groupId>
-            <artifactId>helidon-build-common-test-utils</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
