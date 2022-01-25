@@ -43,7 +43,8 @@ export PATH=/tools/graalvm-ce-java17-21.3.0/bin:${PATH}
 
 if [ "${1}" = "--release" ] ; then
     # get maven version
-    MVN_VERSION=$(mvn "${MAVEN_ARGS}" \
+    # shellcheck disable=SC2086
+    MVN_VERSION=$(mvn ${MAVEN_ARGS} \
         -q \
         -f "${WS_DIR}"/pom.xml \
         -Dexec.executable="echo" \
