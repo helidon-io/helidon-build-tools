@@ -119,10 +119,21 @@ fi
 export FULL_VERSION
 printf "\n%s: FULL_VERSION=%s\n\n" "$(basename "${0}")" "${FULL_VERSION}"
 
-osgi_version(){
+major_minor_micro() {
   # shellcheck disable=SC2001
-  local major_minor_micro=$(echo "${1}" | sed 's/\([0-9]\{1,\}\)\.\([0-9]\{1,\}\)\.\([0-9]\{1,\}\)\(.*\)/\1.\2.\3/g')
+  echo "${1}" | sed 's/\([0-9]\{1,\}\)\.\([0-9]\{1,\}\)\.\([0-9]\{1,\}\)\(.*\)/\1.\2.\3/g'
+}
+
+osgi_mvn_version(){
+  # shellcheck disable=SC2001
+  local major_minor_micro=$(major_minor_micro "${1}")
   if [[ "${1}" =~ -SNAPSHOT$ ]] ; then echo "${major_minor_micro}-SNAPSHOT" ; else echo "${major_minor_micro}" ; fi
+}
+
+osgi_bundle_version() {
+  # shellcheck disable=SC2001
+  local major_minor_micro=$(major_minor_micro "${1}")
+  if [[ "${1}" =~ -SNAPSHOT$ ]] ; then echo "${major_minor_micro}.qualifier" ; else echo "${major_minor_micro}" ; fi
 }
 
 update_version(){
@@ -134,17 +145,26 @@ update_version(){
         -Dproperty="helidon.version" \
         -DprocessFromLocalAggregationRoot="false"
 
-    local current_osgi_version
-    current_osgi_version="$(osgi_version "${MVN_VERSION}")"
-    local new_osgi_version
-    new_osgi_version="$(osgi_version "${FULL_VERSION}")"
+    local osgi_mvn_v
+    osgi_mvn_v="$(osgi_mvn_version "${MVN_VERSION}")"
+    local new_osgi_mvn_v
+    new_osgi_mvn_v="$(osgi_mvn_version "${FULL_VERSION}")"
 
-    # shellcheck disable=SC2044
     for pom in $(find ide-support -name "pom.xml") ; do
       # shellcheck disable=SC2002
-      # shellcheck disable=SC2140
-      cat "${pom}" | sed s@"<version>${current_osgi_version}</version>"@"<version>${new_osgi_version}</version>"@g > "${pom}.tmp"
+      cat "${pom}" | sed s@"<version>${osgi_mvn_v}</version>"@"<version>${new_osgi_mvn_v}</version>"@g > "${pom}.tmp"
       mv "${pom}".tmp "${pom}"
+    done
+
+    local osgi_bundle_v
+    osgi_bundle_v="$(osgi_bundle_version "${MVN_VERSION}")"
+    local new_osgi_bundle_v
+    new_osgi_bundle_v="$(osgi_bundle_version "${FULL_VERSION}")"
+
+    for manifest in $(find ide-support/lsp -name "MANIFEST.MF") ; do
+      # shellcheck disable=SC2002
+      cat "${manifest}" | sed s@"Bundle-Version: ${osgi_bundle_v}"@"Bundle-Version: ${new_osgi_bundle_v}"@g > "${manifest}.tmp"
+      mv "${manifest}".tmp "${manifest}"
     done
 }
 
