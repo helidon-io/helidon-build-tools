@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,10 @@ import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
  */
 @CommandFragment
 final class CommonOptions {
+
+    /**
+     * Where to look for CLI update information.
+     */
     private static final String UPDATE_URL = "https://github.com/oracle/helidon-build-tools/blob/master/cli/CHANGELOG.md";
 
     private final boolean verbose;

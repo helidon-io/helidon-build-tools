@@ -67,6 +67,11 @@ public class Metadata {
      */
     public static final TimeUnit DEFAULT_UPDATE_FREQUENCY_UNITS = TimeUnit.HOURS;
 
+    /**
+     * The Helidon 3.x version.
+     */
+    public static final MavenVersion HELIDON_3 = toMavenVersion("3.0.0-SNAPSHOT");
+
     private static final String LATEST_VERSION_FILE_NAME = "latest";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     private static final String METADATA_FILE_NAME = "metadata.properties";
@@ -173,6 +178,21 @@ public class Metadata {
                 throw (UpdateFailed) initialFailure;
             }
             throw (RuntimeException) initialFailure;
+        }
+    }
+
+    /**
+     * Asserts that the given Helidon version is available.
+     *
+     * @param helidonVersion The version.
+     * @throws UpdateFailed if the metadata update failed.
+     * @throws IllegalArgumentException if the version is not available.
+     */
+    public void assertVersionIsAvailable(MavenVersion helidonVersion) throws UpdateFailed {
+        if (helidonVersion.isLessThan(HELIDON_3)) {
+            versionedFile(helidonVersion, CATALOG_FILE_NAME, true);
+        } else {
+            archetypeV2Of(helidonVersion);
         }
     }
 
@@ -368,9 +388,19 @@ public class Metadata {
      * @throws UpdateFailed if the metadata update failed
      */
     public Path archetypeV2Of(String version) throws UpdateFailed {
-        final MavenVersion helidonVersion = toMavenVersion(version);
-        final String fileName = "helidon-" + helidonVersion + JAR_SUFFIX;
-        return versionedFile(helidonVersion, fileName, false);
+        return archetypeV2Of(toMavenVersion(version));
+    }
+
+    /**
+     * Returns the path to the archetype V2 jar for the given version.
+     *
+     * @param version The version.
+     * @return The path to the archetype jar.
+     * @throws UpdateFailed if the metadata update failed
+     */
+    public Path archetypeV2Of(MavenVersion version) throws UpdateFailed {
+        final String fileName = "helidon-" + version + JAR_SUFFIX;
+        return versionedFile(version, fileName, false);
     }
 
     @SuppressWarnings("SameParameterValue")
