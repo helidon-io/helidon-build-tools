@@ -33,6 +33,7 @@
 
     <properties>
         <mainClass>io.helidon.build.linker.tests.Main</mainClass>
+        <native.image.skip>true</native.image.skip>
     </properties>
 
     <dependencies>
