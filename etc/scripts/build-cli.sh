@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -ex
 #
 # Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 #
@@ -54,11 +54,12 @@ if [ "${1}" = "--release" ] ; then
 
     # strip qualifier
     readonly VERSION="${MVN_VERSION%-*}"
-    git fetch origin refs/tags/"${VERSION}":refs/tags/"${VERSION}"
+    git fetch origin "refs/tags/${VERSION}:refs/tags/${VERSION}"
     git checkout refs/tags/"${VERSION}"
 fi
 
-mvn "${MAVEN_ARGS}" -f "${WS_DIR}"/helidon-cli/impl/pom.xml \
+# shellcheck disable=SC2086
+mvn ${MAVEN_ARGS} -f "${WS_DIR}"/helidon-cli/impl/pom.xml \
     clean install \
     -DskipTests \
     -Pnative-image \
