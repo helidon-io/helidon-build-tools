@@ -82,7 +82,7 @@ public class Metadata {
     /**
      * The last known Helidon 2.x release version. Update this when possible!
      */
-    public static final MavenVersion LAST_KNOWN_HELIDON_2_RELEASE = toMavenVersion("2.4.1");
+    public static final MavenVersion LAST_KNOWN_HELIDON_2_RELEASE = toMavenVersion("2.4.1");  // TODO REMOVE
 
     private static final String LATEST_VERSION_FILE_NAME = "latest";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
@@ -591,6 +591,8 @@ public class Metadata {
 
     private MavenVersion findLatestSupportedVersion() {
         try {
+            // TODO FORCE AN UPDATE INSTEAD, AND RE-READ latest
+
             return Files.list(rootDir)
                         .filter(Files::isDirectory)
                         .map(dir -> dir.getFileName().toString())

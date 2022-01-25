@@ -49,7 +49,7 @@ final class CommonOptions {
     /**
      * Where to look for CLI update information.
      */
-    public static final String UPDATE_URL = "https://github.com/oracle/helidon/blob/master/HELIDON-CLI.md";
+    public static final String UPDATE_URL = "https://github.com/oracle/helidon-build-tools/blob/master/cli/CHANGELOG.md";
 
     private final boolean verbose;
     private final boolean debug;
