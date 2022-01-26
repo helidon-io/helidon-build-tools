@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -494,6 +494,11 @@ public final class ArchetypeDescriptor {
 
         private final List<Transformation> transformations;
 
+        /**
+         * Create a new instance.
+         *
+         * @param transformations list of transformations
+         */
         protected PathSets(List<Transformation> transformations) {
             this.transformations = Objects.requireNonNull(transformations, "transformations is null");
         }
@@ -656,6 +661,13 @@ public final class ArchetypeDescriptor {
 
         private final String text;
 
+        /**
+         * Create a new instance.
+         *
+         * @param text             node text
+         * @param ifProperties     if properties
+         * @param unlessProperties unless properties
+         */
         protected FlowNode(String text, List<Property> ifProperties, List<Property> unlessProperties) {
             super(ifProperties, unlessProperties);
             this.text = Objects.requireNonNull(text, "text is null");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package io.helidon.build.common.markdown;
 
 /**
  * Extension that provides support for the non-standard markdown syntax (kramdown extension).
- * See <a href="https://kramdown.gettalong.org/syntax.html#extensions>Kramdown extensions</a>.
+ * See <a href="https://kramdown.gettalong.org/syntax.html#extensions">Kramdown extensions</a>.
  * <p>
  * Create it with {@link #create()} and then configure it on the builders
  * ({@link Parser.Builder#extensions(Iterable)},

@@ -578,6 +578,9 @@ public class Metadata {
         private boolean debugPlugin;
         private TimeUnit updateFrequencyUnits = DEFAULT_UPDATE_FREQUENCY_UNITS;
 
+        /**
+         * Create a new builder.
+         */
         protected Builder() {
         }
 

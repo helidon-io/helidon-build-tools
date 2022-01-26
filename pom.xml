@@ -230,7 +230,7 @@
                     <version>${version.plugin.javadoc}</version>
                     <configuration>
                         <release>${maven.compiler.release}</release>
-                        <failOnError>false</failOnError>
+                        <failOnError>true</failOnError>
                         <quiet>true</quiet>
                         <sourceFileExcludes>
                             <sourceFileExclude>**/module-info.java</sourceFileExclude>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,18 +52,38 @@ public class Page implements Model {
         this.metadata = metadata;
     }
 
+    /**
+     * get the source path.
+     *
+     * @return source path.
+     */
     public String getSourcePath() {
         return sourcePath;
     }
 
+    /**
+     * Get the source extension.
+     *
+     * @return source extension
+     */
     public String getSourceExt() {
         return sourceExt;
     }
 
+    /**
+     * Get the target path.
+     *
+     * @return target path.
+     */
     public String getTargetPath() {
         return targetPath;
     }
 
+    /**
+     * Get the metadata.
+     *
+     * @return metadata
+     */
     public Metadata getMetadata() {
         return metadata;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 
 /**
  * Describes included content and formats it in various ways.
- * <h1>Overview</h1>
+ * <h2>Overview</h2>
  * For the purposes of preprocessing the AsciiDoc, we treat all included content
  * as residing within a block, whether that is an actual block (such as the body
  * of a {@code [source]} block between the "----" lines) or a synthetic block
@@ -41,11 +41,11 @@ import java.util.regex.Pattern;
  * <li>the included text itself.
  * </ul>
  *
- * <h1>Text Formatting of Includes</h1>
- * We expresses included content in two intermediate formats and one external
+ * <h2>Text Formatting of Includes</h2>
+ * We express included content in two intermediate formats and one external
  * one we use during preprocessing.
  *
- * <h2>Brief Bracketed Form (internal)</h2>
+ * <h3>Brief Bracketed Form (internal)</h3>
  * In this form we bracket an AsciiDoc {@code include::} directive with a
  * preceding {@code // _include-start::} and a following
  * {@code // _include-end::} comment. For example, if the original AsciiDoc file
@@ -92,7 +92,7 @@ import java.util.regex.Pattern;
  * where the included text resides, and
  * <li>the actual included text in the relevant block.
  * </ul>
- * A free-standing {@code include::} becomes
+ * A freestanding {@code include::} becomes
  * <pre>
  * {@code
  * // _include::0-n:somePath.adoc
@@ -102,7 +102,7 @@ import java.util.regex.Pattern;
  * See {@link Block#asBlockWithNumberedIncludes() } which also creates
  * the numbered form but organizes the comment and the corresponding included text somewhat differently.
  *
- * <h1>Creating {@code Include} Instances by Parsing AsciiDoc</h1>
+ * <h2>Creating {@code Include} Instances by Parsing AsciiDoc</h2>
  * Although we use three formats to express included content, we only ever need
  * to parse two of them -- full bracketed and numbered -- into {@code Include}
  * instances.

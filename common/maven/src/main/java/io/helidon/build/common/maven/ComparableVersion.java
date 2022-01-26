@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -539,6 +539,12 @@ class ComparableVersion implements Comparable<ComparableVersion> {
         return value;
     }
 
+    /**
+     * Get the canonical version.
+     *
+     * @return canonical version
+     */
+    @SuppressWarnings("unused")
     public String getCanonical() {
         if (canonical == null) {
             canonical = items.toString();

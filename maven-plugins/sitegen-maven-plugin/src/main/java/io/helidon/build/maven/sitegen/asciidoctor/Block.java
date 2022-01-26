@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 /**
  * Describes content that is a block (e.g., {@code [source]}) that might contain
  * includes.
- * <h1>Overview</h1>
+ * <h2>Overview</h2>
  * For our purposes a block contains
  * <ul>
  * <li>its declaration (e.g., {@code [source]} with, potentially, additional
@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
  * block, and
  * <li>the body itself.
  * </ul>
- * <h1>Text Formatting</h1>
+ * <h2>Text Formatting</h2>
  * At different times we represent a block as text in three ways.
  * <h2>Brief Bracketed Form (internal)</h2>
  * In this form we bracket each AsciiDoc {@code include::} directive in the body
@@ -96,7 +96,7 @@ import java.util.stream.Collectors;
  * ----
  * }
  * </pre>
- * <h2>Creating {@code Block} Instances by Parsing AsciiDoc</h2>
+ * <h3>Creating {@code Block} Instances by Parsing AsciiDoc</h3>
  * The {@link #consumeBlock} method reads content and builds an instance
  * representing the corresponding block, advancing the current line indicator
  * for the content as it does so.
@@ -120,7 +120,7 @@ public class Block {
                     new String[]{"source", "listing", "example"}));
 
     /*
-     * Matches lines that start with a "[", capturing until , or ] as the introducer
+     * Match lines that start with a "[", capturing until, or "]" as the introducer
      */
     private static final Pattern BLOCK_INTRODUCER_PATTERN = Pattern.compile("\\[([^,\\]]*).*");
 
@@ -130,7 +130,6 @@ public class Block {
      *
      * @param content lines containing AsciiDoc
      * @param lineNumber line number at which to begin processing the block
-     * block
      * @return a new Block describing the block
      */
     static Block consumeBlock(List<String> content, AtomicInteger lineNumber) {
