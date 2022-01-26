@@ -59,7 +59,7 @@ if [ "${1}" = "--release" ] ; then
 fi
 
 # shellcheck disable=SC2086
-mvn ${MAVEN_ARGS} -f "${WS_DIR}"/helidon-cli/impl/pom.xml \
+mvn ${MAVEN_ARGS} -f "${WS_DIR}"/cli/impl/pom.xml \
     clean install \
     -DskipTests \
     -Pnative-image \
