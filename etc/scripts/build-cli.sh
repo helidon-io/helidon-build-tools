@@ -53,8 +53,8 @@ if [ "${1}" = "--release" ] ; then
         org.codehaus.mojo:exec-maven-plugin:1.3.1:exec)
 
     # strip qualifier
-    readonly VERSION="${MVN_VERSION%-*}"
-    git fetch origin "refs/tags/${VERSION}:refs/tags/${VERSION}"
+    readonly VERSION="${MVN_VERSION%%-SNAPSHOT}"
+    git fetch origin "refs/tags/${MVN_VERSION}:refs/tags/${VERSION}"
     git checkout refs/tags/"${VERSION}"
 fi
 
