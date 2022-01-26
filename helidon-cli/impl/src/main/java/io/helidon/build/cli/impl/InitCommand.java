@@ -37,6 +37,7 @@ import io.helidon.build.cli.impl.FlowNodeControllers.FlowNodeController;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.ProjectConfig;
+import io.helidon.build.util.RequirementFailure;
 import io.helidon.build.util.Requirements;
 import io.helidon.build.util.SubstitutionVariables;
 
@@ -154,7 +155,7 @@ public final class InitCommand extends BaseCommand {
         if (helidonVersion == null) {
             if (context.properties().containsKey(HELIDON_VERSION_PROPERTY)) {
                 helidonVersion = context.properties().getProperty(HELIDON_VERSION_PROPERTY);
-                assertSupportedVersion(helidonVersion);
+                assertSupportedVersion(helidonVersion, true);
             } else if (batch) {
                 helidonVersion = defaultHelidonVersion();
                 Log.info("Using Helidon version " + helidonVersion);
@@ -162,14 +163,15 @@ public final class InitCommand extends BaseCommand {
                 String defaultHelidonVersion = null;
                 try {
                     defaultHelidonVersion = defaultHelidonVersion();
+                } catch (RequirementFailure e) {
+                    throw e;
                 } catch (Exception ignored) {
-                    // ignore default version lookup error
-                    // since we always prompt in interactive
+                    // ignore default version lookup error since we always prompt in interactive
                 }
                 helidonVersion = prompt("Helidon version", defaultHelidonVersion, this::isSupportedVersion);
             }
         } else {
-            assertSupportedVersion(helidonVersion);
+            assertSupportedVersion(helidonVersion, true);
         }
 
         // Need flavor to proceed
@@ -316,8 +318,12 @@ public final class InitCommand extends BaseCommand {
         String version = System.getProperty(HELIDON_VERSION_PROPERTY);
         if (version == null) {
             try {
-                version = metadata.latestSupportedVersion().toString();
+                version = metadata.latestVersion().toString();
+                // This should only fail when --url is used pointing to 3.x or newer
+                assertSupportedVersion(version, false);
                 Log.debug("Latest Helidon version found: %s", version);
+            } catch (RequirementFailure e) {
+                throw e;
             } catch (Metadata.UpdateFailed e) {
                 Log.info(e.getMessage());
                 failed(VERSION_LOOKUP_FAILED);
@@ -344,7 +350,7 @@ public final class InitCommand extends BaseCommand {
 
     private boolean isSupportedVersion(MavenVersion version, boolean notFoundIsError) {
         try {
-            metadata.assertVersionisAvailable(version);
+            metadata.assertVersionIsAvailable(version);
             return true;
         } catch (IllegalArgumentException | Metadata.UpdateFailed e) {
             Log.debug(e.getMessage());
@@ -367,9 +373,11 @@ public final class InitCommand extends BaseCommand {
         return false;
     }
 
-    private void assertSupportedVersion(String helidonVersion) {
+    private void assertSupportedVersion(String helidonVersion, boolean checkMetadata) {
         MavenVersion version = MavenVersion.toMavenVersion(helidonVersion);
         require(version.isLessThan(HELIDON_3), HELIDON_3_MESSAGE, UPDATE_URL);
-        require(isSupportedVersion(version, true), AVAILABLE_VERSIONS_MESSAGE, HELIDON_RELEASES_URL);
+        if (checkMetadata) {
+            require(isSupportedVersion(version, true), AVAILABLE_VERSIONS_MESSAGE, HELIDON_RELEASES_URL);
+        }
     }
 }

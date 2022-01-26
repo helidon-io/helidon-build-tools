@@ -49,7 +49,6 @@ import static io.helidon.build.util.FileUtils.lastModifiedTime;
 import static io.helidon.build.util.MavenVersion.toMavenVersion;
 import static io.helidon.build.util.PrintStreams.DEVNULL;
 import static io.helidon.build.util.PrintStreams.STDOUT;
-import static java.lang.Character.isDigit;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -78,11 +77,6 @@ public class Metadata {
      * The Helidon 3.x version.
      */
     public static final MavenVersion HELIDON_3 = toMavenVersion("3.0.0-SNAPSHOT");
-
-    /**
-     * The last known Helidon 2.x release version. Update this when possible!
-     */
-    public static final MavenVersion LAST_KNOWN_HELIDON_2_RELEASE = toMavenVersion("2.4.1");  // TODO REMOVE
 
     private static final String LATEST_VERSION_FILE_NAME = "latest";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
@@ -196,31 +190,6 @@ public class Metadata {
     }
 
     /**
-     * Returns the latest pre 3.x Helidon version.
-     *
-     * @return The version.
-     * @throws UpdateFailed If the metadata updated failed.
-     */
-    public MavenVersion latestSupportedVersion() throws UpdateFailed {
-        MavenVersion latest = latestVersion.get();
-        if (latest == null) {
-            latest = latestVersion(true);
-        }
-
-        // Is latest Helidon 3.x or later?
-
-        if (latest.isGreaterThanOrEqualTo(HELIDON_3)) {
-
-            // Yes, and we don't support that, so try to find the latest supported version
-
-            Log.debug("Latest version %s is unsupported, searching for a supported version", latest);
-            latest = findLatestSupportedVersion();
-            Log.debug("Returning latest supported version: %s", latest);
-        }
-        return latest;
-    }
-
-    /**
      * Returns the {@code helidon-cli-maven-plugin} version for the given Helidon version.
      *
      * @param helidonVersion The version.
@@ -324,7 +293,7 @@ public class Metadata {
                                                  .map(Metadata::versionOfCliMessageKey)
                                                  .map(MavenVersion::toMavenVersion)
                                                  .filter(v -> v.isGreaterThan(sinceCliVersion))
-                                                 .sorted()
+                                                 .sorted(Comparator.reverseOrder())
                                                  .collect(Collectors.toList());
         final Map<MavenVersion, String> result = new LinkedHashMap<>();
         versions.forEach(v -> result.put(v, props.property(toCliMessageKey(v))));
@@ -398,7 +367,7 @@ public class Metadata {
      * @throws UpdateFailed if the metadata update failed.
      * @throws IllegalArgumentException if the version is not available.
      */
-    public void assertVersionisAvailable(MavenVersion helidonVersion) throws UpdateFailed {
+    public void assertVersionIsAvailable(MavenVersion helidonVersion) throws UpdateFailed {
         versionedFile(helidonVersion, CATALOG_FILE_NAME, true);
     }
 
@@ -470,7 +439,7 @@ public class Metadata {
         return checkForUpdates(helidonVersion, checkFile, System.currentTimeMillis(), quiet);
     }
 
-    boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, long currentTimeMillis, boolean quiet)
+    private boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, long currentTimeMillis, boolean quiet)
             throws UpdateFailed {
 
         if (isStale(checkFile, currentTimeMillis)) {
@@ -589,30 +558,11 @@ public class Metadata {
         }
     }
 
-    private MavenVersion findLatestSupportedVersion() {
-        try {
-            // TODO FORCE AN UPDATE INSTEAD, AND RE-READ latest
-
-            return Files.list(rootDir)
-                        .filter(Files::isDirectory)
-                        .map(dir -> dir.getFileName().toString())
-                        .filter(dirName -> isDigit(dirName.charAt(0)) && dirName.contains("."))
-                        .filter(dirName -> Files.exists(rootDir.resolve(dirName).resolve(METADATA_FILE_NAME)))
-                        .map(MavenVersion::toMavenVersion)
-                        .filter(version -> version.isLessThan(HELIDON_3))
-                        .max(Comparator.naturalOrder())
-                        .orElse(LAST_KNOWN_HELIDON_2_RELEASE);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
     /**
      * Update failed checked exception.
      * This is a checked exception by design to ensure a proper error handling.
      */
     public static class UpdateFailed extends Exception {
-
         private UpdateFailed(Plugins.PluginFailed ex) {
             super(ex.getMessage(), ex);
         }
