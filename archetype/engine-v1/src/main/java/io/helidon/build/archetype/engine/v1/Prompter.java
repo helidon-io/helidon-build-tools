@@ -45,14 +45,21 @@ public class Prompter {
     public static String prompt(String question, String defaultAnswer, Predicate<String> validator) {
         while (true) {
             try {
-                String styledDefaultAnswer = BoldBlue.apply(String.format("%s", defaultAnswer));
-                String styledQuestion = Bold.apply(question);
-                String fullPrompt = String.format("%s (default: %s): ", styledQuestion, styledDefaultAnswer);
+                String fullPrompt;
+                String styledPrompt = Bold.apply(question);
+                if (defaultAnswer == null) {
+                    fullPrompt = String.format("%s: ", styledPrompt);
+                } else {
+                    String styledDefaultAnswer = BoldBlue.apply(String.format("%s", defaultAnswer));
+                    fullPrompt = String.format("%s (default: %s): ", styledPrompt, styledDefaultAnswer);
+                }
                 System.out.print(fullPrompt);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
                 String response = reader.readLine();
                 if (response == null || response.trim().isEmpty()) {
-                    return defaultAnswer;
+                    if (defaultAnswer != null) {
+                        return defaultAnswer;
+                    }
                 } else if (validator.test(response)) {
                     return response;
                 }
