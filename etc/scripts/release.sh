@@ -126,13 +126,15 @@ major_minor_micro() {
 
 osgi_mvn_version(){
   # shellcheck disable=SC2001
-  local major_minor_micro=$(major_minor_micro "${1}")
+  local major_minor_micro
+  major_minor_micro=$(major_minor_micro "${1}")
   if [[ "${1}" =~ -SNAPSHOT$ ]] ; then echo "${major_minor_micro}-SNAPSHOT" ; else echo "${major_minor_micro}" ; fi
 }
 
 osgi_bundle_version() {
   # shellcheck disable=SC2001
-  local major_minor_micro=$(major_minor_micro "${1}")
+  local major_minor_micro
+  major_minor_micro=$(major_minor_micro "${1}")
   if [[ "${1}" =~ -SNAPSHOT$ ]] ; then echo "${major_minor_micro}.qualifier" ; else echo "${major_minor_micro}" ; fi
 }
 
@@ -150,8 +152,10 @@ update_version(){
     local new_osgi_mvn_v
     new_osgi_mvn_v="$(osgi_mvn_version "${FULL_VERSION}")"
 
+    # shellcheck disable=SC2044
     for pom in $(find ide-support -name "pom.xml") ; do
       # shellcheck disable=SC2002
+      # shellcheck disable=SC2140
       cat "${pom}" | sed s@"<version>${osgi_mvn_v}</version>"@"<version>${new_osgi_mvn_v}</version>"@g > "${pom}.tmp"
       mv "${pom}".tmp "${pom}"
     done
@@ -161,8 +165,10 @@ update_version(){
     local new_osgi_bundle_v
     new_osgi_bundle_v="$(osgi_bundle_version "${FULL_VERSION}")"
 
+    # shellcheck disable=SC2044
     for manifest in $(find ide-support/lsp -name "MANIFEST.MF") ; do
       # shellcheck disable=SC2002
+      # shellcheck disable=SC2140
       cat "${manifest}" | sed s@"Bundle-Version: ${osgi_bundle_v}"@"Bundle-Version: ${new_osgi_bundle_v}"@g > "${manifest}.tmp"
       mv "${manifest}".tmp "${manifest}"
     done
@@ -170,7 +176,8 @@ update_version(){
 
 release_build(){
     # Do the release work in a branch
-    local GIT_BRANCH="release/${FULL_VERSION}"
+    local GIT_BRANCH
+    GIT_BRANCH="release/${FULL_VERSION}"
     git branch -D "${GIT_BRANCH}" > /dev/null 2>&1 || true
     git checkout -b "${GIT_BRANCH}"
 
@@ -184,44 +191,21 @@ release_build(){
     # Commit version changes
     git commit -a -m "Release ${FULL_VERSION} [ci skip]"
 
-    # Create the nexus staging repository
-    local STAGING_DESC="Helidon Build Tools v${FULL_VERSION}"
-
-    # shellcheck disable=SC2086
-    mvn ${MAVEN_ARGS} -Nnexus-staging:rc-open \
-        -DstagingProfileId="6026dab46eed94" \
-        -DstagingDescription="${STAGING_DESC}"
-
-    # shellcheck disable=SC2155
-    # shellcheck disable=SC2086
-    export STAGING_REPO_ID=$(mvn ${MAVEN_ARGS} -N nexus-staging:rc-list | \
-        grep -E "^[0-9:,]*[ ]?\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
-        awk '{print $2" "$3}' | \
-        sed -e s@'\[INFO\] '@@g -e s@'OPEN'@@g | \
-        head -1)
-    echo "Nexus staging repository ID: ${STAGING_REPO_ID}"
-
     # Perform local deployment
     # shellcheck disable=SC2086
-    mvn ${MAVEN_ARGS} clean deploy -Prelease,ide-support -DskipTests \
-        -DskipRemoteStaging=true \
-        -DstagingRepositoryId="${STAGING_REPO_ID}" \
-        -DretryFailedDeploymentCount="10"
+    mvn ${MAVEN_ARGS} clean deploy \
+        -Prelease,ide-support \
+        -DskipTests \
+        -DskipRemoteStaging=true
 
     # Upload all artifacts to nexus
     # shellcheck disable=SC2086
     mvn ${MAVEN_ARGS} -N nexus-staging:deploy-staged \
-        -DstagingDescription="${STAGING_DESC}"
-
-    # Close the nexus staging repository
-    # shellcheck disable=SC2086
-    mvn ${MAVEN_ARGS} -N nexus-staging:rc-close \
-        -DstagingRepositoryId="${STAGING_REPO_ID}" \
-        -DstagingDescription="${STAGING_DESC}"
+        -DstagingDescription="Helidon Build Tools v${FULL_VERSION}"
 
     # Create and push a git tag
-    # shellcheck disable=SC2155
-    local GIT_REMOTE=$(git config --get remote.origin.url | \
+    local GIT_REMOTE
+    GIT_REMOTE=$(git config --get remote.origin.url | \
         sed "s,https://\([^/]*\)/,git@\1:,")
 
     git remote add release "${GIT_REMOTE}" > /dev/null 2>&1 || \
