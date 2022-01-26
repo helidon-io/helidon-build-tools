@@ -30,8 +30,18 @@
     <packaging>pom</packaging>
     <name>Helidon Command Line Interface Tests</name>
 
-    <modules>
-        <module>functional</module>
-    </modules>
+    <profiles>
+        <profile>
+            <id>run-test</id>
+            <activation>
+                <property>
+                    <name>!skipTests</name>
+                </property>
+            </activation>
+            <modules>
+                <module>functional</module>
+            </modules>
+        </profile>
+    </profiles>
 
 </project>

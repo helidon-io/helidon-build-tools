@@ -123,7 +123,6 @@
         <version.lib.asciidoctorj-diagram>2.2.1</version.lib.asciidoctorj-diagram>
         <version.lib.asm>7.2</version.lib.asm>
         <version.lib.checkstyle>9.1</version.lib.checkstyle>
-        <version.lib.bedrock>5.0.11</version.lib.bedrock>
         <version.lib.diffutils>2.2</version.lib.diffutils>
         <version.lib.doxia>1.9.1</version.lib.doxia>
         <version.lib.freemarker>2.3.23</version.lib.freemarker>

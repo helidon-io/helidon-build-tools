@@ -17,6 +17,7 @@
 package io.helidon.tests.functional;
 
 import io.helidon.build.cli.impl.CommandInvoker;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -36,10 +37,18 @@ public class CliFunctionalTest {
     private static final String CUSTOM_PROJECT = "myproject";
     private static final String CUSTOM_PACKAGE_NAME = "custom.pack.name";
     private static Path workDir;
+    private static Path inputFile;
 
     @BeforeAll
     static void setup() throws IOException {
         workDir = Files.createTempDirectory("generated");
+        inputFile = Files.createTempFile("input","txt");
+        Files.writeString(inputFile, "\n\n\n");
+    }
+
+    @AfterAll
+    static void cleanTempFile() {
+        inputFile.toFile().delete();
     }
 
     @AfterEach
@@ -190,7 +199,7 @@ public class CliFunctionalTest {
                 .artifactId(artifactId)
                 .packageName(packageName)
                 .projectName(name)
-                .input(getClass().getResource("input.txt"))
+                .input(inputFile.toUri().toURL())
                 .invokeInit()
                 .validateProject();
     }
