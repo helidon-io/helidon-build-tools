@@ -188,27 +188,34 @@ release_build(){
     local STAGING_DESC="Helidon Build Tools v${FULL_VERSION}"
 
     # shellcheck disable=SC2086
-    mvn ${MAVEN_ARGS} nexus-staging:rc-open \
+    mvn ${MAVEN_ARGS} -Nnexus-staging:rc-open \
         -DstagingProfileId="6026dab46eed94" \
         -DstagingDescription="${STAGING_DESC}"
+
     # shellcheck disable=SC2155
     # shellcheck disable=SC2086
-    export STAGING_REPO_ID=$(mvn ${MAVEN_ARGS} nexus-staging:rc-list | \
+    export STAGING_REPO_ID=$(mvn ${MAVEN_ARGS} -N nexus-staging:rc-list | \
         grep -E "^[0-9:,]*[ ]?\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
         awk '{print $2" "$3}' | \
         sed -e s@'\[INFO\] '@@g -e s@'OPEN'@@g | \
         head -1)
     echo "Nexus staging repository ID: ${STAGING_REPO_ID}"
 
-    # Perform deployment
+    # Perform local deployment
     # shellcheck disable=SC2086
     mvn ${MAVEN_ARGS} clean deploy -Prelease,ide-support -DskipTests \
+        -DskipRemoteStaging=true \
         -DstagingRepositoryId="${STAGING_REPO_ID}" \
         -DretryFailedDeploymentCount="10"
 
+    # Upload all artifacts to nexus
+    # shellcheck disable=SC2086
+    mvn ${MAVEN_ARGS} -N nexus-staging:deploy-staged \
+        -DstagingDescription="${STAGING_DESC}"
+
     # Close the nexus staging repository
     # shellcheck disable=SC2086
-    mvn ${MAVEN_ARGS} nexus-staging:rc-close \
+    mvn ${MAVEN_ARGS} -N nexus-staging:rc-close \
         -DstagingRepositoryId="${STAGING_REPO_ID}" \
         -DstagingDescription="${STAGING_DESC}"
 
