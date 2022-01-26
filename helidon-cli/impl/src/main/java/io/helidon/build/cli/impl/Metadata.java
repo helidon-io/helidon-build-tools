@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,11 @@ public class Metadata {
      * The default update frequency units.
      */
     public static final TimeUnit DEFAULT_UPDATE_FREQUENCY_UNITS = TimeUnit.HOURS;
+
+    /**
+     * The Helidon 3.x version.
+     */
+    public static final MavenVersion HELIDON_3 = toMavenVersion("3.0.0-SNAPSHOT");
 
     private static final String LATEST_VERSION_FILE_NAME = "latest";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
@@ -188,7 +193,7 @@ public class Metadata {
      * Returns the {@code helidon-cli-maven-plugin} version for the given Helidon version.
      *
      * @param helidonVersion The version.
-     * @param quiet          If info messages should be suppressed.
+     * @param quiet If info messages should be suppressed.
      * @return The version.
      * @throws UpdateFailed if the metadata update failed
      */
@@ -201,7 +206,7 @@ public class Metadata {
      *
      * @param helidonVersion The version.
      * @param thisCliVersion This CLI version.
-     * @param quiet          If info messages should be suppressed.
+     * @param quiet If info messages should be suppressed.
      * @return The version.
      * @throws UpdateFailed if the metadata update failed
      */
@@ -216,9 +221,9 @@ public class Metadata {
         final MavenVersion latestPluginVersion = latestPluginVersion(helidonVersion, thisCliVersion, properties);
         cliToPluginVersions.put(latestPluginVersion, latestPluginVersion);
         properties.entrySet()
-                .stream()
-                .filter(e -> isCliPluginVersionKey(e.getKey()))
-                .forEach(e -> cliToPluginVersions.put(toCliPluginVersion(e.getKey()), toMavenVersion(e.getValue())));
+                  .stream()
+                  .filter(e -> isCliPluginVersionKey(e.getKey()))
+                  .forEach(e -> cliToPluginVersions.put(toCliPluginVersion(e.getKey()), toMavenVersion(e.getValue())));
 
         // Short circuit if there is only one
 
@@ -229,9 +234,9 @@ public class Metadata {
         // Find the maximum CLI version that is <= thisCliVersion
 
         final Optional<MavenVersion> maxCliVersion = cliToPluginVersions.keySet()
-                .stream()
-                .filter(v -> v.isLessThanOrEqualTo(thisCliVersion))
-                .max(Comparator.naturalOrder());
+                                                                        .stream()
+                                                                        .filter(v -> v.isLessThanOrEqualTo(thisCliVersion))
+                                                                        .max(Comparator.naturalOrder());
 
         // Return the corresponding plugin version
 
@@ -242,7 +247,7 @@ public class Metadata {
      * Returns the CLI version for the given Helidon version.
      *
      * @param helidonVersion The version.
-     * @param quiet          If info messages should be suppressed.
+     * @param quiet If info messages should be suppressed.
      * @return The properties.
      * @throws UpdateFailed if the metadata update failed
      */
@@ -254,7 +259,7 @@ public class Metadata {
      * Checks if there is a more recent CLI version available and returns the version if so.
      *
      * @param thisCliVersion The version of this CLI.
-     * @param quiet          If info messages should be suppressed.
+     * @param quiet If info messages should be suppressed.
      * @return A valid CLI version if a more recent CLI is available.
      * @throws UpdateFailed if the metadata update failed
      */
@@ -272,7 +277,7 @@ public class Metadata {
      * Returns the release notes for the latest Helidon version that are more recent than the given CLI version.
      *
      * @param latestHelidonVersion The latest Helidon version.
-     * @param sinceCliVersion      The CLI version to start with.
+     * @param sinceCliVersion The CLI version to start with.
      * @return The notes, in sorted order.
      * @throws UpdateFailed if the metadata update failed
      */
@@ -283,13 +288,13 @@ public class Metadata {
         requireNonNull(sinceCliVersion, "sinceCliVersion must not be null");
         final ConfigProperties props = propertiesOf(latestHelidonVersion, true);
         final List<MavenVersion> versions = props.keySet()
-                .stream()
-                .filter(Metadata::isCliMessageKey)
-                .map(Metadata::versionOfCliMessageKey)
-                .map(MavenVersion::toMavenVersion)
-                .filter(v -> v.isGreaterThan(sinceCliVersion))
-                .sorted()
-                .collect(Collectors.toList());
+                                                 .stream()
+                                                 .filter(Metadata::isCliMessageKey)
+                                                 .map(Metadata::versionOfCliMessageKey)
+                                                 .map(MavenVersion::toMavenVersion)
+                                                 .filter(v -> v.isGreaterThan(sinceCliVersion))
+                                                 .sorted(Comparator.reverseOrder())
+                                                 .collect(Collectors.toList());
         final Map<MavenVersion, String> result = new LinkedHashMap<>();
         versions.forEach(v -> result.put(v, props.property(toCliMessageKey(v))));
         return result;
@@ -321,7 +326,7 @@ public class Metadata {
      * Returns the metadata properties for the given Helidon version.
      *
      * @param helidonVersion The version.
-     * @param quiet          If info messages should be suppressed.
+     * @param quiet If info messages should be suppressed.
      * @return The properties.
      * @throws UpdateFailed if the metadata update failed
      */
@@ -356,6 +361,17 @@ public class Metadata {
     }
 
     /**
+     * Asserts that the given Helidon version is available.
+     *
+     * @param helidonVersion The version.
+     * @throws UpdateFailed if the metadata update failed.
+     * @throws IllegalArgumentException if the version is not available.
+     */
+    public void assertVersionIsAvailable(MavenVersion helidonVersion) throws UpdateFailed {
+        versionedFile(helidonVersion, CATALOG_FILE_NAME, true);
+    }
+
+    /**
      * Returns the path to the archetype jar for the given catalog entry.
      *
      * @param catalogEntry The catalog entry.
@@ -380,7 +396,7 @@ public class Metadata {
         final String latest = properties.property(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
         if (latest == null) {
             Log.debug("Helidon version %s does not contain %s, using current CLI version %s", helidonVersion,
-                    LATEST_CLI_PLUGIN_VERSION_PROPERTY, thisCliVersion);
+                      LATEST_CLI_PLUGIN_VERSION_PROPERTY, thisCliVersion);
             return thisCliVersion;
         } else {
             return toMavenVersion(latest);
@@ -389,8 +405,8 @@ public class Metadata {
 
     private static boolean isCliPluginVersionKey(String key) {
         return key.startsWith(CLI_PLUGIN_VERSION_PROPERTY_PREFIX)
-                && key.endsWith(CLI_PLUGIN_VERSION_PROPERTY_SUFFIX)
-                && !key.equals(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
+               && key.endsWith(CLI_PLUGIN_VERSION_PROPERTY_SUFFIX)
+               && !key.equals(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
     }
 
     private static MavenVersion toCliPluginVersion(String key) {
@@ -423,7 +439,7 @@ public class Metadata {
         return checkForUpdates(helidonVersion, checkFile, System.currentTimeMillis(), quiet);
     }
 
-    boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, long currentTimeMillis, boolean quiet)
+    private boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, long currentTimeMillis, boolean quiet)
             throws UpdateFailed {
 
         if (isStale(checkFile, currentTimeMillis)) {
@@ -459,19 +475,19 @@ public class Metadata {
                         final String elapsedDays = elapsed.toDaysPart() == 1 ? "day" : "days";
                         if (stale) {
                             Log.debug("stale check is true for %s (last: %s, now: %s, elapsed: %d %s %02d:%02d:%02d)",
-                                    file, lastModifiedTime, currentTime,
-                                    elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
-                                    elapsed.toSecondsPart());
+                                      file, lastModifiedTime, currentTime,
+                                      elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
+                                      elapsed.toSecondsPart());
                         } else {
                             final Duration remain = Duration.ofMillis(remainingMillis);
                             final String remainDays = remain.toDaysPart() == 1 ? "day" : "days";
                             Log.debug("stale check is false for %s (last: %s, now: %s, elapsed: %d %s %02d:%02d:%02d, "
-                                            + "remain: %d %s %02d:%02d:%02d)",
-                                    file, lastModifiedTime, currentTime,
-                                    elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
-                                    elapsed.toSecondsPart(),
-                                    remain.toDaysPart(), remainDays, remain.toHoursPart(), remain.toMinutesPart(),
-                                    remain.toSecondsPart());
+                                      + "remain: %d %s %02d:%02d:%02d)",
+                                      file, lastModifiedTime, currentTime,
+                                      elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
+                                      elapsed.toSecondsPart(),
+                                      remain.toDaysPart(), remainDays, remain.toHoursPart(), remain.toMinutesPart(),
+                                      remain.toSecondsPart());
                         }
                     }
                     return stale;
@@ -518,7 +534,7 @@ public class Metadata {
             if (stdOut == null) {
                 stdOut = PrintStreams.apply(STDOUT, LogFormatter.of(Level.INFO));
             }
-        } else if (stdOut == null){
+        } else if (stdOut == null) {
             stdOut = DEVNULL;
         }
         try {
@@ -547,7 +563,6 @@ public class Metadata {
      * This is a checked exception by design to ensure a proper error handling.
      */
     public static class UpdateFailed extends Exception {
-
         private UpdateFailed(Plugins.PluginFailed ex) {
             super(ex.getMessage(), ex);
         }

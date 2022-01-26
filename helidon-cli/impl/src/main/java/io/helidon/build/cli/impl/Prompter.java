@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,11 @@ package io.helidon.build.cli.impl;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import static io.helidon.build.util.StyleFunction.Bold;
 import static io.helidon.build.util.StyleFunction.BoldBlue;
@@ -30,27 +32,42 @@ import static io.helidon.build.util.StyleFunction.BoldBlue;
  * Class Prompter.
  */
 class Prompter {
+    private static final Predicate<String> NO_VALIDATION = input -> true;
 
-    private Prompter() {
+    static String prompt(String prompt, String defaultAnswer, Predicate<String> validator) {
+        while (true) {
+            try {
+                String styledPrompt = Bold.apply(prompt);
+                String fullPrompt;
+                if (defaultAnswer == null) {
+                    fullPrompt = String.format("%s: ", styledPrompt);
+                } else {
+                    String styledDefaultAnswer = BoldBlue.apply(String.format("%s", defaultAnswer));
+                    fullPrompt = String.format("%s (default: %s): ", styledPrompt, styledDefaultAnswer);
+                }
+                System.out.print(fullPrompt);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+                String response = reader.readLine();
+                if (response == null || response.trim().isEmpty()) {
+                    if (defaultAnswer != null) {
+                        return defaultAnswer;
+                    }
+                } else if (validator.test(response)) {
+                    return response;
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
     }
 
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     static String prompt(String question, Optional<String> defaultResponse) {
         return prompt(question, defaultResponse.orElse(null));
     }
 
     static String prompt(String question, String defaultResponse) {
-        try {
-            String def = BoldBlue.apply(defaultResponse);
-            String q = defaultResponse != null
-                    ? String.format("%s (Default: %s): ", question, def)
-                    : String.format("%s: ", question);
-            System.out.print(Bold.apply(q));
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            String response = reader.readLine();
-            return response == null || response.length() == 0 ? defaultResponse : response.trim();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return prompt(question, defaultResponse, NO_VALIDATION);
     }
 
     static int prompt(String question, List<String> options, int defaultOption) {
@@ -59,48 +76,28 @@ class Prompter {
 
     static int prompt(String question, String[] options, int defaultOption) {
         Objects.checkIndex(defaultOption, options.length);
-        try {
-            System.out.println(Bold.apply(question));
-            for (int i = 0; i < options.length; i++) {
-                String o = BoldBlue.apply(String.format("  (%d) %s ", i + 1, options[i]));
-                System.out.println(o);
-            }
-            String def = BoldBlue.apply(String.format("%d", defaultOption + 1));
-            String q = String.format("Enter selection (Default: %s): ", def);
-            System.out.print(Bold.apply(q));
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            String response = reader.readLine();
-            if (response == null || response.trim().length() == 0) {
-                return defaultOption;
-            }
-            int option = Integer.parseInt(response.trim());
-            if (option <= 0 || option > options.length) {
-                return prompt(question, options, defaultOption);
-            }
-            return option - 1;
-        } catch (NumberFormatException e) {
-            return prompt(question, options, defaultOption);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        System.out.println(Bold.apply(question));
+        for (int i = 0; i < options.length; i++) {
+            String o = BoldBlue.apply(String.format("  (%d) %s ", i + 1, options[i]));
+            System.out.println(o);
         }
+        String defaultResponse = Integer.toString(defaultOption + 1);
+        String response = prompt("Enter selection", defaultResponse, input -> {
+            try {
+                int option = Integer.parseInt(input);
+                return option > 0 && option <= options.length;
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        });
+        return Integer.parseInt(response) - 1;
     }
 
     static boolean promptYesNo(String question, boolean defaultOption) {
-        try {
-            String def = BoldBlue.apply(defaultOption ? "y" : "n");
-            String q = String.format("%s (Default: %s): ", question, def);
-            System.out.print(Bold.apply(q));
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            String response = reader.readLine();
-            if (response == null || response.trim().length() == 0) {
-                return defaultOption;
-            }
-            response = response.trim().toLowerCase();
-            return response.equals("y") || response.equals("n")
-                    ? response.equals("y") : promptYesNo(question, defaultOption);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        String defaultResponse = defaultOption ? "y" : "n";
+        String response = prompt(question, defaultResponse,
+                                 input -> input.equalsIgnoreCase("y") || input.equalsIgnoreCase("n"));
+        return response.equalsIgnoreCase("y");
     }
 
 
@@ -115,5 +112,8 @@ class Prompter {
         String[] flavorOptions = new String[]{"SE", "MP"};
         int flavorIndex = prompt("Helidon flavor", flavorOptions, 0);
         System.out.println("Response is '" + flavorOptions[flavorIndex] + "'");
+    }
+
+    private Prompter() {
     }
 }
