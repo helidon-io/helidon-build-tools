@@ -300,7 +300,7 @@ public class Metadata {
                                                  .map(Metadata::versionOfCliMessageKey)
                                                  .map(MavenVersion::toMavenVersion)
                                                  .filter(v -> v.isGreaterThan(sinceCliVersion))
-                                                 .sorted()
+                                                 .sorted(Comparator.reverseOrder())
                                                  .collect(Collectors.toList());
         final Map<MavenVersion, String> result = new LinkedHashMap<>();
         versions.forEach(v -> result.put(v, props.property(toCliMessageKey(v))));
@@ -565,13 +565,72 @@ public class Metadata {
 
     private MavenVersion readLatestVersion() {
         try {
-            final List<String> lines = Files.readAllLines(latestVersionFile, UTF_8);
-            for (String line : lines) {
-                if (!line.isEmpty()) {
-                    return toMavenVersion(line.trim());
-                }
+            List<MavenVersion> versions = Files.readAllLines(latestVersionFile, UTF_8)
+                                               .stream()
+                                               .filter(line -> !line.trim().isEmpty())
+                                               .map(MavenVersion::toMavenVersion)
+                                               .collect(Collectors.toList());
+            if (versions.isEmpty()) {
+                throw new IllegalStateException("No version in " + latestVersionFile);
             }
-            throw new IllegalStateException("No version in " + latestVersionFile);
+
+            // Once helidon.io has been updated with the two line "latest" file, we should
+            // require two versions here; for now, we don't want to fail.
+            // NOTE: FIX THIS IN UpdateMetadata as well!
+            /*
+            latest file:
+
+                2.4.1
+                3.4.12
+
+                # Selection rules.
+                #   The CLI selects the one rule that applies to itself based on its version
+                #   and filters out the latest from the list above.
+                #
+                # Version range works as follows:
+                #   [1.0,2.0) versions 1.0 (included) to 2.0 (not included)
+                #   [1.0,2.0] versions 1.0 to 2.0 (both included)
+                #   [1.5,) versions 1.5 and higher
+                #   (,1.0],[1.2,) versions up to 1.0 (included) and 1.2 or higher
+                #
+                # Notes:
+                #   1 == 1.0 == 1.0.0
+                #   X-alpha is the lowest version of X
+
+                cli.[2-alpha,3-alpha).latest=[2-alpha,3-alpha)
+                cli.[3-alpha,).latest=[3-alpha,)
+
+             */
+
+            /*
+                1, Copy VersionRange from maven next to MavenVersion under common/maven module:
+                    a. Make Restriction a nested class
+                    b. Replace exceptions with IllegalArgumentException
+                    c. Replace use of ArtifactVersion interface with ComparableVersion.
+                2. Add utility to process new "latest" file under cli/common module, e.g.
+                    LatestVersion.create(Path file) -> create(inputStream)
+                    LatestVersion.create(InputStream)
+                3. Change cli/plugin to
+                    a. depend on common/maven and cli/common
+                    b. use shade plugin (https://maven.apache.org/plugins/maven-shade-plugin) including
+                       only the classes we depend on: https://maven.apache.org/plugins/maven-shade-plugin/examples/includes-excludes.html
+                       RELOCATING them to the plugin package: (https://maven.apache.org/plugins/maven-shade-plugin/examples/class-relocation.html)
+                       CONFIGURING to NOT attach artifact: https://maven.apache.org/plugins/maven-shade-plugin/shade-mojo.html
+                            <shadedArtifactAttached>false</shadedArtifactAttached>
+                    c. Use utility from #2
+
+
+               See https://github.com/apache/maven/blob/master/maven-artifact/src/main/java/org/apache/maven/artifact/versioning/VersionRange.java
+             */
+
+
+            if (versions.size() == 1) {
+                return versions.get(0);
+            } else {
+                // TODO RANGE CHECK AS ABOVE, need to do the same in UpdateMetadata
+                return versions.get(1);
+            }
+
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
@@ -582,7 +641,6 @@ public class Metadata {
      * This is a checked exception by design to ensure a proper error handling.
      */
     public static class UpdateFailed extends Exception {
-
         private UpdateFailed(Plugins.PluginFailed ex) {
             super(ex.getMessage(), ex);
         }

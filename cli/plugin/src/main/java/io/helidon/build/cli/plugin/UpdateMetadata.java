@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -161,13 +162,22 @@ class UpdateMetadata extends Plugin {
     }
 
     private String readLatestVersion() throws Exception {
-        final List<String> lines = Files.readAllLines(latestVersionFile, UTF_8);
-        for (String line : lines) {
-            if (!line.isEmpty()) {
-                return line.trim();
-            }
+        final List<String> versions = Files.readAllLines(latestVersionFile, UTF_8)
+                                           .stream()
+                                           .filter(line -> !line.trim().isEmpty())
+                                           .collect(Collectors.toList());
+        if (versions.isEmpty()) {
+            throw new IllegalStateException("No version in " + latestVersionFile);
         }
-        throw new IllegalStateException("No version in " + latestVersionFile);
+
+        // Once helidon.io has been updated with the two line "latest" file, we should
+        // require two versions here; for now, we don't want to fail.
+
+        if (versions.size() == 1) {
+            return versions.get(0);
+        } else {
+            return versions.get(1);
+        }
     }
 
     private URL resolve(String fileName) throws Exception {
