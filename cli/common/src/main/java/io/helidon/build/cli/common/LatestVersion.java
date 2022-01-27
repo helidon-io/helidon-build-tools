@@ -30,6 +30,8 @@ import io.helidon.build.common.maven.MavenVersion;
 import io.helidon.build.common.maven.VersionRange;
 
 import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
+import static io.helidon.build.common.maven.VersionRange.createFromVersionSpec;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -41,28 +43,47 @@ import static java.util.Objects.requireNonNull;
  *   <li>The first non-empty line must be a 2.x version number for backwards compatibility.</li>
  *   <li>May be followed by any of the following:</li>
  *   <ul>
- *       <li>lines staring with '#', which are treated as comments and ignored</li>
+ *       <li>lines containing additional version numbers</li>
+ *       <li>lines starting with '#', which are treated as comments and ignored</li>
  *       <li>lines containing key=value properties</li>
  *   </ul>
  * </ol>
- * TODO: describe rule properties.
+ * If properties exist whose keys begin with "cli." and end with ".latest", they are treated as rules, where
+ * a version range is supplied in the key and one in the value, e.g.:
+ * <pre>
+ *     cli.[2-alpha,3-alpha).latest=[2-alpha,3-alpha)
+ *     cli.[3-alpha,).latest=[3-alpha,)
+ * </pre>
+ * The range in the key is used to match the current CLI version, and the value is used to match against
+ * the latest version list.
+ * <p>
+ * Version ranges use the following syntax:
+ * <pre>
+ *  [1.0,2.0) versions 1.0 (included) to 2.0 (not included)
+ *  [1.0,2.0] versions 1.0 to 2.0 (both included)
+ *  [1.5,) versions 1.5 and higher
+ *  (,1.0],[1.2,) versions up to 1.0 (included) and 1.2 or higher
+ * </pre>
+ * Notes that:
+ * <ul>
+ *     <li>1 == 1.0 == 1.0.0</li>
+ *     <li>X-alpha is the lowest version of X</li>
+ * </ul>
  */
 public class LatestVersion {
-    private static final VersionRange HELIDON_2 = VersionRange.createFromVersionSpec("[2-alpha,3-alpha)");
+    private static final VersionRange HELIDON_2 = createFromVersionSpec("[2-alpha,3-alpha)");
     private static final String COMMENT = "#";
     private static final String PROPERTY_SEP = "=";
+    private static final String CLI_PREFIX = "cli.";
+    private static final String LATEST_SUFFIX = ".latest";
+
     private final List<MavenVersion> versions;
     private final List<VersionRule> rules;
     private final Map<String, String> properties;
 
     private LatestVersion(List<MavenVersion> versions, Map<String, String> properties) {
         this.versions = requireNonNull(versions);
-        this.properties = requireNonNull(properties);
-        if (versions.isEmpty()) {
-            throw new IllegalArgumentException("versions may not be empty");
-        } else if (!HELIDON_2.containsVersion(versions.get(0))) {
-            throw new IllegalArgumentException("a 2.x version must be first: " + versions);
-        }
+        this.properties = unmodifiableMap(requireNonNull(properties));
         if (properties.isEmpty()) {
             rules = List.of();
         } else {
@@ -72,12 +93,19 @@ public class LatestVersion {
 
     private static List<VersionRule> toRules(Map<String, String> properties) {
         List<VersionRule> rules = new ArrayList<>();
-        // TODO PARSE
+        properties.forEach((key, value) -> {
+            if (key.startsWith(CLI_PREFIX) && key.endsWith(LATEST_SUFFIX)) {
+                String cliSpec = key.substring(CLI_PREFIX.length(), key.length() - LATEST_SUFFIX.length());
+                VersionRule rule = new VersionRule(cliSpec, value);
+                rules.add(rule);
+            }
+        });
         return rules;
     }
 
     /**
      * Creates a new instance from the given "latest" file.
+     *
      * @param latestFile The file.
      * @return The instance.
      */
@@ -91,10 +119,12 @@ public class LatestVersion {
 
     /**
      * Creates a new instance from the given "latest" file lines.
+     *
      * @param latestFileLines The lines.
      * @return The instance.
      */
     public static LatestVersion create(List<String> latestFileLines) {
+        assertValid(latestFileLines);
         List<MavenVersion> versions = new ArrayList<>();
         Map<String, String> properties = new HashMap<>();
 
@@ -117,8 +147,37 @@ public class LatestVersion {
         return new LatestVersion(versions, properties);
     }
 
+    private static void assertValid(List<String> latestFileLines) {
+
+        // Make sure the first non-empty line is a 2.x version.
+        // Here, we exactly duplicate the way 2.x versions find the first line, which
+        // should have trimmed the line prior to the isEmpty test but did not, so any
+        // blank lines prior to the version MUST not contain whitespace.
+
+        boolean foundVersion = false;
+        for (String line : latestFileLines) {
+            if (!line.isEmpty()) {
+                String trimmedLine = line.trim();
+                if (trimmedLine.isEmpty()) {
+                    throw new IllegalStateException("The first non-empty line must be a 2.x version, but is only whitespace.");
+                }
+                MavenVersion version = toMavenVersion(trimmedLine);
+                if (HELIDON_2.containsVersion(version)) {
+                    foundVersion = true;
+                    break;
+                } else {
+                    throw new IllegalStateException("The first non-empty line must be a 2.x version, is: " + version);
+                }
+            }
+        }
+        if (!foundVersion) {
+            throw new IllegalStateException("No versions found.");
+        }
+    }
+
     /**
      * Returns the latest Helidon version for the given CLI version.
+     *
      * @param cliVersion The CLI version.
      * @return The latest Helidon version.
      * @throws IllegalStateException If an error occurs.
@@ -132,21 +191,39 @@ public class LatestVersion {
                     return rule.latest(versions, cliVersion);
                 }
             }
-            throw new IllegalStateException("no rule matches CLI version " + cliVersion);
+            throw new IllegalStateException("No rule matches CLI version " + cliVersion);
         }
     }
 
     /**
+     * Returns the latest versions.
+     *
+     * @return The versions.
+     */
+    public List<MavenVersion> versions() {
+        return Collections.unmodifiableList(versions);
+    }
+
+    /**
      * Returns the properties.
+     *
      * @return The properties.
      */
     public Map<String, String> properties() {
-        return Collections.unmodifiableMap(properties);
+        return properties;
+    }
+
+    List<VersionRule> rules() {
+        return rules;
     }
 
     static class VersionRule {
         private final VersionRange cliRange;
         private final VersionRange helidonRange;
+
+        VersionRule(String cliRange, String helidonRange) {
+            this(createFromVersionSpec(cliRange), createFromVersionSpec(helidonRange));
+        }
 
         VersionRule(VersionRange cliRange, VersionRange helidonRange) {
             this.cliRange = cliRange;
@@ -160,7 +237,8 @@ public class LatestVersion {
         MavenVersion latest(List<MavenVersion> helidonVersions, MavenVersion cliVersion) {
             MavenVersion latest = helidonRange.matchVersion(helidonVersions);
             if (latest == null) {
-                String message = String.format("No matching version for CLI version %s with rule %s", cliVersion, helidonRange);
+                String message = String.format("No matching version for CLI version %s with rule %s. Versions: %s",
+                                               cliVersion, helidonRange, helidonVersions);
                 throw new IllegalStateException(message);
             }
             return latest;
