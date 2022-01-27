@@ -74,9 +74,9 @@ public class Metadata {
     public static final TimeUnit DEFAULT_UPDATE_FREQUENCY_UNITS = TimeUnit.HOURS;
 
     /**
-     * The Helidon 3.x version.
+     * The minimum Helidon 3.x version.
      */
-    public static final MavenVersion HELIDON_3 = toMavenVersion("3.0.0-SNAPSHOT");
+    public static final MavenVersion HELIDON_3 = toMavenVersion("3.0.0-alpha");
 
     private static final String LATEST_VERSION_FILE_NAME = "latest";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
