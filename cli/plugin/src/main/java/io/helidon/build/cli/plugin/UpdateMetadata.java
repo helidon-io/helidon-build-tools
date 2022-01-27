@@ -29,16 +29,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import javax.net.ssl.SSLException;
 
+import io.helidon.build.cli.common.LatestVersion;
+import io.helidon.build.common.maven.MavenVersion;
+
+import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -161,23 +163,11 @@ class UpdateMetadata extends Plugin {
         return result;
     }
 
-    private String readLatestVersion() throws Exception {
-        final List<String> versions = Files.readAllLines(latestVersionFile, UTF_8)
-                                           .stream()
-                                           .filter(line -> !line.trim().isEmpty())
-                                           .collect(Collectors.toList());
-        if (versions.isEmpty()) {
-            throw new IllegalStateException("No version in " + latestVersionFile);
-        }
-
-        // Once helidon.io has been updated with the two line "latest" file, we should
-        // require two versions here; for now, we don't want to fail.
-
-        if (versions.size() == 1) {
-            return versions.get(0);
-        } else {
-            return versions.get(1);
-        }
+    private String readLatestVersion()  {
+        MavenVersion cliVersion = toMavenVersion(this.cliVersion);
+        return LatestVersion.create(latestVersionFile)
+                            .latest(cliVersion)
+                            .toString();
     }
 
     private URL resolve(String fileName) throws Exception {

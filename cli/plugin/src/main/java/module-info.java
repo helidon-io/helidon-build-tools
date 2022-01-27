@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@
  * Helidon CLI plugin.
  */
 module io.helidon.build.cli.plugin {
+    requires io.helidon.build.common.maven;
+    requires io.helidon.build.cli.common;
     exports io.helidon.build.cli.plugin;
     opens io.helidon.build.cli.plugin;
 }

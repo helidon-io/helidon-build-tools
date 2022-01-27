@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
+import io.helidon.build.cli.common.LatestVersion;
 import io.helidon.build.common.ConfigProperties;
 import io.helidon.build.common.Log;
 import io.helidon.build.common.Requirements;
@@ -43,7 +44,6 @@ import static io.helidon.build.cli.impl.CommandRequirements.requireHelidonVersio
 import static io.helidon.build.common.FileUtils.lastModifiedTime;
 import static io.helidon.build.common.FileUtils.requireFile;
 import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -200,7 +200,7 @@ public class Metadata {
      * Returns the {@code helidon-cli-maven-plugin} version for the given Helidon version.
      *
      * @param helidonVersion The version.
-     * @param quiet          If info messages should be suppressed.
+     * @param quiet If info messages should be suppressed.
      * @return The version.
      * @throws UpdateFailed if the metadata update failed
      */
@@ -213,7 +213,7 @@ public class Metadata {
      *
      * @param helidonVersion The version.
      * @param thisCliVersion This CLI version.
-     * @param quiet          If info messages should be suppressed.
+     * @param quiet If info messages should be suppressed.
      * @return The version.
      * @throws UpdateFailed if the metadata update failed
      */
@@ -254,7 +254,7 @@ public class Metadata {
      * Returns the CLI version for the given Helidon version.
      *
      * @param helidonVersion The version.
-     * @param quiet          If info messages should be suppressed.
+     * @param quiet If info messages should be suppressed.
      * @return The properties.
      * @throws UpdateFailed if the metadata update failed
      */
@@ -266,7 +266,7 @@ public class Metadata {
      * Checks if there is a more recent CLI version available and returns the version if so.
      *
      * @param thisCliVersion The version of this CLI.
-     * @param quiet          If info messages should be suppressed.
+     * @param quiet If info messages should be suppressed.
      * @return A valid CLI version if a more recent CLI is available.
      * @throws UpdateFailed if the metadata update failed
      */
@@ -284,7 +284,7 @@ public class Metadata {
      * Returns the release notes for the latest Helidon version that are more recent than the given CLI version.
      *
      * @param latestHelidonVersion The latest Helidon version.
-     * @param sinceCliVersion      The CLI version to start with.
+     * @param sinceCliVersion The CLI version to start with.
      * @return The notes, in sorted order.
      * @throws UpdateFailed if the metadata update failed
      */
@@ -333,7 +333,7 @@ public class Metadata {
      * Returns the metadata properties for the given Helidon version.
      *
      * @param helidonVersion The version.
-     * @param quiet          If info messages should be suppressed.
+     * @param quiet If info messages should be suppressed.
      * @return The properties.
      * @throws UpdateFailed if the metadata update failed
      */
@@ -348,7 +348,7 @@ public class Metadata {
      * @return The catalog.
      * @throws UpdateFailed if the metadata update failed
      */
-    public ArchetypeCatalog catalogOf(String helidonVersion) throws UpdateFailed  {
+    public ArchetypeCatalog catalogOf(String helidonVersion) throws UpdateFailed {
         return catalogOf(toMavenVersion(helidonVersion));
     }
 
@@ -418,7 +418,7 @@ public class Metadata {
         final String latest = properties.property(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
         if (latest == null) {
             Log.debug("Helidon version %s does not contain %s, using current CLI version %s", helidonVersion,
-                    LATEST_CLI_PLUGIN_VERSION_PROPERTY, thisCliVersion);
+                      LATEST_CLI_PLUGIN_VERSION_PROPERTY, thisCliVersion);
             return thisCliVersion;
         } else {
             return toMavenVersion(latest);
@@ -427,8 +427,8 @@ public class Metadata {
 
     private static boolean isCliPluginVersionKey(String key) {
         return key.startsWith(CLI_PLUGIN_VERSION_PROPERTY_PREFIX)
-                && key.endsWith(CLI_PLUGIN_VERSION_PROPERTY_SUFFIX)
-                && !key.equals(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
+               && key.endsWith(CLI_PLUGIN_VERSION_PROPERTY_SUFFIX)
+               && !key.equals(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
     }
 
     private static MavenVersion toCliPluginVersion(String key) {
@@ -457,7 +457,7 @@ public class Metadata {
         return requireFile(requireHelidonVersionDir(versionDir).resolve(fileName));
     }
 
-    private boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, boolean quiet) throws UpdateFailed  {
+    private boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, boolean quiet) throws UpdateFailed {
         return checkForUpdates(helidonVersion, checkFile, System.currentTimeMillis(), quiet);
     }
 
@@ -499,19 +499,19 @@ public class Metadata {
                         final String elapsedDays = elapsed.toDaysPart() == 1 ? "day" : "days";
                         if (stale) {
                             Log.debug("stale check is true for %s (last: %s, now: %s, elapsed: %d %s %02d:%02d:%02d)",
-                                    file, lastModifiedTime, currentTime,
-                                    elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
-                                    elapsed.toSecondsPart());
+                                      file, lastModifiedTime, currentTime,
+                                      elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
+                                      elapsed.toSecondsPart());
                         } else {
                             final Duration remain = Duration.ofMillis(remainingMillis);
                             final String remainDays = remain.toDaysPart() == 1 ? "day" : "days";
                             Log.debug("stale check is false for %s (last: %s, now: %s, elapsed: %d %s %02d:%02d:%02d, "
-                                            + "remain: %d %s %02d:%02d:%02d)",
-                                    file, lastModifiedTime, currentTime,
-                                    elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
-                                    elapsed.toSecondsPart(),
-                                    remain.toDaysPart(), remainDays, remain.toHoursPart(), remain.toMinutesPart(),
-                                    remain.toSecondsPart());
+                                      + "remain: %d %s %02d:%02d:%02d)",
+                                      file, lastModifiedTime, currentTime,
+                                      elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
+                                      elapsed.toSecondsPart(),
+                                      remain.toDaysPart(), remainDays, remain.toHoursPart(), remain.toMinutesPart(),
+                                      remain.toSecondsPart());
                         }
                     }
                     return stale;
@@ -564,76 +564,9 @@ public class Metadata {
     }
 
     private MavenVersion readLatestVersion() {
-        try {
-            List<MavenVersion> versions = Files.readAllLines(latestVersionFile, UTF_8)
-                                               .stream()
-                                               .filter(line -> !line.trim().isEmpty())
-                                               .map(MavenVersion::toMavenVersion)
-                                               .collect(Collectors.toList());
-            if (versions.isEmpty()) {
-                throw new IllegalStateException("No version in " + latestVersionFile);
-            }
-
-            // Once helidon.io has been updated with the two line "latest" file, we should
-            // require two versions here; for now, we don't want to fail.
-            // NOTE: FIX THIS IN UpdateMetadata as well!
-            /*
-            latest file:
-
-                2.4.1
-                3.4.12
-
-                # Selection rules.
-                #   The CLI selects the one rule that applies to itself based on its version
-                #   and filters out the latest from the list above.
-                #
-                # Version range works as follows:
-                #   [1.0,2.0) versions 1.0 (included) to 2.0 (not included)
-                #   [1.0,2.0] versions 1.0 to 2.0 (both included)
-                #   [1.5,) versions 1.5 and higher
-                #   (,1.0],[1.2,) versions up to 1.0 (included) and 1.2 or higher
-                #
-                # Notes:
-                #   1 == 1.0 == 1.0.0
-                #   X-alpha is the lowest version of X
-
-                cli.[2-alpha,3-alpha).latest=[2-alpha,3-alpha)
-                cli.[3-alpha,).latest=[3-alpha,)
-
-             */
-
-            /*
-                1, Copy VersionRange from maven next to MavenVersion under common/maven module:
-                    a. Make Restriction a nested class
-                    b. Replace exceptions with IllegalArgumentException
-                    c. Replace use of ArtifactVersion interface with ComparableVersion.
-                2. Add utility to process new "latest" file under cli/common module, e.g.
-                    LatestVersion.create(Path file) -> create(inputStream)
-                    LatestVersion.create(InputStream)
-                3. Change cli/plugin to
-                    a. depend on common/maven and cli/common
-                    b. use shade plugin (https://maven.apache.org/plugins/maven-shade-plugin) including
-                       only the classes we depend on: https://maven.apache.org/plugins/maven-shade-plugin/examples/includes-excludes.html
-                       RELOCATING them to the plugin package: (https://maven.apache.org/plugins/maven-shade-plugin/examples/class-relocation.html)
-                       CONFIGURING to NOT attach artifact: https://maven.apache.org/plugins/maven-shade-plugin/shade-mojo.html
-                            <shadedArtifactAttached>false</shadedArtifactAttached>
-                    c. Use utility from #2
-
-
-               See https://github.com/apache/maven/blob/master/maven-artifact/src/main/java/org/apache/maven/artifact/versioning/VersionRange.java
-             */
-
-
-            if (versions.size() == 1) {
-                return versions.get(0);
-            } else {
-                // TODO RANGE CHECK AS ABOVE, need to do the same in UpdateMetadata
-                return versions.get(1);
-            }
-
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
+        MavenVersion cliVersion = toMavenVersion(Config.buildVersion());
+        return LatestVersion.create(latestVersionFile)
+                            .latest(cliVersion);
     }
 
     /**

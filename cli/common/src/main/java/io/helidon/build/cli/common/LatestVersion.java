@@ -18,6 +18,7 @@ package io.helidon.build.cli.common;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -51,8 +52,8 @@ import static java.util.Objects.requireNonNull;
  * If properties exist whose keys begin with "cli." and end with ".latest", they are treated as rules, where
  * a version range is supplied in the key and one in the value, e.g.:
  * <pre>
- *     cli.[2-alpha,3-alpha).latest=[2-alpha,3-alpha)
- *     cli.[3-alpha,).latest=[3-alpha,)
+ *  cli.[2-alpha,3-alpha).latest=[2-alpha,3-alpha)
+ *  cli.[3-alpha,).latest=[3-alpha,)
  * </pre>
  * The range in the key is used to match the current CLI version, and the value is used to match against
  * the latest version list.
@@ -69,6 +70,28 @@ import static java.util.Objects.requireNonNull;
  *     <li>1 == 1.0 == 1.0.0</li>
  *     <li>X-alpha is the lowest version of X</li>
  * </ul>
+ * Here is a complete example "latest" file:
+ * <pre>
+ *  2.4.1
+ *  3.4.12
+ *
+ *  # Selection rules.
+ *  #   The CLI selects the one rule that applies to itself based on its version
+ *  #   and filters out the latest from the list above.
+ *  #
+ *  # Version range works as follows:
+ *  #   [1.0,2.0) versions 1.0 (included) to 2.0 (not included)
+ *  #   [1.0,2.0] versions 1.0 to 2.0 (both included)
+ *  #   [1.5,) versions 1.5 and higher
+ *  #   (,1.0],[1.2,) versions up to 1.0 (included) and 1.2 or higher
+ *  #
+ *  # Notes:
+ *  #   1 == 1.0 == 1.0.0
+ *  #   X-alpha is the lowest version of X
+ *
+ *  cli.[2-alpha,3-alpha).latest=[2-alpha,3-alpha)
+ *  cli.[3-alpha,).latest=[3-alpha,)
+ * </pre>
  */
 public class LatestVersion {
     private static final VersionRange HELIDON_2 = createFromVersionSpec("[2-alpha,3-alpha)");
@@ -91,18 +114,6 @@ public class LatestVersion {
         }
     }
 
-    private static List<VersionRule> toRules(Map<String, String> properties) {
-        List<VersionRule> rules = new ArrayList<>();
-        properties.forEach((key, value) -> {
-            if (key.startsWith(CLI_PREFIX) && key.endsWith(LATEST_SUFFIX)) {
-                String cliSpec = key.substring(CLI_PREFIX.length(), key.length() - LATEST_SUFFIX.length());
-                VersionRule rule = new VersionRule(cliSpec, value);
-                rules.add(rule);
-            }
-        });
-        return rules;
-    }
-
     /**
      * Creates a new instance from the given "latest" file.
      *
@@ -111,7 +122,7 @@ public class LatestVersion {
      */
     public static LatestVersion create(Path latestFile) {
         try {
-            return create(Files.readAllLines(latestFile));
+            return create(Files.readAllLines(latestFile, StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -145,34 +156,6 @@ public class LatestVersion {
             }
         }
         return new LatestVersion(versions, properties);
-    }
-
-    private static void assertValid(List<String> latestFileLines) {
-
-        // Make sure the first non-empty line is a 2.x version.
-        // Here, we exactly duplicate the way 2.x versions find the first line, which
-        // should have trimmed the line prior to the isEmpty test but did not, so any
-        // blank lines prior to the version MUST not contain whitespace.
-
-        boolean foundVersion = false;
-        for (String line : latestFileLines) {
-            if (!line.isEmpty()) {
-                String trimmedLine = line.trim();
-                if (trimmedLine.isEmpty()) {
-                    throw new IllegalStateException("The first non-empty line must be a 2.x version, but is only whitespace.");
-                }
-                MavenVersion version = toMavenVersion(trimmedLine);
-                if (HELIDON_2.containsVersion(version)) {
-                    foundVersion = true;
-                    break;
-                } else {
-                    throw new IllegalStateException("The first non-empty line must be a 2.x version, is: " + version);
-                }
-            }
-        }
-        if (!foundVersion) {
-            throw new IllegalStateException("No versions found.");
-        }
     }
 
     /**
@@ -214,6 +197,46 @@ public class LatestVersion {
     }
 
     List<VersionRule> rules() {
+        return rules;
+    }
+
+    private static void assertValid(List<String> latestFileLines) {
+
+        // Make sure the first non-empty line is a 2.x version.
+        // Here, we exactly duplicate the way 2.x versions find the first line, which
+        // should have trimmed the line prior to the isEmpty test but did not, so any
+        // blank lines prior to the version MUST not contain whitespace.
+
+        boolean foundVersion = false;
+        for (String line : latestFileLines) {
+            if (!line.isEmpty()) {
+                String trimmedLine = line.trim();
+                if (trimmedLine.isEmpty()) {
+                    throw new IllegalStateException("The first non-empty line must be a 2.x version, but is only whitespace.");
+                }
+                MavenVersion version = toMavenVersion(trimmedLine);
+                if (HELIDON_2.containsVersion(version)) {
+                    foundVersion = true;
+                    break;
+                } else {
+                    throw new IllegalStateException("The first non-empty line must be a 2.x version, is: " + version);
+                }
+            }
+        }
+        if (!foundVersion) {
+            throw new IllegalStateException("No versions found.");
+        }
+    }
+
+    private static List<VersionRule> toRules(Map<String, String> properties) {
+        List<VersionRule> rules = new ArrayList<>();
+        properties.forEach((key, value) -> {
+            if (key.startsWith(CLI_PREFIX) && key.endsWith(LATEST_SUFFIX)) {
+                String cliSpec = key.substring(CLI_PREFIX.length(), key.length() - LATEST_SUFFIX.length());
+                VersionRule rule = new VersionRule(cliSpec, value);
+                rules.add(rule);
+            }
+        });
         return rules;
     }
 
