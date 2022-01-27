@@ -7,6 +7,20 @@ All notable changes to the Helidon CLI will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.2]
+
+### Fixes
+
+- Suppress download progress output during build [568](https://github.com/oracle/helidon-build-tools/issues/568) [332](https://github.com/oracle/helidon-build-tools/issues/332)
+- Need to touch pom.xml twice for dev loop to process the change [429](https://github.com/oracle/helidon-build-tools/issues/429) [569](https://github.com/oracle/helidon-build-tools/issues/569) [576](https://github.com/oracle/helidon-build-tools/issues/576)
+- Fix log level support  [560](https://github.com/oracle/helidon-build-tools/issues/560)
+- Improve error message when unsupported Helidon version is used [627](https://github.com/oracle/helidon-build-tools/627)
+
+### Notes
+
+This version marks the latest feature release of the Helidon CLI for the 2.x versions.
+The upcoming Helidon 3.x archetypes won't be compatible with the 2.x CLI.
+
 ## 2.3.1
 
 This release of helidon-build-tools does not contain changes related to the Helidon CLI.
@@ -143,6 +157,7 @@ This release of helidon-build-tools does not contain changes related to the Heli
 
 Initial release of the Helidon CLI.
 
+[2.3.2]: https://github.com/oracle/helidon-build-tools/compare/2.3.0...2.3.2
 [2.3.0]: https://github.com/oracle/helidon-build-tools/compare/2.2.3...2.3.0
 [2.2.3]: https://github.com/oracle/helidon-build-tools/compare/2.2.2...2.2.3
 [2.2.2]: https://github.com/oracle/helidon-build-tools/compare/2.2.0...2.2.2
