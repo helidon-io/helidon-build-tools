@@ -61,22 +61,9 @@ class LatestVersionTest {
     }
 
     @Test
-    void testFirstLineOnlyWhitespace() {
-        Exception e = assertThrows(IllegalStateException.class, () -> LatestVersion.create(List.of(" ")));
-        assertThat(e.getMessage(), is("The first non-empty line must be a 2.x version, but is only whitespace."));
-    }
-
-    @Test
-    void testFirstLineIsNot2x() {
-        Exception e = assertThrows(IllegalStateException.class, () -> LatestVersion.create(List.of("3.0.0-alpha")));
-        assertThat(e.getMessage(), is("The first non-empty line must be a 2.x version, is: 3.0.0-alpha"));
-    }
-
-    @Test
-    void testNoMatchingRule() {
-        LatestVersion latest = LatestVersion.create(List.of("2.4.2", "3.0.1", RULE_HELIDON_2, RULE_HELIDON_3));
-        Exception e = assertThrows(IllegalStateException.class, () -> latest.latest(toMavenVersion("1.0")));
-        assertThat(e.getMessage(), is("No rule matches CLI version 1.0"));
+    void testUnknownEntry() {
+        Exception e = assertThrows(IllegalStateException.class, () -> LatestVersion.create(List.of("foo")));
+        assertThat(e.getMessage(), is("Unknown entry: foo"));
     }
 
     @Test
@@ -110,6 +97,17 @@ class LatestVersionTest {
         assertThat(latest.rules().size(), is(0));
         assertThat(latest.properties().size(), is(0));
         assertThat(latest.latest(toMavenVersion("2.3.0")), is(toMavenVersion("3.0.0")));
+    }
+
+    @Test
+    void testNoMatchingRule() {
+        LatestVersion latest = LatestVersion.create(List.of("2.4.2", "3.0.1", RULE_HELIDON_2));
+        assertThat(latest, is(not(nullValue())));
+        assertThat(latest.versions().size(), is(2));
+        assertThat(latest.rules().size(), is(1));
+        assertThat(latest.properties().size(), is(1));
+        assertThat(latest.latest(toMavenVersion("2.3.0")), is(toMavenVersion("2.4.2")));
+        assertThat(latest.latest(toMavenVersion("3.5")), is(toMavenVersion("3.0.1")));
     }
 
     @Test

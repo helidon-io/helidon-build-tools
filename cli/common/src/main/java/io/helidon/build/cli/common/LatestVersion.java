@@ -40,16 +40,13 @@ import static java.util.Objects.requireNonNull;
  * Provides "latest" version selection for a given CLI version given a set of "latest" versions and
  * rules for given CLI versions.
  * <p>
- * Supports the "latest" file format:
- * <ol>
- *   <li>The first non-empty line must be a 2.x version number for backwards compatibility.</li>
- *   <li>May be followed by any of the following:</li>
- *   <ul>
- *       <li>lines containing additional version numbers</li>
- *       <li>lines starting with '#', which are treated as comments and ignored</li>
- *       <li>lines containing key=value properties</li>
- *   </ul>
- * </ol>
+ * Supports the "latest" file format, which <em>must</em> contain at least one line containing only a version, and may contain
+ * zero or more of the following:
+ * <ul>
+ *      <li>lines containing additional version numbers</li>
+ *      <li>lines starting with '#', which are treated as comments and ignored</li>
+ *      <li>lines containing key=value properties</li>
+ * </ul>
  * If properties exist whose keys begin with "cli." and end with ".latest", they are treated as rules, where
  * a version range is supplied in the key and one in the value, e.g.:
  * <pre>
@@ -66,27 +63,25 @@ import static java.util.Objects.requireNonNull;
  *  [1.5,) versions 1.5 and higher
  *  (,1.0],[1.2,) versions up to 1.0 (included) and 1.2 or higher
  * </pre>
- * Notes that:
- * <ul>
- *     <li>1 == 1.0 == 1.0.0</li>
- *     <li>X-alpha is the lowest version of X</li>
- * </ul>
- * Here is a complete example "latest" file:
+ * <h2>Example "latest" File</h2>
  * <pre>
  *  2.4.1
  *  3.4.12
  *
  *  # Selection rules.
+ *  #
  *  #   The CLI selects the one rule that applies to itself based on its version
  *  #   and filters out the latest from the list above.
  *  #
  *  # Version range works as follows:
+ *  #
  *  #   [1.0,2.0) versions 1.0 (included) to 2.0 (not included)
  *  #   [1.0,2.0] versions 1.0 to 2.0 (both included)
  *  #   [1.5,) versions 1.5 and higher
  *  #   (,1.0],[1.2,) versions up to 1.0 (included) and 1.2 or higher
  *  #
  *  # Notes:
+ *  #
  *  #   1 == 1.0 == 1.0.0
  *  #   X-alpha is the lowest version of X
  *
@@ -95,7 +90,6 @@ import static java.util.Objects.requireNonNull;
  * </pre>
  */
 public class LatestVersion {
-    private static final VersionRange HELIDON_2 = createFromVersionSpec("[2-alpha,3-alpha)");
     private static final String COMMENT = "#";
     private static final String PROPERTY_SEP = "=";
     private static final String CLI_PREFIX = "cli.";
@@ -136,7 +130,6 @@ public class LatestVersion {
      * @return The instance.
      */
     public static LatestVersion create(List<String> latestFileLines) {
-        assertValid(latestFileLines);
         List<MavenVersion> versions = new ArrayList<>();
         Map<String, String> properties = new HashMap<>();
 
@@ -151,33 +144,35 @@ public class LatestVersion {
                         throw new IllegalStateException("Duplicate property '" + key + "'");
                     }
                     properties.put(key, value);
-                } else {
+                } else if (Character.isDigit(line.charAt(0))) {
                     versions.add(toMavenVersion(line));
+                } else {
+                    throw new IllegalStateException("Unknown entry: " + line);
                 }
             }
+        }
+        if (versions.isEmpty()) {
+            throw new IllegalStateException("No versions found.");
         }
         versions.sort(Comparator.reverseOrder());
         return new LatestVersion(versions, properties);
     }
 
     /**
-     * Returns the latest Helidon version for the given CLI version.
+     * Returns the latest Helidon version for the given CLI version. If no rule exists for this version, the
+     * most recent Helidon version will be returned. If a rule does exist, the most recent Helidon version that
+     * matches the rule will be returned.
      *
      * @param cliVersion The CLI version.
-     * @return The latest Helidon version.
-     * @throws IllegalStateException If an error occurs.
+     * @return The Helidon version.
      */
     public MavenVersion latest(MavenVersion cliVersion) {
-        if (rules.isEmpty()) {
-            return versions.get(0);
-        } else {
-            for (VersionRule rule : rules) {
-                if (rule.matches(cliVersion)) {
-                    return rule.latest(versions, cliVersion);
-                }
+        for (VersionRule rule : rules) {
+            if (rule.matches(cliVersion)) {
+                return rule.latest(versions, cliVersion);
             }
-            throw new IllegalStateException("No rule matches CLI version " + cliVersion);
         }
+        return versions.get(0);
     }
 
     /**
@@ -200,34 +195,6 @@ public class LatestVersion {
 
     List<VersionRule> rules() {
         return rules;
-    }
-
-    private static void assertValid(List<String> latestFileLines) {
-
-        // Make sure the first non-empty line is a 2.x version.
-        // Here, we exactly duplicate the way 2.x versions find the first line, which
-        // should have trimmed the line prior to the isEmpty test but did not, so any
-        // blank lines prior to the version MUST not contain whitespace.
-
-        boolean foundVersion = false;
-        for (String line : latestFileLines) {
-            if (!line.isEmpty()) {
-                String trimmedLine = line.trim();
-                if (trimmedLine.isEmpty()) {
-                    throw new IllegalStateException("The first non-empty line must be a 2.x version, but is only whitespace.");
-                }
-                MavenVersion version = toMavenVersion(trimmedLine);
-                if (HELIDON_2.containsVersion(version)) {
-                    foundVersion = true;
-                    break;
-                } else {
-                    throw new IllegalStateException("The first non-empty line must be a 2.x version, is: " + version);
-                }
-            }
-        }
-        if (!foundVersion) {
-            throw new IllegalStateException("No versions found.");
-        }
     }
 
     private static List<VersionRule> toRules(Map<String, String> properties) {

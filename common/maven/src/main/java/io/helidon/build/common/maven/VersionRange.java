@@ -32,7 +32,6 @@ import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 public class VersionRange {
 
     private static final Map<String, VersionRange> CACHE_SPEC = Collections.synchronizedMap(new WeakHashMap<>());
-    private static final Map<String, VersionRange> CACHE_VERSION = Collections.synchronizedMap(new WeakHashMap<>());
 
     private final MavenVersion recommendedVersion;
     private final List<Restriction> restrictions;
@@ -249,23 +248,23 @@ public class VersionRange {
             this.upperBoundInclusive = upperBoundInclusive;
         }
 
-        public MavenVersion getLowerBound() {
+        MavenVersion getLowerBound() {
             return lowerBound;
         }
 
-        public boolean isLowerBoundInclusive() {
+        boolean isLowerBoundInclusive() {
             return lowerBoundInclusive;
         }
 
-        public MavenVersion getUpperBound() {
+        MavenVersion getUpperBound() {
             return upperBound;
         }
 
-        public boolean isUpperBoundInclusive() {
+        boolean isUpperBoundInclusive() {
             return upperBoundInclusive;
         }
 
-        public boolean containsVersion(MavenVersion version) {
+        boolean containsVersion(MavenVersion version) {
             if (lowerBound != null) {
                 int comparison = lowerBound.compareTo(version);
 
