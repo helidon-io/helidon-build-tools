@@ -115,6 +115,7 @@ public interface RichTextStyle {
          *
          * @param function function used to map each object to a style
          * @param objects  objects to be mapped as style
+         * @param <T> function parameter type
          */
         @SafeVarargs
         public <T> StyleList(Function<T, RichTextStyle> function, T... objects) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
+/**
+ * Attribution license.
+ */
 @XmlRootElement()
 @XmlAccessorType(XmlAccessType.FIELD)
 public class AttributionLicense {
@@ -43,18 +46,38 @@ public class AttributionLicense {
         this.text = text;
     }
 
+    /**
+     * Set the name.
+     *
+     * @param name name
+     */
     public void setName(String name) {
         this.name = name;
     }
 
-    public void setText(String text) {
-        this.text = text;
-    }
-
+    /**
+     * Get the name.
+     *
+     * @return name
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Set the text.
+     *
+     * @param text text
+     */
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    /**
+     * Get the text.
+     *
+     * @return text
+     */
     public String getText() {
         return text;
     }

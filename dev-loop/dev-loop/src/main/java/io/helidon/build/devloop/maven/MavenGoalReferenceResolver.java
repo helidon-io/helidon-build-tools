@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static java.util.Objects.requireNonNull;
  * Finally, any lifecycle phase (e.g. {@code process-resources}) may be used as a reference, and will expand to the corresponding
  * list of goals.
  * <br><br>
- * <h3>Example References</h3>
+ * <h2>Example References</h2>
  * <ol>
  *     <li>{@code org.apache.maven.plugins:maven-exec-plugin:3.0.0:exec@compile-sass}</li>
  *     <li>{@code org.apache.maven.plugins:maven-exec-plugin:exec@compile-sass}</li>

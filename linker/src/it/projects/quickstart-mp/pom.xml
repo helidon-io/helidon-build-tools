@@ -31,6 +31,10 @@
     <version>1.0-SNAPSHOT</version>
     <name>quickstart-mp</name>
 
+    <properties>
+        <native.image.skip>true</native.image.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>

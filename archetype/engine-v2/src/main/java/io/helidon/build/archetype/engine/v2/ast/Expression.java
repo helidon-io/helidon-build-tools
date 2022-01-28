@@ -132,6 +132,9 @@ public final class Expression {
      */
     public static final class UnresolvedVariableException extends RuntimeException {
 
+        /**
+         * Variable.
+         */
         private final String variable;
 
         private UnresolvedVariableException(String variable) {

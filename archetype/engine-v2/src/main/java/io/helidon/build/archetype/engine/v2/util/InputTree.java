@@ -144,6 +144,9 @@ public class InputTree {
         node.children().forEach(this::addNodes);
     }
 
+    /**
+     * Input tree node.
+     */
     public abstract static class Node {
         private int id;      // non-final to allow prune() to fix this to avoid sparse arrays
         private Node parent; // non-final to allow preset siblings to become children
@@ -286,6 +289,11 @@ public class InputTree {
             return index;
         }
 
+        /**
+         * Create a node index.
+         *
+         * @return node index
+         */
         protected abstract NodeIndex createIndex();
 
         /**
@@ -383,6 +391,12 @@ public class InputTree {
             }
         }
 
+        /**
+         * Print a string description of this node.
+         *
+         * @param value value
+         * @return description
+         */
         protected String toString(Object value) {
             String path = path();
             if (path == null) {
@@ -419,11 +433,19 @@ public class InputTree {
             return maxIndex + 1;
         }
 
+        /**
+         * Reset the state.
+         */
         void reset() {
             current = 0;
             completed = false;
         }
 
+        /**
+         * Move to the next index.
+         *
+         * @return {@code true} if completed, {@code false} otherwise
+         */
         boolean next() {
             current++;
             if (current > maxIndex) {
@@ -432,6 +454,11 @@ public class InputTree {
             return completed;
         }
 
+        /**
+         * Get the current index.
+         *
+         * @return current index
+         */
         int current() {
             if (current > maxIndex) {
                 current = 0;
@@ -440,13 +467,31 @@ public class InputTree {
             return current;
         }
 
+        /**
+         * Get the completed attribute.
+         *
+         * @return completed
+         */
         boolean completed() {
             return completed;
         }
     }
 
+    /**
+     * Input node.
+     */
     public static class InputNode extends Node {
 
+        /**
+         * Create a new input node.
+         *
+         * @param id     id
+         * @param parent parent
+         * @param kind   kind
+         * @param path   path
+         * @param script script
+         * @param line   line
+         */
         InputNode(int id, Node parent, Kind kind, String path, Path script, int line) {
             super(id, parent, path, kind, script, line);
         }
@@ -462,7 +507,16 @@ public class InputTree {
         }
     }
 
+    /**
+     * Root node.
+     */
     public static class Root extends Node {
+
+        /**
+         * Create a new root node.
+         *
+         * @param id id
+         */
         Root(int id) {
             super(id, null, null, Kind.ROOT, Path.of("/"), 0);
         }
@@ -484,10 +538,24 @@ public class InputTree {
         }
     }
 
+    /**
+     * List node.
+     */
     public static class ListNode extends InputNode {
         private final List<String> defaults;
         private final BiFunction<List<String>, List<String>, List<List<String>>> combiner;
 
+        /**
+         * Create a new list node.
+         *
+         * @param id       id
+         * @param parent   parent
+         * @param path     path
+         * @param defaults defaults
+         * @param script   script
+         * @param line     line
+         * @param combiner combiner
+         */
         ListNode(int id, Node parent, String path, List<String> defaults, Path script, int line,
                  BiFunction<List<String>, List<String>, List<List<String>>> combiner) {
             super(id, parent, Kind.LIST, path, script, line);
@@ -501,9 +569,16 @@ public class InputTree {
             return new ListIndex(combiner.apply(values, defaults));
         }
 
+        /**
+         * List index.
+         */
         static class ListIndex extends NodeIndex {
             private final List<String> valuesAsString;
 
+            /**
+             * Create a new list index.
+             * @param combinations combinations
+             */
             ListIndex(List<List<String>> combinations) {
                 super(combinations.size());
                 this.valuesAsString = new ArrayList<>(combinations.size());
@@ -511,6 +586,13 @@ public class InputTree {
             }
         }
 
+        /**
+         * Compute the default combinations for a list.
+         *
+         * @param listValues list values
+         * @param defaults   list defaults
+         * @return combinations
+         */
         static List<List<String>> defaultListCombinations(List<String> listValues, List<String> defaults) {
 
             // To be complete, we would generate all possible combinations of the list of values (not permutations, since
@@ -567,9 +649,22 @@ public class InputTree {
         }
     }
 
+    /**
+     * Value node.
+     */
     public static class ValueNode extends Node {
         private final String value;
 
+        /**
+         * Create a new value node.
+         *
+         * @param id     id
+         * @param parent parent
+         * @param path   path
+         * @param value  value
+         * @param script script
+         * @param line   line
+         */
         ValueNode(int id, Node parent, String path, String value, Path script, int line) {
             super(id, parent, path, Kind.VALUE, script, line);
             // Allow null values for text as a way to represent optionals with no default; these will not be collected
@@ -579,6 +674,11 @@ public class InputTree {
             this.value = value;
         }
 
+        /**
+         * Get the value.
+         *
+         * @return value
+         */
         String value() {
             return value;
         }
@@ -603,14 +703,31 @@ public class InputTree {
         }
     }
 
+    /**
+     * Preset node.
+     */
     public static class PresetNode extends Node {
         private final Map<String, String> presets;
 
+        /**
+         * Create a new preset node.
+         *
+         * @param id     id
+         * @param parent parent
+         * @param path   path
+         * @param script script
+         * @param line   line
+         */
         PresetNode(int id, Node parent, String path, Path script, int line) {
             super(id, parent, path, Kind.PRESETS, script, line);
             this.presets = new LinkedHashMap<>();
         }
 
+        /**
+         * Get the presets.
+         *
+         * @return presets
+         */
         Map<String, String> presets() {
             return presets;
         }
