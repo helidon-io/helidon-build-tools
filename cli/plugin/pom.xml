@@ -123,9 +123,15 @@
                         <configuration>
                             <overwriteExistingFiles>true</overwriteExistingFiles>
                             <module>
-                                <moduleInfoFile>
-                                    src/main/java/module-info.java
-                                </moduleInfoFile>
+                                <moduleInfo>
+                                    <name>io.helidon.build.cli.plugin</name>
+                                    <exports>
+                                        io.helidon.build.cli.plugin;
+                                    </exports>
+                                    <opens>
+                                        io.helidon.build.cli.plugin
+                                    </opens>
+                                </moduleInfo>
                             </module>
                         </configuration>
                     </execution>

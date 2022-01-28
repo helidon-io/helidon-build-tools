@@ -1,0 +1,19 @@
+2.4.1
+3.0.0
+
+# Selection rules.
+#   The CLI selects the one rule that applies to itself based on its version
+#   and filters out the latest from the list above.
+#
+# Version range works as follows:
+#   [1.0,2.0) versions 1.0 (included) to 2.0 (not included)
+#   [1.0,2.0] versions 1.0 to 2.0 (both included)
+#   [1.5,) versions 1.5 and higher
+#   (,1.0],[1.2,) versions up to 1.0 (included) and 1.2 or higher
+#
+# Notes:
+#   1 == 1.0 == 1.0.0
+#   X-alpha is the lowest version of X
+
+cli.[2-alpha,3-alpha).latest=[2-alpha,3-alpha)
+cli.[3-alpha,).latest=[3-alpha,)

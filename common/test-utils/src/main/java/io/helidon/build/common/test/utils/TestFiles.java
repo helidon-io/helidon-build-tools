@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,18 @@ public abstract class TestFiles {
         } catch (URISyntaxException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    /**
+     * Returns a path to a resource file or directory under "target/test-classes/" for the given test class.
+     *
+     * @param testClass The test class.
+     * @param resourcePath The resource path.
+     * @return The path.
+     */
+    public static Path testResourcePath(Class<?> testClass, String resourcePath) {
+        Path targetDir = targetDir(testClass);
+        return targetDir.resolve("test-classes/" + resourcePath);
     }
 
     /**

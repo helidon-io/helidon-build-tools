@@ -15,11 +15,19 @@
  */
 package io.helidon.build.cli.common;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
+
+import io.helidon.build.common.Log;
 
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
+import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -32,6 +40,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class LatestVersionTest {
     private static final String RULE_HELIDON_2 = "cli.[2-alpha,3-alpha).latest=[2-alpha,3-alpha)";
     private static final String RULE_HELIDON_3 = "cli.[3-alpha,).latest=[3-alpha,)";
+
+    private static Path latestFile(String fileName) {
+        Path file = testResourcePath(LatestVersionTest.class, "latest-files/" + fileName);
+        Log.info("%n----- Testing latest file '" + fileName + "' -----%n");
+        try {
+            Files.readAllLines(file, StandardCharsets.UTF_8)
+                 .forEach(line -> Log.info("    " + line));
+            Log.info("%n-------------------------------------------");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return file;
+    }
 
     @Test
     void testEmpty() {
@@ -67,7 +88,7 @@ class LatestVersionTest {
 
     @Test
     void testDuplicateProperties() {
-        Exception e = assertThrows(IllegalStateException.class, () -> LatestVersion.create(List.of("2.4.1","k1=v1", "k1=v2")));
+        Exception e = assertThrows(IllegalStateException.class, () -> LatestVersion.create(List.of("2.4.1", "k1=v1", "k1=v2")));
         assertThat(e.getMessage(), is("Duplicate property 'k1'"));
     }
 
@@ -93,7 +114,7 @@ class LatestVersionTest {
 
     @Test
     void testProperties() {
-        LatestVersion latest = LatestVersion.create(List.of("2.4.1", "k1=v1", "k2=v2","k3=foo=bar"));
+        LatestVersion latest = LatestVersion.create(List.of("2.4.1", "k1=v1", "k2=v2", "k3=foo=bar"));
         assertThat(latest, is(not(nullValue())));
         assertThat(latest.versions().size(), is(1));
         assertThat(latest.rules().size(), is(0));
@@ -113,5 +134,34 @@ class LatestVersionTest {
         assertThat(latest.properties().size(), is(2));
         assertThat(latest.latest(toMavenVersion("2.3.0")), is(toMavenVersion("2.4.2")));
         assertThat(latest.latest(toMavenVersion("3.0.0")), is(toMavenVersion("3.0.1")));
+    }
+
+    @Test
+    void testHelidon3LatestFile() {
+        Path latestFile = latestFile("latest-3x");
+        LatestVersion latest = LatestVersion.create(latestFile);
+        assertThat(latest, is(not(nullValue())));
+        assertThat(latest.versions().size(), is(2));
+        assertThat(latest.rules().size(), is(2));
+        assertThat(latest.properties().size(), is(2));
+        assertThat(latest.latest(toMavenVersion("2.3.0")), is(toMavenVersion("2.4.1")));
+        assertThat(latest.latest(toMavenVersion("3.0.0")), is(toMavenVersion("3.0.0")));
+    }
+
+    @Test
+    void testHelidon3LatestFileWithLimitForSpecificCLIVersion() {
+        Path latestFile = latestFile("latest-3x-limit-3.5");
+        LatestVersion latest = LatestVersion.create(latestFile);
+        assertThat(latest, is(not(nullValue())));
+        assertThat(latest.versions().size(), is(3));
+        assertThat(latest.rules().size(), is(3));
+        assertThat(latest.properties().size(), is(3));
+        assertThat(latest.latest(toMavenVersion("2.3.0")), is(toMavenVersion("2.4.1")));
+        assertThat(latest.latest(toMavenVersion("3.0.0")), is(toMavenVersion("3.7.0")));
+        assertThat(latest.latest(toMavenVersion("3.1.0")), is(toMavenVersion("3.7.0")));
+        assertThat(latest.latest(toMavenVersion("3.4.9")), is(toMavenVersion("3.7.0")));
+        assertThat(latest.latest(toMavenVersion("3.5.0")), is(toMavenVersion("3.4.0")));
+        assertThat(latest.latest(toMavenVersion("3.6.0")), is(toMavenVersion("3.7.0")));
+        assertThat(latest.latest(toMavenVersion("5.0.0")), is(toMavenVersion("3.7.0")));
     }
 }
