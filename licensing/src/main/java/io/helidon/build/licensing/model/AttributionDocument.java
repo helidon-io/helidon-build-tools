@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
+/**
+ * Attribution document.
+ */
 @XmlRootElement(name = "attribution-document")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class AttributionDocument {
@@ -43,6 +46,7 @@ public class AttributionDocument {
 
     /**
      * Set dependencies.
+     *
      * @param dependencies list of dependencies to add.
      */
     public void setDependencies(List<AttributionDependency> dependencies) {
@@ -51,6 +55,7 @@ public class AttributionDocument {
 
     /**
      * Set licenses.
+     *
      * @param licenses set list of licenses to add.
      */
     public void setLicenses(List<AttributionLicense> licenses) {
@@ -59,6 +64,7 @@ public class AttributionDocument {
 
     /**
      * Get Dependencies.
+     *
      * @return Dependencies
      */
     public List<AttributionDependency> getDependencies() {
@@ -67,14 +73,17 @@ public class AttributionDocument {
 
     /**
      * Add one dependency.
+     *
      * @param dependency add a single dependency.
      */
+    @SuppressWarnings("unused")
     public void addDependency(AttributionDependency dependency) {
         this.dependencies.add(dependency);
     }
 
     /**
      * Get licenses.
+     *
      * @return licenses
      */
     public List<AttributionLicense> getLicenses() {
@@ -83,6 +92,7 @@ public class AttributionDocument {
 
     /**
      * Add one license.
+     *
      * @param license license to add.
      */
     public void addLicense(AttributionLicense license) {

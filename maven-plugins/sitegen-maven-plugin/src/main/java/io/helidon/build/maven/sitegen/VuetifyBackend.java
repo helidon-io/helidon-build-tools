@@ -324,6 +324,7 @@ public class VuetifyBackend extends Backend {
      * Create a new {@link Builder} instance.
      * @return the created builder
      */
+    @SuppressWarnings("unchecked")
     public static Builder builder(){
         return new Builder();
     }

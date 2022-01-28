@@ -16,6 +16,7 @@
 #
 
 require_env() {
+    # shellcheck disable=SC2086
     if [ -z "$(eval echo \$${1})" ] ; then
         echo "ERROR: ${1} not set in the environment"
         return 1
@@ -23,10 +24,17 @@ require_env() {
 }
 if [ -n "${JENKINS_HOME}" ] ; then
     export JAVA_HOME="/tools/jdk-17"
+    # nexus-staging requires the following --add-opens
+    MAVEN_OPTS="${MAVEN_OPTS} --add-opens java.base/java.util=ALL-UNNAMED"
+    MAVEN_OPTS="${MAVEN_OPTS} --add-opens java.base/java.lang.reflect=ALL-UNNAMED"
+    MAVEN_OPTS="${MAVEN_OPTS} --add-opens java.base/java.text=ALL-UNNAMED"
+    MAVEN_OPTS="${MAVEN_OPTS} --add-opens java.desktop/java.awt.font=ALL-UNNAMED"
+    # configure maven logging
     MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
     MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.showDateTime=true"
     MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss,SSS"
     export MAVEN_OPTS
+
     export PATH="/tools/apache-maven-3.6.3/bin:${JAVA_HOME}/bin:${PATH}"
     if [ -n "${GITHUB_SSH_KEY}" ] ; then
         export GIT_SSH_COMMAND="ssh -i ${GITHUB_SSH_KEY}"
@@ -47,24 +55,24 @@ if [ -n "${JENKINS_HOME}" ] ; then
     fi
     if [ ! -e "${HOME}/.npmrc" ] ; then
         if [ -n "${NPM_CONFIG_REGISTRY}" ] ; then
-            echo "registry = ${NPM_CONFIG_REGISTRY}" >> ${HOME}/.npmrc
+            echo "registry = ${NPM_CONFIG_REGISTRY}" >> "${HOME}"/.npmrc
         fi
         if [ -n "${https_proxy}" ] ; then
-            echo "https-proxy = ${https_proxy}" >> ${HOME}/.npmrc
+            echo "https-proxy = ${https_proxy}" >> "${HOME}"/.npmrc
         fi
         if [ -n "${http_proxy}" ] ; then
-            echo "proxy = ${http_proxy}" >> ${HOME}/.npmrc
+            echo "proxy = ${http_proxy}" >> "${HOME}"/.npmrc
         fi
         if [ -n "${NO_PROXY}" ] ; then
-            echo "noproxy = ${NO_PROXY}" >> ${HOME}/.npmrc
+            echo "noproxy = ${NO_PROXY}" >> "${HOME}"/.npmrc
         fi
     fi
 
     if [ -n "${GPG_PUBLIC_KEY}" ] ; then
-        gpg --import --no-tty --batch ${GPG_PUBLIC_KEY}
+        gpg --import --no-tty --batch "${GPG_PUBLIC_KEY}"
     fi
     if [ -n "${GPG_PRIVATE_KEY}" ] ; then
-        gpg --allow-secret-key-import --import --no-tty --batch ${GPG_PRIVATE_KEY}
+        gpg --allow-secret-key-import --import --no-tty --batch "${GPG_PRIVATE_KEY}"
     fi
     if [ -n "${GPG_PASSPHRASE}" ] ; then
         echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf

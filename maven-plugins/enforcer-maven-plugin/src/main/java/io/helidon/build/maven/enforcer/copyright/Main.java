@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,11 +46,11 @@ import io.helidon.build.maven.enforcer.RuleFailure;
  * </ul>
  *
  * Example template file (very simple):
- * <code><pre>
+ * <pre><code>
  * Copyright (c) YYYY Oracle and/or its affiliates.
  *
  * This program is made available under the Apache 2.0 license.
- * </pre></code>
+ * </code></pre>
  */
 public final class Main {
     private Main() {

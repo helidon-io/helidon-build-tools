@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -ex
 #
 # Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 #
@@ -43,7 +43,8 @@ export PATH=/tools/graalvm-ce-java17-21.3.0/bin:${PATH}
 
 if [ "${1}" = "--release" ] ; then
     # get maven version
-    MVN_VERSION=$(mvn "${MAVEN_ARGS}" \
+    # shellcheck disable=SC2086
+    MVN_VERSION=$(mvn ${MAVEN_ARGS} \
         -q \
         -f "${WS_DIR}"/pom.xml \
         -Dexec.executable="echo" \
@@ -52,12 +53,13 @@ if [ "${1}" = "--release" ] ; then
         org.codehaus.mojo:exec-maven-plugin:1.3.1:exec)
 
     # strip qualifier
-    readonly VERSION="${MVN_VERSION%-*}"
-    git fetch origin refs/tags/"${VERSION}":refs/tags/"${VERSION}"
+    readonly VERSION="${MVN_VERSION%%-SNAPSHOT}"
+    git fetch origin "refs/tags/${MVN_VERSION}:refs/tags/${VERSION}"
     git checkout refs/tags/"${VERSION}"
 fi
 
-mvn "${MAVEN_ARGS}" -f "${WS_DIR}"/helidon-cli/impl/pom.xml \
+# shellcheck disable=SC2086
+mvn ${MAVEN_ARGS} -f "${WS_DIR}"/cli/impl/pom.xml \
     clean install \
     -DskipTests \
     -Pnative-image \

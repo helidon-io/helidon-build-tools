@@ -1,5 +1,5 @@
 @REM
-@REM Copyright (c) 2021 Oracle and/or its affiliates.
+@REM Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 @REM
 @REM Licensed under the Apache License, Version 2.0 (the "License");
 @REM you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ cd %~dp0\..\..
 if "%~1"=="/release" GOTO Release
 
 mvn %MAVEN_ARGS% ^
-    -f helidon-cli/impl/pom.xml ^
+    -f cli/impl/pom.xml ^
     clean install ^
     -DskipTests ^
     -Pnative-image ^
@@ -34,7 +34,7 @@ set VERSION=%MVN_VERSION:-SNAPSHOT=%
 git fetch origin refs/tags/%VERSION%:refs/tags/%VERSION%
 git checkout refs/tags/%VERSION% && (
   mvn %MAVEN_ARGS% ^
-      -f helidon-cli/impl/pom.xml ^
+      -f cli/impl/pom.xml ^
       clean install ^
       -DskipTests ^
       -Pnative-image ^

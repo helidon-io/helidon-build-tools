@@ -7,6 +7,50 @@ All notable changes to the Helidon CLI will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0-M2]
+
+### Notable New Features
+
+- New V2 archetype engine to support Helidon 3.x and onward [550](https://github.com/oracle/helidon-build-tools/issues/550) [345](https://github.com/oracle/helidon-build-tools/issues/345)
+
+### Changes
+
+- All archetype values can be passed as properties `-Dprop=value` [543](https://github.com/oracle/helidon-build-tools/issues/543)
+- Remove project name [590](https://github.com/oracle/helidon-build-tools/issues/590) [620](https://github.com/oracle/helidon-build-tools/pull/620)
+- Remove `project.directory` from the `.helidon` file [339](https://github.com/oracle/helidon-build-tools/issues/339) [620](https://github.com/oracle/helidon-build-tools/pull/620)
+- Clarify comments in generated user config [624](https://github.com/oracle/helidon-build-tools/pull/624)
+
+### Fixes
+
+- Suppress download progress output during build [332](https://github.com/oracle/helidon-build-tools/issues/332) [568](https://github.com/oracle/helidon-build-tools/pull/568)
+- Need to touch pom.xml twice for dev loop to process the change [429](https://github.com/oracle/helidon-build-tools/issues/429) [569](https://github.com/oracle/helidon-build-tools/pull/569) [576](https://github.com/oracle/helidon-build-tools/pull/576)
+
+## 2.3.1
+
+This release of helidon-build-tools does not contain changes related to the Helidon CLI.
+
+## [2.3.0]
+
+### Fixes
+
+- Metadata errors not reported [487](https://github.com/oracle/helidon-build-tools/issues/487) [506](https://github.com/oracle/helidon-build-tools/pull/506)
+- dev-loop incremental recompilation fails with maven 3.8.2 [499](https://github.com/oracle/helidon-build-tools/issues/499) [500](https://github.com/oracle/helidon-build-tools/pull/500)
+- dev-loop does not re-build for resource files on Windows [357](https://github.com/oracle/helidon-build-tools/issues/357) [483](https://github.com/oracle/helidon-build-tools/issues/483) [498](https://github.com/oracle/helidon-build-tools/pull/498)
+- dev-loop ctrl+c on Windows [511](https://github.com/oracle/helidon-build-tools/pull/511)
+- fix shutdown hooks with native image [520](https://github.com/oracle/helidon-build-tools/pull/520)
+
+### Changes
+
+- Consolidated dev-loop Maven integration code [504](https://github.com/oracle/helidon-build-tools/pull/504/files)
+- Improved process monitoring, reduced CPU usage, improved console printing [511](https://github.com/oracle/helidon-build-tools/pull/511)
+
+### Notes
+
+The dev-loop bug fixes and changes described above are part of the `helidon-cli-maven-plugin`. You may run into the
+described issues if you are using an older version of the plugin. You can use `helidon dev --current` to force the use
+of the plugin matching that matches the cli version.
+
+
 ## [2.2.3]
 
 ### Fixes
@@ -35,7 +79,7 @@ This release of helidon-build-tools does not contain changes related to the Heli
 
 - Do not error if the Maven version cannot be resolved. Allow support of shims [390](https://github.com/oracle/helidon-build-tools/pull/390) [364](https://github.com/oracle/helidon-build-tools/pull/364)
 - CLI always generates project in the same directory [393](https://github.com/oracle/helidon-build-tools/pull/393) [333](https://github.com/oracle/helidon-build-tools/pull/333)
-- Fix bad error message when no Maven is not found in the PATH [](https://github.com/oracle/helidon-build-tools/pull/396) [304](https://github.com/oracle/helidon-build-tools/pull/304)
+- Fix bad error message when no Maven is not found in the PATH [396](https://github.com/oracle/helidon-build-tools/pull/396) [304](https://github.com/oracle/helidon-build-tools/pull/304)
 - Fix aether utility to use Maven settings [397](https://github.com/oracle/helidon-build-tools/pull/397) [383](https://github.com/oracle/helidon-build-tools/issues/383)
 
 ## [2.1.3]
@@ -118,11 +162,13 @@ This release of helidon-build-tools does not contain changes related to the Heli
 
 Initial release of the Helidon CLI.
 
-[2.2.3]: https://github.com/oracle/helidon-build-tools/compare/2.2.2...2.2.3
-[2.2.2]: https://github.com/oracle/helidon-build-tools/compare/2.2.0...2.2.2
-[2.2.0]: https://github.com/oracle/helidon-build-tools/compare/2.1.3...2.2.0
-[2.1.3]: https://github.com/oracle/helidon-build-tools/compare/2.1.2...2.1.3
-[2.1.2]: https://github.com/oracle/helidon-build-tools/compare/2.1.1...2.1.2
-[2.1.0]: https://github.com/oracle/helidon-build-tools/compare/2.0.2...2.1.0
-[2.0.2]: https://github.com/oracle/helidon-build-tools/compare/2.0.1...2.0.2
-[2.0.0]: https://github.com/oracle/helidon-build-tools/tree/2.0.0/helidon-cli
+[3.0.0-M2]: https://github.com/oracle/helidon-build-tools/tree/3.0.0-M2/cli
+[2.3.0]: https://github.com/oracle/helidon-build-tools/compare/2.2.3...2.3.0
+[2.2.3]:    https://github.com/oracle/helidon-build-tools/compare/2.2.2...2.2.3
+[2.2.2]:    https://github.com/oracle/helidon-build-tools/compare/2.2.0...2.2.2
+[2.2.0]:    https://github.com/oracle/helidon-build-tools/compare/2.1.3...2.2.0
+[2.1.3]:    https://github.com/oracle/helidon-build-tools/compare/2.1.2...2.1.3
+[2.1.2]:    https://github.com/oracle/helidon-build-tools/compare/2.1.1...2.1.2
+[2.1.0]:    https://github.com/oracle/helidon-build-tools/compare/2.0.2...2.1.0
+[2.0.2]:    https://github.com/oracle/helidon-build-tools/compare/2.0.1...2.0.2
+[2.0.0]:    https://github.com/oracle/helidon-build-tools/tree/2.0.0/helidon-cli
