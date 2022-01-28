@@ -125,7 +125,7 @@ public class VersionRange {
     }
 
     /**
-     * Select the greatest matching version from the given list, if any.
+     * Select the maximum matching version from the given list, if any.
      *
      * @param versions The versions.
      * @return The version, {@code null} if none match.

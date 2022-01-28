@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -142,8 +143,8 @@ public class LatestVersion {
         for (String rawLine : latestFileLines) {
             String line = rawLine.trim();
             if (!line.isEmpty() && !line.startsWith(COMMENT)) {
-                if (line.contains(PROPERTY_SEP)) {
-                    int index = line.indexOf(PROPERTY_SEP);
+                int index = line.indexOf(PROPERTY_SEP);
+                if (index > 0) {
                     String key = line.substring(0, index).trim();
                     String value = line.substring(index + 1).trim();
                     if (properties.containsKey(key)) {
@@ -155,6 +156,7 @@ public class LatestVersion {
                 }
             }
         }
+        versions.sort(Comparator.reverseOrder());
         return new LatestVersion(versions, properties);
     }
 

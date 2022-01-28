@@ -62,7 +62,7 @@ class LatestVersionTest {
     void testNoMatchingVersionForRule() {
         LatestVersion latest = LatestVersion.create(List.of("2.4.2", "2.5.0", RULE_HELIDON_2, RULE_HELIDON_3));
         Exception e = assertThrows(IllegalStateException.class, () -> latest.latest(toMavenVersion("3.0.0")));
-        assertThat(e.getMessage(), is("No matching version for CLI version 3.0.0 with rule [3-alpha,). Versions: [2.4.2, 2.5.0]"));
+        assertThat(e.getMessage(), is("No matching version for CLI version 3.0.0 with rule [3-alpha,). Versions: [2.5.0, 2.4.2]"));
     }
 
     @Test
@@ -82,13 +82,13 @@ class LatestVersionTest {
     }
 
     @Test
-    void testMultipleVersions() {
+    void testMultipleVersionsNoRules() {
         LatestVersion latest = LatestVersion.create(List.of("2.4.1", "3.0.0"));
         assertThat(latest, is(not(nullValue())));
         assertThat(latest.versions().size(), is(2));
         assertThat(latest.rules().size(), is(0));
         assertThat(latest.properties().size(), is(0));
-        assertThat(latest.latest(toMavenVersion("2.3.0")), is(toMavenVersion("2.4.1")));
+        assertThat(latest.latest(toMavenVersion("2.3.0")), is(toMavenVersion("3.0.0")));
     }
 
     @Test
