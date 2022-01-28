@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -38,6 +37,10 @@ import java.util.zip.ZipInputStream;
 
 import javax.net.ssl.SSLException;
 
+import io.helidon.build.cli.common.LatestVersion;
+import io.helidon.build.common.maven.MavenVersion;
+
+import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -160,14 +163,11 @@ class UpdateMetadata extends Plugin {
         return result;
     }
 
-    private String readLatestVersion() throws Exception {
-        final List<String> lines = Files.readAllLines(latestVersionFile, UTF_8);
-        for (String line : lines) {
-            if (!line.isEmpty()) {
-                return line.trim();
-            }
-        }
-        throw new IllegalStateException("No version in " + latestVersionFile);
+    private String readLatestVersion()  {
+        MavenVersion cliVersion = toMavenVersion(this.cliVersion);
+        return LatestVersion.create(latestVersionFile)
+                            .latest(cliVersion)
+                            .toString();
     }
 
     private URL resolve(String fileName) throws Exception {

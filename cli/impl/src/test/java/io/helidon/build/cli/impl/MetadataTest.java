@@ -260,14 +260,14 @@ public class MetadataTest extends MetadataTestBase {
         assertThat(notes, is(not(nullValue())));
         List<MavenVersion> keys = new ArrayList<>(notes.keySet());
         assertThat(keys.size(), is(4));
-        assertThat(keys.get(0), is(toMavenVersion("2.0.0-M2")));
-        assertThat(keys.get(1), is(toMavenVersion("2.0.0-M4")));
-        assertThat(keys.get(2), is(toMavenVersion("2.0.0-RC1")));
-        assertThat(keys.get(3), is(toMavenVersion("2.0.0-RC2")));
-        assertThat(notes.get(keys.get(0)), containsString("dev command"));
-        assertThat(notes.get(keys.get(1)), containsString("archetype support"));
-        assertThat(notes.get(keys.get(2)), containsString("Performance"));
-        assertThat(notes.get(keys.get(3)), containsString("DB archetype"));
+        assertThat(keys.get(0), is(toMavenVersion("2.0.0-RC2")));
+        assertThat(keys.get(1), is(toMavenVersion("2.0.0-RC1")));
+        assertThat(keys.get(2), is(toMavenVersion("2.0.0-M4")));
+        assertThat(keys.get(3), is(toMavenVersion("2.0.0-M2")));
+        assertThat(notes.get(keys.get(0)), containsString("DB archetype"));
+        assertThat(notes.get(keys.get(1)), containsString("Performance"));
+        assertThat(notes.get(keys.get(2)), containsString("archetype support"));
+        assertThat(notes.get(keys.get(3)), containsString("dev command"));
 
         // Check from the latest version (RC1)
 

@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
+import io.helidon.build.cli.common.LatestVersion;
 import io.helidon.build.common.ConfigProperties;
 import io.helidon.build.common.Log;
 import io.helidon.build.common.Requirements;
@@ -43,7 +44,6 @@ import static io.helidon.build.cli.impl.CommandRequirements.requireHelidonVersio
 import static io.helidon.build.common.FileUtils.lastModifiedTime;
 import static io.helidon.build.common.FileUtils.requireFile;
 import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -68,9 +68,9 @@ public class Metadata {
     public static final TimeUnit DEFAULT_UPDATE_FREQUENCY_UNITS = TimeUnit.HOURS;
 
     /**
-     * The Helidon 3.x version.
+     * The minimum Helidon 3.x version.
      */
-    public static final MavenVersion HELIDON_3 = toMavenVersion("3.0.0-SNAPSHOT");
+    public static final MavenVersion HELIDON_3 = toMavenVersion("3.0.0-alpha");
 
     private static final String LATEST_VERSION_FILE_NAME = "latest";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
@@ -200,7 +200,7 @@ public class Metadata {
      * Returns the {@code helidon-cli-maven-plugin} version for the given Helidon version.
      *
      * @param helidonVersion The version.
-     * @param quiet          If info messages should be suppressed.
+     * @param quiet If info messages should be suppressed.
      * @return The version.
      * @throws UpdateFailed if the metadata update failed
      */
@@ -213,7 +213,7 @@ public class Metadata {
      *
      * @param helidonVersion The version.
      * @param thisCliVersion This CLI version.
-     * @param quiet          If info messages should be suppressed.
+     * @param quiet If info messages should be suppressed.
      * @return The version.
      * @throws UpdateFailed if the metadata update failed
      */
@@ -254,7 +254,7 @@ public class Metadata {
      * Returns the CLI version for the given Helidon version.
      *
      * @param helidonVersion The version.
-     * @param quiet          If info messages should be suppressed.
+     * @param quiet If info messages should be suppressed.
      * @return The properties.
      * @throws UpdateFailed if the metadata update failed
      */
@@ -266,7 +266,7 @@ public class Metadata {
      * Checks if there is a more recent CLI version available and returns the version if so.
      *
      * @param thisCliVersion The version of this CLI.
-     * @param quiet          If info messages should be suppressed.
+     * @param quiet If info messages should be suppressed.
      * @return A valid CLI version if a more recent CLI is available.
      * @throws UpdateFailed if the metadata update failed
      */
@@ -284,7 +284,7 @@ public class Metadata {
      * Returns the release notes for the latest Helidon version that are more recent than the given CLI version.
      *
      * @param latestHelidonVersion The latest Helidon version.
-     * @param sinceCliVersion      The CLI version to start with.
+     * @param sinceCliVersion The CLI version to start with.
      * @return The notes, in sorted order.
      * @throws UpdateFailed if the metadata update failed
      */
@@ -300,7 +300,7 @@ public class Metadata {
                                                  .map(Metadata::versionOfCliMessageKey)
                                                  .map(MavenVersion::toMavenVersion)
                                                  .filter(v -> v.isGreaterThan(sinceCliVersion))
-                                                 .sorted()
+                                                 .sorted(Comparator.reverseOrder())
                                                  .collect(Collectors.toList());
         final Map<MavenVersion, String> result = new LinkedHashMap<>();
         versions.forEach(v -> result.put(v, props.property(toCliMessageKey(v))));
@@ -333,7 +333,7 @@ public class Metadata {
      * Returns the metadata properties for the given Helidon version.
      *
      * @param helidonVersion The version.
-     * @param quiet          If info messages should be suppressed.
+     * @param quiet If info messages should be suppressed.
      * @return The properties.
      * @throws UpdateFailed if the metadata update failed
      */
@@ -348,7 +348,7 @@ public class Metadata {
      * @return The catalog.
      * @throws UpdateFailed if the metadata update failed
      */
-    public ArchetypeCatalog catalogOf(String helidonVersion) throws UpdateFailed  {
+    public ArchetypeCatalog catalogOf(String helidonVersion) throws UpdateFailed {
         return catalogOf(toMavenVersion(helidonVersion));
     }
 
@@ -418,7 +418,7 @@ public class Metadata {
         final String latest = properties.property(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
         if (latest == null) {
             Log.debug("Helidon version %s does not contain %s, using current CLI version %s", helidonVersion,
-                    LATEST_CLI_PLUGIN_VERSION_PROPERTY, thisCliVersion);
+                      LATEST_CLI_PLUGIN_VERSION_PROPERTY, thisCliVersion);
             return thisCliVersion;
         } else {
             return toMavenVersion(latest);
@@ -427,8 +427,8 @@ public class Metadata {
 
     private static boolean isCliPluginVersionKey(String key) {
         return key.startsWith(CLI_PLUGIN_VERSION_PROPERTY_PREFIX)
-                && key.endsWith(CLI_PLUGIN_VERSION_PROPERTY_SUFFIX)
-                && !key.equals(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
+               && key.endsWith(CLI_PLUGIN_VERSION_PROPERTY_SUFFIX)
+               && !key.equals(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
     }
 
     private static MavenVersion toCliPluginVersion(String key) {
@@ -457,7 +457,7 @@ public class Metadata {
         return requireFile(requireHelidonVersionDir(versionDir).resolve(fileName));
     }
 
-    private boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, boolean quiet) throws UpdateFailed  {
+    private boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, boolean quiet) throws UpdateFailed {
         return checkForUpdates(helidonVersion, checkFile, System.currentTimeMillis(), quiet);
     }
 
@@ -499,19 +499,19 @@ public class Metadata {
                         final String elapsedDays = elapsed.toDaysPart() == 1 ? "day" : "days";
                         if (stale) {
                             Log.debug("stale check is true for %s (last: %s, now: %s, elapsed: %d %s %02d:%02d:%02d)",
-                                    file, lastModifiedTime, currentTime,
-                                    elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
-                                    elapsed.toSecondsPart());
+                                      file, lastModifiedTime, currentTime,
+                                      elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
+                                      elapsed.toSecondsPart());
                         } else {
                             final Duration remain = Duration.ofMillis(remainingMillis);
                             final String remainDays = remain.toDaysPart() == 1 ? "day" : "days";
                             Log.debug("stale check is false for %s (last: %s, now: %s, elapsed: %d %s %02d:%02d:%02d, "
-                                            + "remain: %d %s %02d:%02d:%02d)",
-                                    file, lastModifiedTime, currentTime,
-                                    elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
-                                    elapsed.toSecondsPart(),
-                                    remain.toDaysPart(), remainDays, remain.toHoursPart(), remain.toMinutesPart(),
-                                    remain.toSecondsPart());
+                                      + "remain: %d %s %02d:%02d:%02d)",
+                                      file, lastModifiedTime, currentTime,
+                                      elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
+                                      elapsed.toSecondsPart(),
+                                      remain.toDaysPart(), remainDays, remain.toHoursPart(), remain.toMinutesPart(),
+                                      remain.toSecondsPart());
                         }
                     }
                     return stale;
@@ -564,17 +564,9 @@ public class Metadata {
     }
 
     private MavenVersion readLatestVersion() {
-        try {
-            final List<String> lines = Files.readAllLines(latestVersionFile, UTF_8);
-            for (String line : lines) {
-                if (!line.isEmpty()) {
-                    return toMavenVersion(line.trim());
-                }
-            }
-            throw new IllegalStateException("No version in " + latestVersionFile);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
+        MavenVersion cliVersion = toMavenVersion(Config.buildVersion());
+        return LatestVersion.create(latestVersionFile)
+                            .latest(cliVersion);
     }
 
     /**
@@ -582,7 +574,6 @@ public class Metadata {
      * This is a checked exception by design to ensure a proper error handling.
      */
     public static class UpdateFailed extends Exception {
-
         private UpdateFailed(Plugins.PluginFailed ex) {
             super(ex.getMessage(), ex);
         }
