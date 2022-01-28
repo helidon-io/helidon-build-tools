@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@ public class VuetifyNavigation implements Model {
 
     /**
      * Get the top level navigation items.
+     *
      * @return {@code List<Item>}, never {@code null}
      */
     public List<Item> getItems() {
@@ -64,6 +65,7 @@ public class VuetifyNavigation implements Model {
 
     /**
      * Get the main navigation glyph.
+     *
      * @return the {@link Glyph} instance if set, {@code null} otherwise
      */
     public Glyph getGlyph() {
@@ -72,6 +74,7 @@ public class VuetifyNavigation implements Model {
 
     /**
      * Get the main navigation title.
+     *
      * @return the title, never {@code null}
      */
     public String getTitle() {
@@ -122,6 +125,7 @@ public class VuetifyNavigation implements Model {
 
         /**
          * Set the main navigation title.
+         *
          * @param title the title to use
          * @return the {@link Builder} instance
          */
@@ -132,6 +136,7 @@ public class VuetifyNavigation implements Model {
 
         /**
          * Set the main navigation glyph.
+         *
          * @param glyph the glyph to use
          * @return the {@link Builder} instance
          */
@@ -142,6 +147,7 @@ public class VuetifyNavigation implements Model {
 
         /**
          * Set the top level navigation items.
+         *
          * @param items the items to use
          * @return the {@link Builder} instance
          */
@@ -152,22 +158,23 @@ public class VuetifyNavigation implements Model {
 
         /**
          * Apply the configuration represented by the given {@link Config} node.
+         *
          * @param node a {@link Config} node containing configuration values to apply
          * @return the {@link Builder} instance
          */
         public Builder config(Config node) {
             node.get(TITLE_PROP)
-                    .asString()
-                    .ifPresent(it -> put(TITLE_PROP, it));
+                .asString()
+                .ifPresent(it -> put(TITLE_PROP, it));
 
             node.get(GLYPH_PROP)
-                    .ifExists(it -> put(GLYPH_PROP, Glyph.builder().config(it).build()));
+                .ifExists(it -> put(GLYPH_PROP, Glyph.builder().config(it).build()));
 
             node.get(ITEMS_PROP)
-                    .asNodeList()
-                    .ifPresent(it -> put(ITEMS_PROP, it.stream()
-                            .map(n -> Item.from(n, true))
-                            .collect(Collectors.toList())));
+                .asNodeList()
+                .ifPresent(it -> put(ITEMS_PROP, it.stream()
+                                                   .map(n -> Item.from(n, true))
+                                                   .collect(Collectors.toList())));
 
             return this;
         }
@@ -181,13 +188,13 @@ public class VuetifyNavigation implements Model {
                 String attr = entry.getKey();
                 Object val = entry.getValue();
                 switch (attr) {
-                    case(TITLE_PROP):
+                    case (TITLE_PROP):
                         title = asType(val, String.class);
                         break;
-                    case(GLYPH_PROP):
+                    case (GLYPH_PROP):
                         glyph = asType(val, Glyph.class);
                         break;
-                    case(ITEMS_PROP):
+                    case (ITEMS_PROP):
                         items = asList(val, Item.class);
                         break;
                     default:
@@ -200,6 +207,7 @@ public class VuetifyNavigation implements Model {
 
     /**
      * Create a new {@link Builder} instance.
+     *
      * @return the created builder
      */
     public static Builder builder() {
@@ -227,6 +235,7 @@ public class VuetifyNavigation implements Model {
 
         /**
          * Get the item title.
+         *
          * @return the title, may be {@code null} depending on sub-class behavior
          */
         public String getTitle() {
@@ -235,6 +244,7 @@ public class VuetifyNavigation implements Model {
 
         /**
          * Get the item glyph.
+         *
          * @return the glyph, may be {@code null} depending on sub-class behavior
          */
         public Glyph getGlyph() {
@@ -243,6 +253,7 @@ public class VuetifyNavigation implements Model {
 
         /**
          * Test if the item is an instance of {@link Group}.
+         *
          * @return true if the item is {@link Group}, false otherwise
          */
         public boolean isGroup() {
@@ -251,8 +262,9 @@ public class VuetifyNavigation implements Model {
 
         /**
          * Convert this item to a {@link Group}.
-         * @throws IllegalStateException of the is not a an instance of {@link Group}
+         *
          * @return the item as a {@link Group}
+         * @throws IllegalStateException of the is not a an instance of {@link Group}
          */
         public Group asGroup() throws IllegalStateException {
             if (!isGroup()) {
@@ -263,6 +275,7 @@ public class VuetifyNavigation implements Model {
 
         /**
          * Test if the item is an instance of {@link SubGroup}.
+         *
          * @return true if the item is {@link SubGroup}, false otherwise
          */
         public boolean isSubGroup() {
@@ -271,8 +284,9 @@ public class VuetifyNavigation implements Model {
 
         /**
          * Convert this item to a {@link SubGroup}.
-         * @throws IllegalStateException of the is not a an instance of {@link SubGroup}
+         *
          * @return the item as a {@link SubGroup}
+         * @throws IllegalStateException of the is not a an instance of {@link SubGroup}
          */
         public SubGroup asSubGroup() {
             if (!isGroup()) {
@@ -283,6 +297,7 @@ public class VuetifyNavigation implements Model {
 
         /**
          * Test if the item is an instance of {@link Link}.
+         *
          * @return true if the item is {@link Link}, false otherwise
          */
         public boolean isLink() {
@@ -291,8 +306,9 @@ public class VuetifyNavigation implements Model {
 
         /**
          * Convert this item to a {@link Link}.
-         * @throws IllegalStateException of the is not a an instance of {@link Link}
+         *
          * @return the item as a {@link Link}
+         * @throws IllegalStateException of the is not a an instance of {@link Link}
          */
         public Link asLink() {
             if (!isLink()) {
@@ -329,20 +345,22 @@ public class VuetifyNavigation implements Model {
             } else if (node.get(INCLUDES_PROP).exists()
                     || node.get(EXCLUDES_PROP).exists()) {
                 return new Pages(SourcePathFilter.builder()
-                                .config(node)
-                                .build());
+                                                 .config(node)
+                                                 .build());
             }
             throw new IllegalArgumentException("Unknown navigation item type");
         }
 
         /**
          * A base fluent builder for {@link Item} sub-classes.
+         *
          * @param <T> the sub-class type
          */
         protected abstract static class Builder<T extends Item> extends AbstractBuilder<T> {
 
             /**
              * Set the item title.
+             *
              * @param title the title to use
              * @return the {@link Builder} instance
              */
@@ -353,6 +371,7 @@ public class VuetifyNavigation implements Model {
 
             /**
              * Set the item glyph.
+             *
              * @param glyph the glyph to use
              * @return the {@link Builder} instance
              */
@@ -363,18 +382,19 @@ public class VuetifyNavigation implements Model {
 
             /**
              * Apply the configuration represented by the given {@link Config} node.
+             *
              * @param node a {@link Config} node containing configuration values to apply
              * @return the {@link Builder} instance
              */
             public Builder<T> config(Config node) {
                 node.get(TITLE_PROP)
-                        .asString()
-                        .ifPresent(it -> put(TITLE_PROP, it));
+                    .asString()
+                    .ifPresent(it -> put(TITLE_PROP, it));
 
                 node.get(GLYPH_PROP)
-                        .ifExists(c -> put(GLYPH_PROP, Glyph.builder()
-                                .config(c)
-                                .build()));
+                    .ifExists(c -> put(GLYPH_PROP, Glyph.builder()
+                                                        .config(c)
+                                                        .build()));
 
                 return this;
             }
@@ -383,7 +403,7 @@ public class VuetifyNavigation implements Model {
 
     /**
      * Special item type used to match {@link Page} instances.
-     *
+     * <p>
      * The {@link #resolve(java.util.Collection)} method is designed to replace
      * matched pages with {@link Link} instances.
      */
@@ -398,12 +418,12 @@ public class VuetifyNavigation implements Model {
 
         private List<Item> resolve(Collection<Page> allPages) {
             return Page.filter(allPages, pages.getIncludes(), pages.getExcludes())
-                    .stream()
-                    .map(page -> Link.builder()
-                        .href(page.getTargetPath())
-                        .title(page.getMetadata().getTitle())
-                        .build())
-                    .collect(Collectors.toList());
+                       .stream()
+                       .map(page -> Link.builder()
+                                        .href(page.getTargetPath())
+                                        .title(page.getMetadata().getTitle())
+                                        .build())
+                       .collect(Collectors.toList());
         }
 
         /**
@@ -413,6 +433,7 @@ public class VuetifyNavigation implements Model {
 
             /**
              * Set the includes pattern.
+             *
              * @param includes the includes pattern to use
              * @return the {@link Builder} instance
              */
@@ -435,12 +456,12 @@ public class VuetifyNavigation implements Model {
             @Override
             public Builder config(Config node) {
                 node.get(INCLUDES_PROP)
-                        .asList(String.class)
-                        .ifPresent(it -> put(INCLUDES_PROP, it));
+                    .asList(String.class)
+                    .ifPresent(it -> put(INCLUDES_PROP, it));
 
                 node.get(EXCLUDES_PROP)
-                        .asList(String.class)
-                        .ifPresent(it -> put(EXCLUDES_PROP, it));
+                    .asList(String.class)
+                    .ifPresent(it -> put(EXCLUDES_PROP, it));
 
                 return this;
             }
@@ -453,10 +474,10 @@ public class VuetifyNavigation implements Model {
                     String attr = entry.getKey();
                     Object val = entry.getValue();
                     switch (attr) {
-                        case(INCLUDES_PROP):
+                        case (INCLUDES_PROP):
                             includes = asList(val, String.class);
                             break;
-                        case(EXCLUDES_PROP):
+                        case (EXCLUDES_PROP):
                             excludes = asList(val, String.class);
                             break;
                         default:
@@ -464,14 +485,15 @@ public class VuetifyNavigation implements Model {
                     }
                 }
                 return new Pages(SourcePathFilter.builder()
-                        .includes(includes)
-                        .excludes(excludes)
-                        .build());
+                                                 .includes(includes)
+                                                 .excludes(excludes)
+                                                 .build());
             }
         }
 
         /**
          * Create a new {@link Builder} instance.
+         *
          * @return the created builder
          */
         public static Builder builder() {
@@ -489,10 +511,11 @@ public class VuetifyNavigation implements Model {
 
         /**
          * Create a new instance of {@link Group}.
-         * @param title the group title
-         * @param glyph the group glyph
+         *
+         * @param title      the group title
+         * @param glyph      the group glyph
          * @param pathprefix the group path prefix
-         * @param items the group items
+         * @param items      the group items
          */
         protected Group(String title, Glyph glyph, String pathprefix, List<Item> items) {
             super(title, glyph);
@@ -503,6 +526,7 @@ public class VuetifyNavigation implements Model {
 
         /**
          * Get the path prefix associated with this group.
+         *
          * @return the path prefix, may be {@code null}
          */
         public String getPathprefix() {
@@ -511,6 +535,7 @@ public class VuetifyNavigation implements Model {
 
         /**
          * Get the group items.
+         *
          * @return {@code List<Item>}, never {@code null}
          */
         public List<Item> getItems() {
@@ -557,6 +582,7 @@ public class VuetifyNavigation implements Model {
 
             /**
              * Set the group items.
+             *
              * @param items the items to set
              * @return the {@link Builder} instance
              */
@@ -567,6 +593,7 @@ public class VuetifyNavigation implements Model {
 
             /**
              * Set the path prefix.
+             *
              * @param pathprefix the path prefix to use
              * @return the {@link Builder} instance
              */
@@ -580,10 +607,10 @@ public class VuetifyNavigation implements Model {
                 super.config(node);
 
                 node.get(ITEMS_PROP)
-                        .asNodeList()
-                        .ifPresent(it -> put(ITEMS_PROP, it.stream()
-                                .map(n -> Item.from(n, false))
-                                .collect(Collectors.toList())));
+                    .asNodeList()
+                    .ifPresent(it -> put(ITEMS_PROP, it.stream()
+                                                       .map(n -> Item.from(n, false))
+                                                       .collect(Collectors.toList())));
 
                 node.get(PATHPREFIX_PROP).asString().ifPresent(it -> put(PATHPREFIX_PROP, it));
 
@@ -622,6 +649,7 @@ public class VuetifyNavigation implements Model {
 
         /**
          * Create a new {@link Builder} instance.
+         *
          * @return the created builder
          */
         public static Builder builder() {
@@ -692,6 +720,7 @@ public class VuetifyNavigation implements Model {
 
         /**
          * Create a new {@link Builder} instance.
+         *
          * @return the created builder
          */
         public static Builder builder() {
@@ -712,6 +741,11 @@ public class VuetifyNavigation implements Model {
             this.href = href;
         }
 
+        /**
+         * Get the href link attribute.
+         *
+         * @return href
+         */
         public String getHref() {
             return href;
         }
@@ -733,6 +767,7 @@ public class VuetifyNavigation implements Model {
 
             /**
              * Set the link value.
+             *
              * @param href the link value to use
              * @return the {@link Builder} instance
              */
@@ -746,8 +781,8 @@ public class VuetifyNavigation implements Model {
                 super.config(node);
 
                 node.get(HREF_PROP)
-                        .asString()
-                        .ifPresent(it -> put(HREF_PROP, it));
+                    .asString()
+                    .ifPresent(it -> put(HREF_PROP, it));
 
                 return this;
             }

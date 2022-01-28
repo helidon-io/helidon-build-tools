@@ -88,7 +88,7 @@ public class AnsiTextStyle implements RichTextStyle {
     /**
      * Returns the style for the given name.
      * <br><br>
-     * <h3>Text Color Names</h3>
+     * <h4>Text Color Names</h4>
      * <ul>
      *     <li>{@code red}</li>
      *     <li>{@code yellow}</li>
@@ -105,7 +105,7 @@ public class AnsiTextStyle implements RichTextStyle {
      * <br><br>
      * See Portability below for more on {@code default}, {@code bold} and {@code negative}.
      * <br><br>
-     * <h3>Background Color Names</h3>
+     * <h4>Background Color Names</h4>
      * <ul>
      *     <li>{@code bg_red}</li>
      *     <li>{@code bg_yellow}</li>
@@ -119,7 +119,7 @@ public class AnsiTextStyle implements RichTextStyle {
      *     <li>{@code bg_negative}</li>
      * </ul>
      * <br><br>
-     * <h3>Emphasis Names</h3>
+     * <h4>Emphasis Names</h4>
      * <ul>
      *     <li>{@code italic}</li>
      *     <li>{@code bold}</li>
@@ -132,7 +132,7 @@ public class AnsiTextStyle implements RichTextStyle {
      *     <li>{@code blink}</li>
      * </ul>
      * <br><br>
-     * <h3>Aliases</h3>
+     * <h4>Aliases</h4>
      * <br><br>
      * Every text color has the following aliases:
      * <ul>
@@ -161,7 +161,7 @@ public class AnsiTextStyle implements RichTextStyle {
      * The {@code negative} text color and the {@code bg_negative} background color are identical: they invert *both* the default
      * text color and the background color.
      * <br><br>
-     * <h3>Portability</h3>
+     * <h4>Portability</h4>
      * <br><br>
      * Most terminals provide mappings between the standard color names used here and what they actually render. So, for example,
      * you may declare {@code red} but a terminal <em>could</em> be configured to render it as blue; generally, though, themes

@@ -37,6 +37,7 @@ public final class MavenURLConnection extends URLConnection {
      * the object referenced by the URL is not created.
      *
      * @param url the specified URL.
+     * @throws IOException if an IO error occurs
      */
     public MavenURLConnection(URL url) throws IOException {
         super(url);

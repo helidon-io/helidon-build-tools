@@ -232,7 +232,7 @@
                     <version>${version.plugin.javadoc}</version>
                     <configuration>
                         <release>${maven.compiler.release}</release>
-                        <failOnError>false</failOnError>
+                        <failOnError>true</failOnError>
                         <quiet>true</quiet>
                         <sourceFileExcludes>
                             <sourceFileExclude>**/module-info.java</sourceFileExclude>
@@ -418,8 +418,8 @@
                     <configuration>
                         <serverId>ossrh</serverId>
                         <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                        <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                        <skipStagingRepositoryClose>true</skipStagingRepositoryClose>
+                        <autoReleaseAfterClose>false</autoReleaseAfterClose>
+                        <skipStagingRepositoryClose>false</skipStagingRepositoryClose>
                         <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
                         <skipNexusStagingDeployMojo>${maven.deploy.skip}</skipNexusStagingDeployMojo>
                     </configuration>

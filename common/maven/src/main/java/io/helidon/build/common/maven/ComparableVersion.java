@@ -540,10 +540,11 @@ class ComparableVersion implements Comparable<ComparableVersion> {
     }
 
     /**
-     * Returns the canonical version.
+     * Get the canonical version.
      *
-     * @return The version.
+     * @return canonical version
      */
+    @SuppressWarnings("unused")
     public String getCanonical() {
         if (canonical == null) {
             canonical = items.toString();

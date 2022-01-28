@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -443,7 +443,15 @@ public final class ProcessMonitor {
      * Process exception.
      */
     public static class ProcessException extends Exception {
+
+        /**
+         * Monitor.
+         */
         private final ProcessMonitor monitor;
+
+        /**
+         * Timeout.
+         */
         private final boolean timeout;
 
         private ProcessException(ProcessMonitor monitor, boolean timeout) {
@@ -479,6 +487,10 @@ public final class ProcessMonitor {
      * Process failed exception.
      */
     public static final class ProcessFailedException extends ProcessException {
+
+        /**
+         * Exit code.
+         */
         private final int exitCode;
 
         private ProcessFailedException(ProcessMonitor monitor) {
@@ -491,6 +503,7 @@ public final class ProcessMonitor {
          *
          * @return The code.
          */
+        @SuppressWarnings("unused")
         public int exitCode() {
             return exitCode;
         }
