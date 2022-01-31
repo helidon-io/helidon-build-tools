@@ -92,8 +92,6 @@ import static java.util.Objects.requireNonNull;
 public class LatestVersion {
     private static final String COMMENT = "#";
     private static final String PROPERTY_SEP = "=";
-    private static final String CLI_PREFIX = "cli.";
-    private static final String LATEST_SUFFIX = ".latest";
 
     private final List<MavenVersion> versions;
     private final List<VersionRule> rules;
@@ -105,7 +103,7 @@ public class LatestVersion {
         if (properties.isEmpty()) {
             rules = List.of();
         } else {
-            rules = toRules(properties);
+            rules = VersionRule.parse(properties, versions);
         }
     }
 
@@ -169,7 +167,7 @@ public class LatestVersion {
     public MavenVersion latest(MavenVersion cliVersion) {
         for (VersionRule rule : rules) {
             if (rule.matches(cliVersion)) {
-                return rule.latest(versions, cliVersion);
+                return rule.latest(versions);
             }
         }
         return versions.get(0);
@@ -197,43 +195,47 @@ public class LatestVersion {
         return rules;
     }
 
-    private static List<VersionRule> toRules(Map<String, String> properties) {
-        List<VersionRule> rules = new ArrayList<>();
-        properties.forEach((key, value) -> {
-            if (key.startsWith(CLI_PREFIX) && key.endsWith(LATEST_SUFFIX)) {
-                String cliSpec = key.substring(CLI_PREFIX.length(), key.length() - LATEST_SUFFIX.length());
-                VersionRule rule = new VersionRule(cliSpec, value);
-                rules.add(rule);
-            }
-        });
-        return rules;
-    }
-
     static class VersionRule {
+        private static final String CLI_PREFIX = "cli.";
+        private static final String LATEST_SUFFIX = ".latest";
+
         private final VersionRange cliRange;
         private final VersionRange helidonRange;
 
-        VersionRule(String cliRange, String helidonRange) {
-            this(createFromVersionSpec(cliRange), createFromVersionSpec(helidonRange));
+        static List<VersionRule> parse(Map<String, String> properties, List<MavenVersion> versions) {
+            List<VersionRule> rules = new ArrayList<>();
+            properties.forEach((key, value) -> {
+                if (key.startsWith(CLI_PREFIX) && key.endsWith(LATEST_SUFFIX)) {
+                    String cliSpec = key.substring(CLI_PREFIX.length(), key.length() - LATEST_SUFFIX.length());
+                    rules.add(new VersionRule(cliSpec, value, versions));
+                }
+            });
+            return rules;
         }
 
-        VersionRule(VersionRange cliRange, VersionRange helidonRange) {
+        VersionRule(String cliRange, String helidonRange, List<MavenVersion> helidonVersions) {
+            this(createFromVersionSpec(cliRange), createFromVersionSpec(helidonRange), helidonVersions);
+        }
+
+        VersionRule(VersionRange cliRange, VersionRange helidonRange, List<MavenVersion> helidonVersions) {
             this.cliRange = cliRange;
             this.helidonRange = helidonRange;
+            if (helidonRange.matchVersion(helidonVersions) == null) {
+                throw new IllegalStateException(String.format("Rule '%s' does not match any version: %s", this, helidonVersions));
+            }
         }
 
         boolean matches(MavenVersion cliVersion) {
             return cliRange.containsVersion(cliVersion);
         }
 
-        MavenVersion latest(List<MavenVersion> helidonVersions, MavenVersion cliVersion) {
-            MavenVersion latest = helidonRange.matchVersion(helidonVersions);
-            if (latest == null) {
-                String message = String.format("No matching version for CLI version %s with rule %s. Versions: %s",
-                                               cliVersion, helidonRange, helidonVersions);
-                throw new IllegalStateException(message);
-            }
-            return latest;
+        MavenVersion latest(List<MavenVersion> helidonVersions) {
+            return helidonRange.matchVersion(helidonVersions);
+        }
+
+        @Override
+        public String toString() {
+            return CLI_PREFIX + cliRange + LATEST_SUFFIX + PROPERTY_SEP + helidonRange;
         }
     }
 }
