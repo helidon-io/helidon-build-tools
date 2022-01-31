@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.helidon.build.cli.plugin.Log.EOL;
 import static io.helidon.build.cli.plugin.Style.boldBlue;
 import static io.helidon.build.cli.plugin.Style.italic;
 import static java.util.Objects.requireNonNull;
@@ -113,11 +114,14 @@ class GetInfo extends Plugin {
     }
 
     private void log(Map<String, String> info) {
+        StringBuilder b = new StringBuilder();
         info.keySet().stream().sorted().forEach(key -> {
             final String value = info.get(key);
             final String padding = padding(maxWidth, key);
-            Log.info("%s %s %s", italic(key), padding, boldBlue(value));
+            b.append(String.format("%s %s %s", italic(key), padding, boldBlue(value)));
+            b.append(EOL);
         });
+        Log.info(b.toString());
     }
 
     /**
