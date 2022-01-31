@@ -27,9 +27,12 @@ import static java.util.Objects.requireNonNull;
  * Simple logging.
  */
 class Log {
+    /**
+     * Line separator.
+     */
+    public static final String EOL = System.getProperty("line.separator");
     private static final AtomicReference<Consumer<String>> OUT = new AtomicReference<>(System.out::println);
     private static final AtomicReference<Verbosity> VERBOSITY = new AtomicReference<>(Verbosity.NORMAL);
-    private static final String EOL = System.getProperty("line.separator");
     private static final String DEBUG_STYLE = "italic";
     private static final String WARN_STYLE = "YELLOW";
     private static final String ERROR_STYLE = "red";

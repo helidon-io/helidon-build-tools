@@ -39,11 +39,14 @@ import static java.util.stream.Collectors.toMap;
  * Utility to manage user config.
  */
 public class UserConfig {
+    /**
+     * The default project name key.
+     */
+    public static final String DEFAULT_PROJECT_NAME_KEY = "default.project.name";
     private static final String CACHE_DIR_NAME = "cache";
     private static final String PLUGINS_DIR_NAME = "plugins";
     private static final String CONFIG_FILE_NAME = "config";
     private static final String CONFIG_FILE_KEY = "config.file";
-    private static final String DEFAULT_PROJECT_NAME_KEY = "default.project.name";
     private static final String DEFAULT_PROJECT_NAME_DEFAULT_VALUE = "${init_archetype}-${init_flavor}";
     private static final String DEFAULT_GROUP_ID_KEY = "default.group.id";
     private static final String DEFAULT_GROUP_ID_DEFAULT_VALUE = "me.${user.name}-helidon";

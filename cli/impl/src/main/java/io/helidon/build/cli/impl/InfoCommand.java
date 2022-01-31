@@ -29,7 +29,6 @@ import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.common.ConfigProperties;
 import io.helidon.build.common.Log;
-import io.helidon.build.common.Log.Level;
 import io.helidon.build.common.Time;
 import io.helidon.build.common.maven.MavenVersion;
 
@@ -41,8 +40,11 @@ import static io.helidon.build.cli.common.ProjectConfig.PROJECT_MAINCLASS;
 import static io.helidon.build.cli.common.ProjectConfig.PROJECT_RESOURCEDIRS;
 import static io.helidon.build.cli.common.ProjectConfig.PROJECT_SOURCEDIRS;
 import static io.helidon.build.cli.common.ProjectConfig.PROJECT_VERSION;
+import static io.helidon.build.cli.impl.Metadata.HELIDON_3;
+import static io.helidon.build.cli.impl.UserConfig.DEFAULT_PROJECT_NAME_KEY;
 import static io.helidon.build.cli.impl.VersionCommand.addProjectProperty;
 import static io.helidon.build.common.Log.maxKeyWidth;
+import static io.helidon.build.common.Strings.padding;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Italic;
 
@@ -52,15 +54,20 @@ import static io.helidon.build.common.ansi.AnsiTextStyles.Italic;
 @Command(name = "info", description = "Print project information")
 public final class InfoCommand extends BaseCommand {
     private static final int MIN_WIDTH = "plugin.build.revision".length();
-
+    private static final String EOL = System.getProperty("line.separator");
+    private static final int DEFAULT_BUILDER_SIZE = 2048;
+    private static final int VERBOSE_BUILDER_SIZE = 16384;
+    private static final String PAD = " ";
     private final boolean verbose;
     private final boolean plain;
+    private final StringBuilder builder;
 
     @Creator
     InfoCommand(CommonOptions commonOptions) {
         super(commonOptions, true);
         this.verbose = commonOptions.verbose();
         this.plain = commonOptions.plain();
+        this.builder = new StringBuilder(verbose ? VERBOSE_BUILDER_SIZE : DEFAULT_BUILDER_SIZE);
     }
 
     @Override
@@ -74,7 +81,11 @@ public final class InfoCommand extends BaseCommand {
 
         Map<Object, Object> userConfigProps = new LinkedHashMap<>();
         Map<String, String> properties = Config.userConfig().properties();
-        properties.keySet().stream().sorted().forEach(key -> userConfigProps.put(key, properties.get(key)));
+        properties.keySet()
+                  .stream()
+                  .filter(key -> !key.equals(DEFAULT_PROJECT_NAME_KEY))
+                  .sorted()
+                  .forEach(key -> userConfigProps.put(key, properties.get(key)));
 
         // Build properties
 
@@ -110,29 +121,31 @@ public final class InfoCommand extends BaseCommand {
         Map<Object, Object> metaProps = new LinkedHashMap<>();
         if (verbose) {
             try {
-                Metadata meta = metadata();
-                metaProps.put("cache.dir", meta.rootDir());
+                Metadata metadata = metadata();
+                metaProps.put("cache.dir", metadata.rootDir());
 
-                FileTime lastUpdateTime = meta.lastUpdateTime();
+                FileTime lastUpdateTime = metadata.lastUpdateTime();
                 String formattedTime = Time.toDateTime(lastUpdateTime);
                 metaProps.put("last.update.time", formattedTime);
 
-                MavenVersion latestVersion = meta.latestVersion(true);
+                MavenVersion latestVersion = metadata.latestVersion(true);
                 metaProps.put("latest.version", latestVersion.toString());
 
-                ConfigProperties props = meta.propertiesOf(latestVersion);
+                ConfigProperties props = metadata.propertiesOf(latestVersion);
                 props.keySet().stream().sorted().forEach(key -> metaProps.put(key, props.property(key)));
 
-                ArchetypeCatalog catalog = meta.catalogOf(latestVersion);
-                AtomicInteger counter = new AtomicInteger(0);
-                catalog.entries().forEach(e -> {
-                    String prefix = "archetype." + counter.incrementAndGet();
-                    metaProps.put(prefix + ".artifactId", e.artifactId());
-                    metaProps.put(prefix + ".version", e.version());
-                    metaProps.put(prefix + ".title", e.summary());
-                    metaProps.put(prefix + ".name", e.name());
-                    metaProps.put(prefix + ".tags", toString(e.tags()));
-                });
+                if (latestVersion.isLessThan(HELIDON_3)) {
+                    ArchetypeCatalog catalog = metadata.catalogOf(latestVersion);
+                    AtomicInteger counter = new AtomicInteger(0);
+                    catalog.entries().forEach(e -> {
+                        String prefix = "archetype." + counter.incrementAndGet();
+                        metaProps.put(prefix + ".artifactId", e.artifactId());
+                        metaProps.put(prefix + ".version", e.version());
+                        metaProps.put(prefix + ".title", e.summary());
+                        metaProps.put(prefix + ".name", e.name());
+                        metaProps.put(prefix + ".tags", toString(e.tags()));
+                    });
+                }
             } catch (Exception ignore) {
                 // message has already been logged
             }
@@ -157,21 +170,22 @@ public final class InfoCommand extends BaseCommand {
         // Log them all
 
         int maxWidth = Math.max(maxKeyWidth(userConfigProps, buildProps, systemProps, envVars, projectProps), MIN_WIDTH);
-        log("User Config", userConfigProps, maxWidth);
-        log("Project Config", projectProps, maxWidth);
-        log("General", buildProps, maxWidth);
+        append("User Config", userConfigProps, maxWidth);
+        append("Project Config", projectProps, maxWidth);
+        append("General", buildProps, maxWidth);
         try {
-            Plugins.execute("GetInfo", pluginArgs(maxWidth), 5, Log::info);
+            Plugins.execute("GetInfo", pluginArgs(maxWidth), 5, this::append);
         } catch (Plugins.PluginFailed e) {
             Log.error(e, "Unable to get system info");
         }
-        log("Metadata", metaProps, maxWidth);
-        log("System Properties", systemProps, maxWidth);
-        log("Environment Variables", envVars, maxWidth);
+        append("Metadata", metaProps, maxWidth);
+        append("System Properties", systemProps, maxWidth);
+        append("Environment Variables", envVars, maxWidth);
 
         if (!verbose) {
-            Log.info("%nRun 'helidon info --verbose' for more detail.");
+            appendLine("%nRun 'helidon info --verbose' for more detail.");
         }
+        Log.info(builder.toString());
     }
 
     private List<String> pluginArgs(int maxWidth) {
@@ -184,7 +198,7 @@ public final class InfoCommand extends BaseCommand {
         return args;
     }
 
-    private String toString(List<String> list) {
+    private static String toString(List<String> list) {
         StringBuilder sb = new StringBuilder();
         list.forEach(entry -> {
             if (sb.length() > 0) {
@@ -195,16 +209,28 @@ public final class InfoCommand extends BaseCommand {
         return sb.toString();
     }
 
-    private static void logHeader(String header) {
-        Log.info();
-        Log.info("$(bold | %s)", header);
-        Log.info();
+    private void append(String message) {
+        builder.append(message);
     }
 
-    private static void log(String header, Map<Object, Object> map, int maxKeyWidth) {
+    private void appendLine(String line, Object... args) {
+        builder.append(String.format(line, args));
+        appendLine();
+    }
+
+    private void appendLine() {
+        builder.append(EOL);
+    }
+
+    private void append(String header, Map<Object, Object> map, int maxKeyWidth) {
         if (!map.isEmpty()) {
-            logHeader(header);
-            Log.log(Level.INFO, map, maxKeyWidth, Italic, BoldBlue);
+            appendLine();
+            appendLine("$(bold | %s)", header);
+            appendLine();
+            map.forEach((key, value) -> {
+                String padding = padding(PAD, maxKeyWidth, key.toString());
+                appendLine("%s %s %s", Italic.apply(key), padding, BoldBlue.apply(value));
+            });
         }
     }
 }
