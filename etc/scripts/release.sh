@@ -145,7 +145,8 @@ update_version(){
         -DgenerateBackupPoms="false" \
         -DnewVersion="${FULL_VERSION}" \
         -Dproperty="helidon.version" \
-        -DprocessFromLocalAggregationRoot="false"
+        -DprocessFromLocalAggregationRoot="false" \
+        -DupdateMatchingVersions="false"
 
     local osgi_mvn_v
     osgi_mvn_v="$(osgi_mvn_version "${MVN_VERSION}")"
