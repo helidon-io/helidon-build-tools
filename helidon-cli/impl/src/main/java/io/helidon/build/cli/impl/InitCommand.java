@@ -51,6 +51,7 @@ import static io.helidon.build.util.ProjectConfig.PROJECT_FLAVOR;
 import static io.helidon.build.util.Requirements.failed;
 import static io.helidon.build.util.Requirements.require;
 import static io.helidon.build.util.StyleFunction.BoldBrightCyan;
+import static io.helidon.build.util.StyleFunction.ItalicRed;
 import static io.helidon.build.util.SubstitutionVariables.systemPropertyOrEnvVarSource;
 
 /**
@@ -371,7 +372,7 @@ public final class InitCommand extends BaseCommand {
     }
 
     private void versionLookupFailed(String errorMessage) {
-        Log.info("$(italic,red %s)", errorMessage);
+        Log.info(ItalicRed.apply(errorMessage));
         failed(VERSION_LOOKUP_FAILED);
     }
 
