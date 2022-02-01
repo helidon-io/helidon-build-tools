@@ -160,7 +160,7 @@ final class CommonOptions {
         } catch (Metadata.UpdateFailed e) {
             Log.debug("check for updates failed: %s", e.getMessage());
         } catch (Plugins.PluginFailedUnchecked e) {
-            // already logged
+            // debug message is already logged
         } catch (Exception e) {
             Log.debug("check for updates failed: %s", e.toString());
         }
