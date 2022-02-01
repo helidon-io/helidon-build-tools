@@ -352,8 +352,10 @@ public final class InitCommand extends BaseCommand {
         try {
             metadata.assertVersionIsAvailable(version);
             return true;
-        } catch (IllegalArgumentException | Metadata.UpdateFailed e) {
-            Log.debug(e.getMessage());
+        } catch (IllegalArgumentException | Metadata.UpdateFailed | Plugins.PluginFailedUnchecked e) {
+            if (!(e instanceof Plugins.PluginFailedUnchecked)) {
+                Log.debug(e.getMessage());
+            }
             if (notFoundIsError) {
                 Log.error(VERSION_NOT_FOUND_MESSAGE, version);
             } else {
@@ -363,8 +365,6 @@ public final class InitCommand extends BaseCommand {
                 Log.info();
             }
             return false;
-        } catch (Plugins.PluginFailedUnchecked e) {
-            failed(VERSION_LOOKUP_FAILED);
         } catch (Exception e) {
             Log.info("$(italic,red %s)", e.getMessage());
             failed(VERSION_LOOKUP_FAILED);
