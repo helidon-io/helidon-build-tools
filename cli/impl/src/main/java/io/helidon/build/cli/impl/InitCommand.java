@@ -34,6 +34,7 @@ import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenV
 import static io.helidon.build.common.Requirements.failed;
 import static io.helidon.build.common.Requirements.require;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightCyan;
+import static io.helidon.build.common.ansi.AnsiTextStyles.ItalicRed;
 
 /**
  * The {@code init} command.
@@ -209,7 +210,7 @@ public final class InitCommand extends BaseCommand {
     }
 
     private void versionLookupFailed(String errorMessage) {
-        Log.info("$(italic,red %s)", errorMessage);
+        Log.info(ItalicRed.apply(errorMessage));
         failed(VERSION_LOOKUP_FAILED);
     }
 }
