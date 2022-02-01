@@ -51,7 +51,7 @@ public class MetadataTestBase {
     protected String baseUrl;
     protected Path cacheDir;
     protected Path latestFile;
-    protected CapturingLogWriter logged;
+    protected final CapturingLogWriter logged = CapturingLogWriter.create();
     protected Metadata meta;
     protected MavenVersion latestVersion;
     protected MetadataTestServer testServer;
@@ -74,17 +74,15 @@ public class MetadataTestBase {
         useBaseUrl(baseUrl);
         cacheDir = userConfig.cacheDir();
         latestFile = cacheDir.resolve(LATEST_FILE_NAME);
-        logged = CapturingLogWriter.create();
-        Log.writer(logged);
+        logged.clear();
+        logged.install();
     }
 
     /**
      * Cleanup after each test.
      */
     protected void cleanupEach() {
-        if (logged != null) {
-            logged.uninstall();
-        }
+        logged.uninstall();
         if (testServer != null) {
             testServer.stop();
         }
@@ -135,6 +133,7 @@ public class MetadataTestBase {
                        .updateFrequency(updateFrequency)
                        .updateFrequencyUnits(updateFrequencyUnits)
                        .debugPlugin(true)
+                       .pluginStdOut(logged.stdOut())
                        .build();
     }
 

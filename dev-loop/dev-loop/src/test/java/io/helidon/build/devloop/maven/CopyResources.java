@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package io.helidon.build.devloop.maven;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
-import java.util.function.Consumer;
 
 import io.helidon.build.devloop.BuildComponent;
 import io.helidon.build.devloop.BuildRoot;
@@ -35,7 +35,9 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 public class CopyResources implements BuildStep {
 
     @Override
-    public void incrementalBuild(BuildRoot.Changes changes, Consumer<String> stdOut, Consumer<String> stdErr) throws Exception {
+    public void incrementalBuild(BuildRoot.Changes changes,
+                                 PrintStream stdOut,
+                                 PrintStream stdErr) throws Exception {
         if (!changes.isEmpty()) {
             final BuildRoot sources = changes.root();
             if (sources.buildType().directoryType() == DirectoryType.Resources) {
@@ -47,7 +49,8 @@ public class CopyResources implements BuildStep {
 
                 final Set<Path> changed = changes.addedOrModified();
                 if (!changed.isEmpty()) {
-                    stdOut.accept("Copying " + changed.size() + " resource files");
+                    stdOut.println("Copying " + changed.size() + " resource files");
+                    stdOut.flush();
                     for (final Path srcFile : changed) {
                         final Path outFile = toOutputFile(srcDir, srcFile, outDir);
                         copy(srcFile, outFile, stdOut);
@@ -67,14 +70,16 @@ public class CopyResources implements BuildStep {
         }
     }
 
-    private void copy(Path srcFile, Path outFile, Consumer<String> stdOut) throws IOException {
-        stdOut.accept("Copying resource " + srcFile);
+    private void copy(Path srcFile, Path outFile, PrintStream stdOut) throws IOException {
+        stdOut.println("Copying resource " + srcFile);
+        stdOut.flush();
         Files.copy(srcFile, outFile, REPLACE_EXISTING);
     }
 
-    private void remove(Path outFile, Consumer<String> stdOut) throws IOException {
+    private void remove(Path outFile, PrintStream stdOut) throws IOException {
         if (Files.exists(outFile)) {
-            stdOut.accept("Removing resource " + outFile);
+            stdOut.println("Removing resource " + outFile);
+            stdOut.flush();
             Files.delete(outFile);
         }
     }

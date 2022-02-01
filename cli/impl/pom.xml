@@ -258,6 +258,7 @@
                                         <argument>-H:Path=${build.dir}</argument>
                                         <argument>-H:Name=${finalName}</argument>
                                         <argument>-H:+PrintAnalysisCallTree</argument>
+                                        <argument>--install-exit-handlers</argument>
                                         <argument>--no-fallback</argument>
                                         <argument>-cp</argument>
                                         <argument>${build.dir}${file.separator}${finalName}.jar${path.separator}${build.dir}${file.separator}libs${file.separator}*${path.separator}${build.dir}${file.separator}native</argument>

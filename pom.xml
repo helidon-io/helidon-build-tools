@@ -104,10 +104,10 @@
         <maven.compiler.release>11</maven.compiler.release>
 
         <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF-8</surefire.argLine>
-        <surefire.coverage.argline/>
+        <surefire.coverage.argLine/>
 
         <failsafe.argLine>-Xmx1024m -Dfile.encoding=UTF-8</failsafe.argLine>
-        <failsafe.coverage.argline/>
+        <failsafe.coverage.argLine/>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -267,10 +267,11 @@
                     <configuration>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <!-- DO NOT override argLine instead use surefire.argLine -->
-                        <argLine>${surefire.argLine} ${surefire.coverage.argline}</argLine>
+                        <argLine>${surefire.argLine} ${surefire.coverage.argLine}</argLine>
                         <trimStackTrace>false</trimStackTrace>
                         <systemPropertyVariables>
                             <use.embedded.maven.executor>false</use.embedded.maven.executor>
+                            <io.helidon.build.fast.streams>false</io.helidon.build.fast.streams>
                             <jansi.force>true</jansi.force>
                         </systemPropertyVariables>
                         <excludes>
@@ -292,7 +293,7 @@
                     <version>${version.plugin.failsafe}</version>
                     <configuration>
                         <!-- DO NOT override argLine instead use failsafe.argLine -->
-                        <argLine>${failsafe.argLine} ${failsafe.coverage.argline}</argLine>
+                        <argLine>${failsafe.argLine} ${failsafe.coverage.argLine}</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <includes>
                             <include>**/*IT.java</include>

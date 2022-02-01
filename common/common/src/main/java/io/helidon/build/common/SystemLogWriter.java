@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.build.common;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.PrintStream;
 
 import io.helidon.build.common.Log.Level;
 
-/**
- * {@link LogWriter} that writes to {@link System#out} and {@link System#err}.
- */
-public class SystemLogWriter implements LogWriter {
+import static io.helidon.build.common.PrintStreams.STDERR;
+import static io.helidon.build.common.PrintStreams.STDOUT;
 
-    private static final String WARN_PREFIX = "WARNING: ";
-    private static final String ERROR_PREFIX = "ERROR: ";
-    private static final String EOL = System.getProperty("line.separator");
-    private static final String DEFAULT_LEVEL = "info";
-    private int ordinal;
+/**
+ * {@link LogWriter} that writes to {@link PrintStreams#STDOUT} and {@link  PrintStreams#STDERR}.
+ */
+public final class SystemLogWriter extends DefaultLogWriter {
+
+    /**
+     * Installs an instance of this type as the writer in {@link Log} at the given {@link Level}.
+     *
+     * @param level The level.
+     * @return The instance.
+     */
+    public static SystemLogWriter install(Level level) {
+        final SystemLogWriter writer = create(level);
+        Log.writer(writer);
+        return writer;
+    }
 
     /**
      * Returns a new instance.
@@ -37,8 +46,7 @@ public class SystemLogWriter implements LogWriter {
      * @return The instance.
      */
     public static SystemLogWriter create() {
-        final Level level = Level.valueOf(System.getProperty(LEVEL_PROPERTY, DEFAULT_LEVEL).toUpperCase());
-        return create(level);
+        return new SystemLogWriter();
     }
 
     /**
@@ -51,91 +59,33 @@ public class SystemLogWriter implements LogWriter {
         return new SystemLogWriter(level);
     }
 
-    /**
-     * Create a new instance.
-     *
-     * @param level The level at or above which messages should be logged.
-     */
-    protected SystemLogWriter(Level level) {
-        level(level);
+    private final PrintStream stdErr;
+    private final PrintStream stdOut;
+
+    private SystemLogWriter() {
+        super();
+        this.stdOut = PrintStreams.autoFlush(STDOUT);
+        this.stdErr = PrintStreams.autoFlush(STDERR);
     }
 
-    /**
-     * Sets the level.
-     *
-     * @param level The new level.
-     */
-    public void level(Level level) {
-        this.ordinal = level.ordinal();
-    }
-
-    /**
-     * Get the level.
-     *
-     * @return level
-     */
-    public Level level() {
-        return Level.values()[ordinal];
+    private SystemLogWriter(Level level) {
+        super(level);
+        this.stdOut = PrintStreams.autoFlush(STDOUT);
+        this.stdErr = PrintStreams.autoFlush(STDERR);
     }
 
     @Override
-    public boolean isDebug() {
-        return Level.DEBUG.ordinal() >= ordinal;
+    public PrintStream stdOut() {
+        return stdOut;
     }
 
     @Override
-    public boolean isVerbose() {
-        return Level.VERBOSE.ordinal() >= ordinal;
+    public PrintStream stdErr() {
+        return stdErr;
     }
 
     @Override
-    @SuppressWarnings("checkstyle:AvoidNestedBlocks")
-    public void write(Level level, Throwable thrown, String message, Object[] args) {
-        if (level.ordinal() >= ordinal) {
-            final String msg = render(thrown, message, args);
-            switch (level) {
-                case DEBUG:
-                case VERBOSE:
-                case INFO: {
-                    System.out.println(msg);
-                    break;
-                }
-                case WARN: {
-                    System.err.println(WARN_PREFIX + msg);
-                    break;
-                }
-                case ERROR: {
-                    System.err.println(ERROR_PREFIX + msg);
-                    break;
-                }
-                default: {
-                    throw new Error();
-                }
-            }
-        }
-    }
-
-    private String render(Throwable thrown, String message, Object[] args) {
-        String rendered = String.format(message, args);
-        String trace = null;
-        if (thrown != null) {
-            if (isDebug()) {
-                final StringWriter sw = new StringWriter();
-                try (PrintWriter pw = new PrintWriter(sw)) {
-                    thrown.printStackTrace(pw);
-                    trace = sw.toString();
-                } catch (Exception ignored) {
-                }
-            } else if (isVerbose()) {
-                trace = thrown.toString();
-            }
-        }
-        if (trace == null) {
-            return rendered;
-        } else if (rendered.isEmpty()) {
-            return trace;
-        } else {
-            return rendered + EOL + trace;
-        }
+    public boolean isSystem() {
+        return true;
     }
 }

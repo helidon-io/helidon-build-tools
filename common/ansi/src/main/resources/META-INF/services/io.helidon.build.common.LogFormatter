@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-io.helidon.build.common.ansi.AnsiLogWriter
+io.helidon.build.common.ansi.AnsiLogFormatter

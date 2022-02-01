@@ -26,12 +26,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.spi.ToolProvider;
 
 import io.helidon.build.common.Log;
+import io.helidon.build.common.Log.Level;
+import io.helidon.build.common.LogFormatter;
+import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.linker.util.JavaRuntime;
 
 import static io.helidon.build.common.FileUtils.fileName;
 import static io.helidon.build.common.FileUtils.fromWorking;
 import static io.helidon.build.common.FileUtils.sizeOf;
+import static io.helidon.build.common.PrintStreams.STDERR;
+import static io.helidon.build.common.PrintStreams.STDOUT;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightGreen;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldYellow;
@@ -312,8 +317,8 @@ public final class Linker {
                 try {
                     ProcessMonitor.builder()
                                   .processBuilder(new ProcessBuilder().command(command).directory(root))
-                                  .stdOut(Log::info)
-                                  .stdErr(Log::warn)
+                                  .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(Level.INFO)))
+                                  .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(Level.WARN)))
                                   .transform(INDENT)
                                   .capture(false)
                                   .build()

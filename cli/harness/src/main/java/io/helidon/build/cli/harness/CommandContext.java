@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import io.helidon.build.cli.harness.CommandModel.CommandInfo;
+import io.helidon.build.common.DefaultLogWriter;
 import io.helidon.build.common.Log;
 import io.helidon.build.common.Log.Level;
 import io.helidon.build.common.LogWriter;
@@ -76,7 +77,7 @@ public final class CommandContext {
         /**
          * Create a new instance.
          *
-         * @param lookup function used to lookup the internal options
+         * @param lookup function used to look up the internal options
          */
         public InternalOptions(BiFunction<String, String, String> lookup) {
             this.lookup = lookup != null ? lookup : (v1, v2) -> v2;
@@ -93,7 +94,7 @@ public final class CommandContext {
         public static final String RICH_TEXT_DEFAULT_VALUE = "true";
 
         /**
-         * Returns whether or not rich text should be disabled.
+         * Returns whether rich text should be disabled.
          *
          * @return {@code true} if rich text should not be used (equivalent to {@code --plain} option).
          */
@@ -102,7 +103,7 @@ public final class CommandContext {
         }
     }
 
-    private final AtomicReference<SystemLogWriter> logWriter = new AtomicReference<>();
+    private final AtomicReference<DefaultLogWriter> logWriter = new AtomicReference<>();
     private final CommandRegistry registry;
     private final Properties properties;
     private final InternalOptions internalOptions;
@@ -202,6 +203,7 @@ public final class CommandContext {
          *
          * @return failure, may be {@code null}
          */
+        @SuppressWarnings("unused")
         public Throwable failure() {
             return failure;
         }
@@ -325,6 +327,7 @@ public final class CommandContext {
      * @param message error message
      * @return exit action.
      */
+    @SuppressWarnings("unused")
     public ExitAction exitAction(ExitStatus status, String message) {
         if (status.isWorse(exitAction.status)) {
             exitAction = new ExitAction(status, message);
@@ -338,6 +341,7 @@ public final class CommandContext {
      * @param error error
      * @return exit action.
      */
+    @SuppressWarnings("unused")
     public ExitAction exitAction(Throwable error) {
         exitAction = new ExitAction(error);
         return exitAction;
@@ -442,14 +446,22 @@ public final class CommandContext {
     }
 
     /**
-     * Lazily initialize and return the {@link SystemLogWriter}.
+     * Lazily initialize and return the log writer.
      *
      * @return The writer.
      */
-    private SystemLogWriter logWriter() {
-        SystemLogWriter writer = logWriter.get();
+    private DefaultLogWriter logWriter() {
+        DefaultLogWriter writer = logWriter.get();
         if (writer == null) {
-            writer = SystemLogWriter.create(INFO);
+            if (Log.hasWriter()) {
+                LogWriter installed = Log.writer();
+                if (installed instanceof DefaultLogWriter) {
+                    writer = (DefaultLogWriter) installed;
+                }
+            }
+            if (writer == null) {
+                writer = SystemLogWriter.install(INFO);
+            }
             logWriter.set(writer);
         }
         return writer;
@@ -498,7 +510,7 @@ public final class CommandContext {
     /**
      * CommandContext builder.
      *
-     * @param <T> builder sub-class type
+     * @param <T> builder subclass type
      */
     public abstract static class Builder<T extends Builder<T>> {
 

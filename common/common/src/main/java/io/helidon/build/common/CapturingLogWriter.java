@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,30 +13,60 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.build.common;
 
-import java.util.ArrayList;
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import io.helidon.build.common.Log.Level;
 
+import static io.helidon.build.common.PrintStreams.STDERR;
+import static io.helidon.build.common.PrintStreams.STDOUT;
+
 /**
  * A {@link Log#writer} that captures all output.
  */
-public class CapturingLogWriter implements LogWriter {
+public class CapturingLogWriter extends DefaultLogWriter {
 
     private static final String EOL = System.getProperty("line.separator");
     private final LogWriter delegate;
-    private final List<LogEntry> entries;
+    private final StringBuilder output;
+    private final PrintStream stdOut;
+    private final PrintStream stdErr;
 
     private CapturingLogWriter() {
+        super(Log.Level.DEBUG);
         this.delegate = Log.writer();
-        this.entries = new ArrayList<>();
         if (delegate instanceof SystemLogWriter) {
             ((SystemLogWriter) delegate).level(Level.DEBUG);
         }
+        this.output = new StringBuilder();
+        this.stdOut = PrintStreams.delegate(STDOUT, (p, s) -> {
+            p.print(s);
+            output.append(s);
+        });
+        this.stdErr = PrintStreams.delegate(STDERR, (p, s) -> {
+            p.print(s);
+            output.append(s);
+        });
+    }
+
+    @Override
+    public PrintStream stdOut() {
+        return stdOut;
+    }
+
+    @Override
+    public PrintStream stdErr() {
+        return stdErr;
+    }
+
+    @Override
+    public boolean isSystem() {
+        return true;
     }
 
     /**
@@ -113,12 +143,6 @@ public class CapturingLogWriter implements LogWriter {
     }
 
     @Override
-    public void write(Level level, Throwable thrown, String message, Object... args) {
-        delegate.write(level, thrown, message, args);
-        entries.add(new LogEntry(level, thrown, message, args));
-    }
-
-    @Override
     public boolean isDebug() {
         return delegate.isDebug();
     }
@@ -129,13 +153,6 @@ public class CapturingLogWriter implements LogWriter {
     }
 
     /**
-     * Clear the entries.
-     */
-    public void clear() {
-        entries.clear();
-    }
-
-    /**
      * Uninstall this writer.
      */
     public void uninstall() {
@@ -143,27 +160,46 @@ public class CapturingLogWriter implements LogWriter {
     }
 
     /**
-     * Returns the captured log entries.
-     *
-     * @return The entries.
+     * Install this writer.
      */
-    public List<LogEntry> entries() {
-        return entries;
+    public void install() {
+        Log.writer(this);
     }
 
     /**
-     * Returns the log messages.
-     *
-     * @return The messages.
+     * Clear the captured output.
      */
-    public List<String> messages() {
-        return entries.stream().map(LogEntry::toString).collect(Collectors.toList());
+    public void clear() {
+        output.setLength(0);
     }
 
-    @Override
-    public String toString() {
+    /**
+     * Returns the captured lines.
+     *
+     * @return The lines.
+     */
+    public List<String> lines() {
+        return Arrays.stream(output.toString().split("\\R"))
+                     .collect(Collectors.toList());
+    }
+
+    /**
+     * Get the captured raw output.
+     *
+     * @return output
+     */
+    public String output() {
+        return output.toString();
+    }
+
+    /**
+     * Indent the captured output.
+     *
+     * @return indented output
+     */
+    public String indented() {
         StringBuilder sb = new StringBuilder();
-        messages().forEach(msg -> sb.append("    ").append(msg).append(EOL));
+        lines().forEach(msg -> sb.append("    ").append(msg).append(EOL));
         return sb.toString();
     }
 
@@ -173,7 +209,7 @@ public class CapturingLogWriter implements LogWriter {
      * @return The size.
      */
     public int size() {
-        return entries.size();
+        return output.toString().split("\\R").length;
     }
 
     /**
@@ -203,7 +239,7 @@ public class CapturingLogWriter implements LogWriter {
     }
 
     /**
-     * Test whether or not there is at least one log line that contain all given fragments.
+     * Test whether there is at least one log line that contain all given fragments.
      *
      * @param fragments The fragments.
      * @return {@code true} if at least one line matches all.
@@ -213,7 +249,7 @@ public class CapturingLogWriter implements LogWriter {
     }
 
     /**
-     * Asserts the expected count of log lines that contains all given fragments.
+     * Asserts the expected count of log lines contains all given fragments.
      *
      * @param expectedCount The expected count.
      * @param fragments The fragments.
@@ -228,13 +264,13 @@ public class CapturingLogWriter implements LogWriter {
     }
 
     /**
-     * Returns the count of log lines that contains all given fragments.
+     * Returns the count of log lines contains all given fragments.
      *
      * @param fragments The fragments.
      * @return The count.
      */
     public int countLinesContainingAll(String... fragments) {
-        return (int) messages().stream().filter(msg -> containsAll(msg, fragments)).count();
+        return (int) lines().stream().filter(msg -> containsAll(msg, fragments)).count();
     }
 
     private static boolean containsAll(String msg, String... fragments) {

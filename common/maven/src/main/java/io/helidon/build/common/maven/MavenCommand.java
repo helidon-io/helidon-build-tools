@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.build.common.maven;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.jar.JarFile;
@@ -36,6 +35,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.common.Log;
 import io.helidon.build.common.OSType;
+import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.Requirements;
 import io.helidon.build.common.ansi.AnsiConsoleInstaller;
@@ -44,6 +44,9 @@ import static io.helidon.build.common.FileUtils.findExecutableInPath;
 import static io.helidon.build.common.FileUtils.listFiles;
 import static io.helidon.build.common.FileUtils.requireDirectory;
 import static io.helidon.build.common.FileUtils.requireJavaExecutable;
+import static io.helidon.build.common.PrintStreams.DEVNULL;
+import static io.helidon.build.common.PrintStreams.STDERR;
+import static io.helidon.build.common.PrintStreams.STDOUT;
 import static io.helidon.build.common.ansi.AnsiConsoleInstaller.isHelidonChildProcess;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Red;
@@ -56,6 +59,7 @@ import static java.util.Objects.requireNonNull;
 public class MavenCommand {
 
     private static final String EOL = System.getProperty("line.separator");
+    private static final PrintStream RED_STDERR = PrintStreams.apply(STDERR, Red::apply);
     private static final OSType OS = OSType.currentOS();
     private static final String MAVEN_BINARY_NAME = OS.mavenExec();
     private static final String MAVEN_HOME_VAR = "MAVEN_HOME";
@@ -76,10 +80,12 @@ public class MavenCommand {
     private final String name;
     private final ProcessBuilder processBuilder;
     private final int maxWaitSeconds;
-    private final Consumer<String> stdOut;
-    private final Consumer<String> stdErr;
+    private final PrintStream stdOut;
+    private final PrintStream stdErr;
     private final Predicate<String> filter;
     private final Function<String, String> transform;
+    private final Runnable beforeShutdown;
+    private final Runnable afterShutdown;
 
     /**
      * Returns a new builder.
@@ -98,6 +104,8 @@ public class MavenCommand {
         this.stdErr = builder.stdErr;
         this.filter = builder.filter;
         this.transform = builder.transform;
+        this.beforeShutdown = builder.beforeShutdown;
+        this.afterShutdown = builder.afterShutdown;
     }
 
     /**
@@ -226,26 +234,36 @@ public class MavenCommand {
     }
 
     /**
+     * Start the command.
+     *
+     * @return ProcessMonitor
+     * @throws IOException if an IO error occurs
+     */
+    public ProcessMonitor start() throws Exception {
+        // Fork process and wait for its completion
+        if (name != null) {
+            Log.info("%s", Bold.apply(name));
+        }
+        return ProcessMonitor.builder()
+                             .processBuilder(processBuilder)
+                             .stdOut(stdOut)
+                             .stdErr(stdErr)
+                             .filter(filter)
+                             .transform(transform)
+                             .beforeShutdown(beforeShutdown)
+                             .afterShutdown(afterShutdown)
+                             .capture(false)
+                             .build()
+                             .start();
+    }
+
+    /**
      * Executes the command.
      *
      * @throws Exception if an error occurs.
      */
     public void execute() throws Exception {
-        // Fork process and wait for its completion
-        if (name != null) {
-            Log.info("%s", Bold.apply(name));
-        }
-        ProcessMonitor processMonitor = ProcessMonitor.builder()
-                                                      .processBuilder(processBuilder)
-                                                      .stdOut(stdOut)
-                                                      .stdErr(stdErr)
-                                                      .filter(filter)
-                                                      .transform(transform)
-                                                      .errorMessageSuffixIfNoOutput("Retry with --verbose or --debug option.")
-                                                      .capture(false)
-                                                      .build()
-                                                      .start();
-        processMonitor.waitForCompletion(maxWaitSeconds, TimeUnit.SECONDS);
+        start().waitForCompletion(maxWaitSeconds, TimeUnit.SECONDS);
     }
 
     private static Path toMavenExecutable(String mavenHomeEnvVar) {
@@ -289,10 +307,12 @@ public class MavenCommand {
         private boolean verbose;
         private int debugPort;
         private int maxWaitSeconds;
-        private Consumer<String> stdOut;
-        private Consumer<String> stdErr;
-        private Predicate<String> filter;
-        private Function<String, String> transform;
+        private PrintStream stdOut = DEVNULL;
+        private PrintStream stdErr = DEVNULL;
+        private Predicate<String> filter = line -> true;
+        private Function<String, String> transform = Function.identity();
+        private Runnable beforeShutdown = () -> {};
+        private Runnable afterShutdown = () -> {};
         private MavenVersion requiredMinimumVersion;
         private ProcessBuilder processBuilder;
 
@@ -415,23 +435,23 @@ public class MavenCommand {
         }
 
         /**
-         * Sets the consumer for process {@code stdout} stream.
+         * Sets the print stream for process {@code stdout}.
          *
-         * @param stdOut The description.
+         * @param stdOut The handler.
          * @return This builder.
          */
-        public Builder stdOut(Consumer<String> stdOut) {
+        public Builder stdOut(PrintStream stdOut) {
             this.stdOut = stdOut;
             return this;
         }
 
         /**
-         * Sets the consumer for process {@code stderr} stream.
+         * Sets the print stream for process {@code stderr}.
          *
-         * @param stdErr The description.
+         * @param stdErr The handler.
          * @return This builder.
          */
-        public Builder stdErr(Consumer<String> stdErr) {
+        public Builder stdErr(PrintStream stdErr) {
             this.stdErr = stdErr;
             return this;
         }
@@ -455,6 +475,28 @@ public class MavenCommand {
          */
         public Builder transform(Function<String, String> transform) {
             this.transform = transform;
+            return this;
+        }
+
+        /**
+         * Sets the before shutdown callback.
+         *
+         * @param beforeShutdown a callback invoked before the process is stopped by the shutdown hook
+         * @return This builder.
+         */
+        public Builder beforeShutdown(Runnable beforeShutdown) {
+            this.beforeShutdown = beforeShutdown;
+            return this;
+        }
+
+        /**
+         * Sets the after shutdown callback.
+         *
+         * @param afterShutdown a callback invoked after the process is stopped by the shutdown hook
+         * @return This builder.
+         */
+        public Builder afterShutdown(Runnable afterShutdown) {
+            this.afterShutdown = afterShutdown;
             return this;
         }
 
@@ -547,19 +589,11 @@ public class MavenCommand {
             requireNonNull(directory, "directory required");
             requireJavaExecutable();
             if (stdOut == null) {
-                stdOut = Builder::printLineOut;
+                stdOut = STDOUT;
             }
             if (stdErr == null) {
-                stdErr = Builder::printRedLineErr;
+                stdErr = RED_STDERR;
             }
-        }
-
-        private static void printLineOut(String line) {
-            System.out.println(line);
-        }
-
-        private static void printRedLineErr(String line) {
-            System.out.println(Red.apply(line));
         }
     }
 }

@@ -184,9 +184,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-invoker-plugin</artifactId>
-                <configuration>
-                    <streamLogs>true</streamLogs>
-                </configuration>
                 <executions>
                     <execution>
                         <goals>

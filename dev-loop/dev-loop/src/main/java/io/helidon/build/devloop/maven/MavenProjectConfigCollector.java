@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ import static io.helidon.build.cli.common.ProjectConfig.PROJECT_SOURCE_INCLUDES;
 import static io.helidon.build.cli.common.ProjectConfig.PROJECT_VERSION;
 import static io.helidon.build.cli.common.ProjectConfig.RESOURCE_INCLUDE_EXCLUDE_LIST_SEPARATOR;
 import static io.helidon.build.cli.common.ProjectConfig.RESOURCE_INCLUDE_EXCLUDE_SEPARATOR;
+import static io.helidon.build.common.PrintStreams.STDOUT;
 import static java.lang.String.join;
 import static java.util.Collections.emptyList;
 import static org.eclipse.aether.util.artifact.JavaScopes.COMPILE;
@@ -65,7 +66,7 @@ import static org.eclipse.aether.util.artifact.JavaScopes.RUNTIME;
 import static org.eclipse.aether.util.filter.DependencyFilterUtils.classpathFilter;
 
 /**
- * Collects settings from a maven project and stores them in the a config file for later use
+ * Collects settings from a maven project and stores them in a config file for later use
  * by {@link MavenProjectSupplier}. Must be installed as a maven extension to run.
  */
 @Component(role = AbstractMavenLifecycleParticipant.class)
@@ -114,7 +115,7 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
             try {
                 // Ensure that we support this project
                 supportedProjectDir = assertSupportedProject(session);
-                // Install our listener so we can know if compilation occurred and succeeded
+                // Install our listener, so we can know if compilation occurred and succeeded
                 final MavenExecutionRequest request = session.getRequest();
                 originalListener = request.getExecutionListener();
                 request.setExecutionListener(new EventListener(originalListener));
@@ -253,7 +254,8 @@ public class MavenProjectConfigCollector extends AbstractMavenLifecycleParticipa
 
     private static void debug(String message, Object... args) {
         if (DEBUG) {
-            System.out.printf(message + "%n", args);
+            STDOUT.printf(message + "%n", args);
+            STDOUT.flush();
         }
     }
 
