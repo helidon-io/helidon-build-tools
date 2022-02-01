@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,10 +42,7 @@ import io.helidon.build.common.RichTextStyle.StyleList;
  */
 public class RichTextRenderer {
 
-    /**
-     * Start token.
-     */
-    public static final String START_TOKEN = "$(";
+    private static final String START_TOKEN = "$(";
     private static final int START_TOKEN_LEN = START_TOKEN.length();
     private static final char ESCAPE_CHAR = '\\';
     private static final char STYLES_SEP_CHAR = ' ';
