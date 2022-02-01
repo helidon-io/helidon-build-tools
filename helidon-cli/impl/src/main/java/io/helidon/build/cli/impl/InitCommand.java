@@ -59,7 +59,7 @@ import static io.helidon.build.util.SubstitutionVariables.systemPropertyOrEnvVar
 @Command(name = "init", description = "Generate a new project")
 public final class InitCommand extends BaseCommand {
     private static final String HELIDON_RELEASES_URL = "https://github.com/oracle/helidon/releases";
-    private static final String VERSION_LOOKUP_FAILED = "$(italic Cannot lookup version, please specify with --version option.)";
+    private static final String VERSION_LOOKUP_FAILED = "$(italic,red Helidon version lookup failed.)";
     private static final String HELIDON_3_MESSAGE = "$(italic,yellow This version of the CLI does not support Helidon 3.x.)%n"
                                                     + "Please see $(blue %s) to upgrade.";
     private static final String VERSION_NOT_FOUND_MESSAGE = "$(italic Helidon version $(red %s) not found.)";
@@ -324,8 +324,6 @@ public final class InitCommand extends BaseCommand {
                 Log.debug("Latest Helidon version found: %s", version);
             } catch (RequirementFailure e) {
                 throw e;
-            } catch (Plugins.PluginFailedUnchecked e) {
-                failed(VERSION_LOOKUP_FAILED);
             } catch (Exception e) {
                 versionLookupFailed(e.getMessage());
             }
