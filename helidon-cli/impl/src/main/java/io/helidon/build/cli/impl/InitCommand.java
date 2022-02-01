@@ -62,9 +62,9 @@ public final class InitCommand extends BaseCommand {
     private static final String VERSION_LOOKUP_FAILED = "$(italic Cannot lookup version, please specify with --version option.)";
     private static final String HELIDON_3_MESSAGE = "$(italic,yellow This version of the CLI does not support Helidon 3.x.)%n"
                                                     + "Please see $(blue %s) to upgrade.";
-    private static final String VERSION_NOT_FOUND_MESSAGE = "$(italic Helidon version $(red %s) not found.";
+    private static final String VERSION_NOT_FOUND_MESSAGE = "$(italic Helidon version $(red %s) not found.)";
     private static final String AVAILABLE_VERSIONS_MESSAGE = "Please see $(blue %s) for available versions.";
-
+    private static final String NOT_FOUND_STATUS = "404";
 
     private final CommonOptions commonOptions;
     private final boolean batch;
@@ -324,14 +324,10 @@ public final class InitCommand extends BaseCommand {
                 Log.debug("Latest Helidon version found: %s", version);
             } catch (RequirementFailure e) {
                 throw e;
-            } catch (Metadata.UpdateFailed e) {
-                Log.info(e.getMessage());
-                failed(VERSION_LOOKUP_FAILED);
             } catch (Plugins.PluginFailedUnchecked e) {
                 failed(VERSION_LOOKUP_FAILED);
             } catch (Exception e) {
-                Log.info("$(italic,red %s)", e.getMessage());
-                failed(VERSION_LOOKUP_FAILED);
+                versionLookupFailed(e.getMessage());
             }
         }
         return version;
@@ -348,16 +344,20 @@ public final class InitCommand extends BaseCommand {
         return isSupportedVersion(version, false);
     }
 
-    private boolean isSupportedVersion(MavenVersion version, boolean notFoundIsError) {
+    private boolean isSupportedVersion(MavenVersion version, boolean notFoundWillFail) {
         try {
             metadata.assertVersionIsAvailable(version);
             return true;
         } catch (IllegalArgumentException | Metadata.UpdateFailed | Plugins.PluginFailedUnchecked e) {
-            if (!(e instanceof Plugins.PluginFailedUnchecked)) {
-                Log.debug(e.getMessage());
+            String message = e.getMessage();
+            if (!message.contains(NOT_FOUND_STATUS)) {
+                versionLookupFailed(message);
             }
-            if (notFoundIsError) {
-                Log.error(VERSION_NOT_FOUND_MESSAGE, version);
+            if (!(e instanceof Plugins.PluginFailedUnchecked)) {
+                Log.debug(message);
+            }
+            if (notFoundWillFail) {
+                Log.info(VERSION_NOT_FOUND_MESSAGE, version);
             } else {
                 Log.info();
                 Log.info(VERSION_NOT_FOUND_MESSAGE, version);
@@ -366,11 +366,15 @@ public final class InitCommand extends BaseCommand {
             }
             return false;
         } catch (Exception e) {
-            Log.info("$(italic,red %s)", e.getMessage());
-            failed(VERSION_LOOKUP_FAILED);
+            versionLookupFailed(e.getMessage());
         }
 
         return false;
+    }
+
+    private void versionLookupFailed(String errorMessage) {
+        Log.info("$(italic,red %s)", errorMessage);
+        failed(VERSION_LOOKUP_FAILED);
     }
 
     private void assertSupportedVersion(String helidonVersion, boolean checkMetadata) {
