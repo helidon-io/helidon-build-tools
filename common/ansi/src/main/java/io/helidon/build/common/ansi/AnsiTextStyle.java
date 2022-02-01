@@ -22,6 +22,7 @@ import java.util.Map;
 
 import io.helidon.build.common.Log;
 import io.helidon.build.common.RichText;
+import io.helidon.build.common.RichTextRenderer;
 import io.helidon.build.common.RichTextStyle;
 
 import org.fusesource.jansi.Ansi;
@@ -276,7 +277,7 @@ public class AnsiTextStyle implements RichTextStyle {
      * @return {@code true} if an Ansi escape sequence found.
      */
     public static boolean isStyled(String text) {
-        return text != null && text.contains(ANSI_ESCAPE_BEGIN);
+        return text != null && (text.contains(ANSI_ESCAPE_BEGIN) || text.contains(RichTextRenderer.START_TOKEN));
     }
 
     /**

@@ -42,7 +42,10 @@ import io.helidon.build.common.RichTextStyle.StyleList;
  */
 public class RichTextRenderer {
 
-    private static final String START_TOKEN = "$(";
+    /**
+     * Start token.
+     */
+    public static final String START_TOKEN = "$(";
     private static final int START_TOKEN_LEN = START_TOKEN.length();
     private static final char ESCAPE_CHAR = '\\';
     private static final char STYLES_SEP_CHAR = ' ';
