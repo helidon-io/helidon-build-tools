@@ -65,7 +65,7 @@ public final class InitCommand extends BaseCommand {
                                                     + "Please see $(blue %s) to upgrade.";
     private static final String VERSION_NOT_FOUND_MESSAGE = "$(italic Helidon version $(red %s) not found.)";
     private static final String AVAILABLE_VERSIONS_MESSAGE = "Please see $(blue %s) for available versions.";
-    private static final String NOT_FOUND_STATUS = "404";
+    private static final String NOT_FOUND_STATUS_MESSAGE = "connection failed with 404";
 
     private final CommonOptions commonOptions;
     private final boolean batch;
@@ -161,14 +161,7 @@ public final class InitCommand extends BaseCommand {
                 helidonVersion = defaultHelidonVersion();
                 Log.info("Using Helidon version " + helidonVersion);
             } else {
-                String defaultHelidonVersion = null;
-                try {
-                    defaultHelidonVersion = defaultHelidonVersion();
-                } catch (RequirementFailure e) {
-                    throw e;
-                } catch (Exception ignored) {
-                    // ignore default version lookup error since we always prompt in interactive
-                }
+                String defaultHelidonVersion = defaultHelidonVersion();
                 helidonVersion = prompt("Helidon version", defaultHelidonVersion, this::isSupportedVersion);
             }
         } else {
@@ -349,10 +342,11 @@ public final class InitCommand extends BaseCommand {
             return true;
         } catch (IllegalArgumentException | Metadata.UpdateFailed | Plugins.PluginFailedUnchecked e) {
             String message = e.getMessage();
-            if (!message.contains(NOT_FOUND_STATUS)) {
-                versionLookupFailed(message);
+            boolean messageLogged = Log.isDebug() && e instanceof Plugins.PluginFailedUnchecked;
+            if (!message.contains(NOT_FOUND_STATUS_MESSAGE)) {
+                versionLookupFailed(messageLogged ? null : message);
             }
-            if (!(e instanceof Plugins.PluginFailedUnchecked)) {
+            if (!messageLogged) {
                 Log.debug(message);
             }
             if (notFoundWillFail) {
@@ -371,16 +365,18 @@ public final class InitCommand extends BaseCommand {
         return false;
     }
 
-    private void versionLookupFailed(String errorMessage) {
-        Log.info(ItalicRed.apply(errorMessage));
-        failed(VERSION_LOOKUP_FAILED);
-    }
-
     private void assertSupportedVersion(String helidonVersion, boolean checkMetadata) {
         MavenVersion version = MavenVersion.toMavenVersion(helidonVersion);
         require(version.isLessThan(HELIDON_3), HELIDON_3_MESSAGE, UPDATE_URL);
         if (checkMetadata) {
             require(isSupportedVersion(version, true), AVAILABLE_VERSIONS_MESSAGE, HELIDON_RELEASES_URL);
         }
+    }
+
+    private void versionLookupFailed(String errorMessage) {
+        if (errorMessage != null) {
+            Log.info(ItalicRed.apply(errorMessage));
+        }
+        failed(VERSION_LOOKUP_FAILED);
     }
 }
