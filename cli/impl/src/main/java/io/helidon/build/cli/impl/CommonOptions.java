@@ -130,6 +130,7 @@ final class CommonOptions {
             }
             metadata = Metadata.builder()
                                .url(metadataUrl)
+                               .debugPlugin(debug)
                                .updateFrequency(config.checkForUpdatesIntervalHours())
                                .build();
         }
@@ -158,7 +159,7 @@ final class CommonOptions {
                 Log.debug("no update available");
             }
         } catch (Plugins.PluginFailedUnchecked ignore) {
-            // message has already been logged
+            // debug message has already been logged
         } catch (Exception e) {
             Log.debug("check for updates failed: %s", e.toString());
         }

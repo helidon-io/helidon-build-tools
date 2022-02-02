@@ -34,6 +34,7 @@ import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenV
 import static io.helidon.build.common.Requirements.failed;
 import static io.helidon.build.common.Requirements.require;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightCyan;
+import static io.helidon.build.common.ansi.AnsiTextStyles.ItalicRed;
 
 /**
  * The {@code init} command.
@@ -41,9 +42,10 @@ import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightCyan;
 @Command(name = "init", description = "Generate a new project")
 public final class InitCommand extends BaseCommand {
     private static final String HELIDON_RELEASES_URL = "https://github.com/oracle/helidon/releases";
-    private static final String VERSION_LOOKUP_FAILED = "$(italic Cannot lookup version, please specify with --version option.)";
-    private static final String VERSION_NOT_FOUND_MESSAGE = "$(italic Helidon version $(red %s) not found.";
+    private static final String VERSION_LOOKUP_FAILED = "$(italic,red Helidon version lookup failed.)";
+    private static final String VERSION_NOT_FOUND_MESSAGE = "$(italic Helidon version $(red %s) not found.)";
     private static final String AVAILABLE_VERSIONS_MESSAGE = "Please see $(blue %s) for available versions.";
+    private static final String NOT_FOUND_STATUS_MESSAGE = "connection failed with 404";
 
     private final CommonOptions commonOptions;
     private final InitOptions initOptions;
@@ -85,12 +87,7 @@ public final class InitCommand extends BaseCommand {
                 helidonVersion = defaultHelidonVersion();
                 Log.info("Using Helidon version " + helidonVersion);
             } else {
-                String defaultHelidonVersion = null;
-                try {
-                    defaultHelidonVersion = defaultHelidonVersion();
-                } catch (Exception ignored) {
-                    // ignore default version lookup error since we always prompt in interactive
-                }
+                String defaultHelidonVersion = defaultHelidonVersion();
                 helidonVersion = prompt("Helidon version", defaultHelidonVersion, this::isSupportedVersion);
             }
             initOptions.helidonVersion(helidonVersion);
@@ -161,14 +158,10 @@ public final class InitCommand extends BaseCommand {
             try {
                 version = metadata.latestVersion().toString();
                 Log.debug("Latest Helidon version found: %s", version);
-            } catch (Metadata.UpdateFailed e) {
-                Log.info(e.getMessage());
-                failed(VERSION_LOOKUP_FAILED);
             } catch (Plugins.PluginFailedUnchecked e) {
-                failed(VERSION_LOOKUP_FAILED);
+                versionLookupFailed(null);
             } catch (Exception e) {
-                Log.info("$(italic,red %s)", e.getMessage());
-                failed(VERSION_LOOKUP_FAILED);
+                versionLookupFailed(e.getMessage());
             }
         }
         return version;
@@ -179,14 +172,21 @@ public final class InitCommand extends BaseCommand {
         return isSupportedVersion(version, false);
     }
 
-    private boolean isSupportedVersion(MavenVersion version, boolean notFoundIsError) {
+    private boolean isSupportedVersion(MavenVersion version, boolean notFoundWillFail) {
         try {
             metadata.assertVersionIsAvailable(version);
             return true;
-        } catch (IllegalArgumentException | Metadata.UpdateFailed e) {
-            Log.debug(e.getMessage());
-            if (notFoundIsError) {
-                Log.error(VERSION_NOT_FOUND_MESSAGE, version);
+        } catch (IllegalArgumentException | Metadata.UpdateFailed | Plugins.PluginFailedUnchecked e) {
+            String message = e.getMessage();
+            boolean messageLogged = Log.isDebug() && e instanceof Plugins.PluginFailedUnchecked;
+            if (!message.contains(NOT_FOUND_STATUS_MESSAGE)) {
+                versionLookupFailed(messageLogged ? null : message);
+            }
+            if (!messageLogged) {
+                Log.debug(message);
+            }
+            if (notFoundWillFail) {
+                Log.info(VERSION_NOT_FOUND_MESSAGE, version);
             } else {
                 Log.info();
                 Log.info(VERSION_NOT_FOUND_MESSAGE, version);
@@ -194,10 +194,8 @@ public final class InitCommand extends BaseCommand {
                 Log.info();
             }
             return false;
-        } catch (Plugins.PluginFailedUnchecked e) {
-            failed(VERSION_LOOKUP_FAILED);
         } catch (Exception e) {
-            Log.info("$(italic,red %s)", e.getMessage());
+            Log.info(ItalicRed.apply(e.getMessage()));
             failed(VERSION_LOOKUP_FAILED);
         }
 
@@ -207,5 +205,12 @@ public final class InitCommand extends BaseCommand {
     private void assertSupportedVersion(String helidonVersion) {
         MavenVersion version = MavenVersion.toMavenVersion(helidonVersion);
         require(isSupportedVersion(version, true), AVAILABLE_VERSIONS_MESSAGE, HELIDON_RELEASES_URL);
+    }
+
+    private void versionLookupFailed(String errorMessage) {
+        if (errorMessage != null) {
+            Log.info(ItalicRed.apply(errorMessage));
+        }
+        failed(VERSION_LOOKUP_FAILED);
     }
 }
