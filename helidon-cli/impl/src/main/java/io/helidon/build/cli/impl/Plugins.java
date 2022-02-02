@@ -53,6 +53,7 @@ public class Plugins {
     private static final String DEBUG_PORT_PROPERTY = "plugin.debug.port";
     private static final int DEFAULT_DEBUG_PORT = Integer.getInteger(DEBUG_PORT_PROPERTY, 0);
     private static final String DEBUG_ARG_PREFIX = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:";
+    private static final boolean FORK = Boolean.getBoolean("plugin.fork");
     private static final String JIT_LEVEL_ONE = "-XX:TieredStopAtLevel=1";
     private static final String JIT_TWO_COMPILER_THREADS = "-XX:CICompilerCount=2";
     private static final String TIMED_OUT_SUFFIX = " timed out";
@@ -130,7 +131,7 @@ public class Plugins {
                                int maxWaitSeconds,
                                PrintStream stdOut) throws PluginFailed {
 
-        if (ImageInfo.inImageRuntimeCode()) {
+        if (FORK || ImageInfo.inImageRuntimeCode()) {
             spawned(pluginName, pluginArgs, maxWaitSeconds, stdOut);
         } else {
             embedded(pluginName, pluginArgs, stdOut);
@@ -203,7 +204,14 @@ public class Plugins {
             if (process.stdErr().contains(UNSUPPORTED_CLASS_VERSION_ERROR)) {
                 unsupportedJavaVersion();
             } else {
-                throw new PluginFailedUnchecked(String.join(EOL, error.monitor().output()));
+                StringBuilder b = new StringBuilder();
+                for (String line : error.monitor().output().split("\\R")) {
+                    if (b.length() > 0) {
+                        b.append(EOL);
+                    }
+                    b.append(line);
+                }
+                throw new PluginFailedUnchecked(b.toString());
             }
         } catch (ProcessTimeoutException error) {
             throw new PluginFailed(pluginName + TIMED_OUT_SUFFIX);
