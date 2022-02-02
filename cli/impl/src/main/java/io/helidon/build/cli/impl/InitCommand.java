@@ -87,12 +87,7 @@ public final class InitCommand extends BaseCommand {
                 helidonVersion = defaultHelidonVersion();
                 Log.info("Using Helidon version " + helidonVersion);
             } else {
-                String defaultHelidonVersion = null;
-                try {
-                    defaultHelidonVersion = defaultHelidonVersion();
-                } catch (Exception ignored) {
-                    // ignore default version lookup error since we always prompt in interactive
-                }
+                String defaultHelidonVersion = defaultHelidonVersion();
                 helidonVersion = prompt("Helidon version", defaultHelidonVersion, this::isSupportedVersion);
             }
             initOptions.helidonVersion(helidonVersion);
@@ -163,6 +158,8 @@ public final class InitCommand extends BaseCommand {
             try {
                 version = metadata.latestVersion().toString();
                 Log.debug("Latest Helidon version found: %s", version);
+            } catch (Plugins.PluginFailedUnchecked e) {
+                versionLookupFailed(null);
             } catch (Exception e) {
                 versionLookupFailed(e.getMessage());
             }
@@ -181,10 +178,11 @@ public final class InitCommand extends BaseCommand {
             return true;
         } catch (IllegalArgumentException | Metadata.UpdateFailed | Plugins.PluginFailedUnchecked e) {
             String message = e.getMessage();
+            boolean messageLogged = e instanceof Plugins.PluginFailedUnchecked;
             if (!message.contains(NOT_FOUND_STATUS)) {
-                versionLookupFailed(message);
+                versionLookupFailed(messageLogged ? null : message);
             }
-            if (!(e instanceof Plugins.PluginFailedUnchecked)) {
+            if (!messageLogged) {
                 Log.debug(message);
             }
             if (notFoundWillFail) {
@@ -197,7 +195,7 @@ public final class InitCommand extends BaseCommand {
             }
             return false;
         } catch (Exception e) {
-            Log.info("$(italic,red %s)", e.getMessage());
+            Log.info(ItalicRed.apply(e.getMessage()));
             failed(VERSION_LOOKUP_FAILED);
         }
 
@@ -210,7 +208,9 @@ public final class InitCommand extends BaseCommand {
     }
 
     private void versionLookupFailed(String errorMessage) {
-        Log.info(ItalicRed.apply(errorMessage));
+        if (errorMessage != null) {
+            Log.info(ItalicRed.apply(errorMessage));
+        }
         failed(VERSION_LOOKUP_FAILED);
     }
 }
