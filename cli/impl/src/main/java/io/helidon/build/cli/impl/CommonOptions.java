@@ -130,6 +130,7 @@ final class CommonOptions {
             }
             metadata = Metadata.builder()
                                .url(metadataUrl)
+                               .debugPlugin(debug)
                                .updateFrequency(config.checkForUpdatesIntervalHours())
                                .build();
         }

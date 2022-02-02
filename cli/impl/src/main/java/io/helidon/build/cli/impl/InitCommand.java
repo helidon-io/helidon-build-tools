@@ -45,7 +45,7 @@ public final class InitCommand extends BaseCommand {
     private static final String VERSION_LOOKUP_FAILED = "$(italic,red Helidon version lookup failed.)";
     private static final String VERSION_NOT_FOUND_MESSAGE = "$(italic Helidon version $(red %s) not found.)";
     private static final String AVAILABLE_VERSIONS_MESSAGE = "Please see $(blue %s) for available versions.";
-    private static final String NOT_FOUND_STATUS = "404";
+    private static final String NOT_FOUND_STATUS_MESSAGE = "connection failed with 404";
 
     private final CommonOptions commonOptions;
     private final InitOptions initOptions;
@@ -178,8 +178,8 @@ public final class InitCommand extends BaseCommand {
             return true;
         } catch (IllegalArgumentException | Metadata.UpdateFailed | Plugins.PluginFailedUnchecked e) {
             String message = e.getMessage();
-            boolean messageLogged = e instanceof Plugins.PluginFailedUnchecked;
-            if (!message.contains(NOT_FOUND_STATUS)) {
+            boolean messageLogged = Log.isDebug() && e instanceof Plugins.PluginFailedUnchecked;
+            if (!message.contains(NOT_FOUND_STATUS_MESSAGE)) {
                 versionLookupFailed(messageLogged ? null : message);
             }
             if (!messageLogged) {

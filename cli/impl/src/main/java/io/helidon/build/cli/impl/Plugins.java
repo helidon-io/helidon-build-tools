@@ -201,7 +201,14 @@ public class Plugins {
             if (process.stdErr().contains(UNSUPPORTED_CLASS_VERSION_ERROR)) {
                 unsupportedJavaVersion();
             } else {
-                throw new PluginFailedUnchecked(String.join(EOL, error.monitor().output()));
+                StringBuilder b = new StringBuilder();
+                for (String line : error.monitor().output().split("\\R")) {
+                    if (b.length() > 0) {
+                        b.append(EOL);
+                    }
+                    b.append(line);
+                }
+                throw new PluginFailedUnchecked(b.toString());
             }
         } catch (ProcessTimeoutException error) {
             throw new PluginFailed(pluginName + TIMED_OUT_SUFFIX);
