@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,15 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import io.helidon.build.common.Log.Level;
-import io.helidon.build.common.LogWriter;
+import io.helidon.build.common.LogFormatter;
 import io.helidon.build.common.RichTextRenderer;
-import io.helidon.build.common.SystemLogWriter;
 
+import static io.helidon.build.common.LogFormatter.isDebug;
+import static io.helidon.build.common.LogFormatter.isVerbose;
+import static io.helidon.build.common.ansi.AnsiTextProvider.ANSI_ENABLED;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldYellow;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Italic;
 import static io.helidon.build.common.ansi.AnsiTextStyles.ItalicRed;
@@ -32,18 +35,15 @@ import static io.helidon.build.common.ansi.AnsiTextStyles.Plain;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Red;
 
 /**
- * {@link LogWriter} that writes to {@link System#out} and {@link System#err}. Supports use of
- * {@link RichTextRenderer} substitutions in log messages.
+ * {@link LogFormatter} that supports use of {@link RichTextRenderer} substitutions in log messages.
  */
-public final class AnsiLogWriter extends SystemLogWriter {
+public final class AnsiLogFormatter implements LogFormatter {
 
     private static final String EOL = System.getProperty("line.separator");
-    private static final boolean STYLES_ENABLED = AnsiConsoleInstaller.areAnsiEscapesEnabled();
+    private static final boolean STYLES_ENABLED = ANSI_ENABLED.instance();
     private static final String WARN_PREFIX = STYLES_ENABLED ? BoldYellow.apply("warning: ") : "WARNING: ";
     private static final String ERROR_PREFIX = STYLES_ENABLED ? Red.apply("error: ") : "ERROR: ";
-    private static final String DEFAULT_LEVEL = "info";
-    private static final Map<Level, AnsiTextStyles> DEFAULT_STYLES = defaultStyles();
-    private final Map<Level, AnsiTextStyles> styles;
+    private static final Map<Level, AnsiTextStyles> STYLES = defaultStyles();
 
     private static Map<Level, AnsiTextStyles> defaultStyles() {
         final Map<Level, AnsiTextStyles> styles = new EnumMap<>(Level.class);
@@ -58,56 +58,39 @@ public final class AnsiLogWriter extends SystemLogWriter {
     /**
      * Create a new instance.
      */
-    public AnsiLogWriter() {
-        this(Level.valueOf(System.getProperty(LEVEL_PROPERTY, DEFAULT_LEVEL).toUpperCase()));
-    }
-
-    /**
-     * Returns a new instance with the given level.
-     *
-     * @param level The level at or above which messages should be logged.
-     */
-    public AnsiLogWriter(Level level) {
-        this(level, DEFAULT_STYLES);
-    }
-
-    /**
-     * Create a new instance with the given level.
-     *
-     * @param level  The level at or above which messages should be logged.
-     * @param styles The style to apply to messages at a given level.
-     */
-    public AnsiLogWriter(Level level, Map<Level, AnsiTextStyles> styles) {
-        super(level);
-        this.styles = styles;
+    public AnsiLogFormatter() {
     }
 
     @Override
-    public void write(Level level, Throwable thrown, String message, Object[] args) {
-        if (level.ordinal() >= level().ordinal()) {
-            final String msg = render(level, thrown, message, args);
-            switch (level) {
-                case DEBUG:
-                case VERBOSE:
-                case INFO:
-                    System.out.println(msg);
-                    break;
-                case WARN:
-                    System.err.println(WARN_PREFIX + msg);
-                    break;
-                case ERROR:
-                    System.err.println(ERROR_PREFIX + msg);
-                    break;
-                default:
-                    throw new Error();
-            }
+    public String formatMessage(Level level, Throwable thrown, String message, Object... args) {
+        final String msg = formatEntry(level, thrown, message, args);
+        switch (level) {
+            case DEBUG:
+            case VERBOSE:
+            case INFO:
+                return msg;
+            case WARN:
+                return WARN_PREFIX + msg;
+            case ERROR:
+                return ERROR_PREFIX + msg;
+            default:
+                throw new Error();
         }
     }
 
-    private String render(Level level, Throwable thrown, String message, Object... args) {
+    @Override
+    public Function<String, String> formatFunction(Level level) {
+        return s -> formatEntry(level, s);
+    }
+
+    private String formatEntry(Level level, String message) {
+        return toStyled(level,  RichTextRenderer.render(message));
+    }
+
+    private String formatEntry(Level level, Throwable thrown, String message, Object... args) {
         final String rendered = RichTextRenderer.render(message, args);
         final String styled = toStyled(level, rendered);
-        final String trace = toStackTrace(thrown);
+        final String trace = toStackTrace(thrown, level);
         if (trace == null) {
             return styled;
         } else if (styled.isEmpty()) {
@@ -121,16 +104,16 @@ public final class AnsiLogWriter extends SystemLogWriter {
         return AnsiTextStyle.isStyled(message) ? message : style(level, message);
     }
 
-    private String toStackTrace(Throwable thrown) {
+    private String toStackTrace(Throwable thrown, Level level) {
         if (thrown != null) {
-            if (isDebug()) {
+            if (isDebug(level)) {
                 final StringWriter sw = new StringWriter();
                 try (PrintWriter pw = new PrintWriter(sw)) {
                     thrown.printStackTrace(pw);
                     return style(Level.DEBUG, sw.toString());
                 } catch (Exception ignored) {
                 }
-            } else if (isVerbose()) {
+            } else if (isVerbose(level)) {
                 return style(Level.DEBUG, thrown.toString());
             }
         }
@@ -138,7 +121,7 @@ public final class AnsiLogWriter extends SystemLogWriter {
     }
 
     private String style(Level level, String message) {
-        final AnsiTextStyles style = styles.get(level);
+        final AnsiTextStyles style = STYLES.get(level);
         return style == Plain ? message : style.apply(message);
     }
 }

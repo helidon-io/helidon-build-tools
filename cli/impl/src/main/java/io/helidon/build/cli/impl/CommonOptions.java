@@ -157,8 +157,8 @@ final class CommonOptions {
             } else {
                 Log.debug("no update available");
             }
-        } catch (Plugins.PluginFailed ignore) {
-            // debug message is already logged
+        } catch (Plugins.PluginFailedUnchecked ignore) {
+            // debug message has already been logged
         } catch (Exception e) {
             Log.debug("check for updates failed: %s", e.toString());
         }
@@ -169,7 +169,7 @@ final class CommonOptions {
             Map<Object, Object> notes = new LinkedHashMap<>();
             metadata().cliReleaseNotesOf(latestHelidonVersion, sinceCliVersion).forEach((v, m) -> notes.put("    " + v, m));
             return notes;
-        } catch (Plugins.PluginFailed e) {
+        } catch (Plugins.PluginFailedUnchecked e) {
             Log.debug("accessing release notes for %s failed: %s", latestHelidonVersion, e.getMessage());
         } catch (Exception e) {
             Log.debug("accessing release notes for %s failed: %s", latestHelidonVersion, e.toString());

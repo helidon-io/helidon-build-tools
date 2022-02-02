@@ -15,9 +15,6 @@
  */
 package io.helidon.build.cli.impl;
 
-import io.helidon.build.common.Log;
-import io.helidon.build.common.ProcessMonitor;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,11 +24,21 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import io.helidon.build.common.Log.Level;
+import io.helidon.build.common.LogFormatter;
+import io.helidon.build.common.PrintStreams;
+import io.helidon.build.common.ProcessMonitor;
 
 import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY;
+import static io.helidon.build.common.PrintStreams.STDERR;
+import static io.helidon.build.common.PrintStreams.STDOUT;
 import static io.helidon.build.common.ansi.AnsiTextStyle.strip;
+import static java.io.File.pathSeparator;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -69,12 +76,17 @@ class TestUtils {
      * @param name resource name
      * @return resource content
      */
+    @SuppressWarnings("unused")
     static String resourceAsString(String name) {
         InputStream is = TestUtils.class.getResourceAsStream(name);
-        try {
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
+        if (is != null) {
+            try {
+                return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        } else {
+            return null;
         }
     }
 
@@ -99,8 +111,7 @@ class TestUtils {
      * @throws Exception if an error occurs
      */
     static String execWithDirAndInput(File wd, File input, String... args) throws Exception {
-        String classPath = System.getProperty("surefire.test.class.path", System.getProperty("java.class.path"));
-        List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-cp", "\"" + classPath + "\""));
+        List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-cp", "\"" + classpath() + "\""));
         String version = System.getProperty(HELIDON_VERSION_PROPERTY);
         if (version != null) {
             cmdArgs.add("-D" + HELIDON_VERSION_PROPERTY + "=" + version);
@@ -116,14 +127,29 @@ class TestUtils {
         ProcessMonitor monitor = ProcessMonitor.builder()
                                                .processBuilder(pb)
                                                .stdIn(input)
-                                               .stdOut(Log::info)
-                                               .stdErr(Log::error)
+                                               .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(Level.INFO)))
+                                               .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(Level.ERROR)))
                                                .capture(true)
                                                .build()
                                                .start()
                                                .waitForCompletion(10, TimeUnit.MINUTES);
         String output = String.join(EOL, monitor.output());
         return strip(output);
+    }
+
+    /**
+     * The java class-path to use.
+     *
+     * @return class-path string
+     */
+    static String classpath() {
+        List<String> classPath = new LinkedList<>();
+        classPath.addAll(Arrays.asList(System.getProperty("surefire.test.class.path", "").split(pathSeparator)));
+        classPath.addAll(Arrays.asList(System.getProperty("java.class.path", "").split(pathSeparator)));
+        classPath.addAll(Arrays.asList(System.getProperty("jdk.module.path", "").split(pathSeparator)));
+        return classPath.stream()
+                        .distinct()
+                        .collect(Collectors.joining(pathSeparator));
     }
 
     /**

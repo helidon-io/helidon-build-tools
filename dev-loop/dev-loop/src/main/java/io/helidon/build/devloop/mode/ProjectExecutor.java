@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,20 @@
 package io.helidon.build.devloop.mode;
 
 import java.io.File;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import io.helidon.build.common.JavaProcessBuilder;
-import io.helidon.build.common.Log;
 import io.helidon.build.common.OSType;
+import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.ProcessMonitor;
+import io.helidon.build.common.ansi.ConsoleUtils;
 import io.helidon.build.devloop.Project;
 
+import static io.helidon.build.common.PrintStreams.STDERR;
+import static io.helidon.build.common.PrintStreams.STDOUT;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightCyan;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightGreen;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightRed;
@@ -40,10 +43,6 @@ import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_APPLICATI
  * Project executor.
  */
 public class ProjectExecutor {
-    private static final long STOP_WAIT_SECONDS = 1L;
-    private static final int STOP_WAIT_RETRIES = 5;
-    private static final int STOP_WAIT_RETRY_LOG_STEP = 1;
-    private static final int STOP_WAIT_RETRY_FORCE_STEP = 3;
 
     private static final String JAVA_EXEC = OSType.currentOS().javaExecutable();
     private static final String JIT_LEVEL_ONE = "-XX:TieredStopAtLevel=1";
@@ -62,9 +61,9 @@ public class ProjectExecutor {
     private final String logPrefix;
     private final String name;
     private ProcessMonitor processMonitor;
-    private long pid;
     private final List<String> appJvmArgs;
     private final List<String> appArgs;
+    private final StringBuilder stdErrBuf;
     private boolean hasExitMessage;
     private long lastErrorMessageTime;
 
@@ -85,6 +84,7 @@ public class ProjectExecutor {
         this.name = BoldBrightCyan.apply(project.name());
         this.appJvmArgs = appJvmArgs;
         this.appArgs = appArgs;
+        this.stdErrBuf = new StringBuilder();
     }
 
     /**
@@ -113,7 +113,7 @@ public class ProjectExecutor {
     }
 
     /**
-     * Stop execution. Logs stopping message only if process does not stop quickly.
+     * Stop execution.
      *
      * @throws IllegalStateException If process does not stop before timeout.
      */
@@ -133,32 +133,7 @@ public class ProjectExecutor {
                 stateChanged(STOPPING);
             }
             try {
-                boolean isAlive = true;
-                boolean force = false;
-                for (int step = 0; step < STOP_WAIT_RETRIES; step++) {
-                    try {
-                        isAlive = processMonitor.destroy(force)
-                                                .waitForCompletion(STOP_WAIT_SECONDS, TimeUnit.SECONDS)
-                                                .isAlive();
-                        if (!isAlive) {
-                            break;
-                        }
-                    } catch (ProcessMonitor.ProcessTimeoutException timeout) {
-                        if (!verbose && step == STOP_WAIT_RETRY_LOG_STEP) {
-                            stateChanged(STOPPING);
-                        } else if (step == STOP_WAIT_RETRY_FORCE_STEP) {
-                            force = true;
-                        }
-                    } catch (IllegalStateException | ProcessMonitor.ProcessFailedException done) {
-                        isAlive = false;
-                        break;
-                    } catch (Exception e) {
-                        throw new IllegalStateException(stopFailedMessage(e.getMessage()));
-                    }
-                }
-                if (isAlive) {
-                    throw new IllegalStateException(stopFailedMessage("timeout expired"));
-                }
+                processMonitor.stop();
             } finally {
                 processMonitor = null;
             }
@@ -175,7 +150,7 @@ public class ProjectExecutor {
      */
     public boolean isRunning() {
         return processMonitor != null
-               && processMonitor.isAlive();
+                && processMonitor.isAlive();
     }
 
     /**
@@ -201,15 +176,11 @@ public class ProjectExecutor {
         return lastErrorMessageTime > 0;
     }
 
-    private String stopFailedMessage(String reason) {
-        return String.format("Failed to stop %s (pid %d): %s", project.name(), pid, reason);
-    }
-
     private void stateChanged(String state) {
         if (logPrefix == null) {
-            Log.info("%s %s", name, state);
+            STDOUT.printf("%s %s", name, state);
         } else {
-            Log.info("%s%s %s", logPrefix, name, state);
+            STDOUT.printf("%s%s %s", logPrefix, name, state);
         }
     }
 
@@ -220,25 +191,27 @@ public class ProjectExecutor {
                                                           .command(command);
         try {
             stateChanged(STARTING);
-            Log.info();
+            STDOUT.println();
+            STDOUT.flush();
             this.processMonitor = ProcessMonitor.builder()
                                                 .processBuilder(processBuilder)
-                                                .stdOut(this::printStdOut)
-                                                .stdErr(this::printStdErr)
+                                                .afterShutdown(ConsoleUtils::reset)
+                                                .stdOut(STDOUT)
+                                                .stdErr(PrintStreams.delegate(STDERR, this::printStdErr))
                                                 .capture(true)
                                                 .build()
                                                 .start();
-            this.pid = processMonitor.toHandle().pid();
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
     }
 
-    private void printStdOut(String line) {
-        System.out.println(line);
-    }
-
-    private void printStdErr(String line) {
+    private void printStdErr(PrintStream stdErr, String str) {
+        if (!str.endsWith("\n") || str.endsWith("\r")) {
+            stdErrBuf.append(str);
+        }
+        String line = stdErrBuf.append(str).toString();
+        stdErrBuf.setLength(0);
         lastErrorMessageTime = System.nanoTime();
         for (String exitMessageFragment : EXIT_MESSAGE_FRAGMENTS) {
             if (line.contains(exitMessageFragment)) {
@@ -246,7 +219,7 @@ public class ProjectExecutor {
                 break;
             }
         }
-        System.err.println(line);
+        stdErr.print(str);
     }
 
     private String classPathString() {

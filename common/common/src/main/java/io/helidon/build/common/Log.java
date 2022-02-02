@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,7 @@ public class Log {
          *
          * @return The level.
          */
+        @SuppressWarnings("unused")
         java.util.logging.Level toJulLevel() {
             return julLevel;
         }
@@ -82,7 +83,7 @@ public class Log {
     }
 
     /**
-     * Returns whether or not debug messages will be written.
+     * Returns whether debug messages will be written.
      *
      * @return {@code true} if enabled.
      */
@@ -91,7 +92,7 @@ public class Log {
     }
 
     /**
-     * Returns whether or not verbose messages will be written.
+     * Returns whether verbose messages will be written.
      *
      * @return {@code true} if enabled.
      */
@@ -113,6 +114,7 @@ public class Log {
      *
      * @return The count.
      */
+    @SuppressWarnings("unused")
     public static int warnings() {
         return WARNINGS.get();
     }
@@ -322,21 +324,12 @@ public class Log {
     }
 
     /**
-     * Tests whether or not a writer has been set.
+     * Tests whether a writer has been set.
      *
      * @return {@code true} if set.
      */
     public static boolean hasWriter() {
         return WRITER.get() != null;
-    }
-
-    /**
-     * Tests whether or not the writer is the {@link SystemLogWriter}.
-     *
-     * @return {@code true} If the writer is the {@link SystemLogWriter}.
-     */
-    public static boolean isSystemWriter() {
-        return WRITER.get() instanceof SystemLogWriter;
     }
 
     /**

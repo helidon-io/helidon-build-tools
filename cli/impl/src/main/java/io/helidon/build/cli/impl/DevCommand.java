@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.helidon.build.cli.impl;
 
-import java.util.function.Consumer;
+import java.io.PrintStream;
 import java.util.function.Predicate;
 
 import io.helidon.build.cli.harness.Command;
@@ -26,6 +26,8 @@ import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
 import io.helidon.build.common.Log;
+import io.helidon.build.common.PrintStreams;
+import io.helidon.build.common.PrintStreams.PrintStreamAdapter;
 import io.helidon.build.common.Strings;
 import io.helidon.build.common.ansi.AnsiConsoleInstaller;
 import io.helidon.build.common.maven.MavenCommand;
@@ -35,6 +37,8 @@ import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
 import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.cli.impl.CommandRequirements.requireValidMavenProjectConfig;
+import static io.helidon.build.common.PrintStreams.STDERR;
+import static io.helidon.build.common.PrintStreams.STDOUT;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightGreen;
@@ -77,6 +81,7 @@ public final class DevCommand extends BaseCommand {
     private static final String EXITING = BoldBrightGreen.apply("exiting");
     private static final String DEFAULT_DEBUG_PORT = "5005";
     private static final String DEBUG_ARGS = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=%s,address=*:%s";
+    private static final PrintStream RED_STDERR = PrintStreams.apply(STDERR, Red::apply);
 
     private final CommonOptions commonOptions;
     private final boolean clean;
@@ -181,26 +186,21 @@ public final class DevCommand extends BaseCommand {
             terminalModeOutput = new TerminalModeOutput();
         }
 
-        // Add a shutdown hook to print an exit message
-
-        Runtime.getRuntime().addShutdownHook(new Thread(DevCommand::exiting));
-
         // Execute helidon-maven-cli-plugin to enter dev loop
 
-        Consumer<String> stdOut = terminalMode
+        PrintStream stdOut = terminalMode
                 ? terminalModeOutput
-                : DevCommand::printStdOutLine;
-
-        Consumer<String> stdErr = DevCommand::printStdErrLine;
+                : STDOUT;
 
         Predicate<String> filter = terminalMode
                 ? terminalModeOutput
                 : DevCommand::printAllLines;
 
         MavenCommand.builder()
+                    .beforeShutdown(DevCommand::exiting)
                     .verbose(verbosity == DEBUG)
                     .stdOut(stdOut)
-                    .stdErr(stdErr)
+                    .stdErr(RED_STDERR)
                     .filter(filter)
                     .addArgument(devGoal)
                     .addArgument(CLEAN_PROP_PREFIX + clean)
@@ -222,27 +222,19 @@ public final class DevCommand extends BaseCommand {
 
     private static void printState(String state, boolean newline) {
         final String header = newline ? HEADER + "%n" : HEADER;
-        System.out.printf(header, state);
-        System.out.flush();
+        STDOUT.printf(header, state);
+        STDOUT.flush();
     }
 
     private static boolean printAllLines(String line) {
         return true;
     }
 
-    private static void printStdOutLine(String line) {
-        System.out.println(line);
-    }
-
-    private static void printStdErrLine(String line) {
-        System.out.println(Red.apply(line));
-    }
-
-
     /**
      * A stateful filter/transform that cleans up output from {@code DevLoop}.
      */
-    private static class TerminalModeOutput implements Predicate<String>, Consumer<String> {
+    private static class TerminalModeOutput extends PrintStreamAdapter implements Predicate<String> {
+
         private static final String DEBUGGER_LISTEN_MESSAGE_PREFIX = "Listening for transport";
         private static final String DOWNLOADING_MESSAGE_PREFIX = "Downloading from";
         private static final String DOWNLOAD_MESSAGE_PREFIX = "Download";
@@ -288,10 +280,11 @@ public final class DevCommand extends BaseCommand {
                     clearProgressIndicator();
                     if (skipHeader) {
                         skipHeader = false;
-                        System.out.println();
+                        STDOUT.println();
                     } else {
                         header(line);
                     }
+                    STDOUT.flush();
                     return false;
                 } else if (line.startsWith(DEV_LOOP_STYLED_MESSAGE_PREFIX)
                            || line.startsWith(DEV_LOOP_MESSAGE_PREFIX)) {
@@ -377,13 +370,13 @@ public final class DevCommand extends BaseCommand {
         private void updateProgress(String line) {
             if (!progressCompleted) {
                 if (debugger) {
-                    System.out.println();
+                    STDOUT.println();
                     progressCompleted = true;
                 } else if (!skipHeader) {
                     if (line.contains(DOWNLOADING_MESSAGE_PREFIX)) {
                         header(Bold.apply(DEV_LOOP_HEADER));
-                        System.out.print(DEV_LOOP_STYLED_MESSAGE_PREFIX + BoldBlue.apply(DOWNLOADING_ARTIFACTS));
-                        System.out.flush();
+                        STDOUT.print(DEV_LOOP_STYLED_MESSAGE_PREFIX + BoldBlue.apply(DOWNLOADING_ARTIFACTS));
+                        STDOUT.flush();
                         skipHeader = true;
                         progressStarted = false;
                     }
@@ -403,8 +396,8 @@ public final class DevCommand extends BaseCommand {
                 }
             } else {
                 hideCursor();
-                System.out.print(SPINNER[progressIndex++]);
-                System.out.flush();
+                STDOUT.print(SPINNER[progressIndex++]);
+                STDOUT.flush();
                 progressStarted = true;
             }
             if (progressIndex == SPINNER.length) {
@@ -425,10 +418,10 @@ public final class DevCommand extends BaseCommand {
 
         private void header(String line) {
             if (clearScreen()) {
-                System.out.println();
-                System.out.println(line);
+                STDOUT.println();
+                STDOUT.println(line);
             }
-            System.out.println();
+            STDOUT.println();
         }
 
         private static String errorMessage(String line) {
@@ -446,10 +439,13 @@ public final class DevCommand extends BaseCommand {
         }
 
         @Override
-        public void accept(String line) {
+        public void print(String line) {
+            if (line == null) {
+                return;
+            }
             if (!line.isBlank()) {
                 if (insertLine) {
-                    System.out.println();
+                    STDOUT.println();
                     insertLine = false;
                 }
                 if (line.startsWith(MAVEN_LOG_LEVEL_START)) {
@@ -459,16 +455,21 @@ public final class DevCommand extends BaseCommand {
                             System.out.println();
                             insertLineIfError = false;
                         }
-                        System.out.println(errorMessage);
+                        STDOUT.println(errorMessage);
                     }
                 } else {
-                    System.out.println(line);
+                    STDOUT.print(line);
                 }
                 if (appendLine) {
-                    System.out.println();
+                    STDOUT.println();
                     appendLine = false;
                 }
             }
+        }
+
+        @Override
+        public void flush() {
+            STDOUT.flush();
         }
     }
 }

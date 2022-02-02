@@ -16,7 +16,6 @@
 
 package io.helidon.build.devloop;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;

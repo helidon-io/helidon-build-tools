@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@ package io.helidon.build.cli.impl;
 
 import io.helidon.build.cli.harness.CommandLineInterface;
 import io.helidon.build.cli.harness.CommandRunner;
+
+import org.graalvm.nativeimage.ImageInfo;
+import sun.misc.Signal;
 
 /**
  * Helidon CLI definition and entry-point.
@@ -42,6 +45,13 @@ public final class Helidon {
      * @param args raw command line arguments
      */
     public static void main(String[] args) {
+
+        if (ImageInfo.inImageRuntimeCode()) {
+            // Register a signal handler for Ctrl-C that calls System.exit in order to trigger
+            // the shutdown hooks
+            Signal.handle(new Signal("INT"), sig -> System.exit(0));
+        }
+
         CommandRunner.builder()
                      .args(args)
                      .optionLookup(Config.userConfig()::property)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.build.common.ansi;
 
+import static io.helidon.build.common.PrintStreams.STDOUT;
 import static org.fusesource.jansi.Ansi.ansi;
 
 /**
@@ -44,8 +45,8 @@ public class ConsoleUtils {
      */
     public static boolean clearScreen(int startRow) {
         if (ENABLED) {
-            System.out.print(ansi().cursor(startRow, 0).eraseScreen());
-            System.out.flush();
+            STDOUT.print(ansi().cursor(startRow, 0).eraseScreen());
+            STDOUT.flush();
             return true;
         } else {
             return false;
@@ -73,8 +74,8 @@ public class ConsoleUtils {
      */
     public static boolean rewriteLine(int charsToBackUp, String message) {
         if (ENABLED) {
-            System.out.print(ansi().cursorLeft(charsToBackUp).a(message));
-            System.out.flush();
+            STDOUT.print(ansi().cursorLeft(charsToBackUp).a(message));
+            STDOUT.flush();
             return true;
         } else {
             return false;
@@ -88,8 +89,8 @@ public class ConsoleUtils {
      */
     public static boolean hideCursor() {
         if (ENABLED) {
-            System.out.print(HIDE_CURSOR);
-            System.out.flush();
+            STDOUT.print(HIDE_CURSOR);
+            STDOUT.flush();
             return true;
         } else {
             return false;
@@ -104,11 +105,21 @@ public class ConsoleUtils {
      */
     public static boolean showCursor() {
         if (ENABLED) {
-            System.out.print(SHOW_CURSOR);
-            System.out.flush();
+            STDOUT.print(SHOW_CURSOR);
+            STDOUT.flush();
             return true;
         } else {
             return false;
+        }
+    }
+
+    /**
+     * Reset ansi if Ansi escapes are enabled.
+     */
+    public static void reset() {
+        if (ENABLED) {
+            STDOUT.println(ansi().reset().toString());
+            STDOUT.flush();
         }
     }
 

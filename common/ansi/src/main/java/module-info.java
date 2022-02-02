@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import io.helidon.build.common.LogWriter;
+import io.helidon.build.common.LogFormatter;
 import io.helidon.build.common.RichTextProvider;
-import io.helidon.build.common.ansi.AnsiLogWriter;
+import io.helidon.build.common.ansi.AnsiLogFormatter;
 import io.helidon.build.common.ansi.AnsiTextProvider;
 
 /**
@@ -28,5 +28,5 @@ module io.helidon.build.common.ansi {
     requires info.picocli.jansi.graalvm;
     exports io.helidon.build.common.ansi;
     provides RichTextProvider with AnsiTextProvider;
-    provides LogWriter with AnsiLogWriter;
+    provides LogFormatter with AnsiLogFormatter;
 }

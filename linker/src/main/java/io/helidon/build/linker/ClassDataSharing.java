@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.build.linker;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -25,10 +26,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
-import io.helidon.build.common.Log;
+import io.helidon.build.common.Log.Level;
+import io.helidon.build.common.LogFormatter;
 import io.helidon.build.common.OSType;
+import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.linker.util.Constants;
 import io.helidon.build.linker.util.JavaRuntime;
@@ -36,6 +38,9 @@ import io.helidon.build.linker.util.JavaRuntime;
 import static io.helidon.build.common.FileUtils.fileName;
 import static io.helidon.build.common.FileUtils.requireDirectory;
 import static io.helidon.build.common.FileUtils.requireFile;
+import static io.helidon.build.common.PrintStreams.DEVNULL;
+import static io.helidon.build.common.PrintStreams.STDERR;
+import static io.helidon.build.common.PrintStreams.STDOUT;
 import static io.helidon.build.linker.Configuration.Builder.DEFAULT_MAX_APP_START_SECONDS;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
@@ -370,8 +375,6 @@ public final class ClassDataSharing {
 
         private void execute(String action, String... jvmArgs) throws Exception {
             final ProcessBuilder processBuilder = new ProcessBuilder();
-            final Consumer<String> stdOut = logOutput ? Log::debug : null;
-            final Consumer<String> stdErr = logOutput ? Log::warn : null;
             final List<String> command = new ArrayList<>();
 
             command.add(javaPath().toString());
@@ -385,6 +388,15 @@ public final class ClassDataSharing {
 
             processBuilder.directory(jri.toFile());
 
+            PrintStream stdOut;
+            PrintStream stdErr;
+            if (logOutput) {
+                stdOut = PrintStreams.apply(STDOUT, LogFormatter.of(Level.DEBUG));
+                stdErr = PrintStreams.apply(STDERR, LogFormatter.of(Level.WARN));
+            } else {
+                stdOut = DEVNULL;
+                stdErr = DEVNULL;
+            }
             ProcessMonitor.builder()
                           .description(action)
                           .processBuilder(processBuilder)

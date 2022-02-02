@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.build.devloop.BuildExecutor;
 import io.helidon.build.devloop.BuildMonitor;
-import io.helidon.build.devloop.util.ConsumerPrintStream;
 
 /**
  * A {@link BuildExecutor} that executes within the current process. Uses reflection to avoid build time
@@ -43,14 +42,14 @@ public class EmbeddedMavenExecutor extends BuildExecutor {
      * Constructor.
      *
      * @param projectDir The project directory.
-     * @param monitor The build monitor. All output is written to {@link BuildMonitor#stdOutConsumer()} and
-     * {@link BuildMonitor#stdErrConsumer()}.
+     * @param monitor The build monitor. All output is written to {@link BuildMonitor#stdOut()} and
+     * {@link BuildMonitor#stdErr()}.
      */
     public EmbeddedMavenExecutor(Path projectDir, BuildMonitor monitor) {
         super(projectDir, monitor);
         initialize();
-        this.out = ConsumerPrintStream.newStream(monitor.stdOutConsumer());
-        this.err = ConsumerPrintStream.newStream(monitor.stdErrConsumer());
+        this.out = monitor.stdOut();
+        this.err = monitor.stdErr();
     }
 
     @Override

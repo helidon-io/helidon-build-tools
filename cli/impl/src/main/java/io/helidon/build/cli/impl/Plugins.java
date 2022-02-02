@@ -17,6 +17,7 @@ package io.helidon.build.cli.impl;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,17 +25,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 import io.helidon.build.cli.plugin.Plugin;
 import io.helidon.build.common.JavaProcessBuilder;
 import io.helidon.build.common.Log;
 import io.helidon.build.common.ProcessMonitor;
+import io.helidon.build.common.ProcessMonitor.ProcessFailedException;
+import io.helidon.build.common.ProcessMonitor.ProcessTimeoutException;
 import io.helidon.build.common.Proxies;
 
 import org.graalvm.nativeimage.ImageInfo;
 
 import static io.helidon.build.cli.impl.CommandRequirements.unsupportedJavaVersion;
+import static io.helidon.build.common.PrintStreams.STDOUT;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -109,7 +112,7 @@ public class Plugins {
                                List<String> pluginArgs,
                                int maxWaitSeconds) throws PluginFailed {
 
-        execute(pluginName, pluginArgs, maxWaitSeconds, null);
+        execute(pluginName, pluginArgs, maxWaitSeconds, STDOUT);
     }
 
     /**
@@ -126,7 +129,7 @@ public class Plugins {
     public static void execute(String pluginName,
                                List<String> pluginArgs,
                                int maxWaitSeconds,
-                               Consumer<String> stdOut) throws PluginFailed {
+                               PrintStream stdOut) throws PluginFailed {
 
         if (FORK || ImageInfo.inImageRuntimeCode()) {
             spawned(pluginName, pluginArgs, maxWaitSeconds, stdOut);
@@ -147,10 +150,12 @@ public class Plugins {
         return args;
     }
 
-    private static void embedded(String pluginName, List<String> pluginArgs, Consumer<String> stdOut) {
+    private static void embedded(String pluginName,
+                                 List<String> pluginArgs,
+                                 PrintStream stdOut) throws PluginFailed {
         try {
             List<String> command = pluginArgs(pluginName, pluginArgs);
-            Plugin.execute(command.toArray(new String[0]), stdOut);
+            Plugin.execute(command.toArray(new String[0]), stdOut::println);
         } catch (Plugin.Failed ex) {
             if (ex.getCause() != null) {
                 throw new PluginFailed(ex.getCause());
@@ -165,7 +170,7 @@ public class Plugins {
     private static void spawned(String pluginName,
                                 List<String> pluginArgs,
                                 int maxWaitSeconds,
-                                Consumer<String> stdOut) throws PluginFailed {
+                                PrintStream stdOut) throws PluginFailed {
 
         // Create the command
         final List<String> command = new ArrayList<>();
@@ -183,34 +188,28 @@ public class Plugins {
         // Create the process builder
 
         final ProcessBuilder processBuilder = JavaProcessBuilder.newInstance().command(command);
+        ProcessMonitor process = ProcessMonitor.builder()
+                                               .processBuilder(processBuilder)
+                                               .stdOut(stdOut)
+                                               .capture(true)
+                                               .build();
 
-        // Fork and wait...
-
-        Log.debug("executing %s", command);
-
-        final List<String> stdErr = new ArrayList<>();
         try {
-            ProcessMonitor.builder()
-                          .processBuilder(processBuilder)
-                          .stdOut(stdOut)
-                          .stdErr(stdErr::add)
-                          .capture(true)
-                          .build()
-                          .start()
-                          .waitForCompletion(maxWaitSeconds, TimeUnit.SECONDS);
-        } catch (ProcessMonitor.ProcessFailedException error) {
-            if (containsUnsupportedClassVersionError(stdErr)) {
+            Log.debug("executing %s", command);
+            process.execute(maxWaitSeconds, TimeUnit.SECONDS);
+        } catch (ProcessFailedException error) {
+            if (process.stdErr().contains(UNSUPPORTED_CLASS_VERSION_ERROR)) {
                 unsupportedJavaVersion();
             } else {
                 throw new PluginFailedUnchecked(String.join(EOL, error.monitor().output()));
             }
-        } catch (ProcessMonitor.ProcessTimeoutException error) {
+        } catch (ProcessTimeoutException error) {
             throw new PluginFailed(pluginName + TIMED_OUT_SUFFIX);
         } catch (Exception e) {
-            if (stdErr.isEmpty()) {
+            if (process.stdErr().isEmpty()) {
                 throw new PluginFailed(e);
             } else {
-                throw new PluginFailed(String.join(EOL, stdErr), e);
+                throw new PluginFailed(String.join(EOL, process.stdErr()), e);
             }
         }
     }
@@ -231,7 +230,7 @@ public class Plugins {
     /**
      * Plugin failure.
      */
-    public static class PluginFailed extends RuntimeException {
+    public static class PluginFailed extends Exception {
         private PluginFailed(String message) {
             super(message);
         }
@@ -243,10 +242,6 @@ public class Plugins {
         private PluginFailed(String message, Throwable cause) {
             super(message, cause);
         }
-    }
-
-    private static boolean containsUnsupportedClassVersionError(List<String> stdErr) {
-        return stdErr.stream().anyMatch(line -> line.contains(UNSUPPORTED_CLASS_VERSION_ERROR));
     }
 
     private Plugins() {

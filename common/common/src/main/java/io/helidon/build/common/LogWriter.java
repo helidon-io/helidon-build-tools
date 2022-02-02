@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,18 +40,27 @@ public interface LogWriter {
     void write(Level level, Throwable thrown, String message, Object[] args);
 
     /**
-     * Returns whether or not debug messages will be written.
+     * Returns whether debug messages will be written.
      *
      * @return {@code true} if enabled.
      */
     boolean isDebug();
 
     /**
-     * Returns whether or not verbose messages will be written.
+     * Returns whether verbose messages will be written.
      *
      * @return {@code true} if enabled.
      */
     boolean isVerbose();
+
+    /**
+     * Return whether this writer prints to the system {@code stdout} and/or {@code stderr}.
+     *
+     * @return {@code true} if system.
+     */
+    default boolean isSystem() {
+        return false;
+    }
 
     /**
      * Lazy initialization for the loaded {@link LogWriter}.
