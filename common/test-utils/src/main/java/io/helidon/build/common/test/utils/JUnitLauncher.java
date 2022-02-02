@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,6 +70,8 @@ import static org.junit.platform.launcher.LauncherConstants.CAPTURE_STDOUT_PROPE
  */
 public class JUnitLauncher {
 
+    private static final String FAST_STREAMS_PROP = "io.helidon.build.fast.streams";
+
     private final PrintStream out;
     private final PrintStream err;
     private final File reportsDir;
@@ -107,16 +109,21 @@ public class JUnitLauncher {
     public void launch() throws AssertionError {
         Thread currentThread = Thread.currentThread();
         ClassLoader contextClassLoader = currentThread.getContextClassLoader();
+        String origFastStream = System.getProperty(FAST_STREAMS_PROP);
         PrintStream origOut = System.out;
         PrintStream origErr = System.err;
         try {
             currentThread.setContextClassLoader(this.getClass().getClassLoader());
             System.setOut(out);
             System.setErr(err);
+            System.setProperty(FAST_STREAMS_PROP, "false");
             launch0();
         } finally {
             System.setOut(origOut);
             System.setErr(origErr);
+            if (origFastStream != null) {
+                System.setProperty(FAST_STREAMS_PROP, origFastStream);
+            }
             currentThread.setContextClassLoader(contextClassLoader);
         }
     }

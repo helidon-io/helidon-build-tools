@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -42,15 +42,16 @@ readonly LOG_FILE=$(mktemp -t XXXcheckstyle-log)
 
 readonly RESULT_FILE=$(mktemp -t XXXcheckstyle-result)
 
-source ${WS_DIR}/etc/scripts/pipeline-env.sh
+source "${WS_DIR}"/etc/scripts/pipeline-env.sh
 
 die(){ echo "${1}" ; exit 1 ;}
 
+# shellcheck disable=SC2086
 mvn ${MAVEN_ARGS} checkstyle:checkstyle-aggregate \
-    -f ${WS_DIR}/pom.xml \
+    -f "${WS_DIR}"/pom.xml \
     -Dcheckstyle.output.format="plain" \
     -Dcheckstyle.output.file="${RESULT_FILE}" \
     -Pide-support > ${LOG_FILE} 2>&1 || (cat ${LOG_FILE} ; exit 1)
 
-grep "^\[ERROR\]" ${RESULT_FILE} \
+grep "^\[ERROR\]" "${RESULT_FILE}" \
     && die "CHECKSTYLE ERROR" || echo "CHECKSTYLE OK"

@@ -476,7 +476,7 @@ abstract class ArchetypeInvoker {
             try {
                 Path archetype = metadata().archetypeV2Of(helidonVersion);
                 return FileSystems.newFileSystem(archetype, this.getClass().getClassLoader());
-            } catch (Metadata.UpdateFailed | Plugins.PluginFailed e) {
+            } catch (Metadata.UpdateFailed | Plugins.PluginFailedUnchecked e) {
                 Requirements.failed(HELIDON_VERSION_NOT_FOUND, helidonVersion);
                 return null;
             } catch (IOException ex) {

@@ -1,6 +1,6 @@
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <surefire.coverage.argline />
+        <surefire.coverage.argLine />
         <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF-8</surefire.argLine>
     </properties>
 
@@ -41,7 +41,7 @@
                 <version>2.12.4</version>
                 <configuration>
                     <!-- this is an example of a configuration -->
-                    <argLine>${surefire.argLine} ${surefire.coverage.argline}</argLine>
+                    <argLine>${surefire.argLine} ${surefire.coverage.argLine}</argLine>
                 </configuration>
             </plugin>
             <plugin>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,16 @@
  */
 package io.helidon.build.cli.harness;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
 
 import io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 
+import io.helidon.build.common.CapturingLogWriter;
 import io.helidon.build.common.Log;
 import io.helidon.build.common.Strings;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.common.ansi.AnsiTextStyle.strip;
@@ -42,29 +41,39 @@ public class ExecTest {
     static final String CLI_USAGE = resourceAsString("cli-usage.txt");
     static final String HELP_CMD_HELP = resourceAsString("help-cmd-help.txt");
     static final String SIMPLE_CMD_HELP = resourceAsString("simple-cmd-help.txt");
+    final CapturingLogWriter logged = CapturingLogWriter.create();
 
     static CommandContext context() {
         return new CommandContext(REGISTRY, null);
     }
 
     static String resourceAsString(String name) {
-        return Strings.normalizeNewLines(Strings.read(ExecTest.class.getResourceAsStream(name)));
+        InputStream is = ExecTest.class.getResourceAsStream(name);
+        if (is != null) {
+            return Strings.normalizeNewLines(Strings.read(is));
+        }
+        return null;
     }
 
-    static String exec(CommandContext context, String... args) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream stdout = System.out;
-        try {
-            System.setOut(new PrintStream(baos));
-            CommandRunner.execute2(context, args);
-        } finally {
-            System.setOut(stdout);
-        }
-        String out = Strings.normalizeNewLines(baos.toString(StandardCharsets.UTF_8));
+    @BeforeEach
+    void prepareEach() {
+        logged.clear();
+        logged.install();
+    }
+
+    @AfterEach
+    void cleanupEach() {
+        logged.uninstall();
+    }
+
+    String exec(CommandContext context, String... args) {
+        logged.clear();
+        CommandRunner.execute2(context, args);
+        String out = Strings.normalizeNewLines(logged.output());
         return strip(out);
     }
 
-    static String exec(String... args) {
+    String exec(String... args) {
         return exec(context(), args);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package io.helidon.build.devloop;
 
-import java.util.function.Consumer;
+import java.io.PrintStream;
+
+import io.helidon.build.common.PrintStreams;
 
 /**
  * A receiver of build loop messages and events.
@@ -28,8 +30,8 @@ public interface BuildMonitor {
      *
      * @return The consumer.
      */
-    default Consumer<String> stdOutConsumer() {
-        return System.out::println;
+    default PrintStream stdOut() {
+        return PrintStreams.STDOUT;
     }
 
     /**
@@ -37,8 +39,8 @@ public interface BuildMonitor {
      *
      * @return The consumer.
      */
-    default Consumer<String> stdErrConsumer() {
-        return System.err::println;
+    default PrintStream stdErr() {
+        return PrintStreams.STDERR;
     }
 
     /**

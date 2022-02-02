@@ -78,7 +78,7 @@ public abstract class Plugin {
     }
 
     /**
-     * Returns an new instance from the given name, where the class name is constructed by
+     * Returns a new instance from the given name, where the class name is constructed by
      * prepending this package name.
      *
      * @param simpleClassName The unqualified plugin class name.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 
 import io.helidon.build.common.LogWriter;
+import io.helidon.build.common.LogFormatter;
 import io.helidon.build.common.RichTextProvider;
 
 /**
@@ -25,4 +26,5 @@ module io.helidon.build.common {
     exports io.helidon.build.common;
     uses RichTextProvider;
     uses LogWriter;
+    uses LogFormatter;
 }

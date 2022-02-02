@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiPredicate;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import io.helidon.build.cli.common.ProjectConfig;
-import io.helidon.build.devloop.util.ConsumerPrintStream;
 
 import static io.helidon.build.common.FileChanges.DetectionType.LATEST;
 import static io.helidon.build.common.FileChanges.changedSince;
@@ -246,7 +244,7 @@ public class Project {
     }
 
     /**
-     * Returns whether or not all binaries are newer than all sources and no sources have changed.
+     * Returns whether all binaries are newer than all sources and no sources have changed.
      *
      * @return {@code true} if up to date, {@code false} if not.
      */
@@ -279,12 +277,12 @@ public class Project {
 
         if (newerThan(latestSource, latestBinary)) {
 
-            // Yes, so we are not up to date.
+            // Yes, so we are not up-to-date.
 
             return false;
         }
 
-        // We're up to date.
+        // We're up-to-date.
         return true;
     }
 
@@ -304,28 +302,19 @@ public class Project {
      * Perform an incremental build for the given changes.
      *
      * @param changes The changes.
-     * @param stdOut A consumer for stdout.
-     * @param stdErr A consumer for stderr.
+     * @param stdOut A printer for stdout.
+     * @param stdErr A printer for stderr.
      * @throws Exception on error.
      */
     protected void incrementalBuild(List<BuildRoot.Changes> changes,
-                                    Consumer<String> stdOut,
-                                    Consumer<String> stdErr) throws Exception {
+                                    PrintStream stdOut,
+                                    PrintStream stdErr) throws Exception {
         if (!changes.isEmpty()) {
-            final PrintStream origOut = System.out;
-            final PrintStream origErr = System.err;
-            try {
-                System.setOut(ConsumerPrintStream.newStream(stdOut));
-                System.setErr(ConsumerPrintStream.newStream(stdErr));
-                for (final BuildRoot.Changes changed : changes) {
-                    changed.root().component().incrementalBuild(changed, stdOut, stdErr);
-                }
-                config.buildSucceeded();
-                config.store();
-            } finally {
-                System.setOut(origOut);
-                System.setErr(origErr);
+            for (final BuildRoot.Changes changed : changes) {
+                changed.root().component().incrementalBuild(changed, stdOut, stdErr);
             }
+            config.buildSucceeded();
+            config.store();
         }
     }
 

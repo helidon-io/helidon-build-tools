@@ -35,7 +35,10 @@ import java.util.stream.IntStream;
 
 import io.helidon.build.common.InputStreams;
 import io.helidon.build.common.Log;
+import io.helidon.build.common.Log.Level;
+import io.helidon.build.common.LogFormatter;
 import io.helidon.build.common.OSType;
+import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.linker.util.Constants;
 
@@ -43,6 +46,8 @@ import static io.helidon.build.common.FileUtils.lastModifiedSeconds;
 import static io.helidon.build.common.FileUtils.requireDirectory;
 import static io.helidon.build.common.FileUtils.requireFile;
 import static io.helidon.build.common.OSType.Unknown;
+import static io.helidon.build.common.PrintStreams.STDERR;
+import static io.helidon.build.common.PrintStreams.STDOUT;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
@@ -130,8 +135,8 @@ public class StartScript {
         processBuilder.directory(root.toFile());
         final ProcessMonitor monitor = ProcessMonitor.builder()
                                                      .processBuilder(processBuilder)
-                                                     .stdOut(Log::info)
-                                                     .stdErr(Log::warn)
+                                                     .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(Level.INFO)))
+                                                     .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(Level.WARN)))
                                                      .transform(transform)
                                                      .capture(true)
                                                      .build();
