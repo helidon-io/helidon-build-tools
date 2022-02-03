@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static io.helidon.build.cli.plugin.Log.EOL;
 import static io.helidon.build.cli.plugin.Style.boldBlue;
 import static io.helidon.build.cli.plugin.Style.italic;
 import static java.util.Objects.requireNonNull;
@@ -38,6 +37,7 @@ class GetInfo extends Plugin {
     private static final String BUILD_PREFIX = "plugin.build.";
     private static final String MAX_WIDTH_ARG = "--maxWidth";
     private static final String PLAIN_ARG = "--plain";
+    private static final String EOL_MARKER = "~@~";
     private static final String PAD = " ";
 
     private final Map<String, String> info;
@@ -119,7 +119,7 @@ class GetInfo extends Plugin {
             final String value = info.get(key);
             final String padding = padding(maxWidth, key);
             b.append(String.format("%s %s %s", italic(key), padding, boldBlue(value)));
-            b.append(EOL);
+            b.append(EOL_MARKER);
         });
         Log.info(b.toString());
     }
