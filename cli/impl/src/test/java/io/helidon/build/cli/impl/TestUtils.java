@@ -29,8 +29,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import io.helidon.build.common.Log.Level;
-import io.helidon.build.common.LogFormatter;
+import io.helidon.build.common.logging.LogLevel;
+import io.helidon.build.common.logging.LogFormatter;
 import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.ProcessMonitor;
 
@@ -127,8 +127,8 @@ class TestUtils {
         ProcessMonitor monitor = ProcessMonitor.builder()
                                                .processBuilder(pb)
                                                .stdIn(input)
-                                               .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(Level.INFO)))
-                                               .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(Level.ERROR)))
+                                               .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(LogLevel.INFO)))
+                                               .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(LogLevel.ERROR)))
                                                .capture(true)
                                                .build()
                                                .start()

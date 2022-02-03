@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,14 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
 
+import io.helidon.build.common.logging.Log;
+import io.helidon.build.common.logging.LogLevel;
+
 import static java.util.Objects.requireNonNull;
 
 
 /**
- * A builder for accessing a network stream. Supports retries.
+ * A builder for accessing a network stream. Support retries.
  */
 public class NetworkConnection {
 
@@ -41,7 +44,7 @@ public class NetworkConnection {
          * Returns the stream after connecting to the given url.
          *
          * @param url            The url.
-         * @param connectTimeout The connect timeout, in milliseconds.
+         * @param connectTimeout The connection timeout, in milliseconds.
          * @param readTimeout    The read timeout, in milliseconds.
          * @return The stream.
          * @throws IOException If an error occurs.
@@ -97,7 +100,7 @@ public class NetworkConnection {
         public void execute(int attempt, int maxAttempts) {
             try {
                 final long delay = initialDelay + (attempt * increment);
-                if (Log.isVerbose()) {
+                if (LogLevel.isVerbose()) {
                     final float seconds = delay / 1000F;
                     Log.info("  $(italic retry %d of %d, sleeping for %.1f seconds)", attempt, maxAttempts, seconds);
                 } else {
@@ -189,6 +192,7 @@ public class NetworkConnection {
          * @param maxRetries The maximum number of retries.
          * @return This instance, for chaining.
          */
+        @SuppressWarnings("UnusedReturnValue")
         public Builder maxRetries(int maxRetries) {
             if (maxRetries <= 0) {
                 throw new IllegalArgumentException("maxRetries must be > 0");
@@ -198,11 +202,12 @@ public class NetworkConnection {
         }
 
         /**
-         * Sets the connect timeout.
+         * Sets the connection timeout.
          *
          * @param connectTimeout The timeout.
          * @return This instance, for chaining.
          */
+        @SuppressWarnings("UnusedReturnValue")
         public Builder connectTimeout(int connectTimeout) {
             if (connectTimeout <= 0) {
                 throw new IllegalArgumentException("connect timeout must be > 0");
@@ -217,6 +222,7 @@ public class NetworkConnection {
          * @param readTimeout The timeout.
          * @return This instance, for chaining.
          */
+        @SuppressWarnings("UnusedReturnValue")
         public Builder readTimeout(int readTimeout) {
             if (readTimeout <= 0) {
                 throw new IllegalArgumentException("read timeout must be > 0");
@@ -242,6 +248,7 @@ public class NetworkConnection {
          * @param retryDelay The delay.
          * @return This instance, for chaining.
          */
+        @SuppressWarnings("unused")
         public Builder retryDelay(RetryDelay retryDelay) {
             this.delay = requireNonNull(retryDelay);
             return this;

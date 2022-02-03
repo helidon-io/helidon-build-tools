@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,7 @@ package io.helidon.build.maven;
 
 import java.util.List;
 
-import io.helidon.build.common.Log;
-import io.helidon.build.common.maven.plugin.MavenLogWriter;
+import io.helidon.build.common.logging.Log;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -49,7 +48,6 @@ public class LogMojo extends AbstractMojo {
         if (skip) {
             getLog().info("execution skipped");
         } else {
-            Log.writer(MavenLogWriter.create(getLog()));
             messages.forEach(msg -> Log.info(msg == null ? "" : msg));
         }
     }

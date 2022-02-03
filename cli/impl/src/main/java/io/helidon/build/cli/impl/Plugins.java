@@ -28,11 +28,12 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.build.cli.plugin.Plugin;
 import io.helidon.build.common.JavaProcessBuilder;
-import io.helidon.build.common.Log;
 import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.ProcessMonitor.ProcessFailedException;
 import io.helidon.build.common.ProcessMonitor.ProcessTimeoutException;
 import io.helidon.build.common.Proxies;
+import io.helidon.build.common.logging.Log;
+import io.helidon.build.common.logging.LogLevel;
 
 import org.graalvm.nativeimage.ImageInfo;
 
@@ -140,9 +141,9 @@ public class Plugins {
     private static List<String> pluginArgs(String pluginName, List<String> pluginArgs) {
         List<String> args = new ArrayList<>();
         args.add(requireNonNull(pluginName));
-        if (Log.isDebug() && !pluginArgs.contains("--debug")) {
+        if (LogLevel.isDebug() && !pluginArgs.contains("--debug")) {
             args.add("--debug");
-        } else if (Log.isVerbose() && !pluginArgs.contains("--verbose")) {
+        } else if (LogLevel.isVerbose() && !pluginArgs.contains("--verbose")) {
             args.add("--verbose");
         }
         args.addAll(pluginArgs);

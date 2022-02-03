@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import io.helidon.build.common.Log;
+import io.helidon.build.common.logging.Log;
+import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.linker.util.JavaRuntime;
 
 import static io.helidon.build.common.FileUtils.list;
@@ -192,7 +193,7 @@ public final class Application implements ResourceContainer {
 
     private List<Jar> collectClassPath() {
         final List<Jar> classPath = addClassPath(mainJar, new HashSet<>(), new ArrayList<>());
-        if (Log.isDebug()) {
+        if (LogLevel.isDebug()) {
             Log.debug("Application classpath:");
             classPath.forEach(jar -> Log.debug("    %s", jar));
         }

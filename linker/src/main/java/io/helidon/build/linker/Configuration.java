@@ -24,10 +24,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import io.helidon.build.common.Log;
-import io.helidon.build.common.LogWriter;
 import io.helidon.build.common.Strings;
-import io.helidon.build.common.SystemLogWriter;
+import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.linker.util.Constants;
 import io.helidon.build.linker.util.JavaRuntime;
 
@@ -35,7 +33,6 @@ import static io.helidon.build.common.FileUtils.requireExistent;
 import static io.helidon.build.common.FileUtils.requireFile;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
-import static java.util.Objects.requireNonNull;
 
 /**
  * Linker configuration.
@@ -217,7 +214,6 @@ public final class Configuration {
         private boolean stripDebug;
         private boolean cds;
         private boolean test;
-        private LogWriter logWriter;
         private int maxAppStartSeconds;
 
         private Builder() {
@@ -478,17 +474,6 @@ public final class Configuration {
         }
 
         /**
-         * Sets the log writer.
-         *
-         * @param logWriter The writer.
-         * @return The builder.
-         */
-        public Builder logWriter(LogWriter logWriter) {
-            this.logWriter = requireNonNull(logWriter);
-            return this;
-        }
-
-        /**
          * Sets whether to strip debug information from JDK classes.
          *
          * @param stripDebug {@code true} if debug information should be stripped.
@@ -534,10 +519,9 @@ public final class Configuration {
                                                    + "in the plugin configuration.");
             }
             jriDirectory = JavaRuntime.prepareJriDirectory(jriDirectory, mainJar, replace);
-            if (logWriter == null) {
-                logWriter = SystemLogWriter.create(verbose ? Log.Level.DEBUG : Log.Level.INFO);
+            if (verbose) {
+                LogLevel.set(LogLevel.DEBUG);
             }
-            Log.writer(logWriter);
             return new Configuration(this);
         }
 

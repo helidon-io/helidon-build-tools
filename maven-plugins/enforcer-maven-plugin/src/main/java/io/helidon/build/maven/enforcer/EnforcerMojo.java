@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.build.common.Log;
-import io.helidon.build.common.maven.plugin.MavenLogWriter;
+import io.helidon.build.common.logging.Log;
 import io.helidon.build.maven.enforcer.copyright.Copyright;
 import io.helidon.build.maven.enforcer.copyright.CopyrightConfig;
 import io.helidon.build.maven.enforcer.typo.TypoConfig;
@@ -76,7 +75,7 @@ public class EnforcerMojo extends AbstractMojo {
     private boolean useGit;
 
     /**
-     * Whether to use git ignore to matches files.
+     * Whether to use git ignore to match files.
      */
     @Parameter(property = "helidon.enforcer.honor-gitignore", defaultValue = "true")
     private boolean honorGitIgnore;
@@ -97,7 +96,7 @@ public class EnforcerMojo extends AbstractMojo {
 
     /**
      * Enforcer rules to execute.
-     * Currently supported (and configured) are {@code copyright} and {@code typos}.
+     * Currently, supported (and configured) are {@code copyright} and {@code typos}.
      */
     @Parameter(property = "helidon.enforcer.rules", defaultValue = "copyright,typos")
     private String[] rules;
@@ -122,8 +121,6 @@ public class EnforcerMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        Log.writer(MavenLogWriter.create(getLog()));
-
         if (skip) {
             Log.info("Skipping execution.");
             return;
@@ -135,7 +132,7 @@ public class EnforcerMojo extends AbstractMojo {
         if (!path.equals(rootDir) && path.startsWith(rootDir)) {
             // this is not the root dir, and the root dir is my parent
             // all rules run on the whole subpath of current module, so this always makes sense
-            getLog().info("Parent path " + rootDir + " already checked");
+            Log.info("Parent path " + rootDir + " already checked");
             return;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.helidon.build.cli.harness;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import io.helidon.build.common.Log;
+import io.helidon.build.common.logging.Log;
 
 import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
 

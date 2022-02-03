@@ -27,11 +27,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.build.common.Log.Level;
-import io.helidon.build.common.LogFormatter;
 import io.helidon.build.common.OSType;
 import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.ProcessMonitor;
+import io.helidon.build.common.logging.LogFormatter;
+import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.linker.util.Constants;
 import io.helidon.build.linker.util.JavaRuntime;
 
@@ -391,8 +391,8 @@ public final class ClassDataSharing {
             PrintStream stdOut;
             PrintStream stdErr;
             if (logOutput) {
-                stdOut = PrintStreams.apply(STDOUT, LogFormatter.of(Level.DEBUG));
-                stdErr = PrintStreams.apply(STDERR, LogFormatter.of(Level.WARN));
+                stdOut = PrintStreams.apply(STDOUT, LogFormatter.of(LogLevel.DEBUG));
+                stdErr = PrintStreams.apply(STDERR, LogFormatter.of(LogLevel.WARN));
             } else {
                 stdOut = DEVNULL;
                 stdErr = DEVNULL;

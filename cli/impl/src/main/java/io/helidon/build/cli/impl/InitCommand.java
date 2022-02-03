@@ -25,7 +25,7 @@ import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.impl.InitOptions.BuildSystem;
-import io.helidon.build.common.Log;
+import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;

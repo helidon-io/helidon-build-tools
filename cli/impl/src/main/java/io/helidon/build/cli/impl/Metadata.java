@@ -36,11 +36,12 @@ import java.util.stream.Collectors;
 import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
 import io.helidon.build.cli.common.LatestVersion;
 import io.helidon.build.common.ConfigProperties;
-import io.helidon.build.common.Log;
-import io.helidon.build.common.LogFormatter;
 import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.Requirements;
 import io.helidon.build.common.Time;
+import io.helidon.build.common.logging.Log;
+import io.helidon.build.common.logging.LogFormatter;
+import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.cli.impl.CommandRequirements.requireHelidonVersionDir;
@@ -499,7 +500,7 @@ public class Metadata {
                     final long elapsedMillis = currentTimeMillis - lastModifiedMillis;
                     final long remainingMillis = updateFrequencyMillis - elapsedMillis;
                     final boolean stale = remainingMillis <= 0;
-                    if (Log.isDebug()) {
+                    if (LogLevel.isDebug()) {
                         final String lastModifiedTime = Time.toDateTime(lastModifiedMillis);
                         final String currentTime = Time.currentDateTime();
                         final Duration elapsed = Duration.ofMillis(elapsedMillis);
@@ -537,7 +538,7 @@ public class Metadata {
     }
 
     private void update(MavenVersion helidonVersion, boolean quiet) throws UpdateFailed {
-        final boolean logInfo = Log.isDebug() || !quiet;
+        final boolean logInfo = LogLevel.isDebug() || !quiet;
         final int maxAttempts = quiet ? 1 : PLUGIN_MAX_ATTEMPTS;
         final List<String> args = new ArrayList<>();
         args.add("--baseUrl");
@@ -563,7 +564,7 @@ public class Metadata {
         if (debugPlugin) {
             args.add("--debug");
             if (stdOut == null) {
-                stdOut = PrintStreams.apply(STDOUT, LogFormatter.of(Log.Level.INFO));
+                stdOut = PrintStreams.apply(STDOUT, LogFormatter.of(LogLevel.INFO));
             }
         } else if (stdOut == null) {
             stdOut = DEVNULL;

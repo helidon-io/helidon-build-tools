@@ -21,26 +21,22 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import io.helidon.build.cli.harness.CommandModel.CommandInfo;
-import io.helidon.build.common.DefaultLogWriter;
-import io.helidon.build.common.Log;
-import io.helidon.build.common.Log.Level;
-import io.helidon.build.common.LogWriter;
 import io.helidon.build.common.Requirements;
-import io.helidon.build.common.SystemLogWriter;
 import io.helidon.build.common.ansi.AnsiTextStyle;
+import io.helidon.build.common.logging.Log;
+import io.helidon.build.common.logging.LogLevel;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import static io.helidon.build.common.Log.Level.ERROR;
-import static io.helidon.build.common.Log.Level.INFO;
-import static io.helidon.build.common.Log.Level.VERBOSE;
-import static io.helidon.build.common.Log.Level.WARN;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Red;
+import static io.helidon.build.common.logging.LogLevel.ERROR;
+import static io.helidon.build.common.logging.LogLevel.INFO;
+import static io.helidon.build.common.logging.LogLevel.VERBOSE;
+import static io.helidon.build.common.logging.LogLevel.WARN;
 
 /**
  * The command context.
@@ -103,7 +99,6 @@ public final class CommandContext {
         }
     }
 
-    private final AtomicReference<DefaultLogWriter> logWriter = new AtomicReference<>();
     private final CommandRegistry registry;
     private final Properties properties;
     private final InternalOptions internalOptions;
@@ -236,9 +231,9 @@ public final class CommandContext {
             }
         }
 
-        private void exit(String message, Throwable error, Level level, int statusCode) {
+        private void exit(String message, Throwable error, LogLevel level, int statusCode) {
             if (message != null || error != null) {
-                if (Log.isVerbose()) {
+                if (LogLevel.isVerbose()) {
                     Log.info();
                 }
                 if (AnsiTextStyle.isStyled(message)) {
@@ -255,7 +250,7 @@ public final class CommandContext {
                     }
                     Log.log(level, error, message);
                 }
-                if (Log.isVerbose()) {
+                if (LogLevel.isVerbose()) {
                     Log.info();
                 }
             }
@@ -423,10 +418,10 @@ public final class CommandContext {
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
     void verbosity(Verbosity verbosity) {
         this.verbosity = verbosity;
-        Level level;
+        LogLevel level;
         switch (verbosity) {
             case DEBUG: {
-                level = Level.DEBUG;
+                level = LogLevel.DEBUG;
                 break;
             }
             case VERBOSE: {
@@ -441,30 +436,8 @@ public final class CommandContext {
                 throw new RuntimeException("unknown verbosity: " + verbosity);
             }
         }
-        logWriter().level(level);
-        System.setProperty(LogWriter.LEVEL_PROPERTY, level.name());
-    }
-
-    /**
-     * Lazily initialize and return the log writer.
-     *
-     * @return The writer.
-     */
-    private DefaultLogWriter logWriter() {
-        DefaultLogWriter writer = logWriter.get();
-        if (writer == null) {
-            if (Log.hasWriter()) {
-                LogWriter installed = Log.writer();
-                if (installed instanceof DefaultLogWriter) {
-                    writer = (DefaultLogWriter) installed;
-                }
-            }
-            if (writer == null) {
-                writer = SystemLogWriter.install(INFO);
-            }
-            logWriter.set(writer);
-        }
-        return writer;
+        LogLevel.set(level);
+        System.setProperty(LogLevel.LEVEL_PROPERTY, level.name());
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.build.common.FileChanges.DetectionType;
-import io.helidon.build.common.Log;
+import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
 import io.helidon.build.devloop.maven.MavenProjectSupplier;
 

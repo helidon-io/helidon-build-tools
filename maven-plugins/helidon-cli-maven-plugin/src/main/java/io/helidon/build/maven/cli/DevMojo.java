@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.build.common.Log;
-import io.helidon.build.common.SystemLogWriter;
-import io.helidon.build.common.maven.plugin.MavenLogWriter;
+import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.devloop.ProjectSupplier;
 import io.helidon.build.devloop.maven.DevLoopBuildConfig;
 import io.helidon.build.devloop.maven.MavenEnvironment;
@@ -161,10 +159,8 @@ public class DevMojo extends AbstractMojo {
         }
         try {
             MavenProjectConfigCollector.assertSupportedProject(session);
-            if (terminalMode) {
-                Log.writer(SystemLogWriter.create(getLog().isDebugEnabled() ? Log.Level.DEBUG : Log.Level.INFO));
-            } else {
-                Log.writer(MavenLogWriter.create(getLog()));
+            if (terminalMode && getLog().isDebugEnabled()) {
+                LogLevel.set(LogLevel.DEBUG);
             }
 
             final DevLoopBuildConfig configuration = buildConfig(true);

@@ -25,11 +25,11 @@ import io.helidon.build.cli.harness.CommandContext.Verbosity;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
-import io.helidon.build.common.Log;
 import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.PrintStreams.PrintStreamAdapter;
 import io.helidon.build.common.Strings;
 import io.helidon.build.common.ansi.AnsiConsoleInstaller;
+import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.maven.MavenCommand;
 
 import static io.helidon.build.cli.common.CliProperties.HELIDON_CLI_PLUGIN_VERSION_PROPERTY;

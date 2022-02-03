@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,8 +89,6 @@ public final class CommandRunner {
         CommandParser.Resolver globalResolver = parser.globalResolver();
         if (globalResolver.resolve(GlobalOptions.PLAIN_FLAG_INFO) || context.internalOptions().richTextDisabled()) {
             AnsiConsoleInstaller.disable();
-        } else {
-            AnsiConsoleInstaller.install();
         }
         if (globalResolver.resolve(GlobalOptions.VERBOSE_FLAG_INFO)) {
             context.verbosity(CommandContext.Verbosity.VERBOSE);
