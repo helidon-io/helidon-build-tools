@@ -32,8 +32,6 @@ import io.helidon.build.common.ConfigProperties;
 import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.Time;
 import io.helidon.build.common.logging.Log;
-import io.helidon.build.common.logging.LogFormatter;
-import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.cli.common.ProjectConfig.HELIDON_VERSION;
@@ -47,7 +45,7 @@ import static io.helidon.build.cli.common.ProjectConfig.PROJECT_VERSION;
 import static io.helidon.build.cli.impl.Metadata.HELIDON_3;
 import static io.helidon.build.cli.impl.UserConfig.DEFAULT_PROJECT_NAME_KEY;
 import static io.helidon.build.cli.impl.VersionCommand.addProjectProperty;
-import static io.helidon.build.common.PrintStreams.STDOUT;
+import static io.helidon.build.common.PrintStreams.DEVNULL;
 import static io.helidon.build.common.Strings.padding;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Italic;
@@ -62,6 +60,7 @@ public final class InfoCommand extends BaseCommand {
     private static final String EOL = System.getProperty("line.separator");
     private static final int DEFAULT_BUILDER_SIZE = 2048;
     private static final int VERBOSE_BUILDER_SIZE = 16384;
+    private static final String EOL_MARKER = "~@~";
     private static final String PAD = " ";
     private final boolean verbose;
     private final boolean plain;
@@ -178,8 +177,9 @@ public final class InfoCommand extends BaseCommand {
         append("User Config", userConfigProps, maxWidth);
         append("Project Config", projectProps, maxWidth);
         append("General", buildProps, maxWidth);
+
         try {
-            PrintStream stdOut = PrintStreams.apply(STDOUT, LogFormatter.of(LogLevel.INFO));
+            PrintStream stdOut = PrintStreams.delegate(DEVNULL, (p, s) -> append(s.replace(EOL_MARKER, EOL)));
             Plugins.execute("GetInfo", pluginArgs(maxWidth), 5, stdOut);
         } catch (Plugins.PluginFailed e) {
             Log.error(e, "Unable to get system info");

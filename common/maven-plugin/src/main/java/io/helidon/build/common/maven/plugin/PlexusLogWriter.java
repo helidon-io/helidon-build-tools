@@ -16,6 +16,7 @@
 package io.helidon.build.common.maven.plugin;
 
 import io.helidon.build.common.RichTextRenderer;
+import io.helidon.build.common.logging.DefaultLogWriter;
 import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.logging.LogWriter;
 
@@ -32,7 +33,9 @@ public class PlexusLogWriter extends LogWriter {
         recordEntry(entry);
         Logger logger = PlexusLoggerHolder.LOGGER.get();
         if (logger == null) {
-            throw new IllegalStateException("Plexus logger is null");
+            // fallback to the default writer
+            DefaultLogWriter.INSTANCE.writeEntry(level, thrown, message, args);
+            return;
         }
         switch (level) {
             case DEBUG:
