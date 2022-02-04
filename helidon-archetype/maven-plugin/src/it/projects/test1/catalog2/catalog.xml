@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 <archetype-catalog modelVersion="1.0"
                    name="catalog2"
                    groupId="io.helidon.build-tools.archetype.tests"
-                   version="2.3.1-SNAPSHOT">
+                   version="2.0.0-SNAPSHOT">
 
     <archetype name="test-archetype1"
                title="Test Archetype #1"
