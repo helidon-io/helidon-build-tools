@@ -94,6 +94,7 @@ public enum LogLevel {
      * @return {@code true} if enabled.
      */
     public static boolean isVerbose() {
-        return get() == VERBOSE;
+        LogLevel level = get();
+        return level == VERBOSE || level == DEBUG;
     }
 }
