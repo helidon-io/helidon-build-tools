@@ -99,14 +99,10 @@ public abstract class LogWriter {
         private Holder() {
         }
 
-        static final LogWriter INSTANCE;
+        static final LogWriter INSTANCE = ServiceLoader.load(LogWriter.class)
+                                                       .findFirst()
+                                                       .orElse(DefaultLogWriter.INSTANCE);
 
-        static {
-            INSTANCE = ServiceLoader.load(LogWriter.class)
-                                .findFirst()
-                                .orElse(DefaultLogWriter.INSTANCE);
-            Log.nextInitState();
-        }
     }
 
 }

@@ -27,8 +27,6 @@ import static io.helidon.build.common.Strings.padding;
  */
 public class Log {
 
-    private static final AtomicInteger STATE = new AtomicInteger();
-    private static final int INITIALIZED = 2;
     private static final String PAD = " ";
 
     private final AtomicInteger messages = new AtomicInteger();
@@ -36,6 +34,8 @@ public class Log {
     private final AtomicInteger errors = new AtomicInteger();
 
     private Log() {
+        LogWriter.ensureLoaded();
+        LogFormatter.ensureLoaded();
     }
 
     /**
@@ -223,13 +223,6 @@ public class Log {
         return maxLen;
     }
 
-    /**
-     * Increment the init state.
-     */
-    static void nextInitState() {
-        STATE.incrementAndGet();
-    }
-
     private void logEntry(LogLevel level, Throwable thrown, String message, Object... args) {
         messages.incrementAndGet();
         if (level == LogLevel.WARN) {
@@ -246,24 +239,10 @@ public class Log {
                 }
             }
         }
-        if (STATE.get() >= INITIALIZED) {
-            LogWriter.write(level, thrown, message, args);
-        } else if (LogLevel.isDebug()){
-            if (thrown != null) {
-                thrown.printStackTrace(System.out);
-            }
-            System.out.printf(message + "%n", args);
-        }
+        LogWriter.write(level, thrown, message, args);
     }
 
     private static final class Holder {
-
-        static final Log INSTANCE;
-
-        static {
-            INSTANCE = new Log();
-            LogWriter.ensureLoaded();
-            LogFormatter.ensureLoaded();
-        }
+        static final Log INSTANCE = new Log();
     }
 }

@@ -93,14 +93,8 @@ public abstract class LogFormatter {
         private Holder() {
         }
 
-        static final LogFormatter INSTANCE;
-
-        static {
-            INSTANCE = ServiceLoader.load(LogFormatter.class, LogFormatter.class.getClassLoader())
-                                    .findFirst()
-                                    .orElse(DefaultFormatter.INSTANCE);
-            Log.nextInitState();
-        }
+        static final LogFormatter INSTANCE = ServiceLoader.load(LogFormatter.class, LogFormatter.class.getClassLoader())
+                                                          .findFirst()
+                                                          .orElse(DefaultFormatter.INSTANCE);
     }
-
 }

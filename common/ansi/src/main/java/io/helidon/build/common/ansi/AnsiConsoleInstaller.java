@@ -19,7 +19,7 @@ package io.helidon.build.common.ansi;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 
-import io.helidon.build.common.logging.Log;
+import io.helidon.build.common.logging.LogLevel;
 
 import org.fusesource.jansi.Ansi;
 import picocli.jansi.graalvm.AnsiConsole;
@@ -167,19 +167,19 @@ public class AnsiConsoleInstaller {
 
         private static ConsoleType desiredConsoleType() {
             if (Boolean.getBoolean(JANSI_FORCE_PROPERTY)) {
-                Log.debug("Jansi streams requested: %s=true", JANSI_FORCE_PROPERTY);
+                log("Jansi streams requested: %s=true", JANSI_FORCE_PROPERTY);
                 return ConsoleType.ANSI;
             } else if (Boolean.getBoolean(JANSI_STRIP_PROPERTY)) {
-                Log.debug("Jansi strip streams requested: %s=true", JANSI_STRIP_PROPERTY);
+                log("Jansi strip streams requested: %s=true", JANSI_STRIP_PROPERTY);
                 return ConsoleType.STRIP_ANSI;
             } else if (Boolean.getBoolean(JANSI_PASS_THROUGH_PROPERTY)) {
-                Log.debug("Jansi pass through streams requested: %s=true", JANSI_PASS_THROUGH_PROPERTY);
+                log("Jansi pass through streams requested: %s=true", JANSI_PASS_THROUGH_PROPERTY);
                 return ConsoleType.STRIP_ANSI;
             } else if (System.console() != null) {
-                Log.debug("No Jansi request, but Console is available");
+                log("No Jansi request, but Console is available");
                 return ConsoleType.ANSI;
             } else {
-                Log.debug("No Jansi request and Console is not available");
+                log("No Jansi request and Console is not available");
                 return ConsoleType.DEFAULT;
             }
         }
@@ -214,13 +214,13 @@ public class AnsiConsoleInstaller {
             if (desiredType != installedType) {
                 switch (installedType) {
                     case STRIP_ANSI:
-                        Log.debug("Desired = %s, but Ansi escapes will be stripped by system streams.", desiredType);
+                        log("Desired = %s, but Ansi escapes will be stripped by system streams.", desiredType);
                         break;
                     case ANSI:
-                        Log.debug("Desired = %s, but Ansi escapes should be supported by system streams.", desiredType);
+                        log("Desired = %s, but Ansi escapes should be supported by system streams.", desiredType);
                         break;
                     case DEFAULT:
-                        Log.debug("Desired = %s, but System.out not a Jansi type (%s) so Ansi escapes should not be stripped",
+                        log("Desired = %s, but System.out not a Jansi type (%s) so Ansi escapes should not be stripped",
                                 desiredType, systemOutClassName);
                         break;
                     default:
@@ -228,6 +228,12 @@ public class AnsiConsoleInstaller {
                 }
             }
             return installedType;
+        }
+
+        private static void log(String message, Object... args) {
+            if (LogLevel.isDebug()){
+                System.out.printf(message + "%n", args);
+            }
         }
     }
 }
