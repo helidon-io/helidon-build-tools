@@ -62,12 +62,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.oracle.bedrock</groupId>
-            <artifactId>bedrock-runtime-maven</artifactId>
-            <version>${version.lib.bedrock}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
