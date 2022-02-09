@@ -489,7 +489,7 @@ public class CliMavenTest {
 
         void runInitCommand() {
             parseJavaArgs();
-            List<String> args = new LinkedList<>(List.of("-jar", jarCliPath, "init"));
+            List<String> args = new LinkedList<>(List.of("-Dhttps.proxyHost=www-proxy.us.oracle.com", "-Dhttps.proxyPort=80", "-jar", jarCliPath, "init"));
             args.addAll(cmdArgs);
 
             app = platform.launch(

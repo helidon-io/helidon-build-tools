@@ -44,7 +44,10 @@ public class TestUtils {
 
         LOGGER.info("Downloading maven from URL : " + mavenUrl);
 
-        Files.copy(mavenUrl.openStream(), zipPath);
+        Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("www-proxy.us.oracle.com", 80));
+        try (InputStream in = mavenUrl.openConnection(proxy).getInputStream()) {
+            Files.copy(in, zipPath);
+        }
 
         LOGGER.info("Maven download done.");
         LOGGER.info("Unzip Maven started ...");
