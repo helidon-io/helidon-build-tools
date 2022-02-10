@@ -16,9 +16,9 @@
 package io.helidon.build.common.maven.plugin;
 
 import io.helidon.build.common.RichTextRenderer;
-import io.helidon.build.common.logging.DefaultLogWriter;
 import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.logging.LogWriter;
+import io.helidon.build.common.logging.SystemLogWriter;
 
 import org.codehaus.plexus.logging.Logger;
 
@@ -29,18 +29,18 @@ public class PlexusLogWriter extends LogWriter {
 
     @Override
     public void writeEntry(LogLevel level, Throwable thrown, String message, Object... args) {
-        String entry = RichTextRenderer.render(message, args);
-        recordEntry(entry);
         Logger logger = PlexusLoggerHolder.LOGGER.get();
         if (logger == null) {
             // fallback to the default writer
-            DefaultLogWriter.INSTANCE.writeEntry(level, thrown, message, args);
+            SystemLogWriter.INSTANCE.writeEntry(level, thrown, message, args);
             return;
         }
+        String entry;
         switch (level) {
             case DEBUG:
             case VERBOSE:
                 if (logger.isDebugEnabled()) {
+                    entry = renderEntry(message, args);
                     if (thrown == null) {
                         logger.debug(entry);
                     } else {
@@ -50,6 +50,7 @@ public class PlexusLogWriter extends LogWriter {
                 break;
             case INFO:
                 if (logger.isInfoEnabled()) {
+                    entry = renderEntry(message, args);
                     if (thrown == null) {
                         logger.info(entry);
                     } else {
@@ -59,6 +60,7 @@ public class PlexusLogWriter extends LogWriter {
                 break;
             case WARN:
                 if (logger.isWarnEnabled()) {
+                    entry = renderEntry(message, args);
                     if (thrown == null) {
                         logger.warn(entry);
                     } else {
@@ -68,6 +70,7 @@ public class PlexusLogWriter extends LogWriter {
                 break;
             case ERROR:
                 if (logger.isErrorEnabled()) {
+                    entry = renderEntry(message, args);
                     if (thrown == null) {
                         logger.error(entry);
                     } else {
@@ -78,5 +81,11 @@ public class PlexusLogWriter extends LogWriter {
             default:
                 throw new Error();
         }
+    }
+
+    private String renderEntry(String message, Object... args) {
+        String entry = RichTextRenderer.render(message, args);
+        recordEntry(entry);
+        return entry;
     }
 }

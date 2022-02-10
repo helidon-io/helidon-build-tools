@@ -15,16 +15,17 @@
  */
 package io.helidon.build.common.logging;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.ServiceLoader;
-import java.util.Set;
 
 /**
  * The {@link Log} writer.
  */
 public abstract class LogWriter {
 
-    private final Set<LogRecorder> recorders = new HashSet<>();
+    private final List<LogRecorder> recorders = Collections.synchronizedList(new ArrayList<>());
 
     /**
      * Create a new instance.
@@ -84,11 +85,11 @@ public abstract class LogWriter {
     }
 
     /**
-     * Ensure that the log writer is loaded.
+     * Load the log writer implementation.
      *
      * @throws IllegalStateException if the loaded instance is {@code null}
      */
-    static void ensureLoaded() throws IllegalStateException {
+    static void init() throws IllegalStateException {
         if (Holder.INSTANCE == null) {
             throw new IllegalStateException("Unable to load log writer");
         }
@@ -101,8 +102,6 @@ public abstract class LogWriter {
 
         static final LogWriter INSTANCE = ServiceLoader.load(LogWriter.class)
                                                        .findFirst()
-                                                       .orElse(DefaultLogWriter.INSTANCE);
-
+                                                       .orElse(SystemLogWriter.INSTANCE);
     }
-
 }

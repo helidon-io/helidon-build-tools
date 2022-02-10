@@ -25,17 +25,17 @@ import static io.helidon.build.common.PrintStreams.STDOUT;
 /**
  * Default log writer implementation.
  */
-public final class DefaultLogWriter extends LogWriter {
+public final class SystemLogWriter extends LogWriter {
 
     /**
      * Singleton.
      */
-    public static final DefaultLogWriter INSTANCE = new DefaultLogWriter();
+    public static final SystemLogWriter INSTANCE = new SystemLogWriter();
 
     private final PrintStream stdErr;
     private final PrintStream stdOut;
 
-    private DefaultLogWriter() {
+    private SystemLogWriter() {
         super();
         stdOut = PrintStreams.autoFlush(STDOUT);
         stdErr = PrintStreams.autoFlush(STDERR);

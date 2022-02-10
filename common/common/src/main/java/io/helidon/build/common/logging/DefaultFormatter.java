@@ -48,9 +48,9 @@ final class DefaultFormatter extends LogFormatter {
     }
 
     private static String trace(LogLevel level, Throwable thrown) {
-        final StringWriter sw = new StringWriter();
         if (thrown != null) {
             if (isDebug(level)) {
+                StringWriter sw = new StringWriter();
                 try (PrintWriter pw = new PrintWriter(sw)) {
                     thrown.printStackTrace(pw);
                     return sw.toString();

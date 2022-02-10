@@ -28,14 +28,16 @@ import static io.helidon.build.common.Strings.padding;
 public class Log {
 
     private static final String PAD = " ";
+    private static final AtomicInteger MESSAGES = new AtomicInteger();
+    private static final AtomicInteger WARNINGS = new AtomicInteger();
+    private static final AtomicInteger ERRORS = new AtomicInteger();
 
-    private final AtomicInteger messages = new AtomicInteger();
-    private final AtomicInteger warnings = new AtomicInteger();
-    private final AtomicInteger errors = new AtomicInteger();
+    static {
+        LogWriter.init();
+        LogFormatter.init();
+    }
 
     private Log() {
-        LogWriter.ensureLoaded();
-        LogFormatter.ensureLoaded();
     }
 
     /**
@@ -44,7 +46,7 @@ public class Log {
      * @return The count.
      */
     public static int messages() {
-        return Holder.INSTANCE.messages.get();
+        return MESSAGES.get();
     }
 
     /**
@@ -54,7 +56,7 @@ public class Log {
      */
     @SuppressWarnings("unused")
     public static int warnings() {
-        return Holder.INSTANCE.warnings.get();
+        return WARNINGS.get();
     }
 
     /**
@@ -63,7 +65,7 @@ public class Log {
      * @return The count.
      */
     public static int errors() {
-        return Holder.INSTANCE.errors.get();
+        return ERRORS.get();
     }
 
     /**
@@ -200,7 +202,22 @@ public class Log {
      * @param args    The message args.
      */
     public static void log(LogLevel level, Throwable thrown, String message, Object... args) {
-        Holder.INSTANCE.logEntry(level, thrown, message, args);
+        MESSAGES.incrementAndGet();
+        if (level == LogLevel.WARN) {
+            WARNINGS.incrementAndGet();
+        } else if (level == LogLevel.ERROR) {
+            ERRORS.incrementAndGet();
+        }
+        if (message == null) {
+            message = "<null>";
+        } else {
+            for (int i = 0; i < args.length; i++) {
+                if (args[i] == null) {
+                    args[i] = "<null>";
+                }
+            }
+        }
+        LogWriter.write(level, thrown, message, args);
     }
 
     /**
@@ -221,28 +238,5 @@ public class Log {
             }
         }
         return maxLen;
-    }
-
-    private void logEntry(LogLevel level, Throwable thrown, String message, Object... args) {
-        messages.incrementAndGet();
-        if (level == LogLevel.WARN) {
-            warnings.incrementAndGet();
-        } else if (level == LogLevel.ERROR) {
-            errors.incrementAndGet();
-        }
-        if (message == null) {
-            message = "<null>";
-        } else {
-            for (int i = 0; i < args.length; i++) {
-                if (args[i] == null) {
-                    args[i] = "<null>";
-                }
-            }
-        }
-        LogWriter.write(level, thrown, message, args);
-    }
-
-    private static final class Holder {
-        static final Log INSTANCE = new Log();
     }
 }

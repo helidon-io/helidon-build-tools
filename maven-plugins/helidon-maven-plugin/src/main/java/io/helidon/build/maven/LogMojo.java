@@ -46,7 +46,7 @@ public class LogMojo extends AbstractMojo {
     @Override
     public void execute() {
         if (skip) {
-            getLog().info("execution skipped");
+            Log.info("execution skipped");
         } else {
             messages.forEach(msg -> Log.info(msg == null ? "" : msg));
         }

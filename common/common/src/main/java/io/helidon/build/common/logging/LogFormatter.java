@@ -78,11 +78,11 @@ public abstract class LogFormatter {
     }
 
     /**
-     * Ensure that the log formatter is loaded.
+     * Load the log formatter implementation.
      *
      * @throws IllegalStateException if the loaded instance is {@code null}
      */
-    static void ensureLoaded() throws IllegalStateException {
+    static void init() throws IllegalStateException {
         if (Holder.INSTANCE == null) {
             throw new IllegalStateException("Unable to load log formatter");
         }
