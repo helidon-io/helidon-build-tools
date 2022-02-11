@@ -57,6 +57,7 @@ public final class ProcessMonitor {
     private final Runnable beforeShutdown;
     private final Runnable afterShutdown;
     private volatile Process process;
+    private final boolean ignoreExitValue;
 
     /**
      * Returns a new builder.
@@ -83,6 +84,7 @@ public final class ProcessMonitor {
         private Function<String, String> transform = Function.identity();
         private Runnable beforeShutdown = () -> {};
         private Runnable afterShutdown = () -> {};
+        private boolean ignoreExitValue = false;
 
         private Builder() {
         }
@@ -213,6 +215,17 @@ public final class ProcessMonitor {
         }
 
         /**
+         * Ignore the process exit value.
+         *
+         * @param ignore the exit value
+         * @return This builder.
+         */
+        public Builder ignoreExitValue(boolean ignore) {
+            this.ignoreExitValue = ignore;
+            return this;
+        }
+
+        /**
          * Builds the instance.
          *
          * @return The instance.
@@ -258,6 +271,7 @@ public final class ProcessMonitor {
         this.beforeShutdown = builder.beforeShutdown;
         this.afterShutdown = builder.afterShutdown;
         this.exitFuture = new CompletableFuture<>();
+        this.ignoreExitValue = builder.ignoreExitValue;
     }
 
     /**
@@ -358,7 +372,7 @@ public final class ProcessMonitor {
                 exitFuture.get(timeout, unit);
                 try {
                     // ignore exit code if this is a shutdown
-                    if (process.exitValue() != 0 && !shutdown.get()) {
+                    if (process.exitValue() != 0 && !shutdown.get() && !ignoreExitValue) {
                         throw new ProcessFailedException();
                     }
                 } catch (IllegalThreadStateException ex) {

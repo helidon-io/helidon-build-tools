@@ -15,14 +15,18 @@
  */
 package io.helidon.tests.functional;
 
+import org.junit.jupiter.api.Assertions;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.net.ServerSocket;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,7 +43,7 @@ public class TestUtils {
 
         Path zipPath = destination.resolve("maven.zip");
         URL mavenUrl = new URL(
-                String.format("https://archive.apache.org/dist/maven/maven-3/%s/binaries/apache-maven-%s-bin.zip", version, version)
+                String.format("http://archive.apache.org/dist/maven/maven-3/%s/binaries/apache-maven-%s-bin.zip", version, version)
         );
 
         LOGGER.info("Downloading maven from URL : " + mavenUrl);
@@ -96,6 +100,37 @@ public class TestUtils {
             bos.write(bytesIn, 0, read);
         }
         bos.close();
+    }
+
+    static void waitForApplication(int port) throws Exception {
+        long timeout = 30 * 1000;
+        long now = System.currentTimeMillis();
+        URL url = new URL("http://localhost:" + port + "/greet");
+
+        HttpURLConnection conn = null;
+        int responseCode;
+        do {
+            Thread.sleep(1000);
+            if ((System.currentTimeMillis() - now) > timeout) {
+                Assertions.fail("Application failed to start on port :" + port);
+            }
+            try {
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(500);
+                responseCode = conn.getResponseCode();
+            } catch (Exception ex) {
+                responseCode = -1;
+            }
+            if (conn != null) {
+                conn.disconnect();
+            }
+        } while (responseCode != 200);
+    }
+
+    static int getAvailablePort() throws IOException {
+        ServerSocket s = new ServerSocket(0);
+        s.close();
+        return s.getLocalPort();
     }
 
 }

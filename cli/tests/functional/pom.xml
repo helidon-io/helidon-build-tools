@@ -31,11 +31,12 @@
     <artifactId>helidon-cli-functional</artifactId>
     <name>Helidon Command Line Interface Functional Tests</name>
 
-    <properties>
-        <jarCliPath>${project.basedir}/../../impl/target/helidon.jar</jarCliPath>
-    </properties>
-
     <dependencies>
+        <dependency>
+            <groupId>io.helidon.build-tools.common</groupId>
+            <artifactId>helidon-build-common-maven</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>io.helidon.build-tools.cli</groupId>
             <artifactId>helidon-cli-impl</artifactId>
@@ -53,12 +54,6 @@
             <groupId>io.helidon.build-tools.cli</groupId>
             <artifactId>helidon-cli-common</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.oracle.bedrock</groupId>
-            <artifactId>bedrock-testing-support</artifactId>
-            <version>${version.lib.bedrock}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -103,7 +98,6 @@
                         <!-- version should be upgraded to 3.0.0 once released-->
                         <helidon.test.version>2.4.0</helidon.test.version>
                         <helidon.current.test.version>${project.version}</helidon.current.test.version>
-                        <jar.cli.path>${jarCliPath}</jar.cli.path>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

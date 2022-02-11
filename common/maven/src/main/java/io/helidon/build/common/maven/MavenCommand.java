@@ -75,6 +75,7 @@ public class MavenCommand {
                                                 + "$(bold Version) $(GREEN %s) $(bold or later is required.) "
                                                 + "Please update from %s and prepend your PATH or set the MAVEN_HOME or MVN_HOME "
                                                 + "environment variable.";
+    private final boolean ignoreExitValue;
 
     private final String name;
     private final ProcessBuilder processBuilder;
@@ -105,6 +106,7 @@ public class MavenCommand {
         this.transform = builder.transform;
         this.beforeShutdown = builder.beforeShutdown;
         this.afterShutdown = builder.afterShutdown;
+        this.ignoreExitValue = builder.ignoreExitValue;
     }
 
     /**
@@ -230,6 +232,7 @@ public class MavenCommand {
         // If we were able to determine the maven version, go ahead and make sure it is acceptable.
         Requirements.require(installed.isGreaterThanOrEqualTo(requiredMinimumVersion),
                 VERSION_ERROR, installed, requiredMinimumVersion, MAVEN_DOWNLOAD_URL);
+
     }
 
     /**
@@ -252,6 +255,7 @@ public class MavenCommand {
                              .beforeShutdown(beforeShutdown)
                              .afterShutdown(afterShutdown)
                              .capture(false)
+                             .ignoreExitValue(ignoreExitValue)
                              .build()
                              .start();
     }
@@ -287,7 +291,7 @@ public class MavenCommand {
      * {@link MavenCommand} builder.
      */
     public static class Builder {
-        private static final String MAVEN_EXEC = OS.mavenExec();
+        private static final String DEFAULT_MAVEN_EXEC = OS.mavenExec();
         private static final String PATH_VAR = "PATH";
         private static final String MAVEN_OPTS_VAR = "MAVEN_OPTS";
         private static final String MAVEN_DEBUG_OPTS_VAR = "MAVEN_DEBUG_OPTS";
@@ -314,6 +318,9 @@ public class MavenCommand {
         private Runnable afterShutdown = () -> {};
         private MavenVersion requiredMinimumVersion;
         private ProcessBuilder processBuilder;
+        private String customMavenExec;
+        private boolean ignoreExitValue = false;
+        private boolean ignoreMavenVersion = false;
 
         private Builder() {
             this.mavenArgs = new ArrayList<>();
@@ -423,6 +430,16 @@ public class MavenCommand {
         }
 
         /**
+         * Ignore the exit value.
+         *
+         * @return This instance, for chaining.
+         */
+        public Builder ignoreExitValue() {
+            this.ignoreExitValue = true;
+            return this;
+        }
+
+        /**
          * Enables attaching a debugger on the given port.
          *
          * @param debugPort The port.
@@ -500,6 +517,27 @@ public class MavenCommand {
         }
 
         /**
+         * Sets the maven executable path to be used for command execution.
+         *
+         * @param mvn the maven executable path
+         * @return This builder.
+         */
+        public Builder mvnExecutable(Path mvn) {
+            customMavenExec = mvn.toString();
+            return this;
+        }
+
+        /**
+         * Sets the maven executable path to be used for command execution.
+         *
+         * @return This builder.
+         */
+        public Builder ignoreMavenVersion() {
+            ignoreMavenVersion = true;
+            return this;
+        }
+
+        /**
          * Sets the maximum number of seconds to wait for command to complete.
          *
          * @param maxWaitSeconds The seconds.
@@ -521,7 +559,7 @@ public class MavenCommand {
             // Create the command
 
             List<String> command = new ArrayList<>();
-            command.add(MAVEN_EXEC);
+            command.add(customMavenExec == null ? DEFAULT_MAVEN_EXEC : customMavenExec);
             command.addAll(mavenArgs);
             if (verbose) {
                 command.add("--debug");
@@ -564,6 +602,12 @@ public class MavenCommand {
             mavenOpts = addMavenOption(AnsiConsoleInstaller.childProcessArgument(), mavenOpts);
 
             env.put(MAVEN_OPTS_VAR, mavenOpts);
+            if (customMavenExec != null) {
+                String mvnHome = Path.of(customMavenExec).getParent().getParent().toString();
+                processBuilder.environment().put("M2_HOME", mvnHome);
+                processBuilder.environment().put(MVN_HOME_VAR, mvnHome);
+                processBuilder.environment().put(MAVEN_HOME_VAR, mvnHome);
+            }
 
             return new MavenCommand(this);
         }
@@ -584,7 +628,9 @@ public class MavenCommand {
         }
 
         private void prepare() {
-            requireMavenVersion(requiredMinimumVersion);
+            if (!ignoreMavenVersion) {
+                requireMavenVersion(requiredMinimumVersion);
+            }
             requireNonNull(directory, "directory required");
             requireJavaExecutable();
             if (stdOut == null) {
