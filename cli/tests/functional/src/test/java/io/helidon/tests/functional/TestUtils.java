@@ -30,6 +30,7 @@ import java.net.ServerSocket;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -50,7 +51,7 @@ public class TestUtils {
 
         Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("www-proxy.us.oracle.com", 80));
         try (InputStream in = mavenUrl.openConnection(proxy).getInputStream()) {
-            Files.copy(in, zipPath);
+            Files.copy(in, zipPath, StandardCopyOption.REPLACE_EXISTING);
         }
 
         LOGGER.info("Maven download done.");
