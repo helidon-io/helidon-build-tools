@@ -31,6 +31,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -68,6 +69,16 @@ public class TestUtils {
 
         if (!zipPath.toFile().delete()) {
             LOGGER.info("Could not clean zip file");
+        }
+
+        Optional<String> mvnFile = Files.walk(destination)
+                .map(Path::getFileName)
+                .map(Path::toString)
+                .filter(name -> name.equals("mvn"))
+                .findFirst();
+
+        if (mvnFile.isEmpty()) {
+            throw new IOException("Maven downloading failed. Test can not be processed");
         }
     }
 

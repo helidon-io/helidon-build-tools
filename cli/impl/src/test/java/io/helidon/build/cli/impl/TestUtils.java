@@ -149,7 +149,7 @@ class TestUtils {
      * @param wd    working directory
      * @param args  command arguments
      * @param environment  environment variables
-     * @return output stripped of ANSI colors
+     * @return process monitor
      * @throws Exception if an error occurs
      */
     static ProcessMonitor execDevWithDirAndInput(File wd, Map<String, String> environment, String... args) throws Exception {

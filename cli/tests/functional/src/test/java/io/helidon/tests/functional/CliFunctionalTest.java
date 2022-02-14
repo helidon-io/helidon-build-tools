@@ -175,12 +175,15 @@ public class CliFunctionalTest {
     @Test
     public void testVerbose() throws Exception {
         int port = TestUtils.getAvailablePort();
+        Map<String, String> env = Map.of(
+                "MAVEN_HOME", MavenCommand.mavenHome().toString(),
+                "M2_HOME", MavenCommand.mavenHome().toString());
 
         commandInvoker(null).artifactId("artifactid").invokeInit();
         CommandInvoker invoker = commandInvoker(null)
                 .appJvmArgs("-Dserver.port=" + port)
                 .verbose()
-                .environment(Map.of("MAVEN_HOME", MavenCommand.mavenHome().toString()))
+                .environment(env)
                 .workDir(workDir.resolve("artifactid"))
                 .build()
                 .invokeDev();

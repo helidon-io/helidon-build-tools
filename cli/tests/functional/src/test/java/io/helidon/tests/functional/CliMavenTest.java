@@ -150,9 +150,9 @@ public class CliMavenTest {
                 .build()
                 .execute();
         String output = stream.toString();
-        Assertions.assertTrue(output.contains("Property groupId is missing. Add -DgroupId=someValue"));
-        Assertions.assertTrue(output.contains("Property package is missing. Add -Dpackage=someValue"));
-        Assertions.assertTrue(output.contains("Property artifactId is missing. Add -DartifactId=someValue"));
+        Assertions.assertTrue(output.contains("Property groupId is missing."));
+        Assertions.assertTrue(output.contains("Property package is missing."));
+        Assertions.assertTrue(output.contains("Property artifactId is missing."));
         Assertions.assertTrue(output.contains("BUILD FAILURE"));
     }
 
