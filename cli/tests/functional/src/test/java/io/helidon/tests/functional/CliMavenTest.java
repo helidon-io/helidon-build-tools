@@ -206,7 +206,7 @@ public class CliMavenTest {
                 .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.1", "bin", "mvn"))
                 .directory(workDir.resolve("artifactid"))
                 .stdOut(new PrintStream(stream))
-                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:3.0.0-M2:dev")
+                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + ARCHETYPE_VERSION + ":dev")
                 .build()
                 .start();
         TestUtils.waitForApplication(port);
@@ -228,7 +228,7 @@ public class CliMavenTest {
                 .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", "mvn"))
                 .directory(workDir.resolve("artifactid"))
                 .stdOut(new PrintStream(stream))
-                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:3.0.0-M2:dev")
+                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + ARCHETYPE_VERSION + ":dev")
                 .build()
                 .start();
         TestUtils.waitForApplication(port);
