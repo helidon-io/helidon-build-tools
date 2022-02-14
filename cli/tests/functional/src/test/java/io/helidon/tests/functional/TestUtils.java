@@ -28,6 +28,7 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ServerSocket;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -51,7 +52,9 @@ public class TestUtils {
         LOGGER.info("Downloading maven from URL : " + mavenUrl);
 
         Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("www-proxy.us.oracle.com", 80));
-        try (InputStream in = mavenUrl.openConnection(proxy).getInputStream()) {
+        URLConnection connection = mavenUrl.openConnection(proxy);
+        connection.setReadTimeout(10*60*1000);
+        try (InputStream in = connection.getInputStream()) {
             Files.copy(in, zipPath, StandardCopyOption.REPLACE_EXISTING);
         }
 
