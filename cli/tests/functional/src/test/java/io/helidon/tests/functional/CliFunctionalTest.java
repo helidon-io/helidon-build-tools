@@ -156,11 +156,25 @@ public class CliFunctionalTest {
         runInteractiveTest(flavor, null, archetype, null, null, null, CUSTOM_PROJECT, false);
     }
 
-    private CommandInvoker.Builder commandInvoker(String version) {
+    private CommandInvoker.Builder commandInvoker(String flavor,
+                                                  String version,
+                                                  String archetype,
+                                                  String groupId,
+                                                  String artifactId,
+                                                  String packageName,
+                                                  String name,
+                                                  boolean startApp) {
         return CommandInvoker.builder()
                 .helidonVersion(version)
                 .metadataUrl("https://helidon.io/cli-data")
-                .workDir(workDir);
+                .workDir(workDir)
+                .buildProject(startApp)
+                .flavor(flavor)
+                .archetypeName(archetype)
+                .groupId(groupId)
+                .artifactId(artifactId)
+                .packageName(packageName)
+                .projectName(name);
     }
 
     private void runBatchTest(String flavor,
@@ -171,14 +185,14 @@ public class CliFunctionalTest {
                               String packageName,
                               String name,
                               boolean startApp) throws Exception {
-        commandInvoker(version)
-                .buildProject(startApp)
-                .flavor(flavor)
-                .archetypeName(archetype)
-                .groupId(groupId)
-                .artifactId(artifactId)
-                .packageName(packageName)
-                .projectName(name)
+        commandInvoker(flavor, version, archetype, groupId, artifactId, packageName, name, startApp)
+                .invokeInit()
+                .validateProject();
+
+        cleanUp();
+
+        commandInvoker(flavor, version, archetype, groupId, artifactId, packageName, name, startApp)
+                .execScript()
                 .invokeInit()
                 .validateProject();
     }
@@ -191,15 +205,16 @@ public class CliFunctionalTest {
                                     String packageName,
                                     String name,
                                     boolean startApp) throws Exception {
-        commandInvoker(version)
-                .buildProject(startApp)
-                .flavor(flavor)
-                .archetypeName(archetype)
-                .groupId(groupId)
-                .artifactId(artifactId)
-                .packageName(packageName)
-                .projectName(name)
+        commandInvoker(flavor, version, archetype, groupId, artifactId, packageName, name, startApp)
                 .input(inputFile.toUri().toURL())
+                .invokeInit()
+                .validateProject();
+
+        cleanUp();
+
+        commandInvoker(flavor, version, archetype, groupId, artifactId, packageName, name, startApp)
+                .input(inputFile.toUri().toURL())
+                .execScript()
                 .invokeInit()
                 .validateProject();
     }

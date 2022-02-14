@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import io.helidon.build.common.OSType;
 import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.logging.LogFormatter;
 import io.helidon.build.common.PrintStreams;
@@ -138,6 +139,40 @@ class TestUtils {
                                                .build()
                                                .start()
                                                .waitForCompletion(10, TimeUnit.MINUTES);
+        String output = String.join(EOL, monitor.output());
+        return strip(output);
+    }
+
+    static String execScript(File wd, File input, String... args) throws Exception {
+        List<String> cmdArgs = new LinkedList<>();
+        String script = System.getProperty("helidon.shell.script");
+        if (script == null) {
+            throw new IllegalStateException("Shell script path not set");
+        }
+        script = Path.of(script).normalize().toString();
+
+        if (OSType.currentOS().equals(OSType.Windows)) {
+            cmdArgs.add("bash");
+        }
+
+        cmdArgs.add(script);
+        cmdArgs.addAll(Arrays.asList(args));
+        ProcessBuilder pb = new ProcessBuilder(cmdArgs);
+
+        if (wd != null) {
+            pb.directory(wd);
+        }
+
+        ProcessMonitor monitor = ProcessMonitor.builder()
+                .processBuilder(pb)
+                .stdIn(input)
+                .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(LogLevel.INFO)))
+                .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(LogLevel.ERROR)))
+                .capture(true)
+                .build()
+                .start()
+                .waitForCompletion(1, TimeUnit.MINUTES);
+
         String output = String.join(EOL, monitor.output());
         return strip(output);
     }

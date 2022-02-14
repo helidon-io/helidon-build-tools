@@ -261,6 +261,7 @@ public interface CommandInvoker {
         private final String helidonVersion;
         private final boolean buildProject;
         private final boolean useProjectOption;
+        private final boolean execScript;
 
         private InvokerImpl(Builder builder) {
             useProjectOption = builder.useProjectOption;
@@ -392,7 +393,14 @@ public interface CommandInvoker {
             System.out.println();
 
             // Execute and verify process exit code
-            String output = TestUtils.execWithDirAndInput(workDir.toFile(), input, argsArray);
+            String output;
+            if (execScript) {
+                System.out.println("Executing CLI with helidon.sh script");
+                output = TestUtils.execScript(workDir.toFile(), input, argsArray);
+            } else {
+                output = TestUtils.execWithDirAndInput(workDir.toFile(), input, argsArray);
+            }
+
             return new InvocationResult(this, output);
         }
 
@@ -640,6 +648,7 @@ public interface CommandInvoker {
         private String helidonVersion;
         private boolean buildProject;
         private boolean useProjectOption;
+        private boolean execScript = false;
 
         /**
          * Use the {@code --project} option instead of the project argument.
@@ -651,6 +660,7 @@ public interface CommandInvoker {
             this.useProjectOption = useProjectOption;
             return this;
         }
+
 
         /**
          * Set the build project flag.
@@ -782,6 +792,16 @@ public interface CommandInvoker {
          */
         public Builder userConfig(UserConfig config) {
             this.config = config;
+            return this;
+        }
+
+        /**
+         * Run cli with helidon.sh script.
+         *
+         * @return this builder
+         */
+        public Builder execScript() {
+            this.execScript = true;
             return this;
         }
 

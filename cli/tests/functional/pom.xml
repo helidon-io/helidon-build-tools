@@ -71,6 +71,7 @@
                     <systemPropertyVariables>
                         <!-- version should be upgraded to 3.0.0 once released-->
                         <helidon.test.version>2.4.0</helidon.test.version>
+                        <helidon.shell.script>${project.basedir}/../../impl/helidon.sh</helidon.shell.script>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
