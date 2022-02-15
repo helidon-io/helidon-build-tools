@@ -17,6 +17,7 @@
 package io.helidon.tests.functional;
 
 import io.helidon.build.cli.impl.CommandInvoker;
+import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.maven.MavenCommand;
 import io.helidon.build.common.maven.MavenVersion;
@@ -25,7 +26,6 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
-import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -35,7 +35,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -43,7 +42,6 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -77,20 +75,12 @@ public class CliMavenTest {
 
     @AfterEach
     void cleanUpGeneratedFiles() throws IOException {
-        cleanUp(workDir);
+        FileUtils.deleteDirectoryContent(workDir);
     }
 
     @AfterAll
     static void cleanUp() throws IOException {
-        cleanUp(mavenHome);
-    }
-
-    static void cleanUp(Path directory) throws IOException {
-        Files.walk(directory)
-                .sorted(Comparator.reverseOrder())
-                .filter(it -> !it.equals(directory))
-                .map(Path::toFile)
-                .forEach(File::delete);
+        FileUtils.deleteDirectoryContent(mavenHome);
     }
 
     static Stream<String> getMavenVersions() {
@@ -200,12 +190,11 @@ public class CliMavenTest {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         generateBareSe();
 
-        setCustomServerPortInPom(workDir.resolve("artifactid").resolve("pom.xml"), port);
-
         ProcessMonitor monitor = MavenCommand.builder()
                 .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.1", "bin", "mvn"))
                 .directory(workDir.resolve("artifactid"))
                 .stdOut(new PrintStream(stream))
+                .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
                 .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + ARCHETYPE_VERSION + ":dev")
                 .build()
                 .start();
@@ -222,12 +211,11 @@ public class CliMavenTest {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         generateBareSe();
 
-        setCustomServerPortInPom(workDir.resolve("artifactid").resolve("pom.xml"), port);
-
         ProcessMonitor monitor = MavenCommand.builder()
                 .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", "mvn"))
                 .directory(workDir.resolve("artifactid"))
                 .stdOut(new PrintStream(stream))
+                .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
                 .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + ARCHETYPE_VERSION + ":dev")
                 .build()
                 .start();
@@ -258,28 +246,12 @@ public class CliMavenTest {
                 .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", "mvn"))
                 .directory(workDir)
                 .stdOut(System.out)
+                .addArgument("-Ddev.appJvmArgs=\"-Dserver.port=0\"")
                 .addArguments(List.of("helidon:dev", "-Dversion.plugin.helidon=2.0.2"))
                 .build()
                 .start();
         TestUtils.waitForApplication(port);
         monitor.stop();
-    }
-
-    private void setCustomServerPortInPom(Path pom, int port) throws Exception {
-        Plugin plugin = new Plugin();
-        plugin.setGroupId("io.helidon.build-tools");
-        plugin.setArtifactId("helidon-cli-maven-plugin");
-        Xpp3Dom config = new Xpp3Dom("configuration");
-        Xpp3Dom appArgs = new Xpp3Dom("appJvmArgs");
-        appArgs.setValue("-Dserver.port=" + port);
-        config.addChild(appArgs);
-        plugin.setConfiguration(config);
-
-        MavenXpp3Reader mavenReader = new MavenXpp3Reader();
-        Model model = mavenReader.read(new FileReader(pom.toFile()));
-        model.getBuild().getPlugins().add(plugin);
-        MavenXpp3Writer mavenWriter = new MavenXpp3Writer();
-        mavenWriter.write(new FileWriter(pom.toFile()), model);
     }
 
     private void generateBareSe() throws Exception {

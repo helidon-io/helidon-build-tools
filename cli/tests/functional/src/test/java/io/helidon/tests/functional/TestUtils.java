@@ -15,12 +15,10 @@
  */
 package io.helidon.tests.functional;
 
+import io.helidon.build.common.FileUtils;
 import org.junit.jupiter.api.Assertions;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -34,12 +32,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Logger;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 public class TestUtils {
 
-    private static final int BUFFER_SIZE = 4096;
     private static final Logger LOGGER = Logger.getLogger(TestUtils.class.getName());
 
     static void downloadMavenDist(Path destination, String version) throws IOException {
@@ -61,7 +56,7 @@ public class TestUtils {
         LOGGER.info("Maven download done.");
         LOGGER.info("Unzip Maven started ...");
 
-        unzip(zipPath, destination);
+        FileUtils.unzip(zipPath, destination);
 
         LOGGER.info("Unzip Maven done.");
 
@@ -83,38 +78,6 @@ public class TestUtils {
         if (mvnFile.isEmpty()) {
             throw new IOException("Maven downloading failed. Test can not be processed");
         }
-    }
-
-    private static void unzip(Path zipFilePath, Path destDirectory) throws IOException {
-        String destination = destDirectory.toString();
-        File destDir = new File(destination);
-        if (!destDir.exists()) {
-            destDir.mkdir();
-        }
-        ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFilePath.toString()));
-        ZipEntry entry = zipIn.getNextEntry();
-        while (entry != null) {
-            String filePath = destination + File.separator + entry.getName();
-            if (!entry.isDirectory()) {
-                extractFile(zipIn, filePath);
-            } else {
-                File dir = new File(filePath);
-                dir.mkdirs();
-            }
-            zipIn.closeEntry();
-            entry = zipIn.getNextEntry();
-        }
-        zipIn.close();
-    }
-
-    private static void extractFile(ZipInputStream zipIn, String filePath) throws IOException {
-        BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath));
-        byte[] bytesIn = new byte[BUFFER_SIZE];
-        int read;
-        while ((read = zipIn.read(bytesIn)) != -1) {
-            bos.write(bytesIn, 0, read);
-        }
-        bos.close();
     }
 
     static void waitForApplication(int port) throws Exception {

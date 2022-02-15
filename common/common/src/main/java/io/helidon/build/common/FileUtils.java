@@ -16,6 +16,7 @@
 package io.helidon.build.common;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -42,6 +43,8 @@ import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.FileSystems.getFileSystem;
@@ -742,6 +745,36 @@ public final class FileUtils {
                      }
                  });
             return zip;
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe);
+        }
+    }
+
+    /**
+     * Unzip a zip file.
+     *
+     * @param zip       source file
+     * @param directory target directory
+     */
+    public static void unzip(Path zip, Path directory) {
+        try {
+            File destDir = directory.toFile();
+            if (!destDir.exists()) {
+                Files.createDirectory(destDir.toPath());
+            }
+            ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zip.toString()));
+            ZipEntry entry = zipIn.getNextEntry();
+            while (entry != null) {
+                Path filePath = directory.resolve(entry.getName());
+                if (!entry.isDirectory()) {
+                    Files.copy(zipIn, filePath, REPLACE_EXISTING);
+                } else {
+                    Files.createDirectories(filePath);
+                }
+                zipIn.closeEntry();
+                entry = zipIn.getNextEntry();
+            }
+            zipIn.close();
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
         }
