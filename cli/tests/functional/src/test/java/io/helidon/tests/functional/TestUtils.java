@@ -49,9 +49,9 @@ public class TestUtils {
 
         Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("www-proxy.us.oracle.com", 80));
         URLConnection connection = mavenUrl.openConnection(proxy);
-        connection.setConnectTimeout(10*60*1000);
+        connection.setConnectTimeout(100*60*1000);
         connection.setReadTimeout(100*60*1000);
-        ReadableByteChannel readableByteChannel = Channels.newChannel(mavenUrl.openStream());
+        ReadableByteChannel readableByteChannel = Channels.newChannel(connection.getInputStream());
         FileOutputStream fileOutputStream = new FileOutputStream(Files.createFile(zipPath).toString());
         fileOutputStream.getChannel()
                 .transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
