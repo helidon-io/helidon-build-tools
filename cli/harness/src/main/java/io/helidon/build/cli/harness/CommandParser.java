@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ public final class CommandParser {
         Properties properties = new Properties();
         Map<String, Parameter> params = new HashMap<>();
         String error = null;
-        LinkedList<String> argsList = new LinkedList<>(Arrays.asList(args));
+        List<String> argsList = mapArgs(args);
         Iterator<String> it = argsList.iterator();
         while (it.hasNext()) {
             String rawArg = it.next();
@@ -110,6 +110,15 @@ public final class CommandParser {
             }
         }
         return new CommandParser(argsList, commandName, new Resolver(params, properties), error);
+    }
+
+    static List<String> mapArgs(String... args) {
+        List<String> result = new LinkedList<>(Arrays.asList(args));
+        // Map version flag to version command if first argument
+        if (args.length >= 1 && args[0].equals(GlobalOptions.VERSION_FLAG_ARGUMENT)) {
+            result.set(0, GlobalOptions.VERSION_FLAG_NAME);
+        }
+        return result;
     }
 
     /**
@@ -189,11 +198,11 @@ public final class CommandParser {
                 if (!Option.VALID_NAME.test(optionName)) {
                     throw new CommandParserException(INVALID_OPTION_NAME + ": " + optionName);
                 }
-                ParameterInfo paramInfo = parametersMap.get(optionName);
+                ParameterInfo<?> paramInfo = parametersMap.get(optionName);
                 if (paramInfo instanceof FlagInfo) {
                     parsedParams.put(optionName, new FlagParam(optionName));
                 } else if (paramInfo instanceof KeyValueInfo) {
-                    boolean required = ((KeyValueInfo) paramInfo).required();
+                    boolean required = ((KeyValueInfo<?>) paramInfo).required();
                     if (!it.hasNext()) {
                         if (required) {
                             throw new CommandParserException(MISSING_REQUIRED_OPTION + ": " + optionName);
@@ -203,7 +212,7 @@ public final class CommandParser {
                     }
                     parsedParams.put(optionName, new KeyValueParam(optionName, it.next().trim()));
                 } else if (paramInfo instanceof KeyValuesInfo) {
-                    boolean required = ((KeyValuesInfo) paramInfo).required();
+                    boolean required = ((KeyValuesInfo<?>) paramInfo).required();
                     if (!it.hasNext()) {
                         if (required) {
                             throw new CommandParserException(MISSING_REQUIRED_OPTION + ": " + optionName);
@@ -217,9 +226,7 @@ public final class CommandParser {
                     }
                     String[] splitValues = value.split(",");
                     LinkedList<String> values = new LinkedList<>();
-                    for (String splitValue : splitValues) {
-                        values.add(splitValue);
-                    }
+                    Collections.addAll(values, splitValues);
                     Parameter param = parsedParams.get(optionName);
                     if (param == null) {
                         parsedParams.put(optionName, new KeyValuesParam(optionName, values));
@@ -362,7 +369,6 @@ public final class CommandParser {
          * @return resolved value for the argument
          * @throws CommandParserException if an error occurs while resolving the option
          */
-        @SuppressWarnings("unchecked")
         public <T> T resolve(ArgumentInfo<T> option) throws CommandParserException {
             Class<T> type = option.type();
             Parameter resolved = params.get("");
@@ -371,7 +377,7 @@ public final class CommandParser {
             }
             if (isSupported(type, Option.Argument.SUPPORTED_TYPES)) {
                 if (resolved == null) {
-                    return (T) null;
+                    return null;
                 } else if (resolved instanceof ArgumentParam) {
                     return type.cast(((ArgumentParam) resolved).value);
                 }
@@ -379,6 +385,7 @@ public final class CommandParser {
             throw new CommandParserException(INVALID_ARGUMENT_VALUE);
         }
 
+        @SuppressWarnings("rawtypes")
         private static <T> T resolveValue(Class<T> type, String rawValue) {
             Objects.requireNonNull(rawValue, "rawValue is null");
             if (String.class.equals(type)) {

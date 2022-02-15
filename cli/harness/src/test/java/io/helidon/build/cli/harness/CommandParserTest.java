@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -247,6 +247,12 @@ public class CommandParserTest {
         assertThat(resolver.params().containsKey("help"), is(true));
         assertThat(parser.globalResolver().properties().isEmpty(), is(true));
         assertThat(resolver.properties().getProperty("foo"), is("bar"));
+    }
+
+    @Test
+    public void testVersionFlag() {
+        CommandParser parser = CommandParser.create("--version");
+        assertThat(parser.commandName().get(), is("version"));
     }
 
     @Test
