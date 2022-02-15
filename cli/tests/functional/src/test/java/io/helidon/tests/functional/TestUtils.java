@@ -19,17 +19,18 @@ import io.helidon.build.common.FileUtils;
 import org.junit.jupiter.api.Assertions;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ServerSocket;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -50,9 +51,11 @@ public class TestUtils {
         URLConnection connection = mavenUrl.openConnection(proxy);
         connection.setConnectTimeout(10*60*1000);
         connection.setReadTimeout(100*60*1000);
-        try (InputStream in = connection.getInputStream()) {
-            Files.copy(in, zipPath, StandardCopyOption.REPLACE_EXISTING);
-        }
+        ReadableByteChannel readableByteChannel = Channels.newChannel(mavenUrl.openStream());
+        FileOutputStream fileOutputStream = new FileOutputStream(Files.createFile(zipPath).toString());
+        fileOutputStream.getChannel()
+                .transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
+
 
         LOGGER.info("Maven download done.");
         LOGGER.info("Unzip Maven started ...");
