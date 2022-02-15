@@ -44,12 +44,8 @@ export function getLaunchedServers(): Map<string, HelidonServerInstance> {
     return launchedServers;
 }
 
-export async function startHelidonDev(): Promise<Map<string, HelidonServerInstance>> {
+export async function startHelidonDev(extensionPath: string): Promise<Map<string, HelidonServerInstance>> {
     try {
-        if (!ChildProcessAPI.isCommandExist('helidon')) {
-            VSCodeAPI.showInformationMessage('Helidon CLI is not installed');
-            return new Map();
-        }
         const helidonProjectDirs = getHelidonProjectDirs();
         let helidonProjectDir: string;
 
@@ -66,12 +62,12 @@ export async function startHelidonDev(): Promise<Map<string, HelidonServerInstan
             helidonProjectDir = directory.description!;
         }
 
-        const helidonServer = obtainHelidonServerInstance(helidonProjectDir);
+        const helidonServer = obtainHelidonServerInstance(helidonProjectDir, extensionPath);
         launchedServers.set(path.basename(helidonProjectDir), helidonServer);
         return launchedServers;
 
-    } catch (e) {
-        VSCodeAPI.showErrorMessage(e);
+    } catch (e: any) {
+        VSCodeAPI.showErrorMessage(e.message);
         return new Map();
     }
 }
@@ -96,7 +92,7 @@ async function obtainHelidonProjectDirToStart(helidonProjectDirs: string[]): Pro
     });
 }
 
-function obtainHelidonServerInstance(helidonProjectDir: string): HelidonServerInstance {
+function obtainHelidonServerInstance(helidonProjectDir: string, extensionPath: string): HelidonServerInstance {
 
     const helidonDirName = path.basename(helidonProjectDir);
     refreshLaunchedServers();
@@ -108,7 +104,7 @@ function obtainHelidonServerInstance(helidonProjectDir: string): HelidonServerIn
             return helidonServer;
         }
         // change existing instance
-        helidonServer.serverProcess = obtainNewServerProcess(helidonProjectDir);
+        helidonServer.serverProcess = obtainNewServerProcess(helidonProjectDir, extensionPath);
         helidonServer.outputChannel.show();
         configureServerOutput(helidonServer.serverProcess, helidonServer.outputChannel);
         helidonServer.isActive = true;
@@ -119,7 +115,7 @@ function obtainHelidonServerInstance(helidonProjectDir: string): HelidonServerIn
     // create new instance
     const outputChannel = VSCodeAPI.createOutputChannel(helidonDirName);
     outputChannel.show();
-    const serverProcess = obtainNewServerProcess(helidonProjectDir);
+    const serverProcess = obtainNewServerProcess(helidonProjectDir, extensionPath);
     configureServerOutput(serverProcess, outputChannel);
 
     return {
@@ -139,13 +135,15 @@ function refreshLaunchedServers() {
     });
 }
 
-function obtainNewServerProcess(helidonProjectDir: string): ChildProcess {
-    const cmdSpan = "helidon";
-    const args = ['dev'];
+function obtainNewServerProcess(helidonProjectDir: string, extensionPath: string): ChildProcess {
+    let cmdSpan = "java";
+    const args = ['-jar', `${extensionPath}/target/cli/helidon.jar`, 'dev'];
+
     const opts = {
-        cwd: helidonProjectDir // cwd means -> current working directory (where this maven command will by executed)
+        cwd: helidonProjectDir, // cwd means -> current working directory (where this command will by executed)
     };
     const serverProcess = ChildProcessAPI.spawnProcess(cmdSpan, args, opts);
+
     return serverProcess;
 }
 
@@ -158,6 +156,7 @@ function configureServerOutput(serverProcess: ChildProcess, outputChannel: Outpu
     });
 
     serverProcess!.stderr!.on('data', (data: string) => {
+        outputFormatter.formatInputString(data);
         console.error(data);
         VSCodeAPI.showErrorMessage(data);
     });
@@ -189,8 +188,8 @@ export async function stopHelidonDev() {
             currentHelidonServer = launchedServers.get(stopServerName)!;
             deactivateServer(currentHelidonServer);
         }
-    } catch (e) {
-        VSCodeAPI.showErrorMessage(e);
+    } catch (e: any) {
+        VSCodeAPI.showErrorMessage(e.message);
         return;
     }
 }
@@ -279,7 +278,9 @@ function getHelidonProjectDirs(): string[] {
         const mavenProjectPomPath = path.join(mavenProject, POM_XML_FILE);
         const isHelidonProject = isPomFileContainsHelidonDependency(mavenProjectPomPath);
         if (isHelidonProject) {
-            helidonProjectDirs.push(mavenProject);
+            if (!helidonProjectDirs.includes(mavenProject)) {
+                helidonProjectDirs.push(mavenProject);
+            }
         }
     }
     return helidonProjectDirs;

@@ -52,9 +52,10 @@ suite('Helidon Project Generator Test Suite', () => {
         });
         vsCodeApiMockManager.mock('showInputBox', "test");
         vsCodeApiMockManager.mock('showOpenFolderDialog', <vscode.Uri>{fsPath: "fsPath"});
+        vsCodeApiMockManager.mock('createOutputChannel', <vscode.OutputChannel>{appendLine(str:string){}});
         fsSystemApiMockManager.mock('isPathExistsSync', false);
         let childProcessMock = childProcessAPIManager.mock('execProcess', createChildProcess());
-        await helidonGenerator.showHelidonGenerator();
+        await helidonGenerator.showHelidonGenerator("helidonJarFolder");
         assert(childProcessMock.calledOnce);
     });
 });

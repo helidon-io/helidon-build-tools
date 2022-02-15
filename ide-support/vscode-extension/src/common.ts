@@ -48,3 +48,9 @@ export function validateUserInput(userInput: string, pattern: RegExp, errorMessa
     }
     return undefined;
 }
+
+export function getSubstringBetween(initString: string, startSubstring: string, endSubstring: string): string {
+    const startPosition = initString.lastIndexOf(startSubstring)+startSubstring.length;
+    const endPosition = initString.lastIndexOf(endSubstring);
+    return initString.substring(startPosition, endPosition).trim();
+}

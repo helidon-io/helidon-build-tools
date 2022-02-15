@@ -113,13 +113,12 @@ export class VSCodeAPI {
         return commands.executeCommand(command, ...rest);
     }
 
-    public static getVisibleTextEditors(): TextEditor[] {
+    public static getVisibleTextEditors(): readonly TextEditor[] {
         return window.visibleTextEditors;
     }
 
     public static async showInputBox(data: InputBoxData) {
         return await new Promise<string | undefined>((resolve, rejects) => {
-            // let inputBox = window.createInputBox();
             const inputBox = window.createInputBox();
             inputBox.title = data.title;
             inputBox.placeholder = data.placeholder;

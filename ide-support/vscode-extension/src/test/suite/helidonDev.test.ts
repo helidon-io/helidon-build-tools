@@ -166,7 +166,7 @@ suite('HelidonDev Test Suite', () => {
         childProcessAPIManager.mock('spawnProcess', createServerProcess());
         vsCodeApiMockManager.mock('createOutputChannel', createOutputChannel());
 
-        const launchedServers = await startHelidonDev();
+        const launchedServers = await startHelidonDev("extensionPath");
         expect(launchedServers.size).is.equal(1);
         expect(launchedServers.keys().next().value).is.equal('helidonDir2');
     });
@@ -183,7 +183,7 @@ suite('HelidonDev Test Suite', () => {
         childProcessAPIManager.mock('spawnProcess', createServerProcess());
         vsCodeApiMockManager.mock('createOutputChannel', createOutputChannel());
 
-        const launchedServers = await startHelidonDev();
+        const launchedServers = await startHelidonDev("extensionPath");
         expect(launchedServers.size).is.equal(0);
     });
 
@@ -198,14 +198,14 @@ suite('HelidonDev Test Suite', () => {
         childProcessAPIManager.mock('spawnProcess', createServerProcess());
         vsCodeApiMockManager.mock('createOutputChannel', createOutputChannel());
 
-        const launchedServers = await startHelidonDev();
+        const launchedServers = await startHelidonDev("extensionPath");
         expect(launchedServers.size).is.equal(1);
     });
 
     test('No helidon servers start when there are no open folder in workspace', async () => {
         childProcessAPIManager.mock('isCommandExist', true);
         vsCodeApiMockManager.mock('getWorkspaceFolders', undefined);
-        const launchedServers = await startHelidonDev();
+        const launchedServers = await startHelidonDev("extensionPath");
         expect(launchedServers.size).is.equal(0);
     });
 
