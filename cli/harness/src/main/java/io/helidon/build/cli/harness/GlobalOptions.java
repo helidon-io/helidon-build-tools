@@ -47,14 +47,9 @@ public class GlobalOptions {
     public static final String VERSION_FLAG_NAME = "version";
 
     /**
-     * The --version flag description.
+     * The --version flag argument.
      */
-    public static final String VERSION_FLAG_DESCRIPTION = "Display version information";
-
-    /**
-     * The --version flag info.
-     */
-    public static final FlagInfo VERSION_FLAG_INFO = new FlagInfo(VERSION_FLAG_NAME, VERSION_FLAG_DESCRIPTION, false);
+    public static final String VERSION_FLAG_ARGUMENT = "--" + VERSION_FLAG_NAME;
 
     /**
      * The --verbose flag name.
@@ -131,7 +126,6 @@ public class GlobalOptions {
      */
     static final FlagInfo[] GLOBAL_FLAGS = new FlagInfo[]{
             HELP_FLAG_INFO,
-            VERSION_FLAG_INFO,
             VERBOSE_FLAG_INFO,
             DEBUG_FLAG_INFO,
             PLAIN_FLAG_INFO

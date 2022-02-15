@@ -75,7 +75,7 @@ public final class CommandParser {
         Properties properties = new Properties();
         Map<String, Parameter> params = new HashMap<>();
         String error = null;
-        LinkedList<String> argsList = new LinkedList<>(Arrays.asList(args));
+        List<String> argsList = mapArgs(args);
         Iterator<String> it = argsList.iterator();
         while (it.hasNext()) {
             String rawArg = it.next();
@@ -110,6 +110,15 @@ public final class CommandParser {
             }
         }
         return new CommandParser(argsList, commandName, new Resolver(params, properties), error);
+    }
+
+    static List<String> mapArgs(String... args) {
+        List<String> result = new LinkedList<>(Arrays.asList(args));
+        // Map version flag to version command if first argument
+        if (args.length >= 1 && args[0].equals(GlobalOptions.VERSION_FLAG_ARGUMENT)) {
+            result.set(0, GlobalOptions.VERSION_FLAG_NAME);
+        }
+        return result;
     }
 
     /**

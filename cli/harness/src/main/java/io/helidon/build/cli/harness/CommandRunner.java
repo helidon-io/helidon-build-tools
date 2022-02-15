@@ -67,11 +67,7 @@ public final class CommandRunner {
      * Execute the current command from the parser.
      */
     private void doExecute() {
-        if (parser.globalResolver().resolve(GlobalOptions.VERSION_FLAG_INFO)) {
-            doExecuteCommand(context.command(GlobalOptions.VERSION_FLAG_NAME).orElseThrow());
-        } else {
-            parser.commandName().ifPresentOrElse(this::doExecuteCommandName, this::printUsage);
-        }
+        parser.commandName().ifPresentOrElse(this::doExecuteCommandName, this::printUsage);
     }
 
     /**
