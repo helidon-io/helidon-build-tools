@@ -48,6 +48,7 @@ public class TestUtils {
 
         Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("www-proxy.us.oracle.com", 80));
         URLConnection connection = mavenUrl.openConnection(proxy);
+        connection.setConnectTimeout(10*60*1000);
         connection.setReadTimeout(100*60*1000);
         try (InputStream in = connection.getInputStream()) {
             Files.copy(in, zipPath, StandardCopyOption.REPLACE_EXISTING);
