@@ -16,7 +16,6 @@
 package io.helidon.build.common;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -43,8 +42,6 @@ import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.FileSystems.getFileSystem;
@@ -757,24 +754,25 @@ public final class FileUtils {
      * @param directory target directory
      */
     public static void unzip(Path zip, Path directory) {
-        try {
-            File destDir = directory.toFile();
-            if (!destDir.exists()) {
-                Files.createDirectory(destDir.toPath());
+        try (FileSystem fs = newZipFileSystem(zip)) {
+            if (!Files.exists(directory)) {
+                Files.createDirectory(directory);
             }
-            ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zip.toString()));
-            ZipEntry entry = zipIn.getNextEntry();
-            while (entry != null) {
-                Path filePath = directory.resolve(entry.getName());
-                if (!entry.isDirectory()) {
-                    Files.copy(zipIn, filePath, REPLACE_EXISTING);
-                } else {
-                    Files.createDirectories(filePath);
-                }
-                zipIn.closeEntry();
-                entry = zipIn.getNextEntry();
-            }
-            zipIn.close();
+            Path root = fs.getRootDirectories().iterator().next();
+            Files.walk(root)
+                    .filter(p -> !p.equals(root))
+                    .forEach(file -> {
+                        Path filePath = directory.resolve(Path.of(file.toString().substring(1)));
+                        try {
+                            if (Files.isDirectory(file)) {
+                                Files.createDirectories(filePath);
+                            } else {
+                                Files.copy(file, filePath);
+                            }
+                        } catch (IOException ioe) {
+                            throw new UncheckedIOException(ioe);
+                        }
+                    });
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
         }
