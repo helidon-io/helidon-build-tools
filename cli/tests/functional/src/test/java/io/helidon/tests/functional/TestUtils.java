@@ -40,7 +40,7 @@ public class TestUtils {
 
     static void downloadMavenDist(Path destination, String version) throws IOException {
 
-        Path zipPath = destination.resolve("maven.zip");
+        Path zipPath = destination.resolve("maven" + version + ".zip");
         URL mavenUrl = new URL(
                 String.format("http://archive.apache.org/dist/maven/maven-3/%s/binaries/apache-maven-%s-bin.zip", version, version)
         );
@@ -69,7 +69,7 @@ public class TestUtils {
                 .filter(File::isFile)
                 .forEach(file -> file.setExecutable(true));
 
-        FileUtils.delete(zipPath);
+        //FileUtils.delete(zipPath);
 
         Optional<String> mvnFile = Files.walk(destination)
                 .map(Path::getFileName)
