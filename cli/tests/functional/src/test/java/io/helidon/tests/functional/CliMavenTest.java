@@ -112,12 +112,13 @@ public class CliMavenTest {
                 .addArguments(mavenArgs)
                 .build()
                 .execute();
+        String processOutput = stream.toString();
 
         if (MavenVersion.toMavenVersion(version).isLessThan(MavenVersion.toMavenVersion("3.2.5"))) {
-            Assertions.assertTrue(stream.toString().contains("Requires Maven >= 3.2.5"));
+            Assertions.assertTrue(processOutput.contains("Requires Maven >= 3.2.5"), "Error with following output:\n" + processOutput);
             return;
         }
-        Assertions.assertTrue(stream.toString().contains("BUILD SUCCESS"));
+        Assertions.assertTrue(processOutput.contains("BUILD SUCCESS"), "Error with following output:\n" + processOutput);
     }
 
     @Test
@@ -140,10 +141,10 @@ public class CliMavenTest {
                 .build()
                 .execute();
         String output = stream.toString();
-        Assertions.assertTrue(output.contains("Property groupId is missing."));
-        Assertions.assertTrue(output.contains("Property package is missing."));
-        Assertions.assertTrue(output.contains("Property artifactId is missing."));
-        Assertions.assertTrue(output.contains("BUILD FAILURE"));
+        Assertions.assertTrue(output.contains("Property groupId is missing."), "Build should be failing:\n" + output);
+        Assertions.assertTrue(output.contains("Property package is missing."), "Build should be failing:\n" + output);
+        Assertions.assertTrue(output.contains("Property artifactId is missing."), "Build should be failing:\n" + output);
+        Assertions.assertTrue(output.contains("BUILD FAILURE"), "Build should be failing:\n" + output);
     }
 
     @Test //Test issue https://github.com/oracle/helidon-build-tools/issues/499
