@@ -48,7 +48,8 @@ import java.util.stream.Stream;
 
 public class CliMavenTest {
 
-    private static final String ARCHETYPE_VERSION = helidonArchetypeVersion();
+    private static final String PLUGIN_VERSION = helidonArchetypeVersion();
+    private static final String ARCHETYPE_VERSION = "2.4.2";
     private static final List<String> MAVEN_VERSIONS = List.of("3.1.1", "3.2.5", "3.8.1", "3.8.2", "3.8.4");
 
     private static Path workDir;
@@ -95,13 +96,11 @@ public class CliMavenTest {
                 "archetype:generate",
                 "-DinteractiveMode=false",
                 "-DarchetypeGroupId=io.helidon.archetypes",
-                "-DarchetypeArtifactId=helidon",
+                "-DarchetypeArtifactId=helidon-quickstart-se",
                 "-DarchetypeVersion=" + ARCHETYPE_VERSION,
                 "-DgroupId=groupid",
                 "-DartifactId=artifactid",
-                "-Dpackage=custom.pack.name",
-                "-Dflavor=se",
-                "-Dbase=bare");
+                "-Dpackage=custom.pack.name");
 
         MavenCommand.builder()
                 .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-" + version, "bin", "mvn"))
@@ -115,7 +114,7 @@ public class CliMavenTest {
         String processOutput = stream.toString();
 
         if (MavenVersion.toMavenVersion(version).isLessThan(MavenVersion.toMavenVersion("3.2.5"))) {
-            Assertions.assertTrue(processOutput.contains("Requires Maven >= 3.2.5"), "Error with following output:\n" + processOutput);
+            Assertions.assertTrue(processOutput.contains("BUILD FAILURE"), "Error with following output:\n" + processOutput);
             return;
         }
         Assertions.assertTrue(processOutput.contains("BUILD SUCCESS"), "Error with following output:\n" + processOutput);
@@ -127,7 +126,7 @@ public class CliMavenTest {
                 "archetype:generate",
                 "-DinteractiveMode=false",
                 "-DarchetypeGroupId=io.helidon.archetypes",
-                "-DarchetypeArtifactId=helidon",
+                "-DarchetypeArtifactId=helidon-quickstart-se",
                 "-DarchetypeVersion=" + ARCHETYPE_VERSION);
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -196,7 +195,7 @@ public class CliMavenTest {
                 .directory(workDir.resolve("artifactid"))
                 .stdOut(new PrintStream(stream))
                 .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
-                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + ARCHETYPE_VERSION + ":dev")
+                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + PLUGIN_VERSION + ":dev")
                 .build()
                 .start();
         TestUtils.waitForApplication(port);
@@ -217,7 +216,7 @@ public class CliMavenTest {
                 .directory(workDir.resolve("artifactid"))
                 .stdOut(new PrintStream(stream))
                 .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
-                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + ARCHETYPE_VERSION + ":dev")
+                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + PLUGIN_VERSION + ":dev")
                 .build()
                 .start();
         TestUtils.waitForApplication(port);
