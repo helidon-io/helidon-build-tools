@@ -69,9 +69,7 @@ public class TestUtils {
                 .filter(File::isFile)
                 .forEach(file -> file.setExecutable(true));
 
-        if (!zipPath.toFile().delete()) {
-            LOGGER.info("Could not clean zip file");
-        }
+        FileUtils.delete(zipPath);
 
         Optional<String> mvnFile = Files.walk(destination)
                 .map(Path::getFileName)
