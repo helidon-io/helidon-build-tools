@@ -35,6 +35,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -42,6 +43,7 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -76,7 +78,11 @@ public class CliMavenTest {
 
     @AfterEach
     void cleanUpGeneratedFiles() throws IOException {
-        FileUtils.deleteDirectoryContent(workDir);
+        Files.walk(workDir)
+                .sorted(Comparator.reverseOrder())
+                .filter(it -> !it.equals(workDir))
+                .map(Path::toFile)
+                .forEach(File::delete);
     }
 
     @AfterAll

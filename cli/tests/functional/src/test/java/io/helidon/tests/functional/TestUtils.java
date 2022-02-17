@@ -32,7 +32,6 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.logging.Logger;
 
 public class TestUtils {
@@ -41,23 +40,14 @@ public class TestUtils {
 
     static void downloadMavenDist(Path destination, String version) throws IOException {
 
-        Path zipPath = destination.resolve("maven" + version + ".zip");
+        Path zipPath = destination.resolve("maven-" + version + ".zip");
         URL mavenUrl = new URL(
                 String.format("http://archive.apache.org/dist/maven/maven-3/%s/binaries/apache-maven-%s-bin.zip", version, version)
         );
 
         LOGGER.info("Downloading maven from URL : " + mavenUrl);
 
-        Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("www-proxy.us.oracle.com", 80));
-        URLConnection connection = mavenUrl.openConnection(proxy);
-        connection.setConnectTimeout(100*60*1000);
-        connection.setReadTimeout(100*60*1000);
-        ReadableByteChannel readableByteChannel = Channels.newChannel(connection.getInputStream());
-        FileOutputStream fileOutputStream = new FileOutputStream(Files.createFile(zipPath).toString());
-        fileOutputStream.getChannel()
-                .transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
-        fileOutputStream.close();
-
+        downloadFileFromUrl(zipPath, mavenUrl);
 
         LOGGER.info("Maven download done.");
         LOGGER.info("Unzip Maven started ...");
@@ -73,14 +63,25 @@ public class TestUtils {
 
         FileUtils.delete(zipPath);
 
-        Optional<String> mvnFile = Files.walk(destination)
+        Files.walk(destination)
                 .map(Path::getFileName)
                 .map(Path::toString)
                 .filter(name -> name.equals("mvn"))
-                .findFirst();
+                .findFirst().orElseThrow();
+    }
 
-        if (mvnFile.isEmpty()) {
-            throw new IOException("Maven downloading failed. Test can not be processed");
+    static void downloadFileFromUrl(Path destination, URL url) {
+        try {
+            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("www-proxy.us.oracle.com", 80));
+            URLConnection connection = url.openConnection(proxy);
+            connection.setConnectTimeout(100*60*1000);
+            connection.setReadTimeout(100*60*1000);
+            ReadableByteChannel readableByteChannel = Channels.newChannel(connection.getInputStream());
+            FileOutputStream fileOutputStream = new FileOutputStream(Files.createFile(destination).toString());
+            fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
+            fileOutputStream.close();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Download failed at URL : " + url, e);
         }
     }
 

@@ -757,6 +757,38 @@ public final class FileUtils {
      * @param directory target directory
      */
     public static void unzip(Path zip, Path directory) {
+        try (FileSystem fs = newZipFileSystem(zip)) {
+            if (!Files.exists(directory)) {
+                Files.createDirectory(directory);
+            }
+            Path root = fs.getRootDirectories().iterator().next();
+            Files.walk(root)
+                    .filter(p -> !p.equals(root))
+                    .forEach(file -> {
+                        Path filePath = directory.resolve(Path.of(file.toString().substring(1)));
+                        try {
+                            if (Files.isDirectory(file)) {
+                                Files.createDirectories(filePath);
+                            } else {
+                                Files.copy(file, filePath);
+                            }
+                        } catch (IOException ioe) {
+                            throw new UncheckedIOException(ioe);
+                        }
+                    });
+        } catch (IOException | UncheckedIOException e) {
+            //if zipFileSystem fails, try to unzip with ZipStream
+            unzip0(zip, directory);
+        }
+    }
+
+    /**
+     * Unzip a zip file.
+     *
+     * @param zip       source file
+     * @param directory target directory
+     */
+    public static void unzip0(Path zip, Path directory) {
         try {
             if (!Files.exists(directory)) {
                 Files.createDirectory(directory);
