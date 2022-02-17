@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Assertions;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -55,6 +56,7 @@ public class TestUtils {
         FileOutputStream fileOutputStream = new FileOutputStream(Files.createFile(zipPath).toString());
         fileOutputStream.getChannel()
                 .transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
+        fileOutputStream.close();
 
 
         LOGGER.info("Maven download done.");
@@ -69,7 +71,7 @@ public class TestUtils {
                 .filter(File::isFile)
                 .forEach(file -> file.setExecutable(true));
 
-        //FileUtils.delete(zipPath);
+        FileUtils.delete(zipPath);
 
         Optional<String> mvnFile = Files.walk(destination)
                 .map(Path::getFileName)
@@ -107,10 +109,14 @@ public class TestUtils {
         } while (responseCode != 200);
     }
 
-    static int getAvailablePort() throws IOException {
-        ServerSocket s = new ServerSocket(0);
-        s.close();
-        return s.getLocalPort();
+    static int getAvailablePort() {
+        try {
+            ServerSocket s = new ServerSocket(0);
+            s.close();
+            return s.getLocalPort();
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe);
+        }
     }
 
 }
