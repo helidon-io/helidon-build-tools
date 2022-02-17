@@ -255,7 +255,7 @@ public final class CommandContext {
             }
             if (embedded) {
                 if (statusCode != 0) {
-                    throw new Error(message, error);
+                    throw new Error(AnsiTextStyle.strip(message), error);
                 }
             } else {
                 System.exit(statusCode);

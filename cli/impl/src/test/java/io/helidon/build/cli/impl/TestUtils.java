@@ -33,6 +33,11 @@ import io.helidon.build.common.Log.Level;
 import io.helidon.build.common.LogFormatter;
 import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.ProcessMonitor;
+import io.helidon.build.common.ansi.AnsiTextStyle;
+
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeMatcher;
 
 import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.common.PrintStreams.STDERR;
@@ -181,5 +186,98 @@ class TestUtils {
             throw new IllegalStateException("Unable to resolve helidon.test.version from test.properties");
         }
         return version;
+    }
+
+    /**
+     * Returns a matcher used to assert that the message equals an expected message ignoring Ansi characters.
+     *
+     * @return The matcher.
+     */
+    static Matcher<String> equalToIgnoringStyle(String expected) {
+        return new TypeSafeMatcher<>() {
+            private final String strippedExpected = AnsiTextStyle.strip(expected);
+
+            @Override
+            protected boolean matchesSafely(String s) {
+                return AnsiTextStyle.strip(s).equals(strippedExpected);
+            }
+
+            @Override
+            public void describeMismatchSafely(String item, Description mismatchDescription) {
+                mismatchDescription.appendText("was \"").appendText(AnsiTextStyle.strip(item)).appendText("\"");
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendValue(strippedExpected);
+            }
+        };
+    }
+
+    /**
+     * Returns a matcher used to assert that the message contains an expected message ignoring Ansi characters.
+     *
+     * @return The matcher.
+     */
+    static Matcher<String> containsStringIgnoringStyle(String expected) {
+        return new TypeSafeMatcher<>() {
+            private final String strippedExpected = AnsiTextStyle.strip(expected);
+
+            @Override
+            protected boolean matchesSafely(String s) {
+                return AnsiTextStyle.strip(s).contains(strippedExpected);
+            }
+
+            @Override
+            public void describeMismatchSafely(String item, Description mismatchDescription) {
+                mismatchDescription.appendText("was \"").appendText(AnsiTextStyle.strip(item)).appendText("\"");
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("a string containing ")
+                            .appendValue(strippedExpected);
+            }
+        };
+    }
+
+    /**
+     * Returns a matcher used to assert that the message contains Ansi characters.
+     *
+     * @return The matcher.
+     */
+    static Matcher<String> isStyled() {
+        return new TypeSafeMatcher<>() {
+
+            @Override
+            protected boolean matchesSafely(String s) {
+                return AnsiTextStyle.isStyled(s);
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("is styled");
+            }
+        };
+    }
+
+    /**
+     * Returns a matcher used to assert that the message does not contain Ansi characters.
+     *
+     * @return The matcher.
+     */
+    static Matcher<String> isNotStyled() {
+        return new TypeSafeMatcher<>() {
+
+            @Override
+            protected boolean matchesSafely(String s) {
+                return !AnsiTextStyle.isStyled(s);
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("is styled");
+            }
+        };
     }
 }
