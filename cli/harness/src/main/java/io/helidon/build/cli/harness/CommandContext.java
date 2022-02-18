@@ -46,6 +46,7 @@ import static io.helidon.build.common.ansi.AnsiTextStyles.Red;
  * The command context.
  */
 public final class CommandContext {
+    private static final String EMBEDDED_PROPERTY = "embedded.mode";
 
     /**
      * Verbosity levels.
@@ -110,6 +111,7 @@ public final class CommandContext {
     private Verbosity verbosity;
     private ExitAction exitAction;
     private CommandParser parser;
+    private boolean embedded;
 
     @SuppressWarnings("CopyConstructorMissesField")
     CommandContext(CommandContext parent) {
@@ -232,34 +234,47 @@ public final class CommandContext {
                     exit(message, null, WARN, 0);
                     break;
                 default:
-                    System.exit(0);
+                    exit(null, null, INFO, 0);
             }
         }
 
         private void exit(String message, Throwable error, Level level, int statusCode) {
-            if (message != null || error != null) {
+            String errorMessage = errorMessage(message, error);
+            if (errorMessage != null) {
                 if (Log.isVerbose()) {
                     Log.info();
                 }
                 if (AnsiTextStyle.isStyled(message)) {
                     Log.info(message);
                 } else {
-                    if (message == null) {
-                        if (error.getMessage() != null) {
-                            message = error.getMessage();
-                        } else if (error.getCause() != null) {
-                            message = error.getCause().getMessage();
-                        } else {
-                            message = "Unknown error";
-                        }
-                    }
                     Log.log(level, error, message);
                 }
                 if (Log.isVerbose()) {
                     Log.info();
                 }
             }
-            System.exit(statusCode);
+            if (embedded) {
+                if (statusCode != 0) {
+                    throw new Error(AnsiTextStyle.strip(message), error);
+                }
+            } else {
+                System.exit(statusCode);
+            }
+        }
+
+        private String errorMessage(String message, Throwable error) {
+            if (message == null) {
+                if (error != null) {
+                    if (error.getMessage() != null) {
+                        message = error.getMessage();
+                    } else if (error.getCause() != null) {
+                        message = error.getCause().getMessage();
+                    } else {
+                        message = "Unknown error";
+                    }
+                }
+            }
+            return message;
         }
     }
 
@@ -363,6 +378,8 @@ public final class CommandContext {
      */
     void parser(CommandParser parser) {
         this.parser = Objects.requireNonNull(parser, "parser is null");
+        this.properties.putAll(parser.globalResolver().properties());
+        this.embedded = "true".equals(properties.get(EMBEDDED_PROPERTY));
     }
 
     /**
