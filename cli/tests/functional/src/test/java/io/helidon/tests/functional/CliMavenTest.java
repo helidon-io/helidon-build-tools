@@ -22,22 +22,18 @@ import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.maven.MavenCommand;
 import io.helidon.build.common.maven.MavenVersion;
 import io.helidon.webclient.WebClient;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.Plugin;
-import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -96,6 +92,7 @@ public class CliMavenTest {
 
     @ParameterizedTest
     @MethodSource("getMavenVersions")
+    @DisabledOnOs(OS.WINDOWS)
     public void testMavenArchetypeGenerate(String version) throws Exception {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         List<String> mavenArgs = List.of(
@@ -127,6 +124,7 @@ public class CliMavenTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     public void testMissingValues() throws Exception {
         List<String> mvnArgs = List.of(
                 "archetype:generate",
@@ -153,6 +151,7 @@ public class CliMavenTest {
     }
 
     @Test //Test issue https://github.com/oracle/helidon-build-tools/issues/499
+    @DisabledOnOs(OS.WINDOWS)
     public void testIssue499() throws Exception {
         int port = TestUtils.getAvailablePort();
         generateBareSe();
@@ -191,6 +190,7 @@ public class CliMavenTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     public void testCliMavenPluginJansiIssue() throws Exception {
         int port = TestUtils.getAvailablePort();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -212,6 +212,7 @@ public class CliMavenTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     public void testCliMavenPluginBackwardCompatibility() throws Exception {
         int port = TestUtils.getAvailablePort();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -230,34 +231,6 @@ public class CliMavenTest {
 
         String output = stream.toString();
         Assertions.assertTrue(output.contains("BUILD SUCCESS"));
-    }
-
-    //@Test
-    public void testCliPluginCompatibility() throws Exception {
-        int port = TestUtils.getAvailablePort();
-        generateBareSe();
-
-        Plugin plugin = new Plugin();
-        plugin.setGroupId("io.helidon.build-tools");
-        plugin.setArtifactId("helidon-maven-plugin");
-        plugin.setVersion("2.0.2");
-        Path pom = workDir.resolve("artifactid").resolve("pom.xml");
-        MavenXpp3Reader mavenReader = new MavenXpp3Reader();
-        Model model = mavenReader.read(new FileReader(pom.toFile()));
-        model.getBuild().getPlugins().add(plugin);
-        MavenXpp3Writer mavenWriter = new MavenXpp3Writer();
-        mavenWriter.write(new FileWriter(pom.toFile()), model);
-
-        ProcessMonitor monitor = MavenCommand.builder()
-                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", "mvn"))
-                .directory(workDir)
-                .stdOut(System.out)
-                .addArgument("-Ddev.appJvmArgs=\"-Dserver.port=0\"")
-                .addArguments(List.of("helidon:dev", "-Dversion.plugin.helidon=2.0.2"))
-                .build()
-                .start();
-        TestUtils.waitForApplication(port);
-        monitor.stop();
     }
 
     private void generateBareSe() throws Exception {
