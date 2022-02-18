@@ -201,15 +201,15 @@ public class AnsiTextStyle implements RichTextStyle {
      * @throws IllegalArgumentException If required and name is not found.
      */
     public static RichTextStyle named(String name, boolean required) {
-        if (ANSI_ENABLED.instance()) {
-            final RichTextStyle style = STYLES.get(name);
-            if (style != null) {
-                return style;
-            } else if (required) {
+        final RichTextStyle style = STYLES.get(name);
+        if (style == null) {
+            if (required) {
                 throw new IllegalArgumentException("Unknown style: " + name);
+            } else {
+                return NONE;
             }
         }
-        return NONE;
+        return ANSI_ENABLED.instance() ? style : NONE;
     }
 
     /**
