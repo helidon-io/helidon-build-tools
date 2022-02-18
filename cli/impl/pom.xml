@@ -201,6 +201,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <systemProperties>
+                        <reuseForks>false</reuseForks>
                         <helidon.test.version>2.2.2</helidon.test.version>
                     </systemProperties>
                 </configuration>

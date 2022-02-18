@@ -15,6 +15,7 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,6 +24,7 @@ import io.helidon.build.common.CapturingLogWriter;
 import io.helidon.build.common.Log;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -42,8 +44,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class EmbeddedModeTest {
     private static final String EMBEDDED_ARG = "-Dembedded.mode=true";
+    private static final String SEP = File.separator;
 
     private CapturingLogWriter logged;
+
+    @BeforeAll
+    public static void beforeAllTests() {
+        System.setProperty("jansi.passthrough", "true");
+    }
 
     @BeforeEach
     public void beforeEach() {
@@ -107,7 +115,7 @@ class EmbeddedModeTest {
         assertThat(lines.get(1), isStyled());
         assertThat(lines.get(2), isStyled());
         assertThat(lines.get(0), is("Updating metadata for Helidon version 99.99"));
-        assertThat(lines.get(1), containsStringIgnoringStyle("cli-data.zip (No such file or directory)"));
+        assertThat(lines.get(1), containsStringIgnoringStyle("jabberwocky" + SEP + "99.99" + SEP + "cli-data.zip"));
         assertThat(lines.get(2), equalToIgnoringStyle("Helidon version lookup failed."));
     }
 }

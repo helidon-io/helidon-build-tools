@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import io.helidon.build.common.RichText;
 import io.helidon.build.common.RichTextProvider;
 import io.helidon.build.common.RichTextStyle;
 import io.helidon.build.common.RichTextStyle.StyleList;
+
+import org.fusesource.jansi.Ansi;
 
 /**
  * Ansi implementation of {@link RichTextProvider}.
@@ -42,6 +44,7 @@ public class AnsiTextProvider implements RichTextProvider {
      */
     public AnsiTextProvider() {
         enabled = AnsiConsoleInstaller.install();
+        Ansi.setEnabled(enabled);
     }
 
     /**

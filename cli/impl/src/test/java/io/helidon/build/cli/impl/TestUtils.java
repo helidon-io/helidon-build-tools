@@ -255,8 +255,13 @@ class TestUtils {
             }
 
             @Override
+            public void describeMismatchSafely(String item, Description mismatchDescription) {
+                mismatchDescription.appendText("was not styled: \"").appendText(AnsiTextStyle.strip(item)).appendText("\"");
+            }
+
+            @Override
             public void describeTo(Description description) {
-                description.appendText("is styled");
+                description.appendText("String is styled");
             }
         };
     }
@@ -275,8 +280,13 @@ class TestUtils {
             }
 
             @Override
+            public void describeMismatchSafely(String item, Description mismatchDescription) {
+                mismatchDescription.appendText("was styled: \"").appendText(item).appendText("\"");
+            }
+
+            @Override
             public void describeTo(Description description) {
-                description.appendText("is styled");
+                description.appendText("String is not styled");
             }
         };
     }
