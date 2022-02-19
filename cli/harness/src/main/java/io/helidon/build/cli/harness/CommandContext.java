@@ -46,7 +46,6 @@ import static io.helidon.build.common.ansi.AnsiTextStyles.Red;
  * The command context.
  */
 public final class CommandContext {
-    private static final String EMBEDDED_PROPERTY = "embedded.mode";
 
     /**
      * Verbosity levels.
@@ -108,21 +107,22 @@ public final class CommandContext {
     private final CommandRegistry registry;
     private final Properties properties;
     private final InternalOptions internalOptions;
+    private final boolean embedded;
     private Verbosity verbosity;
     private ExitAction exitAction;
     private CommandParser parser;
-    private boolean embedded;
 
     @SuppressWarnings("CopyConstructorMissesField")
     CommandContext(CommandContext parent) {
-        this(parent.registry, parent.internalOptions);
+        this(parent.registry, parent.internalOptions, parent.embedded);
     }
 
-    CommandContext(CommandRegistry registry, InternalOptions internalOptions) {
+    CommandContext(CommandRegistry registry, InternalOptions internalOptions, boolean embedded) {
         this.registry = Objects.requireNonNull(registry, "registry is null");
         this.exitAction = new ExitAction();
         this.properties = new Properties();
         this.internalOptions = internalOptions != null ? internalOptions : InternalOptions.EMPTY;
+        this.embedded = embedded;
     }
 
     /**
@@ -379,7 +379,6 @@ public final class CommandContext {
     void parser(CommandParser parser) {
         this.parser = Objects.requireNonNull(parser, "parser is null");
         this.properties.putAll(parser.globalResolver().properties());
-        this.embedded = "true".equals(properties.get(EMBEDDED_PROPERTY));
     }
 
     /**
@@ -531,6 +530,7 @@ public final class CommandContext {
      */
     public abstract static class Builder<T extends Builder<T>> {
 
+        private boolean embedded;
         private Class<?> cliClass;
         private BiFunction<String, String, String> lookup;
 
@@ -562,13 +562,24 @@ public final class CommandContext {
         }
 
         /**
+         * Set embedded mode.
+         *
+         * @param embedded {@code true} if embedded mode
+         * @return this builder
+         */
+        @SuppressWarnings("unchecked")
+        public T embedded(boolean embedded) {
+            this.embedded = embedded;
+            return (T) this;
+        }
+        /**
          * Build the command context instance.
          *
          * @return CommandContext
          */
         protected CommandContext buildContext() {
             CommandRegistry registry = CommandRegistry.load(cliClass);
-            return new CommandContext(registry, new InternalOptions(lookup));
+            return new CommandContext(registry, new InternalOptions(lookup), embedded);
         }
     }
 }

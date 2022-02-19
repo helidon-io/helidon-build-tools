@@ -16,8 +16,6 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import io.helidon.build.common.CapturingLogWriter;
@@ -43,7 +41,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Unit test for embedded mode.
  */
 class EmbeddedModeTest {
-    private static final String EMBEDDED_ARG = "-Dembedded.mode=true";
     private static final String SEP = File.separator;
 
     private CapturingLogWriter logged;
@@ -65,16 +62,9 @@ class EmbeddedModeTest {
         logged.uninstall();
     }
 
-    static void invoke(String... args) {
-        List<String> arguments = new ArrayList<>();
-        arguments.add(EMBEDDED_ARG); // Must be first to handle invalid command names
-        arguments.addAll(Arrays.asList(args));
-        Helidon.main(arguments.toArray(new String[0]));
-    }
-
     @Test
     void testValidCommand() {
-        invoke("version");
+        Helidon.embeddedMain("version");
         assertThat(logged.lines(), is(not(empty())));
         assertThat(logged.countLinesContainingAll("build."), is(3));
         assertThat(logged.lines().get(0), isStyled());
@@ -82,7 +72,7 @@ class EmbeddedModeTest {
 
     @Test
     void testUnknownCommand() {
-        Error e = assertThrows(Error.class, () -> invoke("foo"));
+        Error e = assertThrows(Error.class, () -> Helidon.embeddedMain("foo"));
         assertThat(e.getMessage(), isNotStyled());
         assertThat(e.getMessage(), startsWith("'foo' is not a valid command."));
         List<String> lines = logged.lines();
@@ -95,7 +85,7 @@ class EmbeddedModeTest {
 
     @Test
     void testInvalidCommand() {
-        Error e = assertThrows(Error.class, () -> invoke("*"));
+        Error e = assertThrows(Error.class, () -> Helidon.embeddedMain("*"));
         assertThat(e.getMessage(), isNotStyled());
         assertThat(e.getMessage(), is("Invalid command name: *"));
         List<String> lines = logged.lines();
@@ -106,7 +96,8 @@ class EmbeddedModeTest {
 
     @Test
     void testStyledExceptionThrown() {
-        Error e = assertThrows(Error.class, () -> invoke("init", "--version", "99.99", "--url", "file:///jabberwocky"));
+        Error e = assertThrows(Error.class,
+                               () -> Helidon.embeddedMain("init", "--version", "99.99", "--url", "file:///jabberwocky"));
         assertThat(e.getMessage(), isNotStyled());
         assertThat(e.getMessage(), is("Helidon version lookup failed."));
         List<String> lines = logged.lines();
