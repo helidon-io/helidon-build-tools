@@ -64,7 +64,7 @@ class EmbeddedModeTest {
 
     @Test
     void testValidCommand() {
-        Helidon.embeddedMain("version");
+        Helidon.execute("version");
         assertThat(logged.lines(), is(not(empty())));
         assertThat(logged.countLinesContainingAll("build."), is(3));
         assertThat(logged.lines().get(0), isStyled());
@@ -72,7 +72,7 @@ class EmbeddedModeTest {
 
     @Test
     void testUnknownCommand() {
-        Error e = assertThrows(Error.class, () -> Helidon.embeddedMain("foo"));
+        Error e = assertThrows(Error.class, () -> Helidon.execute("foo"));
         assertThat(e.getMessage(), isNotStyled());
         assertThat(e.getMessage(), startsWith("'foo' is not a valid command."));
         List<String> lines = logged.lines();
@@ -85,7 +85,7 @@ class EmbeddedModeTest {
 
     @Test
     void testInvalidCommand() {
-        Error e = assertThrows(Error.class, () -> Helidon.embeddedMain("*"));
+        Error e = assertThrows(Error.class, () -> Helidon.execute("*"));
         assertThat(e.getMessage(), isNotStyled());
         assertThat(e.getMessage(), is("Invalid command name: *"));
         List<String> lines = logged.lines();
@@ -96,8 +96,7 @@ class EmbeddedModeTest {
 
     @Test
     void testStyledExceptionThrown() {
-        Error e = assertThrows(Error.class,
-                               () -> Helidon.embeddedMain("init", "--version", "99.99", "--url", "file:///jabberwocky"));
+        Error e = assertThrows(Error.class, () -> Helidon.execute("init", "--version", "99.99", "--url", "file:///jabberwocky"));
         assertThat(e.getMessage(), isNotStyled());
         assertThat(e.getMessage(), is("Helidon version lookup failed."));
         List<String> lines = logged.lines();

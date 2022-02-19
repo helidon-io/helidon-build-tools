@@ -55,7 +55,7 @@ public final class Helidon {
      * @param args raw command line arguments
      * @throws Error if the command fails.
      */
-    public static void embeddedMain(String... args) {
+    public static void execute(String... args) {
         execute(args, true);
     }
 
