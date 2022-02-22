@@ -50,7 +50,8 @@ public final class Helidon {
 
     /**
      * Execute the command in embedded mode. Will not call {@link System#exit(int)} but
-     * return normally on success or throw an exception on failure.
+     * return normally on success or throw an exception on failure. This entry point is not
+     * intended for use within a native image (e.g. via JNI).
      *
      * @param args raw command line arguments
      * @throws Error if the command fails.
