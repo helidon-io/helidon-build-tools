@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import io.helidon.build.common.maven.MavenCommand;
 
 import static io.helidon.build.cli.common.CliProperties.HELIDON_CLI_PLUGIN_VERSION_PROPERTY;
 import static io.helidon.build.cli.common.CliProperties.HELIDON_PLUGIN_VERSION_PROPERTY;
-import static io.helidon.build.cli.harness.CommandContext.Verbosity.NORMAL;
+import static io.helidon.build.cli.harness.CommandContext.Verbosity.DEBUG;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.cli.impl.CommandRequirements.requireValidMavenProjectConfig;
 
@@ -90,7 +90,7 @@ public final class BuildCommand extends BaseCommand {
                                                    .addOptionalArgument(pluginVersionProperty)
                                                    .addOptionalArgument(cliPluginVersionProperty)
                                                    .addArguments(context.propertyArgs(true))
-                                                   .verbose(context.verbosity() != NORMAL)
+                                                   .verbose(context.verbosity() == DEBUG)
                                                    .directory(commonOptions.project());
         switch (buildMode) {
             case PLAIN:
