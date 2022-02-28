@@ -128,7 +128,7 @@ public class GraalNativeMojo extends AbstractMojo {
     /**
      * Indicates if project resources should be added to the image.
      */
-    @Parameter(defaultValue = "true", property="native.image.addProjectResources")
+    @Parameter(defaultValue = "true", property = "native.image.addProjectResources")
     private boolean addProjectResources;
 
     @Parameter(defaultValue = EXEC_MODE_JAR,
@@ -142,7 +142,7 @@ public class GraalNativeMojo extends AbstractMojo {
     /**
      * List of regexp matching names of resources to be included in the image.
      */
-    @Parameter(property="native.image.includeResources")
+    @Parameter(property = "native.image.includeResources")
     private List<String> includeResources;
 
     /**
