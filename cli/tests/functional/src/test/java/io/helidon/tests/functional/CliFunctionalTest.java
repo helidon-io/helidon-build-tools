@@ -17,6 +17,7 @@
 package io.helidon.tests.functional;
 
 import io.helidon.build.cli.impl.CommandInvoker;
+import io.helidon.build.common.OSType;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -189,12 +190,8 @@ public class CliFunctionalTest {
                 .invokeInit()
                 .validateProject();
 
-        cleanUp();
-
-        commandInvoker(flavor, version, archetype, groupId, artifactId, packageName, name, startApp)
-                .execScript()
-                .invokeInit()
-                .validateProject();
+        runHelidonScriptTest(flavor, version, archetype, groupId, artifactId, packageName, name, startApp);
+        runHelidonClassTest(flavor, version, archetype, groupId, artifactId, packageName, name, startApp);
     }
 
     private void runInteractiveTest(String flavor,
@@ -209,12 +206,38 @@ public class CliFunctionalTest {
                 .input(inputFile.toUri().toURL())
                 .invokeInit()
                 .validateProject();
+    }
+
+    private void runHelidonScriptTest(String flavor,
+                                      String version,
+                                      String archetype,
+                                      String groupId,
+                                      String artifactId,
+                                      String packageName,
+                                      String name,
+                                      boolean startApp) throws Exception {
+
+        if (!OSType.currentOS().equals(OSType.Windows)) {
+            cleanUp();
+            commandInvoker(flavor, version, archetype, groupId, artifactId, packageName, name, startApp)
+                    .execScript()
+                    .invokeInit()
+                    .validateProject();
+        }
+    }
+
+    private void runHelidonClassTest(String flavor,
+                                      String version,
+                                      String archetype,
+                                      String groupId,
+                                      String artifactId,
+                                      String packageName,
+                                      String name,
+                                      boolean startApp) throws Exception {
 
         cleanUp();
-
         commandInvoker(flavor, version, archetype, groupId, artifactId, packageName, name, startApp)
-                .input(inputFile.toUri().toURL())
-                .execScript()
+                .execHelidonClass()
                 .invokeInit()
                 .validateProject();
     }

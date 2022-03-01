@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -145,17 +146,10 @@ class TestUtils {
 
     static String execScript(File wd, File input, String... args) throws Exception {
         List<String> cmdArgs = new LinkedList<>();
-        String script = System.getProperty("helidon.shell.script");
-        if (script == null) {
-            throw new IllegalStateException("Shell script path not set");
-        }
-        script = Path.of(script).normalize().toString();
+        Path script = helidonShellScript();
+        setExecutable(script.toFile());
 
-        if (OSType.currentOS().equals(OSType.Windows)) {
-            cmdArgs.add("bash");
-        }
-
-        cmdArgs.add(script);
+        cmdArgs.add(script.normalize().toString());
         cmdArgs.addAll(Arrays.asList(args));
         ProcessBuilder pb = new ProcessBuilder(cmdArgs);
 
@@ -175,6 +169,19 @@ class TestUtils {
 
         String output = String.join(EOL, monitor.output());
         return strip(output);
+    }
+
+    /**
+     * Make a file executable.
+     *
+     * @param file to be made executable
+     * @throws IllegalStateException if the file can not be made executable
+     */
+    static void setExecutable(File file) {
+        Objects.requireNonNull(file, "File provided is null");
+        if (!file.setExecutable(true)) {
+            throw new IllegalStateException(String.format("Unable to make file %s executable.", file.getName()));
+        }
     }
 
     /**
@@ -221,6 +228,20 @@ class TestUtils {
             throw new IllegalStateException("Unable to resolve helidon.test.version from test.properties");
         }
         return version;
+    }
+
+    /**
+     * Get the Helidon shell script Path.
+     *
+     * @return script path
+     * @throws IllegalStateException if the {@code helidon.shell.script} is system property not found
+     */
+    static Path helidonShellScript() {
+        String script = System.getProperty("helidon.shell.script");
+        if (script == null) {
+            throw new IllegalStateException("Unable to resolve helidon.shell.script system property");
+        }
+        return Path.of(script);
     }
 
     /**

@@ -262,6 +262,7 @@ public interface CommandInvoker {
         private final boolean buildProject;
         private final boolean useProjectOption;
         private final boolean execScript;
+        private final boolean execHelidonClass;
 
         private InvokerImpl(Builder builder) {
             useProjectOption = builder.useProjectOption;
@@ -286,6 +287,8 @@ public interface CommandInvoker {
             groupId = builder.groupId == null ? config.defaultGroupId(substitutions) : builder.groupId;
             artifactId = config.artifactId(builder.artifactId, builder.projectName, substitutions);
             packageName = builder.packageName == null ? config.defaultPackageName(substitutions) : builder.packageName;
+            execScript = builder.execScript;
+            execHelidonClass = builder.execHelidonClass;
             try {
                 workDir = builder.workDir == null ? Files.createTempDirectory("helidon-init") : builder.workDir;
                 projectDir = unique(workDir, projectName);
@@ -392,16 +395,24 @@ public interface CommandInvoker {
             args.forEach(a -> System.out.print(a + " "));
             System.out.println();
 
-            // Execute and verify process exit code
-            String output;
-            if (execScript) {
-                System.out.println("Executing CLI with helidon.sh script");
-                output = TestUtils.execScript(workDir.toFile(), input, argsArray);
-            } else {
-                output = TestUtils.execWithDirAndInput(workDir.toFile(), input, argsArray);
+            return new InvocationResult(this, executeInit(workDir.toFile(), input, argsArray));
+        }
+
+        private String executeInit(File wd, File input, String... args) throws Exception {
+            if (execScript && execHelidonClass) {
+                throw new IllegalStateException("Both script and Helidon class cannot be run in the same process");
             }
 
-            return new InvocationResult(this, output);
+            if (execScript) {
+                System.out.println("Executing CLI with helidon.sh script");
+                return TestUtils.execScript(wd, input, args);
+            }
+            if (execHelidonClass) {
+                Helidon.execute(args);
+                return "Helidon class executed";
+            }
+
+            return TestUtils.execWithDirAndInput(workDir.toFile(), input, args);
         }
 
         @Override
@@ -649,6 +660,7 @@ public interface CommandInvoker {
         private boolean buildProject;
         private boolean useProjectOption;
         private boolean execScript = false;
+        private boolean execHelidonClass = false;
 
         /**
          * Use the {@code --project} option instead of the project argument.
@@ -802,6 +814,16 @@ public interface CommandInvoker {
          */
         public Builder execScript() {
             this.execScript = true;
+            return this;
+        }
+
+        /**
+         * Run cli with helidon.sh script.
+         *
+         * @return this builder
+         */
+        public Builder execHelidonClass() {
+            this.execHelidonClass = true;
             return this;
         }
 
