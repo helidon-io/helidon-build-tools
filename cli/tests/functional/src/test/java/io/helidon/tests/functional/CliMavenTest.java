@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+@DisabledOnOs(OS.WINDOWS)
 public class CliMavenTest {
 
     private static final String PLUGIN_VERSION = helidonArchetypeVersion();
@@ -92,7 +93,6 @@ public class CliMavenTest {
 
     @ParameterizedTest
     @MethodSource("getMavenVersions")
-    @DisabledOnOs(OS.WINDOWS)
     public void testMavenArchetypeGenerate(String version) throws Exception {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         List<String> mavenArgs = List.of(
@@ -124,7 +124,6 @@ public class CliMavenTest {
     }
 
     @Test
-    @DisabledOnOs(OS.WINDOWS)
     public void testMissingValues() throws Exception {
         List<String> mvnArgs = List.of(
                 "archetype:generate",
@@ -151,7 +150,6 @@ public class CliMavenTest {
     }
 
     @Test //Test issue https://github.com/oracle/helidon-build-tools/issues/499
-    @DisabledOnOs(OS.WINDOWS)
     public void testIssue499() throws Exception {
         int port = TestUtils.getAvailablePort();
         generateBareSe();
@@ -190,7 +188,6 @@ public class CliMavenTest {
     }
 
     @Test
-    @DisabledOnOs(OS.WINDOWS)
     public void testCliMavenPluginJansiIssue() throws Exception {
         int port = TestUtils.getAvailablePort();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -212,7 +209,6 @@ public class CliMavenTest {
     }
 
     @Test
-    @DisabledOnOs(OS.WINDOWS)
     public void testCliMavenPluginBackwardCompatibility() throws Exception {
         int port = TestUtils.getAvailablePort();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();

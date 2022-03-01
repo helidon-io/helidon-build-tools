@@ -86,7 +86,7 @@ public class TestUtils {
     }
 
     static void waitForApplication(int port) throws Exception {
-        long timeout = 30 * 1000;
+        long timeout = 60 * 1000;
         long now = System.currentTimeMillis();
         URL url = new URL("http://localhost:" + port + "/greet");
 
