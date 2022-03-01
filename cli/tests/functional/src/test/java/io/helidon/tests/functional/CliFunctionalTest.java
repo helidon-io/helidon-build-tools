@@ -18,9 +18,12 @@ package io.helidon.tests.functional;
 
 import io.helidon.build.cli.impl.CommandInvoker;
 import io.helidon.build.common.OSType;
+import io.helidon.build.common.ProcessMonitor;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -155,6 +158,45 @@ public class CliFunctionalTest {
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customProjectNameInteractiveTest(String flavor, String archetype) throws Exception {
         runInteractiveTest(flavor, null, archetype, null, null, null, CUSTOM_PROJECT, false);
+    }
+
+    @Test
+    public void IncorrectFlavorTest() throws Exception {
+        try {
+            commandInvoker("wrongFlavor", null, null, null, null, null, null, false)
+                    .build()
+                    .invokeInit();
+        } catch (ProcessMonitor.ProcessFailedException e) {
+            Assertions.assertTrue(e.getMessage().contains("ERROR: Invalid choice: WRONGFLAVOR"));
+            return;
+        }
+        Assertions.fail("Exception should have been thrown");
+    }
+
+    @Test
+    public void IncorrectHelidonVersionTest() throws Exception {
+        try {
+            commandInvoker("se", "0.0.0", "bare", null, null, null, null, false)
+                    .build()
+                    .invokeInit();
+        } catch (ProcessMonitor.ProcessFailedException e) {
+            Assertions.assertTrue(e.getMessage().contains("Helidon version 0.0.0 not found."));
+            return;
+        }
+        Assertions.fail("Exception should have been thrown");
+    }
+
+    @Test
+    public void IncorrectArchetypeTest() throws Exception {
+        try {
+            commandInvoker("se", null, "none", null, null, null, null, false)
+                    .build()
+                    .invokeInit();
+        } catch (ProcessMonitor.ProcessFailedException e) {
+            Assertions.assertTrue(e.getMessage().contains("\"catalogEntry\" is null"));
+            return;
+        }
+        Assertions.fail("Exception should have been thrown");
     }
 
     private CommandInvoker.Builder commandInvoker(String flavor,
