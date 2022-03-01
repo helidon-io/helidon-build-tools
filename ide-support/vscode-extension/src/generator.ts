@@ -61,22 +61,22 @@ export async function showHelidonGenerator(extensionPath: string) {
     ];
 
     async function showInputBox(data: InputBoxData) {
-        return VSCodeAPI.showInputBox (data);
+        return VSCodeAPI.showInputBox(data);
     }
 
     async function obtainTypeOfProject(state: Partial<GeneratedProjectData>) {
-        state.projectData = (<ProjectData>await VSCodeAPI.showPickOption ({
+        state.projectData = (<ProjectData>await VSCodeAPI.showPickOption({
             title: "Choose project you want to generate.",
             totalSteps: NUMBER_OF_STEPS,
             currentStep: 1,
             placeholder: "Project type",
             items: quickPickItems
         }));
-        await obtainGroupId (state);
+        await obtainGroupId(state);
     }
 
     async function obtainGroupId(state: Partial<GeneratedProjectData>) {
-        state.groupId = await VSCodeAPI.showInputBox ({
+        state.groupId = await VSCodeAPI.showInputBox({
             title: "Select your project groupId",
             placeholder: "Project groupId",
             value: "io.helidon.examples",
@@ -85,17 +85,17 @@ export async function showHelidonGenerator(extensionPath: string) {
             currentStep: 2,
             messageValidation: groupIdValidator
         });
-        return await obtainArtifactId (state);
+        return await obtainArtifactId(state);
     }
 
     function groupIdValidator(value: string): string | undefined {
-        const exp = new RegExp ("^[a-z\.]*$");
+        const exp = new RegExp("^[a-z\.]*$");
         const errorMessage = "This groupId is not valid. Use only words separated by dots.";
-        return validateUserInput (value, exp, errorMessage);
+        return validateUserInput(value, exp, errorMessage);
     }
 
     async function obtainArtifactId(state: Partial<GeneratedProjectData>) {
-        state.artifactId = await showInputBox ({
+        state.artifactId = await showInputBox({
             title: "Select your project artifactId",
             placeholder: "Project artifactId",
             value: state.projectData ? `${state.projectData.base}-${state.projectData.flavor}` : "my-project",
@@ -104,18 +104,18 @@ export async function showHelidonGenerator(extensionPath: string) {
             currentStep: 3,
             messageValidation: artifactIdValidator
         });
-        return await obtainPackage (state);
+        return await obtainPackage(state);
     }
 
     function artifactIdValidator(value: string): string | undefined {
-        const exp = new RegExp ("^[a-z\-]*$");
+        const exp = new RegExp("^[a-z\-]*$");
         const errorMessage = "This artifactId is not valid. Use only words separated by -";
-        return validateUserInput (value, exp, errorMessage);
+        return validateUserInput(value, exp, errorMessage);
     }
 
     async function obtainPackage(state: Partial<GeneratedProjectData>) {
         const pkg = state.projectData ? state.projectData.pkg : "io.helidon.examples.quickstart";
-        state.pkg = await showInputBox ({
+        state.pkg = await showInputBox({
             title: "Select your project package structure",
             placeholder: pkg,
             value: pkg,
@@ -124,7 +124,7 @@ export async function showHelidonGenerator(extensionPath: string) {
             currentStep: 4,
             messageValidation: packageValidator
         });
-        return await generateProject (new Map<string, string> ([
+        return await generateProject(new Map<string, string>([
                 ["flavor", state.projectData!.flavor],
                 ["base", state.projectData!.base],
                 ["package", state.pkg!],
@@ -136,45 +136,45 @@ export async function showHelidonGenerator(extensionPath: string) {
     }
 
     function packageValidator(value: string): string | undefined {
-        const exp = new RegExp ("^[a-zA-Z\.]*$");
+        const exp = new RegExp("^[a-zA-Z\.]*$");
         const errorMessage = "This package structure is not valid. Use only words separated by dots.";
-        return validateUserInput (value, exp, errorMessage);
+        return validateUserInput(value, exp, errorMessage);
     }
 
     async function generateProject(projectData: Map<string, string>) {
-        const artifactId = <string>projectData.get ('artifactId');
-        const targetDir = await obtainTargetFolder (artifactId);
+        const artifactId = <string>projectData.get('artifactId');
+        const targetDir = await obtainTargetFolder(artifactId);
         if (!targetDir) {
-            throw new Error ('Helidon project generation has been canceled.');
+            throw new Error('Helidon project generation has been canceled.');
         }
 
-        VSCodeAPI.showInformationMessage ('Your Helidon project is being created...');
+        VSCodeAPI.showInformationMessage('Your Helidon project is being created...');
 
-        const archetypeValues = prepareProperties (projectData);
+        const archetypeValues = prepareProperties(projectData);
         const cmd = `java -jar ${extensionPath}/target/cli/helidon.jar init --batch \
             --reset --url file://${extensionPath}/cli-data \
             ${archetypeValues}`;
 
-        const channel = VSCodeAPI.createOutputChannel ('helidon');
-        channel.appendLine (cmd);
+        const channel = VSCodeAPI.createOutputChannel('helidon');
+        channel.appendLine(cmd);
 
         const opts = {
             cwd: targetDir.fsPath
         };
-        ChildProcessAPI.execProcess (cmd, opts, (error: string, stdout: string, stderr: string) => {
-            channel.appendLine (stdout);
-            if (stdout.includes ("Switch directory to ")) {
-                const projectDir = getSubstringBetween (stdout, "Switch directory to ", "to use CLI");
-                VSCodeAPI.showInformationMessage ('Project generated...');
-                openPreparedProject (projectDir);
+        ChildProcessAPI.execProcess(cmd, opts, (error: string, stdout: string, stderr: string) => {
+            channel.appendLine(stdout);
+            if (stdout.includes("Switch directory to ")) {
+                const projectDir = getSubstringBetween(stdout, "Switch directory to ", "to use CLI");
+                VSCodeAPI.showInformationMessage('Project generated...');
+                openPreparedProject(projectDir);
             } else {
-                VSCodeAPI.showInformationMessage ('Project generation failed...');
+                VSCodeAPI.showInformationMessage('Project generation failed...');
             }
             if (stderr) {
-                channel.appendLine (stderr);
+                channel.appendLine(stderr);
             }
             if (error) {
-                channel.appendLine (error);
+                channel.appendLine(error);
             }
         });
     }
@@ -190,16 +190,16 @@ export async function showHelidonGenerator(extensionPath: string) {
     async function obtainTargetFolder(artifactId: string) {
 
         const specificFolderMessage = `'${artifactId}'` + EXISTING_FOLDER;
-        let directory: Uri | undefined = await VSCodeAPI.showOpenFolderDialog ({openLabel: SELECT_FOLDER});
+        let directory: Uri | undefined = await VSCodeAPI.showOpenFolderDialog({openLabel: SELECT_FOLDER});
 
-        while (directory && FileSystemAPI.isPathExistsSync (path.join (directory.fsPath, artifactId))) {
-            const choice: string | undefined = await VSCodeAPI.showWarningMessage (specificFolderMessage, OVERWRITE_EXISTING, NEW_DIR);
+        while (directory && FileSystemAPI.isPathExistsSync(path.join(directory.fsPath, artifactId))) {
+            const choice: string | undefined = await VSCodeAPI.showWarningMessage(specificFolderMessage, OVERWRITE_EXISTING, NEW_DIR);
             if (choice === OVERWRITE_EXISTING) {
                 // Following line deletes target folder recursively
-                require ("rimraf").sync (path.join (directory.fsPath, artifactId));
+                require("rimraf").sync(path.join(directory.fsPath, artifactId));
                 break;
             } else if (choice === NEW_DIR) {
-                directory = await VSCodeAPI.showOpenFolderDialog ({openLabel: SELECT_FOLDER});
+                directory = await VSCodeAPI.showOpenFolderDialog({openLabel: SELECT_FOLDER});
             } else {
                 directory = undefined;
                 break;
@@ -212,43 +212,43 @@ export async function showHelidonGenerator(extensionPath: string) {
     async function openPreparedProject(projectDir: string): Promise<void> {
 
         const openFolderCommand = 'vscode.openFolder';
-        const newProjectFolderUri = getNewProjectFolder (projectDir);
+        const newProjectFolderUri = getNewProjectFolder(projectDir);
 
-        if (VSCodeAPI.getWorkspaceFolders ()) {
-            const input: string | undefined = await VSCodeAPI.showInformationMessage (PROJECT_READY, NEW_WINDOW, ADD_TO_WORKSPACE);
+        if (VSCodeAPI.getWorkspaceFolders()) {
+            const input: string | undefined = await VSCodeAPI.showInformationMessage(PROJECT_READY, NEW_WINDOW, ADD_TO_WORKSPACE);
             if (!input) {
                 return;
             } else if (input === ADD_TO_WORKSPACE) {
-                VSCodeAPI.updateWorkspaceFolders (
-                    VSCodeAPI.getWorkspaceFolders () ? VSCodeAPI.getWorkspaceFolders ()!.length : 0,
+                VSCodeAPI.updateWorkspaceFolders(
+                    VSCodeAPI.getWorkspaceFolders() ? VSCodeAPI.getWorkspaceFolders()!.length : 0,
                     undefined,
                     {uri: newProjectFolderUri}
                 );
             } else {
-                VSCodeAPI.executeCommand (openFolderCommand, newProjectFolderUri, true);
+                VSCodeAPI.executeCommand(openFolderCommand, newProjectFolderUri, true);
             }
-        } else if (VSCodeAPI.getVisibleTextEditors ().length > 0) {
+        } else if (VSCodeAPI.getVisibleTextEditors().length > 0) {
             // If VS does not have any project opened, but has some file opened in it.
-            const input: string | undefined = await VSCodeAPI.showInformationMessage (PROJECT_READY, NEW_WINDOW, CURRENT_WINDOW);
+            const input: string | undefined = await VSCodeAPI.showInformationMessage(PROJECT_READY, NEW_WINDOW, CURRENT_WINDOW);
             if (input) {
-                VSCodeAPI.executeCommand (openFolderCommand, newProjectFolderUri, NEW_WINDOW === input);
+                VSCodeAPI.executeCommand(openFolderCommand, newProjectFolderUri, NEW_WINDOW === input);
             }
         } else {
-            VSCodeAPI.executeCommand (openFolderCommand, newProjectFolderUri, false);
+            VSCodeAPI.executeCommand(openFolderCommand, newProjectFolderUri, false);
         }
 
     }
 
     function getNewProjectFolder(projectDir: string): Uri {
-        return Uri.file (projectDir);
+        return Uri.file(projectDir);
     }
 
     try {
-        await obtainTypeOfProject ({
+        await obtainTypeOfProject({
             archetypeVersion: DEFAULT_ARCHETYPE_VERSION
         });
     } catch (e: any) {
-        VSCodeAPI.showErrorMessage (e.message);
+        VSCodeAPI.showErrorMessage(e.message);
     }
 
 }
