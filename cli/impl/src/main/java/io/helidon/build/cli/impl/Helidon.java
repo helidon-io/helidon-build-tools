@@ -40,11 +40,34 @@ public final class Helidon {
     }
 
     /**
-     * Execute the command.
+     * Execute the command. Will call {@link System#exit(int)}.
      *
      * @param args raw command line arguments
      */
-    public static void main(String[] args) {
+    public static void main(String... args) {
+        execute(args, false);
+    }
+
+    /**
+     * Execute the command in embedded mode. Will not call {@link System#exit(int)} but
+     * return normally on success or throw an exception on failure. This entry point is not
+     * intended for use within a native image (e.g. via JNI).
+     *
+     * @param args raw command line arguments
+     * @throws Error if the command fails.
+     */
+    public static void execute(String... args) {
+        execute(args, true);
+    }
+
+    /**
+     * Execute the command.
+     *
+     * @param args raw command line arguments
+     * @param embedded {@code true} if embedded mode.
+     * @throws Error if the command fails and in embedded mode.
+     */
+    private static void execute(String[] args, boolean embedded) {
 
         if (ImageInfo.inImageRuntimeCode()) {
             // Register a signal handler for Ctrl-C that calls System.exit in order to trigger
@@ -56,6 +79,7 @@ public final class Helidon {
                      .args(args)
                      .optionLookup(Config.userConfig()::property)
                      .cliClass(Helidon.class)
+                     .embedded(embedded)
                      .build()
                      .initProxy()
                      .execute()

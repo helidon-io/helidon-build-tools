@@ -152,6 +152,14 @@ public class CapturingLogWriter extends DefaultLogWriter {
         return delegate.isVerbose();
     }
 
+    @Override
+    public void level(Level level) {
+        super.level(level);
+        if (delegate instanceof SystemLogWriter) {
+            ((SystemLogWriter) delegate).level(level);
+        }
+    }
+
     /**
      * Uninstall this writer.
      */

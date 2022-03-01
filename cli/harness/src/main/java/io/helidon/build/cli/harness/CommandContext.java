@@ -107,20 +107,22 @@ public final class CommandContext {
     private final CommandRegistry registry;
     private final Properties properties;
     private final InternalOptions internalOptions;
+    private final boolean embedded;
     private Verbosity verbosity;
     private ExitAction exitAction;
     private CommandParser parser;
 
     @SuppressWarnings("CopyConstructorMissesField")
     CommandContext(CommandContext parent) {
-        this(parent.registry, parent.internalOptions);
+        this(parent.registry, parent.internalOptions, parent.embedded);
     }
 
-    CommandContext(CommandRegistry registry, InternalOptions internalOptions) {
+    CommandContext(CommandRegistry registry, InternalOptions internalOptions, boolean embedded) {
         this.registry = Objects.requireNonNull(registry, "registry is null");
         this.exitAction = new ExitAction();
         this.properties = new Properties();
         this.internalOptions = internalOptions != null ? internalOptions : InternalOptions.EMPTY;
+        this.embedded = embedded;
     }
 
     /**
@@ -232,34 +234,47 @@ public final class CommandContext {
                     exit(message, null, WARN, 0);
                     break;
                 default:
-                    System.exit(0);
+                    exit(null, null, INFO, 0);
             }
         }
 
         private void exit(String message, Throwable error, Level level, int statusCode) {
-            if (message != null || error != null) {
+            String errorMessage = errorMessage(message, error);
+            if (errorMessage != null) {
                 if (Log.isVerbose()) {
                     Log.info();
                 }
                 if (AnsiTextStyle.isStyled(message)) {
                     Log.info(message);
                 } else {
-                    if (message == null) {
-                        if (error.getMessage() != null) {
-                            message = error.getMessage();
-                        } else if (error.getCause() != null) {
-                            message = error.getCause().getMessage();
-                        } else {
-                            message = "Unknown error";
-                        }
-                    }
                     Log.log(level, error, message);
                 }
                 if (Log.isVerbose()) {
                     Log.info();
                 }
             }
-            System.exit(statusCode);
+            if (embedded) {
+                if (statusCode != 0) {
+                    throw new Error(AnsiTextStyle.strip(message), error);
+                }
+            } else {
+                System.exit(statusCode);
+            }
+        }
+
+        private String errorMessage(String message, Throwable error) {
+            if (message == null) {
+                if (error != null) {
+                    if (error.getMessage() != null) {
+                        message = error.getMessage();
+                    } else if (error.getCause() != null) {
+                        message = error.getCause().getMessage();
+                    } else {
+                        message = "Unknown error";
+                    }
+                }
+            }
+            return message;
         }
     }
 
@@ -363,6 +378,7 @@ public final class CommandContext {
      */
     void parser(CommandParser parser) {
         this.parser = Objects.requireNonNull(parser, "parser is null");
+        this.properties.putAll(parser.globalResolver().properties());
     }
 
     /**
@@ -514,6 +530,7 @@ public final class CommandContext {
      */
     public abstract static class Builder<T extends Builder<T>> {
 
+        private boolean embedded;
         private Class<?> cliClass;
         private BiFunction<String, String, String> lookup;
 
@@ -545,13 +562,24 @@ public final class CommandContext {
         }
 
         /**
+         * Set embedded mode.
+         *
+         * @param embedded {@code true} if embedded mode
+         * @return this builder
+         */
+        @SuppressWarnings("unchecked")
+        public T embedded(boolean embedded) {
+            this.embedded = embedded;
+            return (T) this;
+        }
+        /**
          * Build the command context instance.
          *
          * @return CommandContext
          */
         protected CommandContext buildContext() {
             CommandRegistry registry = CommandRegistry.load(cliClass);
-            return new CommandContext(registry, new InternalOptions(lookup));
+            return new CommandContext(registry, new InternalOptions(lookup), embedded);
         }
     }
 }

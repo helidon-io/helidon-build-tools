@@ -44,7 +44,7 @@ public class ExecTest {
     final CapturingLogWriter logged = CapturingLogWriter.create();
 
     static CommandContext context() {
-        return new CommandContext(REGISTRY, null);
+        return new CommandContext(REGISTRY, null, false);
     }
 
     static String resourceAsString(String name) {
