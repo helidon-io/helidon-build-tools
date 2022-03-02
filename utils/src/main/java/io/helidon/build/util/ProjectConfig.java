@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ import static io.helidon.build.util.FileUtils.assertExists;
  * Class ProjectConfig.
  */
 public class ProjectConfig extends ConfigProperties {
+    private static final String FILE_HEADER = " Helidon Project Configuration\n"
+                                              + " >>> This is a generated file, do not edit. <<<\n";
 
     /**
      * Helidon CLI config file.
@@ -269,5 +271,10 @@ public class ProjectConfig extends ConfigProperties {
     public long lastSuccessfulBuildTime() {
         final String time = property(PROJECT_LAST_BUILD_SUCCESS_TIME);
         return time == null ? 0L : Long.parseLong(time);
+    }
+
+    @Override
+    public void store() {
+        store(FILE_HEADER);
     }
 }
