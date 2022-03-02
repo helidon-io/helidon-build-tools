@@ -173,11 +173,11 @@ public class CliFunctionalTest {
     public void testVerbose() throws Exception {
         int port = TestUtils.getAvailablePort();
 
-        TestUtils.generateBareSe(workDir, CUSTOM_ARTIFACT_ID);
+        commandInvoker(null).artifactId("artifactid").invokeInit();
         CommandInvoker invoker = commandInvoker(null)
                 .appJvmArgs("-Dserver.port=" + port)
                 .verbose()
-                .workDir(workDir.resolve(CUSTOM_ARTIFACT_ID))
+                .workDir(workDir.resolve("artifactid"))
                 .build()
                 .invokeDev();
         TestUtils.waitForApplication(port);
