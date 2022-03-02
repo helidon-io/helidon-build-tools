@@ -48,8 +48,7 @@ import org.sonatype.plexus.build.incremental.BuildContext;
  */
 @Mojo(name = "native-image",
       defaultPhase = LifecyclePhase.PACKAGE,
-      requiresDependencyResolution = ResolutionScope.RUNTIME,
-      requiresProject = true)
+      requiresDependencyResolution = ResolutionScope.RUNTIME)
 public class GraalNativeMojo extends AbstractMojo {
     private static final String EXEC_MODE_MAIN_CLASS = "main";
     private static final String EXEC_MODE_JAR = "jar";
@@ -60,7 +59,7 @@ public class GraalNativeMojo extends AbstractMojo {
     /**
      * {@code true} if running on WINDOWS.
      */
-    private static final boolean IS_WINDOWS = File.pathSeparator != ":";
+    private static final boolean IS_WINDOWS = File.pathSeparatorChar != ':';
 
     /**
      * Constant for the {@code native-image} command file name.
@@ -129,7 +128,7 @@ public class GraalNativeMojo extends AbstractMojo {
     /**
      * Indicates if project resources should be added to the image.
      */
-    @Parameter(defaultValue = "true")
+    @Parameter(defaultValue = "true", property = "native.image.addProjectResources")
     private boolean addProjectResources;
 
     @Parameter(defaultValue = EXEC_MODE_JAR,
@@ -143,7 +142,7 @@ public class GraalNativeMojo extends AbstractMojo {
     /**
      * List of regexp matching names of resources to be included in the image.
      */
-    @Parameter
+    @Parameter(property = "native.image.includeResources")
     private List<String> includeResources;
 
     /**
@@ -162,7 +161,7 @@ public class GraalNativeMojo extends AbstractMojo {
     /**
      * Additional command line arguments.
      */
-    @Parameter
+    @Parameter(property = "native.image.additionalArgs")
     private List<String> additionalArgs;
 
     /**
@@ -344,15 +343,13 @@ public class GraalNativeMojo extends AbstractMojo {
                 String[] includes = null;
                 if (resource.getIncludes() != null
                         && !resource.getIncludes().isEmpty()) {
-                    includes = (String[]) resource.getIncludes()
-                            .toArray(new String[resource.getIncludes().size()]);
+                    includes = resource.getIncludes().toArray(new String[0]);
                 }
                 scanner.setIncludes(includes);
                 String[] excludes = null;
                 if (resource.getExcludes() != null
                         && !resource.getExcludes().isEmpty()) {
-                    excludes = (String[]) resource.getExcludes()
-                            .toArray(new String[resource.getExcludes().size()]);
+                    excludes = resource.getExcludes().toArray(new String[0]);
                 }
                 scanner.setExcludes(excludes);
                 scanner.scan();
@@ -445,9 +442,7 @@ public class GraalNativeMojo extends AbstractMojo {
      * @return {@code true} if a windows script, {@code false} otherwise
      */
     private static boolean isWindowsScript(File cmd) {
-        return WINDOWS_SCRIPT_EXTENSIONS.stream()
-                .filter(ext -> cmd.getAbsolutePath().endsWith("." + ext))
-                .count() >= 1;
+        return WINDOWS_SCRIPT_EXTENSIONS.stream().anyMatch(ext -> cmd.getAbsolutePath().endsWith("." + ext));
     }
 
     /**

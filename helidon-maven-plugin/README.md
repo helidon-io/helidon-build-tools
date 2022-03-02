@@ -24,23 +24,20 @@ This plugin binds to the `package` phase by default.
 | Property | Type | Default<br/>Value | Description |
 | --- | --- | --- | --- |
 | graalVMHome | File | `${env.GRAALVM_HOME}` | GraalVM home |
-| reportExceptionStackTraces | Boolean | `true` | Show exception stack traces for exceptions during image building |
-| buildShared | Boolean | `false` | Build shared library |
-| buildStatic | Boolean | `false` | Build statically linked executable (requires static `libc` and `zlib` |
-| noServer | Boolean | `true` | Do not use image-build server |
-| addProjectResources | Boolean | `true` | Indicates if project build resources should be added to the image |
+| reportExceptionStackTraces | boolean | `true` | Show exception stack traces for exceptions during image building |
+| buildShared | boolean | `false` | Build shared library |
+| buildStatic | boolean | `false` | Build statically linked executable (requires static `libc` and `zlib` |
+| noServer | boolean | `true` | Do not use image-build server |
+| addProjectResources | boolean | `true` | Indicates if project build resources should be added to the image |
 | includeResources | List | [] | List of regexp matching names of resources to be included in the image |
 | additionalArgs | List | [] | Additional command line arguments |
-| skipNativeImage | Boolean | `false` | Skip this goal execution |
+| skipNativeImage | boolean | `false` | Skip this goal execution |
 | execMode | enum | `jar` | Execution mode - `jar`, `jar-cp`, or `main` |
 | mainClass | String | `${mainClass}` | Main class to use when execMode is set to `main` | 
 
-The parameters `reportExceptionStackTraces`, `noServer`, `buildShared`,
- `buildStatic` and `skipNativeImage` are mapped to user properties of the form:
- `native.image.PROPERTY`. The parameter `siteArchiveSkip` is mapped to:
- `native.image.skip`. 
-The parameter `execMode` is maped to property `native.image.execMode`.
-The parameter `mainClass` is mapped to property `native.image.mainClass`.
+Except for `skipNativeImage`, the above parameters are mapped to user properties of the form `native.image.PROPERTY`; 
+`skipNativeImage` is mapped to `native.image.skip`. Multiple values for the `native.image.additonalArgs` and 
+`native.image.includeResources` properties must be comma separated.
 
 ### Specifying the path to `native-image`
 
@@ -140,14 +137,18 @@ This plugin binds to the `package` phase by default.
 | defaultArgs | List | [] | Application arguments to use if none are passed to the `start` script |
 | defaultDebugOptions | List | [] | JVM debug options to use if the `--debug` flag is passed to the `start` script |
 | additionalModules | Set | [] | Add any modules that may not be found automatically |
-| addClassDataSharingArchive | Boolean | `true` | Add a Class Data Sharing archive to reduce startup time |
-| testImage | Boolean | `true` | Start the application after the image is built |
-| stripDebug | Boolean | `false` | Remove all debug support from the image, including within `.class` files |
-| skipJavaImage | Boolean | `false` | Skip this goal execution |
+| addClassDataSharingArchive | boolean | `true` | Add a Class Data Sharing archive to reduce startup time |
+| testImage | boolean | `true` | Start the application after the image is built |
+| stripDebug | boolean | `false` | Remove all debug support from the image, including within `.class` files |
+| skipJavaImage | boolean | `false` | Skip this goal execution |
 | additionalJlinkArgs | List | [] | Additional arguments to use when invoking `jlink` |
+| maxAppStartSeconds | int | `60` | Maximum seconds to wait for application startup |
 
-The above parameters are mapped to user properties of the form: `jlink.image.PROPERTY`.
-For example `-Djlink.image.addClassDataSharingArchive=false`.
+
+The above parameters are mapped to user properties of the form `jlink.image.PROPERTY`, e.g.
+`-Djlink.image.addClassDataSharingArchive=false`. Multiple arguments for the `jlink.image.additionalJlinkArgs` 
+property must be comma separated.
+
 
 ### General usage
 
@@ -443,5 +444,5 @@ plugin's classpath.
 | outputFileDir| File | `target` | Directory to place generated report text file. |
 | outputFileName| String | `HELIDON_THIRD_PARTY_LICENSES.txt` | Name of generated report file. |
 | modules| String | `*`  | Comma seperated list of Helidon module names (`helidon-webserver,helidon-microprofile`). `*` means all Helidon modules in application's dependencies |
-| skip| Boolean | false | true to skip this goal. |
+| skip| boolean | false | true to skip this goal. |
 

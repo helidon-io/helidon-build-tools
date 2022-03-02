@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,9 +103,9 @@ public final class DevCommand extends BaseCommand {
     DevCommand(CommonOptions commonOptions,
                @Flag(name = "clean", description = "Perform a clean before the first build") boolean clean,
                @Flag(name = "fork", description = "Fork mvn execution") boolean fork,
-               @KeyValue(name = "app-jvm-args", description = "JVM args used when starting the application")
+               @KeyValue(name = "app-jvm-args", description = "JVM args used when starting the application (space separated)")
                        String appJvmArgs,
-               @KeyValue(name = "app-args", description = "Application args used when starting the application")
+               @KeyValue(name = "app-args", description = "Application args used when starting the application (space separated)")
                        String appArgs,
                @Flag(name = "app-debug", description = "Enable application debugger")
                        boolean appDebug,
