@@ -17,7 +17,6 @@
 package io.helidon.tests.functional;
 
 import io.helidon.build.cli.impl.CommandInvoker;
-import io.helidon.build.common.maven.MavenCommand;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -28,11 +27,9 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
-import java.util.Map;
 
 public class CliFunctionalTest {
 
@@ -176,11 +173,11 @@ public class CliFunctionalTest {
     public void testVerbose() throws Exception {
         int port = TestUtils.getAvailablePort();
 
-        commandInvoker(null).artifactId("artifactid").invokeInit();
+        TestUtils.generateBareSe(workDir, CUSTOM_ARTIFACT_ID);
         CommandInvoker invoker = commandInvoker(null)
                 .appJvmArgs("-Dserver.port=" + port)
                 .verbose()
-                .workDir(workDir.resolve("artifactid"))
+                .workDir(workDir.resolve(CUSTOM_ARTIFACT_ID))
                 .build()
                 .invokeDev();
         TestUtils.waitForApplication(port);

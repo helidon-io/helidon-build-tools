@@ -97,7 +97,7 @@
                     <systemPropertyVariables>
                         <!-- version should be upgraded to 3.0.0 once released-->
                         <helidon.test.version>2.4.0</helidon.test.version>
-                        <helidon.current.test.version>${project.version}</helidon.current.test.version>
+                        <helidon.plugin.version>${project.version}</helidon.plugin.version>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

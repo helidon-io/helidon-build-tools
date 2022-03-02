@@ -54,6 +54,15 @@ public class CliMavenTest {
     private static Path workDir;
     private static Path mavenHome;
 
+    private static String helidonArchetypeVersion() {
+        String version = System.getProperty("helidon.plugin.version");
+        if (version != null) {
+            return version;
+        } else {
+            throw new IllegalStateException("Helidon archetype version is not set");
+        }
+    }
+
     @BeforeAll
     static void setUp() throws IOException {
         workDir = Files.createTempDirectory("generated");
@@ -61,15 +70,6 @@ public class CliMavenTest {
 
         for (String version : MAVEN_VERSIONS) {
             TestUtils.downloadMavenDist(mavenHome, version);
-        }
-    }
-
-    private static String helidonArchetypeVersion() {
-        String version = System.getProperty("helidon.current.test.version");
-        if (version != null) {
-            return version;
-        } else {
-            throw new IllegalStateException("Helidon archetype version is not set");
         }
     }
 
@@ -123,8 +123,10 @@ public class CliMavenTest {
         Assertions.assertTrue(processOutput.contains("BUILD SUCCESS"), "Error with following output:\n" + processOutput);
     }
 
-    @Test
-    public void testMissingValues() throws Exception {
+    @ParameterizedTest
+    @MethodSource("getMavenVersions")
+    public void testMissingValues(String version) throws Exception {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
         List<String> mvnArgs = List.of(
                 "archetype:generate",
                 "-DinteractiveMode=false",
@@ -132,10 +134,8 @@ public class CliMavenTest {
                 "-DarchetypeArtifactId=helidon-quickstart-se",
                 "-DarchetypeVersion=" + ARCHETYPE_VERSION);
 
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-
         MavenCommand.builder()
-                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", "mvn"))
+                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-" + version, "bin", "mvn"))
                 .directory(workDir)
                 .stdOut(new PrintStream(stream))
                 .addArguments(mvnArgs)
@@ -143,6 +143,12 @@ public class CliMavenTest {
                 .build()
                 .execute();
         String output = stream.toString();
+
+        if (MavenVersion.toMavenVersion(version).isLessThan(MavenVersion.toMavenVersion("3.2.5"))) {
+            Assertions.assertTrue(output.contains("BUILD FAILURE"), "Build should be failing:\n" + output);
+            return;
+        }
+
         Assertions.assertTrue(output.contains("Property groupId is missing."), "Build should be failing:\n" + output);
         Assertions.assertTrue(output.contains("Property package is missing."), "Build should be failing:\n" + output);
         Assertions.assertTrue(output.contains("Property artifactId is missing."), "Build should be failing:\n" + output);
@@ -152,7 +158,7 @@ public class CliMavenTest {
     @Test //Test issue https://github.com/oracle/helidon-build-tools/issues/499
     public void testIssue499() throws Exception {
         int port = TestUtils.getAvailablePort();
-        generateBareSe();
+        TestUtils.generateBareSe(workDir, "artifactid");
         CommandInvoker invoker = CommandInvoker.builder()
                 .metadataUrl("https://helidon.io/cli-data")
                 .appJvmArgs("-Dserver.port=" + port)
@@ -191,7 +197,7 @@ public class CliMavenTest {
     public void testCliMavenPluginJansiIssue() throws Exception {
         int port = TestUtils.getAvailablePort();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        generateBareSe();
+        TestUtils.generateBareSe(workDir, "artifactid");
 
         ProcessMonitor monitor = MavenCommand.builder()
                 .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.1", "bin", "mvn"))
@@ -212,7 +218,7 @@ public class CliMavenTest {
     public void testCliMavenPluginBackwardCompatibility() throws Exception {
         int port = TestUtils.getAvailablePort();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        generateBareSe();
+        TestUtils.generateBareSe(workDir, "artifactid");
 
         ProcessMonitor monitor = MavenCommand.builder()
                 .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", "mvn"))
@@ -227,14 +233,6 @@ public class CliMavenTest {
 
         String output = stream.toString();
         Assertions.assertTrue(output.contains("BUILD SUCCESS"));
-    }
-
-    private void generateBareSe() throws Exception {
-        CommandInvoker.builder()
-                .metadataUrl("https://helidon.io/cli-data")
-                .workDir(workDir)
-                .artifactId("artifactid")
-                .invokeInit();
     }
 
 }

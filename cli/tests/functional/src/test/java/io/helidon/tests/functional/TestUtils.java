@@ -15,6 +15,7 @@
  */
 package io.helidon.tests.functional;
 
+import io.helidon.build.cli.impl.CommandInvoker;
 import io.helidon.build.common.FileUtils;
 import org.junit.jupiter.api.Assertions;
 
@@ -118,6 +119,14 @@ public class TestUtils {
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
         }
+    }
+
+    static void generateBareSe(Path wd, String artifactId) throws Exception {
+        CommandInvoker.builder()
+                .metadataUrl("https://helidon.io/cli-data")
+                .workDir(wd)
+                .artifactId(artifactId)
+                .invokeInit();
     }
 
 }
