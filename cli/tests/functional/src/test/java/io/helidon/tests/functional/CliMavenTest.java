@@ -18,6 +18,7 @@ package io.helidon.tests.functional;
 
 import io.helidon.build.cli.impl.CommandInvoker;
 import io.helidon.build.common.FileUtils;
+import io.helidon.build.common.OSType;
 import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.maven.MavenCommand;
 import io.helidon.build.common.maven.MavenVersion;
@@ -27,8 +28,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -44,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-@DisabledOnOs(OS.WINDOWS)
 public class CliMavenTest {
 
     private static final String PLUGIN_VERSION = helidonArchetypeVersion();
@@ -73,7 +71,7 @@ public class CliMavenTest {
         }
     }
 
-    @AfterEach
+    @AfterEach //FileUtils not used because of Windows throwing exception
     void cleanUpGeneratedFiles() throws IOException {
         Files.walk(workDir)
                 .sorted(Comparator.reverseOrder())
@@ -106,7 +104,7 @@ public class CliMavenTest {
                 "-Dpackage=custom.pack.name");
 
         MavenCommand.builder()
-                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-" + version, "bin", "mvn"))
+                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-" + version, "bin", OSType.currentOS().mavenExec()))
                 .ignoreMavenVersion()
                 .ignoreExitValue()
                 .directory(workDir)
@@ -135,7 +133,7 @@ public class CliMavenTest {
                 "-DarchetypeVersion=" + ARCHETYPE_VERSION);
 
         MavenCommand.builder()
-                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-" + version, "bin", "mvn"))
+                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-" + version, "bin", OSType.currentOS().mavenExec()))
                 .directory(workDir)
                 .stdOut(new PrintStream(stream))
                 .addArguments(mvnArgs)
@@ -193,14 +191,14 @@ public class CliMavenTest {
         invoker.stopMonitor();
     }
 
-    @Test
+    @Test //Issue#259 https://github.com/oracle/helidon-build-tools/issues/259
     public void testCliMavenPluginJansiIssue() throws Exception {
         int port = TestUtils.getAvailablePort();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         TestUtils.generateBareSe(workDir, "artifactid");
 
         ProcessMonitor monitor = MavenCommand.builder()
-                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.1", "bin", "mvn"))
+                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.1", "bin", OSType.currentOS().mavenExec()))
                 .directory(workDir.resolve("artifactid"))
                 .stdOut(new PrintStream(stream))
                 .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
@@ -221,7 +219,7 @@ public class CliMavenTest {
         TestUtils.generateBareSe(workDir, "artifactid");
 
         ProcessMonitor monitor = MavenCommand.builder()
-                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", "mvn"))
+                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", OSType.currentOS().mavenExec()))
                 .directory(workDir.resolve("artifactid"))
                 .stdOut(new PrintStream(stream))
                 .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
