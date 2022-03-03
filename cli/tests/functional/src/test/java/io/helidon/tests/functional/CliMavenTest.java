@@ -17,8 +17,6 @@
 package io.helidon.tests.functional;
 
 import io.helidon.build.cli.impl.CommandInvoker;
-import io.helidon.build.common.FileUtils;
-import io.helidon.build.common.OSType;
 import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.maven.MavenCommand;
 import io.helidon.build.common.maven.MavenVersion;
@@ -80,18 +78,21 @@ public class CliMavenTest {
                 .forEach(File::delete);
     }
 
-    @AfterAll
+    @AfterAll //FileUtils not used because of Windows throwing exception
     static void cleanUp() throws IOException {
-        FileUtils.deleteDirectoryContent(mavenHome);
+        Files.walk(mavenHome)
+                .sorted(Comparator.reverseOrder())
+                .filter(it -> !it.equals(workDir))
+                .map(Path::toFile)
+                .forEach(File::delete);
     }
 
     static Stream<String> getMavenVersions() {
         return MAVEN_VERSIONS.stream();
     }
 
-    @ParameterizedTest
-    @MethodSource("getMavenVersions")
-    public void testMavenArchetypeGenerate(String version) throws Exception {
+    @Test
+    public void testWrongMavenVersion() throws Exception {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         List<String> mavenArgs = List.of(
                 "archetype:generate",
@@ -104,7 +105,7 @@ public class CliMavenTest {
                 "-Dpackage=custom.pack.name");
 
         MavenCommand.builder()
-                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-" + version, "bin", OSType.currentOS().mavenExec()))
+                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.1.1", "bin", TestUtils.mvnExecutable("3.1.1")))
                 .ignoreMavenVersion()
                 .ignoreExitValue()
                 .directory(workDir)
@@ -114,11 +115,7 @@ public class CliMavenTest {
                 .execute();
         String processOutput = stream.toString();
 
-        if (MavenVersion.toMavenVersion(version).isLessThan(MavenVersion.toMavenVersion("3.2.5"))) {
-            Assertions.assertTrue(processOutput.contains("BUILD FAILURE"), "Error with following output:\n" + processOutput);
-            return;
-        }
-        Assertions.assertTrue(processOutput.contains("BUILD SUCCESS"), "Error with following output:\n" + processOutput);
+        Assertions.assertTrue(processOutput.contains("BUILD FAILURE"), "Error with following output:\n" + processOutput);
     }
 
     @ParameterizedTest
@@ -133,7 +130,7 @@ public class CliMavenTest {
                 "-DarchetypeVersion=" + ARCHETYPE_VERSION);
 
         MavenCommand.builder()
-                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-" + version, "bin", OSType.currentOS().mavenExec()))
+                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-" + version, "bin", TestUtils.mvnExecutable(version)))
                 .directory(workDir)
                 .stdOut(new PrintStream(stream))
                 .addArguments(mvnArgs)
@@ -198,7 +195,7 @@ public class CliMavenTest {
         TestUtils.generateBareSe(workDir, "artifactid");
 
         ProcessMonitor monitor = MavenCommand.builder()
-                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.1", "bin", OSType.currentOS().mavenExec()))
+                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.1", "bin", TestUtils.mvnExecutable("3.8.1")))
                 .directory(workDir.resolve("artifactid"))
                 .stdOut(new PrintStream(stream))
                 .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
@@ -219,7 +216,7 @@ public class CliMavenTest {
         TestUtils.generateBareSe(workDir, "artifactid");
 
         ProcessMonitor monitor = MavenCommand.builder()
-                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", OSType.currentOS().mavenExec()))
+                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", TestUtils.mvnExecutable("3.8.4")))
                 .directory(workDir.resolve("artifactid"))
                 .stdOut(new PrintStream(stream))
                 .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)

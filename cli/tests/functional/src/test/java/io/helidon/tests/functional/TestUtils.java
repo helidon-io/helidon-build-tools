@@ -17,6 +17,8 @@ package io.helidon.tests.functional;
 
 import io.helidon.build.cli.impl.CommandInvoker;
 import io.helidon.build.common.FileUtils;
+import io.helidon.build.common.OSType;
+import io.helidon.build.common.maven.MavenVersion;
 import org.junit.jupiter.api.Assertions;
 
 import java.io.File;
@@ -73,8 +75,8 @@ public class TestUtils {
 
     static void downloadFileFromUrl(Path destination, URL url) {
         try {
-            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("www-proxy.us.oracle.com", 80));
-            URLConnection connection = url.openConnection(proxy);
+            //Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("www-proxy.us.oracle.com", 80));
+            URLConnection connection = url.openConnection();
             connection.setConnectTimeout(100*60*1000);
             connection.setReadTimeout(100*60*1000);
             ReadableByteChannel readableByteChannel = Channels.newChannel(connection.getInputStream());
@@ -127,6 +129,16 @@ public class TestUtils {
                 .workDir(wd)
                 .artifactId(artifactId)
                 .invokeInit();
+    }
+
+    static String mvnExecutable(String mavenVersion) {
+        if (OSType.currentOS().equals(OSType.Windows)) {
+            if (MavenVersion.toMavenVersion(mavenVersion).isLessThanOrEqualTo(MavenVersion.toMavenVersion("3.2.5"))) {
+                return "mvn.bat";
+            }
+            return "mvn.cmd";
+        }
+        return "mvn";
     }
 
 }
