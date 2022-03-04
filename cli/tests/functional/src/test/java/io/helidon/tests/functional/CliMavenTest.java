@@ -198,11 +198,16 @@ public class CliMavenTest {
                 .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.1", "bin", TestUtils.mvnExecutable("3.8.1")))
                 .directory(workDir.resolve("artifactid"))
                 .stdOut(new PrintStream(stream))
+                .stdErr(new PrintStream(stream))
                 .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
                 .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + PLUGIN_VERSION + ":dev")
                 .build()
                 .start();
-        TestUtils.waitForApplication(port);
+        try {
+            TestUtils.waitForApplication(port);
+        } catch (Exception e) {
+            Assertions.fail("Output : \n" + stream);
+        }
         monitor.stop();
 
         String output = stream.toString();
