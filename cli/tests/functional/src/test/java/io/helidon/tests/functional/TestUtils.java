@@ -75,8 +75,8 @@ public class TestUtils {
 
     static void downloadFileFromUrl(Path destination, URL url) {
         try {
-            //Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("www-proxy.us.oracle.com", 80));
-            URLConnection connection = url.openConnection();
+            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("www-proxy.us.oracle.com", 80));
+            URLConnection connection = url.openConnection(proxy);
             connection.setConnectTimeout(100*60*1000);
             connection.setReadTimeout(100*60*1000);
             ReadableByteChannel readableByteChannel = Channels.newChannel(connection.getInputStream());
