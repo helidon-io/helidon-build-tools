@@ -379,7 +379,7 @@ public final class CommandParser {
                 if (resolved == null) {
                     return null;
                 } else if (resolved instanceof ArgumentParam) {
-                    return type.cast(((ArgumentParam) resolved).value);
+                    return resolveValue(type, ((ArgumentParam) resolved).value);
                 }
             }
             throw new CommandParserException(INVALID_ARGUMENT_VALUE);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,8 +111,11 @@ class HelpCommand extends CommandModel {
                         if (fragmentParam.visible()) {
                             if (fragmentParam instanceof NamedOptionInfo) {
                                 NamedOptionInfo<?> fragmentOption = (NamedOptionInfo<?>) fragmentParam;
-                                usage.append(fragmentOption.usage());
+                                appendUsage(usage, fragmentOption.usage());
                                 options.put("--" + fragmentOption.name(), optionDescription(fragmentOption));
+                            } else if (fragmentParam instanceof ArgumentInfo) {
+                                ArgumentInfo<?> fragmentArgument = (ArgumentInfo<?>) fragmentParam;
+                                appendUsage(usage, fragmentArgument.usage());
                             }
                         }
                     }
@@ -121,11 +124,18 @@ class HelpCommand extends CommandModel {
             if (!argument.isEmpty()) {
                 usage.append((usage.length() == 0) ? argument : (" " + argument));
             }
-            Log.info(String.format("%nUsage:\t%s %s [OPTIONS] %s%n", context.cliName(), model.command().name(),
-                    usage.toString()));
+            Log.info(String.format("%nUsage:\t%s %s [OPTIONS] %s%n", context.cliName(), model.command().name(), usage));
             Log.info(model.command().description());
             Log.info("\nOptions:");
             Log.info(OutputHelper.table(options));
         }
+    }
+
+    private static void appendUsage(StringBuilder usage, String message) {
+        int length = usage.length();
+        if (length > 0 && usage.charAt(length - 1) != ' ') {
+            usage.append(' ');
+        }
+        usage.append(message);
     }
 }
