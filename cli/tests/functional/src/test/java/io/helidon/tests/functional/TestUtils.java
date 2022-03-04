@@ -98,7 +98,8 @@ public class TestUtils {
         do {
             Thread.sleep(1000);
             if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Application failed to start on port :" + port);
+                //Assertions.fail("Application failed to start on port :" + port);
+                throw new Exception();
             }
             try {
                 conn = (HttpURLConnection) url.openConnection();
