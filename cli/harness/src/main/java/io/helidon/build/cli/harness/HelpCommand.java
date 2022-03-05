@@ -101,7 +101,7 @@ class HelpCommand extends CommandModel {
                                 appendUsage(fragmentOption.usage());
                                 options.put("--" + fragmentOption.name(), optionDescription(fragmentOption));
                             } else if (fragmentParam instanceof ArgumentInfo) {
-                                appendUsage(((ArgumentInfo<?>) fragmentParam).usage());
+                                argument = (((ArgumentInfo<?>) fragmentParam).usage());
                             }
                         }
                     }
