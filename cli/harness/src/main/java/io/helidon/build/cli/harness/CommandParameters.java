@@ -15,6 +15,7 @@
  */
 package io.helidon.build.cli.harness;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -38,9 +39,7 @@ public class CommandParameters {
     protected CommandParameters(ParameterInfo<?>... params) {
         this.params = new LinkedList<>();
         if (params != null) {
-            for (ParameterInfo<?> param : params) {
-                this.params.add(param);
-            }
+            Collections.addAll(this.params, params);
         }
     }
 
@@ -53,14 +52,10 @@ public class CommandParameters {
     protected CommandParameters(CommandModel.FlagInfo[] globalFlags, ParameterInfo<?>... params) {
         this.params = new LinkedList<>();
         if (globalFlags != null) {
-            for (ParameterInfo<?> param : globalFlags) {
-                this.params.add(param);
-            }
+            Collections.addAll(this.params, globalFlags);
         }
         if (params != null) {
-            for (ParameterInfo<?> param : params) {
-                this.params.add(param);
-            }
+            Collections.addAll(this.params, params);
         }
     }
 
@@ -180,14 +175,14 @@ public class CommandParameters {
 
     private static String paramName(ParameterInfo<?> param) {
         if (param instanceof CommandModel.NamedOptionInfo) {
-            return ((CommandModel.NamedOptionInfo) param).name();
+            return ((CommandModel.NamedOptionInfo<?>) param).name();
         }
         return "";
     }
 
     private static Stream<ParameterInfo<?>> paramStream(ParameterInfo<?> param) {
         if (param instanceof CommandFragmentInfo) {
-            return ((CommandFragmentInfo) param).parameters().stream();
+            return ((CommandFragmentInfo<?>) param).parameters().stream();
         }
         return Stream.of(param);
     }

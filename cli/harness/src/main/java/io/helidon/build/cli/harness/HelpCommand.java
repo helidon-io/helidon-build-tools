@@ -46,6 +46,7 @@ class HelpCommand extends CommandModel {
     private static final class HelpCommandExecution implements CommandExecution {
 
         private final CommandParser.Resolver resolver;
+        private StringBuilder usage;
 
         HelpCommandExecution(CommandParser.Resolver resolver) {
             this.resolver = resolver;
@@ -76,6 +77,45 @@ class HelpCommand extends CommandModel {
                     () -> context.commandNotFoundError(commandName));
         }
 
+        private void doExecute(CommandContext context, CommandModel model) {
+            usage = new StringBuilder();
+            Map<String, String> options = new LinkedHashMap<>(UsageCommand.GLOBAL_OPTIONS);
+            String argument = "";
+            for (ParameterInfo<?> param : model.parameters()) {
+                if (!param.visible()) {
+                    continue;
+                }
+                if (param instanceof ArgumentInfo) {
+                    argument = ((ArgumentInfo<?>) param).usage();
+                } else if (param instanceof OptionInfo) {
+                    appendUsage(((OptionInfo<?>) param).usage());
+                }
+                if (param instanceof NamedOptionInfo) {
+                    NamedOptionInfo<?> option = (NamedOptionInfo<?>) param;
+                    options.put("--" + option.name(), optionDescription(option));
+                } else if (param instanceof CommandFragmentInfo) {
+                    for (ParameterInfo<?> fragmentParam : ((CommandFragmentInfo<?>) param).parameters()) {
+                        if (fragmentParam.visible()) {
+                            if (fragmentParam instanceof NamedOptionInfo) {
+                                NamedOptionInfo<?> fragmentOption = (NamedOptionInfo<?>) fragmentParam;
+                                appendUsage(fragmentOption.usage());
+                                options.put("--" + fragmentOption.name(), optionDescription(fragmentOption));
+                            } else if (fragmentParam instanceof ArgumentInfo) {
+                                appendUsage(((ArgumentInfo<?>) fragmentParam).usage());
+                            }
+                        }
+                    }
+                }
+            }
+            if (!argument.isEmpty()) {
+                appendUsage(argument);
+            }
+            Log.info(String.format("%nUsage:\t%s %s [OPTIONS] %s%n", context.cliName(), model.command().name(), usage));
+            Log.info(model.command().description());
+            Log.info("\nOptions:");
+            Log.info(OutputHelper.table(options));
+        }
+
         private String optionDescription(NamedOptionInfo<?> option) {
             String desc = option.description();
             if (option instanceof KeyValueInfo && !((KeyValueInfo<?>) option).required()) {
@@ -87,55 +127,11 @@ class HelpCommand extends CommandModel {
             return desc;
         }
 
-        private void doExecute(CommandContext context, CommandModel model) {
-            Map<String, String> options = new LinkedHashMap<>(UsageCommand.GLOBAL_OPTIONS);
-            StringBuilder usage = new StringBuilder();
-            String argument = "";
-            for (ParameterInfo<?> param : model.parameters()) {
-                if (!param.visible()) {
-                    continue;
-                }
-                if (usage.length() > 0) {
-                    usage.append(" ");
-                }
-                if (param instanceof ArgumentInfo) {
-                    argument = ((ArgumentInfo<?>) param).usage();
-                } else if (param instanceof OptionInfo) {
-                    usage.append(((OptionInfo<?>) param).usage());
-                }
-                if (param instanceof NamedOptionInfo) {
-                    NamedOptionInfo<?> option = (NamedOptionInfo<?>) param;
-                    options.put("--" + option.name(), optionDescription(option));
-                } else if (param instanceof CommandFragmentInfo) {
-                    for (ParameterInfo<?> fragmentParam : ((CommandFragmentInfo<?>) param).parameters()) {
-                        if (fragmentParam.visible()) {
-                            if (fragmentParam instanceof NamedOptionInfo) {
-                                NamedOptionInfo<?> fragmentOption = (NamedOptionInfo<?>) fragmentParam;
-                                appendUsage(usage, fragmentOption.usage());
-                                options.put("--" + fragmentOption.name(), optionDescription(fragmentOption));
-                            } else if (fragmentParam instanceof ArgumentInfo) {
-                                ArgumentInfo<?> fragmentArgument = (ArgumentInfo<?>) fragmentParam;
-                                appendUsage(usage, fragmentArgument.usage());
-                            }
-                        }
-                    }
-                }
+        private void appendUsage(String message) {
+            if (usage.length() > 0) {
+                usage.append(' ');
             }
-            if (!argument.isEmpty()) {
-                usage.append((usage.length() == 0) ? argument : (" " + argument));
-            }
-            Log.info(String.format("%nUsage:\t%s %s [OPTIONS] %s%n", context.cliName(), model.command().name(), usage));
-            Log.info(model.command().description());
-            Log.info("\nOptions:");
-            Log.info(OutputHelper.table(options));
+            usage.append(message);
         }
-    }
-
-    private static void appendUsage(StringBuilder usage, String message) {
-        int length = usage.length();
-        if (length > 0 && usage.charAt(length - 1) != ' ') {
-            usage.append(' ');
-        }
-        usage.append(message);
     }
 }
