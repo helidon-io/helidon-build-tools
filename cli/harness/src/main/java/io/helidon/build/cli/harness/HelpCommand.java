@@ -21,6 +21,10 @@ import java.util.Optional;
 
 import io.helidon.build.common.Log;
 
+import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Italic;
+
 /**
  * The {@code help} command.
  */
@@ -46,7 +50,7 @@ class HelpCommand extends CommandModel {
     private static final class HelpCommandExecution implements CommandExecution {
 
         private final CommandParser.Resolver resolver;
-        private StringBuilder usage;
+        private Map<String, String> options;
 
         HelpCommandExecution(CommandParser.Resolver resolver) {
             this.resolver = resolver;
@@ -78,8 +82,8 @@ class HelpCommand extends CommandModel {
         }
 
         private void doExecute(CommandContext context, CommandModel model) {
-            usage = new StringBuilder();
-            Map<String, String> options = new LinkedHashMap<>(UsageCommand.GLOBAL_OPTIONS);
+            StringBuilder usage = new StringBuilder();
+            options = new LinkedHashMap<>(UsageCommand.GLOBAL_OPTIONS);
             String argument = "";
             for (ParameterInfo<?> param : model.parameters()) {
                 if (!param.visible()) {
@@ -87,19 +91,14 @@ class HelpCommand extends CommandModel {
                 }
                 if (param instanceof ArgumentInfo) {
                     argument = ((ArgumentInfo<?>) param).usage();
-                } else if (param instanceof OptionInfo) {
-                    appendUsage(((OptionInfo<?>) param).usage());
                 }
                 if (param instanceof NamedOptionInfo) {
-                    NamedOptionInfo<?> option = (NamedOptionInfo<?>) param;
-                    options.put("--" + option.name(), optionDescription(option));
+                    appendOption((NamedOptionInfo<?>) param);
                 } else if (param instanceof CommandFragmentInfo) {
                     for (ParameterInfo<?> fragmentParam : ((CommandFragmentInfo<?>) param).parameters()) {
                         if (fragmentParam.visible()) {
                             if (fragmentParam instanceof NamedOptionInfo) {
-                                NamedOptionInfo<?> fragmentOption = (NamedOptionInfo<?>) fragmentParam;
-                                appendUsage(fragmentOption.usage());
-                                options.put("--" + fragmentOption.name(), optionDescription(fragmentOption));
+                                appendOption((NamedOptionInfo<?>) fragmentParam);
                             } else if (fragmentParam instanceof ArgumentInfo) {
                                 argument = (((ArgumentInfo<?>) fragmentParam).usage());
                             }
@@ -108,12 +107,17 @@ class HelpCommand extends CommandModel {
                 }
             }
             if (!argument.isEmpty()) {
-                appendUsage(argument);
+                usage.append(' ').append(Italic.apply(argument));
             }
-            Log.info(String.format("%nUsage:\t%s %s [OPTIONS] %s%n", context.cliName(), model.command().name(), usage));
-            Log.info(model.command().description());
-            Log.info("\nOptions:");
+            String styledName = BoldBlue.apply(context.cliName() + " " + model.command().name());
+            Log.info("%n%s%n", Bold.apply(model.command().description()));
+            Log.info(String.format("Usage: %s [%s]%s%n", styledName, Italic.apply("OPTIONS"), usage));
+            Log.info("Options\n");
             Log.info(OutputHelper.table(options));
+        }
+
+        private void appendOption(NamedOptionInfo<?> option) {
+            options.put(option.syntax(), optionDescription(option));
         }
 
         private String optionDescription(NamedOptionInfo<?> option) {
@@ -125,13 +129,6 @@ class HelpCommand extends CommandModel {
                 }
             }
             return desc;
-        }
-
-        private void appendUsage(String message) {
-            if (usage.length() > 0) {
-                usage.append(' ');
-            }
-            usage.append(message);
         }
     }
 }

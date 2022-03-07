@@ -26,7 +26,7 @@ import sun.misc.Signal;
  */
 @CommandLineInterface(
         name = "helidon",
-        description = "Helidon Project command line tool",
+        description = "Helidon command line tool",
         commands = {
                 BuildCommand.class,
                 DevCommand.class,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Map;
 import io.helidon.build.common.Log;
 
 import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
 
 /**
  * Built-in usage command.
@@ -54,12 +55,12 @@ final class UsageCommand extends CommandModel {
     }
 
     private void execute(CommandContext context) {
-        String styledName = Bold.apply(context.cliName());
-        Log.info(String.format("%nUsage:\t%s [OPTIONS] COMMAND%n", styledName));
-        Log.info(context.cliDescription());
-        Log.info("\nOptions:");
+        String styledName = BoldBlue.apply(context.cliName());
+        Log.info("%n%s%n", Bold.apply(context.cliDescription()));
+        Log.info(String.format("Usage: %s [OPTIONS] COMMAND%n", styledName));
+        Log.info("Options\n");
         Log.info(OutputHelper.table(GLOBAL_OPTIONS));
-        Log.info("\nCommands:");
+        Log.info("\nCommands\n");
         Map<String, String> commands = new LinkedHashMap<>();
         for (CommandModel cmdModel : context.allCommands()) {
             CommandInfo cmdInfo = cmdModel.command();

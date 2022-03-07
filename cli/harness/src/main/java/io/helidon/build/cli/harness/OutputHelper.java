@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package io.helidon.build.cli.harness;
 
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import io.helidon.build.common.ansi.AnsiTextStyle;
 
 /**
  * Utility class to help with output.
@@ -36,14 +38,14 @@ public final class OutputHelper {
      * @return rendered table
      */
     public static String table(Map<String, String> map) {
-        int maxKeyWidth = map.keySet().stream().mapToInt(String::length).max().orElse(0);
+        int maxKeyWidth = map.keySet().stream().map(AnsiTextStyle::strip).mapToInt(String::length).max().orElse(0);
         return map.entrySet().stream()
                 .map(e -> BEGIN_SPACING + e.getKey() + padding(maxKeyWidth, e.getKey()) + COL_SPACING + e.getValue())
                 .collect(Collectors.joining("\n"));
     }
 
-    private static String padding(int maxKeyWidth, Object key) {
-        final int keyLen = key.toString().length();
+    private static String padding(int maxKeyWidth, String key) {
+        final int keyLen = AnsiTextStyle.strip(key).length();
         if (maxKeyWidth > keyLen) {
             return " ".repeat(maxKeyWidth - keyLen);
         } else {
