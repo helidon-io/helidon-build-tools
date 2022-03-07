@@ -129,6 +129,7 @@ public class TestUtils {
                 .metadataUrl("https://helidon.io/cli-data")
                 .workDir(wd)
                 .artifactId(artifactId)
+                .projectName(artifactId)
                 .invokeInit();
     }
 
