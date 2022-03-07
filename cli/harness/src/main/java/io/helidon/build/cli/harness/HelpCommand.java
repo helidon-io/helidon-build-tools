@@ -51,6 +51,8 @@ class HelpCommand extends CommandModel {
 
         private final CommandParser.Resolver resolver;
         private Map<String, String> options;
+        private Map<String, String> required;
+        private StringBuilder requiredOptions;
 
         HelpCommandExecution(CommandParser.Resolver resolver) {
             this.resolver = resolver;
@@ -58,10 +60,10 @@ class HelpCommand extends CommandModel {
 
         private Optional<String> commandName(CommandContext context) {
             return Optional.ofNullable(resolver.resolve(ARG_INFO))
-                // if the help command is forced because of --help, the actual command arg is the original command name
-                .or(() -> context.parser().commandName().map((command) -> "help".equals(command) ? null : command))
-                // if --help is found at this point, this is help about the help command
-                .or(() -> Optional.ofNullable(resolver.resolve(GlobalOptions.HELP_FLAG_INFO) ? "help" : null));
+                           // if the help command is forced because of --help, the actual command arg is the original command name
+                           .or(() -> context.parser().commandName().map((command) -> "help".equals(command) ? null : command))
+                           // if --help is found at this point, this is help about the help command
+                           .or(() -> Optional.ofNullable(resolver.resolve(GlobalOptions.HELP_FLAG_INFO) ? "help" : null));
         }
 
         @Override
@@ -83,6 +85,8 @@ class HelpCommand extends CommandModel {
 
         private void doExecute(CommandContext context, CommandModel model) {
             StringBuilder usage = new StringBuilder();
+            requiredOptions = new StringBuilder();
+            required = new LinkedHashMap<>();
             options = new LinkedHashMap<>(UsageCommand.GLOBAL_OPTIONS);
             String argument = "";
             for (ParameterInfo<?> param : model.parameters()) {
@@ -111,13 +115,23 @@ class HelpCommand extends CommandModel {
             }
             String styledName = BoldBlue.apply(context.cliName() + " " + model.command().name());
             Log.info("%n%s%n", Bold.apply(model.command().description()));
-            Log.info(String.format("Usage: %s [%s]%s%n", styledName, Italic.apply("OPTIONS"), usage));
-            Log.info("Options\n");
-            Log.info(OutputHelper.table(options));
+            Log.info(String.format("Usage: %s %s[%s]%s", styledName, requiredOptions, Italic.apply("OPTIONS"), usage));
+            int maxKeyWidth = OutputHelper.maxKeyWidth(required, options);
+            if (!required.isEmpty()) {
+                Log.info("\nRequired\n");
+                Log.info(OutputHelper.table(required, maxKeyWidth));
+            }
+            Log.info("\nOptions\n");
+            Log.info(OutputHelper.table(options, maxKeyWidth));
         }
 
         private void appendOption(NamedOptionInfo<?> option) {
-            options.put(option.syntax(), optionDescription(option));
+            if (option instanceof RequiredOption && ((RequiredOption) option).required()) {
+                requiredOptions.append(option.syntax().replace(" | ", "|")).append(' ');
+                required.put(option.syntax(), optionDescription(option));
+            } else {
+                options.put(option.syntax(), optionDescription(option));
+            }
         }
 
         private String optionDescription(NamedOptionInfo<?> option) {

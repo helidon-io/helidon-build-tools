@@ -12,7 +12,7 @@ Options
 
 Commands
 
-  common    A test command with common options
-  simple    A simple test command
+  common              A test command with common options
+  simple              A simple test command
 
-Run 'test-cli COMMAND --help' for more information on a command.
+Run test-cli COMMAND --help for more information on a command.

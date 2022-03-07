@@ -75,7 +75,7 @@ public class ExecTest {
     }
 
     String exec(String... args) {
-        return exec(context(), args);
+        return AnsiTextStyle.strip(exec(context(), args));
     }
 
     @Test

@@ -22,6 +22,7 @@ import io.helidon.build.common.Log;
 
 import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Italic;
 
 /**
  * Built-in usage command.
@@ -55,20 +56,24 @@ final class UsageCommand extends CommandModel {
     }
 
     private void execute(CommandContext context) {
-        String styledName = BoldBlue.apply(context.cliName());
-        Log.info("%n%s%n", Bold.apply(context.cliDescription()));
-        Log.info(String.format("Usage: %s [OPTIONS] COMMAND%n", styledName));
-        Log.info("Options\n");
-        Log.info(OutputHelper.table(GLOBAL_OPTIONS));
-        Log.info("\nCommands\n");
         Map<String, String> commands = new LinkedHashMap<>();
         for (CommandModel cmdModel : context.allCommands()) {
             CommandInfo cmdInfo = cmdModel.command();
             commands.put(cmdInfo.name(), cmdInfo.description());
         }
+        int maxKeyWidth = OutputHelper.maxKeyWidth(GLOBAL_OPTIONS, commands);
+        String styledName = BoldBlue.apply(context.cliName());
+        String styledCommand = Italic.apply("COMMAND");
+        String styledInfo = BoldBlue.apply(context.cliName()) + " " + styledCommand + " " + BoldBlue.apply("--help");
+        Log.info("%n%s%n", Bold.apply(context.cliDescription()));
+        Log.info("Usage: %s [OPTIONS] %s%n", styledName, styledCommand);
+        Log.info("Options\n");
+        Log.info(OutputHelper.table(GLOBAL_OPTIONS, maxKeyWidth));
+        Log.info("\nCommands\n");
         if (!commands.isEmpty()) {
-            Log.info(OutputHelper.table(commands));
+            Log.info(OutputHelper.table(commands, maxKeyWidth));
         }
-        Log.info(String.format("%nRun '%s COMMAND --help' for more information on a command.", context.cliName()));
+
+        Log.info("%nRun %s for more information on a command.", styledInfo);
     }
 }
