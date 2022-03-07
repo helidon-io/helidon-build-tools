@@ -130,7 +130,8 @@ public class TestUtils {
                 .workDir(wd)
                 .artifactId(artifactId)
                 .projectName(artifactId)
-                .invokeInit();
+                .invokeInit()
+                .validateProject();
     }
 
     static String mvnExecutable(String mavenVersion) {
