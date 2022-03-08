@@ -37,8 +37,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
-    @Order(2)
-    @Disabled
+    @Order(1)
     public void testProjectOption() throws Exception {
         System.out.println("TEST: testProjectOption");
         CommandInvoker.InvocationResult result = commandInvoker()
@@ -52,7 +51,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
-    @Order(1)
+    @Order(2)
     public void testProjectArgument() throws Exception {
         System.out.println("TEST: testProjectArgument");
         CommandInvoker.InvocationResult result = commandInvoker()
