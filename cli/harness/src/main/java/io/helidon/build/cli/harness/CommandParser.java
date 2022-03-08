@@ -190,7 +190,7 @@ public final class CommandParser {
                 continue;
             }
             rawArg = rawArg.trim();
-            String arg = rawArg.trim().toLowerCase();
+            String arg = rawArg.toLowerCase();
             if (GlobalOptions.isGlobalFlag(arg)) {
                 parsedParams.put(arg, new FlagParam(arg));
             } else if (isParam(arg)) {
@@ -244,7 +244,7 @@ public final class CommandParser {
             } else if (parsedParams.containsKey("")) {
                 throw new CommandParserException(TOO_MANY_ARGUMENTS);
             } else {
-                parsedParams.put("", new ArgumentParam(arg));
+                parsedParams.put("", new ArgumentParam(rawArg));
             }
         }
         return new Resolver(parsedParams, properties);
