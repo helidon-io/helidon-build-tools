@@ -15,7 +15,11 @@
  */
 package io.helidon.build.cli.impl;
 
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -23,6 +27,7 @@ import static org.hamcrest.Matchers.is;
 /**
  * Class InitDefaultTest.
  */
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class InitCommandTest extends InitCommandTestBase {
 
     @Override
@@ -32,6 +37,31 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
+    @Order(1)
+    public void testProjectOption() throws Exception {
+        System.out.println("TEST: testProjectOption");
+        commandInvoker()
+                .projectName("project-option")
+                .packageName("io.helidon.mypackage")
+                .useProjectOption(true)
+                .invokeInit()
+                .validateProject();
+    }
+
+    @Test
+    @Order(2)
+    public void testProjectArgument() throws Exception {
+        System.out.println("TEST: testProjectArgument");
+        commandInvoker()
+                .projectName("project-argument")
+                .packageName("io.helidon.mypackage")
+                .useProjectOption(false)
+                .invokeInit()
+                .validateProject();
+    }
+
+    @Test
+    @Disabled
     public void testDefaults() throws Exception {
         commandInvoker()
                 .invokeInit()
@@ -39,6 +69,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
+    @Disabled
     public void testFlavor() throws Exception {
         commandInvoker()
                 .flavor("MP")
@@ -47,6 +78,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
+    @Disabled
     public void testGroupId() throws Exception {
         commandInvoker()
                 .groupId("io.helidon.basicapp")
@@ -55,6 +87,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
+    @Disabled
     public void testArtifactId() throws Exception {
         CommandInvoker invoker = commandInvoker()
                 .artifactId("foo-artifact")
@@ -64,6 +97,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
+    @Disabled
     public void testPackage() throws Exception {
         commandInvoker()
                 .packageName("io.helidon.mypackage")
@@ -72,6 +106,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
+    @Disabled
     public void testName() throws Exception {
         commandInvoker()
                 .projectName("mybasicproject")
@@ -80,6 +115,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
+    @Disabled
     public void testInteractiveSe() throws Exception {
         commandInvoker()
                 .input(getClass().getResource("input.txt"))
@@ -88,6 +124,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
+    @Disabled
     public void testInteractiveMp() throws Exception {
         commandInvoker()
                 .input(getClass().getResource("input.txt"))

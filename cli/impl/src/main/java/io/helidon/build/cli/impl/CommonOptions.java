@@ -18,6 +18,7 @@ package io.helidon.build.cli.impl;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -197,10 +198,21 @@ final class CommonOptions {
                     throw new UncheckedIOException(e);
                 }
             }
-            return projectDirOption.toPath().toAbsolutePath();
+            Path result = projectDirOption.toPath().toAbsolutePath();
+            System.out.println("\nUsing --project option: " + result);
+            System.out.println("Parent dir exists: " + Files.exists(result.getParent()));
+            System.out.println("Process id: " + ProcessHandle.current().pid());
+            System.out.println("Process info: " + ProcessHandle.current().info());
+            return result;
         } else if (projectDirArgument != null) {
-            return projectDirArgument.toPath().toAbsolutePath();
+            Path result = projectDirArgument.toPath().toAbsolutePath();
+            System.out.println("\nUsing project argument: " + result);
+            System.out.println("Parent dir exists: " + Files.exists(result.getParent()));
+            System.out.println("Process id: " + ProcessHandle.current().pid());
+            System.out.println("Process info: " + ProcessHandle.current().info());
+            return result;
         } else {
+            System.out.println("Using WORKING_DIR: " + WORKING_DIR);
             return WORKING_DIR;
         }
     }
