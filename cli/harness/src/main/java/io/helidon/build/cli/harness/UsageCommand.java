@@ -73,7 +73,6 @@ final class UsageCommand extends CommandModel {
         if (!commands.isEmpty()) {
             Log.info(OutputHelper.table(commands, maxKeyWidth));
         }
-
         Log.info("%nRun %s for more information on a command.", styledInfo);
     }
 }
