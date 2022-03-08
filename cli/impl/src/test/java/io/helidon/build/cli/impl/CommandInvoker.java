@@ -380,6 +380,7 @@ public interface CommandInvoker {
             args.add(packageName);
             args.add("--name");
             args.add(projectName);
+            args.add("--project");
             args.add(projectDir.toString());
             String[] argsArray = args.toArray(new String[]{});
             System.out.print("Executing with args ");
