@@ -47,7 +47,7 @@ public class InitCommandTest extends InitCommandTestBase {
                 .invokeInit();
         System.out.println("\n\nOUTPUT: " + result.output);
 
-               result.validateProject();
+        result.validateProject();
     }
 
     @Test
