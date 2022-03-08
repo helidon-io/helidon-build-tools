@@ -800,9 +800,8 @@ public interface CommandInvoker {
          * @return invoker instance
          * @throws Exception if any error occurs
          */
-        public CommandInvoker invokeInit() throws Exception {
+        public CommandInvoker.InvocationResult invokeInit() throws Exception {
             return new InvokerImpl(this).invokeInit();
         }
-
     }
 }

@@ -40,24 +40,28 @@ public class InitCommandTest extends InitCommandTestBase {
     @Order(1)
     public void testProjectOption() throws Exception {
         System.out.println("TEST: testProjectOption");
-        commandInvoker()
+        CommandInvoker.InvocationResult result = commandInvoker()
                 .projectName("project-option")
                 .packageName("io.helidon.mypackage")
                 .useProjectOption(true)
-                .invokeInit()
-                .validateProject();
+                .invokeInit();
+        System.out.println("OUTPUT: " + result.output);
+
+               result.validateProject();
     }
 
     @Test
     @Order(2)
     public void testProjectArgument() throws Exception {
         System.out.println("TEST: testProjectArgument");
-        commandInvoker()
+        CommandInvoker.InvocationResult result = commandInvoker()
                 .projectName("project-argument")
                 .packageName("io.helidon.mypackage")
                 .useProjectOption(false)
-                .invokeInit()
-                .validateProject();
+                .invokeInit();
+        System.out.println("OUTPUT: " + result.output);
+
+        result.validateProject();
     }
 
     @Test
