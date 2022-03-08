@@ -64,7 +64,7 @@ public class InitCommandTest extends InitCommandTestBase {
         CommandInvoker.InvocationResult result = commandInvoker()
                 .projectName("project-argument")
                 .packageName("io.helidon.mypackage")
-                .useProjectOption(false)
+                .useProjectOption(true)
                 .invokeInit();
         System.out.println("targetDir exists [after invoke]: " + Files.exists(targetDir));
         System.out.println("\n\nOUTPUT: " + result.output);
