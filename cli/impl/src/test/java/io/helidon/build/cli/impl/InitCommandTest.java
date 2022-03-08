@@ -45,7 +45,7 @@ public class InitCommandTest extends InitCommandTestBase {
                 .packageName("io.helidon.mypackage")
                 .useProjectOption(true)
                 .invokeInit();
-        System.out.println("OUTPUT: " + result.output);
+        System.out.println("\n\nOUTPUT: " + result.output);
 
                result.validateProject();
     }
@@ -59,7 +59,7 @@ public class InitCommandTest extends InitCommandTestBase {
                 .packageName("io.helidon.mypackage")
                 .useProjectOption(false)
                 .invokeInit();
-        System.out.println("OUTPUT: " + result.output);
+        System.out.println("\n\nOUTPUT: " + result.output);
 
         result.validateProject();
     }
