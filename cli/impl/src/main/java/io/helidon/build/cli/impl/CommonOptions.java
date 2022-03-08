@@ -200,14 +200,14 @@ final class CommonOptions {
             }
             Path result = projectDirOption.toPath().toAbsolutePath();
             System.out.println("\nUsing --project option: " + result);
-            System.out.println("Parent dir exists: " + Files.exists(result.getParent()));
+            System.out.println("Parent dir " + result.getParent() + " exists: " + Files.exists(result.getParent()));
             System.out.println("Process id: " + ProcessHandle.current().pid());
             System.out.println("Process info: " + ProcessHandle.current().info());
             return result;
         } else if (projectDirArgument != null) {
             Path result = projectDirArgument.toPath().toAbsolutePath();
             System.out.println("\nUsing project argument: " + result);
-            System.out.println("Parent dir exists: " + Files.exists(result.getParent()));
+            System.out.println("Parent dir " + result.getParent() + " exists: " + Files.exists(result.getParent()));
             System.out.println("Process id: " + ProcessHandle.current().pid());
             System.out.println("Process info: " + ProcessHandle.current().info());
             return result;
