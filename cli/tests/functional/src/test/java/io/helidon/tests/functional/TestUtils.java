@@ -15,9 +15,9 @@
  */
 package io.helidon.tests.functional;
 
-import io.helidon.build.cli.impl.CommandInvoker;
 import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.OSType;
+import io.helidon.build.common.maven.MavenCommand;
 import io.helidon.build.common.maven.MavenVersion;
 import org.junit.jupiter.api.Assertions;
 
@@ -35,6 +35,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.logging.Logger;
 
 public class TestUtils {
@@ -124,14 +125,25 @@ public class TestUtils {
         }
     }
 
-    static void generateBareSe(Path wd, String artifactId) throws Exception {
-        CommandInvoker.builder()
-                .metadataUrl("https://helidon.io/cli-data")
-                .workDir(wd)
-                .artifactId(artifactId)
-                .projectName(artifactId)
-                .invokeInit()
-                .validateProject();
+    static void generateBareSe(Path wd, String mavenHome) throws Exception {
+        List<String> mavenArgs = List.of(
+                "archetype:generate",
+                "-DinteractiveMode=false",
+                "-DarchetypeGroupId=io.helidon.archetypes",
+                "-DarchetypeArtifactId=helidon",
+                "-DarchetypeVersion=3.0.0-M1",
+                "-DgroupId=groupid",
+                "-DartifactId=artifactid",
+                "-Dpackage=custom.pack.name",
+                "-Dflavor=se",
+                "-Dbase=bare");
+
+        MavenCommand.builder()
+                .executable(Path.of(mavenHome, "apache-maven-3.8.4", "bin", TestUtils.mvnExecutable("3.8.4")))
+                .directory(wd)
+                .addArguments(mavenArgs)
+                .build()
+                .execute();
     }
 
     static String mvnExecutable(String mavenVersion) {

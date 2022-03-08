@@ -153,7 +153,7 @@ public class CliMavenTest {
     @Test //Test issue https://github.com/oracle/helidon-build-tools/issues/499
     public void testIssue499() throws Exception {
         int port = TestUtils.getAvailablePort();
-        TestUtils.generateBareSe(workDir, "artifactid");
+        TestUtils.generateBareSe(workDir, mavenHome.toString());
         CommandInvoker invoker = CommandInvoker.builder()
                 .metadataUrl("https://helidon.io/cli-data")
                 .appJvmArgs("-Dserver.port=" + port)
@@ -192,7 +192,7 @@ public class CliMavenTest {
     public void testCliMavenPluginJansiIssue() throws Exception {
         int port = TestUtils.getAvailablePort();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        TestUtils.generateBareSe(workDir, "artifactid");
+        TestUtils.generateBareSe(workDir, mavenHome.toString());
 
         ProcessMonitor monitor = MavenCommand.builder()
                 .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.1", "bin", TestUtils.mvnExecutable("3.8.1")))
@@ -218,7 +218,7 @@ public class CliMavenTest {
     public void testCliMavenPluginBackwardCompatibility() throws Exception {
         int port = TestUtils.getAvailablePort();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        TestUtils.generateBareSe(workDir, "artifactid");
+        TestUtils.generateBareSe(workDir, mavenHome.toString());
 
         ProcessMonitor monitor = MavenCommand.builder()
                 .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", TestUtils.mvnExecutable("3.8.4")))
