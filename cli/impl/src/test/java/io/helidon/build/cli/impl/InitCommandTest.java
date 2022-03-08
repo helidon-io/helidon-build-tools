@@ -15,6 +15,8 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.nio.file.Files;
+
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -33,35 +35,42 @@ public class InitCommandTest extends InitCommandTestBase {
     @Override
     protected CommandInvoker.Builder commandInvoker() {
         return super.commandInvoker()
-                .buildProject(true);
+                    .buildProject(true);
     }
 
     @Test
     @Order(1)
     public void testProjectOption() throws Exception {
         System.out.println("TEST: testProjectOption");
+        System.out.println("targetDir exists [before invoke]: " + Files.exists(targetDir));
         CommandInvoker.InvocationResult result = commandInvoker()
                 .projectName("project-option")
                 .packageName("io.helidon.mypackage")
                 .useProjectOption(true)
                 .invokeInit();
+        System.out.println("targetDir exists [after invoke]: " + Files.exists(targetDir));
         System.out.println("\n\nOUTPUT: " + result.output);
 
         result.validateProject();
+        System.out.println("targetDir exists [after validate]: " + Files.exists(targetDir));
+
     }
 
     @Test
     @Order(2)
     public void testProjectArgument() throws Exception {
         System.out.println("TEST: testProjectArgument");
+        System.out.println("targetDir exists [before invoke]: " + Files.exists(targetDir));
         CommandInvoker.InvocationResult result = commandInvoker()
                 .projectName("project-argument")
                 .packageName("io.helidon.mypackage")
                 .useProjectOption(false)
                 .invokeInit();
+        System.out.println("targetDir exists [after invoke]: " + Files.exists(targetDir));
         System.out.println("\n\nOUTPUT: " + result.output);
 
         result.validateProject();
+        System.out.println("targetDir exists [after validate]: " + Files.exists(targetDir));
     }
 
     @Test

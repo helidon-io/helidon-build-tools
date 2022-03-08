@@ -27,7 +27,7 @@ import static io.helidon.build.cli.impl.TestUtils.helidonTestVersion;
 class InitCommandTestBase extends MetadataAccessTestBase {
 
     private static final String HELIDON_TEST_VERSION = helidonTestVersion();
-    private final Path targetDir = TestFiles.targetDir(InitCommandTestBase.class);
+    protected final Path targetDir = TestFiles.targetDir(InitCommandTestBase.class);
 
     /**
      * Create a new init command invoker builder.
