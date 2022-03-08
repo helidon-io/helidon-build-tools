@@ -15,21 +15,20 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.nio.file.Files;
+import io.helidon.build.common.ProcessMonitor;
 
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.TestInfo;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Class InitDefaultTest.
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class InitCommandTest extends InitCommandTestBase {
 
     @Override
@@ -38,51 +37,56 @@ public class InitCommandTest extends InitCommandTestBase {
                     .buildProject(true);
     }
 
-    @Test
-    @Order(1)
-    public void testProjectOption() throws Exception {
-        System.out.println("TEST: testProjectOption");
-        System.out.println("targetDir exists [before invoke]: " + Files.exists(targetDir));
-        CommandInvoker.InvocationResult result = commandInvoker()
-                .projectName("project-option")
-                .packageName("io.helidon.mypackage")
-                .useProjectOption(true)
-                .invokeInit();
-        System.out.println("targetDir exists [after invoke]: " + Files.exists(targetDir));
-        System.out.println("\n\nOUTPUT: " + result.output);
-
-        result.validateProject();
-        System.out.println("targetDir exists [after validate]: " + Files.exists(targetDir));
-
+    @BeforeEach
+    public void beforeEach(TestInfo info) {
+        System.out.println("\n--- Running " + info.getDisplayName() + "----------------------------------------\n");
     }
 
     @Test
-    @Order(2)
-    public void testProjectArgument() throws Exception {
-        System.out.println("TEST: testProjectArgument");
-        System.out.println("targetDir exists [before invoke]: " + Files.exists(targetDir));
-        CommandInvoker.InvocationResult result = commandInvoker()
-                .projectName("project-argument")
-                .packageName("io.helidon.mypackage")
-                .useProjectOption(true)
-                .invokeInit();
-        System.out.println("targetDir exists [after invoke]: " + Files.exists(targetDir));
-        System.out.println("\n\nOUTPUT: " + result.output);
-
-        result.validateProject();
-        System.out.println("targetDir exists [after validate]: " + Files.exists(targetDir));
+    void testProjectOptionAndArgumentMatch() throws Exception {
+        String projectDir = uniqueProjectDir("bare-se-match").toString();
+        String output = TestUtils.execWithDirAndInput(TARGET_DIR.toFile(), null,
+                                                      "init",
+                                                      "--url", metadataUrl(),
+                                                      "--batch",
+                                                      "--version", HELIDON_TEST_VERSION,
+                                                      "--package", "me.bob.helidon",
+                                                      "--groupId", "me.bob-helidon",
+                                                      "--artifactId", "bare-se",
+                                                      "--project", projectDir,
+                                                      projectDir);
+        assertThat(output, containsString("Switch directory to " + projectDir + " to use CLI"));
     }
 
     @Test
-    @Disabled
+    void testProjectOptionAndArgumentMismatch() {
+        String projectDir1 = uniqueProjectDir("bare-se-mismatch").toString();
+        String projectDir2 = uniqueProjectDir("bare-se-mismatch2").toString();
+        Exception e = assertThrows(ProcessMonitor.ProcessFailedException.class, () ->
+                TestUtils.execWithDirAndInput(TARGET_DIR.toFile(), null,
+                                              "init",
+                                              "--url", metadataUrl(),
+                                              "--batch",
+                                              "--version", HELIDON_TEST_VERSION,
+                                              "--package", "me.bob.helidon",
+                                              "--groupId", "me.bob-helidon",
+                                              "--artifactId", "bare-se",
+                                              "--project", projectDir1,
+                                              projectDir2));
+        assertThat(e.getMessage(), containsString("Different project directories provided"));
+        assertThat(e.getMessage(), containsString("'--project " + projectDir1 + "'"));
+        assertThat(e.getMessage(), containsString("'" + projectDir2 + "'"));
+    }
+
+    @Test
     public void testDefaults() throws Exception {
         commandInvoker()
+                .useProjectOption(true)
                 .invokeInit()
                 .validateProject();
     }
 
     @Test
-    @Disabled
     public void testFlavor() throws Exception {
         commandInvoker()
                 .flavor("MP")
@@ -91,7 +95,6 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
-    @Disabled
     public void testGroupId() throws Exception {
         commandInvoker()
                 .groupId("io.helidon.basicapp")
@@ -100,17 +103,15 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
-    @Disabled
     public void testArtifactId() throws Exception {
         CommandInvoker invoker = commandInvoker()
                 .artifactId("foo-artifact")
                 .invokeInit()
                 .validateProject();
-        assertThat(invoker.projectDir().getFileName().toString(), is("foo-artifact"));
+        assertThat(invoker.projectDir().getFileName().toString(), startsWith("foo-artifact"));
     }
 
     @Test
-    @Disabled
     public void testPackage() throws Exception {
         commandInvoker()
                 .packageName("io.helidon.mypackage")
@@ -119,7 +120,6 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
-    @Disabled
     public void testName() throws Exception {
         commandInvoker()
                 .projectName("mybasicproject")
@@ -128,7 +128,6 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
-    @Disabled
     public void testInteractiveSe() throws Exception {
         commandInvoker()
                 .input(getClass().getResource("input.txt"))
@@ -137,7 +136,6 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
-    @Disabled
     public void testInteractiveMp() throws Exception {
         commandInvoker()
                 .input(getClass().getResource("input.txt"))

@@ -102,7 +102,6 @@ public final class InitCommand extends BaseCommand {
                 .build();
 
         Path projectDir = archetypeInvoker.invoke();
-        System.out.println("projectDir exists after archetype invoker build: " + Files.exists(projectDir));
 
         String dir = BoldBrightCyan.apply(projectDir);
         Prompter.displayLine("Switch directory to " + dir + " to use CLI");

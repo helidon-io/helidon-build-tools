@@ -17,6 +17,7 @@ package io.helidon.build.cli.impl;
 
 import java.nio.file.Path;
 
+import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.test.utils.TestFiles;
 
 import static io.helidon.build.cli.impl.TestUtils.helidonTestVersion;
@@ -26,18 +27,29 @@ import static io.helidon.build.cli.impl.TestUtils.helidonTestVersion;
  */
 class InitCommandTestBase extends MetadataAccessTestBase {
 
-    private static final String HELIDON_TEST_VERSION = helidonTestVersion();
-    protected final Path targetDir = TestFiles.targetDir(InitCommandTestBase.class);
+    protected static final String HELIDON_TEST_VERSION = helidonTestVersion();
+    protected static final Path TARGET_DIR = TestFiles.targetDir(InitCommandTestBase.class);
 
     /**
      * Create a new init command invoker builder.
+     *
      * @return InitCommandInvoker.Builder
      */
     protected CommandInvoker.Builder commandInvoker() {
         return CommandInvoker.builder()
-                .helidonVersion(HELIDON_TEST_VERSION)
-                .metadataUrl(metadataUrl())
-                .userConfig(userConfig())
-                .workDir(targetDir);
+                             .helidonVersion(HELIDON_TEST_VERSION)
+                             .metadataUrl(metadataUrl())
+                             .userConfig(userConfig())
+                             .workDir(TARGET_DIR);
+    }
+
+    /**
+     * Returns a unique project directory path.
+     *
+     * @param projectName The project name.
+     * @return The path.
+     */
+    protected Path uniqueProjectDir(String projectName) {
+        return FileUtils.unique(TARGET_DIR, projectName);
     }
 }
