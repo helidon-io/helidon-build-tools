@@ -139,7 +139,7 @@ public class TestUtils {
                 "-Dbase=bare");
 
         MavenCommand.builder()
-                .executable(Path.of(mavenHome, "apache-maven-3.8.4", "bin", TestUtils.mvnExecutable("3.8.4")))
+                .mvnExecutable(Path.of(mavenHome, "apache-maven-3.8.4", "bin", TestUtils.mvnExecutable("3.8.4")))
                 .directory(wd)
                 .addArguments(mavenArgs)
                 .build()
