@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,10 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.build.common.Log;
+
+import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Italic;
 
 /**
  * The {@code help} command.
@@ -46,6 +50,9 @@ class HelpCommand extends CommandModel {
     private static final class HelpCommandExecution implements CommandExecution {
 
         private final CommandParser.Resolver resolver;
+        private Map<String, String> options;
+        private Map<String, String> required;
+        private StringBuilder requiredOptions;
 
         HelpCommandExecution(CommandParser.Resolver resolver) {
             this.resolver = resolver;
@@ -53,10 +60,10 @@ class HelpCommand extends CommandModel {
 
         private Optional<String> commandName(CommandContext context) {
             return Optional.ofNullable(resolver.resolve(ARG_INFO))
-                // if the help command is forced because of --help, the actual command arg is the original command name
-                .or(() -> context.parser().commandName().map((command) -> "help".equals(command) ? null : command))
-                // if --help is found at this point, this is help about the help command
-                .or(() -> Optional.ofNullable(resolver.resolve(GlobalOptions.HELP_FLAG_INFO) ? "help" : null));
+                           // if the help command is forced because of --help, the actual command arg is the original command name
+                           .or(() -> context.parser().commandName().map((command) -> "help".equals(command) ? null : command))
+                           // if --help is found at this point, this is help about the help command
+                           .or(() -> Optional.ofNullable(resolver.resolve(GlobalOptions.HELP_FLAG_INFO) ? "help" : null));
         }
 
         @Override
@@ -76,6 +83,57 @@ class HelpCommand extends CommandModel {
                     () -> context.commandNotFoundError(commandName));
         }
 
+        private void doExecute(CommandContext context, CommandModel model) {
+            StringBuilder usage = new StringBuilder();
+            requiredOptions = new StringBuilder();
+            required = new LinkedHashMap<>();
+            options = new LinkedHashMap<>(UsageCommand.GLOBAL_OPTIONS);
+            String argument = "";
+            for (ParameterInfo<?> param : model.parameters()) {
+                if (!param.visible()) {
+                    continue;
+                }
+                if (param instanceof ArgumentInfo) {
+                    argument = ((ArgumentInfo<?>) param).usage();
+                }
+                if (param instanceof NamedOptionInfo) {
+                    appendOption((NamedOptionInfo<?>) param);
+                } else if (param instanceof CommandFragmentInfo) {
+                    for (ParameterInfo<?> fragmentParam : ((CommandFragmentInfo<?>) param).parameters()) {
+                        if (fragmentParam.visible()) {
+                            if (fragmentParam instanceof NamedOptionInfo) {
+                                appendOption((NamedOptionInfo<?>) fragmentParam);
+                            } else if (fragmentParam instanceof ArgumentInfo) {
+                                argument = (((ArgumentInfo<?>) fragmentParam).usage());
+                            }
+                        }
+                    }
+                }
+            }
+            if (!argument.isEmpty()) {
+                usage.append(' ').append(Italic.apply(argument));
+            }
+            String styledName = BoldBlue.apply(context.cliName() + " " + model.command().name());
+            Log.info("%n%s%n", Bold.apply(model.command().description()));
+            Log.info(String.format("Usage: %s %s[%s]%s", styledName, requiredOptions, Italic.apply("OPTIONS"), usage));
+            int maxKeyWidth = OutputHelper.maxKeyWidth(required, options);
+            if (!required.isEmpty()) {
+                Log.info("\nRequired\n");
+                Log.info(OutputHelper.table(required, maxKeyWidth));
+            }
+            Log.info("\nOptions\n");
+            Log.info(OutputHelper.table(options, maxKeyWidth));
+        }
+
+        private void appendOption(NamedOptionInfo<?> option) {
+            if (option instanceof RequiredOption && ((RequiredOption) option).required()) {
+                requiredOptions.append(option.syntax().replace(" | ", "|")).append(' ');
+                required.put(option.syntax(), optionDescription(option));
+            } else {
+                options.put(option.syntax(), optionDescription(option));
+            }
+        }
+
         private String optionDescription(NamedOptionInfo<?> option) {
             String desc = option.description();
             if (option instanceof KeyValueInfo && !((KeyValueInfo<?>) option).required()) {
@@ -85,47 +143,6 @@ class HelpCommand extends CommandModel {
                 }
             }
             return desc;
-        }
-
-        private void doExecute(CommandContext context, CommandModel model) {
-            Map<String, String> options = new LinkedHashMap<>(UsageCommand.GLOBAL_OPTIONS);
-            StringBuilder usage = new StringBuilder();
-            String argument = "";
-            for (ParameterInfo<?> param : model.parameters()) {
-                if (!param.visible()) {
-                    continue;
-                }
-                if (usage.length() > 0) {
-                    usage.append(" ");
-                }
-                if (param instanceof ArgumentInfo) {
-                    argument = ((ArgumentInfo<?>) param).usage();
-                } else if (param instanceof OptionInfo) {
-                    usage.append(((OptionInfo<?>) param).usage());
-                }
-                if (param instanceof NamedOptionInfo) {
-                    NamedOptionInfo<?> option = (NamedOptionInfo<?>) param;
-                    options.put("--" + option.name(), optionDescription(option));
-                } else if (param instanceof CommandFragmentInfo) {
-                    for (ParameterInfo<?> fragmentParam : ((CommandFragmentInfo<?>) param).parameters()) {
-                        if (fragmentParam.visible()) {
-                            if (fragmentParam instanceof NamedOptionInfo) {
-                                NamedOptionInfo<?> fragmentOption = (NamedOptionInfo<?>) fragmentParam;
-                                usage.append(fragmentOption.usage());
-                                options.put("--" + fragmentOption.name(), optionDescription(fragmentOption));
-                            }
-                        }
-                    }
-                }
-            }
-            if (!argument.isEmpty()) {
-                usage.append((usage.length() == 0) ? argument : (" " + argument));
-            }
-            Log.info(String.format("%nUsage:\t%s %s [OPTIONS] %s%n", context.cliName(), model.command().name(),
-                    usage.toString()));
-            Log.info(model.command().description());
-            Log.info("\nOptions:");
-            Log.info(OutputHelper.table(options));
         }
     }
 }

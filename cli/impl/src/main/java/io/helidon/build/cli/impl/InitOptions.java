@@ -20,6 +20,7 @@ import java.util.Map;
 
 import io.helidon.build.cli.harness.CommandFragment;
 import io.helidon.build.cli.harness.Creator;
+import io.helidon.build.cli.harness.Option;
 import io.helidon.build.cli.harness.Option.KeyValue;
 import io.helidon.build.cli.impl.ArchetypeInvoker.EngineVersion;
 import io.helidon.build.common.SubstitutionVariables;
@@ -61,6 +62,7 @@ public final class InitOptions {
     private final String groupIdOption;
     private final String artifactIdOption;
     private final String packageNameOption;
+    private final boolean batch;
     private String projectName;
     private String groupId;
     private String artifactId;
@@ -96,13 +98,14 @@ public final class InitOptions {
     @Creator
     InitOptions(
             @KeyValue(name = "flavor", description = "Helidon flavor") Flavor flavor,
-            @KeyValue(name = "build", description = "Build type") BuildSystem build,
+            @KeyValue(name = "build", description = "Build type", visible = false) BuildSystem build,
             @KeyValue(name = "version", description = "Helidon version") String version,
             @KeyValue(name = "archetype", description = "Archetype name") String archetypeName,
             @KeyValue(name = "groupid", description = "Project's group ID") String groupId,
             @KeyValue(name = "artifactid", description = "Project's artifact ID") String artifactId,
             @KeyValue(name = "package", description = "Project's package name") String packageName,
-            @KeyValue(name = "name", description = "Project's name") String projectName) {
+            @KeyValue(name = "name", description = "Project's name") String projectName,
+            @Option.Flag(name = "batch", description = "Enable non-interactive mode") boolean batch) {
 
         this.buildOption = build;
         this.build = build == null ? BuildSystem.MAVEN : build;
@@ -115,6 +118,7 @@ public final class InitOptions {
         this.groupIdOption = groupId;
         this.artifactIdOption = artifactId;
         this.packageNameOption = packageName;
+        this.batch = batch;
 
         // The following will be updated by applyConfig:
 
@@ -284,6 +288,14 @@ public final class InitOptions {
      */
     String packageNameOption() {
         return packageNameOption;
+    }
+
+    /**
+     * Whether batch mode is enabled.
+     * @return {@code true} if batch mode.
+     */
+    boolean batch() {
+        return batch;
     }
 
     /**

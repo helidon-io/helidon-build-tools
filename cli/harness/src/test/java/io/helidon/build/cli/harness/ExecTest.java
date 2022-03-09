@@ -19,10 +19,11 @@ import java.io.InputStream;
 
 import io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
-
 import io.helidon.build.common.CapturingLogWriter;
 import io.helidon.build.common.Log;
 import io.helidon.build.common.Strings;
+import io.helidon.build.common.ansi.AnsiTextStyle;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,7 +51,7 @@ public class ExecTest {
     static String resourceAsString(String name) {
         InputStream is = ExecTest.class.getResourceAsStream(name);
         if (is != null) {
-            return Strings.normalizeNewLines(Strings.read(is));
+            return AnsiTextStyle.strip(Strings.normalizeNewLines(Strings.read(is)));
         }
         return null;
     }
@@ -74,7 +75,7 @@ public class ExecTest {
     }
 
     String exec(String... args) {
-        return exec(context(), args);
+        return AnsiTextStyle.strip(exec(context(), args));
     }
 
     @Test

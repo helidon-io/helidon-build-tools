@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.build.cli.harness;
 import java.io.File;
 import java.util.Collection;
 import java.util.Objects;
+
+import static io.helidon.build.common.ansi.AnsiTextStyles.Italic;
 
 /**
  * Command model.
@@ -137,23 +139,23 @@ public abstract class CommandModel extends CommandParameters {
         }
     }
 
-    private static String valueUsage(Class<?> type) {
+    @SuppressWarnings("rawtypes, unchecked")
+    private static String valueSyntax(Class<?> type) {
         String usage = "";
         if (String.class.equals(type)) {
-            usage += "VALUE";
+            usage += Italic.apply("VALUE");
         } else if (Integer.class.equals(type)) {
-            usage += "NUMBER";
+            usage += Italic.apply("NUMBER");
         } else if (File.class.equals(type)) {
-            usage += "PATH";
+            usage += Italic.apply("PATH");
         } else if (Enum.class.isAssignableFrom(type)) {
-            String choices = "";
-            @SuppressWarnings("unchecked")
+            StringBuilder choices = new StringBuilder();
             Class<? extends Enum> enumClass = (Class<? extends Enum>) type;
             for (Enum e : enumClass.getEnumConstants()) {
-                if (!choices.isEmpty()) {
-                    choices += "|";
+                if (choices.length() > 0) {
+                    choices.append(" | ");
                 }
-                choices += e.name();
+                choices.append(e.name());
             }
             usage += choices;
         }
@@ -196,11 +198,11 @@ public abstract class CommandModel extends CommandParameters {
         }
 
         /**
-         * Get the usage for this option.
+         * Get the syntax for this option.
          *
-         * @return usage, never {@code null}
+         * @return syntax, never {@code null}
          */
-        abstract String usage();
+        abstract String syntax();
 
         @Override
         public boolean equals(Object o) {
@@ -243,11 +245,20 @@ public abstract class CommandModel extends CommandParameters {
             return required;
         }
 
-        @Override
+        /**
+         * Get the usage for this option.
+         *
+         * @return usage, never {@code null}
+         */
         String usage() {
             return (required ? "" : "[")
-                    + description().toUpperCase()
-                    + (required ? "" : "]");
+                   + syntax()
+                   + (required ? "" : "]");
+        }
+
+        @Override
+        String syntax() {
+            return description().toUpperCase();
         }
 
         @Override
@@ -364,8 +375,8 @@ public abstract class CommandModel extends CommandParameters {
         }
 
         @Override
-        String usage() {
-            return "[--" + name() + "]";
+        String syntax() {
+            return "--" + name();
         }
 
         @Override
@@ -446,10 +457,8 @@ public abstract class CommandModel extends CommandParameters {
         }
 
         @Override
-        String usage() {
-            return (required ? "" : "[")
-                    + "--" + name() + " " + valueUsage(type())
-                    + (required ? "" : "]");
+        String syntax() {
+            return "--" + name() + " " + valueSyntax(type());
         }
 
         @Override
@@ -504,11 +513,9 @@ public abstract class CommandModel extends CommandParameters {
         }
 
         @Override
-        String usage() {
-            return (required ? "" : "[")
-                    + "--" + name() + " " + valueUsage(paramType)
-                    + "[," + valueUsage(paramType) + "]"
-                    + (required ? "" : "]");
+        String syntax() {
+            return "--" + name() + " " + valueSyntax(paramType)
+                   + "[," + valueSyntax(paramType) + "]";
         }
 
         @Override
