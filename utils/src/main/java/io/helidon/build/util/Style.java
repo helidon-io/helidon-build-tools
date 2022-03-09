@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -317,7 +317,7 @@ public class Style {
     public static String strip(String input) {
         AnsiState state = AnsiState.ESC1;
         StringBuilder sb = new StringBuilder();
-        char[] buffer = new char[100];
+        char[] buffer = new char[1024];
         int pos = 0;
         int index;
         for (index = 0; index < input.length(); index++) {

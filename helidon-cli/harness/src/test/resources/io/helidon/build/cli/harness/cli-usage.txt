@@ -1,16 +1,18 @@
 
-Usage:	test-cli [OPTIONS] COMMAND
-
 A test cli
 
-Options:
+Usage: test-cli [OPTIONS] COMMAND
+
+Options
+
   -D<name>=<value>    Define a system property
   --verbose           Produce verbose output
   --debug             Produce debug output
   --plain             Do not use color or styles in output
 
-Commands:
-  common    A test command with common options
-  simple    A simple test command
+Commands
 
-Run 'test-cli COMMAND --help' for more information on a command.
+  common              A test command with common options
+  simple              A simple test command
+
+Run test-cli COMMAND --help for more information on a command.

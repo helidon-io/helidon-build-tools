@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.build.cli.impl;
 import java.nio.file.Path;
 
 import io.helidon.build.test.TestFiles;
+import io.helidon.build.util.FileUtils;
 
 import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
 
@@ -25,11 +26,12 @@ import static io.helidon.build.test.HelidonTestVersions.helidonTestVersion;
  * Base class for init command tests and other tests that use {@code helidon init}.
  */
 class InitCommandTestBase extends MetadataAccessTestBase {
-
-    private final Path targetDir = TestFiles.targetDir();
+    protected static final String HELIDON_TEST_VERSION = helidonTestVersion();
+    protected static final Path TARGET_DIR = TestFiles.targetDir(InitCommandTestBase.class);
 
     /**
      * Create a new init command invoker builder.
+     *
      * @return InitCommandInvoker.Builder
      */
     protected CommandInvoker.Builder commandInvoker() {
@@ -37,6 +39,16 @@ class InitCommandTestBase extends MetadataAccessTestBase {
                 .helidonVersion(helidonTestVersion())
                 .metadataUrl(metadataUrl())
                 .userConfig(userConfig())
-                .workDir(targetDir);
+                .workDir(TARGET_DIR);
+    }
+
+    /**
+     * Returns a unique project directory path.
+     *
+     * @param projectName The project name.
+     * @return The path.
+     */
+    protected Path uniqueProjectDir(String projectName) {
+        return FileUtils.unique(TARGET_DIR, projectName);
     }
 }

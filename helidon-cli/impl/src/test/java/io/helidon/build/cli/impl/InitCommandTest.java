@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,16 @@
  */
 package io.helidon.build.cli.impl;
 
+import io.helidon.build.util.ProcessMonitor;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Class InitDefaultTest.
@@ -28,12 +34,54 @@ public class InitCommandTest extends InitCommandTestBase {
     @Override
     protected CommandInvoker.Builder commandInvoker() {
         return super.commandInvoker()
-                .buildProject(true);
+                    .buildProject(true);
+    }
+
+    @BeforeEach
+    public void beforeEach(TestInfo info) {
+        System.out.println("\n--- Running " + info.getDisplayName() + "----------------------------------------\n");
+    }
+
+    @Test
+    void testProjectOptionAndArgumentMatch() throws Exception {
+        String projectDir = uniqueProjectDir("bare-se-match").toString();
+        String output = TestUtils.execWithDirAndInput(TARGET_DIR.toFile(), null,
+                                                      "init",
+                                                      "--url", metadataUrl(),
+                                                      "--batch",
+                                                      "--version", HELIDON_TEST_VERSION,
+                                                      "--package", "me.bob.helidon",
+                                                      "--groupId", "me.bob-helidon",
+                                                      "--artifactId", "bare-se",
+                                                      "--project", projectDir,
+                                                      projectDir);
+        assertThat(output, containsString("Switch directory to " + projectDir + " to use CLI"));
+    }
+
+    @Test
+    void testProjectOptionAndArgumentMismatch() {
+        String projectDir1 = uniqueProjectDir("bare-se-mismatch").toString();
+        String projectDir2 = uniqueProjectDir("bare-se-mismatch2").toString();
+        Exception e = assertThrows(ProcessMonitor.ProcessFailedException.class, () ->
+                TestUtils.execWithDirAndInput(TARGET_DIR.toFile(), null,
+                                              "init",
+                                              "--url", metadataUrl(),
+                                              "--batch",
+                                              "--version", HELIDON_TEST_VERSION,
+                                              "--package", "me.bob.helidon",
+                                              "--groupId", "me.bob-helidon",
+                                              "--artifactId", "bare-se",
+                                              "--project", projectDir1,
+                                              projectDir2));
+        assertThat(e.getMessage(), containsString("Different project directories provided"));
+        assertThat(e.getMessage(), containsString("'--project " + projectDir1 + "'"));
+        assertThat(e.getMessage(), containsString("'" + projectDir2 + "'"));
     }
 
     @Test
     public void testDefaults() throws Exception {
         commandInvoker()
+                .useProjectOption(true)
                 .invokeInit()
                 .validateProject();
     }
@@ -60,7 +108,7 @@ public class InitCommandTest extends InitCommandTestBase {
                 .artifactId("foo-artifact")
                 .invokeInit()
                 .validateProject();
-        assertThat(invoker.projectDir().getFileName().toString(), is("foo-artifact"));
+        assertThat(invoker.projectDir().getFileName().toString(), startsWith("foo-artifact"));
     }
 
     @Test
