@@ -118,6 +118,7 @@ public class CliMavenTest {
                     .execute();
         } catch (ProcessMonitor.ProcessFailedException e) {
             assertThat(stream.toString(), containsString("Requires Maven >= 3.2.5"));
+            stream.close();
             return;
         }
         assertThat("Exception expected when using wrong maven version", false);
@@ -149,6 +150,7 @@ public class CliMavenTest {
             assertThat(output, containsString("Property artifactId is missing."));
             assertThat(output, containsString("Property package is missing."));
             assertThat(output, containsString("BUILD FAILURE"));
+            stream.close();
             return;
         }
         assertThat("Exception expected due to missing values", false);
@@ -204,6 +206,7 @@ public class CliMavenTest {
                 .start();
         TestUtils.waitForApplication(port);
         monitor.stop();
+        stream.close();
 
         assertThat(stream.toString(), containsString("BUILD SUCCESS"));
     }
@@ -228,6 +231,7 @@ public class CliMavenTest {
                 .start();
         TestUtils.waitForApplication(port);
         monitor.stop();
+        stream.close();
 
         assertThat(stream.toString(), containsString("BUILD SUCCESS"));
     }
@@ -250,8 +254,10 @@ public class CliMavenTest {
             TestUtils.waitForApplication(port);
             monitor.stop();
         } catch (Exception e) {
+            stream.close();
             throw new Exception(stream.toString());
         }
+        stream.close();
         return stream.toString();
     }
 
@@ -287,6 +293,7 @@ public class CliMavenTest {
         try {
             TestUtils.waitForApplication(port);
         } catch (Exception e) {
+            stream.close();
             throw new Exception(stream.toString());
         }
 
@@ -300,6 +307,7 @@ public class CliMavenTest {
                 .toCompletableFuture().get();
 
         monitor.stop();
+        stream.close();
     }
 
 }
