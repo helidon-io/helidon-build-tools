@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -45,7 +43,6 @@ import static io.helidon.build.common.PrintStreams.STDERR;
 import static io.helidon.build.common.PrintStreams.STDOUT;
 import static io.helidon.build.common.ansi.AnsiTextStyle.strip;
 import static java.io.File.pathSeparator;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * CLI test utils.
@@ -192,23 +189,6 @@ class TestUtils {
         return classPath.stream()
                         .distinct()
                         .collect(Collectors.joining(pathSeparator));
-    }
-
-    /**
-     * Assert that the root directory of the Java package exists under {@code src/main/java} of the given project directory.
-     *
-     * @param projectPath project directory
-     * @param packageName Java package name
-     */
-    static void assertPackageExists(Path projectPath, String packageName) {
-        assertTrue(Files.exists(projectPath));
-        Path path = projectPath.resolve("src/main/java");
-        assertTrue(Files.exists(path));
-        String[] dirs = packageName.split("\\.");
-        for (String dir : dirs) {
-            path = path.resolve(dir);
-            assertTrue(Files.exists(path));
-        }
     }
 
     /**

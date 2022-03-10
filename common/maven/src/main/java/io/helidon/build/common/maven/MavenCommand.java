@@ -75,7 +75,6 @@ public class MavenCommand {
                                                 + "$(bold Version) $(GREEN %s) $(bold or later is required.) "
                                                 + "Please update from %s and prepend your PATH or set the MAVEN_HOME or MVN_HOME "
                                                 + "environment variable.";
-    private final boolean ignoreExitValue;
 
     private final String name;
     private final ProcessBuilder processBuilder;
@@ -106,7 +105,6 @@ public class MavenCommand {
         this.transform = builder.transform;
         this.beforeShutdown = builder.beforeShutdown;
         this.afterShutdown = builder.afterShutdown;
-        this.ignoreExitValue = builder.ignoreExitValue;
     }
 
     /**
@@ -255,7 +253,6 @@ public class MavenCommand {
                              .beforeShutdown(beforeShutdown)
                              .afterShutdown(afterShutdown)
                              .capture(false)
-                             .ignoreExitValue(ignoreExitValue)
                              .build()
                              .start();
     }
@@ -319,7 +316,6 @@ public class MavenCommand {
         private MavenVersion requiredMinimumVersion;
         private ProcessBuilder processBuilder;
         private String customMavenExec;
-        private boolean ignoreExitValue = false;
         private boolean ignoreMavenVersion = false;
 
         private Builder() {
@@ -430,16 +426,6 @@ public class MavenCommand {
         }
 
         /**
-         * Ignore the exit value.
-         *
-         * @return This instance, for chaining.
-         */
-        public Builder ignoreExitValue() {
-            this.ignoreExitValue = true;
-            return this;
-        }
-
-        /**
          * Enables attaching a debugger on the given port.
          *
          * @param debugPort The port.
@@ -522,17 +508,8 @@ public class MavenCommand {
          * @param mvn the maven executable path
          * @return This builder.
          */
-        public Builder mvnExecutable(Path mvn) {
+        public Builder executable(Path mvn) {
             customMavenExec = mvn.toString();
-            return this;
-        }
-
-        /**
-         * Sets the maven executable path to be used for command execution.
-         *
-         * @return This builder.
-         */
-        public Builder ignoreMavenVersion() {
             ignoreMavenVersion = true;
             return this;
         }

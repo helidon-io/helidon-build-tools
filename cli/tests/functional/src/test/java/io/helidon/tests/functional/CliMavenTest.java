@@ -16,14 +16,12 @@
 
 package io.helidon.tests.functional;
 
-import io.helidon.build.cli.impl.CommandInvoker;
 import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.maven.MavenCommand;
 import io.helidon.build.common.maven.MavenVersion;
 import io.helidon.webclient.WebClient;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -33,13 +31,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 
 public class CliMavenTest {
 
@@ -87,8 +89,9 @@ public class CliMavenTest {
                 .forEach(File::delete);
     }
 
-    static Stream<String> getMavenVersions() {
-        return MAVEN_VERSIONS.stream();
+    static Stream<String> getValidMavenVersions() {
+        return MAVEN_VERSIONS.stream()
+                .filter(v -> MavenVersion.toMavenVersion(v).isGreaterThanOrEqualTo(MavenVersion.toMavenVersion("3.2.5")));
     }
 
     @Test
@@ -104,22 +107,24 @@ public class CliMavenTest {
                 "-DartifactId=artifactid",
                 "-Dpackage=custom.pack.name");
 
-        MavenCommand.builder()
-                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.1.1", "bin", TestUtils.mvnExecutable("3.1.1")))
-                .ignoreMavenVersion()
-                .ignoreExitValue()
-                .directory(workDir)
-                .stdOut(new PrintStream(stream))
-                .addArguments(mavenArgs)
-                .build()
-                .execute();
-        String processOutput = stream.toString();
-
-        Assertions.assertTrue(processOutput.contains("BUILD FAILURE"), "Error with following output:\n" + processOutput);
+        try {
+            MavenCommand.builder()
+                    .executable(Path.of(mavenHome.toString(), "apache-maven-3.1.1", "bin", TestUtils.mvnExecutable("3.1.1")))
+                    .directory(workDir)
+                    .stdOut(new PrintStream(stream))
+                    .stdErr(new PrintStream(stream))
+                    .addArguments(mavenArgs)
+                    .build()
+                    .execute();
+        } catch (ProcessMonitor.ProcessFailedException e) {
+            assertThat(stream.toString(), containsString("Requires Maven >= 3.2.5"));
+            return;
+        }
+        assertThat("Exception expected when using wrong maven version", false);
     }
 
     @ParameterizedTest
-    @MethodSource("getMavenVersions")
+    @MethodSource("getValidMavenVersions")
     public void testMissingValues(String version) throws Exception {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         List<String> mvnArgs = List.of(
@@ -129,38 +134,141 @@ public class CliMavenTest {
                 "-DarchetypeArtifactId=helidon-quickstart-se",
                 "-DarchetypeVersion=" + ARCHETYPE_VERSION);
 
-        MavenCommand.builder()
-                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-" + version, "bin", TestUtils.mvnExecutable(version)))
-                .directory(workDir)
-                .stdOut(new PrintStream(stream))
-                .addArguments(mvnArgs)
-                .ignoreExitValue()
-                .build()
-                .execute();
-        String output = stream.toString();
-
-        if (MavenVersion.toMavenVersion(version).isLessThan(MavenVersion.toMavenVersion("3.2.5"))) {
-            Assertions.assertTrue(output.contains("BUILD FAILURE"), "Build should be failing:\n" + output);
+        try {
+            MavenCommand.builder()
+                    .executable(Path.of(mavenHome.toString(), "apache-maven-" + version, "bin", TestUtils.mvnExecutable(version)))
+                    .directory(workDir)
+                    .stdOut(new PrintStream(stream))
+                    .stdErr(new PrintStream(stream))
+                    .addArguments(mvnArgs)
+                    .build()
+                    .execute();
+        } catch (ProcessMonitor.ProcessFailedException e) {
+            String output = stream.toString();
+            assertThat(output, containsString("Property groupId is missing."));
+            assertThat(output, containsString("Property artifactId is missing."));
+            assertThat(output, containsString("Property package is missing."));
+            assertThat(output, containsString("BUILD FAILURE"));
             return;
         }
-
-        Assertions.assertTrue(output.contains("Property groupId is missing."), "Build should be failing:\n" + output);
-        Assertions.assertTrue(output.contains("Property package is missing."), "Build should be failing:\n" + output);
-        Assertions.assertTrue(output.contains("Property artifactId is missing."), "Build should be failing:\n" + output);
-        Assertions.assertTrue(output.contains("BUILD FAILURE"), "Build should be failing:\n" + output);
+        assertThat("Exception expected due to missing values", false);
     }
 
-    @Test //Test issue https://github.com/oracle/helidon-build-tools/issues/499
+    @Test //Issue#499 https://github.com/oracle/helidon-build-tools/issues/499
+    public void catchIssue499() {
+        try {
+            runIssue499("2.2.3");
+        } catch (Exception e) {
+            assertThat(e.getMessage(), containsString("COMPILATION ERROR :"));
+            return;
+        }
+        assertThat("Exception expected due to https://github.com/oracle/helidon-build-tools/issues/499", false);
+    }
+
+    @Test //Issue#499 https://github.com/oracle/helidon-build-tools/issues/499
     public void testIssue499() throws Exception {
+        runIssue499(PLUGIN_VERSION);
+    }
+
+    @Test //Issue#259 https://github.com/oracle/helidon-build-tools/issues/259
+    public void catchingJansiIssue() throws Exception {
+        try {
+            runCliMavenPluginJansiIssue("2.1.0");
+        } catch (Exception e) {
+            assertThat(e.getMessage(), containsString("org/fusesource/jansi/AnsiOutputStream"));
+            assertThat(e.getMessage(), containsString("BUILD FAILURE"));
+            return;
+        }
+        assertThat("Exception expected due to Jansi issue", false);
+    }
+
+    @Test //Issue#259 https://github.com/oracle/helidon-build-tools/issues/259
+    public void testFixJansiIssue() throws Exception {
+        String output = runCliMavenPluginJansiIssue(PLUGIN_VERSION);
+        assertThat(output, containsString("BUILD SUCCESS"));
+    }
+
+    @Test
+    public void testCliMavenPluginBackwardCompatibility() throws Exception {
         int port = TestUtils.getAvailablePort();
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
         TestUtils.generateBareSe(workDir, mavenHome.toString());
-        CommandInvoker invoker = CommandInvoker.builder()
-                .metadataUrl("https://helidon.io/cli-data")
-                .appJvmArgs("-Dserver.port=" + port)
-                .environment(Map.of("MAVEN_HOME",
-                        Path.of(mavenHome.toString(), "apache-maven-3.8.2").toString()))
-                .workDir(workDir.resolve("artifactid"))
-                .invokeDev();
+
+        ProcessMonitor monitor = MavenCommand.builder()
+                .executable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", TestUtils.mvnExecutable("3.8.4")))
+                .directory(workDir.resolve("artifactid"))
+                .stdOut(new PrintStream(stream))
+                .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
+                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + PLUGIN_VERSION + ":dev")
+                .build()
+                .start();
+        TestUtils.waitForApplication(port);
+        monitor.stop();
+
+        assertThat(stream.toString(), containsString("BUILD SUCCESS"));
+    }
+
+    @Test
+    public void testOldMavenPlugin() throws Exception {
+        int port = TestUtils.getAvailablePort();
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        TestUtils.generateBareSe(workDir, mavenHome.toString());
+        Path conf = workDir.resolve("artifactid/src/main/resources/application.yaml");
+        String content = new String(Files.readAllBytes(conf));
+        content = content.replaceAll("8080", String.valueOf(port));
+        Files.write(conf, Collections.singleton(content));
+
+        ProcessMonitor monitor = MavenCommand.builder()
+                .executable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", TestUtils.mvnExecutable("3.8.4")))
+                .directory(workDir.resolve("artifactid"))
+                .stdOut(new PrintStream(stream))
+                .stdErr(new PrintStream(stream))
+                .addArgument("io.helidon.build-tools:helidon-maven-plugin:2.0.2:dev")
+                .build()
+                .start();
+        TestUtils.waitForApplication(port);
+        monitor.stop();
+
+        assertThat(stream.toString(), containsString("BUILD SUCCESS"));
+    }
+
+    private String runCliMavenPluginJansiIssue(String pluginVersion) throws Exception {
+        int port = TestUtils.getAvailablePort();
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        TestUtils.generateBareSe(workDir, mavenHome.toString());
+
+        try {
+            ProcessMonitor monitor = MavenCommand.builder()
+                    .executable(Path.of(mavenHome.toString(), "apache-maven-3.8.2", "bin", TestUtils.mvnExecutable("3.8.2")))
+                    .directory(workDir.resolve("artifactid"))
+                    .stdOut(new PrintStream(stream))
+                    .stdErr(new PrintStream(stream))
+                    .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
+                    .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + pluginVersion + ":dev")
+                    .build()
+                    .start();
+            TestUtils.waitForApplication(port);
+            monitor.stop();
+        } catch (Exception e) {
+            throw new Exception(stream.toString());
+        }
+        return stream.toString();
+    }
+
+    public void runIssue499(String pluginVersion) throws Exception {
+        int port = TestUtils.getAvailablePort();
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+        TestUtils.generateBareSe(workDir, mavenHome.toString());
+        ProcessMonitor monitor = MavenCommand.builder()
+                .executable(Path.of(mavenHome.toString(), "apache-maven-3.8.2", "bin", TestUtils.mvnExecutable("3.8.2")))
+                .directory(workDir.resolve("artifactid"))
+                .stdOut(new PrintStream(stream))
+                .stdErr(new PrintStream(stream))
+                .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
+                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + pluginVersion + ":dev")
+                .build()
+                .start();
         TestUtils.waitForApplication(port);
 
         Files.walk(workDir)
@@ -172,67 +280,26 @@ public class CliMavenTest {
                         content = content.replaceAll("\"World\"", "\"Jhon\"");
                         Files.write(path, content.getBytes(StandardCharsets.UTF_8));
                     } catch (IOException ioException) {
-                        Assertions.fail("Unable to modified GreetService file");
+                        throw new UncheckedIOException(ioException);
                     }
                 });
 
-        TestUtils.waitForApplication(port);
-
-        WebClient client = WebClient.builder()
-                .baseUri("http://localhost:" + port + "/greet")
-                .build();
-        client.get().request(String.class)
-                .thenAccept(s -> Assertions.assertTrue(s.contains("Jhon")))
-                .toCompletableFuture().get();
-
-        invoker.stopMonitor();
-    }
-
-    @Test //Issue#259 https://github.com/oracle/helidon-build-tools/issues/259
-    public void testCliMavenPluginJansiIssue() throws Exception {
-        int port = TestUtils.getAvailablePort();
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        TestUtils.generateBareSe(workDir, mavenHome.toString());
-
-        ProcessMonitor monitor = MavenCommand.builder()
-                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.1", "bin", TestUtils.mvnExecutable("3.8.1")))
-                .directory(workDir.resolve("artifactid"))
-                .stdOut(new PrintStream(stream))
-                .stdErr(new PrintStream(stream))
-                .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
-                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + PLUGIN_VERSION + ":dev")
-                .build()
-                .start();
         try {
             TestUtils.waitForApplication(port);
         } catch (Exception e) {
-            Assertions.fail("Output : \n" + stream);
+            throw new Exception(stream.toString());
         }
-        monitor.stop();
 
-        String output = stream.toString();
-        Assertions.assertTrue(output.contains("BUILD SUCCESS"));
-    }
-
-    @Test
-    public void testCliMavenPluginBackwardCompatibility() throws Exception {
-        int port = TestUtils.getAvailablePort();
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        TestUtils.generateBareSe(workDir, mavenHome.toString());
-
-        ProcessMonitor monitor = MavenCommand.builder()
-                .mvnExecutable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", TestUtils.mvnExecutable("3.8.4")))
-                .directory(workDir.resolve("artifactid"))
-                .stdOut(new PrintStream(stream))
-                .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
-                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + PLUGIN_VERSION + ":dev")
+        WebClient.builder()
+                .baseUri("http://localhost:" + port + "/greet")
                 .build()
-                .start();
-        TestUtils.waitForApplication(port);
-        monitor.stop();
+                .get().request(String.class)
+                .thenAccept(
+                        s -> assertThat(s, containsString("Jhon"))
+                )
+                .toCompletableFuture().get();
 
-        String output = stream.toString();
-        Assertions.assertTrue(output.contains("BUILD SUCCESS"));
+        monitor.stop();
     }
 
 }

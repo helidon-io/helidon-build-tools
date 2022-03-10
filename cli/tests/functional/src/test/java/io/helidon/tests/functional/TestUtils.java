@@ -19,7 +19,6 @@ import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.OSType;
 import io.helidon.build.common.maven.MavenCommand;
 import io.helidon.build.common.maven.MavenVersion;
-import org.junit.jupiter.api.Assertions;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -99,8 +98,7 @@ public class TestUtils {
         do {
             Thread.sleep(1000);
             if ((System.currentTimeMillis() - now) > timeout) {
-                //Assertions.fail("Application failed to start on port :" + port);
-                throw new Exception();
+                throw new Exception("Application failed to start on port :" + port);
             }
             try {
                 conn = (HttpURLConnection) url.openConnection();
@@ -125,7 +123,7 @@ public class TestUtils {
         }
     }
 
-    static void generateBareSe(Path wd, String mavenHome) throws Exception {
+    static void generateBareSe(Path wd, String mavenHome) {
         List<String> mavenArgs = List.of(
                 "archetype:generate",
                 "-DinteractiveMode=false",
@@ -138,12 +136,17 @@ public class TestUtils {
                 "-Dflavor=se",
                 "-Dbase=bare");
 
-        MavenCommand.builder()
-                .mvnExecutable(Path.of(mavenHome, "apache-maven-3.8.4", "bin", TestUtils.mvnExecutable("3.8.4")))
-                .directory(wd)
-                .addArguments(mavenArgs)
-                .build()
-                .execute();
+        try {
+            MavenCommand.builder()
+                    .executable(Path.of(mavenHome, "apache-maven-3.8.4", "bin", TestUtils.mvnExecutable("3.8.4")))
+                    .directory(wd)
+                    .addArguments(mavenArgs)
+                    .build()
+                    .execute();
+        } catch (Exception e) {
+            throw new IllegalStateException("Cannot generate bare-se project", e);
+        }
+
     }
 
     static String mvnExecutable(String mavenVersion) {

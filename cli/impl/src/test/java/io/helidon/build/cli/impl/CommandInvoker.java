@@ -240,7 +240,7 @@ public interface CommandInvoker {
      * @param sourceRoot source root directory
      * @return this invoker
      */
-    CommandInvoker assertPackageExists(Path sourceRoot);
+    CommandInvoker assertPackageExists(Path sourceRoot) throws IOException;
 
     /**
      * Assert that there is at least one {@code .java} file in the given "source root" directory.
@@ -515,8 +515,11 @@ public interface CommandInvoker {
         }
 
         @Override
-        public CommandInvoker assertPackageExists(Path sourceRoot) {
-            TestUtils.assertPackageExists(projectDir, packageName);
+        public CommandInvoker assertPackageExists(Path sourceRoot) throws IOException {
+            long sources = Files.walk(sourceRoot)
+                    .filter(file -> file.toString().contains(packageName.replace(".", File.separator)))
+                    .count();
+            assertThat(sources, is(greaterThan(0L)));
             return this;
         }
 
@@ -653,7 +656,7 @@ public interface CommandInvoker {
         }
 
         @Override
-        public CommandInvoker assertPackageExists(Path sourceRoot) {
+        public CommandInvoker assertPackageExists(Path sourceRoot) throws IOException {
             return delegate.assertPackageExists(sourceRoot);
         }
 
