@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -573,6 +573,37 @@ public final class FileUtils {
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * Create a {@link Path} path under the given parent directory that does not already exist.
+     * Appends {@code -$i} to the given name until a non-existing entry is found.
+     *
+     * @param directory parent directory where to create the new directory
+     * @param name      the name of the entry to create
+     * @param suffix    the suffix to append after {@code -$i}
+     * @return Path
+     */
+    public static Path unique(Path directory, String name, String suffix) {
+        Path path = directory.resolve(name + suffix);
+        int i = 1;
+        while (Files.exists(path)) {
+            path = directory.resolve(name + "-" + i + suffix);
+            i++;
+        }
+        return path;
+    }
+
+    /**
+     * Create a {@link Path} path under the given parent directory that does not already exist.
+     * Appends {@code -$i} to the given name until a non-existing entry is found.
+     *
+     * @param directory parent directory where to create the new directory
+     * @param name      the name of the entry to create
+     * @return Path
+     */
+    public static Path unique(Path directory, String name) {
+        return unique(directory, name, "");
     }
 
     /**

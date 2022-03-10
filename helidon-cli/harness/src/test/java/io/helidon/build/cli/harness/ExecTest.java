@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,14 @@ import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 import io.helidon.build.test.CapturingLogWriter;
 import io.helidon.build.util.Log;
 import io.helidon.build.util.Strings;
+import io.helidon.build.util.Style;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.util.Style.strip;
+import static java.util.Objects.requireNonNull;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -57,7 +59,7 @@ public class ExecTest {
     }
 
     static String resourceAsString(String name) {
-        return Strings.normalizeNewLines(Strings.read(ExecTest.class.getResourceAsStream(name)));
+        return Strings.normalizeNewLines(Strings.read(requireNonNull(ExecTest.class.getResourceAsStream(name))));
     }
 
     String exec(CommandContext context, String... args) {
@@ -68,7 +70,7 @@ public class ExecTest {
     }
 
     String exec(String... args) {
-        return exec(context(), args);
+        return Style.strip(exec(context(), args));
     }
 
     @Test

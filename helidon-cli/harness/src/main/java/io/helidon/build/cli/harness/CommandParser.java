@@ -181,7 +181,7 @@ public final class CommandParser {
                 continue;
             }
             rawArg = rawArg.trim();
-            String arg = rawArg.trim().toLowerCase();
+            String arg = rawArg.toLowerCase();
             if (GlobalOptions.isGlobalFlag(arg)) {
                 parsedParams.put(arg, new FlagParam(arg));
             } else if (isParam(arg)) {
@@ -189,11 +189,11 @@ public final class CommandParser {
                 if (!Option.VALID_NAME.test(optionName)) {
                     throw new CommandParserException(INVALID_OPTION_NAME + ": " + optionName);
                 }
-                ParameterInfo paramInfo = parametersMap.get(optionName);
+                ParameterInfo<?> paramInfo = parametersMap.get(optionName);
                 if (paramInfo instanceof FlagInfo) {
                     parsedParams.put(optionName, new FlagParam(optionName));
                 } else if (paramInfo instanceof KeyValueInfo) {
-                    boolean required = ((KeyValueInfo) paramInfo).required();
+                    boolean required = ((KeyValueInfo<?>) paramInfo).required();
                     if (!it.hasNext()) {
                         if (required) {
                             throw new CommandParserException(MISSING_REQUIRED_OPTION + ": " + optionName);
@@ -203,7 +203,7 @@ public final class CommandParser {
                     }
                     parsedParams.put(optionName, new KeyValueParam(optionName, it.next().trim()));
                 } else if (paramInfo instanceof KeyValuesInfo) {
-                    boolean required = ((KeyValuesInfo) paramInfo).required();
+                    boolean required = ((KeyValuesInfo<?>) paramInfo).required();
                     if (!it.hasNext()) {
                         if (required) {
                             throw new CommandParserException(MISSING_REQUIRED_OPTION + ": " + optionName);
@@ -217,9 +217,7 @@ public final class CommandParser {
                     }
                     String[] splitValues = value.split(",");
                     LinkedList<String> values = new LinkedList<>();
-                    for (String splitValue : splitValues) {
-                        values.add(splitValue);
-                    }
+                    Collections.addAll(values, splitValues);
                     Parameter param = parsedParams.get(optionName);
                     if (param == null) {
                         parsedParams.put(optionName, new KeyValuesParam(optionName, values));
@@ -237,7 +235,7 @@ public final class CommandParser {
             } else if (parsedParams.containsKey("")) {
                 throw new CommandParserException(TOO_MANY_ARGUMENTS);
             } else {
-                parsedParams.put("", new ArgumentParam(arg));
+                parsedParams.put("", new ArgumentParam(rawArg));
             }
         }
         return new Resolver(parsedParams, properties);
@@ -362,7 +360,6 @@ public final class CommandParser {
          * @return resolved value for the argument
          * @throws CommandParserException if an error occurs while resolving the option
          */
-        @SuppressWarnings("unchecked")
         public <T> T resolve(ArgumentInfo<T> option) throws CommandParserException {
             Class<T> type = option.type();
             Parameter resolved = params.get("");
@@ -371,14 +368,15 @@ public final class CommandParser {
             }
             if (isSupported(type, Option.Argument.SUPPORTED_TYPES)) {
                 if (resolved == null) {
-                    return (T) null;
+                    return null;
                 } else if (resolved instanceof ArgumentParam) {
-                    return type.cast(((ArgumentParam) resolved).value);
+                    return resolveValue(type, ((ArgumentParam) resolved).value);
                 }
             }
             throw new CommandParserException(INVALID_ARGUMENT_VALUE);
         }
 
+        @SuppressWarnings("rawtypes")
         private static <T> T resolveValue(Class<T> type, String rawValue) {
             Objects.requireNonNull(rawValue, "rawValue is null");
             if (String.class.equals(type)) {
