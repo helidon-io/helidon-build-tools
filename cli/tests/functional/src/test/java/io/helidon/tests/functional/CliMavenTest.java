@@ -240,9 +240,9 @@ public class CliMavenTest {
         int port = TestUtils.getAvailablePort();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         TestUtils.generateBareSe(workDir, mavenHome.toString());
-
+        ProcessMonitor monitor = null;
         try {
-            ProcessMonitor monitor = MavenCommand.builder()
+             monitor = MavenCommand.builder()
                     .executable(Path.of(mavenHome.toString(), "apache-maven-3.8.2", "bin", TestUtils.mvnExecutable("3.8.2")))
                     .directory(workDir.resolve("artifactid"))
                     .stdOut(new PrintStream(stream))
@@ -253,11 +253,12 @@ public class CliMavenTest {
                     .start();
             TestUtils.waitForApplication(port);
             monitor.stop();
+            stream.close();
         } catch (Exception e) {
+            monitor.stop();
             stream.close();
             throw new Exception(stream.toString());
         }
-        stream.close();
         return stream.toString();
     }
 
@@ -293,6 +294,7 @@ public class CliMavenTest {
         try {
             TestUtils.waitForApplication(port);
         } catch (Exception e) {
+            monitor.stop();
             stream.close();
             throw new Exception(stream.toString());
         }
