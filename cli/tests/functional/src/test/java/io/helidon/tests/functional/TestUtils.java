@@ -143,6 +143,14 @@ public class TestUtils {
                     .addArguments(mavenArgs)
                     .build()
                     .execute();
+
+            Files.walk(wd.resolve("artifactid"))
+                    .map(Path::toFile)
+                    .forEach(f -> {
+                        f.setWritable(true);
+                        f.setReadable(true);
+                        f.setExecutable(true);
+                    });
         } catch (Exception e) {
             throw new IllegalStateException("Cannot generate bare-se project", e);
         }
