@@ -20,15 +20,13 @@ import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.maven.MavenCommand;
 import io.helidon.build.common.maven.MavenVersion;
 import io.helidon.webclient.WebClient;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
@@ -36,7 +34,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -71,22 +68,9 @@ public class CliMavenTest {
         }
     }
 
-    @AfterEach //FileUtils not used because of Windows throwing exception
-    void cleanUpGeneratedFiles() throws IOException {
-        Files.walk(workDir)
-                .sorted(Comparator.reverseOrder())
-                .filter(it -> !it.equals(workDir))
-                .map(Path::toFile)
-                .forEach(File::delete);
-    }
-
-    @AfterAll //FileUtils not used because of Windows throwing exception
-    static void cleanUp() throws IOException {
-        Files.walk(mavenHome)
-                .sorted(Comparator.reverseOrder())
-                .filter(it -> !it.equals(workDir))
-                .map(Path::toFile)
-                .forEach(File::delete);
+    @BeforeEach
+    void refresh() throws IOException{
+        workDir = Files.createTempDirectory("generated");
     }
 
     static Stream<String> getValidMavenVersions() {
@@ -109,7 +93,7 @@ public class CliMavenTest {
 
         try {
             MavenCommand.builder()
-                    .executable(Path.of(mavenHome.toString(), "apache-maven-3.1.1", "bin", TestUtils.mvnExecutable("3.1.1")))
+                    .executable(Path.of(mavenHome.toString(), "apache-maven-3.1.1", "bin", TestUtils.getMvnExecutable("3.1.1")))
                     .directory(workDir)
                     .stdOut(new PrintStream(stream))
                     .stdErr(new PrintStream(stream))
@@ -137,7 +121,7 @@ public class CliMavenTest {
 
         try {
             MavenCommand.builder()
-                    .executable(Path.of(mavenHome.toString(), "apache-maven-" + version, "bin", TestUtils.mvnExecutable(version)))
+                    .executable(Path.of(mavenHome.toString(), "apache-maven-" + version, "bin", TestUtils.getMvnExecutable(version)))
                     .directory(workDir)
                     .stdOut(new PrintStream(stream))
                     .stdErr(new PrintStream(stream))
@@ -197,7 +181,7 @@ public class CliMavenTest {
         TestUtils.generateBareSe(workDir, mavenHome.toString());
 
         ProcessMonitor monitor = MavenCommand.builder()
-                .executable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", TestUtils.mvnExecutable("3.8.4")))
+                .executable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", TestUtils.getMvnExecutable("3.8.4")))
                 .directory(workDir.resolve("artifactid"))
                 .stdOut(new PrintStream(stream))
                 .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
@@ -222,7 +206,7 @@ public class CliMavenTest {
         Files.write(conf, Collections.singleton(content));
 
         ProcessMonitor monitor = MavenCommand.builder()
-                .executable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", TestUtils.mvnExecutable("3.8.4")))
+                .executable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", TestUtils.getMvnExecutable("3.8.4")))
                 .directory(workDir.resolve("artifactid"))
                 .stdOut(new PrintStream(stream))
                 .stdErr(new PrintStream(stream))
@@ -243,7 +227,7 @@ public class CliMavenTest {
         ProcessMonitor monitor = null;
         try {
              monitor = MavenCommand.builder()
-                    .executable(Path.of(mavenHome.toString(), "apache-maven-3.8.2", "bin", TestUtils.mvnExecutable("3.8.2")))
+                    .executable(Path.of(mavenHome.toString(), "apache-maven-3.8.2", "bin", TestUtils.getMvnExecutable("3.8.2")))
                     .directory(workDir.resolve("artifactid"))
                     .stdOut(new PrintStream(stream))
                     .stdErr(new PrintStream(stream))
@@ -268,7 +252,7 @@ public class CliMavenTest {
 
         TestUtils.generateBareSe(workDir, mavenHome.toString());
         ProcessMonitor monitor = MavenCommand.builder()
-                .executable(Path.of(mavenHome.toString(), "apache-maven-3.8.2", "bin", TestUtils.mvnExecutable("3.8.2")))
+                .executable(Path.of(mavenHome.toString(), "apache-maven-3.8.2", "bin", TestUtils.getMvnExecutable("3.8.2")))
                 .directory(workDir.resolve("artifactid"))
                 .stdOut(new PrintStream(stream))
                 .stdErr(new PrintStream(stream))

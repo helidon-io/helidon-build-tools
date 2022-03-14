@@ -138,26 +138,17 @@ public class TestUtils {
 
         try {
             MavenCommand.builder()
-                    .executable(Path.of(mavenHome, "apache-maven-3.8.4", "bin", TestUtils.mvnExecutable("3.8.4")))
+                    .executable(Path.of(mavenHome, "apache-maven-3.8.4", "bin", TestUtils.getMvnExecutable("3.8.4")))
                     .directory(wd)
                     .addArguments(mavenArgs)
                     .build()
                     .execute();
-
-            Files.walk(wd.resolve("artifactid"))
-                    .map(Path::toFile)
-                    .forEach(f -> {
-                        f.setWritable(true);
-                        f.setReadable(true);
-                        f.setExecutable(true);
-                    });
         } catch (Exception e) {
             throw new IllegalStateException("Cannot generate bare-se project", e);
         }
-
     }
 
-    static String mvnExecutable(String mavenVersion) {
+    static String getMvnExecutable(String mavenVersion) {
         if (OSType.currentOS().equals(OSType.Windows)) {
             if (MavenVersion.toMavenVersion(mavenVersion).isLessThanOrEqualTo(MavenVersion.toMavenVersion("3.2.5"))) {
                 return "mvn.bat";
