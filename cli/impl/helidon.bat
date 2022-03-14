@@ -23,7 +23,7 @@ EXIT /B 0
 
 :init
     set projectDir=%~dp0
-    set targetDir="%projectDir%\target\"
+    set targetDir="%projectDir%\target"
     set jarFile="%targetDir%\helidon.jar"
     set attach="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005"
     set attachMvn="-Dmvn.debug.port=5006"
@@ -57,11 +57,9 @@ EXIT /B 0
     )
 
     set command="java %jvm% -jar %jarFile% %args%"
-
 EXIT /B 0
 
 :appendVar
     set %~1="%~1 %~2"
-
 EXIT /B 0
 
