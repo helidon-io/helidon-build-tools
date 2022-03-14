@@ -216,7 +216,7 @@ public class CliMavenTest {
         try {
             TestUtils.waitForApplication(port);
         } catch (Exception e) {
-            System.out.println("Output: \n" + stream);
+            assertThat("Output: \n" + stream, false);
         }
         monitor.stop();
         stream.close();
