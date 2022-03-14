@@ -395,16 +395,16 @@ public interface CommandInvoker {
             args.forEach(a -> System.out.print(a + " "));
             System.out.println();
 
-            return new InvocationResult(this, executeInit(workDir.toFile(), input, argsArray));
+            return new InvocationResult(this, execute(workDir.toFile(), input, argsArray));
         }
 
-        private String executeInit(File wd, File input, String... args) throws Exception {
+        private String execute(File wd, File input, String... args) throws Exception {
             if (execScript && execHelidonClass) {
                 throw new IllegalStateException("Both script and Helidon class cannot be run in the same process");
             }
 
             if (execScript) {
-                System.out.println("Executing CLI with helidon.sh script");
+                System.out.println("Executing CLI with helidon script");
                 return TestUtils.execScript(wd, input, args);
             }
             if (execHelidonClass) {

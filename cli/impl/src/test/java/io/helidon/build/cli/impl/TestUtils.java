@@ -241,6 +241,9 @@ class TestUtils {
         if (script == null) {
             throw new IllegalStateException("Unable to resolve helidon.shell.script system property");
         }
+        script = OSType.currentOS().equals(OSType.Windows)
+                ? script.concat(".bat")
+                : script.concat(".sh");
         return Path.of(script);
     }
 
