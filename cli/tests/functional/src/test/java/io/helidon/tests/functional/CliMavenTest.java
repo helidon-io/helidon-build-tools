@@ -213,7 +213,11 @@ public class CliMavenTest {
                 .addArgument("io.helidon.build-tools:helidon-maven-plugin:2.0.2:dev")
                 .build()
                 .start();
-        TestUtils.waitForApplication(port);
+        try {
+            TestUtils.waitForApplication(port);
+        } catch (Exception e) {
+            System.out.println("Output: \n" + stream);
+        }
         monitor.stop();
         stream.close();
 
