@@ -16,50 +16,58 @@
 
 @echo off
 
-:main
-    call :init
-    %action% %command%
-EXIT /B 0
+set projectDir=%~dp0
+set targetDir=%projectDir%target
+set jarFile=%targetDir%\helidon.jar
+set attach="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005"
+set attachMvn="-Dmvn.debug.port=5006"
+set attachMvnChild="-Dmvn.child.debug.port=5007"
+set attachPlugin="-Dplugin.debug.port=5006"
+set action=
+set args=
 
-:init
-    set projectDir=%~dp0
-    set targetDir="%projectDir%\target"
-    set jarFile="%targetDir%\helidon.jar"
-    set attach="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005"
-    set attachMvn="-Dmvn.debug.port=5006"
-    set attachMvnChild="-Dmvn.child.debug.port=5007"
-    set attachPlugin="-Dplugin.debug.port=5006"
-    set action="exec"
+for %%x in (%*) do (
 
-    for %%x in (%*) do (
-        if %%x==--attach (
-            call :appendVar jvm %attach%
-            goto END_LOOP
-        )
-        if %%x==--attachMvn (
-            call :appendVar jvm %attachMvn%
-            goto END_LOOP
-        )
-        if %%x==--attachMvnChild (
-            call :appendVar jvm %attachMvnChild%
-            goto END_LOOP
-        )
-        if %%x==--attachPlugin (
-            call :appendVar jvm %attachPlugin%
-            goto END_LOOP
-        )
-        if %%x==--dryRun (
-            set action=echo
-            goto END_LOOP
-        )
-        call :appendVar args %%x
-        :END_LOOP
+    set add=yes
+
+    if %%~x==--attach (
+        call :appendVar jvm %attach%
+        set add=no
+    ) else if %%~x==--attachMvn (
+        call :appendVar jvm %attachMvn%
+        set add=no
+    ) else if %%~x==--attachMvnChild (
+        call :appendVar jvm %attachMvnChild%
+        set add=no
+    ) else if %%~x==--attachPlugin (
+        call :appendVar jvm %attachPlugin%
+        set add=no
+    ) else if %%~x==--dryRun (
+        set action=echo
+        set add=no
+    ) else if add==yes (
+        call :appendVar args %args% %%~x
     )
+)
 
-    set command="java %jvm% -jar %jarFile% %args%"
-EXIT /B 0
+call :clear
+
+%action% java %jvm% -jar %jarFile% %args%
+
+goto :eof
 
 :appendVar
-    set %~1="%~1 %~2"
+    set %~1=%~2 %~3
 EXIT /B 0
 
+:clear
+    set projectDir=
+    set targetDir=
+    set jarFile=
+    set attach=
+    set attachMvn=
+    set attachMvnChild=
+    set attachPlugin=
+    set action=
+    set args=
+EXIT /B 0
