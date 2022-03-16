@@ -167,7 +167,7 @@ class TestUtils {
                 .start()
                 .waitForCompletion(1, TimeUnit.MINUTES);
 
-        String output = String.join(EOL, monitor.output());
+        String output = String.join(EOL, monitor.output(), monitor.stdOut());
         return strip(output);
     }
 
