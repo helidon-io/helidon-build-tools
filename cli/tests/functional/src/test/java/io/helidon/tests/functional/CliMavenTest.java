@@ -33,7 +33,6 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -42,15 +41,14 @@ import static org.hamcrest.Matchers.containsString;
 
 public class CliMavenTest {
 
-    private static final String PLUGIN_VERSION = helidonArchetypeVersion();
-    private static final String ARCHETYPE_VERSION = "2.4.2";
+    private static final String CLI_VERSION = helidonArchetypeVersion();
     private static final List<String> MAVEN_VERSIONS = List.of("3.1.1", "3.2.5", "3.8.1", "3.8.2", "3.8.4");
 
     private static Path workDir;
     private static Path mavenHome;
 
     private static String helidonArchetypeVersion() {
-        String version = System.getProperty("helidon.plugin.version");
+        String version = System.getProperty("helidon.cli.version");
         if (version != null) {
             return version;
         } else {
@@ -85,11 +83,13 @@ public class CliMavenTest {
                 "archetype:generate",
                 "-DinteractiveMode=false",
                 "-DarchetypeGroupId=io.helidon.archetypes",
-                "-DarchetypeArtifactId=helidon-quickstart-se",
-                "-DarchetypeVersion=" + ARCHETYPE_VERSION,
+                "-DarchetypeArtifactId=helidon",
+                "-DarchetypeVersion=" + CLI_VERSION,
                 "-DgroupId=groupid",
                 "-DartifactId=artifactid",
-                "-Dpackage=custom.pack.name");
+                "-Dpackage=custom.pack.name",
+                "-Dflavor=se",
+                "-Dbase=bare");
 
         try {
             MavenCommand.builder()
@@ -111,33 +111,9 @@ public class CliMavenTest {
     @ParameterizedTest
     @MethodSource("getValidMavenVersions")
     public void testMissingValues(String version) throws Exception {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        List<String> mvnArgs = List.of(
-                "archetype:generate",
-                "-DinteractiveMode=false",
-                "-DarchetypeGroupId=io.helidon.archetypes",
-                "-DarchetypeArtifactId=helidon-quickstart-se",
-                "-DarchetypeVersion=" + ARCHETYPE_VERSION);
-
-        try {
-            MavenCommand.builder()
-                    .executable(Path.of(mavenHome.toString(), "apache-maven-" + version, "bin", TestUtils.getMvnExecutable(version)))
-                    .directory(workDir)
-                    .stdOut(new PrintStream(stream))
-                    .stdErr(new PrintStream(stream))
-                    .addArguments(mvnArgs)
-                    .build()
-                    .execute();
-        } catch (ProcessMonitor.ProcessFailedException e) {
-            String output = stream.toString();
-            assertThat(output, containsString("Property groupId is missing."));
-            assertThat(output, containsString("Property artifactId is missing."));
-            assertThat(output, containsString("Property package is missing."));
-            assertThat(output, containsString("BUILD FAILURE"));
-            stream.close();
-            return;
-        }
-        assertThat("Exception expected due to missing values", false);
+        missingArtifactGroupPackageValues(version);
+        missingFlavorValue(version);
+        missingBaseValue(version);
     }
 
     @Test //Issue#499 https://github.com/oracle/helidon-build-tools/issues/499
@@ -153,7 +129,7 @@ public class CliMavenTest {
 
     @Test //Issue#499 https://github.com/oracle/helidon-build-tools/issues/499
     public void testIssue499() throws Exception {
-        runIssue499(PLUGIN_VERSION);
+        runIssue499(CLI_VERSION);
     }
 
     @Test //Issue#259 https://github.com/oracle/helidon-build-tools/issues/259
@@ -170,12 +146,12 @@ public class CliMavenTest {
 
     @Test //Issue#259 https://github.com/oracle/helidon-build-tools/issues/259
     public void testFixJansiIssue() throws Exception {
-        String output = runCliMavenPluginJansiIssue(PLUGIN_VERSION);
+        String output = runCliMavenPluginJansiIssue(CLI_VERSION);
         assertThat(output, containsString("BUILD SUCCESS"));
     }
 
     @Test
-    public void testCliMavenPluginBackwardCompatibility() throws Exception {
+    public void testCliMavenPlugin() throws Exception {
         int port = TestUtils.getAvailablePort();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         TestUtils.generateBareSe(workDir, mavenHome.toString());
@@ -185,39 +161,10 @@ public class CliMavenTest {
                 .directory(workDir.resolve("artifactid"))
                 .stdOut(new PrintStream(stream))
                 .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
-                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + PLUGIN_VERSION + ":dev")
+                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + CLI_VERSION + ":dev")
                 .build()
                 .start();
         TestUtils.waitForApplication(port);
-        monitor.stop();
-        stream.close();
-
-        assertThat(stream.toString(), containsString("BUILD SUCCESS"));
-    }
-
-    @Test
-    public void testOldMavenPlugin() throws Exception {
-        int port = TestUtils.getAvailablePort();
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        TestUtils.generateBareSe(workDir, mavenHome.toString());
-        Path conf = workDir.resolve("artifactid/src/main/resources/application.yaml");
-        String content = new String(Files.readAllBytes(conf));
-        content = content.replaceAll("8080", String.valueOf(port));
-        Files.write(conf, Collections.singleton(content));
-
-        ProcessMonitor monitor = MavenCommand.builder()
-                .executable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", TestUtils.getMvnExecutable("3.8.4")))
-                .directory(workDir.resolve("artifactid"))
-                .stdOut(new PrintStream(stream))
-                .stdErr(new PrintStream(stream))
-                .addArgument("io.helidon.build-tools:helidon-maven-plugin:2.0.2:dev")
-                .build()
-                .start();
-        try {
-            TestUtils.waitForApplication(port);
-        } catch (Exception e) {
-            assertThat("Output: \n" + stream, false);
-        }
         monitor.stop();
         stream.close();
 
@@ -298,6 +245,71 @@ public class CliMavenTest {
 
         monitor.stop();
         stream.close();
+    }
+
+    private String runMissingValueTest(List<String> args, String mavenVersion) throws Exception {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        try {
+            MavenCommand.builder()
+                    .executable(Path.of(mavenHome.toString(), "apache-maven-" + mavenVersion, "bin", TestUtils.getMvnExecutable(mavenVersion)))
+                    .directory(workDir)
+                    .stdOut(new PrintStream(stream))
+                    .stdErr(new PrintStream(stream))
+                    .addArguments(args)
+                    .build()
+                    .execute();
+        } catch (ProcessMonitor.ProcessFailedException e) {
+            return stream.toString();
+        }
+        assertThat("Exception expected due to missing values", false);
+        return "failed test";
+    }
+
+    private void missingArtifactGroupPackageValues(String mavenVersion) throws Exception {
+        List<String> mvnArgs = List.of(
+                "archetype:generate",
+                "-DinteractiveMode=false",
+                "-DarchetypeGroupId=io.helidon.archetypes",
+                "-DarchetypeArtifactId=helidon",
+                "-DarchetypeVersion=" + CLI_VERSION);
+        String output = runMissingValueTest(mvnArgs, mavenVersion);
+        assertThat(output, containsString("Property groupId is missing."));
+        assertThat(output, containsString("Property artifactId is missing."));
+        assertThat(output, containsString("Property package is missing."));
+        assertThat(output, containsString("BUILD FAILURE"));
+    }
+
+    private void missingFlavorValue(String mavenVersion) throws Exception {
+        List<String> args = List.of(
+                "archetype:generate",
+                "-DinteractiveMode=false",
+                "-DarchetypeGroupId=io.helidon.archetypes",
+                "-DarchetypeArtifactId=helidon",
+                "-DarchetypeVersion=" + CLI_VERSION,
+                "-DgroupId=groupid",
+                "-DartifactId=artifactid",
+                "-Dpackage=me.pack.name"
+        );
+        String output = runMissingValueTest(args, mavenVersion);
+        assertThat(output, containsString("Unresolved input: flavor"));
+        assertThat(output, containsString("BUILD FAILURE"));
+    }
+
+    private void missingBaseValue(String mavenVersion) throws Exception {
+        List<String> args = List.of(
+                "archetype:generate",
+                "-DinteractiveMode=false",
+                "-DarchetypeGroupId=io.helidon.archetypes",
+                "-DarchetypeArtifactId=helidon",
+                "-DarchetypeVersion=" + CLI_VERSION,
+                "-DgroupId=groupid",
+                "-DartifactId=artifactid",
+                "-Dpackage=me.pack.name",
+                "-Dflavor=se"
+        );
+        String output = runMissingValueTest(args, mavenVersion);
+        assertThat(output, containsString("Unresolved input: base"));
+        assertThat(output, containsString("BUILD FAILURE"));
     }
 
 }
