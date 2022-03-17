@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.common.SubstitutionVariables;
@@ -263,6 +264,7 @@ public interface CommandInvoker {
         private final boolean useProjectOption;
         private final boolean execScript;
         private final boolean execHelidonClass;
+        private final boolean execNativeImage;
 
         private InvokerImpl(Builder builder) {
             useProjectOption = builder.useProjectOption;
@@ -289,6 +291,7 @@ public interface CommandInvoker {
             packageName = builder.packageName == null ? config.defaultPackageName(substitutions) : builder.packageName;
             execScript = builder.execScript;
             execHelidonClass = builder.execHelidonClass;
+            execNativeImage = builder.execNativeImage;
             try {
                 workDir = builder.workDir == null ? Files.createTempDirectory("helidon-init") : builder.workDir;
                 projectDir = unique(workDir, projectName);
@@ -399,7 +402,7 @@ public interface CommandInvoker {
         }
 
         private String execute(File wd, File input, String... args) throws Exception {
-            if (execScript && execHelidonClass) {
+            if (Stream.of(execScript, execHelidonClass, execNativeImage).filter(b -> b).count() > 1L) {
                 throw new IllegalStateException("Both script and Helidon class cannot be run in the same process");
             }
 
@@ -410,6 +413,10 @@ public interface CommandInvoker {
             if (execHelidonClass) {
                 Helidon.execute(args);
                 return "Helidon class executed";
+            }
+            if (execNativeImage) {
+                System.out.println("Executing CLI using native image");
+                return TestUtils.execNativeImage(wd, input, args);
             }
 
             return TestUtils.execWithDirAndInput(workDir.toFile(), input, args);
@@ -661,6 +668,7 @@ public interface CommandInvoker {
         private boolean useProjectOption;
         private boolean execScript = false;
         private boolean execHelidonClass = false;
+        private boolean execNativeImage = false;
 
         /**
          * Use the {@code --project} option instead of the project argument.
@@ -824,6 +832,16 @@ public interface CommandInvoker {
          */
         public Builder execHelidonClass() {
             this.execHelidonClass = true;
+            return this;
+        }
+
+        /**
+         * Run cli with native image.
+         *
+         * @return this builder
+         */
+        public Builder execNativeImage() {
+            this.execNativeImage = true;
             return this;
         }
 

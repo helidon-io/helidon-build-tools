@@ -71,10 +71,29 @@
                     <systemPropertyVariables>
                         <!-- version should be upgraded to 3.0.0 once released-->
                         <helidon.test.version>2.4.0</helidon.test.version>
-                        <helidon.shell.script>${project.basedir}/../../impl/helidon</helidon.shell.script>
+                        <helidon.script>${project.basedir}/../../impl/helidon</helidon.script>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>native-image</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <native.image>turned-on</native.image>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

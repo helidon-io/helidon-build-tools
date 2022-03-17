@@ -42,8 +42,13 @@ public class CliFunctionalTest {
     private static final String CUSTOM_ARTIFACT_ID = "myartifactid";
     private static final String CUSTOM_PROJECT = "myproject";
     private static final String CUSTOM_PACKAGE_NAME = "custom.pack.name";
+    private static final boolean IS_NATIVE_IMAGE = isNativeImage();
     private static Path workDir;
     private static Path inputFile;
+
+    static boolean isNativeImage() {
+        return System.getProperty("native.image") != null;
+    }
 
     @BeforeAll
     static void setup() throws IOException {
@@ -236,6 +241,10 @@ public class CliFunctionalTest {
 
         runHelidonScriptTest(flavor, version, archetype, groupId, artifactId, packageName, name, startApp);
         runHelidonClassTest(flavor, version, archetype, groupId, artifactId, packageName, name, startApp);
+
+        if (IS_NATIVE_IMAGE) {
+            runNativeImageTest(flavor, version, archetype, groupId, artifactId, packageName, name, startApp);
+        }
     }
 
     private void runInteractiveTest(String flavor,
@@ -272,17 +281,32 @@ public class CliFunctionalTest {
     }
 
     private void runHelidonClassTest(String flavor,
-                                      String version,
-                                      String archetype,
-                                      String groupId,
-                                      String artifactId,
-                                      String packageName,
-                                      String name,
-                                      boolean startApp) throws Exception {
+                                     String version,
+                                     String archetype,
+                                     String groupId,
+                                     String artifactId,
+                                     String packageName,
+                                     String name,
+                                     boolean startApp) throws Exception {
 
         cleanUp();
         commandInvoker(flavor, version, archetype, groupId, artifactId, packageName, name, startApp)
                 .execHelidonClass()
+                .invokeInit()
+                .validateProject();
+    }
+
+    private void runNativeImageTest(String flavor,
+                                    String version,
+                                    String archetype,
+                                    String groupId,
+                                    String artifactId,
+                                    String packageName,
+                                    String name,
+                                    boolean startApp) throws Exception {
+        cleanUp();
+        commandInvoker(flavor, version, archetype, groupId, artifactId, packageName, name, startApp)
+                .execNativeImage()
                 .invokeInit()
                 .validateProject();
     }

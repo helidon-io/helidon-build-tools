@@ -125,33 +125,27 @@ class TestUtils {
         }
         cmdArgs.add(Helidon.class.getName());
         cmdArgs.addAll(Arrays.asList(args));
-        ProcessBuilder pb = new ProcessBuilder(cmdArgs);
-
-        if (wd != null) {
-            pb.directory(wd);
-        }
-
-        ProcessMonitor monitor = ProcessMonitor.builder()
-                                               .processBuilder(pb)
-                                               .stdIn(input)
-                                               .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(LogLevel.INFO)))
-                                               .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(LogLevel.ERROR)))
-                                               .capture(true)
-                                               .build()
-                                               .start()
-                                               .waitForCompletion(10, TimeUnit.MINUTES);
-        String output = String.join(EOL, monitor.output());
-        return strip(output);
+        return execute(wd, input, cmdArgs);
     }
 
     static String execScript(File wd, File input, String... args) throws Exception {
-        List<String> cmdArgs = new LinkedList<>();
-        Path script = helidonShellScript();
-        setExecutable(script.toFile());
+        return execute(helidonShellScript(), wd, input, args);
+    }
 
-        cmdArgs.add(script.normalize().toString());
+    static String execNativeImage(File wd, File input, String... args) throws Exception {
+        return execute(helidonNativeImage(), wd, input, args);
+    }
+
+    private static String execute(Path executable, File wd, File input, String... args) throws Exception {
+        setExecutable(executable.toFile());
+        List<String> cmdArgs = new LinkedList<>();
+        cmdArgs.add(executable.normalize().toString());
         cmdArgs.addAll(Arrays.asList(args));
-        ProcessBuilder pb = new ProcessBuilder(cmdArgs);
+        return execute(wd, input, cmdArgs);
+    }
+
+    private static String execute(File wd, File input, List<String> args) throws Exception {
+        ProcessBuilder pb = new ProcessBuilder(args);
 
         if (wd != null) {
             pb.directory(wd);
@@ -165,9 +159,9 @@ class TestUtils {
                 .capture(true)
                 .build()
                 .start()
-                .waitForCompletion(1, TimeUnit.MINUTES);
+                .waitForCompletion(5, TimeUnit.MINUTES);
 
-        String output = String.join(EOL, monitor.output(), monitor.stdOut());
+        String output = String.join(EOL, monitor.output());
         return strip(output);
     }
 
@@ -237,14 +231,22 @@ class TestUtils {
      * @throws IllegalStateException if the {@code helidon.shell.script} is system property not found
      */
     static Path helidonShellScript() {
-        String script = System.getProperty("helidon.shell.script");
+        String script = System.getProperty("helidon.script");
         if (script == null) {
-            throw new IllegalStateException("Unable to resolve helidon.shell.script system property");
+            throw new IllegalStateException("Unable to resolve helidon.script system property");
         }
         script = OSType.currentOS().equals(OSType.Windows)
                 ? script.concat(".bat")
                 : script.concat(".sh");
         return Path.of(script);
+    }
+
+    static Path helidonNativeImage() {
+        String script = System.getProperty("helidon.script");
+        if (script == null) {
+            throw new IllegalStateException("Unable to resolve helidon.script system property");
+        }
+        return Path.of(script).getParent().resolve("target/helidon");
     }
 
     /**
