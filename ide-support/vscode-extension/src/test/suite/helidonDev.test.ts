@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -166,7 +166,7 @@ suite('HelidonDev Test Suite', () => {
         childProcessAPIManager.mock('spawnProcess', createServerProcess());
         vsCodeApiMockManager.mock('createOutputChannel', createOutputChannel());
 
-        const launchedServers = await startHelidonDev();
+        const launchedServers = await startHelidonDev("extensionPath");
         expect(launchedServers.size).is.equal(1);
         expect(launchedServers.keys().next().value).is.equal('helidonDir2');
     });
@@ -183,7 +183,7 @@ suite('HelidonDev Test Suite', () => {
         childProcessAPIManager.mock('spawnProcess', createServerProcess());
         vsCodeApiMockManager.mock('createOutputChannel', createOutputChannel());
 
-        const launchedServers = await startHelidonDev();
+        const launchedServers = await startHelidonDev("extensionPath");
         expect(launchedServers.size).is.equal(0);
     });
 
@@ -198,14 +198,14 @@ suite('HelidonDev Test Suite', () => {
         childProcessAPIManager.mock('spawnProcess', createServerProcess());
         vsCodeApiMockManager.mock('createOutputChannel', createOutputChannel());
 
-        const launchedServers = await startHelidonDev();
+        const launchedServers = await startHelidonDev("extensionPath");
         expect(launchedServers.size).is.equal(1);
     });
 
     test('No helidon servers start when there are no open folder in workspace', async () => {
         childProcessAPIManager.mock('isCommandExist', true);
         vsCodeApiMockManager.mock('getWorkspaceFolders', undefined);
-        const launchedServers = await startHelidonDev();
+        const launchedServers = await startHelidonDev("extensionPath");
         expect(launchedServers.size).is.equal(0);
     });
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,9 +52,10 @@ suite('Helidon Project Generator Test Suite', () => {
         });
         vsCodeApiMockManager.mock('showInputBox', "test");
         vsCodeApiMockManager.mock('showOpenFolderDialog', <vscode.Uri>{fsPath: "fsPath"});
+        vsCodeApiMockManager.mock('createOutputChannel', <vscode.OutputChannel>{appendLine(str:string){}});
         fsSystemApiMockManager.mock('isPathExistsSync', false);
         let childProcessMock = childProcessAPIManager.mock('execProcess', createChildProcess());
-        await helidonGenerator.showHelidonGenerator();
+        await helidonGenerator.showHelidonGenerator("helidonJarFolder");
         assert(childProcessMock.calledOnce);
     });
 });
