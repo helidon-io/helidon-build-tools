@@ -30,7 +30,7 @@ public final class Preset extends Block {
     private final String path;
     private final boolean resolvable;
 
-    private Preset(Builder builder) {
+    private Preset(Builder builder, List<String> values) {
         super(builder);
         this.path = builder.attribute("path", true);
         this.resolvable = !"false".equalsIgnoreCase(builder.attribute("resolvable", false));
@@ -44,9 +44,7 @@ public final class Preset extends Block {
                 value = Value.create(builder.value());
                 break;
             case LIST:
-                List<Node.Builder<? extends Node, ?>> children = builder.children();
-                value = Value.create(children.stream().map(Node.Builder::value).collect(toUnmodifiableList()));
-                children.clear();
+                value = Value.create(values);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown preset kind: " + kind);
@@ -108,7 +106,14 @@ public final class Preset extends Block {
 
         @Override
         protected Preset doBuild() {
-            return new Preset(this);
+            if (kind() == Kind.LIST) {
+                // collapse the nested values and clear the children
+                List<Node.Builder<? extends Node, ?>> children = children();
+                List<String> values = children.stream().map(Node.Builder::value).collect(toUnmodifiableList());
+                children.clear();
+                return new Preset(this, values);
+            }
+            return new Preset(this, null);
         }
     }
 }

@@ -139,7 +139,7 @@ public class Value {
      * @return Value
      */
     public static Value create(String value) {
-        return new Value(value, ValueTypes.STRING);
+        return value == null ? NULL : new Value(value, ValueTypes.STRING);
     }
 
     /**

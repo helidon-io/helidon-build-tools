@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -185,6 +185,7 @@ class ScriptLoaderTest {
                         assertThat(preset.path(), is("preset4"));
                         assertThat(preset.kind(), is(Preset.Kind.LIST));
                         assertThat(preset.value().asList(), contains("list1"));
+                        assertThat(preset.children().isEmpty(), is(true));
                         break;
                 }
                 return VisitResult.CONTINUE;
