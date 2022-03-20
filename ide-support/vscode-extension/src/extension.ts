@@ -22,6 +22,7 @@ import { VSCodeHelidonCommands } from "./common";
 import { openStartPage } from "./startPage";
 import { updateWorkspaceDocuments } from "./propertiesSupport";
 import { commands, WorkspaceFoldersChangeEvent } from 'vscode';
+import { STEPS } from "./steps_data";
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -37,7 +38,7 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     context.subscriptions.push(vscode.commands.registerCommand(VSCodeHelidonCommands.GENERATE_PROJECT, () => {
-        showHelidonGenerator(context.extensionPath);
+        showHelidonGenerator(context.extensionPath, STEPS);
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand(VSCodeHelidonCommands.START_PAGE, () => {
