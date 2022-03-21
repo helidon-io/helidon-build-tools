@@ -33,9 +33,16 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.build-tools</groupId>
+            <artifactId>helidon-cli-maven-plugin</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.build-tools.common</groupId>
             <artifactId>helidon-build-common-maven</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.build-tools.cli</groupId>
@@ -97,7 +104,8 @@
                     <systemPropertyVariables>
                         <!-- version should be upgraded to 3.0.0 once released-->
                         <helidon.test.version>2.4.0</helidon.test.version>
-                        <helidon.cli.version>${project.version}</helidon.cli.version>
+                        <helidon.cli.version>3.0.0-M1</helidon.cli.version>
+                        <helidon.plugin.version>3.0.0-M3</helidon.plugin.version>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

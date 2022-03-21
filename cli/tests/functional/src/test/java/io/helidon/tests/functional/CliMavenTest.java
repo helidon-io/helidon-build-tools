@@ -41,18 +41,19 @@ import static org.hamcrest.Matchers.containsString;
 
 public class CliMavenTest {
 
-    private static final String CLI_VERSION = helidonArchetypeVersion();
+    private static final String CLI_VERSION = getProperty("helidon.cli.version");
+    private static final String PLUGIN_VERSION = getProperty("helidon.plugin.version");
     private static final List<String> MAVEN_VERSIONS = List.of("3.1.1", "3.2.5", "3.8.1", "3.8.2", "3.8.4");
 
     private static Path workDir;
     private static Path mavenHome;
 
-    private static String helidonArchetypeVersion() {
-        String version = System.getProperty("helidon.cli.version");
+    private static String getProperty(String property) {
+        String version = System.getProperty(property);
         if (version != null) {
             return version;
         } else {
-            throw new IllegalStateException("Helidon archetype version is not set");
+            throw new IllegalStateException(String.format("%s is not set", property));
         }
     }
 
@@ -129,11 +130,11 @@ public class CliMavenTest {
 
     @Test //Issue#499 https://github.com/oracle/helidon-build-tools/issues/499
     public void testIssue499() throws Exception {
-        runIssue499(CLI_VERSION);
+        runIssue499(PLUGIN_VERSION);
     }
 
     @Test //Issue#259 https://github.com/oracle/helidon-build-tools/issues/259
-    public void catchingJansiIssue() throws Exception {
+    public void catchingJansiIssue() {
         try {
             runCliMavenPluginJansiIssue("2.1.0");
         } catch (Exception e) {
@@ -146,7 +147,7 @@ public class CliMavenTest {
 
     @Test //Issue#259 https://github.com/oracle/helidon-build-tools/issues/259
     public void testFixJansiIssue() throws Exception {
-        String output = runCliMavenPluginJansiIssue(CLI_VERSION);
+        String output = runCliMavenPluginJansiIssue(PLUGIN_VERSION);
         assertThat(output, containsString("BUILD SUCCESS"));
     }
 
@@ -161,7 +162,7 @@ public class CliMavenTest {
                 .directory(workDir.resolve("artifactid"))
                 .stdOut(new PrintStream(stream))
                 .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
-                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + CLI_VERSION + ":dev")
+                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + PLUGIN_VERSION + ":dev")
                 .build()
                 .start();
         TestUtils.waitForApplication(port);
