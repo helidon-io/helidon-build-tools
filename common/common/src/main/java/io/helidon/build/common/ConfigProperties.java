@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,10 +177,8 @@ public class ConfigProperties {
      */
     public void load() {
         if (exists()) {
-            try {
-                try (FileReader reader = new FileReader(file.toFile())) {
-                    properties.load(reader);
-                }
+            try (FileReader reader = new FileReader(file.toFile())) {
+                properties.load(reader);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -191,10 +189,16 @@ public class ConfigProperties {
      * Stores properties to file.
      */
     public void store() {
-        try {
-            try (FileWriter writer = new FileWriter(file.toFile())) {
-                properties.store(writer, "Helidon Project Configuration");
-            }
+        store(null);
+    }
+
+    /**
+     * Stores properties to file with the given comments.
+     * @param comments The file comments. May be {@code null}.
+     */
+    public void store(String comments) {
+        try (FileWriter writer = new FileWriter(file.toFile())) {
+            properties.store(writer, comments);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

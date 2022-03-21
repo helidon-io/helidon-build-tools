@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.build.cli.harness;
 
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.helidon.build.cli.harness.CommandModel.FlagInfo;
 
@@ -41,9 +42,14 @@ public class GlobalOptions {
     public static final FlagInfo HELP_FLAG_INFO = new FlagInfo(HELP_FLAG_NAME, HELP_FLAG_DESCRIPTION, false);
 
     /**
-     * The --help flag argument.
+     * The --version flag name.
      */
-    public static final String HELP_FLAG_ARGUMENT = "--" + HELP_FLAG_NAME;
+    public static final String VERSION_FLAG_NAME = "version";
+
+    /**
+     * The --version flag argument.
+     */
+    public static final String VERSION_FLAG_ARGUMENT = "--" + VERSION_FLAG_NAME;
 
     /**
      * The --verbose flag name.
@@ -125,9 +131,9 @@ public class GlobalOptions {
             PLAIN_FLAG_INFO
     };
 
-    private static final Set<String> GLOBAL_FLAG_ARGUMENTS = Set.of(GLOBAL_FLAGS).stream()
-            .map(f -> "--" + f.name())
-            .collect(Collectors.toSet());
+    private static final Set<String> GLOBAL_FLAG_ARGUMENTS = Stream.of(GLOBAL_FLAGS)
+                                                                   .map(f -> "--" + f.name())
+                                                                   .collect(Collectors.toSet());
 
     private GlobalOptions() {
     }

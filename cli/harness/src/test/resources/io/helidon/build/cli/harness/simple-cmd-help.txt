@@ -1,9 +1,10 @@
 
-Usage:	test-cli simple [OPTIONS] [--foo] [--bar]
-
 A simple test command
 
-Options:
+Usage: test-cli simple [OPTIONS]
+
+Options
+
   -D<name>=<value>    Define a system property
   --verbose           Produce verbose output
   --debug             Produce debug output

@@ -81,7 +81,6 @@ abstract class ArchetypeInvoker {
     private static final String HELIDON_VERSION_NOT_FOUND = "$(red Helidon version) $(RED %s) $(red not found.)";
 
     private final Metadata metadata;
-    private final boolean batch;
     private final InitOptions initOptions;
     private final Map<String, String> initProperties;
     private final Function<String, Path> projectDirSupplier;
@@ -89,7 +88,6 @@ abstract class ArchetypeInvoker {
 
     private ArchetypeInvoker(Builder builder) {
         metadata = builder.metadata;
-        batch = builder.batch;
         initOptions = builder.initOptions;
         initProperties = unmodifiableMap(builder.initProperties);
         projectDirSupplier = builder.projectDirSupplier;
@@ -102,7 +100,7 @@ abstract class ArchetypeInvoker {
      * @return {@code true} if interactive, {@code false} if batch
      */
     protected boolean isInteractive() {
-        return !batch;
+        return !initOptions.batch();
     }
 
     /**
@@ -181,7 +179,6 @@ abstract class ArchetypeInvoker {
     static class Builder {
 
         private Metadata metadata;
-        private boolean batch;
         private InitOptions initOptions;
         private final Map<String, String> initProperties;
         private Function<String, Path> projectDirSupplier;
@@ -199,17 +196,6 @@ abstract class ArchetypeInvoker {
          */
         Builder metadata(Metadata metadata) {
             this.metadata = metadata;
-            return this;
-        }
-
-        /**
-         * Set the batch flag.
-         *
-         * @param batch batch flag
-         * @return this builder
-         */
-        Builder batch(boolean batch) {
-            this.batch = batch;
             return this;
         }
 

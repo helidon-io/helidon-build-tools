@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,13 +113,12 @@ export class VSCodeAPI {
         return commands.executeCommand(command, ...rest);
     }
 
-    public static getVisibleTextEditors(): TextEditor[] {
+    public static getVisibleTextEditors(): readonly TextEditor[] {
         return window.visibleTextEditors;
     }
 
     public static async showInputBox(data: InputBoxData) {
         return await new Promise<string | undefined>((resolve, rejects) => {
-            // let inputBox = window.createInputBox();
             const inputBox = window.createInputBox();
             inputBox.title = data.title;
             inputBox.placeholder = data.placeholder;

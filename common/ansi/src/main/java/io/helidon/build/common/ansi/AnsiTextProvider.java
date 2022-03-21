@@ -20,6 +20,8 @@ import io.helidon.build.common.RichTextProvider;
 import io.helidon.build.common.RichTextStyle;
 import io.helidon.build.common.RichTextStyle.StyleList;
 
+import org.fusesource.jansi.Ansi;
+
 /**
  * Ansi implementation of {@link RichTextProvider}.
  */
@@ -32,6 +34,7 @@ public class AnsiTextProvider implements RichTextProvider {
      */
     public AnsiTextProvider() {
         enabled = AnsiConsoleInstaller.install();
+        Ansi.setEnabled(enabled);
     }
 
     /**

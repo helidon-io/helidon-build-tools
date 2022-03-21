@@ -3,6 +3,7 @@ node_modules/
 node/
 out/
 src/
+target/dist/test
 tsconfig.json
 gulpfile.js
 webpack.config.js

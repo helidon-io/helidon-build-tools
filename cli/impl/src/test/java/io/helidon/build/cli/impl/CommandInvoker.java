@@ -260,8 +260,10 @@ public interface CommandInvoker {
         private final UserConfig config;
         private final String helidonVersion;
         private final boolean buildProject;
+        private final boolean useProjectOption;
 
         private InvokerImpl(Builder builder) {
+            useProjectOption = builder.useProjectOption;
             buildProject = builder.buildProject;
             helidonVersion = builder.helidonVersion;
             input = builder.input;
@@ -380,7 +382,9 @@ public interface CommandInvoker {
             args.add(packageName);
             args.add("--name");
             args.add(projectName);
-            args.add("--project");
+            if (useProjectOption) {
+                args.add("--project");
+            }
             args.add(projectDir.toString());
             String[] argsArray = args.toArray(new String[]{});
             System.out.print("Executing with args ");
@@ -394,7 +398,7 @@ public interface CommandInvoker {
 
         @Override
         public InvocationResult invokeCommand(String command) throws Exception {
-            String output = exec(command, "--project ", projectDir.toString());
+            String output = exec(command, "--project", projectDir.toString());
             return new InvocationResult(this, output);
         }
 
@@ -635,6 +639,18 @@ public interface CommandInvoker {
         private File input;
         private String helidonVersion;
         private boolean buildProject;
+        private boolean useProjectOption;
+
+        /**
+         * Use the {@code --project} option instead of the project argument.
+         *
+         * @param useProjectOption {@code true} if should use {@code --project} option
+         * @return this builder
+         */
+        public Builder useProjectOption(boolean useProjectOption) {
+            this.useProjectOption = useProjectOption;
+            return this;
+        }
 
         /**
          * Set the build project flag.
@@ -784,9 +800,8 @@ public interface CommandInvoker {
          * @return invoker instance
          * @throws Exception if any error occurs
          */
-        public CommandInvoker invokeInit() throws Exception {
+        public CommandInvoker.InvocationResult invokeInit() throws Exception {
             return new InvokerImpl(this).invokeInit();
         }
-
     }
 }

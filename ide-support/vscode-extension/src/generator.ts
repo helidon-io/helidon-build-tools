@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,18 @@
 
 import * as path from 'path';
 import { Uri, QuickPickItem } from 'vscode';
-import { validateUserInput } from "./common";
+import { getSubstringBetween, validateUserInput } from "./common";
 import { InputBoxData, VSCodeAPI } from "./VSCodeAPI";
 import { FileSystemAPI } from "./FileSystemAPI";
 import { ChildProcessAPI } from "./ChildProcessAPI";
 
 export interface ProjectData extends QuickPickItem {
-    archetype: string;
+    base: string;
     flavor: string;
     pkg: string;
 }
 
-export async function showHelidonGenerator() {
+export async function showHelidonGenerator(extensionPath: string) {
 
     const NUMBER_OF_STEPS = 4;
 
@@ -52,12 +52,12 @@ export async function showHelidonGenerator() {
     }
 
     const quickPickItems: ProjectData[] = [
-        {label: "Helidon MP Bare", archetype: "bare", flavor: "mp", pkg: "io.helidon.examples.bare.mp"},
-        {label: "Helidon MP Database", archetype: "database", flavor: "mp",  pkg: "io.helidon.examples.database.mp"},
-        {label: "Helidon MP Quickstart", archetype: "quickstart", flavor: "mp", pkg: "io.helidon.examples.quickstart.mp"},
-        {label: "Helidon SE Bare", archetype: "bare", flavor: "se", pkg: "io.helidon.examples.bare.se"},
-        {label: "Helidon SE Database", archetype: "database", flavor: "se", pkg: "io.helidon.examples.database.se"},
-        {label: "Helidon SE Quickstart", archetype: "quickstart", flavor: "se", pkg: "io.helidon.examples.quickstart.se"}
+        {label: "Helidon MP Bare", base: "bare", flavor: "mp", pkg: "io.helidon.examples.bare.mp"},
+        {label: "Helidon MP Database", base: "database", flavor: "mp", pkg: "io.helidon.examples.database.mp"},
+        {label: "Helidon MP Quickstart", base: "quickstart", flavor: "mp", pkg: "io.helidon.examples.quickstart.mp"},
+        {label: "Helidon SE Bare", base: "bare", flavor: "se", pkg: "io.helidon.examples.bare.se"},
+        {label: "Helidon SE Database", base: "database", flavor: "se", pkg: "io.helidon.examples.database.se"},
+        {label: "Helidon SE Quickstart", base: "quickstart", flavor: "se", pkg: "io.helidon.examples.quickstart.se"}
     ];
 
     async function showInputBox(data: InputBoxData) {
@@ -98,7 +98,7 @@ export async function showHelidonGenerator() {
         state.artifactId = await showInputBox({
             title: "Select your project artifactId",
             placeholder: "Project artifactId",
-            value: state.projectData ? `${state.projectData.archetype}-${state.projectData.flavor}` : "my-project",
+            value: state.projectData ? `${state.projectData.base}-${state.projectData.flavor}` : "my-project",
             prompt: "Type in your project artifactId",
             totalSteps: NUMBER_OF_STEPS,
             currentStep: 3,
@@ -124,7 +124,15 @@ export async function showHelidonGenerator() {
             currentStep: 4,
             messageValidation: packageValidator
         });
-        return await generateProject(state as GeneratedProjectData);
+        return await generateProject(new Map<string, string>([
+                ["flavor", state.projectData!.flavor],
+                ["base", state.projectData!.base],
+                ["package", state.pkg!],
+                ["groupId", state.groupId!],
+                ["artifactId", state.artifactId!],
+                ["version", state.archetypeVersion!]
+            ]
+        ));
     }
 
     function packageValidator(value: string): string | undefined {
@@ -133,37 +141,33 @@ export async function showHelidonGenerator() {
         return validateUserInput(value, exp, errorMessage);
     }
 
-    async function generateProject(projectData: GeneratedProjectData) {
-        const targetDir = await obtainTargetFolder(projectData.artifactId);
+    async function generateProject(projectData: Map<string, string>) {
+        const artifactId = <string>projectData.get('artifactId');
+        const targetDir = await obtainTargetFolder(artifactId);
         if (!targetDir) {
             throw new Error('Helidon project generation has been canceled.');
         }
 
         VSCodeAPI.showInformationMessage('Your Helidon project is being created...');
 
-        const cmd = `helidon init \
-            --batch \
-            --plain \
-            --flavor ${projectData.projectData.flavor} \
-            --build MAVEN \
-            --version ${projectData.archetypeVersion} \
-            --archetype ${projectData.projectData.archetype} \
-            --groupid ${projectData.groupId} \
-            --artifactid ${projectData.artifactId}  \
-            --package ${projectData.pkg}`;
+        const archetypeValues = prepareProperties(projectData);
+        const cmd = `java -jar ${extensionPath}/target/cli/helidon.jar init --batch \
+            --reset --url file://${extensionPath}/cli-data \
+            ${archetypeValues}`;
 
         const channel = VSCodeAPI.createOutputChannel('helidon');
         channel.appendLine(cmd);
 
         const opts = {
-            cwd: targetDir.fsPath // cwd means -> current working directory (where this maven command will by executed)
+            cwd: targetDir.fsPath
         };
         ChildProcessAPI.execProcess(cmd, opts, (error: string, stdout: string, stderr: string) => {
             channel.appendLine(stdout);
-            if (stdout.includes("BUILD SUCCESS")) {
+            if (stdout.includes("Switch directory to ")) {
+                const projectDir = getSubstringBetween(stdout, "Switch directory to ", "to use CLI");
                 VSCodeAPI.showInformationMessage('Project generated...');
-                openPreparedProject(targetDir, projectData.artifactId);
-            } else if (stdout.includes("BUILD FAILURE")) {
+                openPreparedProject(projectDir);
+            } else {
                 VSCodeAPI.showInformationMessage('Project generation failed...');
             }
             if (stderr) {
@@ -173,6 +177,14 @@ export async function showHelidonGenerator() {
                 channel.appendLine(error);
             }
         });
+    }
+
+    function prepareProperties(propsMap: Map<string, string>): string {
+        let result = "";
+        for (let [name, value] of propsMap) {
+            result += ` -D${name}=${value}`;
+        }
+        return result;
     }
 
     async function obtainTargetFolder(artifactId: string) {
@@ -197,10 +209,10 @@ export async function showHelidonGenerator() {
         return directory;
     }
 
-    async function openPreparedProject(targetDir: Uri, artifactId: string): Promise<void> {
+    async function openPreparedProject(projectDir: string): Promise<void> {
 
         const openFolderCommand = 'vscode.openFolder';
-        const newProjectFolderUri = getNewProjectFolder(targetDir, artifactId);
+        const newProjectFolderUri = getNewProjectFolder(projectDir);
 
         if (VSCodeAPI.getWorkspaceFolders()) {
             const input: string | undefined = await VSCodeAPI.showInformationMessage(PROJECT_READY, NEW_WINDOW, ADD_TO_WORKSPACE);
@@ -227,17 +239,16 @@ export async function showHelidonGenerator() {
 
     }
 
-    function getNewProjectFolder(targetDir: Uri, artifactId: string): Uri {
-        return Uri.file(path.join(targetDir.fsPath, artifactId));
+    function getNewProjectFolder(projectDir: string): Uri {
+        return Uri.file(projectDir);
     }
 
     try {
         await obtainTypeOfProject({
             archetypeVersion: DEFAULT_ARCHETYPE_VERSION
         });
-    } catch (e) {
-        // window.showErrorMessage(e);
-        VSCodeAPI.showErrorMessage(e);
+    } catch (e: any) {
+        VSCodeAPI.showErrorMessage(e.message);
     }
 
 }

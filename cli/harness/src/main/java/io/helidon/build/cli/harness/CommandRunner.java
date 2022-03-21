@@ -40,7 +40,6 @@ public final class CommandRunner {
         this.context = Objects.requireNonNull(context, "context is null");
         this.parser = CommandParser.create(args == null ? new String[0] : args);
         this.context.parser(parser);
-        this.context.properties().putAll(parser.globalResolver().properties());
     }
 
     /**

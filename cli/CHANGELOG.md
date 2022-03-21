@@ -7,7 +7,7 @@ All notable changes to the Helidon CLI will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [3.0.0-M3]
 
 ### Changes
 
@@ -17,6 +17,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Fixes
 
 - Fix prompter when default answer is null [630](https://github.com/oracle/helidon-build-tools/pull/630)
+- Process monitor rework (forward-port) [511](https://github.com/oracle/helidon-build-tools/pull/511)
+- Fix shutdown hooks in native-image (forward port) [520](https://github.com/oracle/helidon-build-tools/pull/520)
 
 ## [3.0.0-M2]
 
@@ -35,6 +37,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Suppress download progress output during build [332](https://github.com/oracle/helidon-build-tools/issues/332) [568](https://github.com/oracle/helidon-build-tools/pull/568)
 - Need to touch pom.xml twice for dev loop to process the change [429](https://github.com/oracle/helidon-build-tools/issues/429) [569](https://github.com/oracle/helidon-build-tools/pull/569) [576](https://github.com/oracle/helidon-build-tools/pull/576)
+
+## [2.3.3]
+
+### Fixes
+
+- Fix isSupportedVersion to handle PluginFailedException correctly. [639](https://github.com/oracle/helidon-build-tools/pull/639)
+- Fix LineReader.drain. [643](https://github.com/oracle/helidon-build-tools/pull/643)
+- Backport InitCommand fixes. [647](https://github.com/oracle/helidon-build-tools/pull/647)
+
+## [2.3.2]
+
+### Fixes
+
+- Suppress download progress output during build [568](https://github.com/oracle/helidon-build-tools/issues/568) [332](https://github.com/oracle/helidon-build-tools/issues/332)
+- Need to touch pom.xml twice for dev loop to process the change [429](https://github.com/oracle/helidon-build-tools/issues/429) [569](https://github.com/oracle/helidon-build-tools/issues/569) [576](https://github.com/oracle/helidon-build-tools/issues/576)
+- Fix log level support  [560](https://github.com/oracle/helidon-build-tools/issues/560)
+- Improve error message when unsupported Helidon version is used [627](https://github.com/oracle/helidon-build-tools/627)
 
 ## 2.3.1
 
@@ -173,8 +192,10 @@ This release of helidon-build-tools does not contain changes related to the Heli
 
 Initial release of the Helidon CLI.
 
-[unreleased]: https://github.com/oracle/helidon-build-tools/compare/3.0.0-M2...master
+[3.0.0-M3]:   https://github.com/oracle/helidon-build-tools/compare/3.0.0-M2...3.0.0-M3
 [3.0.0-M2]:   https://github.com/oracle/helidon-build-tools/tree/3.0.0-M2/cli
+[2.3.3]:      https://github.com/oracle/helidon-build-tools/compare/2.3.2...2.3.3
+[2.3.2]:      https://github.com/oracle/helidon-build-tools/compare/2.3.0...2.3.2
 [2.3.0]:      https://github.com/oracle/helidon-build-tools/compare/2.2.3...2.3.0
 [2.2.3]:      https://github.com/oracle/helidon-build-tools/compare/2.2.2...2.2.3
 [2.2.2]:      https://github.com/oracle/helidon-build-tools/compare/2.2.0...2.2.2

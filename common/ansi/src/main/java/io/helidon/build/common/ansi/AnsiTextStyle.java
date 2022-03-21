@@ -289,7 +289,7 @@ public class AnsiTextStyle implements RichTextStyle {
     public static String strip(String input) {
         AnsiState state = AnsiState.ESC1;
         StringBuilder sb = new StringBuilder();
-        char[] buffer = new char[100];
+        char[] buffer = new char[1024];
         int pos = 0;
         int index;
         for (index = 0; index < input.length(); index++) {

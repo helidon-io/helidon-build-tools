@@ -44,7 +44,6 @@ import static io.helidon.build.common.FileUtils.findExecutableInPath;
 import static io.helidon.build.common.FileUtils.listFiles;
 import static io.helidon.build.common.FileUtils.requireDirectory;
 import static io.helidon.build.common.FileUtils.requireJavaExecutable;
-import static io.helidon.build.common.PrintStreams.DEVNULL;
 import static io.helidon.build.common.PrintStreams.STDERR;
 import static io.helidon.build.common.PrintStreams.STDOUT;
 import static io.helidon.build.common.ansi.AnsiConsoleInstaller.IS_HELIDON_CHILD_PROCESS;
@@ -307,8 +306,8 @@ public class MavenCommand {
         private boolean verbose;
         private int debugPort;
         private int maxWaitSeconds;
-        private PrintStream stdOut = DEVNULL;
-        private PrintStream stdErr = DEVNULL;
+        private PrintStream stdOut;
+        private PrintStream stdErr;
         private Predicate<String> filter = line -> true;
         private Function<String, String> transform = Function.identity();
         private Runnable beforeShutdown = () -> {};

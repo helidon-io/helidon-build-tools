@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public class HelpCommandTest {
     @Test
     void testCliHelp() throws Exception {
         String output = exec("help");
-        assertThat(output, containsString("Helidon Project command line tool"));
+        assertThat(output, containsString("Helidon command line tool"));
     }
 
     @Test
@@ -58,11 +58,10 @@ public class HelpCommandTest {
         assertCommandHelp("version");
     }
 
-    private static String assertCommandHelp(String command) throws Exception {
+    private static void assertCommandHelp(String command) throws Exception {
         String commandHelp = exec(command, "--help");
         String helpCommand = exec("help", command);
         assertThat(helpCommand, is(commandHelp));
-        assertThat(helpCommand, containsString("Usage:\thelidon " + command));
-        return helpCommand;
+        assertThat(helpCommand, containsString("Usage: helidon " + command));
     }
 }

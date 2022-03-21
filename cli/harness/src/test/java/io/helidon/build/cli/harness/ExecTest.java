@@ -20,11 +20,13 @@ import java.io.InputStream;
 import io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 
+import io.helidon.build.common.ansi.AnsiTextStyle;
 import io.helidon.build.common.logging.LogRecorder;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.Strings;
 import io.helidon.build.common.logging.LogWriter;
 import org.junit.jupiter.api.AfterAll;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,13 +49,13 @@ public class ExecTest {
     static final LogRecorder RECORDER = LogRecorder.create();
 
     static CommandContext context() {
-        return new CommandContext(REGISTRY, null);
+        return new CommandContext(REGISTRY, null, false);
     }
 
     static String resourceAsString(String name) {
         InputStream is = ExecTest.class.getResourceAsStream(name);
         if (is != null) {
-            return Strings.normalizeNewLines(Strings.read(is));
+            return AnsiTextStyle.strip(Strings.normalizeNewLines(Strings.read(is)));
         }
         return null;
     }
@@ -86,7 +88,7 @@ public class ExecTest {
     }
 
     String exec(String... args) {
-        return exec(context(), args);
+        return AnsiTextStyle.strip(exec(context(), args));
     }
 
     @Test

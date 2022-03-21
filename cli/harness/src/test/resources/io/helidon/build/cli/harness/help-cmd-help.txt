@@ -1,9 +1,10 @@
 
-Usage:	test-cli help [OPTIONS] [COMMAND]
-
 Help about the command
 
-Options:
+Usage: test-cli help [OPTIONS] [COMMAND]
+
+Options
+
   -D<name>=<value>    Define a system property
   --verbose           Produce verbose output
   --debug             Produce debug output

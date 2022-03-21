@@ -21,6 +21,7 @@ import io.helidon.build.common.RichTextRenderer;
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.AnsiRenderer;
 import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -32,9 +33,9 @@ import static org.hamcrest.Matchers.is;
  */
 class AnsiTextRendererTest {
 
-    static {
+    @BeforeAll
+    public static void beforeAllTests() {
         System.setProperty("jansi.force", "true");
-        Ansi.setEnabled(true);
     }
 
     @BeforeEach
