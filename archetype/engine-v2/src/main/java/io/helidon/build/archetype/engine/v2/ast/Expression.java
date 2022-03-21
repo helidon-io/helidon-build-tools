@@ -18,6 +18,7 @@ package io.helidon.build.archetype.engine.v2.ast;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -62,7 +63,16 @@ public final class Expression {
     }
 
     private Expression(List<Token> tokens) {
-        this.tokens = tokens;
+        this.tokens = Collections.unmodifiableList(tokens);
+    }
+
+    /**
+     * Get the expression tokens.
+     *
+     * @return list of tokens
+     */
+    public List<Token> tokens() {
+        return tokens;
     }
 
     /**
@@ -267,12 +277,38 @@ public final class Expression {
         return valence;
     }
 
-    private enum Operator {
+    /**
+     * Expression operator.
+     */
+    public enum Operator {
+        /**
+         * Equal operator.
+         */
         EQUAL(8, "=="),
+
+        /**
+         * Not equal operator.
+         */
         NOT_EQUAL(8, "!="),
+
+        /**
+         * And operator.
+         */
         AND(4, "&&"),
+
+        /**
+         * Or operator.
+         */
         OR(3, "||"),
+
+        /**
+         * Contains operator.
+         */
         CONTAINS(9, "contains"),
+
+        /**
+         * Not operator.
+         */
         NOT(13, "!");
 
         private final int precedence;
@@ -282,21 +318,82 @@ public final class Expression {
             this.precedence = precedence;
             this.symbol = symbol;
         }
+
+        /**
+         * Get the operator symbol.
+         *
+         * @return symbol
+         */
+        public String symbol() {
+            return symbol;
+        }
     }
 
-    private static final class Token {
+    /**
+     * Expression token.
+     */
+    public static final class Token {
 
-        static final Pattern ARRAY_PATTERN = Pattern.compile("(?<element>'[^']*')((\\s*,\\s*)|(\\s*]))");
-        static final Pattern VAR_PATTERN = Pattern.compile("^\\$\\{(?<varName>[\\w.-]+)}");
+        private static final Pattern ARRAY_PATTERN = Pattern.compile("(?<element>'[^']*')((\\s*,\\s*)|(\\s*]))");
+        private static final Pattern VAR_PATTERN = Pattern.compile("^\\$\\{(?<varName>[\\w.-]+)}");
 
         private final Operator operator;
         private final String variable;
         private final Value operand;
 
-        Token(Operator operator, String variable, Value operand) {
+        private Token(Operator operator, String variable, Value operand) {
             this.operator = operator;
             this.variable = variable;
             this.operand = operand;
+        }
+
+        /**
+         * Token visitor.
+         *
+         * @param <A> visitor argument
+         */
+        public interface Visitor<A> {
+
+            /**
+             * Visit an operator token.
+             *
+             * @param operator operator
+             * @param arg      visitor argument
+             */
+            void visitOperator(Operator operator, A arg);
+
+            /**
+             * Visit a variable token.
+             *
+             * @param variable variable
+             * @param arg      visitor argument
+             */
+            void visitVariable(String variable, A arg);
+
+            /**
+             * Visit an operand token.
+             *
+             * @param operand operand
+             * @param arg     visitor argument
+             */
+            void visitOperand(Value operand, A arg);
+        }
+
+        /**
+         * Visit this token.
+         *
+         * @param visitor visitor
+         * @param arg     visitor argument
+         * @param <A>     visitor argument type
+         */
+        public <A> void accept(Visitor<A> visitor, A arg) {
+            if (operator != null) {
+                visitor.visitOperator(operator, arg);
+            } else if (operand != null) {
+                visitor.visitOperand(operand, arg);
+            } else {
+                visitor.visitVariable(variable, arg);
+            }
         }
 
         @Override
@@ -312,7 +409,7 @@ public final class Expression {
             return sb.append(" }").toString();
         }
 
-        static List<String> parseArray(String symbol) {
+        private static List<String> parseArray(String symbol) {
             return ARRAY_PATTERN.matcher(symbol)
                                 .results()
                                 .map(r -> r.group(1))
@@ -320,7 +417,7 @@ public final class Expression {
                                 .collect(toList());
         }
 
-        static String parseVariable(String symbol) {
+        private static String parseVariable(String symbol) {
             return VAR_PATTERN.matcher(symbol)
                               .results()
                               .map(r -> r.group(1))
@@ -329,7 +426,7 @@ public final class Expression {
                                       "Incorrect variable name: " + symbol));
         }
 
-        static Token create(Symbol symbol) {
+        private static Token create(Symbol symbol) {
             switch (symbol.type) {
                 case BINARY_LOGICAL_OPERATOR:
                 case UNARY_LOGICAL_OPERATOR:
