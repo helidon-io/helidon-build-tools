@@ -45,19 +45,17 @@ for %%x in (%*) do (
     ) else if %%~x==--dryRun (
         set action=echo
         set add=no
-    ) else if add==yes (
-        call :appendVar args %args% %%~x
+    ) else if %add%==yes (
+        call :appendVar %%~x
     )
 )
 
-call :clear
-
 %action% java %jvm% -jar %jarFile% %args%
 
-goto :eof
+call :clear
 
 :appendVar
-    set %~1=%~2 %~3
+    set args=%args% %~1
 EXIT /B 0
 
 :clear
