@@ -169,8 +169,8 @@ class TestUtils {
 
         return ProcessMonitor.builder()
                    .processBuilder(pb)
-                   .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(Level.INFO)))
-                   .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(Level.ERROR)))
+                   .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(LogLevel.INFO)))
+                   .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(LogLevel.ERROR)))
                    .capture(true)
                    .build()
                    .start();
