@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ public class InputResolverTest {
     @Test
     void testDefaultValueSubstitutions() {
         Block block = inputText("text-input4", "${foo}")
-                .attribute("optional", "true")
+                .attribute("optional", Value.TRUE)
                 .build();
 
         Context context = Context.create();
@@ -95,7 +95,7 @@ public class InputResolverTest {
     @Test
     void testExternalDefaultValueSubstitutions() {
         Block block = inputText("text-input5", "foo")
-                .attribute("optional", "true")
+                .attribute("optional", Value.TRUE)
                 .build();
 
         Context context = Context.create(null, null, Map.of("text-input5", "${foo}"));
@@ -134,7 +134,7 @@ public class InputResolverTest {
         Block block = inputEnum("enum-input3", "VALUE2",
                                 inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
                                 inputOption("option2", "value2", output(model(modelList("colors", modelValue("blue"))))))
-                .attribute("optional", "true")
+                .attribute("optional", Value.TRUE)
                 .build();
 
         Context context = Context.create();
@@ -159,7 +159,7 @@ public class InputResolverTest {
                                 inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
                                 inputOption("option1", "value2", output(model(modelList("colors", modelValue("green"))))),
                                 inputOption("option2", "value3", output(model(modelList("colors", modelValue("blue"))))))
-                .attribute("optional", "true")
+                .attribute("optional", Value.TRUE)
                 .build();
 
         Context context = Context.create();
@@ -178,11 +178,11 @@ public class InputResolverTest {
 
         Block.Builder nestedGlobal = inputEnum("nested-global", "value1",
                                                inputOption("option1", "value1", scope))
-                .attribute("global", "true");
+                .attribute("global", Value.TRUE);
 
         Block global = inputEnum("global", "value1",
                                  inputOption("option1", "value1", nestedGlobal))
-                .attribute("global", "true")
+                .attribute("global", Value.TRUE)
                 .build();
 
         Context context = Context.create();
@@ -200,14 +200,14 @@ public class InputResolverTest {
         Block.Builder invalidGlobal = inputEnum("invalid-global", "value1",
                                          inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
                                          inputOption("option2", "value2", output(model(modelList("colors", modelValue("blue"))))))
-                .attribute("global", "true");
+                .attribute("global", Value.TRUE);
 
         Block.Builder nonGlobal = inputEnum("nested-global", "value1",
                                                inputOption("option1", "value1", invalidGlobal));
 
         Block global = inputEnum("global", "value1",
                                  inputOption("option1", "value1", nonGlobal))
-                .attribute("global", "true")
+                .attribute("global", Value.TRUE)
                 .build();
 
         Context context = Context.create();

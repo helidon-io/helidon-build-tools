@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 package io.helidon.build.archetype.engine.v2.ast;
 
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 
+import io.helidon.build.archetype.engine.v2.ScriptLoader;
+
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Output block.
@@ -241,7 +241,7 @@ public abstract class Output extends Block {
 
         private Transformation(Output.Builder builder) {
             super(builder);
-            this.id = builder.attribute("id", true);
+            this.id = builder.attribute("id", true).asString();
         }
 
         @Override
@@ -274,8 +274,8 @@ public abstract class Output extends Block {
 
         private Replace(Output.Builder builder) {
             super(builder);
-            this.replacement = builder.attribute("replacement", true);
-            this.regex = builder.attribute("regex", true);
+            this.replacement = builder.attribute("replacement", true).asString();
+            this.regex = builder.attribute("regex", true).asString();
         }
 
         /**
@@ -369,15 +369,8 @@ public abstract class Output extends Block {
          */
         Files(Output.Builder builder) {
             super(builder);
-            this.directory = builder.attribute("directory", true);
-            String rawTransformations = builder.attribute("transformations", false);
-            if (rawTransformations != null) {
-                this.transformations = Arrays.stream(rawTransformations.split(","))
-                                             .map(String::trim)
-                                             .collect(toList());
-            } else {
-                this.transformations = emptyList();
-            }
+            this.directory = builder.attribute("directory", true).asString();
+            this.transformations = builder.attribute("transformations", ValueTypes.STRING_LIST, emptyList());
         }
 
         @Override
@@ -418,7 +411,7 @@ public abstract class Output extends Block {
 
         private Templates(Output.Builder builder) {
             super(builder);
-            this.engine = builder.attribute("engine", true);
+            this.engine = builder.attribute("engine", true).asString();
         }
 
         @Override
@@ -456,8 +449,8 @@ public abstract class Output extends Block {
          */
         File(Output.Builder builder) {
             super(builder);
-            this.source = builder.attribute("source", true);
-            this.target = builder.attribute("target", true);
+            this.source = builder.attribute("source", true).asString();
+            this.target = builder.attribute("target", true).asString();
         }
 
         @Override
@@ -498,7 +491,7 @@ public abstract class Output extends Block {
          */
         Template(Output.Builder builder) {
             super(builder);
-            this.engine = builder.attribute("engine", true);
+            this.engine = builder.attribute("engine", true).asString();
         }
 
         @Override
@@ -524,13 +517,14 @@ public abstract class Output extends Block {
     /**
      * Create a new Output block builder.
      *
+     * @param loader     script loader
      * @param scriptPath script path
      * @param position   position
      * @param kind       block kind
      * @return builder
      */
-    public static Builder builder(Path scriptPath, Position position, Kind kind) {
-        return new Builder(scriptPath, position, kind);
+    public static Builder builder(ScriptLoader loader, Path scriptPath, Position position, Kind kind) {
+        return new Builder(loader, scriptPath, position, kind);
     }
 
     /**
@@ -541,12 +535,13 @@ public abstract class Output extends Block {
         /**
          * Create a new output builder.
          *
+         * @param loader     script loader
          * @param scriptPath script path
          * @param position   position
          * @param kind       kind
          */
-        Builder(Path scriptPath, Position position, Kind kind) {
-            super(scriptPath, position, kind);
+        Builder(ScriptLoader loader, Path scriptPath, Position position, Kind kind) {
+            super(loader, scriptPath, position, kind);
         }
 
         @Override

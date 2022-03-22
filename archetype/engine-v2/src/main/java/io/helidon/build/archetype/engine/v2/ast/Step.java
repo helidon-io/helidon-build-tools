@@ -18,7 +18,7 @@ package io.helidon.build.archetype.engine.v2.ast;
 
 import java.nio.file.Path;
 
-import static java.lang.Boolean.parseBoolean;
+import io.helidon.build.archetype.engine.v2.ScriptLoader;
 
 /**
  * Step.
@@ -31,9 +31,9 @@ public class Step extends Block {
 
     private Step(Builder builder) {
         super(builder);
-        label = builder.attribute("label", false);
-        help = builder.attribute("help", false);
-        optional = parseBoolean(builder.attribute("optional", false));
+        label = builder.attribute("label", false).asString();
+        help = builder.attribute("help", false).asString();
+        optional = builder.attribute("optional", false).asBoolean();
     }
 
     /**
@@ -84,13 +84,13 @@ public class Step extends Block {
     /**
      * Create a new Step block builder.
      *
+     * @param loader script loader
      * @param scriptPath script path
      * @param position   position
-     * @param kind       block kind
      * @return builder
      */
-    public static Builder builder(Path scriptPath, Position position, Kind kind) {
-        return new Builder(scriptPath, position, kind);
+    public static Builder builder(ScriptLoader loader, Path scriptPath, Position position) {
+        return new Builder(loader, scriptPath, position);
     }
 
     /**
@@ -98,8 +98,8 @@ public class Step extends Block {
      */
     public static final class Builder extends Block.Builder {
 
-        private Builder(Path scriptPath, Position position, Kind kind) {
-            super(scriptPath, position, kind);
+        private Builder(ScriptLoader loader, Path scriptPath, Position position) {
+            super(loader, scriptPath, position, Kind.STEP);
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.archetype.engine.v2.TestHelper.load;
-import static io.helidon.build.archetype.engine.v2.TestHelper.load0;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
@@ -43,7 +42,7 @@ class ControllerTest {
 
     @Test
     void testPresets() {
-        Script script = load0("controller/presets.xml");
+        Script script = load("controller/presets.xml");
         Context context = Context.create();
         Controller.walk(script, context);
 
@@ -70,7 +69,7 @@ class ControllerTest {
 
     @Test
     void testConditional() {
-        Script script = load0("controller/conditional.xml");
+        Script script = load("controller/conditional.xml");
         Context context = Context.create();
         context.put("doModel", Value.TRUE);
         context.put("doColors", Value.TRUE);

@@ -19,6 +19,8 @@ package io.helidon.build.archetype.engine.v2.ast;
 import java.nio.file.Path;
 import java.util.List;
 
+import io.helidon.build.archetype.engine.v2.ScriptLoader;
+
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
@@ -29,11 +31,13 @@ public final class Preset extends Block {
     private final Value value;
     private final String path;
     private final boolean resolvable;
+    private final boolean isTransient;
 
     private Preset(Builder builder, List<String> values) {
         super(builder);
-        this.path = builder.attribute("path", true);
-        this.resolvable = !"false".equalsIgnoreCase(builder.attribute("resolvable", false));
+        this.path = builder.attribute("path", true).asString();
+        this.resolvable = !"false".equalsIgnoreCase(builder.attribute("resolvable", false).asString());
+        this.isTransient = builder.attribute("transient", false).asBoolean();
         Block.Kind kind = builder.kind();
         switch (kind) {
             case BOOLEAN:
@@ -61,6 +65,15 @@ public final class Preset extends Block {
     }
 
     /**
+     * Test if this preset is transient.
+     *
+     * @return {@code true} if transient, {@code false} otherwise
+     */
+    public boolean isTransient() {
+        return isTransient;
+    }
+
+    /**
      * Get the input path.
      *
      * @return path
@@ -79,6 +92,15 @@ public final class Preset extends Block {
     }
 
     @Override
+    public String toString() {
+        return "Preset{"
+                + "path='" + path + '\''
+                + ", optional=" + resolvable + '\''
+                + ", value=" + value + '\''
+                + '}';
+    }
+
+    @Override
     public <A> VisitResult accept(Block.Visitor<A> visitor, A arg) {
         return visitor.visitPreset(this, arg);
     }
@@ -86,13 +108,14 @@ public final class Preset extends Block {
     /**
      * Create a new builder.
      *
+     * @param loader     script loader
      * @param scriptPath script path
      * @param position   position
      * @param kind       kind
      * @return builder
      */
-    public static Builder builder(Path scriptPath, Position position, Block.Kind kind) {
-        return new Builder(scriptPath, position, kind);
+    public static Builder builder(ScriptLoader loader, Path scriptPath, Position position, Block.Kind kind) {
+        return new Builder(loader, scriptPath, position, kind);
     }
 
     /**
@@ -100,17 +123,17 @@ public final class Preset extends Block {
      */
     public static final class Builder extends Block.Builder {
 
-        private Builder(Path scriptPath, Position position, Block.Kind kind) {
-            super(scriptPath, position, kind);
+        private Builder(ScriptLoader loader, Path scriptPath, Position position, Block.Kind kind) {
+            super(loader, scriptPath, position, kind);
         }
 
         @Override
         protected Preset doBuild() {
             if (kind() == Kind.LIST) {
-                // collapse the nested values and clear the children
-                List<Node.Builder<? extends Node, ?>> children = children();
-                List<String> values = children.stream().map(Node.Builder::value).collect(toUnmodifiableList());
-                children.clear();
+                // collapse the nested values and clear the nested builders
+                List<Node.Builder<? extends Node, ?>> nestedBuilders = nestedBuilders();
+                List<String> values = nestedBuilders.stream().map(Node.Builder::value).collect(toUnmodifiableList());
+                nestedBuilders.clear();
                 return new Preset(this, values);
             }
             return new Preset(this, null);
