@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public class ScriptLoader {
      */
     public static Script load(Path path) {
         return CACHE.computeIfAbsent(path.getFileSystem(), fs -> new HashMap<>())
-                    .compute(path, (p, r) -> load0(p));
+                    .computeIfAbsent(path, ScriptLoader::load0);
     }
 
     /**
@@ -146,7 +146,7 @@ public class ScriptLoader {
             position = Position.of(parser.lineNumber(), parser.charNumber());
             ctx = stack.peek();
             if (ctx == null) {
-                if (!"archetype-script".equals(qName)) {
+                if (!"archetype-script" .equals(qName)) {
                     throw new XMLReaderException(String.format(
                             "Invalid root element '%s'. {file=%s, position=%s}",
                             qName, location, position));
