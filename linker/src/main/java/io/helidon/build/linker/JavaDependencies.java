@@ -32,7 +32,7 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 
 import io.helidon.build.common.InputStreams;
-import io.helidon.build.common.Log;
+import io.helidon.build.common.logging.Log;
 import io.helidon.build.linker.util.JavaRuntime;
 
 import static io.helidon.build.common.InputStreams.toPrintStream;

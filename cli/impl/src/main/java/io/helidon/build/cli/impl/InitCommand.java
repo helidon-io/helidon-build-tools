@@ -24,7 +24,8 @@ import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.impl.InitOptions.BuildSystem;
-import io.helidon.build.common.Log;
+import io.helidon.build.common.logging.Log;
+import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
@@ -174,7 +175,7 @@ public final class InitCommand extends BaseCommand {
             return true;
         } catch (IllegalArgumentException | Metadata.UpdateFailed | Plugins.PluginFailedUnchecked e) {
             String message = e.getMessage();
-            boolean messageLogged = Log.isDebug() && e instanceof Plugins.PluginFailedUnchecked;
+            boolean messageLogged = LogLevel.isDebug() && e instanceof Plugins.PluginFailedUnchecked;
             if (!message.contains(NOT_FOUND_STATUS_MESSAGE)) {
                 versionLookupFailed(messageLogged ? null : message);
             }

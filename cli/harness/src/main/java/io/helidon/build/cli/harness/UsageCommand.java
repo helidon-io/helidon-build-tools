@@ -18,7 +18,7 @@ package io.helidon.build.cli.harness;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import io.helidon.build.common.Log;
+import io.helidon.build.common.logging.Log;
 
 import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;

@@ -29,11 +29,11 @@ import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option.Argument;
 import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
-import io.helidon.build.common.Log;
-import io.helidon.build.common.Log.Level;
 import io.helidon.build.common.Requirements;
 import io.helidon.build.common.Strings;
 import io.helidon.build.common.ansi.AnsiTextStyles;
+import io.helidon.build.common.logging.Log;
+import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.cli.harness.GlobalOptions.DEBUG_FLAG_DESCRIPTION;
@@ -157,7 +157,7 @@ final class CommonOptions {
                 } else {
                     Log.info("$(bold Version %s of this CLI is now available:)", newCliVersion);
                     Log.info();
-                    Log.log(Level.INFO, releaseNotes, AnsiTextStyles.Italic, AnsiTextStyles.Plain);
+                    Log.log(LogLevel.INFO, releaseNotes, AnsiTextStyles.Italic, AnsiTextStyles.Plain);
                     Log.info();
                 }
                 Log.info("Please see $(blue %s) to update.", UPDATE_URL);

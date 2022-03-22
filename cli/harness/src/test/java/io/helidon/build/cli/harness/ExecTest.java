@@ -19,12 +19,16 @@ import java.io.InputStream;
 
 import io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
-import io.helidon.build.common.CapturingLogWriter;
-import io.helidon.build.common.Log;
-import io.helidon.build.common.Strings;
+
 import io.helidon.build.common.ansi.AnsiTextStyle;
+import io.helidon.build.common.logging.LogRecorder;
+import io.helidon.build.common.logging.Log;
+import io.helidon.build.common.Strings;
+import io.helidon.build.common.logging.LogWriter;
+import org.junit.jupiter.api.AfterAll;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -42,7 +46,7 @@ public class ExecTest {
     static final String CLI_USAGE = resourceAsString("cli-usage.txt");
     static final String HELP_CMD_HELP = resourceAsString("help-cmd-help.txt");
     static final String SIMPLE_CMD_HELP = resourceAsString("simple-cmd-help.txt");
-    final CapturingLogWriter logged = CapturingLogWriter.create();
+    static final LogRecorder RECORDER = LogRecorder.create();
 
     static CommandContext context() {
         return new CommandContext(REGISTRY, null, false);
@@ -56,21 +60,30 @@ public class ExecTest {
         return null;
     }
 
+    @BeforeAll
+    static void beforeAllTests() {
+        LogWriter.addRecorder(RECORDER);
+    }
+
+    @AfterAll
+    static void afterAllTests() {
+        LogWriter.removeRecorder(RECORDER);
+    }
+
     @BeforeEach
-    void prepareEach() {
-        logged.clear();
-        logged.install();
+    void beforeEachTest() {
+        RECORDER.clear();
     }
 
     @AfterEach
-    void cleanupEach() {
-        logged.uninstall();
+    void afterEachTest() {
+        RECORDER.clear();
     }
 
     String exec(CommandContext context, String... args) {
-        logged.clear();
+        RECORDER.clear();
         CommandRunner.execute2(context, args);
-        String out = Strings.normalizeNewLines(logged.output());
+        String out = Strings.normalizeNewLines(RECORDER.output());
         return strip(out);
     }
 

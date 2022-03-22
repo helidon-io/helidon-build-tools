@@ -15,7 +15,6 @@
  */
 package io.helidon.build.common;
 
-import java.util.Optional;
 import java.util.ServiceLoader;
 
 /**
@@ -37,19 +36,6 @@ public interface RichTextProvider {
      * @return RichTextStyle
      */
     RichTextStyle styleOf(String... names);
-
-    /**
-     * Convert this provider into a provider of a different type.
-     *
-     * @param aClass provider class
-     * @param <T>    provider class
-     * @return Optional
-     */
-    default <T extends RichTextProvider> Optional<T> as(Class<T> aClass) {
-        return Optional.of(this)
-                       .filter(aClass::isInstance)
-                       .map(aClass::cast);
-    }
 
     /**
      * Lazy initialization for the loaded provider.

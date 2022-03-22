@@ -20,15 +20,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import io.helidon.build.common.Log;
 import io.helidon.build.common.RichText;
 import io.helidon.build.common.RichTextStyle;
+import io.helidon.build.common.logging.Log;
 
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.Ansi.Attribute;
 import org.fusesource.jansi.Ansi.Color;
 
-import static io.helidon.build.common.ansi.AnsiTextProvider.ANSI_ENABLED;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -36,6 +35,8 @@ import static java.util.Objects.requireNonNull;
  */
 @SuppressWarnings("StaticInitializerReferencesSubClass")
 public class AnsiTextStyle implements RichTextStyle {
+
+    private static final boolean ANSI_ENABLED = AnsiTextProvider.isEnabled();
     private static final AnsiTextStyle NONE = new AnsiTextStyle();
     private static final AnsiTextStyle PLAIN = new Emphasis(Attribute.RESET);
     private static final AnsiTextStyle BOLD = new Emphasis(Attribute.INTENSITY_BOLD);
@@ -209,7 +210,7 @@ public class AnsiTextStyle implements RichTextStyle {
                 return NONE;
             }
         }
-        return ANSI_ENABLED.instance() ? style : NONE;
+        return ANSI_ENABLED ? style : NONE;
     }
 
     /**

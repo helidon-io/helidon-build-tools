@@ -25,7 +25,6 @@ import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
 import io.helidon.build.archetype.engine.v1.ArchetypeCatalog.ArchetypeEntry;
 import io.helidon.build.common.ConfigProperties;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -52,12 +51,7 @@ public class MetadataTestIT extends MetadataTestBase {
 
     @BeforeEach
     public void beforeEach(TestInfo info) {
-        prepareEach(info, Metadata.DEFAULT_URL);
-    }
-
-    @AfterEach
-    public void afterEach() {
-        cleanupEach();
+        beforeEach(info, Metadata.DEFAULT_URL);
     }
 
     @Test
@@ -70,25 +64,25 @@ public class MetadataTestIT extends MetadataTestBase {
 
         // Check latest version. Should not perform update.
 
-        logged.clear();
+        LOG_RECORDER.clear();
         latestVersion = meta.latestVersion();
-        assertThat(logged.size(), is(1));
-        logged.assertLinesContainingAll(1, "stale check", "is false", LATEST_FILE_NAME);
+        assertThat(LOG_RECORDER.size(), is(1));
+        assertLinesContainingAll(1, "stale check", "is false", LATEST_FILE_NAME);
 
         // Check properties. Should not perform update.
 
-        logged.clear();
+        LOG_RECORDER.clear();
         ConfigProperties props = meta.propertiesOf(VERSION_RC2);
         assertThat(props, is(not(nullValue())));
         assertThat(props.keySet().isEmpty(), is(false));
         assertThat(props.property("build-tools.version"), is("2.0.0-RC3"));
         assertThat(props.property("cli.version"), is("2.0.0-RC3"));
-        assertThat(logged.size(), is(1));
-        logged.assertLinesContainingAll(1, "stale check", "is false", RC2_LAST_UPDATE);
+        assertThat(LOG_RECORDER.size(), is(1));
+        assertLinesContainingAll(1, "stale check", "is false", RC2_LAST_UPDATE);
 
         // Check catalog again. Should not perform update.
 
-        logged.clear();
+        LOG_RECORDER.clear();
         ArchetypeCatalog catalog = meta.catalogOf(VERSION_RC2);
         assertThat(catalog, is(not(nullValue())));
         assertThat(catalog.entries().size() >= 2, is(true));
@@ -99,26 +93,26 @@ public class MetadataTestIT extends MetadataTestBase {
         assertThat(entriesById.get(HELIDON_BARE_SE).name(), is("bare"));
         assertThat(entriesById.get(HELIDON_BARE_MP), is(notNullValue()));
         assertThat(entriesById.get(HELIDON_BARE_MP).name(), is("bare"));
-        assertThat(logged.size(), is(1));
-        logged.assertLinesContainingAll(1, "stale check", "is false", RC2_LAST_UPDATE);
+        assertThat(LOG_RECORDER.size(), is(1));
+        assertLinesContainingAll(1, "stale check", "is false", RC2_LAST_UPDATE);
 
         // Check archetype. Should not perform update.
 
-        logged.clear();
+        LOG_RECORDER.clear();
         Path archetypeJar = meta.archetypeV1Of(entriesById.get("helidon-bare-se"));
         assertThat(archetypeJar, is(not(nullValue())));
         assertThat(Files.exists(archetypeJar), is(true));
         assertThat(archetypeJar.getFileName().toString(), is("helidon-bare-se-2.0.0-RC2.jar"));
-        assertThat(logged.size(), is(1));
-        logged.assertLinesContainingAll(1, "stale check", "is false", RC2_LAST_UPDATE);
+        assertThat(LOG_RECORDER.size(), is(1));
+        assertLinesContainingAll(1, "stale check", "is false", RC2_LAST_UPDATE);
 
         // Check that more calls do not update
 
-        logged.clear();
+        LOG_RECORDER.clear();
         assertThat(meta.propertiesOf(VERSION_RC2), is(props));
         assertThat(meta.catalogOf(VERSION_RC2), is(catalog));
 
-        assertThat(logged.size(), is(2));
-        logged.assertLinesContainingAll(2, "stale check", "is false", RC2_LAST_UPDATE);
+        assertThat(LOG_RECORDER.size(), is(2));
+        assertLinesContainingAll(2, "stale check", "is false", RC2_LAST_UPDATE);
     }
 }

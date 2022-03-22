@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import io.helidon.build.common.LogFormatter;
+import io.helidon.build.common.logging.LogFormatter;
 import io.helidon.build.common.RichTextProvider;
-import io.helidon.build.common.ansi.AnsiLogFormatter;
+import io.helidon.build.common.ansi.AnsiLogFormatterFacade;
 import io.helidon.build.common.ansi.AnsiTextProvider;
 
 /**
@@ -28,5 +28,5 @@ module io.helidon.build.common.ansi {
     requires info.picocli.jansi.graalvm;
     exports io.helidon.build.common.ansi;
     provides RichTextProvider with AnsiTextProvider;
-    provides LogFormatter with AnsiLogFormatter;
+    provides LogFormatter with AnsiLogFormatterFacade;
 }

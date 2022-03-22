@@ -17,10 +17,11 @@ package io.helidon.build.cli.impl;
 
 import java.io.File;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import io.helidon.build.common.CapturingLogWriter;
-import io.helidon.build.common.Log;
-
+import io.helidon.build.common.logging.LogRecorder;
+import io.helidon.build.common.logging.LogWriter;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,32 +43,36 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class EmbeddedModeTest {
     private static final String SEP = File.separator;
-
-    private CapturingLogWriter logged;
+    private static final LogRecorder LOG_RECORDER = LogRecorder.create();
 
     @BeforeAll
-    public static void beforeAllTests() {
+    static void beforeAllTests() {
         System.setProperty("jansi.passthrough", "true");
+        LogWriter.addRecorder(LOG_RECORDER);
+    }
+
+    @AfterAll
+    static void afterAllTests() {
+        LogWriter.removeRecorder(LOG_RECORDER);
     }
 
     @BeforeEach
-    public void beforeEach() {
-        logged = CapturingLogWriter.create();
-        logged.level(Log.Level.INFO);
-        logged.install();
+    void beforeEachTest() {
+        LOG_RECORDER.clear();
     }
 
     @AfterEach
-    public void afterEach() {
-        logged.uninstall();
+    void afterEachTest() {
+        LOG_RECORDER.clear();
     }
 
     @Test
     void testValidCommand() {
         Helidon.execute("version");
-        assertThat(logged.lines(), is(not(empty())));
-        assertThat(logged.countLinesContainingAll("build."), is(3));
-        assertThat(logged.lines().get(0), isStyled());
+        List<String> lines = loggedLines();
+        assertThat(lines, is(not(empty())));
+        assertThat(countLinesContainingAll("build."), is(3));
+        assertThat(lines.get(0), isStyled());
     }
 
     @Test
@@ -75,7 +80,7 @@ class EmbeddedModeTest {
         Error e = assertThrows(Error.class, () -> Helidon.execute("foo"));
         assertThat(e.getMessage(), isNotStyled());
         assertThat(e.getMessage(), startsWith("'foo' is not a valid command."));
-        List<String> lines = logged.lines();
+        List<String> lines = loggedLines();
         assertThat(lines.size(), is(2));
         assertThat(lines.get(0), isStyled());
         assertThat(lines.get(1), isStyled());
@@ -88,7 +93,7 @@ class EmbeddedModeTest {
         Error e = assertThrows(Error.class, () -> Helidon.execute("*"));
         assertThat(e.getMessage(), isNotStyled());
         assertThat(e.getMessage(), is("Invalid command name: *"));
-        List<String> lines = logged.lines();
+        List<String> lines = loggedLines();
         assertThat(lines.size(), is(1));
         assertThat(lines.get(0), isStyled());
         assertThat(lines.get(0), equalToIgnoringStyle("error: Invalid command name: *"));
@@ -99,7 +104,7 @@ class EmbeddedModeTest {
         Error e = assertThrows(Error.class, () -> Helidon.execute("init", "--version", "99.99", "--url", "file:///jabberwocky"));
         assertThat(e.getMessage(), isNotStyled());
         assertThat(e.getMessage(), is("Helidon version lookup failed."));
-        List<String> lines = logged.lines();
+        List<String> lines = loggedLines();
         assertThat(lines.size(), is(3));
         assertThat(lines.get(0), isNotStyled());
         assertThat(lines.get(1), isStyled());
@@ -107,5 +112,29 @@ class EmbeddedModeTest {
         assertThat(lines.get(0), is("Updating metadata for Helidon version 99.99"));
         assertThat(lines.get(1), containsStringIgnoringStyle("jabberwocky" + SEP + "99.99" + SEP + "cli-data.zip"));
         assertThat(lines.get(2), equalToIgnoringStyle("Helidon version lookup failed."));
+    }
+
+    private static List<String> loggedLines() {
+        return LOG_RECORDER.entries()
+                           .stream()
+                           .flatMap(String::lines)
+                           .collect(Collectors.toList());
+    }
+
+    private int countLinesContainingAll(String... fragments) {
+        return (int) LOG_RECORDER.entries()
+                                 .stream()
+                                 .flatMap(String::lines)
+                                 .filter(msg -> containsAll(msg, fragments))
+                                 .count();
+    }
+
+    private static boolean containsAll(String msg, String... fragments) {
+        for (String fragment : fragments) {
+            if (!msg.contains(fragment)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import io.helidon.build.common.LogWriter;
-import io.helidon.build.common.LogFormatter;
+import io.helidon.build.common.logging.LogWriter;
+import io.helidon.build.common.logging.LogFormatter;
 import io.helidon.build.common.RichTextProvider;
 
 /**
@@ -24,6 +24,7 @@ import io.helidon.build.common.RichTextProvider;
 module io.helidon.build.common {
     requires java.logging;
     exports io.helidon.build.common;
+    exports io.helidon.build.common.logging;
     uses RichTextProvider;
     uses LogWriter;
     uses LogFormatter;

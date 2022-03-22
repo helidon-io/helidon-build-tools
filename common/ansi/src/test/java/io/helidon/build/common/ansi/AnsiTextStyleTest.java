@@ -18,7 +18,7 @@ package io.helidon.build.common.ansi;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.helidon.build.common.Log;
+import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.RichTextStyle;
 
 import org.fusesource.jansi.Ansi;
@@ -281,7 +281,7 @@ class AnsiTextStyleTest {
 
     @Test
     void testStrip() {
-        Assumptions.assumeTrue(AnsiTextProvider.ANSI_ENABLED.instance());
+        Assumptions.assumeTrue(AnsiTextProvider.isEnabled());
         String sample = "sample";
         RichTextStyle style = RichTextStyle.of("RED!");
         String styled = style.apply(sample);

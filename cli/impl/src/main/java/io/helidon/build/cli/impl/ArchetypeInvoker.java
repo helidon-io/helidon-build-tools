@@ -45,10 +45,10 @@ import io.helidon.build.archetype.engine.v2.TerminalInputResolver;
 import io.helidon.build.archetype.engine.v2.UnresolvedInputException;
 import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
-import io.helidon.build.common.Log;
 import io.helidon.build.common.Maps;
 import io.helidon.build.common.RequirementFailure;
 import io.helidon.build.common.Requirements;
+import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;

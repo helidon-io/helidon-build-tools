@@ -22,7 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import io.helidon.build.common.Log;
+import io.helidon.build.common.logging.Log;
 
 import org.junit.jupiter.api.Test;
 

@@ -40,7 +40,7 @@ class AnsiTextRendererTest {
 
     @BeforeEach
     void checkAnsi() {
-        Assumptions.assumeTrue(AnsiTextProvider.ANSI_ENABLED.instance());
+        Assumptions.assumeTrue(AnsiTextProvider.isEnabled());
     }
 
     @Test

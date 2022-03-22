@@ -20,8 +20,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import io.helidon.build.common.Log;
-import io.helidon.build.common.SystemLogWriter;
+import io.helidon.build.common.logging.Log;
+import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.maven.enforcer.FileFinder;
 import io.helidon.build.maven.enforcer.RuleFailure;
 
@@ -62,8 +62,6 @@ public final class Main {
      * @param args options as documented on {@link Main}
      */
     public static void main(String[] args) {
-        Log.writer(SystemLogWriter.create(Log.Level.INFO));
-
         FileFinder.Builder filesBuilder = FileFinder.builder();
         Copyright.Builder copyrightBuilder = Copyright.builder();
         boolean verbose = false;
@@ -119,9 +117,9 @@ public final class Main {
         }
 
         if (debug) {
-            Log.writer(SystemLogWriter.create(Log.Level.DEBUG));
+            LogLevel.set(LogLevel.DEBUG);
         } else if (verbose) {
-            Log.writer(SystemLogWriter.create(Log.Level.VERBOSE));
+            LogLevel.set(LogLevel.VERBOSE);
         }
 
         Copyright copyright = copyrightBuilder.build();

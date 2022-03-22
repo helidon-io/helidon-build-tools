@@ -18,16 +18,23 @@ package io.helidon.build.cli.impl;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.build.cli.impl.Metadata.UpdateFailed;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 
-import io.helidon.build.common.CapturingLogWriter;
-import io.helidon.build.common.Log;
+import io.helidon.build.common.PrintStreams;
+import io.helidon.build.common.logging.LogLevel;
+import io.helidon.build.common.logging.LogRecorder;
+import io.helidon.build.common.logging.Log;
+import io.helidon.build.common.logging.LogWriter;
 import io.helidon.build.common.maven.MavenVersion;
 import io.helidon.build.common.test.utils.TestFiles;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInfo;
 
 import static io.helidon.build.cli.impl.TestMetadata.LAST_UPDATE_FILE_NAME;
@@ -36,6 +43,7 @@ import static io.helidon.build.common.FileUtils.ensureDirectory;
 import static io.helidon.build.common.FileUtils.requireDirectory;
 import static io.helidon.build.common.FileUtils.requireFile;
 import static io.helidon.build.common.FileUtils.unique;
+import static io.helidon.build.common.PrintStreams.STDOUT;
 import static io.helidon.build.common.Unchecked.unchecked;
 import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -48,13 +56,24 @@ import static org.hamcrest.Matchers.nullValue;
  */
 public class MetadataTestBase {
 
+    protected static final LogRecorder LOG_RECORDER = LogRecorder.create();
+
     protected String baseUrl;
     protected Path cacheDir;
     protected Path latestFile;
-    protected final CapturingLogWriter logged = CapturingLogWriter.create();
     protected Metadata meta;
     protected MavenVersion latestVersion;
     protected MetadataTestServer testServer;
+
+    @BeforeAll
+    public static void beforeAll() {
+        LogWriter.addRecorder(LOG_RECORDER);
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        LogWriter.removeRecorder(LOG_RECORDER);
+    }
 
     /**
      * Prepare for each test.
@@ -62,7 +81,7 @@ public class MetadataTestBase {
      * @param info    The test info.
      * @param baseUrl The base url to use.
      */
-    protected void prepareEach(TestInfo info, String baseUrl) {
+    protected void beforeEach(TestInfo info, String baseUrl) {
         String testClassName = info.getTestClass().orElseThrow().getSimpleName();
         String testName = info.getTestMethod().orElseThrow().getName();
         Log.info("%n--- %s $(bold %s) -------------------------------------------%n", testClassName, testName);
@@ -74,15 +93,16 @@ public class MetadataTestBase {
         useBaseUrl(baseUrl);
         cacheDir = userConfig.cacheDir();
         latestFile = cacheDir.resolve(LATEST_FILE_NAME);
-        logged.clear();
-        logged.install();
+        LOG_RECORDER.clear();
+        LogLevel.set(LogLevel.DEBUG);
     }
 
     /**
      * Cleanup after each test.
      */
-    protected void cleanupEach() {
-        logged.uninstall();
+    @AfterEach
+    protected void afterEach() {
+        LogLevel.set(LogLevel.INFO);
         if (testServer != null) {
             testServer.stop();
         }
@@ -133,7 +153,7 @@ public class MetadataTestBase {
                        .updateFrequency(updateFrequency)
                        .updateFrequencyUnits(updateFrequencyUnits)
                        .debugPlugin(true)
-                       .pluginStdOut(logged.stdOut())
+                       .pluginStdOut(PrintStreams.accept(STDOUT, LOG_RECORDER::addEntry))
                        .build();
     }
 
@@ -198,7 +218,7 @@ public class MetadataTestBase {
 
         // Make request. Should update both latest file and latest archetype.
 
-        logged.clear();
+        LOG_RECORDER.clear();
         meta = newInstance(updateFrequency, updateFrequencyUnits);
         request.run();
 
@@ -209,16 +229,16 @@ public class MetadataTestBase {
         requireFile(seJarFile);
         requireFile(mpJarFile);
 
-        logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "connecting", LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "downloading", zipUriPath);
-        logged.assertLinesContainingAll(1, "connecting", zipUriPath);
-        logged.assertLinesContainingAll(1, "connected", zipUriPath);
+        assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "connecting", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "downloading", zipUriPath);
+        assertLinesContainingAll(1, "connecting", zipUriPath);
+        assertLinesContainingAll(1, "connected", zipUriPath);
 
-        logged.assertLinesContainingAll(1, "unzipping", zipPath);
-        logged.assertLinesContainingAll(1, "deleting", zipPath);
-        logged.assertLinesContainingAll(1, "updated", lastUpdatePath, "etag " + expectedEtag);
+        assertLinesContainingAll(1, "unzipping", zipPath);
+        assertLinesContainingAll(1, "deleting", zipPath);
+        assertLinesContainingAll(1, "updated", lastUpdatePath, "etag " + expectedEtag);
     }
 
     /**
@@ -235,9 +255,9 @@ public class MetadataTestBase {
         if (expectedVersion != null) {
             assertThat(latestVersion, is(toMavenVersion(expectedVersion)));
         }
-        logged.assertLinesContainingAll(1, "stale check", staleType, LATEST_FILE_NAME);
-        logged.assertLinesContainingAll("Looking up latest Helidon version");
-        logged.assertNoLinesContainingAll("Updating metadata for Helidon version " + expectedVersion);
+        assertLinesContainingAll(1, "stale check", staleType, LATEST_FILE_NAME);
+        assertLinesContainingAll("Looking up latest Helidon version");
+        assertNoLinesContainingAll("Updating metadata for Helidon version " + expectedVersion);
     }
 
     /**
@@ -252,12 +272,85 @@ public class MetadataTestBase {
         String staleType = expectUpdate ? "(not found)" : "is false";
         String staleFilePath = version + File.separator + LAST_UPDATE_FILE_NAME;
         meta.catalogOf(version);
-        logged.assertLinesContainingAll(1, "stale check", staleType, staleFilePath);
-        logged.assertNoLinesContainingAll("Looking up latest Helidon version");
+        assertLinesContainingAll(1, "stale check", staleType, staleFilePath);
+        assertNoLinesContainingAll("Looking up latest Helidon version");
         if (expectUpdate) {
-            logged.assertLinesContainingAll("Updating metadata for Helidon version " + version);
+            assertLinesContainingAll("Updating metadata for Helidon version " + version);
         } else {
-            logged.assertNoLinesContainingAll("Updating metadata for Helidon version " + version);
+            assertNoLinesContainingAll("Updating metadata for Helidon version " + version);
         }
+    }
+
+    /**
+     * Assert that there is at least one log line that contains all given fragments.
+     *
+     * @param fragments The fragments.
+     * @throws AssertionError if there is no line that contains any of the fragments
+     */
+    public void assertLinesContainingAll(String... fragments) throws AssertionError {
+        if (!atLeastOneLineContainingAll(fragments)) {
+            throw new AssertionError(String.format(
+                    "log should contain at least one line with all of the following: %s%n%s",
+                    Arrays.toString(fragments), this));
+        }
+    }
+
+    /**
+     * Assert that there are no log lines that contain all given fragments.
+     *
+     * @param fragments The fragments.
+     * @throws AssertionError if there is at least one line that contains any of the fragments
+     */
+    public void assertNoLinesContainingAll(String... fragments) throws AssertionError {
+        if (atLeastOneLineContainingAll(fragments)) {
+            throw new AssertionError(String.format(
+                    "log should not contain any lines with all of the following: %s%n%s",
+                    Arrays.toString(fragments), this));
+        }
+    }
+
+    /**
+     * Test whether there is at least one log line that contain all given fragments.
+     *
+     * @param fragments The fragments.
+     * @return {@code true} if at least one line matches all.
+     */
+    public boolean atLeastOneLineContainingAll(String... fragments) {
+        return countLinesContainingAll(fragments) > 0;
+    }
+
+    /**
+     * Asserts the expected count of log lines contains all given fragments.
+     *
+     * @param expectedCount The expected count.
+     * @param fragments The fragments.
+     * @throws AssertionError if the count is different than {@code expectedCount}
+     */
+    public void assertLinesContainingAll(int expectedCount, String... fragments) throws AssertionError {
+        final int count = countLinesContainingAll(fragments);
+        if (count != expectedCount) {
+            throw new AssertionError(String.format(
+                    "log should contain %d lines with all of the following, found %d: %s%n%s",
+                    expectedCount, count, Arrays.toString(fragments), this));
+        }
+    }
+
+    /**
+     * Returns the count of log lines contains all given fragments.
+     *
+     * @param fragments The fragments.
+     * @return The count.
+     */
+    public int countLinesContainingAll(String... fragments) {
+        return (int) LOG_RECORDER.entries().stream().filter(msg -> containsAll(msg, fragments)).count();
+    }
+
+    private static boolean containsAll(String msg, String... fragments) {
+        for (String fragment : fragments) {
+            if (!msg.contains(fragment)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

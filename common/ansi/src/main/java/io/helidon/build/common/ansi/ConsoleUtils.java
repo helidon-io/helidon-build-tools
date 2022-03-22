@@ -16,17 +16,21 @@
 package io.helidon.build.common.ansi;
 
 import static io.helidon.build.common.PrintStreams.STDOUT;
+import static io.helidon.build.common.ansi.AnsiConsoleInstaller.areAnsiEscapesEnabled;
 import static org.fusesource.jansi.Ansi.ansi;
 
 /**
  * Console utilities.
  */
 public class ConsoleUtils {
-    private static final boolean ENABLED = AnsiConsoleInstaller.areAnsiEscapesEnabled();
+
     private static final char FIRST_ESC_CHAR = 27;
     private static final char SECOND_ESC_CHAR = '[';
     private static final char[] SHOW_CURSOR = {FIRST_ESC_CHAR, SECOND_ESC_CHAR, '?', '2', '5', 'h'};
     private static final char[] HIDE_CURSOR = {FIRST_ESC_CHAR, SECOND_ESC_CHAR, '?', '2', '5', 'l'};
+
+    private ConsoleUtils() {
+    }
 
     /**
      * Clears the screen if Ansi escapes are enabled.
@@ -44,7 +48,7 @@ public class ConsoleUtils {
      * @return {@code true} if Ansi escapes are enabled.
      */
     public static boolean clearScreen(int startRow) {
-        if (ENABLED) {
+        if (areAnsiEscapesEnabled()) {
             STDOUT.print(ansi().cursor(startRow, 0).eraseScreen());
             STDOUT.flush();
             return true;
@@ -73,7 +77,7 @@ public class ConsoleUtils {
      * @return {@code true} if Ansi escapes are enabled.
      */
     public static boolean rewriteLine(int charsToBackUp, String message) {
-        if (ENABLED) {
+        if (areAnsiEscapesEnabled()) {
             STDOUT.print(ansi().cursorLeft(charsToBackUp).a(message));
             STDOUT.flush();
             return true;
@@ -88,7 +92,7 @@ public class ConsoleUtils {
      * @return {@code true} if Ansi escapes are enabled.
      */
     public static boolean hideCursor() {
-        if (ENABLED) {
+        if (areAnsiEscapesEnabled()) {
             STDOUT.print(HIDE_CURSOR);
             STDOUT.flush();
             return true;
@@ -104,7 +108,7 @@ public class ConsoleUtils {
      * @return {@code true} if Ansi escapes are enabled.
      */
     public static boolean showCursor() {
-        if (ENABLED) {
+        if (areAnsiEscapesEnabled()) {
             STDOUT.print(SHOW_CURSOR);
             STDOUT.flush();
             return true;
@@ -117,12 +121,9 @@ public class ConsoleUtils {
      * Reset ansi if Ansi escapes are enabled.
      */
     public static void reset() {
-        if (ENABLED) {
+        if (areAnsiEscapesEnabled()) {
             STDOUT.println(ansi().reset().toString());
             STDOUT.flush();
         }
-    }
-
-    private ConsoleUtils() {
     }
 }
