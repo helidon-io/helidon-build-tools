@@ -105,7 +105,7 @@
                         <!-- version should be upgraded to 3.0.0 once released-->
                         <helidon.test.version>2.4.0</helidon.test.version>
                         <helidon.cli.version>3.0.0-M1</helidon.cli.version>
-                        <helidon.plugin.version>3.0.0-M3</helidon.plugin.version>
+                        <helidon.plugin.version>${project.version}</helidon.plugin.version>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
