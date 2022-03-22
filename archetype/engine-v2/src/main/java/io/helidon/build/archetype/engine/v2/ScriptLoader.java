@@ -146,7 +146,7 @@ public class ScriptLoader {
             position = Position.of(parser.lineNumber(), parser.charNumber());
             ctx = stack.peek();
             if (ctx == null) {
-                if (!"archetype-script" .equals(qName)) {
+                if (!"archetype-script".equals(qName)) {
                     throw new XMLReaderException(String.format(
                             "Invalid root element '%s'. {file=%s, position=%s}",
                             qName, location, position));
