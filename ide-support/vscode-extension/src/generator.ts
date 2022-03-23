@@ -15,18 +15,13 @@
  */
 
 import * as path from 'path';
-import { InputBox, QuickInput, QuickInputButtons, QuickPick, QuickPickItem, Uri } from 'vscode';
+import { InputBox, QuickInput, QuickInputButtons, QuickPick, Uri } from 'vscode';
 import { getSubstringBetween, QuickPickData, QuickPickItemExt } from "./common";
 import { VSCodeAPI } from "./VSCodeAPI";
 import { FileSystemAPI } from "./FileSystemAPI";
 import { ChildProcessAPI } from "./ChildProcessAPI";
-import { BaseCommand, GeneratorData, OptionCommand, TextCommand } from "./GeneratorCommand";
-
-export interface ProjectData extends QuickPickItem {
-    base: string;
-    flavor: string;
-    pkg: string;
-}
+import { BaseCommand, GeneratorData, GeneratorDataAPI, OptionCommand, TextCommand } from "./GeneratorCommand";
+import { validateQuickPick, validateText } from "./validationApi";
 
 export async function showHelidonGenerator(extensionPath: string, steps: any) {
 
@@ -40,12 +35,8 @@ export async function showHelidonGenerator(extensionPath: string, steps: any) {
     const NEW_DIR = 'Choose new directory';
     const EXISTING_FOLDER = ' already exists in selected directory.';
 
-    function notEmptyValidator(value: string): string | undefined {
-        if (value) {
-            return undefined;
-        }
-        return "Value cannot be empty.";
-    }
+    let generatorData: GeneratorData;
+    let commandHistory: BaseCommand [];
 
     async function generateProject(projectData: Map<string, string>) {
         const artifactId = <string>projectData.get('artifactId');
@@ -149,17 +140,9 @@ export async function showHelidonGenerator(extensionPath: string, steps: any) {
         return Uri.file(projectDir);
     }
 
-    let generatorData: GeneratorData = {steps: [], elements: [], currentElementIndex: 0};
-    let commandHistory: BaseCommand [] = [];
-    // const steps: any[] = [];
-    // const elements: any[] = [];
-
     function getChildren(children: any[]): any[] {
         const result: any [] = [];
         for (let child of children) {
-            //todo need more checks (if element does not exist in the array) and recursive call for selected options
-            //todo !!! we do not need recursion lets use only top level elements in the steps and add new elements if they are selected
-            //todo !!! use command pattern
             generatorData.elements.push(child);
         }
         return result;
@@ -169,6 +152,7 @@ export async function showHelidonGenerator(extensionPath: string, steps: any) {
         if (!initialTree) {
             return;
         }
+
         if (initialTree.type === 'step-element') {
             if (initialTree.children) {
                 if (initialTree.children.filter((child: any) => child.type === 'step-element').length > 0) {
@@ -191,10 +175,19 @@ export async function showHelidonGenerator(extensionPath: string, steps: any) {
 
     function prepareQuickPickData(element: any, currentStep: number, totalSteps: number): QuickPickData {
         let options: QuickPickItemExt [] = [];
+        let defaultValue: string[] =
+            element.selectedValues ? element.selectedValues :
+                element.defaultValue ? element.defaultValue.split(",").map((value: string) => value.trim()) : [];
+        let selectedOptions: QuickPickItemExt [] = [];
         if (element.type === 'boolean-element') {
             options.push(
                 {label: 'yes', children: element.children, value: 'true'},
                 {label: 'no', value: 'false'});
+            if (defaultValue.length > 0) {
+                selectedOptions.push(
+                    ...options.filter(option => defaultValue.includes(option.value!))
+                );
+            }
         } else {
             options.push(...element.options.map((o: any) => {
                 return {
@@ -203,27 +196,32 @@ export async function showHelidonGenerator(extensionPath: string, steps: any) {
                     value: o.value
                 }
             }));
+            if (defaultValue.length > 0) {
+                selectedOptions.push(
+                    ...options.filter(option => defaultValue.includes(option.value!))
+                );
+            }
         }
-        //todo add default value processing
-        // selectedItems
+        let optional = element.optional ? element.optional.toLowerCase() === 'true' : false;
         return {
             title: element.label,
             currentStep: currentStep,
             totalSteps: totalSteps,
-            placeholder: element.name ?? "",
-            items: options
+            placeholder: (element.name ?? "") + ` (optional - ${optional}). Press 'Enter' to confirm.`,
+            items: options,
+            selectedItems: selectedOptions
         };
     }
 
     function getTextInput(element: any, resolve: any, reject: any): InputBox {
         const data = {
             title: element.label,
-            placeholder: element.defaultValue ?? "",
-            value: element.defaultValue ?? "",
+            placeholder: element.value ? element.value : (element.defaultValue ?? ""),
+            value: element.value ? element.value : (element.defaultValue ?? ""),
             prompt: element.label,
             totalSteps: generatorData.elements.length,
             currentStep: generatorData.currentElementIndex + 1,
-            messageValidation: notEmptyValidator
+            messageValidation: (value: string) => undefined,
         };
         const inputBox = VSCodeAPI.createInputBox(data);
         inputBox.buttons = [QuickInputButtons.Back]
@@ -233,9 +231,9 @@ export async function showHelidonGenerator(extensionPath: string, steps: any) {
 
         inputBox.onDidAccept(async () => {
             const insertedValue = inputBox.value;
-            const validation: string | undefined = await data.messageValidation(insertedValue);
-            if (validation) {
-                inputBox.validationMessage = validation;
+            const validation = validateText(insertedValue, element);
+            if (validation.length > 0) {
+                inputBox.validationMessage = validation.map(error => error.message).join(' ');
             } else {
                 element.value = insertedValue;
                 generatorData = optionCommand.execute();
@@ -243,10 +241,6 @@ export async function showHelidonGenerator(extensionPath: string, steps: any) {
                 inputBox.dispose();
                 resolve(insertedValue);
             }
-        });
-        inputBox.onDidChangeValue(async text => {
-            const validation: string | undefined = await data.messageValidation(text);
-            inputBox.validationMessage = validation;
         });
         inputBox.onDidTriggerButton(item => {
             if (item === QuickInputButtons.Back) {
@@ -263,18 +257,25 @@ export async function showHelidonGenerator(extensionPath: string, steps: any) {
         return inputBox;
     }
 
-    function getQuickPickInput(element: any, canSelectMany: boolean, resolve: any, reject: any): QuickPick<any> {
+    function getQuickPickInput(element: any, resolve: any, reject: any): QuickPick<any> {
         const data = prepareQuickPickData(element, generatorData.currentElementIndex + 1, generatorData.elements.length);
         const quickPick = VSCodeAPI.createQuickPick(data);
-        quickPick.canSelectMany = canSelectMany;
-        quickPick.buttons = [QuickInputButtons.Back]
+        quickPick.canSelectMany = true;
+        quickPick.buttons = [QuickInputButtons.Back];
+        quickPick.selectedItems = data.selectedItems ?? [];
+        quickPick.activeItems = data.selectedItems ?? [];
+        let lastSelectedItems = quickPick.selectedItems;
 
         quickPick.show();
         let optionCommand = new OptionCommand(generatorData);
 
         quickPick.onDidAccept(async () => {
-            if (quickPick.selectedItems) {
-                element.selectedValues = quickPick.selectedItems.map(item => (<QuickPickItemExt>item).value);
+            let selectedValues = quickPick.selectedItems.map(item => (<QuickPickItemExt>item).value);
+            const validation = validateQuickPick(selectedValues, element);
+            if (validation.length > 0) {
+                quickPick.placeholder = validation.map(error => error.message).join(' ');
+            } else {
+                element.selectedValues = selectedValues;
                 let children: any[] = [];
                 for (let item of quickPick.selectedItems) {
                     let option = <QuickPickItemExt>item;
@@ -282,11 +283,23 @@ export async function showHelidonGenerator(extensionPath: string, steps: any) {
                         children.push(...option.children);
                     }
                 }
-                optionCommand.selectedOptions(children);
+                optionCommand.selectedOptionsChildren(children);
                 generatorData = optionCommand.execute();
                 commandHistory.push(optionCommand);
                 resolve(quickPick.selectedItems);
             }
+        });
+        quickPick.onDidChangeSelection(items => {
+            if (element.type !== 'list-element') {
+                let newElements = quickPick.selectedItems.filter(item => !lastSelectedItems.includes(item));
+                if (newElements.length != 0) {
+                    quickPick.selectedItems = quickPick.selectedItems.filter(item => !lastSelectedItems.includes(item));
+                }
+
+                lastSelectedItems = quickPick.selectedItems;
+            }
+
+            console.log(items);
         });
         quickPick.onDidTriggerButton(item => {
             if (item === QuickInputButtons.Back) {
@@ -305,13 +318,13 @@ export async function showHelidonGenerator(extensionPath: string, steps: any) {
     function getInput(element: any): Promise<QuickInput> | undefined {
         let result: Promise<QuickInput> | undefined;
         if (element.type === 'enum-element') {
-            result = new Promise<QuickInput>((resolve, reject) => getQuickPickInput(element, false, resolve, reject));
+            result = new Promise<QuickInput>((resolve, reject) => getQuickPickInput(element, resolve, reject));
         }
         if (element.type === 'list-element') {
-            result = new Promise<QuickInput>((resolve, reject) => getQuickPickInput(element, true, resolve, reject));
+            result = new Promise<QuickInput>((resolve, reject) => getQuickPickInput(element, resolve, reject));
         }
         if (element.type === 'boolean-element') {
-            result = new Promise<QuickInput>((resolve, reject) => getQuickPickInput(element, false, resolve, reject));
+            result = new Promise<QuickInput>((resolve, reject) => getQuickPickInput(element, resolve, reject));
         }
         if (element.type === 'text-element') {
             result = new Promise<QuickInput>((resolve, reject) => getTextInput(element, resolve, reject));
@@ -319,23 +332,10 @@ export async function showHelidonGenerator(extensionPath: string, steps: any) {
         return result;
     }
 
-    function prepareProjectData() {
-        const result: Map<string, string> = new Map();
-        for (let element of generatorData.elements) {
-            let value: string = "";
-            if (element.type === 'enum-element' || element.type === 'boolean-element') {
-                value = element.selectedValues[0];
-            } else if (element.type === 'list-element') {
-                value = element.selectedValues.join(",")
-            } else if (element.type === 'text-element') {
-                value = element.value;
-            }
-            result.set(element.name, value);
-        }
-        return result;
-    }
-
     try {
+        generatorData = {steps: [], elements: [], currentElementIndex: 0};
+        commandHistory = [];
+
         init(steps);
         let maxIterationCount = 100;
         let currentInput: Promise<QuickInput> | undefined;
@@ -343,16 +343,14 @@ export async function showHelidonGenerator(extensionPath: string, steps: any) {
             let element = generatorData.elements[generatorData.currentElementIndex];
             currentInput = getInput(element);
             if (currentInput != null) {
-                let result = await currentInput;
-                console.log(result);
+                await currentInput;
             }
             currentInput = undefined;
             if (maxIterationCount-- < 0) {
                 break;
             }
         }
-
-        await generateProject(prepareProjectData());
+        await generateProject(GeneratorDataAPI.convertProjectDataElements(generatorData));
     } catch (e: any) {
         VSCodeAPI.showErrorMessage(e.message);
     }

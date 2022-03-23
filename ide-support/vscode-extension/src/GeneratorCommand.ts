@@ -21,6 +21,35 @@ export interface GeneratorData {
 
 }
 
+export class GeneratorDataAPI {
+
+    public static convertProjectDataElements(generatorData: GeneratorData) : Map<string, string> {
+        const result: Map<string, string> = new Map();
+        for (let element of generatorData.elements) {
+            let value: string | null = null;
+            if (element.type === 'enum-element') {
+                if (element.selectedValues.length > 0) {
+                    value = element.selectedValues[0];
+                }
+            } else if (element.type === 'boolean-element') {
+                if (element.selectedValues.length > 0) {
+                    value = element.selectedValues[0];
+                } else {
+                    value = 'false';
+                }
+            } else if (element.type === 'list-element') {
+                value = element.selectedValues.join(",")
+            } else if (element.type === 'text-element') {
+                value = element.value;
+            }
+            if (value != null) {
+                result.set(element.name, value);
+            }
+        }
+        return result;
+    }
+}
+
 export abstract class BaseCommand {
 
     readonly initialData: GeneratorData;
@@ -64,7 +93,7 @@ export class OptionCommand extends BaseCommand {
         this.elements = [...this.initialData.elements];
     }
 
-    public selectedOptions (newElements: any[]) : void {
+    public selectedOptionsChildren (newElements: any[]) : void {
         this.newElements = newElements;
     }
 

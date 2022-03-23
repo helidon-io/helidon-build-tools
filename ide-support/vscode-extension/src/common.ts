@@ -28,6 +28,7 @@ export interface QuickPickData {
     totalSteps: number;
     currentStep: number;
     items: QuickPickItemExt[];
+    selectedItems?: QuickPickItemExt[];
 }
 
 // VS Code Helidon extension commands

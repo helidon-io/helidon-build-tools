@@ -138,24 +138,10 @@ function refreshLaunchedServers() {
 function obtainNewServerProcess(helidonProjectDir: string, extensionPath: string): ChildProcess {
     let cmdSpan = "java";
     const args = ['-jar', `${extensionPath}/target/cli/helidon.jar`, 'dev'];
-
-    // let cmdSpan = "mvn";
-    // const args = ['-v'];
-    process.env.M2_HOME="/home/aserkes/.sdkman/candidates/maven/current";
-    process.env.MAVEN_HOME="/home/aserkes/.sdkman/candidates/maven/current";
-    process.env.JAVA_HOME='/home/aserkes/.sdkman/candidates/java/current';
-    process.env.PATH=`${process.env.JAVA_HOME}/bin:${process.env.MAVEN_HOME}/bin:${process.env.PATH}`;
-    // process.env.PATH=`/home/aserkes/.sdkman/candidates/java/current/bin:${process.env.MAVEN_HOME}/bin`;
-console.log("SHELL - "+process.env.M2_HOME);
-console.log("PATH - "+process.env.PATH);
-    
-
-
-const opts = {
-        cwd: helidonProjectDir, // cwd means -> current working directory (where this command will by executed)
+    const opts = {
+        cwd: helidonProjectDir, // where this command will by executed
     };
     const serverProcess = ChildProcessAPI.spawnProcess(cmdSpan, args, opts);
-
     return serverProcess;
 }
 

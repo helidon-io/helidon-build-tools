@@ -62,6 +62,7 @@ export const STEPS = {
                                   label: "Media type support",
                                   id: "mts-se-1",
                                   name: "media-support",
+                                  defaultValue: "false",
                                   prompt: "Do you want to configure media type support (e.g. JSON, XML)?",
                                   children: [
                                     {
@@ -69,6 +70,7 @@ export const STEPS = {
                                       type: "list-element",
                                       id: "list-ms-1",
                                       name: "list-media-types",
+                                      defaultValue: "json,xml",
                                       options: [
                                         {
                                           label: "JSON",

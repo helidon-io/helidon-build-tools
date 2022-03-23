@@ -24,10 +24,12 @@ import {ChildProcess} from 'child_process';
 import * as childProcApi from "../../ChildProcessAPI";
 import * as events from "events";
 import * as stream from "stream";
+import * as generatorAPI from "../../GeneratorCommand";
 
 let vsCodeApiMockManager: any;
 let fsSystemApiMockManager: any;
 let childProcessAPIManager: any;
+let generatorAPIManager: any;
 
 suite('Helidon Project Generator Test Suite', () => {
 
@@ -35,6 +37,7 @@ suite('Helidon Project Generator Test Suite', () => {
         vsCodeApiMockManager = ImportMock.mockStaticClass(vscodeApi, 'VSCodeAPI');
         fsSystemApiMockManager = ImportMock.mockStaticClass(fsSystemApi, 'FileSystemAPI');
         childProcessAPIManager = ImportMock.mockStaticClass(childProcApi, 'ChildProcessAPI');
+        generatorAPIManager = ImportMock.mockStaticClass(generatorAPI, "GeneratorDataAPI");
     });
 
     teardown(() => {
@@ -44,19 +47,15 @@ suite('Helidon Project Generator Test Suite', () => {
     });
 
     test('Correct flow leads to execute mvn command', async () => {
-        vsCodeApiMockManager.mock('showPickOption', {
-          label: "Helidon MP Bare",
-          archetype: "bare",
-          flavor: "mp",
-          pkg: "io.helidon.examples.bare.mp"
-        });
-        // vsCodeApiMockManager.mock('showInputBox', "test");
-        // vsCodeApiMockManager.mock('showOpenFolderDialog', <vscode.Uri>{fsPath: "fsPath"});
-        // vsCodeApiMockManager.mock('createOutputChannel', <vscode.OutputChannel>{appendLine(str:string){}});
-        // fsSystemApiMockManager.mock('isPathExistsSync', false);
-        // let childProcessMock = childProcessAPIManager.mock('execProcess', createChildProcess());
-        // await helidonGenerator.showHelidonGenerator("helidonJarFolder");
-        // assert(childProcessMock.calledOnce);
+        let generatorData = new Map();
+        generatorData.set("artifactId", "value");
+        generatorAPIManager.mock('convertProjectDataElements', generatorData);
+        vsCodeApiMockManager.mock('showOpenFolderDialog', <vscode.Uri>{fsPath: "fsPath"});
+        vsCodeApiMockManager.mock('createOutputChannel', <vscode.OutputChannel>{appendLine(str:string){}});
+        fsSystemApiMockManager.mock('isPathExistsSync', false);
+        let childProcessMock = childProcessAPIManager.mock('execProcess', createChildProcess());
+        await helidonGenerator.showHelidonGenerator("helidonJarFolder", "");
+        assert(childProcessMock.calledOnce);
     });
 });
 
