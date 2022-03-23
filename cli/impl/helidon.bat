@@ -25,37 +25,68 @@ set attachMvnChild="-Dmvn.child.debug.port=5007"
 set attachPlugin="-Dplugin.debug.port=5006"
 set action=
 set args=
+set /a nbargs=0
+set /a loopcount=0
 
 for %%x in (%*) do (
-
-    set add=yes
-
-    if %%~x==--attach (
-        call :appendVar jvm %attach%
-        set add=no
-    ) else if %%~x==--attachMvn (
-        call :appendVar jvm %attachMvn%
-        set add=no
-    ) else if %%~x==--attachMvnChild (
-        call :appendVar jvm %attachMvnChild%
-        set add=no
-    ) else if %%~x==--attachPlugin (
-        call :appendVar jvm %attachPlugin%
-        set add=no
-    ) else if %%~x==--dryRun (
-        set action=echo
-        set add=no
-    ) else if %add%==yes (
-        call :appendVar %%~x
-    )
+    set /a nbargs=nbargs+1
 )
+
+:start
+
+set add=yes
+
+if %loopcount%==%nbargs% (
+    goto exitloop
+)
+
+if %1==--attach (
+    call :appendJvm %attach%
+    set add=no
+)
+
+if %1==--attachMvn (
+    call :appendJvm %attachMvn%
+    set add=no
+)
+
+if %1==--attachMvnChild (
+    call :appendJvm %attachMvnChild%
+    set add=no
+)
+
+if %1==--attachPlugin (
+    call :appendJvm %attachPlugin%
+    set add=no
+)
+
+if %1==--dryRun (
+    set action=echo
+    set add=no
+)
+
+if %add%==yes (
+    call :appendArgs %1
+)
+shift
+
+set /a loopcount=loopcount+1
+
+goto start
+:exitloop
 
 %action% java %jvm% -jar %jarFile% %args%
 
 call :clear
 
-:appendVar
+goto :eof
+
+:appendArgs
     set args=%args% %~1
+EXIT /B 0
+
+:appendJvm
+    set jvm=%jvm% %~1
 EXIT /B 0
 
 :clear
@@ -68,4 +99,5 @@ EXIT /B 0
     set attachPlugin=
     set action=
     set args=
+    set jvm=
 EXIT /B 0
