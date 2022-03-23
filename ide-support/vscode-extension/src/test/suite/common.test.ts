@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,15 @@ suite('Common functions Test Suite', () => {
             .then(content =>
                 assert(content, "File is not found")
             )
+    });
+
+    test("some", ()=> {
+        let initArr : any [] = [];
+        initArr.push("1");
+        let arr: any [] = ['2','3','4'];
+        initArr.push(...arr);
+        initArr.push('5');
+        console.log(initArr.toString())
     });
 
 });

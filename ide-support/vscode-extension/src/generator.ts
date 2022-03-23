@@ -15,23 +15,15 @@
  */
 
 import * as path from 'path';
-import { Uri, QuickPickItem } from 'vscode';
-import { getSubstringBetween, validateUserInput } from "./common";
-import { InputBoxData, VSCodeAPI } from "./VSCodeAPI";
+import { InputBox, QuickInput, QuickInputButtons, QuickPick, Uri } from 'vscode';
+import { getSubstringBetween, QuickPickData, QuickPickItemExt } from "./common";
+import { VSCodeAPI } from "./VSCodeAPI";
 import { FileSystemAPI } from "./FileSystemAPI";
 import { ChildProcessAPI } from "./ChildProcessAPI";
+import { BaseCommand, GeneratorData, GeneratorDataAPI, OptionCommand, TextCommand } from "./GeneratorCommand";
+import { validateQuickPick, validateText } from "./validationApi";
 
-export interface ProjectData extends QuickPickItem {
-    base: string;
-    flavor: string;
-    pkg: string;
-}
-
-export async function showHelidonGenerator(extensionPath: string) {
-
-    const NUMBER_OF_STEPS = 4;
-
-    const DEFAULT_ARCHETYPE_VERSION = "2.0.1";
+export async function showHelidonGenerator(extensionPath: string, steps: any) {
 
     const PROJECT_READY: string = 'Your new project is ready.';
     const NEW_WINDOW: string = 'Open in new window';
@@ -43,103 +35,8 @@ export async function showHelidonGenerator(extensionPath: string) {
     const NEW_DIR = 'Choose new directory';
     const EXISTING_FOLDER = ' already exists in selected directory.';
 
-    interface GeneratedProjectData {
-        projectData: ProjectData;
-        groupId: string;
-        artifactId: string;
-        pkg: string;
-        archetypeVersion: string;
-    }
-
-    const quickPickItems: ProjectData[] = [
-        {label: "Helidon MP Bare", base: "bare", flavor: "mp", pkg: "io.helidon.examples.bare.mp"},
-        {label: "Helidon MP Database", base: "database", flavor: "mp", pkg: "io.helidon.examples.database.mp"},
-        {label: "Helidon MP Quickstart", base: "quickstart", flavor: "mp", pkg: "io.helidon.examples.quickstart.mp"},
-        {label: "Helidon SE Bare", base: "bare", flavor: "se", pkg: "io.helidon.examples.bare.se"},
-        {label: "Helidon SE Database", base: "database", flavor: "se", pkg: "io.helidon.examples.database.se"},
-        {label: "Helidon SE Quickstart", base: "quickstart", flavor: "se", pkg: "io.helidon.examples.quickstart.se"}
-    ];
-
-    async function showInputBox(data: InputBoxData) {
-        return VSCodeAPI.showInputBox(data);
-    }
-
-    async function obtainTypeOfProject(state: Partial<GeneratedProjectData>) {
-        state.projectData = (<ProjectData>await VSCodeAPI.showPickOption({
-            title: "Choose project you want to generate.",
-            totalSteps: NUMBER_OF_STEPS,
-            currentStep: 1,
-            placeholder: "Project type",
-            items: quickPickItems
-        }));
-        await obtainGroupId(state);
-    }
-
-    async function obtainGroupId(state: Partial<GeneratedProjectData>) {
-        state.groupId = await VSCodeAPI.showInputBox({
-            title: "Select your project groupId",
-            placeholder: "Project groupId",
-            value: "io.helidon.examples",
-            prompt: "Type in your project groupId",
-            totalSteps: NUMBER_OF_STEPS,
-            currentStep: 2,
-            messageValidation: groupIdValidator
-        });
-        return await obtainArtifactId(state);
-    }
-
-    function groupIdValidator(value: string): string | undefined {
-        const exp = new RegExp("^[a-z\.]*$");
-        const errorMessage = "This groupId is not valid. Use only words separated by dots.";
-        return validateUserInput(value, exp, errorMessage);
-    }
-
-    async function obtainArtifactId(state: Partial<GeneratedProjectData>) {
-        state.artifactId = await showInputBox({
-            title: "Select your project artifactId",
-            placeholder: "Project artifactId",
-            value: state.projectData ? `${state.projectData.base}-${state.projectData.flavor}` : "my-project",
-            prompt: "Type in your project artifactId",
-            totalSteps: NUMBER_OF_STEPS,
-            currentStep: 3,
-            messageValidation: artifactIdValidator
-        });
-        return await obtainPackage(state);
-    }
-
-    function artifactIdValidator(value: string): string | undefined {
-        const exp = new RegExp("^[a-z\-]*$");
-        const errorMessage = "This artifactId is not valid. Use only words separated by -";
-        return validateUserInput(value, exp, errorMessage);
-    }
-
-    async function obtainPackage(state: Partial<GeneratedProjectData>) {
-        const pkg = state.projectData ? state.projectData.pkg : "io.helidon.examples.quickstart";
-        state.pkg = await showInputBox({
-            title: "Select your project package structure",
-            placeholder: pkg,
-            value: pkg,
-            prompt: "Type in your project package structure",
-            totalSteps: NUMBER_OF_STEPS,
-            currentStep: 4,
-            messageValidation: packageValidator
-        });
-        return await generateProject(new Map<string, string>([
-                ["flavor", state.projectData!.flavor],
-                ["base", state.projectData!.base],
-                ["package", state.pkg!],
-                ["groupId", state.groupId!],
-                ["artifactId", state.artifactId!],
-                ["version", state.archetypeVersion!]
-            ]
-        ));
-    }
-
-    function packageValidator(value: string): string | undefined {
-        const exp = new RegExp("^[a-zA-Z\.]*$");
-        const errorMessage = "This package structure is not valid. Use only words separated by dots.";
-        return validateUserInput(value, exp, errorMessage);
-    }
+    let generatorData: GeneratorData;
+    let commandHistory: BaseCommand [];
 
     async function generateProject(projectData: Map<string, string>) {
         const artifactId = <string>projectData.get('artifactId');
@@ -225,16 +122,16 @@ export async function showHelidonGenerator(extensionPath: string) {
                     {uri: newProjectFolderUri}
                 );
             } else {
-                VSCodeAPI.executeCommand(openFolderCommand, newProjectFolderUri, true);
+                await VSCodeAPI.executeCommand(openFolderCommand, newProjectFolderUri, true);
             }
         } else if (VSCodeAPI.getVisibleTextEditors().length > 0) {
             // If VS does not have any project opened, but has some file opened in it.
             const input: string | undefined = await VSCodeAPI.showInformationMessage(PROJECT_READY, NEW_WINDOW, CURRENT_WINDOW);
             if (input) {
-                VSCodeAPI.executeCommand(openFolderCommand, newProjectFolderUri, NEW_WINDOW === input);
+                await VSCodeAPI.executeCommand(openFolderCommand, newProjectFolderUri, NEW_WINDOW === input);
             }
         } else {
-            VSCodeAPI.executeCommand(openFolderCommand, newProjectFolderUri, false);
+            await VSCodeAPI.executeCommand(openFolderCommand, newProjectFolderUri, false);
         }
 
     }
@@ -243,10 +140,217 @@ export async function showHelidonGenerator(extensionPath: string) {
         return Uri.file(projectDir);
     }
 
-    try {
-        await obtainTypeOfProject({
-            archetypeVersion: DEFAULT_ARCHETYPE_VERSION
+    function getChildren(children: any[]): any[] {
+        const result: any [] = [];
+        for (let child of children) {
+            generatorData.elements.push(child);
+        }
+        return result;
+    }
+
+    function init(initialTree: any) {
+        if (!initialTree) {
+            return;
+        }
+
+        if (initialTree.type === 'step-element') {
+            if (initialTree.children) {
+                if (initialTree.children.filter((child: any) => child.type === 'step-element').length > 0) {
+                    generatorData.steps.push(...initialTree.children);
+                } else {
+                    generatorData.steps.push(initialTree);
+                }
+            }
+        }
+
+        for (let step of generatorData.steps) {
+            if (step.children != null) {
+                const childElements = getChildren(step.children);
+                if (childElements.length > 0) {
+                    generatorData.elements.push(childElements);
+                }
+            }
+        }
+    }
+
+    function prepareQuickPickData(element: any, currentStep: number, totalSteps: number): QuickPickData {
+        let options: QuickPickItemExt [] = [];
+        let defaultValue: string[] =
+            element.selectedValues ? element.selectedValues :
+                element.defaultValue ? element.defaultValue.split(",").map((value: string) => value.trim()) : [];
+        let selectedOptions: QuickPickItemExt [] = [];
+        if (element.type === 'boolean-element') {
+            options.push(
+                {label: 'yes', children: element.children, value: 'true'},
+                {label: 'no', value: 'false'});
+            if (defaultValue.length > 0) {
+                selectedOptions.push(
+                    ...options.filter(option => defaultValue.includes(option.value!))
+                );
+            }
+        } else {
+            options.push(...element.options.map((o: any) => {
+                return {
+                    label: o.label,
+                    children: o.children,
+                    value: o.value
+                }
+            }));
+            if (defaultValue.length > 0) {
+                selectedOptions.push(
+                    ...options.filter(option => defaultValue.includes(option.value!))
+                );
+            }
+        }
+        let optional = element.optional ? element.optional.toLowerCase() === 'true' : false;
+        return {
+            title: element.label,
+            currentStep: currentStep,
+            totalSteps: totalSteps,
+            placeholder: (element.name ?? "") + ` (optional - ${optional}). Press 'Enter' to confirm.`,
+            items: options,
+            selectedItems: selectedOptions
+        };
+    }
+
+    function getTextInput(element: any, resolve: any, reject: any): InputBox {
+        const data = {
+            title: element.label,
+            placeholder: element.value ? element.value : (element.defaultValue ?? ""),
+            value: element.value ? element.value : (element.defaultValue ?? ""),
+            prompt: element.label,
+            totalSteps: generatorData.elements.length,
+            currentStep: generatorData.currentElementIndex + 1,
+            messageValidation: (value: string) => undefined,
+        };
+        const inputBox = VSCodeAPI.createInputBox(data);
+        inputBox.buttons = [QuickInputButtons.Back]
+
+        inputBox.show();
+        let optionCommand = new TextCommand(generatorData);
+
+        inputBox.onDidAccept(async () => {
+            const insertedValue = inputBox.value;
+            const validation = validateText(insertedValue, element);
+            if (validation.length > 0) {
+                inputBox.validationMessage = validation.map(error => error.message).join(' ');
+            } else {
+                element.value = insertedValue;
+                generatorData = optionCommand.execute();
+                commandHistory.push(optionCommand);
+                inputBox.dispose();
+                resolve(insertedValue);
+            }
         });
+        inputBox.onDidTriggerButton(item => {
+            if (item === QuickInputButtons.Back) {
+                resolve(inputBox);
+                if (commandHistory.length !== 0) {
+                    generatorData = commandHistory.pop()!.undo();
+                }
+            }
+        });
+        inputBox.onDidHide(() => {
+            inputBox.dispose();
+        });
+
+        return inputBox;
+    }
+
+    function getQuickPickInput(element: any, resolve: any, reject: any): QuickPick<any> {
+        const data = prepareQuickPickData(element, generatorData.currentElementIndex + 1, generatorData.elements.length);
+        const quickPick = VSCodeAPI.createQuickPick(data);
+        quickPick.canSelectMany = true;
+        quickPick.buttons = [QuickInputButtons.Back];
+        quickPick.selectedItems = data.selectedItems ?? [];
+        quickPick.activeItems = data.selectedItems ?? [];
+        let lastSelectedItems = quickPick.selectedItems;
+
+        quickPick.show();
+        let optionCommand = new OptionCommand(generatorData);
+
+        quickPick.onDidAccept(async () => {
+            let selectedValues = quickPick.selectedItems.map(item => (<QuickPickItemExt>item).value);
+            const validation = validateQuickPick(selectedValues, element);
+            if (validation.length > 0) {
+                quickPick.placeholder = validation.map(error => error.message).join(' ');
+            } else {
+                element.selectedValues = selectedValues;
+                let children: any[] = [];
+                for (let item of quickPick.selectedItems) {
+                    let option = <QuickPickItemExt>item;
+                    if (option.children) {
+                        children.push(...option.children);
+                    }
+                }
+                optionCommand.selectedOptionsChildren(children);
+                generatorData = optionCommand.execute();
+                commandHistory.push(optionCommand);
+                resolve(quickPick.selectedItems);
+            }
+        });
+        quickPick.onDidChangeSelection(items => {
+            if (element.type !== 'list-element') {
+                let newElements = quickPick.selectedItems.filter(item => !lastSelectedItems.includes(item));
+                if (newElements.length != 0) {
+                    quickPick.selectedItems = quickPick.selectedItems.filter(item => !lastSelectedItems.includes(item));
+                }
+
+                lastSelectedItems = quickPick.selectedItems;
+            }
+
+            console.log(items);
+        });
+        quickPick.onDidTriggerButton(item => {
+            if (item === QuickInputButtons.Back) {
+                resolve(quickPick);
+                if (commandHistory.length !== 0) {
+                    generatorData = commandHistory.pop()!.undo();
+                }
+            }
+        });
+        quickPick.onDidHide(() => {
+            quickPick.dispose();
+        });
+        return quickPick;
+    }
+
+    function getInput(element: any): Promise<QuickInput> | undefined {
+        let result: Promise<QuickInput> | undefined;
+        if (element.type === 'enum-element') {
+            result = new Promise<QuickInput>((resolve, reject) => getQuickPickInput(element, resolve, reject));
+        }
+        if (element.type === 'list-element') {
+            result = new Promise<QuickInput>((resolve, reject) => getQuickPickInput(element, resolve, reject));
+        }
+        if (element.type === 'boolean-element') {
+            result = new Promise<QuickInput>((resolve, reject) => getQuickPickInput(element, resolve, reject));
+        }
+        if (element.type === 'text-element') {
+            result = new Promise<QuickInput>((resolve, reject) => getTextInput(element, resolve, reject));
+        }
+        return result;
+    }
+
+    try {
+        generatorData = {steps: [], elements: [], currentElementIndex: 0};
+        commandHistory = [];
+
+        init(steps);
+        let maxIterationCount = 100;
+        let currentInput: Promise<QuickInput> | undefined;
+        while (generatorData.currentElementIndex < generatorData.elements.length) {
+            let element = generatorData.elements[generatorData.currentElementIndex];
+            currentInput = getInput(element);
+            if (currentInput != null) {
+                await currentInput;
+            }
+            currentInput = undefined;
+            if (maxIterationCount-- < 0) {
+                break;
+            }
+        }
+        await generateProject(GeneratorDataAPI.convertProjectDataElements(generatorData));
     } catch (e: any) {
         VSCodeAPI.showErrorMessage(e.message);
     }

@@ -17,12 +17,18 @@
 import { QuickPickItem } from "vscode";
 import * as vscode from "vscode";
 
+export interface QuickPickItemExt extends QuickPickItem {
+    children?: any;
+    value?: string;
+}
+
 export interface QuickPickData {
     title: string;
     placeholder: string;
     totalSteps: number;
     currentStep: number;
-    items: QuickPickItem[];
+    items: QuickPickItemExt[];
+    selectedItems?: QuickPickItemExt[];
 }
 
 // VS Code Helidon extension commands

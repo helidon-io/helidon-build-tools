@@ -18,7 +18,7 @@ import { QuickPickData } from "./common";
 import {
     commands, InputBox,
     OpenDialogOptions,
-    OutputChannel,
+    OutputChannel, QuickPick,
     QuickPickItem,
     TextEditor,
     Uri,
@@ -65,20 +65,21 @@ export class VSCodeAPI {
         return window.createOutputChannel(name);
     }
 
-    public static createInputBox(): InputBox {
-        return window.createInputBox();
+    public static createQuickPick(data: QuickPickData) : QuickPick<QuickPickItem> {
+        const quickPick = window.createQuickPick();
+        quickPick.title = data.title;
+        quickPick.totalSteps = data.totalSteps;
+        quickPick.step = data.currentStep;
+        quickPick.items = data.items;
+        quickPick.ignoreFocusOut = true;
+        quickPick.placeholder = data.placeholder;
+        return quickPick;
     }
 
     public static async showPickOption(data: QuickPickData) {
         return await new Promise<QuickPickItem | undefined>((resolve, reject) => {
-            const quickPick = window.createQuickPick();
-            quickPick.title = data.title;
-            quickPick.totalSteps = data.currentStep;
-            quickPick.step = data.currentStep;
-            quickPick.items = data.items;
-            quickPick.ignoreFocusOut = true;
+            const quickPick = VSCodeAPI.createQuickPick(data);
             quickPick.canSelectMany = false;
-            quickPick.placeholder = data.placeholder;
 
             quickPick.show();
             quickPick.onDidAccept(async () => {
@@ -117,16 +118,24 @@ export class VSCodeAPI {
         return window.visibleTextEditors;
     }
 
+    public static createInputBox(data?: InputBoxData): InputBox {
+        if (data == null) {
+            return window.createInputBox();
+        }
+        const inputBox = window.createInputBox();
+        inputBox.title = data.title;
+        inputBox.placeholder = data.placeholder;
+        inputBox.prompt = data.prompt;
+        inputBox.value = data.value;
+        inputBox.totalSteps = data.totalSteps;
+        inputBox.step = data.currentStep;
+        inputBox.ignoreFocusOut = true;
+        return inputBox;
+    }
+
     public static async showInputBox(data: InputBoxData) {
         return await new Promise<string | undefined>((resolve, rejects) => {
-            const inputBox = window.createInputBox();
-            inputBox.title = data.title;
-            inputBox.placeholder = data.placeholder;
-            inputBox.prompt = data.prompt;
-            inputBox.value = data.value;
-            inputBox.totalSteps = data.totalSteps;
-            inputBox.step = data.currentStep;
-            inputBox.ignoreFocusOut = true;
+            const inputBox = VSCodeAPI.createInputBox(data);
 
             inputBox.show();
             inputBox.onDidAccept(async () => {
