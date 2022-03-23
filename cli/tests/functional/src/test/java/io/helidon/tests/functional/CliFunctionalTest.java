@@ -274,9 +274,6 @@ public class CliFunctionalTest {
         CommandInvoker.InvocationResult result = commandInvoker(flavor, version, archetype, groupId, artifactId, packageName, name, startApp)
                 .execScript()
                 .invokeInit();
-        if (OSType.currentOS().equals(OSType.Windows)) {
-            assertThat(result.output(), false);
-        }
         result.validateProject();
     }
 
