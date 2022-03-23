@@ -16,6 +16,8 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -24,12 +26,14 @@ import java.util.Optional;
 
 import io.helidon.build.cli.harness.CommandFragment;
 import io.helidon.build.cli.harness.Creator;
-import io.helidon.build.cli.harness.Option;
+import io.helidon.build.cli.harness.Option.Argument;
+import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.harness.Option.KeyValue;
-import io.helidon.build.common.Log;
-import io.helidon.build.common.Log.Level;
+import io.helidon.build.common.Requirements;
 import io.helidon.build.common.Strings;
 import io.helidon.build.common.ansi.AnsiTextStyles;
+import io.helidon.build.common.logging.Log;
+import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.cli.harness.GlobalOptions.DEBUG_FLAG_DESCRIPTION;
@@ -52,6 +56,8 @@ final class CommonOptions {
      */
     private static final String UPDATE_URL = "https://github.com/oracle/helidon-build-tools/blob/master/cli/CHANGELOG.md";
 
+    private static final String MISMATCHED_PROJECT_DIRS = "Different project directories provided: '--project %s' and '%s'";
+
     private final boolean verbose;
     private final boolean debug;
     private final boolean plain;
@@ -63,19 +69,20 @@ final class CommonOptions {
     private Metadata metadata;
 
     @Creator
-    CommonOptions(@Option.Flag(name = VERBOSE_FLAG_NAME, description = VERBOSE_FLAG_DESCRIPTION, visible = false) boolean verbose,
-                  @Option.Flag(name = DEBUG_FLAG_NAME, description = DEBUG_FLAG_DESCRIPTION, visible = false) boolean debug,
-                  @Option.Flag(name = PLAIN_FLAG_NAME, description = PLAIN_FLAG_DESCRIPTION, visible = false) boolean plain,
-                  @KeyValue(name = "project", description = "The project directory") File projectDir,
+    CommonOptions(@Flag(name = VERBOSE_FLAG_NAME, description = VERBOSE_FLAG_DESCRIPTION, visible = false) boolean verbose,
+                  @Flag(name = DEBUG_FLAG_NAME, description = DEBUG_FLAG_DESCRIPTION, visible = false) boolean debug,
+                  @Flag(name = PLAIN_FLAG_NAME, description = PLAIN_FLAG_DESCRIPTION, visible = false) boolean plain,
+                  @Argument(description = "project_dir") File projectDirArgument,
+                  @KeyValue(name = "project", description = "Project directory") File projectDirOption,
                   @KeyValue(name = "url", description = "Metadata base URL", visible = false) String metadataUrl,
-                  @Option.Flag(name = "reset", description = "Reset metadata cache", visible = false) boolean resetCache,
+                  @Flag(name = "reset", description = "Reset metadata cache", visible = false) boolean resetCache,
                   @KeyValue(name = "since", description = "Check for updates since this version",
                           visible = false) String since) {
         this.verbose = verbose || debug;
         this.debug = debug;
         this.plain = plain || Config.userConfig().richTextDisabled();
-        this.projectDirSpecified = projectDir != null;
-        this.projectDir = projectDirSpecified ? projectDir.toPath().toAbsolutePath() : WORKING_DIR;
+        this.projectDirSpecified = projectDirOption != null || projectDirArgument != null;
+        this.projectDir = projectDir(projectDirOption, projectDirArgument);
         this.metadataUrl = Strings.isValid(metadataUrl) ? metadataUrl : Config.userConfig().updateUrl();
         this.resetCache = resetCache || since != null;
         this.sinceCliVersion = toMavenVersion(since == null ? Config.buildVersion() : since);
@@ -150,7 +157,7 @@ final class CommonOptions {
                 } else {
                     Log.info("$(bold Version %s of this CLI is now available:)", newCliVersion);
                     Log.info();
-                    Log.log(Level.INFO, releaseNotes, AnsiTextStyles.Italic, AnsiTextStyles.Plain);
+                    Log.log(LogLevel.INFO, releaseNotes, AnsiTextStyles.Italic, AnsiTextStyles.Plain);
                     Log.info();
                 }
                 Log.info("Please see $(blue %s) to update.", UPDATE_URL);
@@ -176,5 +183,25 @@ final class CommonOptions {
             Log.debug("accessing release notes for %s failed: %s", latestHelidonVersion, e.toString());
         }
         return Collections.emptyMap();
+    }
+
+    private static Path projectDir(File projectDirOption, File projectDirArgument) {
+        if (projectDirOption != null) {
+            if (projectDirArgument != null) {
+                // Both were passed, make sure they are equal
+                try {
+                    if (!projectDirOption.getCanonicalPath().equals(projectDirArgument.getCanonicalPath())) {
+                        Requirements.failed(MISMATCHED_PROJECT_DIRS, projectDirOption, projectDirArgument);
+                    }
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+            return projectDirOption.toPath().toAbsolutePath();
+        } else if (projectDirArgument != null) {
+            return projectDirArgument.toPath().toAbsolutePath();
+        } else {
+            return WORKING_DIR;
+        }
     }
 }

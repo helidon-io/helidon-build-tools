@@ -27,10 +27,9 @@ import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
 import io.helidon.build.archetype.engine.v1.ArchetypeCatalog.ArchetypeEntry;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 import io.helidon.build.common.ConfigProperties;
-
-import io.helidon.build.common.Log;
+import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.maven.MavenVersion;
-import org.junit.jupiter.api.AfterEach;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -73,12 +72,7 @@ public class MetadataTest extends MetadataTestBase {
 
     @BeforeEach
     public void beforeEach(TestInfo info) {
-        prepareEach(info, TEST_CLI_DATA_URL.toExternalForm());
-    }
-
-    @AfterEach
-    public void afterEach() {
-        cleanupEach();
+        beforeEach(info, TEST_CLI_DATA_URL.toExternalForm());
     }
 
     @Test
@@ -87,7 +81,7 @@ public class MetadataTest extends MetadataTestBase {
 
         // Check properties. Should not perform update.
 
-        logged.clear();
+        LOG_RECORDER.clear();
         ConfigProperties props = meta.propertiesOf(latestVersion);
         assertThat(props, is(not(nullValue())));
         assertThat(props.keySet().isEmpty(), is(false));
@@ -97,12 +91,12 @@ public class MetadataTest extends MetadataTestBase {
         assertThat(props.contains("cli.2.0.0-M3.message"), is(false));
         assertThat(props.contains("cli.2.0.0-M4.message"), is(true));
         assertThat(props.contains("cli.2.0.0-RC1.message"), is(true));
-        assertThat(logged.size(), is(1));
-        logged.assertLinesContainingAll(1, "stale check", "is false", RC1_LAST_UPDATE);
+        assertThat(LOG_RECORDER.size(), is(1));
+        assertLinesContainingAll(1, "stale check", "is false", RC1_LAST_UPDATE);
 
         // Check catalog. Should not perform update.
 
-        logged.clear();
+        LOG_RECORDER.clear();
         ArchetypeCatalog catalog = meta.catalogOf(latestVersion);
         assertThat(catalog, is(not(nullValue())));
         assertThat(catalog.entries().size(), is(2));
@@ -114,34 +108,34 @@ public class MetadataTest extends MetadataTestBase {
         assertThat(entriesById.get(HELIDON_BARE_SE).name(), is("bare"));
         assertThat(entriesById.get(HELIDON_BARE_MP), is(notNullValue()));
         assertThat(entriesById.get(HELIDON_BARE_MP).name(), is("bare"));
-        assertThat(logged.size(), is(1));
-        logged.assertLinesContainingAll(1, "stale check", "is false", RC1_LAST_UPDATE);
+        assertThat(LOG_RECORDER.size(), is(1));
+        assertLinesContainingAll(1, "stale check", "is false", RC1_LAST_UPDATE);
 
         // Check archetype. Should not perform update.
 
-        logged.clear();
+        LOG_RECORDER.clear();
         Path archetypeJar = meta.archetypeV1Of(entriesById.get("helidon-bare-se"));
         assertThat(archetypeJar, is(not(nullValue())));
         assertThat(Files.exists(archetypeJar), is(true));
         assertThat(archetypeJar.getFileName().toString(), is("helidon-bare-se-2.0.0-RC1.jar"));
-        assertThat(logged.size(), is(1));
-        logged.assertLinesContainingAll(1, "stale check", "is false", RC1_LAST_UPDATE);
+        assertThat(LOG_RECORDER.size(), is(1));
+        assertLinesContainingAll(1, "stale check", "is false", RC1_LAST_UPDATE);
 
         // Check that more calls do not update
 
-        logged.clear();
+        LOG_RECORDER.clear();
         assertThat(meta.latestVersion(), is(latestVersion));
         assertThat(meta.propertiesOf(latestVersion), is(props));
         assertThat(meta.catalogOf(latestVersion), is(catalog));
 
-        assertThat(logged.size(), is(3));
-        logged.assertLinesContainingAll(1, "stale check", "is false", LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(2, "stale check", "is false", RC1_LAST_UPDATE);
+        assertThat(LOG_RECORDER.size(), is(3));
+        assertLinesContainingAll(1, "stale check", "is false", LATEST_FILE_NAME);
+        assertLinesContainingAll(2, "stale check", "is false", RC1_LAST_UPDATE);
 
         // Check the CLI plugin and CLI versions; the plugin should be the current build
         // version because the helidon version is pre CLI plugin
 
-        logged.clear();
+        LOG_RECORDER.clear();
         MavenVersion expectedCliPluginVersion = toMavenVersion(Config.buildVersion());
         assertThat(meta.cliVersionOf(latestVersion, false), is(MAVEN_VERSION_RC1));
         assertThat(meta.cliPluginVersion(latestVersion, false), is(expectedCliPluginVersion));
@@ -292,17 +286,17 @@ public class MetadataTest extends MetadataTestBase {
         // Wait 1.25 seconds and check version. Should perform update.
 
         Log.info("sleeping 1.25 seconds before recheck");
-        logged.clear();
+        LOG_RECORDER.clear();
         Thread.sleep(1250);
         assertThat(meta.latestVersion(), is(latestVersion));
 
-        logged.assertLinesContainingAll(1, "stale check", "is true", LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + NO_ETAG);
-        logged.assertLinesContainingAll("Looking up latest Helidon version");
-        logged.assertNoLinesContainingAll("Updating metadata for Helidon version " + VERSION_RC1);
-        logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "stale check", "is true", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + NO_ETAG);
+        assertLinesContainingAll("Looking up latest Helidon version");
+        assertNoLinesContainingAll("Updating metadata for Helidon version " + VERSION_RC1);
+        assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
     }
 
     @Test
@@ -312,17 +306,17 @@ public class MetadataTest extends MetadataTestBase {
         // Wait 1.25 seconds and check properties. Should perform update.
 
         Log.info("sleeping 1.25 seconds before recheck");
-        logged.clear();
+        LOG_RECORDER.clear();
         Thread.sleep(1250);
         assertThat(meta.propertiesOf(latestVersion), is(not(nullValue())));
 
-        logged.assertLinesContainingAll(1, "stale check", "is true", RC1_LAST_UPDATE);
-        logged.assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + NO_ETAG);
-        logged.assertNoLinesContainingAll("Looking up latest Helidon version");
-        logged.assertLinesContainingAll("Updating metadata for Helidon version " + VERSION_RC1);
-        logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "stale check", "is true", RC1_LAST_UPDATE);
+        assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + NO_ETAG);
+        assertNoLinesContainingAll("Looking up latest Helidon version");
+        assertLinesContainingAll("Updating metadata for Helidon version " + VERSION_RC1);
+        assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
     }
 
     @Test
@@ -332,17 +326,17 @@ public class MetadataTest extends MetadataTestBase {
         // Wait 1.25 seconds and check catalog. Should perform update.
 
         Log.info("sleeping 1.25 seconds before recheck");
-        logged.clear();
+        LOG_RECORDER.clear();
         Thread.sleep(1250);
         assertThat(meta.catalogOf(latestVersion), is(not(nullValue())));
 
-        logged.assertLinesContainingAll(1, "stale check", "is true", RC1_LAST_UPDATE);
-        logged.assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + NO_ETAG);
-        logged.assertNoLinesContainingAll("Looking up latest Helidon version");
-        logged.assertLinesContainingAll("Updating metadata for Helidon version " + VERSION_RC1);
-        logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "stale check", "is true", RC1_LAST_UPDATE);
+        assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + NO_ETAG);
+        assertNoLinesContainingAll("Looking up latest Helidon version");
+        assertLinesContainingAll("Updating metadata for Helidon version " + VERSION_RC1);
+        assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
     }
 
     @Test
@@ -356,13 +350,13 @@ public class MetadataTest extends MetadataTestBase {
         // Now get the properties again and make sure we skip the zip download but still
         // updated the latest version
 
-        logged.clear();
+        LOG_RECORDER.clear();
         assertThat(meta.propertiesOf(latestVersion), is(not(nullValue())));
-        logged.assertLinesContainingAll(1, "not modified", RC1 + "/" + CLI_DATA_FILE_NAME);
-        logged.assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + RC1_ETAG);
-        logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "not modified", RC1 + "/" + CLI_DATA_FILE_NAME);
+        assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + RC1_ETAG);
+        assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
     }
 
     @Test
@@ -379,17 +373,17 @@ public class MetadataTest extends MetadataTestBase {
         // Now get the properties again and make sure we skip the zip download but still updated the latest version.
         // Note that the update is forced here because we used a zero frequency.
 
-        logged.clear();
+        LOG_RECORDER.clear();
         assertThat(meta.propertiesOf(latestVersion), is(not(nullValue())));
-        logged.assertLinesContainingAll(1, "not modified", RC2 + "/" + CLI_DATA_FILE_NAME);
-        logged.assertLinesContainingAll(1, "updated", RC2_LAST_UPDATE, "etag " + RC2_ETAG);
-        logged.assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "not modified", RC2 + "/" + CLI_DATA_FILE_NAME);
+        assertLinesContainingAll(1, "updated", RC2_LAST_UPDATE, "etag " + RC2_ETAG);
+        assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
 
         // Now change the result of /latest and validate the result
 
-        logged.clear();
+        LOG_RECORDER.clear();
         Plugins.reset(true);
         testServer.latest(TestVersion.RC1);
         assertInitialLatestVersionRequestPerformsUpdate(0, NANOSECONDS, VERSION_RC1, RC1_ETAG, true);
@@ -406,13 +400,13 @@ public class MetadataTest extends MetadataTestBase {
 
         // Now request the catalog again and make sure we do no updates
 
-        logged.clear();
+        LOG_RECORDER.clear();
         catalogRequest(VERSION_RC2, false);
         assertThat(meta.propertiesOf(VERSION_RC2), is(not(nullValue())));
-        logged.assertLinesContainingAll(0, "not modified", RC2 + "/" + CLI_DATA_FILE_NAME);
-        logged.assertLinesContainingAll(0, "updated", RC2_LAST_UPDATE, "etag " + RC2_ETAG);
-        logged.assertLinesContainingAll(0, "downloading", LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(0, "connected", LATEST_FILE_NAME);
-        logged.assertLinesContainingAll(0, "wrote", LATEST_FILE_NAME);
+        assertLinesContainingAll(0, "not modified", RC2 + "/" + CLI_DATA_FILE_NAME);
+        assertLinesContainingAll(0, "updated", RC2_LAST_UPDATE, "etag " + RC2_ETAG);
+        assertLinesContainingAll(0, "downloading", LATEST_FILE_NAME);
+        assertLinesContainingAll(0, "connected", LATEST_FILE_NAME);
+        assertLinesContainingAll(0, "wrote", LATEST_FILE_NAME);
     }
 }

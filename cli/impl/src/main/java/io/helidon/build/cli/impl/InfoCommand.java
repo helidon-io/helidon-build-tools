@@ -29,9 +29,9 @@ import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.common.ConfigProperties;
-import io.helidon.build.common.Log;
 import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.Time;
+import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.cli.common.ProjectConfig.HELIDON_VERSION;
@@ -45,11 +45,11 @@ import static io.helidon.build.cli.common.ProjectConfig.PROJECT_VERSION;
 import static io.helidon.build.cli.impl.Metadata.HELIDON_3;
 import static io.helidon.build.cli.impl.UserConfig.DEFAULT_PROJECT_NAME_KEY;
 import static io.helidon.build.cli.impl.VersionCommand.addProjectProperty;
-import static io.helidon.build.common.Log.maxKeyWidth;
 import static io.helidon.build.common.PrintStreams.DEVNULL;
 import static io.helidon.build.common.Strings.padding;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Italic;
+import static io.helidon.build.common.logging.Log.maxKeyWidth;
 
 /**
  * The {@code info} command.

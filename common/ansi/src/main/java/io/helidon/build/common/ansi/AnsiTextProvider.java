@@ -15,7 +15,6 @@
  */
 package io.helidon.build.common.ansi;
 
-import io.helidon.build.common.Instance;
 import io.helidon.build.common.RichText;
 import io.helidon.build.common.RichTextProvider;
 import io.helidon.build.common.RichTextStyle;
@@ -27,15 +26,6 @@ import org.fusesource.jansi.Ansi;
  * Ansi implementation of {@link RichTextProvider}.
  */
 public class AnsiTextProvider implements RichTextProvider {
-
-    /**
-     * Enabled flag if {@link Holder#INSTANCE} is {@link AnsiTextProvider}.
-     * Set to {@code true} if ansi console is enabled, {@code false} otherwise
-     */
-    public static final Instance<Boolean> ANSI_ENABLED =
-            new Instance<>(() -> Holder.INSTANCE.as(AnsiTextProvider.class)
-                                                .map(AnsiTextProvider::isEnabled)
-                                                .orElse(false));
 
     private final boolean enabled;
 
@@ -52,8 +42,11 @@ public class AnsiTextProvider implements RichTextProvider {
      *
      * @return {@code true} if ansi console is enabled, {@code false} otherwise
      */
-    boolean isEnabled() {
-        return enabled;
+    static boolean isEnabled() {
+        if (Holder.INSTANCE instanceof AnsiTextProvider) {
+            return ((AnsiTextProvider) Holder.INSTANCE).enabled;
+        }
+        return false;
     }
 
     @Override

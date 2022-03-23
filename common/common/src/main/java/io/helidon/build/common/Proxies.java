@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
+
+import io.helidon.build.common.logging.Log;
 
 /**
  * Proxy utilities.
@@ -170,10 +172,10 @@ public class Proxies {
     private static void setProperty(String name, String value, Properties properties) {
         final String existing = properties.getProperty(name);
         if (existing == null) {
-            Log.preInitDebug("Setting system entry \"%s\" to \"%s\"", name, value);
+            Log.debug("Setting system entry \"%s\" to \"%s\"", name, value);
             properties.setProperty(name, value);
         } else {
-            Log.preInitDebug("Skip set system entry \"%s\" to \"%s\". Already set to \"%s\"", name, value, existing);
+            Log.debug("Skip set system entry \"%s\" to \"%s\". Already set to \"%s\"", name, value, existing);
         }
     }
 

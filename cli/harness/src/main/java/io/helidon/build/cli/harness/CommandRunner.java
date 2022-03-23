@@ -88,8 +88,6 @@ public final class CommandRunner {
         CommandParser.Resolver globalResolver = parser.globalResolver();
         if (globalResolver.resolve(GlobalOptions.PLAIN_FLAG_INFO) || context.internalOptions().richTextDisabled()) {
             AnsiConsoleInstaller.disable();
-        } else {
-            AnsiConsoleInstaller.install();
         }
         if (globalResolver.resolve(GlobalOptions.VERBOSE_FLAG_INFO)) {
             context.verbosity(CommandContext.Verbosity.VERBOSE);

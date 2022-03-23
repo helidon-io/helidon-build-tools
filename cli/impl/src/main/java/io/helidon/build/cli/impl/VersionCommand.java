@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
-import io.helidon.build.common.Log;
-import io.helidon.build.common.Log.Level;
+import io.helidon.build.common.logging.Log;
+import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.cli.common.ProjectConfig.HELIDON_VERSION;
@@ -69,7 +69,7 @@ final class VersionCommand extends BaseCommand {
             // message has already been logged
         }
 
-        Log.log(Level.INFO, map, Italic, BoldBlue);
+        Log.log(LogLevel.INFO, map, Italic, BoldBlue);
     }
 
     /**

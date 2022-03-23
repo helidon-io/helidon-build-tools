@@ -31,6 +31,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import io.helidon.build.common.logging.Log;
+
 import static io.helidon.build.common.PrintStreams.DEVNULL;
 import static java.util.Objects.requireNonNullElseGet;
 

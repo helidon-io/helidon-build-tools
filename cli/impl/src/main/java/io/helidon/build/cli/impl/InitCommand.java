@@ -23,9 +23,9 @@ import io.helidon.build.archetype.engine.v1.Prompter;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
-import io.helidon.build.cli.harness.Option.Flag;
 import io.helidon.build.cli.impl.InitOptions.BuildSystem;
-import io.helidon.build.common.Log;
+import io.helidon.build.common.logging.Log;
+import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
@@ -54,13 +54,11 @@ public final class InitCommand extends BaseCommand {
     private final boolean batch;
 
     @Creator
-    InitCommand(CommonOptions commonOptions, InitOptions initOptions,
-                @Flag(name = "batch", description = "Enables non-interactive mode") boolean batch) {
-
+    InitCommand(CommonOptions commonOptions, InitOptions initOptions) {
         super(commonOptions, initOptions.helidonVersion() != null);
         this.commonOptions = commonOptions;
         this.initOptions = initOptions;
-        this.batch = batch;
+        this.batch = initOptions.batch();
         this.metadata = metadata();
         this.config = Config.userConfig();
     }
@@ -97,7 +95,6 @@ public final class InitCommand extends BaseCommand {
 
         ArchetypeInvoker archetypeInvoker = ArchetypeInvoker
                 .builder()
-                .batch(batch)
                 .metadata(metadata)
                 .initOptions(initOptions)
                 .userConfig(config)
@@ -178,7 +175,7 @@ public final class InitCommand extends BaseCommand {
             return true;
         } catch (IllegalArgumentException | Metadata.UpdateFailed | Plugins.PluginFailedUnchecked e) {
             String message = e.getMessage();
-            boolean messageLogged = Log.isDebug() && e instanceof Plugins.PluginFailedUnchecked;
+            boolean messageLogged = LogLevel.isDebug() && e instanceof Plugins.PluginFailedUnchecked;
             if (!message.contains(NOT_FOUND_STATUS_MESSAGE)) {
                 versionLookupFailed(messageLogged ? null : message);
             }

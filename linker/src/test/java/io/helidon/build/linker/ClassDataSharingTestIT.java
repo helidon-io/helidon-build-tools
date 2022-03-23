@@ -19,8 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import io.helidon.build.common.Log;
-import io.helidon.build.common.SystemLogWriter;
+import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
 import io.helidon.build.common.test.utils.TestLogLevel;
 
@@ -50,7 +49,7 @@ class ClassDataSharingTestIT {
     @BeforeAll
     static void setup() {
         if (TestLogLevel.isDebug()) {
-            Log.writer(SystemLogWriter.create(Log.Level.DEBUG));
+            LogLevel.set(LogLevel.DEBUG);
         }
     }
 

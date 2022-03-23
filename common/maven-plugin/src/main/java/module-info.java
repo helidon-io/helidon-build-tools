@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,17 @@
  * limitations under the License.
  */
 
+import io.helidon.build.common.logging.LogWriter;
+import io.helidon.build.common.maven.plugin.PlexusLogWriter;
+
 /**
  * Helidon Build Common Maven Plugin.
  */
 module io.helidon.build.common.maven.plugin {
-    requires maven.plugin.api;
     requires io.helidon.build.common;
+    requires plexus.component.annotations;
+    requires org.eclipse.sisu.plexus;
+    requires maven.core;
     exports io.helidon.build.common.maven.plugin;
+    provides LogWriter with PlexusLogWriter;
 }

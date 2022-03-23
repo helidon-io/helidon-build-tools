@@ -33,12 +33,12 @@ import java.util.function.Predicate;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
-import io.helidon.build.common.Log;
 import io.helidon.build.common.OSType;
 import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.Requirements;
 import io.helidon.build.common.ansi.AnsiConsoleInstaller;
+import io.helidon.build.common.logging.Log;
 
 import static io.helidon.build.common.FileUtils.findExecutableInPath;
 import static io.helidon.build.common.FileUtils.listFiles;
@@ -46,7 +46,7 @@ import static io.helidon.build.common.FileUtils.requireDirectory;
 import static io.helidon.build.common.FileUtils.requireJavaExecutable;
 import static io.helidon.build.common.PrintStreams.STDERR;
 import static io.helidon.build.common.PrintStreams.STDOUT;
-import static io.helidon.build.common.ansi.AnsiConsoleInstaller.isHelidonChildProcess;
+import static io.helidon.build.common.ansi.AnsiConsoleInstaller.IS_HELIDON_CHILD_PROCESS;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Red;
 import static java.io.File.pathSeparatorChar;
@@ -317,7 +317,7 @@ public class MavenCommand {
 
         private Builder() {
             this.mavenArgs = new ArrayList<>();
-            this.debugPort = isHelidonChildProcess() ? DEFAULT_CHILD_DEBUG_PORT : DEFAULT_DEBUG_PORT;
+            this.debugPort = IS_HELIDON_CHILD_PROCESS ? DEFAULT_CHILD_DEBUG_PORT : DEFAULT_DEBUG_PORT;
             this.maxWaitSeconds = SECONDS_PER_YEAR;
             this.requiredMinimumVersion = DEFAULT_MINIMUM;
         }

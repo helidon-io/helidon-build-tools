@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.build.common.Log;
+import io.helidon.build.common.logging.Log;
 import io.helidon.build.devloop.BuildExecutor;
 import io.helidon.build.devloop.BuildLoop;
 import io.helidon.build.devloop.BuildMonitor;

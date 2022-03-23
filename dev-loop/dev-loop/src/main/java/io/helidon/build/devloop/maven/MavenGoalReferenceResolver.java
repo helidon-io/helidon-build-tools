@@ -17,7 +17,7 @@ package io.helidon.build.devloop.maven;
 
 import java.util.List;
 
-import io.helidon.build.common.Log;
+import io.helidon.build.common.logging.Log;
 
 import org.apache.maven.lifecycle.NoGoalSpecifiedException;
 

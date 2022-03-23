@@ -138,10 +138,12 @@ function refreshLaunchedServers() {
 function obtainNewServerProcess(helidonProjectDir: string, extensionPath: string): ChildProcess {
     let cmdSpan = "java";
     const args = ['-jar', `${extensionPath}/target/cli/helidon.jar`, 'dev'];
+
     const opts = {
-        cwd: helidonProjectDir, // where this command will by executed
+        cwd: helidonProjectDir, // cwd means -> current working directory (where this command will by executed)
     };
     const serverProcess = ChildProcessAPI.spawnProcess(cmdSpan, args, opts);
+
     return serverProcess;
 }
 

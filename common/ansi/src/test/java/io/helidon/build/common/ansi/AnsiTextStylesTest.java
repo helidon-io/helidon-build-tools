@@ -15,7 +15,7 @@
  */
 package io.helidon.build.common.ansi;
 
-import io.helidon.build.common.Log;
+import io.helidon.build.common.logging.Log;
 
 import org.fusesource.jansi.Ansi;
 import org.junit.jupiter.api.Test;
@@ -30,7 +30,7 @@ class AnsiTextStylesTest {
 
     @Test
     void testAll() {
-        boolean enabled = AnsiTextProvider.ANSI_ENABLED.instance();
+        boolean enabled = AnsiTextProvider.isEnabled();
         Ansi.setEnabled(enabled);
         for (AnsiTextStyles function : AnsiTextStyles.values()) {
             String example = function.apply("example");

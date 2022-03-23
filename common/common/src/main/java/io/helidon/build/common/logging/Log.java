@@ -13,91 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.common;
+package io.helidon.build.common.logging;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.build.common.LogWriter.Holder;
+import io.helidon.build.common.RichTextStyle;
 
 import static io.helidon.build.common.Strings.padding;
-import static java.util.Objects.requireNonNull;
 
 /**
  * Simple, centralized logging.
  */
 public class Log {
 
-    /**
-     * Levels.
-     */
-    public enum Level {
-
-        /**
-         * Debug level.
-         */
-        DEBUG(java.util.logging.Level.FINEST),
-        /**
-         * Verbose level.
-         */
-        VERBOSE(java.util.logging.Level.FINE),
-        /**
-         * Info level.
-         */
-        INFO(java.util.logging.Level.INFO),
-        /**
-         * Warn level.
-         */
-        WARN((java.util.logging.Level.WARNING)),
-        /**
-         * Error level.
-         */
-        ERROR(java.util.logging.Level.SEVERE);
-
-        /**
-         * Returns the corresponding java.util.logging.Level level.
-         *
-         * @return The level.
-         */
-        @SuppressWarnings("unused")
-        java.util.logging.Level toJulLevel() {
-            return julLevel;
-        }
-
-        private final java.util.logging.Level julLevel;
-
-        Level(java.util.logging.Level julLevel) {
-            this.julLevel = julLevel;
-        }
-    }
-
-    private static final AtomicReference<LogWriter> WRITER = new AtomicReference<>();
+    private static final String PAD = " ";
     private static final AtomicInteger MESSAGES = new AtomicInteger();
     private static final AtomicInteger WARNINGS = new AtomicInteger();
     private static final AtomicInteger ERRORS = new AtomicInteger();
-    private static final boolean DEBUG = "debug".equals(System.getProperty("log.level"));
-    private static final String PAD = " ";
+
+    static {
+        LogWriter.init();
+        LogFormatter.init();
+    }
 
     private Log() {
-    }
-
-    /**
-     * Returns whether debug messages will be written.
-     *
-     * @return {@code true} if enabled.
-     */
-    public static boolean isDebug() {
-        return writer().isDebug();
-    }
-
-    /**
-     * Returns whether verbose messages will be written.
-     *
-     * @return {@code true} if enabled.
-     */
-    public static boolean isVerbose() {
-        return writer().isVerbose();
     }
 
     /**
@@ -129,36 +69,13 @@ public class Log {
     }
 
     /**
-     * Sets the writer.
-     *
-     * @param writer The writer.
-     */
-    public static void writer(LogWriter writer) {
-        WRITER.set(requireNonNull(writer));
-    }
-
-    /**
-     * Returns the writer.
-     *
-     * @return The writer.
-     */
-    public static LogWriter writer() {
-        LogWriter writer = WRITER.get();
-        if (writer == null) {
-            writer = Holder.INSTANCE;
-            WRITER.set(writer);
-        }
-        return writer;
-    }
-
-    /**
      * Log a message at DEBUG level.
      *
      * @param message The message.
      * @param args    The message args.
      */
     public static void debug(String message, Object... args) {
-        log(Level.DEBUG, message, args);
+        log(LogLevel.DEBUG, message, args);
     }
 
     /**
@@ -168,14 +85,14 @@ public class Log {
      * @param args    The message args.
      */
     public static void verbose(String message, Object... args) {
-        log(Level.VERBOSE, message, args);
+        log(LogLevel.VERBOSE, message, args);
     }
 
     /**
      * Log an empty message at INFO level.
      */
     public static void info() {
-        log(Level.INFO, "");
+        log(LogLevel.INFO, "");
     }
 
     /**
@@ -185,7 +102,7 @@ public class Log {
      * @param args    The message args.
      */
     public static void info(String message, Object... args) {
-        log(Level.INFO, message, args);
+        log(LogLevel.INFO, message, args);
     }
 
     /**
@@ -195,7 +112,7 @@ public class Log {
      * @param args    The message args.
      */
     public static void warn(String message, Object... args) {
-        log(Level.WARN, message, args);
+        log(LogLevel.WARN, message, args);
     }
 
     /**
@@ -206,7 +123,7 @@ public class Log {
      * @param args   Format string arguments.
      */
     public static void warn(Throwable thrown, String msg, Object... args) {
-        log(Level.WARN, thrown, msg, args);
+        log(LogLevel.WARN, thrown, msg, args);
     }
 
     /**
@@ -216,7 +133,7 @@ public class Log {
      * @param args    The message args.
      */
     public static void error(String message, Object... args) {
-        log(Level.ERROR, message, args);
+        log(LogLevel.ERROR, message, args);
     }
 
     /**
@@ -227,7 +144,7 @@ public class Log {
      * @param args    The message args.
      */
     public static void error(Throwable thrown, String message, Object... args) {
-        log(Level.ERROR, thrown, message, args);
+        log(LogLevel.ERROR, thrown, message, args);
     }
 
     /**
@@ -237,7 +154,7 @@ public class Log {
      * @param message The message.
      * @param args    The message args.
      */
-    public static void log(Level level, String message, Object... args) {
+    public static void log(LogLevel level, String message, Object... args) {
         log(level, null, message, args);
     }
 
@@ -249,7 +166,7 @@ public class Log {
      * @param keyStyle   The style to apply to all keys.
      * @param valueStyle The style to apply to all values.
      */
-    public static void log(Level level, Map<Object, Object> map, RichTextStyle keyStyle, RichTextStyle valueStyle) {
+    public static void log(LogLevel level, Map<Object, Object> map, RichTextStyle keyStyle, RichTextStyle valueStyle) {
         log(level, map, maxKeyWidth(map), keyStyle, valueStyle);
     }
 
@@ -262,7 +179,7 @@ public class Log {
      * @param keyStyle    The style to apply to all keys.
      * @param valueStyle  The style to apply to all values.
      */
-    public static void log(Level level,
+    public static void log(LogLevel level,
                            Map<Object, Object> map,
                            int maxKeyWidth,
                            RichTextStyle keyStyle,
@@ -284,11 +201,11 @@ public class Log {
      * @param message The message.
      * @param args    The message args.
      */
-    public static void log(Level level, Throwable thrown, String message, Object... args) {
+    public static void log(LogLevel level, Throwable thrown, String message, Object... args) {
         MESSAGES.incrementAndGet();
-        if (level == Level.WARN) {
+        if (level == LogLevel.WARN) {
             WARNINGS.incrementAndGet();
-        } else if (level == Level.ERROR) {
+        } else if (level == LogLevel.ERROR) {
             ERRORS.incrementAndGet();
         }
         if (message == null) {
@@ -300,7 +217,7 @@ public class Log {
                 }
             }
         }
-        writer().write(level, thrown, message, args);
+        LogWriter.write(level, thrown, message, args);
     }
 
     /**
@@ -321,30 +238,5 @@ public class Log {
             }
         }
         return maxLen;
-    }
-
-    /**
-     * Tests whether a writer has been set.
-     *
-     * @return {@code true} if set.
-     */
-    public static boolean hasWriter() {
-        return WRITER.get() != null;
-    }
-
-    /**
-     * Writes a debug message that will not trigger {@link LogWriter} lazy initialization. If no writer, has been set, the
-     * message is written directly to {@code System.out}.
-     *
-     * @param message The message.
-     * @param args    The message arguments.
-     */
-    public static void preInitDebug(String message, Object... args) {
-        // Only use debug() if we already have a writer, otherwise we will end up in a cycle
-        if (hasWriter()) {
-            debug(message, args);
-        } else if (DEBUG) {
-            System.out.printf(message + "%n", args);
-        }
     }
 }

@@ -17,7 +17,7 @@ package io.helidon.build.devloop.maven;
 
 import java.io.PrintStream;
 
-import io.helidon.build.common.Log;
+import io.helidon.build.common.logging.Log;
 import io.helidon.build.devloop.BuildRoot;
 import io.helidon.build.devloop.BuildStep;
 
