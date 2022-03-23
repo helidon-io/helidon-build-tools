@@ -17,7 +17,6 @@
 package io.helidon.tests.functional;
 
 import io.helidon.build.cli.impl.CommandInvoker;
-import io.helidon.build.common.OSType;
 import io.helidon.build.common.ProcessMonitor;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -32,8 +31,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
-
-import static org.hamcrest.MatcherAssert.assertThat;
 
 public class CliFunctionalTest {
 
@@ -255,6 +252,7 @@ public class CliFunctionalTest {
                                     String packageName,
                                     String name,
                                     boolean startApp) throws Exception {
+
         commandInvoker(flavor, version, archetype, groupId, artifactId, packageName, name, startApp)
                 .input(inputFile.toUri().toURL())
                 .invokeInit()
@@ -271,10 +269,10 @@ public class CliFunctionalTest {
                                       boolean startApp) throws Exception {
 
         cleanUp();
-        CommandInvoker.InvocationResult result = commandInvoker(flavor, version, archetype, groupId, artifactId, packageName, name, startApp)
+        commandInvoker(flavor, version, archetype, groupId, artifactId, packageName, name, startApp)
                 .execScript()
-                .invokeInit();
-        result.validateProject();
+                .invokeInit()
+                .validateProject();
     }
 
     private void runHelidonClassTest(String flavor,

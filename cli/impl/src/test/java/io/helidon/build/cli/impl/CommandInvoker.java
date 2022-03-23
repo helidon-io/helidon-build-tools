@@ -403,7 +403,7 @@ public interface CommandInvoker {
 
         private String execute(File wd, File input, String... args) throws Exception {
             if (Stream.of(execScript, execHelidonClass, execNativeImage).filter(b -> b).count() > 1L) {
-                throw new IllegalStateException("Both script and Helidon class cannot be run in the same process");
+                throw new IllegalStateException("Several executable cannot be run in the same process");
             }
 
             if (execScript) {
@@ -666,9 +666,9 @@ public interface CommandInvoker {
         private String helidonVersion;
         private boolean buildProject;
         private boolean useProjectOption;
-        private boolean execScript = false;
-        private boolean execHelidonClass = false;
-        private boolean execNativeImage = false;
+        private boolean execScript;
+        private boolean execHelidonClass;
+        private boolean execNativeImage;
 
         /**
          * Use the {@code --project} option instead of the project argument.
@@ -680,7 +680,6 @@ public interface CommandInvoker {
             this.useProjectOption = useProjectOption;
             return this;
         }
-
 
         /**
          * Set the build project flag.
@@ -826,7 +825,7 @@ public interface CommandInvoker {
         }
 
         /**
-         * Run cli with helidon.sh script.
+         * Run cli with {@code helidon} class.
          *
          * @return this builder
          */
