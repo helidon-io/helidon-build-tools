@@ -16,20 +16,20 @@
 package io.helidon.tests.functional;
 
 import io.helidon.build.common.FileUtils;
+import io.helidon.build.common.NetworkConnection;
 import io.helidon.build.common.OSType;
+import io.helidon.build.common.Proxies;
 import io.helidon.build.common.maven.MavenCommand;
 import io.helidon.build.common.maven.MavenVersion;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.net.ServerSocket;
 import java.net.URL;
-import java.net.URLConnection;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
@@ -75,11 +75,14 @@ public class TestUtils {
 
     static void downloadFileFromUrl(Path destination, URL url) {
         try {
-            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("www-proxy.us.oracle.com", 80));
-            URLConnection connection = url.openConnection(proxy);
-            connection.setConnectTimeout(100*60*1000);
-            connection.setReadTimeout(100*60*1000);
-            ReadableByteChannel readableByteChannel = Channels.newChannel(connection.getInputStream());
+            Proxies.setProxyPropertiesFromEnv();
+            InputStream is = NetworkConnection.builder()
+                    .url(url)
+                    .maxRetries(2)
+                    .connectTimeout(100*60*1000)
+                    .readTimeout(100*60*1000)
+                    .open();
+            ReadableByteChannel readableByteChannel = Channels.newChannel(is);
             FileOutputStream fileOutputStream = new FileOutputStream(Files.createFile(destination).toString());
             fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
             fileOutputStream.close();
