@@ -445,7 +445,7 @@ public interface CommandInvoker {
             System.out.println();
 
             // Execute and verify process exit code
-            devMonitor = TestUtils.execDevWithDirAndInput(workDir.toFile(), environment, argsArray);
+            devMonitor = TestUtils.executeDevCommand(workDir.toFile(), environment, argsArray);
             return new InvocationResult(this, devMonitor.output());
         }
 
@@ -872,9 +872,9 @@ public interface CommandInvoker {
         }
 
         /**
-         * Set the application jvm arguments.
+         * Set the application environment.
          *
-         * @param env arguments
+         * @param env environment variables
          * @return this builder
          */
         public Builder environment(Map<String,String> env) {
@@ -883,7 +883,7 @@ public interface CommandInvoker {
         }
 
         /**
-         * Set the application jvm arguments.
+         * Set verbose.
          *
          * @return this builder
          */
@@ -893,7 +893,7 @@ public interface CommandInvoker {
         }
 
         /**
-         * Set the application jvm arguments.
+         * Set debug.
          *
          * @return this builder
          */

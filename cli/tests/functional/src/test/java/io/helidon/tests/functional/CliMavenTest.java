@@ -118,7 +118,7 @@ public class CliMavenTest {
     }
 
     @Test //Issue#499 https://github.com/oracle/helidon-build-tools/issues/499
-    public void catchIssue499() {
+    public void catchDevloopRecompilationFails() {
         try {
             runIssue499("2.2.3");
         } catch (Exception e) {
@@ -129,7 +129,7 @@ public class CliMavenTest {
     }
 
     @Test //Issue#499 https://github.com/oracle/helidon-build-tools/issues/499
-    public void testIssue499() throws Exception {
+    public void testDevloopRecompilationFails() throws Exception {
         runIssue499(PLUGIN_VERSION);
     }
 

@@ -141,7 +141,7 @@ class TestUtils {
     }
 
     /**
-     * Execute the dev CLI command.
+     * Execute the CLI dev goal.
      *
      * @param wd    working directory
      * @param args  command arguments
@@ -149,7 +149,7 @@ class TestUtils {
      * @return process monitor
      * @throws Exception if an error occurs
      */
-    static ProcessMonitor execDevWithDirAndInput(File wd, Map<String, String> environment, String... args) throws Exception {
+    static ProcessMonitor executeDevCommand(File wd, Map<String, String> environment, String... args) throws Exception {
         List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-cp", "\"" + classpath() + "\""));
         String version = System.getProperty(HELIDON_VERSION_PROPERTY);
         if (version != null) {
