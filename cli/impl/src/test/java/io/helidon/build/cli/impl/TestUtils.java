@@ -30,7 +30,6 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import io.helidon.build.common.OSType;
 import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.logging.LogFormatter;
 import io.helidon.build.common.PrintStreams;
@@ -128,20 +127,12 @@ class TestUtils {
         return execute(wd, input, cmdArgs);
     }
 
-    static String execScript(File wd, File input, String... args) throws Exception {
-        return execute(helidonShellScript(), wd, input, args);
-    }
-
-    static String execNativeImage(File wd, File input, String... args) throws Exception {
-        return execute(helidonNativeImage(), wd, input, args);
-    }
-
-    private static String execute(Path executable, File wd, File input, String... args) throws Exception {
+    static String execWithExecutable(Path executable, File wd, String... args) throws Exception {
         setExecutable(executable.toFile());
         List<String> cmdArgs = new LinkedList<>();
         cmdArgs.add(executable.normalize().toString());
         cmdArgs.addAll(Arrays.asList(args));
-        return execute(wd, input, cmdArgs);
+        return execute(wd, null, cmdArgs);
     }
 
     private static String execute(File wd, File input, List<String> args) throws Exception {
@@ -222,31 +213,6 @@ class TestUtils {
             throw new IllegalStateException("Unable to resolve helidon.test.version from test.properties");
         }
         return version;
-    }
-
-    /**
-     * Get the Helidon shell script Path.
-     *
-     * @return script path
-     * @throws IllegalStateException if the {@code helidon.shell.script} is system property not found
-     */
-    static Path helidonShellScript() {
-        String script = System.getProperty("helidon.script");
-        if (script == null) {
-            throw new IllegalStateException("Unable to resolve helidon.script system property");
-        }
-        script = OSType.currentOS().equals(OSType.Windows)
-                ? script.concat(".bat")
-                : script.concat(".sh");
-        return Path.of(script);
-    }
-
-    static Path helidonNativeImage() {
-        String script = System.getProperty("helidon.script");
-        if (script == null) {
-            throw new IllegalStateException("Unable to resolve helidon.script system property");
-        }
-        return Path.of(script).getParent().resolve("target/helidon");
     }
 
     /**

@@ -17,6 +17,7 @@
 package io.helidon.tests.functional;
 
 import io.helidon.build.cli.impl.CommandInvoker;
+import io.helidon.build.common.OSType;
 import io.helidon.build.common.ProcessMonitor;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -40,10 +41,14 @@ public class CliFunctionalTest {
     private static final String CUSTOM_PROJECT = "myproject";
     private static final String CUSTOM_PACKAGE_NAME = "custom.pack.name";
     private static final boolean IS_NATIVE_IMAGE = isNativeImage();
+
     private static Path workDir;
     private static Path inputFile;
+    private static Path helidonShell;
+    private static Path helidonBatch;
+    private static Path helidonNativeImage;
 
-    static boolean isNativeImage() {
+    private static boolean isNativeImage() {
         return System.getProperty("native.image") != null;
     }
 
@@ -52,6 +57,10 @@ public class CliFunctionalTest {
         workDir = Files.createTempDirectory("generated");
         inputFile = Files.createTempFile("input","txt");
         Files.writeString(inputFile, "\n\n\n");
+        Path executableDir = getExecutableDir();
+        helidonBatch = executableDir.resolve("helidon.bat");
+        helidonShell = executableDir.resolve("helidon.sh");
+        helidonNativeImage = executableDir.getParent().resolve("target/helidon");
     }
 
     @AfterAll
@@ -66,6 +75,14 @@ public class CliFunctionalTest {
                 .filter(it -> !it.equals(workDir))
                 .map(Path::toFile)
                 .forEach(File::delete);
+    }
+
+    private static Path getExecutableDir() {
+        String executable = System.getProperty("helidon.executable.directory");
+        if (executable == null) {
+            throw new IllegalStateException("helidon.executable.directory system property is not set");
+        }
+        return Path.of(executable);
     }
 
     @ParameterizedTest
@@ -268,9 +285,10 @@ public class CliFunctionalTest {
                                       String name,
                                       boolean startApp) throws Exception {
 
+        Path executable = OSType.currentOS() == OSType.Windows ? helidonBatch : helidonShell;
         cleanUp();
         commandInvoker(flavor, version, archetype, groupId, artifactId, packageName, name, startApp)
-                .execScript()
+                .executable(executable)
                 .invokeInit()
                 .validateProject();
     }
@@ -286,7 +304,7 @@ public class CliFunctionalTest {
 
         cleanUp();
         commandInvoker(flavor, version, archetype, groupId, artifactId, packageName, name, startApp)
-                .execHelidonClass()
+                .embedded()
                 .invokeInit()
                 .validateProject();
     }
@@ -301,7 +319,7 @@ public class CliFunctionalTest {
                                     boolean startApp) throws Exception {
         cleanUp();
         commandInvoker(flavor, version, archetype, groupId, artifactId, packageName, name, startApp)
-                .execNativeImage()
+                .executable(helidonNativeImage)
                 .invokeInit()
                 .validateProject();
     }

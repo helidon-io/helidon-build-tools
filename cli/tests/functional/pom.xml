@@ -71,7 +71,7 @@
                     <systemPropertyVariables>
                         <!-- version should be upgraded to 3.0.0 once released-->
                         <helidon.test.version>2.4.0</helidon.test.version>
-                        <helidon.script>${project.basedir}/../../impl/helidon</helidon.script>
+                        <helidon.executable.directory>${project.basedir}/../../impl</helidon.executable.directory>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
@@ -88,7 +88,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <systemPropertyVariables>
-                                <native.image>turned-on</native.image>
+                                <native.image>true</native.image>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>

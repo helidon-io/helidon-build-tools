@@ -24,7 +24,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.common.SubstitutionVariables;
@@ -48,6 +47,10 @@ import static org.hamcrest.Matchers.greaterThan;
  * Test utility to invoke {@code helidon}.
  */
 public interface CommandInvoker {
+
+    enum InvokerMode {
+        CLASSPATH, EMBEDDED, EXECUTABLE
+    }
 
     /**
      * Create a new init command invoker builder.
@@ -260,11 +263,10 @@ public interface CommandInvoker {
         private final Path workDir;
         private final UserConfig config;
         private final String helidonVersion;
+        private final Path executable;
         private final boolean buildProject;
         private final boolean useProjectOption;
-        private final boolean execScript;
-        private final boolean execHelidonClass;
-        private final boolean execNativeImage;
+        private final InvokerMode invokerMode;
 
         private InvokerImpl(Builder builder) {
             useProjectOption = builder.useProjectOption;
@@ -289,15 +291,24 @@ public interface CommandInvoker {
             groupId = builder.groupId == null ? config.defaultGroupId(substitutions) : builder.groupId;
             artifactId = config.artifactId(builder.artifactId, builder.projectName, substitutions);
             packageName = builder.packageName == null ? config.defaultPackageName(substitutions) : builder.packageName;
-            execScript = builder.execScript;
-            execHelidonClass = builder.execHelidonClass;
-            execNativeImage = builder.execNativeImage;
+            executable = builder.executable;
+            invokerMode = setInvokerMode(builder.executable, builder.embedded);
             try {
                 workDir = builder.workDir == null ? Files.createTempDirectory("helidon-init") : builder.workDir;
                 projectDir = unique(workDir, projectName);
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }
+        }
+
+        private InvokerMode setInvokerMode(Path executable, boolean embedded) {
+            if (executable != null) {
+                return InvokerMode.EXECUTABLE;
+            }
+            if (embedded) {
+                return InvokerMode.EMBEDDED;
+            }
+            return InvokerMode.CLASSPATH;
         }
 
         @Override
@@ -402,21 +413,14 @@ public interface CommandInvoker {
         }
 
         private String execute(File wd, File input, String... args) throws Exception {
-            if (Stream.of(execScript, execHelidonClass, execNativeImage).filter(b -> b).count() > 1L) {
-                throw new IllegalStateException("Several executable cannot be run in the same process");
+
+            if (invokerMode == InvokerMode.EXECUTABLE) {
+                return TestUtils.execWithExecutable(executable, wd, args);
             }
 
-            if (execScript) {
-                System.out.println("Executing CLI with helidon script");
-                return TestUtils.execScript(wd, input, args);
-            }
-            if (execHelidonClass) {
+            if (invokerMode == InvokerMode.EMBEDDED) {
                 Helidon.execute(args);
                 return "Helidon class executed";
-            }
-            if (execNativeImage) {
-                System.out.println("Executing CLI using native image");
-                return TestUtils.execNativeImage(wd, input, args);
             }
 
             return TestUtils.execWithDirAndInput(workDir.toFile(), input, args);
@@ -664,11 +668,10 @@ public interface CommandInvoker {
         private Path workDir;
         private File input;
         private String helidonVersion;
+        private Path executable;
         private boolean buildProject;
         private boolean useProjectOption;
-        private boolean execScript;
-        private boolean execHelidonClass;
-        private boolean execNativeImage;
+        private boolean embedded;
 
         /**
          * Use the {@code --project} option instead of the project argument.
@@ -819,8 +822,8 @@ public interface CommandInvoker {
          *
          * @return this builder
          */
-        public Builder execScript() {
-            this.execScript = true;
+        public Builder executable(Path executable) {
+            this.executable = executable;
             return this;
         }
 
@@ -829,18 +832,8 @@ public interface CommandInvoker {
          *
          * @return this builder
          */
-        public Builder execHelidonClass() {
-            this.execHelidonClass = true;
-            return this;
-        }
-
-        /**
-         * Run cli with native image.
-         *
-         * @return this builder
-         */
-        public Builder execNativeImage() {
-            this.execNativeImage = true;
+        public Builder embedded() {
+            this.embedded = true;
             return this;
         }
 
