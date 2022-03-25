@@ -46,7 +46,7 @@ public class CliMavenTest {
     private static final List<String> MAVEN_VERSIONS = List.of("3.1.1", "3.2.5", "3.8.1", "3.8.2", "3.8.4");
 
     private static Path workDir;
-    private static Path mavenHome;
+    private static Path mavenDirectory;
 
     private static String getProperty(String property) {
         String version = System.getProperty(property);
@@ -60,10 +60,10 @@ public class CliMavenTest {
     @BeforeAll
     static void setUp() throws IOException {
         workDir = Files.createTempDirectory("generated");
-        mavenHome = Files.createTempDirectory("maven");
+        mavenDirectory = Files.createTempDirectory("maven");
 
         for (String version : MAVEN_VERSIONS) {
-            TestUtils.downloadMavenDist(mavenHome, version);
+            TestUtils.downloadMavenDist(mavenDirectory, version);
         }
     }
 
@@ -80,6 +80,7 @@ public class CliMavenTest {
     @Test
     public void testWrongMavenVersion() throws Exception {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        Path mavenBinDir = mavenDirectory.resolve("apache-maven-3.1.1/bin");
         List<String> mavenArgs = List.of(
                 "archetype:generate",
                 "-DinteractiveMode=false",
@@ -94,7 +95,7 @@ public class CliMavenTest {
 
         try {
             MavenCommand.builder()
-                    .executable(Path.of(mavenHome.toString(), "apache-maven-3.1.1", "bin", TestUtils.getMvnExecutable("3.1.1")))
+                    .executable(mavenBinDir.resolve(TestUtils.getMvnExecutable(mavenBinDir)))
                     .directory(workDir)
                     .stdOut(new PrintStream(stream))
                     .stdErr(new PrintStream(stream))
@@ -155,10 +156,11 @@ public class CliMavenTest {
     public void testCliMavenPlugin() throws Exception {
         int port = TestUtils.getAvailablePort();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        TestUtils.generateBareSe(workDir, mavenHome.toString());
+        Path mavenBinDir = mavenDirectory.resolve("apache-maven-3.8.4/bin");
+        TestUtils.generateBareSe(workDir, mavenBinDir);
 
         ProcessMonitor monitor = MavenCommand.builder()
-                .executable(Path.of(mavenHome.toString(), "apache-maven-3.8.4", "bin", TestUtils.getMvnExecutable("3.8.4")))
+                .executable(mavenBinDir.resolve(TestUtils.getMvnExecutable(mavenBinDir)))
                 .directory(workDir.resolve("artifactid"))
                 .stdOut(new PrintStream(stream))
                 .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
@@ -175,11 +177,12 @@ public class CliMavenTest {
     private String runCliMavenPluginJansiIssue(String pluginVersion) throws Exception {
         int port = TestUtils.getAvailablePort();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        TestUtils.generateBareSe(workDir, mavenHome.toString());
+        Path mavenBinDir = mavenDirectory.resolve("apache-maven-3.8.2/bin");
+        TestUtils.generateBareSe(workDir, mavenBinDir);
         ProcessMonitor monitor = null;
         try {
              monitor = MavenCommand.builder()
-                    .executable(Path.of(mavenHome.toString(), "apache-maven-3.8.2", "bin", TestUtils.getMvnExecutable("3.8.2")))
+                    .executable(mavenBinDir.resolve(TestUtils.getMvnExecutable(mavenBinDir)))
                     .directory(workDir.resolve("artifactid"))
                     .stdOut(new PrintStream(stream))
                     .stdErr(new PrintStream(stream))
@@ -201,10 +204,11 @@ public class CliMavenTest {
     public void runIssue499(String pluginVersion) throws Exception {
         int port = TestUtils.getAvailablePort();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        Path mavenBinDir = mavenDirectory.resolve("apache-maven-3.8.2/bin");
 
-        TestUtils.generateBareSe(workDir, mavenHome.toString());
+        TestUtils.generateBareSe(workDir, mavenBinDir);
         ProcessMonitor monitor = MavenCommand.builder()
-                .executable(Path.of(mavenHome.toString(), "apache-maven-3.8.2", "bin", TestUtils.getMvnExecutable("3.8.2")))
+                .executable(mavenBinDir.resolve(TestUtils.getMvnExecutable(mavenBinDir)))
                 .directory(workDir.resolve("artifactid"))
                 .stdOut(new PrintStream(stream))
                 .stdErr(new PrintStream(stream))
@@ -250,9 +254,10 @@ public class CliMavenTest {
 
     private String runMissingValueTest(List<String> args, String mavenVersion) throws Exception {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        Path mavenBinDir = mavenDirectory.resolve(String.format("apache-maven-%s/bin", mavenVersion));
         try {
             MavenCommand.builder()
-                    .executable(Path.of(mavenHome.toString(), "apache-maven-" + mavenVersion, "bin", TestUtils.getMvnExecutable(mavenVersion)))
+                    .executable(mavenBinDir.resolve(TestUtils.getMvnExecutable(mavenBinDir)))
                     .directory(workDir)
                     .stdOut(new PrintStream(stream))
                     .stdErr(new PrintStream(stream))

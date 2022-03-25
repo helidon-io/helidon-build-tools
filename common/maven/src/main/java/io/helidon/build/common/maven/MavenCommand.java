@@ -63,6 +63,7 @@ public class MavenCommand {
     private static final String MAVEN_BINARY_NAME = OS.mavenExec();
     private static final String MAVEN_HOME_VAR = "MAVEN_HOME";
     private static final String MVN_HOME_VAR = "MVN_HOME";
+    private static final String M2_HOME_VAR = "M2_HOME";
     private static final String MAVEN_CORE_PREFIX = "maven-core";
     private static final String MAVEN_SHIM_TARGET = "libexec/bin/mvn";
     private static final String JAR_SUFFIX = ".jar";
@@ -315,8 +316,7 @@ public class MavenCommand {
         private Runnable afterShutdown = () -> {};
         private MavenVersion requiredMinimumVersion;
         private ProcessBuilder processBuilder;
-        private String customMavenExec;
-        private boolean ignoreMavenVersion = false;
+        private String executable;
 
         private Builder() {
             this.mavenArgs = new ArrayList<>();
@@ -509,8 +509,7 @@ public class MavenCommand {
          * @return This builder.
          */
         public Builder executable(Path mvn) {
-            customMavenExec = mvn.toString();
-            ignoreMavenVersion = true;
+            executable = mvn.toString();
             return this;
         }
 
@@ -536,7 +535,7 @@ public class MavenCommand {
             // Create the command
 
             List<String> command = new ArrayList<>();
-            command.add(customMavenExec == null ? DEFAULT_MAVEN_EXEC : customMavenExec);
+            command.add(executable == null ? DEFAULT_MAVEN_EXEC : executable);
             command.addAll(mavenArgs);
             if (verbose) {
                 command.add("--debug");
@@ -579,9 +578,9 @@ public class MavenCommand {
             mavenOpts = addMavenOption(AnsiConsoleInstaller.childProcessArgument(), mavenOpts);
 
             env.put(MAVEN_OPTS_VAR, mavenOpts);
-            if (customMavenExec != null) {
-                String mvnHome = Path.of(customMavenExec).getParent().getParent().toString();
-                processBuilder.environment().put("M2_HOME", mvnHome);
+            if (executable != null) {
+                String mvnHome = Path.of(executable).getParent().getParent().toString();
+                processBuilder.environment().put(M2_HOME_VAR, mvnHome);
                 processBuilder.environment().put(MVN_HOME_VAR, mvnHome);
                 processBuilder.environment().put(MAVEN_HOME_VAR, mvnHome);
             }
@@ -605,7 +604,7 @@ public class MavenCommand {
         }
 
         private void prepare() {
-            if (!ignoreMavenVersion) {
+            if (executable == null) {
                 requireMavenVersion(requiredMinimumVersion);
             }
             requireNonNull(directory, "directory required");

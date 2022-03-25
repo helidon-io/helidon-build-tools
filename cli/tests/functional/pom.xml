@@ -33,6 +33,7 @@
 
     <dependencies>
         <dependency>
+            <!-- Ensure helidon cli maven plugin is built before running functional test -->
             <groupId>io.helidon.build-tools</groupId>
             <artifactId>helidon-cli-maven-plugin</artifactId>
             <version>${project.version}</version>

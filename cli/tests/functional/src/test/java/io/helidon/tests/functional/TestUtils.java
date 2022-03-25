@@ -40,13 +40,16 @@ import java.util.logging.Logger;
 public class TestUtils {
 
     private static final Logger LOGGER = Logger.getLogger(TestUtils.class.getName());
+    private static final String MAVEN_REPO = "http://archive.apache.org/dist/maven/maven-3/%s/binaries/apache-maven-%s-bin.zip";
+
+    static {
+        Proxies.setProxyPropertiesFromEnv();
+    }
 
     static void downloadMavenDist(Path destination, String version) throws IOException {
 
         Path zipPath = destination.resolve("maven-" + version + ".zip");
-        URL mavenUrl = new URL(
-                String.format("http://archive.apache.org/dist/maven/maven-3/%s/binaries/apache-maven-%s-bin.zip", version, version)
-        );
+        URL mavenUrl = new URL(String.format(MAVEN_REPO, version, version));
 
         LOGGER.info("Downloading maven from URL : " + mavenUrl);
 
@@ -65,17 +68,10 @@ public class TestUtils {
                 .forEach(file -> file.setExecutable(true));
 
         FileUtils.delete(zipPath);
-
-        Files.walk(destination)
-                .map(Path::getFileName)
-                .map(Path::toString)
-                .filter(name -> name.equals("mvn"))
-                .findFirst().orElseThrow();
     }
 
     static void downloadFileFromUrl(Path destination, URL url) {
         try {
-            Proxies.setProxyPropertiesFromEnv();
             InputStream is = NetworkConnection.builder()
                     .url(url)
                     .maxRetries(2)
@@ -126,7 +122,7 @@ public class TestUtils {
         }
     }
 
-    static void generateBareSe(Path wd, String mavenHome) {
+    static void generateBareSe(Path wd, Path mavenBinDir) {
         List<String> mavenArgs = List.of(
                 "archetype:generate",
                 "-DinteractiveMode=false",
@@ -141,7 +137,7 @@ public class TestUtils {
 
         try {
             MavenCommand.builder()
-                    .executable(Path.of(mavenHome, "apache-maven-3.8.4", "bin", TestUtils.getMvnExecutable("3.8.4")))
+                    .executable(mavenBinDir.resolve(TestUtils.getMvnExecutable(mavenBinDir)))
                     .directory(wd)
                     .addArguments(mavenArgs)
                     .build()
@@ -151,14 +147,14 @@ public class TestUtils {
         }
     }
 
-    static String getMvnExecutable(String mavenVersion) {
-        if (OSType.currentOS().equals(OSType.Windows)) {
-            if (MavenVersion.toMavenVersion(mavenVersion).isLessThanOrEqualTo(MavenVersion.toMavenVersion("3.2.5"))) {
-                return "mvn.bat";
+    static String getMvnExecutable(Path mavenBinDir) {
+        List<String> executables = List.of("mvn.bat", "mvn.cmd", "mvn");
+        for (String executable : executables) {
+            if (Files.exists(mavenBinDir.resolve(executable))) {
+                return executable;
             }
-            return "mvn.cmd";
         }
-        return "mvn";
+        throw new IllegalStateException(String.format("mvn executable not found in %s directory.", mavenBinDir));
     }
 
 }

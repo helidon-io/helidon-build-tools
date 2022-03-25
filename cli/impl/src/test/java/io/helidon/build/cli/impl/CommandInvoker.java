@@ -445,7 +445,7 @@ public interface CommandInvoker {
             System.out.println();
 
             // Execute and verify process exit code
-            devMonitor = TestUtils.executeDevCommand(workDir.toFile(), environment, argsArray);
+            devMonitor = TestUtils.startWithDirAndEnv(workDir.toFile(), environment, argsArray);
             return new InvocationResult(this, devMonitor.output());
         }
 

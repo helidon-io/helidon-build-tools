@@ -751,7 +751,8 @@ public final class FileUtils {
     }
 
     /**
-     * Unzip a zip file.
+     * Unzip a zip file using {@link FileSystem} with a fall back on {@link ZipInputStream}
+     * if an exception is caught.
      *
      * @param zip       source file
      * @param directory target directory
@@ -783,12 +784,12 @@ public final class FileUtils {
     }
 
     /**
-     * Unzip a zip file.
+     * Unzip a zip file using {@link ZipInputStream}.
      *
      * @param zip       source file
      * @param directory target directory
      */
-    public static void unzip0(Path zip, Path directory) {
+    private static void unzip0(Path zip, Path directory) {
         try {
             if (!Files.exists(directory)) {
                 Files.createDirectory(directory);

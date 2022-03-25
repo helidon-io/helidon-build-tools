@@ -114,28 +114,14 @@ class TestUtils {
      * @throws Exception if an error occurs
      */
     static String execWithDirAndInput(File wd, File input, String... args) throws Exception {
-        List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-cp", "\"" + classpath() + "\""));
-        String version = System.getProperty(HELIDON_VERSION_PROPERTY);
-        if (version != null) {
-            cmdArgs.add("-D" + HELIDON_VERSION_PROPERTY + "=" + version);
-        }
-        cmdArgs.add(Helidon.class.getName());
-        cmdArgs.addAll(Arrays.asList(args));
-        ProcessBuilder pb = new ProcessBuilder(cmdArgs);
+        ProcessBuilder pb = new ProcessBuilder();
 
         if (wd != null) {
             pb.directory(wd);
         }
 
-        ProcessMonitor monitor = ProcessMonitor.builder()
-                                               .processBuilder(pb)
-                                               .stdIn(input)
-                                               .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(LogLevel.INFO)))
-                                               .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(LogLevel.ERROR)))
-                                               .capture(true)
-                                               .build()
-                                               .start()
-                                               .waitForCompletion(10, TimeUnit.MINUTES);
+        ProcessMonitor monitor = startWithProcessBuilderAndInput(pb, input, args)
+                .waitForCompletion(10, TimeUnit.MINUTES);
         String output = String.join(EOL, monitor.output());
         return strip(output);
     }
@@ -149,15 +135,8 @@ class TestUtils {
      * @return process monitor
      * @throws Exception if an error occurs
      */
-    static ProcessMonitor executeDevCommand(File wd, Map<String, String> environment, String... args) throws Exception {
-        List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-cp", "\"" + classpath() + "\""));
-        String version = System.getProperty(HELIDON_VERSION_PROPERTY);
-        if (version != null) {
-            cmdArgs.add("-D" + HELIDON_VERSION_PROPERTY + "=" + version);
-        }
-        cmdArgs.add(Helidon.class.getName());
-        cmdArgs.addAll(Arrays.asList(args));
-        ProcessBuilder pb = new ProcessBuilder(cmdArgs);
+    static ProcessMonitor startWithDirAndEnv(File wd, Map<String, String> environment, String... args) throws Exception {
+        ProcessBuilder pb = new ProcessBuilder();
 
         if (environment != null) {
             pb.environment().putAll(environment);
@@ -167,13 +146,27 @@ class TestUtils {
             pb.directory(wd);
         }
 
+        return startWithProcessBuilderAndInput(pb, null, args);
+    }
+
+    private static ProcessMonitor startWithProcessBuilderAndInput(ProcessBuilder pb, File input, String... args) throws IOException {
+        List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-cp", "\"" + classpath() + "\""));
+        String version = System.getProperty(HELIDON_VERSION_PROPERTY);
+        if (version != null) {
+            cmdArgs.add("-D" + HELIDON_VERSION_PROPERTY + "=" + version);
+        }
+        cmdArgs.add(Helidon.class.getName());
+        cmdArgs.addAll(Arrays.asList(args));
+        pb.command(cmdArgs);
+
         return ProcessMonitor.builder()
-                   .processBuilder(pb)
-                   .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(LogLevel.INFO)))
-                   .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(LogLevel.ERROR)))
-                   .capture(true)
-                   .build()
-                   .start();
+                .processBuilder(pb)
+                .stdIn(input)
+                .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(LogLevel.INFO)))
+                .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(LogLevel.ERROR)))
+                .capture(true)
+                .build()
+                .start();
     }
 
     /**
