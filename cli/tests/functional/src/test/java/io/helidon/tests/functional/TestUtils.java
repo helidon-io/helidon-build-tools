@@ -148,7 +148,9 @@ public class TestUtils {
     }
 
     static String getMvnExecutable(Path mavenBinDir) {
-        List<String> executables = List.of("mvn.bat", "mvn.cmd", "mvn");
+        List<String> executables = OSType.currentOS() == OSType.Windows
+                ? List.of("mvn.bat", "mvn.cmd")
+                : List.of("mvn");
         for (String executable : executables) {
             if (Files.exists(mavenBinDir.resolve(executable))) {
                 return executable;
