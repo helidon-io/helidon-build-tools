@@ -777,38 +777,8 @@ public final class FileUtils {
                             throw new UncheckedIOException(ioe);
                         }
                     });
-        } catch (IOException | UncheckedIOException e) {
-            //if zipFileSystem fails, try to unzip with ZipStream
-            unzip0(zip, directory);
-        }
-    }
-
-    /**
-     * Unzip a zip file using {@link ZipInputStream}.
-     *
-     * @param zip       source file
-     * @param directory target directory
-     */
-    private static void unzip0(Path zip, Path directory) {
-        try {
-            if (!Files.exists(directory)) {
-                Files.createDirectory(directory);
-            }
-            ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zip.toString()));
-            ZipEntry entry = zipIn.getNextEntry();
-            while (entry != null) {
-                Path filePath = directory.resolve(entry.getName());
-                if (!entry.isDirectory()) {
-                    Files.copy(zipIn, filePath, REPLACE_EXISTING);
-                } else {
-                    Files.createDirectories(filePath);
-                }
-                zipIn.closeEntry();
-                entry = zipIn.getNextEntry();
-            }
-            zipIn.close();
-        } catch (IOException ioe) {
-            throw new UncheckedIOException(ioe);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
