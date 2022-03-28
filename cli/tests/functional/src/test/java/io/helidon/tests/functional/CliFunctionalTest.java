@@ -49,7 +49,7 @@ public class CliFunctionalTest {
     private static Path helidonNativeImage;
 
     private static boolean isNativeImage() {
-        return System.getProperty("native.image") != null;
+        return Boolean.parseBoolean(System.getProperty("native.image"));
     }
 
     @BeforeAll
@@ -60,7 +60,7 @@ public class CliFunctionalTest {
         Path executableDir = getExecutableDir();
         helidonBatch = executableDir.resolve("helidon.bat");
         helidonShell = executableDir.resolve("helidon.sh");
-        helidonNativeImage = executableDir.getParent().resolve("target/helidon");
+        helidonNativeImage = executableDir.resolve("target/helidon");
     }
 
     @AfterAll
