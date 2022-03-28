@@ -40,7 +40,7 @@ import java.util.logging.Logger;
 public class TestUtils {
 
     private static final Logger LOGGER = Logger.getLogger(TestUtils.class.getName());
-    private static final String MAVEN_REPO = "http://archive.apache.org/dist/maven/maven-3/%s/binaries/apache-maven-%s-bin.zip";
+    private static final String MAVEN_DIST_URL = "http://archive.apache.org/dist/maven/maven-3/%s/binaries/apache-maven-%s-bin.zip";
 
     static {
         Proxies.setProxyPropertiesFromEnv();
@@ -49,7 +49,7 @@ public class TestUtils {
     static void downloadMavenDist(Path destination, String version) throws IOException {
 
         Path zipPath = destination.resolve("maven-" + version + ".zip");
-        URL mavenUrl = new URL(String.format(MAVEN_REPO, version, version));
+        URL mavenUrl = new URL(String.format(MAVEN_DIST_URL, version, version));
 
         LOGGER.info("Downloading maven from URL : " + mavenUrl);
 

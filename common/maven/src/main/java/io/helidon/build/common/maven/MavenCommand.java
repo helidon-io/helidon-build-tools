@@ -580,9 +580,8 @@ public class MavenCommand {
             env.put(MAVEN_OPTS_VAR, mavenOpts);
             if (executable != null) {
                 String mvnHome = Path.of(executable).getParent().getParent().toString();
+                //required for maven version 3.1.1
                 processBuilder.environment().put(M2_HOME_VAR, mvnHome);
-                processBuilder.environment().put(MVN_HOME_VAR, mvnHome);
-                processBuilder.environment().put(MAVEN_HOME_VAR, mvnHome);
             }
 
             return new MavenCommand(this);

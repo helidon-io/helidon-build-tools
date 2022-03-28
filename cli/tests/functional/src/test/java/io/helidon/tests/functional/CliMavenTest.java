@@ -44,6 +44,7 @@ public class CliMavenTest {
     private static final String CLI_VERSION = getProperty("helidon.cli.version");
     private static final String PLUGIN_VERSION = getProperty("helidon.plugin.version");
     private static final List<String> MAVEN_VERSIONS = List.of("3.1.1", "3.2.5", "3.8.1", "3.8.2", "3.8.4");
+    private static final MavenVersion MAVEN_3_2_5 = MavenVersion.toMavenVersion("3.2.5");
 
     private static Path workDir;
     private static Path mavenDirectory;
@@ -74,7 +75,7 @@ public class CliMavenTest {
 
     static Stream<String> getValidMavenVersions() {
         return MAVEN_VERSIONS.stream()
-                .filter(v -> MavenVersion.toMavenVersion(v).isGreaterThanOrEqualTo(MavenVersion.toMavenVersion("3.2.5")));
+                .filter(v -> MavenVersion.toMavenVersion(v).isGreaterThanOrEqualTo(MAVEN_3_2_5));
     }
 
     @Test
