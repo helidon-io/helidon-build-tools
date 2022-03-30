@@ -20,18 +20,15 @@ import io.helidon.build.common.NetworkConnection;
 import io.helidon.build.common.OSType;
 import io.helidon.build.common.Proxies;
 import io.helidon.build.common.maven.MavenCommand;
-import io.helidon.build.common.maven.MavenVersion;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.HttpURLConnection;
 import java.net.ServerSocket;
 import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -40,7 +37,7 @@ import java.util.logging.Logger;
 public class TestUtils {
 
     private static final Logger LOGGER = Logger.getLogger(TestUtils.class.getName());
-    private static final String MAVEN_DIST_URL = "http://archive.apache.org/dist/maven/maven-3/%s/binaries/apache-maven-%s-bin.zip";
+    private static final String MAVEN_DIST_URL = "https://archive.apache.org/dist/maven/maven-3/%s/binaries/apache-maven-%s-bin.zip";
 
     static {
         Proxies.setProxyPropertiesFromEnv();
@@ -74,14 +71,11 @@ public class TestUtils {
         try {
             InputStream is = NetworkConnection.builder()
                     .url(url)
-                    .maxRetries(2)
                     .connectTimeout(100*60*1000)
                     .readTimeout(100*60*1000)
                     .open();
-            ReadableByteChannel readableByteChannel = Channels.newChannel(is);
-            FileOutputStream fileOutputStream = new FileOutputStream(Files.createFile(destination).toString());
-            fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
-            fileOutputStream.close();
+            OutputStream os = Files.newOutputStream(destination);
+            is.transferTo(os);
         } catch (IOException e) {
             throw new UncheckedIOException("Download failed at URL : " + url, e);
         }

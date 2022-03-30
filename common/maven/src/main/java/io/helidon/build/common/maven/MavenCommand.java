@@ -164,6 +164,27 @@ public class MavenCommand {
     }
 
     /**
+     * Returns the version of the {@code mvn} executable from mavenHome directory.
+     *
+     * @param mavenHome Maven home directory
+     * @return The version.
+     * @throws IllegalStateException if executable not found.
+     */
+    private static MavenVersion getMavenVersion(Path mavenHome) {
+        final Path mvnHome = mavenHome == null ? mavenHome() : mavenHome;
+        final Path libDir = requireDirectory(mvnHome.resolve("lib"));
+        final List<Path> jars = listFiles(libDir, name -> name.startsWith(MAVEN_CORE_PREFIX) && name.endsWith(JAR_SUFFIX));
+        if (jars.isEmpty()) {
+            throw new IllegalStateException(MAVEN_CORE_PREFIX + "* not found in " + libDir);
+        }
+        final Path jarFile = jars.get(0);
+        final String fileName = jarFile.getFileName().toString();
+        final String versionStr = jarVersion(jarFile)
+                .orElse(fileName.substring(MAVEN_CORE_PREFIX.length() + 1, fileName.length() - JAR_SUFFIX.length()));
+        return MavenVersion.toMavenVersion(versionStr);
+    }
+
+    /**
      * Returns the version of the {@code mvn} executable found via {@link MavenCommand#mavenExecutable()}.
      *
      * @return The version.
@@ -171,18 +192,7 @@ public class MavenCommand {
      */
     public static MavenVersion installedVersion() {
         if (MAVEN_VERSION.get() == null) {
-            final Path mavenHome = mavenHome();
-            final Path libDir = requireDirectory(mavenHome.resolve("lib"));
-            final List<Path> jars = listFiles(libDir, name -> name.startsWith(MAVEN_CORE_PREFIX) && name.endsWith(JAR_SUFFIX));
-            if (jars.isEmpty()) {
-                throw new IllegalStateException(MAVEN_CORE_PREFIX + "* not found in " + libDir);
-            }
-            final Path jarFile = jars.get(0);
-            final String fileName = jarFile.getFileName().toString();
-            final String versionStr = jarVersion(jarFile)
-                    .orElse(fileName.substring(MAVEN_CORE_PREFIX.length() + 1, fileName.length() - JAR_SUFFIX.length()));
-            final MavenVersion version = MavenVersion.toMavenVersion(versionStr);
-            MAVEN_VERSION.set(version);
+            MAVEN_VERSION.set(getMavenVersion(null));
         }
         return MAVEN_VERSION.get();
     }
@@ -316,7 +326,7 @@ public class MavenCommand {
         private Runnable afterShutdown = () -> {};
         private MavenVersion requiredMinimumVersion;
         private ProcessBuilder processBuilder;
-        private String executable;
+        private Path executable;
 
         private Builder() {
             this.mavenArgs = new ArrayList<>();
@@ -509,7 +519,7 @@ public class MavenCommand {
          * @return This builder.
          */
         public Builder executable(Path mvn) {
-            executable = mvn.toString();
+            executable = mvn;
             return this;
         }
 
@@ -535,7 +545,7 @@ public class MavenCommand {
             // Create the command
 
             List<String> command = new ArrayList<>();
-            command.add(executable == null ? DEFAULT_MAVEN_EXEC : executable);
+            command.add(executable == null ? DEFAULT_MAVEN_EXEC : executable.toString());
             command.addAll(mavenArgs);
             if (verbose) {
                 command.add("--debug");
@@ -579,9 +589,10 @@ public class MavenCommand {
 
             env.put(MAVEN_OPTS_VAR, mavenOpts);
             if (executable != null) {
-                String mvnHome = Path.of(executable).getParent().getParent().toString();
-                //required for maven version 3.1.1
-                processBuilder.environment().put(M2_HOME_VAR, mvnHome);
+                String mvnHome = executable.getParent().getParent().toString();
+                if (getMavenVersion(Path.of(mvnHome)).isLessThanOrEqualTo(MavenVersion.toMavenVersion("3.2.5"))) {
+                    env.put(M2_HOME_VAR, mvnHome);
+                }
             }
 
             return new MavenCommand(this);
