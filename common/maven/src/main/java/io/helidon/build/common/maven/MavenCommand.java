@@ -591,7 +591,7 @@ public class MavenCommand {
             if (executable != null) {
                 String mvnHome = executable.getParent().getParent().toString();
                 if (getMavenVersion(Path.of(mvnHome)).isLessThanOrEqualTo(MavenVersion.toMavenVersion("3.2.5"))) {
-                    env.put(M2_HOME_VAR, mvnHome);
+                    //env.put(M2_HOME_VAR, mvnHome);
                 }
             }
 
