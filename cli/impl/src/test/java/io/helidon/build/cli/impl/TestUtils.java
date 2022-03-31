@@ -20,11 +20,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -114,50 +115,48 @@ class TestUtils {
      * @throws Exception if an error occurs
      */
     static String execWithDirAndInput(File wd, File input, String... args) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder();
-
-        if (wd != null) {
-            pb.directory(wd);
-        }
-
-        ProcessMonitor monitor = startWithProcessBuilderAndInput(pb, input, args)
-                .waitForCompletion(10, TimeUnit.MINUTES);
-        String output = String.join(EOL, monitor.output());
-        return strip(output);
+        List<String> cmdArgs = buildJavaCommand();
+        cmdArgs.addAll(Arrays.asList(args));
+        return execute(wd, input, cmdArgs);
     }
 
-    /**
-     * Execute the CLI dev goal.
-     *
-     * @param wd    working directory
-     * @param args  command arguments
-     * @param environment  environment variables
-     * @return process monitor
-     * @throws Exception if an error occurs
-     */
-    static ProcessMonitor startWithDirAndEnv(File wd, Map<String, String> environment, String... args) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder();
-
-        if (environment != null) {
-            pb.environment().putAll(environment);
-        }
-
-        if (wd != null) {
-            pb.directory(wd);
-        }
-
-        return startWithProcessBuilderAndInput(pb, null, args);
+    static String execWithExecutable(Path executable, File wd, String... args) throws Exception {
+        setExecutable(executable.toFile());
+        List<String> cmdArgs = new LinkedList<>();
+        cmdArgs.add(executable.normalize().toString());
+        cmdArgs.addAll(Arrays.asList(args));
+        return execute(wd, null, cmdArgs);
     }
 
-    private static ProcessMonitor startWithProcessBuilderAndInput(ProcessBuilder pb, File input, String... args) throws IOException {
+    static ProcessMonitor startWithDirAndInput(File wd, File input, List<String> args) throws Exception {
+        List<String> cmdArgs = buildJavaCommand();
+        cmdArgs.addAll(args);
+        return startMonitorWithDirAndInput(wd, input, cmdArgs);
+    }
+
+    private static List<String> buildJavaCommand() {
         List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-cp", "\"" + classpath() + "\""));
         String version = System.getProperty(HELIDON_VERSION_PROPERTY);
         if (version != null) {
             cmdArgs.add("-D" + HELIDON_VERSION_PROPERTY + "=" + version);
         }
         cmdArgs.add(Helidon.class.getName());
-        cmdArgs.addAll(Arrays.asList(args));
-        pb.command(cmdArgs);
+        return cmdArgs;
+    }
+
+    private static String execute(File wd, File input, List<String> args) throws Exception {
+        ProcessMonitor monitor = startMonitorWithDirAndInput(wd, input, args)
+                .waitForCompletion(10, TimeUnit.MINUTES);
+        String output = String.join(EOL, monitor.output());
+        return strip(output);
+    }
+
+    private static ProcessMonitor startMonitorWithDirAndInput(File wd, File input, List<String> args) throws Exception {
+        ProcessBuilder pb = new ProcessBuilder(args);
+
+        if (wd != null) {
+            pb.directory(wd);
+        }
 
         return ProcessMonitor.builder()
                 .processBuilder(pb)
@@ -167,6 +166,19 @@ class TestUtils {
                 .capture(true)
                 .build()
                 .start();
+    }
+
+    /**
+     * Make a file executable.
+     *
+     * @param file to be made executable
+     * @throws IllegalStateException if the file can not be made executable
+     */
+    static void setExecutable(File file) {
+        Objects.requireNonNull(file, "File provided is null");
+        if (!file.setExecutable(true)) {
+            throw new IllegalStateException(String.format("Unable to make file %s executable.", file.getName()));
+        }
     }
 
     /**

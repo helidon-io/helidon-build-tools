@@ -230,7 +230,6 @@ public class MavenCommand {
         // If we were able to determine the maven version, go ahead and make sure it is acceptable.
         Requirements.require(installed.isGreaterThanOrEqualTo(requiredMinimumVersion),
                 VERSION_ERROR, installed, requiredMinimumVersion, MAVEN_DOWNLOAD_URL);
-
     }
 
     /**

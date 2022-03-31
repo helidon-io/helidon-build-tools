@@ -42,7 +42,6 @@ import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.zip.ZipInputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.FileSystems.getFileSystem;
@@ -749,8 +748,7 @@ public final class FileUtils {
     }
 
     /**
-     * Unzip a zip file using {@link FileSystem} with a fall back on {@link ZipInputStream}
-     * if an exception is caught.
+     * Unzip a zip file using {@link FileSystem}.
      *
      * @param zip       source file
      * @param directory target directory
