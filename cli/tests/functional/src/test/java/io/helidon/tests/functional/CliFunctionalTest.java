@@ -21,7 +21,6 @@ import io.helidon.build.common.OSType;
 import io.helidon.build.common.ProcessMonitor;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -32,6 +31,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 
 public class CliFunctionalTest {
 
@@ -189,7 +191,7 @@ public class CliFunctionalTest {
                 .build()
                 .invokeInit()
                 .output();
-        Assertions.assertTrue(output.contains("Found maven executable"));
+        assertThat(output, containsString("Found maven executable"));
     }
 
     @Test
@@ -206,7 +208,7 @@ public class CliFunctionalTest {
         TestUtils.waitForApplication(port);
 
         if (!invoker.stopMonitor().output().contains("Detecting the operating system and CPU architecture")) {
-            Assertions.fail("Verbose mode does not print system information");
+            assertThat("Verbose mode does not print system information.", false);
         }
     }
 
@@ -217,10 +219,10 @@ public class CliFunctionalTest {
                     .build()
                     .invokeInit();
         } catch (ProcessMonitor.ProcessFailedException e) {
-            Assertions.assertTrue(e.getMessage().contains("ERROR: Invalid choice: WRONGFLAVOR"));
+            assertThat(e.getMessage(), containsString("ERROR: Invalid choice: WRONGFLAVOR"));
             return;
         }
-        Assertions.fail("Exception should have been thrown");
+        assertThat("Exception should have been thrown due to wrong flavor input.", false);
     }
 
     @Test
@@ -230,10 +232,10 @@ public class CliFunctionalTest {
                     .build()
                     .invokeInit();
         } catch (ProcessMonitor.ProcessFailedException e) {
-            Assertions.assertTrue(e.getMessage().contains("Helidon version 0.0.0 not found."));
+            assertThat(e.getMessage(), containsString("Helidon version 0.0.0 not found."));
             return;
         }
-        Assertions.fail("Exception should have been thrown");
+        assertThat("Exception should have been thrown because of wrong helidon version.", false);
     }
 
     @Test
@@ -243,10 +245,10 @@ public class CliFunctionalTest {
                     .build()
                     .invokeInit();
         } catch (ProcessMonitor.ProcessFailedException e) {
-            Assertions.assertTrue(e.getMessage().contains("\"catalogEntry\" is null"));
+            assertThat(e.getMessage(), containsString("\"catalogEntry\" is null"));
             return;
         }
-        Assertions.fail("Exception should have been thrown");
+        assertThat("Exception should have been thrown because of wrong archetype name", false);
     }
 
     private CommandInvoker.Builder commandInvoker() {

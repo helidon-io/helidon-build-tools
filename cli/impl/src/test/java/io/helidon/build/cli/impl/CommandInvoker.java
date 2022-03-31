@@ -739,9 +739,9 @@ public interface CommandInvoker {
         private boolean buildProject;
         private boolean useProjectOption;
         private boolean embedded;
+        private boolean verbose;
+        private boolean debug;
         private String appJvmArgs;
-        private boolean verbose = false;
-        private boolean debug = false;
 
         /**
          * Use the {@code --project} option instead of the project argument.
