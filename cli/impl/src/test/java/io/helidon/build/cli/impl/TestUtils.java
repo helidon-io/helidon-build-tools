@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -123,23 +124,49 @@ class TestUtils {
         }
         cmdArgs.add(Helidon.class.getName());
         cmdArgs.addAll(Arrays.asList(args));
-        ProcessBuilder pb = new ProcessBuilder(cmdArgs);
+        return execute(wd, input, cmdArgs);
+    }
+
+    static String execWithExecutable(Path executable, File wd, String... args) throws Exception {
+        setExecutable(executable.toFile());
+        List<String> cmdArgs = new LinkedList<>();
+        cmdArgs.add(executable.normalize().toString());
+        cmdArgs.addAll(Arrays.asList(args));
+        return execute(wd, null, cmdArgs);
+    }
+
+    private static String execute(File wd, File input, List<String> args) throws Exception {
+        ProcessBuilder pb = new ProcessBuilder(args);
 
         if (wd != null) {
             pb.directory(wd);
         }
 
         ProcessMonitor monitor = ProcessMonitor.builder()
-                                               .processBuilder(pb)
-                                               .stdIn(input)
-                                               .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(LogLevel.INFO)))
-                                               .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(LogLevel.ERROR)))
-                                               .capture(true)
-                                               .build()
-                                               .start()
-                                               .waitForCompletion(10, TimeUnit.MINUTES);
+                .processBuilder(pb)
+                .stdIn(input)
+                .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(LogLevel.INFO)))
+                .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(LogLevel.ERROR)))
+                .capture(true)
+                .build()
+                .start()
+                .waitForCompletion(5, TimeUnit.MINUTES);
+
         String output = String.join(EOL, monitor.output());
         return strip(output);
+    }
+
+    /**
+     * Make a file executable.
+     *
+     * @param file to be made executable
+     * @throws IllegalStateException if the file can not be made executable
+     */
+    static void setExecutable(File file) {
+        Objects.requireNonNull(file, "File provided is null");
+        if (!file.setExecutable(true)) {
+            throw new IllegalStateException(String.format("Unable to make file %s executable.", file.getName()));
+        }
     }
 
     /**

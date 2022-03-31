@@ -48,6 +48,10 @@ import static org.hamcrest.Matchers.greaterThan;
  */
 public interface CommandInvoker {
 
+    enum InvokerMode {
+        CLASSPATH, EMBEDDED, EXECUTABLE
+    }
+
     /**
      * Create a new init command invoker builder.
      *
@@ -259,8 +263,10 @@ public interface CommandInvoker {
         private final Path workDir;
         private final UserConfig config;
         private final String helidonVersion;
+        private final Path executable;
         private final boolean buildProject;
         private final boolean useProjectOption;
+        private final InvokerMode invokerMode;
 
         private InvokerImpl(Builder builder) {
             useProjectOption = builder.useProjectOption;
@@ -285,12 +291,24 @@ public interface CommandInvoker {
             groupId = builder.groupId == null ? config.defaultGroupId(substitutions) : builder.groupId;
             artifactId = config.artifactId(builder.artifactId, builder.projectName, substitutions);
             packageName = builder.packageName == null ? config.defaultPackageName(substitutions) : builder.packageName;
+            executable = builder.executable;
+            invokerMode = setInvokerMode(builder.executable, builder.embedded);
             try {
                 workDir = builder.workDir == null ? Files.createTempDirectory("helidon-init") : builder.workDir;
                 projectDir = unique(workDir, projectName);
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }
+        }
+
+        private InvokerMode setInvokerMode(Path executable, boolean embedded) {
+            if (executable != null) {
+                return InvokerMode.EXECUTABLE;
+            }
+            if (embedded) {
+                return InvokerMode.EMBEDDED;
+            }
+            return InvokerMode.CLASSPATH;
         }
 
         @Override
@@ -391,9 +409,21 @@ public interface CommandInvoker {
             args.forEach(a -> System.out.print(a + " "));
             System.out.println();
 
-            // Execute and verify process exit code
-            String output = TestUtils.execWithDirAndInput(workDir.toFile(), input, argsArray);
-            return new InvocationResult(this, output);
+            return new InvocationResult(this, execute(workDir.toFile(), input, argsArray));
+        }
+
+        private String execute(File wd, File input, String... args) throws Exception {
+
+            if (invokerMode == InvokerMode.EXECUTABLE) {
+                return TestUtils.execWithExecutable(executable, wd, args);
+            }
+
+            if (invokerMode == InvokerMode.EMBEDDED) {
+                Helidon.execute(args);
+                return "Helidon class executed";
+            }
+
+            return TestUtils.execWithDirAndInput(workDir.toFile(), input, args);
         }
 
         @Override
@@ -638,8 +668,10 @@ public interface CommandInvoker {
         private Path workDir;
         private File input;
         private String helidonVersion;
+        private Path executable;
         private boolean buildProject;
         private boolean useProjectOption;
+        private boolean embedded;
 
         /**
          * Use the {@code --project} option instead of the project argument.
@@ -782,6 +814,26 @@ public interface CommandInvoker {
          */
         public Builder userConfig(UserConfig config) {
             this.config = config;
+            return this;
+        }
+
+        /**
+         * Run cli with helidon.sh script.
+         *
+         * @return this builder
+         */
+        public Builder executable(Path executable) {
+            this.executable = executable;
+            return this;
+        }
+
+        /**
+         * Run cli with {@code helidon} class.
+         *
+         * @return this builder
+         */
+        public Builder embedded() {
+            this.embedded = true;
             return this;
         }
 
