@@ -21,7 +21,6 @@ import io.helidon.build.common.OSType;
 import io.helidon.build.common.ProcessMonitor;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -32,6 +31,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 
 public class CliFunctionalTest {
 
@@ -182,16 +184,45 @@ public class CliFunctionalTest {
     }
 
     @Test
+    public void testDebug() throws Exception {
+        String output = commandInvoker()
+                .input(inputFile.toUri().toURL())
+                .debug()
+                .build()
+                .invokeInit()
+                .output();
+        assertThat(output, containsString("Found maven executable"));
+    }
+
+    @Test
+    public void testVerbose() throws Exception {
+        int port = TestUtils.getAvailablePort();
+
+        commandInvoker().artifactId("artifactid").invokeInit();
+        CommandInvoker invoker = commandInvoker()
+                .appJvmArgs("-Dserver.port=" + port)
+                .verbose()
+                .workDir(workDir.resolve("artifactid"))
+                .build()
+                .invokeDev();
+        TestUtils.waitForApplication(port);
+
+        if (!invoker.stopMonitor().output().contains("Detecting the operating system and CPU architecture")) {
+            assertThat("Verbose mode does not print system information.", false);
+        }
+    }
+
+    @Test
     public void IncorrectFlavorTest() throws Exception {
         try {
             commandInvoker("wrongFlavor", null, null, null, null, null, null, false)
                     .build()
                     .invokeInit();
         } catch (ProcessMonitor.ProcessFailedException e) {
-            Assertions.assertTrue(e.getMessage().contains("ERROR: Invalid choice: WRONGFLAVOR"));
+            assertThat(e.getMessage(), containsString("ERROR: Invalid choice: WRONGFLAVOR"));
             return;
         }
-        Assertions.fail("Exception should have been thrown");
+        assertThat("Exception should have been thrown due to wrong flavor input.", false);
     }
 
     @Test
@@ -201,10 +232,10 @@ public class CliFunctionalTest {
                     .build()
                     .invokeInit();
         } catch (ProcessMonitor.ProcessFailedException e) {
-            Assertions.assertTrue(e.getMessage().contains("Helidon version 0.0.0 not found."));
+            assertThat(e.getMessage(), containsString("Helidon version 0.0.0 not found."));
             return;
         }
-        Assertions.fail("Exception should have been thrown");
+        assertThat("Exception should have been thrown because of wrong helidon version.", false);
     }
 
     @Test
@@ -214,10 +245,16 @@ public class CliFunctionalTest {
                     .build()
                     .invokeInit();
         } catch (ProcessMonitor.ProcessFailedException e) {
-            Assertions.assertTrue(e.getMessage().contains("\"catalogEntry\" is null"));
+            assertThat(e.getMessage(), containsString("\"catalogEntry\" is null"));
             return;
         }
-        Assertions.fail("Exception should have been thrown");
+        assertThat("Exception should have been thrown because of wrong archetype name", false);
+    }
+
+    private CommandInvoker.Builder commandInvoker() {
+        return CommandInvoker.builder()
+                .metadataUrl("https://helidon.io/cli-data")
+                .workDir(workDir);
     }
 
     private CommandInvoker.Builder commandInvoker(String flavor,
@@ -228,10 +265,8 @@ public class CliFunctionalTest {
                                                   String packageName,
                                                   String name,
                                                   boolean startApp) {
-        return CommandInvoker.builder()
+        return commandInvoker()
                 .helidonVersion(version)
-                .metadataUrl("https://helidon.io/cli-data")
-                .workDir(workDir)
                 .buildProject(startApp)
                 .flavor(flavor)
                 .archetypeName(archetype)
@@ -249,13 +284,12 @@ public class CliFunctionalTest {
                               String packageName,
                               String name,
                               boolean startApp) throws Exception {
+
         commandInvoker(flavor, version, archetype, groupId, artifactId, packageName, name, startApp)
                 .invokeInit()
                 .validateProject();
-
         runHelidonScriptTest(flavor, version, archetype, groupId, artifactId, packageName, name, startApp);
         runHelidonClassTest(flavor, version, archetype, groupId, artifactId, packageName, name, startApp);
-
         if (IS_NATIVE_IMAGE) {
             runNativeImageTest(flavor, version, archetype, groupId, artifactId, packageName, name, startApp);
         }
@@ -317,6 +351,7 @@ public class CliFunctionalTest {
                                     String packageName,
                                     String name,
                                     boolean startApp) throws Exception {
+
         cleanUp();
         commandInvoker(flavor, version, archetype, groupId, artifactId, packageName, name, startApp)
                 .executable(helidonNativeImage)

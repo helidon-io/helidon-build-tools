@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,7 +44,6 @@ import static io.helidon.build.common.PrintStreams.STDERR;
 import static io.helidon.build.common.PrintStreams.STDOUT;
 import static io.helidon.build.common.ansi.AnsiTextStyle.strip;
 import static java.io.File.pathSeparator;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * CLI test utils.
@@ -117,12 +115,7 @@ class TestUtils {
      * @throws Exception if an error occurs
      */
     static String execWithDirAndInput(File wd, File input, String... args) throws Exception {
-        List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-cp", "\"" + classpath() + "\""));
-        String version = System.getProperty(HELIDON_VERSION_PROPERTY);
-        if (version != null) {
-            cmdArgs.add("-D" + HELIDON_VERSION_PROPERTY + "=" + version);
-        }
-        cmdArgs.add(Helidon.class.getName());
+        List<String> cmdArgs = buildJavaCommand();
         cmdArgs.addAll(Arrays.asList(args));
         return execute(wd, input, cmdArgs);
     }
@@ -135,25 +128,44 @@ class TestUtils {
         return execute(wd, null, cmdArgs);
     }
 
+    static ProcessMonitor startWithDirAndInput(File wd, File input, List<String> args) throws Exception {
+        List<String> cmdArgs = buildJavaCommand();
+        cmdArgs.addAll(args);
+        return startMonitorWithDirAndInput(wd, input, cmdArgs);
+    }
+
+    private static List<String> buildJavaCommand() {
+        List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-cp", "\"" + classpath() + "\""));
+        String version = System.getProperty(HELIDON_VERSION_PROPERTY);
+        if (version != null) {
+            cmdArgs.add("-D" + HELIDON_VERSION_PROPERTY + "=" + version);
+        }
+        cmdArgs.add(Helidon.class.getName());
+        return cmdArgs;
+    }
+
     private static String execute(File wd, File input, List<String> args) throws Exception {
+        ProcessMonitor monitor = startMonitorWithDirAndInput(wd, input, args)
+                .waitForCompletion(10, TimeUnit.MINUTES);
+        String output = String.join(EOL, monitor.output());
+        return strip(output);
+    }
+
+    private static ProcessMonitor startMonitorWithDirAndInput(File wd, File input, List<String> args) throws Exception {
         ProcessBuilder pb = new ProcessBuilder(args);
 
         if (wd != null) {
             pb.directory(wd);
         }
 
-        ProcessMonitor monitor = ProcessMonitor.builder()
+        return ProcessMonitor.builder()
                 .processBuilder(pb)
                 .stdIn(input)
                 .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(LogLevel.INFO)))
                 .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(LogLevel.ERROR)))
                 .capture(true)
                 .build()
-                .start()
-                .waitForCompletion(5, TimeUnit.MINUTES);
-
-        String output = String.join(EOL, monitor.output());
-        return strip(output);
+                .start();
     }
 
     /**
@@ -182,23 +194,6 @@ class TestUtils {
         return classPath.stream()
                         .distinct()
                         .collect(Collectors.joining(pathSeparator));
-    }
-
-    /**
-     * Assert that the root directory of the Java package exists under {@code src/main/java} of the given project directory.
-     *
-     * @param projectPath project directory
-     * @param packageName Java package name
-     */
-    static void assertPackageExists(Path projectPath, String packageName) {
-        assertTrue(Files.exists(projectPath));
-        Path path = projectPath.resolve("src/main/java");
-        assertTrue(Files.exists(path));
-        String[] dirs = packageName.split("\\.");
-        for (String dir : dirs) {
-            path = path.resolve(dir);
-            assertTrue(Files.exists(path));
-        }
     }
 
     /**
