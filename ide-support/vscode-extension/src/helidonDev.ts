@@ -21,6 +21,7 @@ import { VSCodeAPI } from "./VSCodeAPI";
 import { FileSystemAPI } from "./FileSystemAPI";
 import { ChildProcessAPI } from "./ChildProcessAPI";
 import { OutputFormatter } from "./OutputFormatter";
+import * as vscode from "vscode";
 
 const POM_XML_FILE: string = 'pom.xml';
 const SRC_DIR: string = 'src';
@@ -139,6 +140,25 @@ function obtainNewServerProcess(helidonProjectDir: string, extensionPath: string
     let cmdSpan = "java";
     const args = ['-jar', `${extensionPath}/target/cli/helidon.jar`, 'dev'];
 
+    let helidonConfig = vscode.workspace.getConfiguration('helidon');
+    let javaHomeBinDir: string = helidonConfig.get("javaBinDirForHelidonDev")!;
+    let mavenBinDir: string = helidonConfig.get("mavenBinDirForHelidonDev")!;
+    if (javaHomeBinDir && mavenBinDir) {
+        if (process.env.PATH != null) {
+            if (!process.env.PATH.includes(mavenBinDir)) {
+                process.env.PATH=`${mavenBinDir}:${process.env.PATH}`;
+            }
+            if (!process.env.PATH.includes(javaHomeBinDir)) {
+                process.env.PATH=`${javaHomeBinDir}:${process.env.PATH}`;
+            }
+        } else {
+            process.env.PATH=`${javaHomeBinDir}:${mavenBinDir}:${process.env.PATH}`;
+        }
+    }
+    console.log("javaHome - "+javaHomeBinDir);
+    console.log("mavenBinDir - "+mavenBinDir);
+    console.log("process.env.PATH - "+process.env.PATH);
+
     const opts = {
         cwd: helidonProjectDir, // cwd means -> current working directory (where this command will by executed)
     };
@@ -157,12 +177,13 @@ function configureServerOutput(serverProcess: ChildProcess, outputChannel: Outpu
 
     serverProcess!.stderr!.on('data', (data: string) => {
         outputFormatter.formatInputString(data);
-        console.error(data);
+        console.error(data.toString());
         VSCodeAPI.showErrorMessage(data);
     });
 
     serverProcess.on('close', (code: string) => {
         outputChannel.appendLine("Server stopped");
+        stopHelidonDev();
     });
 }
 
