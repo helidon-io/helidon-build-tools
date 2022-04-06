@@ -118,7 +118,7 @@ public final class ScriptDeserializer {
         private Script.Builder scriptBuilder;
 
         ReaderImpl(InputStream is) {
-            location = VirtualFileSystem.create(CWD).getPath("<unknown>.json");
+            location = VirtualFileSystem.create(CWD).getPath("[unknown].json");
             this.parser = SimpleJSONParser.create(is, this);
         }
 

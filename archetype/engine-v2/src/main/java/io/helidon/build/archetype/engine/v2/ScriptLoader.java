@@ -111,7 +111,7 @@ public class ScriptLoader {
     @SuppressWarnings("unused")
     public Script loadScript(InputStream is) {
         int id = nextId.updateAndGet(i -> i == Integer.MAX_VALUE ? 1 : i + 1);
-        return loadScript(is, Path.of("<unknown>-" + id + ".xml"));
+        return loadScript(is, Path.of("[unknown]-" + id + ".xml"));
     }
 
     private Script loadScript(Path path) {
