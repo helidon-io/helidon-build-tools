@@ -205,8 +205,18 @@ public final class JsonFactory {
      * @throws IOException if an IO error occurs
      */
     public static JsonStructure readJson(Path file) throws IOException {
-        JsonReader reader = JSON_READER_FACTORY.createReader(Files.newInputStream(file));
-        return reader.readObject();
+        return readJson(Files.newInputStream(file));
+    }
+
+    /**
+     * Read the given JSON file.
+     *
+     * @param is input stream
+     * @return JsonStructure
+     */
+    public static JsonStructure readJson(InputStream is) {
+        JsonReader reader = JSON_READER_FACTORY.createReader(is);
+        return reader.read();
     }
 
     /**

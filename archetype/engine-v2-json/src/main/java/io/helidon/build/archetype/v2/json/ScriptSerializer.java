@@ -69,12 +69,11 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
     private final Map<String, Context> methodContexts = new HashMap<>();
     private final JsonObjectBuilder methodsBuilder = JsonFactory.createObjectBuilder();
     private final JsonArrayBuilder directivesBuilder = JsonFactory.createArrayBuilder();
+    private final boolean obfuscate;
     private volatile String exprId;
 
-    /**
-     * Create a new instance.
-     */
-    ScriptSerializer() {
+    private ScriptSerializer(boolean obfuscate) {
+        this.obfuscate = obfuscate;
     }
 
     /**
@@ -118,7 +117,7 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
      * @return JsonObject
      */
     public static JsonObject serialize(Script script, boolean obfuscate) {
-        ScriptSerializer serializer = new ScriptSerializer();
+        ScriptSerializer serializer = new ScriptSerializer(obfuscate);
         Script compiledScript = ClientCompiler.compile(script, obfuscate);
         Walker.walk(serializer, compiledScript, compiledScript);
         return JsonFactory.createObjectBuilder()
@@ -323,7 +322,11 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
 
     @SuppressWarnings("unused")
     private String methodId(String method) {
-        return String.valueOf(nextMethodId.incrementAndGet());
+        if (obfuscate) {
+            return String.valueOf(nextMethodId.incrementAndGet());
+        } else {
+            return method;
+        }
     }
 
     private String exprId(Expression expr) {
