@@ -34,9 +34,9 @@ import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.Expression;
 import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Invocation;
+import io.helidon.build.archetype.engine.v2.ast.Location;
 import io.helidon.build.archetype.engine.v2.ast.Method;
 import io.helidon.build.archetype.engine.v2.ast.Node;
-import io.helidon.build.archetype.engine.v2.ast.Position;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Step;
@@ -44,7 +44,6 @@ import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.v2.json.SimpleJSONParser.JSONReaderException;
 import io.helidon.build.archetype.v2.json.SimpleJSONParser.KeyInfo;
 import io.helidon.build.common.Maps;
-import io.helidon.build.common.VirtualFileSystem;
 
 /**
  * Script de-serializer.
@@ -103,22 +102,19 @@ public final class ScriptDeserializer {
 
     private static final class ReaderImpl implements SimpleJSONParser.Reader {
 
-        static final Path CWD = Path.of("");
-
         private final ScriptLoader loader = ScriptLoader.create();
+        private final Path path = loader.unknownPath();
         private final Map<String, Expression> expressions = new HashMap<>();
         private final Deque<Context> stack = new ArrayDeque<>();
         private final SimpleJSONParser parser;
-        private final Path location;
 
         private String qName;
         private Map<String, Value> attrs;
         private Context ctx;
-        private Position position;
+        private Location location;
         private Script.Builder scriptBuilder;
 
         ReaderImpl(InputStream is) {
-            location = VirtualFileSystem.create(CWD).getPath("[unknown].json");
             this.parser = SimpleJSONParser.create(is, this);
         }
 
@@ -150,10 +146,10 @@ public final class ScriptDeserializer {
         @Override
         public void startElement(String qName, Map<String, JsonValue> attrs) {
             this.qName = qName;
-            position = Position.of(parser.lineNumber(), parser.charNumber());
+            location = Location.of(path, parser.lineNumber(), parser.charNumber());
             ctx = stack.peek();
             if (ctx == null) {
-                scriptBuilder = Script.builder(loader, location);
+                scriptBuilder = Script.builder(loader, path);
                 stack.push(new Context(State.START, scriptBuilder));
             } else {
                 this.attrs = Maps.mapValue(attrs, JsonFactory::readValue);
@@ -161,12 +157,12 @@ public final class ScriptDeserializer {
                     processElement();
                 } catch (IllegalArgumentException ex) {
                     throw new JSONReaderException(String.format(
-                            "Invalid element '%s'. { position=%s }",
-                            qName, position), ex);
+                            "Invalid element '%s'. { location=%s }",
+                            qName, location), ex);
                 } catch (Throwable ex) {
                     throw new JSONReaderException(String.format(
-                            "An unexpected error occurred. { position=%s }",
-                            position), ex);
+                            "An unexpected error occurred. { location=%s }",
+                            location), ex);
                 }
             }
         }
@@ -219,13 +215,13 @@ public final class ScriptDeserializer {
         }
 
         void processMethod() {
-            addChild(State.EXECUTABLE, Method.builder(loader, location, position)
+            addChild(State.EXECUTABLE, Method.builder(loader, path, location)
                                              .attribute("name", Value.create(qName)));
         }
 
         boolean processExec() {
             if ("call".equals(qName)) {
-                addChild(ctx.state, Invocation.builder(loader, location, position, Invocation.Kind.CALL));
+                addChild(ctx.state, Invocation.builder(loader, path, location, Invocation.Kind.CALL));
                 return true;
             }
             return false;
@@ -286,7 +282,7 @@ public final class ScriptDeserializer {
                     throw new JSONReaderException(String.format(
                             "Invalid input block: %s. { element=%s }", kind, qName));
             }
-            addChild(nextState, Input.builder(loader, location, position, kind));
+            addChild(nextState, Input.builder(loader, path, location, kind));
         }
 
         void processPreset() {
@@ -297,10 +293,10 @@ public final class ScriptDeserializer {
                 case TEXT:
                 case ENUM:
                 case LIST:
-                    builder = Preset.builder(loader, location, position, blockKind());
+                    builder = Preset.builder(loader, path, location, blockKind());
                     break;
                 case VALUE:
-                    builder = Block.builder(loader, location, position, blockKind());
+                    builder = Block.builder(loader, path, location, blockKind());
                     break;
                 default:
                     throw new JSONReaderException(String.format(
@@ -323,11 +319,11 @@ public final class ScriptDeserializer {
                     break;
                 case METHOD:
                     nextState = State.EXECUTABLE;
-                    builder = Method.builder(loader, location, position);
+                    builder = Method.builder(loader, path, location);
                     break;
                 case STEP:
                     nextState = State.EXECUTABLE;
-                    builder = Step.builder(loader, location, position);
+                    builder = Step.builder(loader, path, location);
                     break;
                 case INPUTS:
                     nextState = State.INPUT;
@@ -338,7 +334,7 @@ public final class ScriptDeserializer {
                 default:
             }
             if (builder == null) {
-                builder = Block.builder(loader, location, position, kind);
+                builder = Block.builder(loader, path, location, kind);
             }
             addChild(nextState, builder);
         }
@@ -351,7 +347,7 @@ public final class ScriptDeserializer {
                 if (expr == null) {
                     throw new IllegalStateException("Unresolved expression: " + ifExprId);
                 }
-                ctx.builder.addChild(Condition.builder(loader, location, position)
+                ctx.builder.addChild(Condition.builder(loader, path, location)
                                               .expression(expr)
                                               .then(builder));
             } else {

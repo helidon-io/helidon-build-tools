@@ -279,12 +279,12 @@ public abstract class Model extends Block {
      *
      * @param loader     script loader
      * @param scriptPath script path
-     * @param position   position
+     * @param location   location
      * @param kind       block kind
      * @return builder
      */
-    public static Builder builder(ScriptLoader loader, Path scriptPath, Position position, Kind kind) {
-        return new Builder(loader, scriptPath, position, kind);
+    public static Builder builder(ScriptLoader loader, Path scriptPath, Location location, Kind kind) {
+        return new Builder(loader, scriptPath, location, kind);
     }
 
     /**
@@ -294,8 +294,8 @@ public abstract class Model extends Block {
 
         private String value;
 
-        private Builder(ScriptLoader loader, Path scriptPath, Position position, Kind kind) {
-            super(loader, scriptPath, position, kind);
+        private Builder(ScriptLoader loader, Path scriptPath, Location location, Kind kind) {
+            super(loader, scriptPath, location, kind);
         }
 
         @Override

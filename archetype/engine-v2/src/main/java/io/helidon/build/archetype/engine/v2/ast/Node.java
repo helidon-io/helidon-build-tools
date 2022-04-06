@@ -45,7 +45,7 @@ public abstract class Node {
     //  this will provide good stack traces even for compiled scripts
     //  use workDir instead of scriptPath
     //  use node.id() as the key in ScriptLoader
-    private final Position position;
+    private final Location location;
     private final Map<String, Value> attributes;
 
     /**
@@ -54,7 +54,7 @@ public abstract class Node {
      * @param builder builder
      */
     protected Node(Builder<?, ?> builder) {
-        this(builder.loader, builder.scriptPath, builder.position, builder.attributes);
+        this(builder.loader, builder.scriptPath, builder.location, builder.attributes);
     }
 
     /**
@@ -62,24 +62,24 @@ public abstract class Node {
      *
      * @param loader     script loader
      * @param scriptPath script path
-     * @param position   position
+     * @param location   location
      * @param attributes attributes map
      */
-    protected Node(ScriptLoader loader, Path scriptPath, Position position, Map<String, Value> attributes) {
+    protected Node(ScriptLoader loader, Path scriptPath, Location location, Map<String, Value> attributes) {
         this.loader = requireNonNull(loader, "loader is null");
         this.scriptPath = requireNonNull(scriptPath, "scriptPath is null");
-        this.position = requireNonNull(position, "position is null");
+        this.location = requireNonNull(location, "location is null");
         this.attributes = requireNonNull(attributes, "attributes is null");
         this.id = NEXT_ID.updateAndGet(i -> i == Integer.MAX_VALUE ? 1 : i + 1);
     }
 
     /**
-     * Get the source position.
+     * Get the source location.
      *
-     * @return position
+     * @return location
      */
-    public Position position() {
-        return position;
+    public Location location() {
+        return location;
     }
 
     /**
@@ -273,13 +273,11 @@ public abstract class Node {
     @SuppressWarnings({"unchecked", "UnusedReturnValue"})
     public abstract static class Builder<T, U extends Builder<T, U>> {
 
-        private static final Position NULL_SOURCE = Position.of(0, 0);
-
         private final List<Node.Builder<? extends Node, ?>> children = new LinkedList<>();
         private final Map<String, Value> attributes = new HashMap<>();
         private final ScriptLoader loader;
         private final Path scriptPath;
-        private final Position position;
+        private final Location location;
         private String value;
         private T instance;
 
@@ -288,12 +286,12 @@ public abstract class Node {
          *
          * @param loader     script loader
          * @param scriptPath script path
-         * @param position   position
+         * @param location   location
          */
-        protected Builder(ScriptLoader loader, Path scriptPath, Position position) {
+        protected Builder(ScriptLoader loader, Path scriptPath, Location location) {
             this.loader = requireNonNull(loader, "loader is null");
             this.scriptPath = requireNonNull(scriptPath, "scriptPath is null").toAbsolutePath().normalize();
-            this.position = position == null ? NULL_SOURCE : position;
+            this.location = location == null ? Location.of(scriptPath, 0, 0) : location;
         }
 
         /**
@@ -425,8 +423,8 @@ public abstract class Node {
             if (value == null) {
                 if (required) {
                     throw new IllegalStateException(String.format(
-                            "Unable to get attribute '%s', file=%s, position=%s",
-                            key, scriptPath, position));
+                            "Unable to get attribute '%s', file=%s, location=%s",
+                            key, scriptPath, location));
                 }
                 return Value.NULL;
             }

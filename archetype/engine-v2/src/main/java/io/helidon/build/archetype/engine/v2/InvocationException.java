@@ -22,6 +22,7 @@ import java.util.Iterator;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.Invocation;
+import io.helidon.build.archetype.engine.v2.ast.Location;
 import io.helidon.build.archetype.engine.v2.ast.Node;
 
 /**
@@ -66,8 +67,9 @@ public class InvocationException extends RuntimeException {
     }
 
     private static StackTraceElement stackTraceElement(Node node) {
-        String fileName = node.scriptPath().toString();
-        int lineNumber = node.position().lineNumber();
+        Location location = node.location();
+        String fileName = location.path().toString();
+        int lineNumber = location.lineNumber();
         return new StackTraceElement("archetype", method(node), fileName, lineNumber);
     }
 

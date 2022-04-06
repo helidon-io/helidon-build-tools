@@ -47,18 +47,18 @@ public class Block extends Node {
      *
      * @param loader     script loader
      * @param scriptPath script path
-     * @param position   position
+     * @param location   location
      * @param attributes attributes map
      * @param kind       kind
      * @param children   children
      */
     protected Block(ScriptLoader loader,
                     Path scriptPath,
-                    Position position,
+                    Location location,
                     Map<String, Value> attributes,
                     Kind kind,
                     List<Node> children) {
-        super(loader, scriptPath, position, attributes);
+        super(loader, scriptPath, location, attributes);
         this.kind = Objects.requireNonNull(kind, "kind is null");
         this.children = Objects.requireNonNull(children, "children is null");
     }
@@ -79,7 +79,7 @@ public class Block extends Node {
      * @return block
      */
     public Block wrap(Block.Kind kind) {
-        return new Block(loader(), scriptPath(), position(), attributes(), kind, List.of(this));
+        return new Block(loader(), scriptPath(), location(), attributes(), kind, List.of(this));
     }
 
     @Override
@@ -409,12 +409,12 @@ public class Block extends Node {
      *
      * @param loader     script loader
      * @param scriptPath script path
-     * @param position   position
+     * @param location   location
      * @param kind       kind
      * @return builder
      */
-    public static Builder builder(ScriptLoader loader, Path scriptPath, Position position, Kind kind) {
-        return new Builder(loader, scriptPath, position, kind);
+    public static Builder builder(ScriptLoader loader, Path scriptPath, Location location, Kind kind) {
+        return new Builder(loader, scriptPath, location, kind);
     }
 
     /**
@@ -429,11 +429,11 @@ public class Block extends Node {
          *
          * @param loader     script loader
          * @param scriptPath script path
-         * @param position   position
+         * @param location   location
          * @param kind       kind
          */
-        protected Builder(ScriptLoader loader, Path scriptPath, Position position, Kind kind) {
-            super(loader, scriptPath, position);
+        protected Builder(ScriptLoader loader, Path scriptPath, Location location, Kind kind) {
+            super(loader, scriptPath, location);
             this.kind = kind;
         }
 

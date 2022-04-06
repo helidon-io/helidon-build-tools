@@ -44,8 +44,8 @@ import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Input.NamedInput;
+import io.helidon.build.archetype.engine.v2.ast.Location;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
-import io.helidon.build.archetype.engine.v2.ast.Position;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Value;
@@ -62,7 +62,10 @@ import static java.util.Objects.requireNonNull;
  * generating input combinations.
  */
 public class InputTree {
-    private final BiFunction<List<String>, List<String>, List<List<String>>> listCombiner;
+
+    private static final Path NULL_PATH = Path.of("");
+    private static final Location NULL_LOCATION = Location.of(NULL_PATH, 0, 0);
+
     private final Node root;
     private final int nodeCount;
     private List<Node> allNodes;
@@ -134,7 +137,6 @@ public class InputTree {
 
 
     private InputTree(Builder builder) {
-        this.listCombiner = builder.listCombiner;
         this.root = builder.root();
         this.nodeCount = builder.nextId;
     }
@@ -415,7 +417,7 @@ public class InputTree {
         }
     }
 
-    static class NodeIndex {
+    public static class NodeIndex {
         private final int maxIndex;
         private int current;
         private boolean completed;
@@ -518,7 +520,7 @@ public class InputTree {
          * @param id id
          */
         Root(int id) {
-            super(id, null, null, Kind.ROOT, Path.of("/"), 0);
+            super(id, null, null, Kind.ROOT, NULL_PATH, 0);
         }
 
         @Override
@@ -890,7 +892,7 @@ public class InputTree {
             }
 
             if (!externalValues.isEmpty()) {
-                PresetNode presets = (PresetNode) pushPresets("$-externalValues", Path.of("/"), Position.of(0, 0));
+                PresetNode presets = (PresetNode) pushPresets("$-externalValues", NULL_PATH, NULL_LOCATION);
                 externalValues.forEach(presets::add);
             }
 
@@ -1031,29 +1033,30 @@ public class InputTree {
             return nodes.peek();
         }
 
-        Node pushInput(Kind kind, String path, Path script, Position position) {
+        Node pushInput(Kind kind, String path, Path script, Location location) {
             Node parent = parent();
-            return push(new InputNode(nextId++, parent, kind, path, script, position.lineNumber()));
+            return push(new InputNode(nextId++, parent, kind, path, script, location.lineNumber()));
         }
 
-        void pushInputList(String path, List<String> defaults, Path script, Position position) {
+        void pushInputList(String path, List<String> defaults, Path script, Location location) {
             Node parent = parent();
-            push(new ListNode(nextId++, parent, path, defaults, script, position.lineNumber(), listCombiner));
+            push(new ListNode(nextId++, parent, path, defaults, script, location.lineNumber(), listCombiner));
         }
 
-        Node pushPresets(String path, Path script, Position position) {
+        Node pushPresets(String path, Path script, Location location) {
             Node parent = parent();
-            return push(new PresetNode(nextId++, parent, path, script, position.lineNumber()));
+            return push(new PresetNode(nextId++, parent, path, script, location.lineNumber()));
         }
 
-        void pushValue(String value, Path script, Position position) {
+        void pushValue(String value, Path script, Location location) {
             Node parent = requireNonNull(parent());
-            push(new ValueNode(nextId++, parent, parent.path(), value, script, position.lineNumber()));
+            push(new ValueNode(nextId++, parent, parent.path(), value, script, location.lineNumber()));
         }
 
-        void addValue(Node parent, String value, Path script, Position position) {
+        @SuppressWarnings("SameParameterValue")
+        void addValue(Node parent, String value, Path script, Location location) {
             // Adds self to parent
-            new ValueNode(nextId++, parent, parent.path(), value, script, position.lineNumber());
+            new ValueNode(nextId++, parent, parent.path(), value, script, location.lineNumber());
         }
 
         String externalDefault(String path) {
@@ -1117,7 +1120,7 @@ public class InputTree {
                 ctx.pushCwd(block.scriptPath().getParent());
                 return VisitResult.CONTINUE;
             } else if (block.kind() == Block.Kind.PRESETS) {
-                builder.pushPresets(ctx.path(), block.scriptPath(), block.position());
+                builder.pushPresets(ctx.path(), block.scriptPath(), block.location());
             }
             return super.visitBlock(block, ctx);
         }
@@ -1139,7 +1142,6 @@ public class InputTree {
         }
 
         private static class InputCollector extends InputResolver {
-            private static final String TEXT = "text";
             private final Builder builder;
 
             InputCollector(Builder builder) {
@@ -1157,8 +1159,9 @@ public class InputTree {
             @Override
             public VisitResult visitBoolean(Input.Boolean input, Context context) {
                 String path = push(input, context);
-                Node node = builder.pushInput(Kind.BOOLEAN, path, input.scriptPath(), input.position());
-                builder.pushValue("yes", input.scriptPath(), input.position());
+                //noinspection unused
+                Node node = builder.pushInput(Kind.BOOLEAN, path, input.scriptPath(), input.location());
+                builder.pushValue("yes", input.scriptPath(), input.location());
                 return VisitResult.CONTINUE;
             }
 
@@ -1175,15 +1178,15 @@ public class InputTree {
                     }
                 }
                 push(input, context);
-                builder.pushInput(Kind.TEXT, path, input.scriptPath(), input.position());
-                builder.pushValue(defaultValue, input.scriptPath(), input.position());
+                builder.pushInput(Kind.TEXT, path, input.scriptPath(), input.location());
+                builder.pushValue(defaultValue, input.scriptPath(), input.location());
                 return VisitResult.CONTINUE;
             }
 
             @Override
             public VisitResult visitEnum(Input.Enum input, Context context) {
                 String path = push(input, context);
-                builder.pushInput(Kind.ENUM, path, input.scriptPath(), input.position());
+                builder.pushInput(Kind.ENUM, path, input.scriptPath(), input.location());
                 return VisitResult.CONTINUE;
             }
 
@@ -1200,14 +1203,14 @@ public class InputTree {
                                           .collect(Collectors.toList());
                 }
                 path = push(input, context);
-                builder.pushInputList(path, defaultValues, input.scriptPath(), input.position());
+                builder.pushInputList(path, defaultValues, input.scriptPath(), input.location());
                 return VisitResult.CONTINUE;
             }
 
             @Override
             public VisitResult visitOption(Input.Option option, Context context) {
                 String value = option.value();
-                builder.pushValue(value, option.scriptPath(), option.position());
+                builder.pushValue(value, option.scriptPath(), option.location());
                 return VisitResult.CONTINUE;
             }
 
@@ -1216,7 +1219,7 @@ public class InputTree {
                 switch (input.kind()) {
                     case BOOLEAN:
                         Node parent = builder.current().parent();
-                        builder.addValue(parent, "no", input.scriptPath(), input.position());
+                        builder.addValue(parent, "no", input.scriptPath(), input.location());
                         // pop 2
                         builder.pop();
                         builder.pop();
@@ -1235,13 +1238,6 @@ public class InputTree {
                         throw new IllegalStateException("unknown kind: " + input.kind());
                 }
                 return super.postVisitAny(input, context);
-            }
-
-            private static List<String> values(Input.Options input) {
-                return input.options()
-                            .stream()
-                            .map(option -> input.normalizeOptionValue(option.value()))
-                            .collect(Collectors.toList());
             }
         }
     }

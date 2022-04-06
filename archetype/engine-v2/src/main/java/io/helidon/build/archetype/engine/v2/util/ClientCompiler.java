@@ -26,23 +26,22 @@ import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.DeclaredBlock;
 import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Invocation;
+import io.helidon.build.archetype.engine.v2.ast.Location;
 import io.helidon.build.archetype.engine.v2.ast.Method;
 import io.helidon.build.archetype.engine.v2.ast.Node;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Value;
-import io.helidon.build.common.VirtualFileSystem;
 
 /**
  * Client script builder.
  */
 public class ClientCompiler implements Node.Visitor<Script> {
 
-    private static final Path CWD = Path.of("");
     private final LinkedList<Node.Builder<?, ?>> stack = new LinkedList<>();
     private final ScriptLoader loader = ScriptLoader.create();
-    private final Path path = VirtualFileSystem.create(CWD).getPath("script");
+    private final Path path = loader.unknownPath();
     private final Map<String, Method.Builder> methodBuilders = new HashMap<>();
     private final ArchetypeInfo info;
     private final boolean obfuscate;
@@ -75,7 +74,7 @@ public class ClientCompiler implements Node.Visitor<Script> {
         if (declaredBlock == null) {
             throw new IllegalStateException("Unresolved invocation: " + invocation);
         }
-        Invocation.Builder builder = Invocation.builder(loader, path, null, Invocation.Kind.CALL);
+        Invocation.Builder builder = Invocation.builder(loader, path, invocation.location(), Invocation.Kind.CALL);
         builder.attribute("method", Value.create(methodName(declaredBlock)));
         addChild(builder);
         return Node.VisitResult.CONTINUE;
@@ -83,13 +82,14 @@ public class ClientCompiler implements Node.Visitor<Script> {
 
     @Override
     public Node.VisitResult visitCondition(Condition condition, Script script) {
-        addChild(Condition.builder(loader, path, null).expression(condition.expression()));
+        addChild(Condition.builder(loader, path, condition.location()).expression(condition.expression()));
         return Node.VisitResult.CONTINUE;
     }
 
     @Override
     public Node.VisitResult visitBlock(Block block, Script script) {
         Block.Kind kind = block.kind();
+        Location location = block.location();
         if (block instanceof DeclaredBlock) {
             if (block.equals(script)) {
                 stack.push(scriptBuilder);
@@ -97,7 +97,7 @@ public class ClientCompiler implements Node.Visitor<Script> {
                 String methodName = methodName((DeclaredBlock) block);
                 Method.Builder builder = methodBuilders.get(methodName);
                 if (builder == null) {
-                    builder = Method.builder(loader, path, null);
+                    builder = Method.builder(loader, path, location);
                     builder.attribute("name", Value.create(methodName));
                     methodsBuilder.addChild(builder);
                     methodBuilders.put(methodName, builder);
@@ -110,15 +110,15 @@ public class ClientCompiler implements Node.Visitor<Script> {
                 builder = Preset.builder(loader, path, null, kind);
                 if (kind == Block.Kind.LIST) {
                     for (String value : ((Preset) block).value().asList()) {
-                        builder.addChild(Block.builder(loader, path, null, Block.Kind.VALUE).value(value));
+                        builder.addChild(Block.builder(loader, path, location, Block.Kind.VALUE).value(value));
                     }
                 }
             } else if (block instanceof Step) {
-                builder = Step.builder(loader, path, null);
+                builder = Step.builder(loader, path, location);
             } else if (block instanceof Input) {
-                builder = Input.builder(loader, path, null, kind);
+                builder = Input.builder(loader, path, location, kind);
             } else {
-                builder = Block.builder(loader, path, null, kind);
+                builder = Block.builder(loader, path, location, kind);
             }
             builder.attributes(block.attributes());
             addChild(builder);

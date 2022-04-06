@@ -110,12 +110,12 @@ public final class Preset extends Block {
      *
      * @param loader     script loader
      * @param scriptPath script path
-     * @param position   position
+     * @param location   location
      * @param kind       kind
      * @return builder
      */
-    public static Builder builder(ScriptLoader loader, Path scriptPath, Position position, Block.Kind kind) {
-        return new Builder(loader, scriptPath, position, kind);
+    public static Builder builder(ScriptLoader loader, Path scriptPath, Location location, Block.Kind kind) {
+        return new Builder(loader, scriptPath, location, kind);
     }
 
     /**
@@ -123,8 +123,8 @@ public final class Preset extends Block {
      */
     public static final class Builder extends Block.Builder {
 
-        private Builder(ScriptLoader loader, Path scriptPath, Position position, Block.Kind kind) {
-            super(loader, scriptPath, position, kind);
+        private Builder(ScriptLoader loader, Path scriptPath, Location location, Block.Kind kind) {
+            super(loader, scriptPath, location, kind);
         }
 
         @Override

@@ -84,13 +84,13 @@ public class Step extends Block {
     /**
      * Create a new Step block builder.
      *
-     * @param loader script loader
+     * @param loader     script loader
      * @param scriptPath script path
-     * @param position   position
+     * @param location   location
      * @return builder
      */
-    public static Builder builder(ScriptLoader loader, Path scriptPath, Position position) {
-        return new Builder(loader, scriptPath, position);
+    public static Builder builder(ScriptLoader loader, Path scriptPath, Location location) {
+        return new Builder(loader, scriptPath, location);
     }
 
     /**
@@ -98,8 +98,8 @@ public class Step extends Block {
      */
     public static final class Builder extends Block.Builder {
 
-        private Builder(ScriptLoader loader, Path scriptPath, Position position) {
-            super(loader, scriptPath, position, Kind.STEP);
+        private Builder(ScriptLoader loader, Path scriptPath, Location location) {
+            super(loader, scriptPath, location, Kind.STEP);
         }
 
         @Override
