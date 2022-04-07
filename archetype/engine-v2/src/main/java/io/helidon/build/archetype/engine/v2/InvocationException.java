@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Iterator;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.Invocation;
+import io.helidon.build.archetype.engine.v2.ast.Location;
 import io.helidon.build.archetype.engine.v2.ast.Node;
 
 /**
@@ -36,18 +37,27 @@ public class InvocationException extends RuntimeException {
      * @param node      current node
      * @param cause     cause
      */
-    InvocationException(Deque<Node> callStack, Node node, Throwable cause) {
-        super("Invocation error: " + cause.getMessage(), cause, false, true);
+    InvocationException(Deque<Invocation> callStack, Node node, Throwable cause) {
+        super(message(cause), cause, false, true);
         setStackTrace(stackTrace(callStack, node));
     }
 
-    private StackTraceElement[] stackTrace(Deque<Node> callStack, Node node) {
+    private static String message(Throwable cause) {
+        String msg = "Invocation error";
+        String causeMsg = cause.getMessage();
+        if (causeMsg != null) {
+            msg += ": " + causeMsg;
+        }
+        return msg;
+    }
+
+    private StackTraceElement[] stackTrace(Deque<Invocation> callStack, Node node) {
         StackTraceElement[] original = getStackTrace();
         int size = callStack.size() + 1;
         StackTraceElement[] stackTrace = new StackTraceElement[size + original.length];
         stackTrace[0] = stackTraceElement(node);
         if (!callStack.isEmpty()) {
-            Iterator<Node> it = callStack.iterator();
+            Iterator<Invocation> it = callStack.iterator();
             for (int i = 1; it.hasNext(); i++) {
                 stackTrace[i] = stackTraceElement(it.next());
             }
@@ -57,8 +67,9 @@ public class InvocationException extends RuntimeException {
     }
 
     private static StackTraceElement stackTraceElement(Node node) {
-        String fileName = node.scriptPath().toString();
-        int lineNumber = node.position().lineNumber();
+        Location location = node.location();
+        String fileName = location.path().toString();
+        int lineNumber = location.lineNumber();
         return new StackTraceElement("archetype", method(node), fileName, lineNumber);
     }
 

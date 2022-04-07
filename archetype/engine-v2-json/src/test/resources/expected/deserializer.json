@@ -1,0 +1,199 @@
+{
+  "expressions": {
+  },
+  "methods": {
+    "1": [
+      {
+        "kind": "inputs",
+        "children": [
+          {
+            "kind": "text",
+            "label": "Comment",
+            "name": "comment",
+            "global": false,
+            "optional": true,
+            "default": null
+          }
+        ]
+      }
+    ]
+  },
+  "children": [
+    {
+      "kind": "step",
+      "label": "Cake",
+      "id": "1",
+      "children": [
+        {
+          "kind": "inputs",
+          "children": [
+            {
+              "kind": "enum",
+              "label": "Fruit",
+              "name": "fruit",
+              "global": false,
+              "optional": false,
+              "default": "berries",
+              "children": [
+                {
+                  "kind": "option",
+                  "label": "Berries",
+                  "value": "berries",
+                  "children": [
+                    {
+                      "kind": "inputs",
+                      "children": [
+                        {
+                          "kind": "enum",
+                          "label": "Berry type",
+                          "name": "berry-type",
+                          "global": false,
+                          "optional": false,
+                          "default": "raspberry",
+                          "children": [
+                            {
+                              "kind": "option",
+                              "label": "Raspberry",
+                              "value": "raspberry",
+                              "children": [
+                                {
+                                  "kind": "inputs",
+                                  "children": [
+                                    {
+                                      "kind": "boolean",
+                                      "label": "Organic",
+                                      "name": "organic",
+                                      "global": false,
+                                      "optional": false,
+                                      "default": true
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "kind": "option",
+                              "label": "Strawberry",
+                              "value": "strawberry",
+                              "children": [
+                                {
+                                  "kind": "inputs",
+                                  "children": [
+                                    {
+                                      "kind": "boolean",
+                                      "label": "Frozen",
+                                      "name": "frozen",
+                                      "global": false,
+                                      "optional": false,
+                                      "default": true
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "kind": "option",
+                  "label": "Tropical",
+                  "value": "tropical",
+                  "children": [
+                    {
+                      "kind": "inputs",
+                      "children": [
+                        {
+                          "kind": "enum",
+                          "label": "Tropical type",
+                          "name": "tropical-type",
+                          "global": false,
+                          "optional": false,
+                          "default": "mango",
+                          "children": [
+                            {
+                              "kind": "option",
+                              "label": "Mango",
+                              "value": "mango",
+                              "children": [
+                                {
+                                  "kind": "inputs",
+                                  "children": [
+                                    {
+                                      "kind": "boolean",
+                                      "label": "Fare trade",
+                                      "name": "fare-trade",
+                                      "global": false,
+                                      "optional": false,
+                                      "default": true,
+                                      "children": [
+                                        {
+                                          "kind": "call",
+                                          "method": "1"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "kind": "option",
+                              "label": "Banana",
+                              "value": "banana",
+                              "children": [
+                                {
+                                  "kind": "inputs",
+                                  "children": [
+                                    {
+                                      "kind": "boolean",
+                                      "label": "Plantain",
+                                      "name": "plantain",
+                                      "global": false,
+                                      "optional": false,
+                                      "default": true
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "call",
+          "method": "1"
+        },
+        {
+          "kind": "step",
+          "label": "Customize cake",
+          "id": "2",
+          "children": [
+            {
+              "kind": "inputs",
+              "children": [
+                {
+                  "kind": "boolean",
+                  "label": "Frosting",
+                  "name": "frosting",
+                  "global": false,
+                  "optional": false,
+                  "default": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

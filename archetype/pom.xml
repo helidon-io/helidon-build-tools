@@ -33,5 +33,6 @@
     <modules>
         <module>engine-v1</module>
         <module>engine-v2</module>
+        <module>engine-v2-json</module>
     </modules>
 </project>

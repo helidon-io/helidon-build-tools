@@ -65,6 +65,23 @@
         <xs:attributeGroup ref="a:src-group"/>
     </xs:complexType>
 
+    <xs:complexType name="call-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Directive that executes a method.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute type="xs:string" name="method">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Name of the method to invoke.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="glob-type">
         <xs:annotation>
             <xs:documentation source="version">2.0</xs:documentation>
@@ -489,6 +506,14 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="transient" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Indicate if a preset should be serialized to a client.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:attributeGroup>
 
     <xs:complexType name="presets-type">
@@ -669,6 +694,7 @@
                 <xs:element name="presets" type="a:presets-type"/>
                 <xs:element name="exec" type="a:exec-type"/>
                 <xs:element name="source" type="a:source-type"/>
+                <xs:element name="call" type="a:call-type"/>
                 <xs:element name="inputs" type="a:input-types"/>
                 <xs:element name="step" type="a:step-type"/>
             </xs:choice>
@@ -848,6 +874,7 @@
                 <xs:element name="presets" type="a:presets-type"/>
                 <xs:element name="exec" type="a:exec-type"/>
                 <xs:element name="source" type="a:source-type"/>
+                <xs:element name="call" type="a:call-type"/>
                 <xs:element name="inputs" type="a:input-types"/>
             </xs:choice>
             <xs:element name="output" type="a:output-type" minOccurs="0"/>
@@ -1147,6 +1174,40 @@
         <xs:attributeGroup ref="a:if-group"/>
     </xs:complexType>
 
+    <xs:complexType name="method-types">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Method declarations.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence minOccurs="0">
+            <xs:element name="method" type="a:method-type" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="method-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Method declaration.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="help" type="a:help-type" minOccurs="0"/>
+            <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="output" type="a:output-type" minOccurs="0"/>
+        </xs:sequence>
+        <xs:attribute type="xs:string" name="name" use="required">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Name of the method.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:element name="archetype-script">
         <xs:annotation>
             <xs:documentation source="version">2.0</xs:documentation>
@@ -1157,6 +1218,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="help" type="a:help-type" minOccurs="0"/>
+                <xs:element name="methods" type="a:method-types" minOccurs="0" />
                 <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="output" type="a:output-type" minOccurs="0"/>
             </xs:sequence>

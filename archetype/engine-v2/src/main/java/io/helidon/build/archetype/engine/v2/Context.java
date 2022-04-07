@@ -17,18 +17,16 @@ package io.helidon.build.archetype.engine.v2;
 
 import java.nio.file.Path;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.build.archetype.engine.v2.ast.Input;
+import io.helidon.build.archetype.engine.v2.ast.DynamicValue;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.common.GenericType;
 
 import static io.helidon.build.common.PropertyEvaluator.evaluate;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Context.
@@ -51,10 +49,10 @@ public final class Context {
 
     private Context(Path cwd, Map<String, String> externalValues, Map<String, String> externalDefaults) {
         if (externalDefaults != null) {
-            externalDefaults.forEach((k, v) -> defaults.put(k, new ExternalValue(v)));
+            externalDefaults.forEach((k, v) -> defaults.put(k, externalValue(v)));
         }
         if (externalValues != null) {
-            externalValues.forEach((k, v) -> values.put(k, new ExternalValue(evaluate(v, externalValues::get))));
+            externalValues.forEach((k, v) -> values.put(k, externalValue(evaluate(v, externalValues::get))));
         }
         directories.push(cwd == null ? NULL_PATH : cwd);
     }
@@ -262,6 +260,17 @@ public final class Context {
         });
     }
 
+    /**
+     * Ensure that {@code inputs} is empty.
+     *
+     * @throws IllegalStateException if {@code inputs} is not empty
+     */
+    public void ensureEmptyInputs() {
+        if (!inputs.isEmpty()) {
+            throw new IllegalStateException("Invalid state, inputs is not empty: " + inputs);
+        }
+    }
+
     private String fullPath() {
         StringBuilder sb = new StringBuilder();
         String[] inputsArray = inputs.toArray(new String[0]);
@@ -307,67 +316,58 @@ public final class Context {
         return new Context(cwd, externalValues, externalDefaults);
     }
 
-    /**
-     * Ensure that {@code inputs} is empty.
-     *
-     * @throws IllegalStateException if {@code inputs} is not empty
-     */
-    public void ensureEmptyInputs() {
-        if (!inputs.isEmpty()) {
-            throw new IllegalStateException("Invalid state, inputs is not empty: " + inputs);
-        }
+    private static ContextValue externalValue(String value) {
+        return new ContextValue(DynamicValue.create(value), false);
     }
 
     /**
      * Context value.
      */
-    private static class ContextValue extends Value {
+    private static final class ContextValue implements Value {
 
         private final boolean internal;
         private final boolean external;
-
-        private ContextValue(Object value, GenericType<?> type) {
-            super(value, type);
-            internal = false;
-            external = true;
-        }
+        private final Value value;
 
         private ContextValue(Value value, boolean internal) {
-            super(value.unwrap(), value.type());
+            this.value = value;
             this.internal = internal;
             this.external = true;
-        }
-    }
-
-    /**
-     * A context value with no predefined type, parsed on the fly.
-     */
-    private static final class ExternalValue extends ContextValue {
-
-        private ExternalValue(String value) {
-            super(value, null);
-        }
-
-        @Override
-        public String asString() {
-            return (String) unwrap();
         }
 
         @Override
         public Boolean asBoolean() {
-            return Input.Boolean.valueOf((String) unwrap());
+            return value.asBoolean();
+        }
+
+        @Override
+        public String asString() {
+            return value.asString();
         }
 
         @Override
         public Integer asInt() {
-            return Integer.parseInt((String) unwrap());
+            return value.asInt();
         }
 
         @Override
         public List<String> asList() {
-            return Arrays.stream(((String) unwrap()).split(","))
-                         .map(String::trim)
-                         .collect(toList());
+            return value.asList();
+        }
+
+        @Override
+        public Object unwrap() {
+            return value.unwrap();
+        }
+
+        @Override
+        public GenericType<?> type() {
+            return value.type();
+        }
+
+        @Override
+        public <U> U as(GenericType<U> type) {
+            return value.as(type);
         }
     }
 }

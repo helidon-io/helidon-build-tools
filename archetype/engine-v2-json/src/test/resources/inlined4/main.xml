@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
+
+    <methods>
+        <method name="main">
+            <step label="Cake">
+                <call method="fruit"/>
+                <call method="common"/>
+                <call method="customize"/>
+            </step>
+        </method>
+        <method name="fruit">
+            <inputs>
+                <enum name="fruit" label="Fruit" default="berries">
+                    <option value="berries" label="Berries">
+                        <call method="berries"/>
+                    </option>
+                    <option value="tropical" label="Tropical">
+                        <call method="tropical"/>
+                    </option>
+                </enum>
+            </inputs>
+        </method>
+        <method name="berries">
+            <inputs>
+                <enum name="berry-type" label="Berry type" default="raspberry">
+                    <option value="raspberry" label="Raspberry">
+                        <call method="raspberry"/>
+                    </option>
+                    <option value="strawberry" label="Strawberry">
+                        <call method="strawberry"/>
+                    </option>
+                </enum>
+            </inputs>
+        </method>
+        <method name="tropical">
+            <inputs>
+                <enum name="tropical-type" label="Tropical type" default="mango">
+                    <option value="mango" label="Mango">
+                        <call method="mango"/>
+                    </option>
+                    <option value="banana" label="Banana">
+                        <call method="banana"/>
+                    </option>
+                </enum>
+            </inputs>
+        </method>
+        <method name="raspberry">
+            <inputs>
+                <boolean name="organic" label="Organic"/>
+            </inputs>
+        </method>
+        <method name="strawberry">
+            <inputs>
+                <boolean name="frozen" label="Frozen"/>
+            </inputs>
+        </method>
+        <method name="mango">
+            <inputs>
+                <boolean name="fare-trade" label="Fare trade">
+                    <call method="common"/>
+                </boolean>
+            </inputs>
+        </method>
+        <method name="banana">
+            <inputs>
+                <boolean name="plantain" label="Plantain"/>
+            </inputs>
+        </method>
+        <method name="common">
+            <inputs>
+                <text name="comment" label="Comment"/>
+            </inputs>
+        </method>
+        <method name="customize">
+            <inputs>
+                <boolean name="frosting" label="Frosting"/>
+            </inputs>
+        </method>
+    </methods>
+    <call method="main"/>
+</archetype-script>

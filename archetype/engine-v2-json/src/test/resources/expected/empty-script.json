@@ -1,0 +1,38 @@
+{
+  "expressions": {},
+  "methods": {},
+  "children": [
+    {
+      "label": "Step1",
+      "id": "1",
+      "kind": "step",
+      "children": [
+        {
+          "kind": "inputs",
+          "children": [
+            {
+              "label": "Enum1",
+              "name": "enum1",
+              "global": false,
+              "optional": false,
+              "default": null,
+              "kind": "enum",
+              "children": [
+                {
+                  "label": "Enum1Value1",
+                  "value": "enum1-value1",
+                  "kind": "option"
+                },
+                {
+                  "label": "Enum1Value2",
+                  "value": "enum1-value2",
+                  "kind": "option"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Invocation;
@@ -28,14 +29,14 @@ import io.helidon.build.archetype.engine.v2.ast.Node;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Output;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
-
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.common.test.utils.TestFiles;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.archetype.engine.v2.TestHelper.load0;
+import static io.helidon.build.archetype.engine.v2.TestHelper.load;
 import static io.helidon.build.archetype.engine.v2.TestHelper.walk;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -50,20 +51,34 @@ class ScriptLoaderTest {
 
     @Test
     void testInputs() {
-        Script script = load0("loader/inputs.xml");
+        Script script = load("loader/inputs.xml");
         int[] index = new int[]{0};
         walk(new Input.Visitor<>() {
 
             @Override
             public VisitResult visitText(Input.Text input, Void arg) {
-                assertThat(++index[0], is(1));
-                assertThat(input.name(), is("input1"));
-                assertThat(input.label(), is("Text input"));
-                assertThat(input.help(), is("Help 1"));
-                assertThat(input.isOptional(), is(true));
-                assertThat(input.defaultValue(), is(not(nullValue())));
-                assertThat(input.defaultValue().asString(), is("default#1"));
-                assertThat(input.prompt(), is("Enter 1"));
+                switch (++index[0]) {
+                    case 1:
+                        assertThat(input.name(), is("input1"));
+                        assertThat(input.label(), is("Text input"));
+                        assertThat(input.help(), is("Help 1"));
+                        assertThat(input.isOptional(), is(true));
+                        assertThat(input.defaultValue(), is(not(nullValue())));
+                        assertThat(input.defaultValue().asString(), is("default#1"));
+                        assertThat(input.prompt(), is("Enter 1"));
+                        break;
+                    case 5:
+                        assertThat(input.name(), is("more-input1"));
+                        assertThat(input.label(), is("More input 1"));
+                        assertThat(input.help(), is("More Help 1"));
+                        assertThat(input.isOptional(), is(true));
+                        assertThat(input.defaultValue(), is(not(nullValue())));
+                        assertThat(input.defaultValue().asString(), is("more#1"));
+                        assertThat(input.prompt(), is("More1"));
+                        break;
+                    default:
+                        Assertions.fail("Unexpected index: " + index[0]);
+                }
                 return VisitResult.CONTINUE;
             }
 
@@ -113,12 +128,12 @@ class ScriptLoaderTest {
                 return VisitResult.CONTINUE;
             }
         }, script);
-        assertThat(index[0], is(4));
+        assertThat(index[0], is(5));
     }
 
     @Test
     void testNestedInputs() {
-        Script script = load0("loader/nested-inputs.xml");
+        Script script = load("loader/nested-inputs.xml");
         int[] index = new int[]{0};
         walk(new Input.Visitor<>() {
             @Override
@@ -134,32 +149,91 @@ class ScriptLoaderTest {
 
     @Test
     void testInvocations() {
-        Script script = load0("loader/invocations.xml");
+        Script script = load("loader/invocations.xml");
         int[] index = new int[]{0};
         walk(new Node.Visitor<>() {
 
             @Override
             public VisitResult visitInvocation(Invocation invocation, Void arg) {
-                switch (++index[0]) {
-                    case 1:
-                        assertThat(invocation.kind(), is(Invocation.Kind.SOURCE));
-                        assertThat(invocation.src(), is("./dir1/script1.xml"));
-                        break;
-                    case 2:
-                        assertThat(invocation.kind(), is(Invocation.Kind.EXEC));
-                        assertThat(invocation.src(), is("./dir2/script2.xml"));
-                        break;
-                }
-                // stop here to avoid io exceptions on the fake files
-                return VisitResult.SKIP_SUBTREE;
+                return invocation.accept(new Invocation.Visitor<>() {
+                    @Override
+                    public VisitResult visitScriptInvocation(Invocation.ScriptInvocation invocation, Void arg) {
+                        switch (++index[0]) {
+                            case 1:
+                                assertThat(invocation.kind(), is(Invocation.Kind.SOURCE));
+                                assertThat(invocation.src(), is("./dir1/script1.xml"));
+                                break;
+                            case 2:
+                                assertThat(invocation.kind(), is(Invocation.Kind.EXEC));
+                                assertThat(invocation.src(), is("./dir2/script2.xml"));
+                                break;
+                        }
+                        // stop here to avoid io exceptions on the fake files
+                        return VisitResult.SKIP_SUBTREE;
+                    }
+                }, arg);
             }
         }, script);
         assertThat(index[0], is(2));
     }
 
     @Test
+    void testMethods() {
+        Script script = load("loader/methods.xml");
+        int[] index = new int[]{0};
+        walk(new Node.Visitor<>() {
+
+            @Override
+            public VisitResult visitInvocation(Invocation invocation, Void arg) {
+                return invocation.accept(new Invocation.Visitor<>() {
+
+                    @Override
+                    public VisitResult visitMethodInvocation(Invocation.MethodInvocation invocation, Void arg) {
+                        switch (++index[0]) {
+                            case 1:
+                                assertThat(invocation.method(), is("red"));
+                                break;
+                            case 3:
+                                assertThat(invocation.method(), is("blue"));
+                                break;
+                        }
+                        return VisitResult.CONTINUE;
+                    }
+                }, arg);
+            }
+
+            @Override
+            public VisitResult visitBlock(Block block, Void arg) {
+                return block.accept(new Block.Visitor<>() {
+
+                    @Override
+                    public VisitResult visitOutput(Output output, Void arg) {
+                        return output.accept(new Output.Visitor<>() {
+                            @Override
+                            public VisitResult visitFile(Output.File file, Void arg) {
+                                switch (++index[0]) {
+                                    case 2:
+                                        assertThat(file.source(), is("red.txt"));
+                                        assertThat(file.target(), is("red.txt"));
+                                        break;
+                                    case 4:
+                                        assertThat(file.source(), is("blue.txt"));
+                                        assertThat(file.target(), is("blue.txt"));
+                                        break;
+                                }
+                                return VisitResult.CONTINUE;
+                            }
+                        }, arg);
+                    }
+                }, arg);
+            }
+        }, script);
+        assertThat(index[0], is(4));
+    }
+
+    @Test
     void testPresets() {
-        Script script = load0("loader/presets.xml");
+        Script script = load("loader/presets.xml");
         int[] index = new int[]{0};
         walk(new VisitorAdapter<>(null, null, null) {
 
@@ -196,7 +270,7 @@ class ScriptLoaderTest {
 
     @Test
     void testOutput() {
-        Script script = load0("loader/output.xml");
+        Script script = load("loader/output.xml");
         int[] index = new int[]{0};
         walk(new Output.Visitor<>() {
             @Override
@@ -267,7 +341,7 @@ class ScriptLoaderTest {
 
     @Test
     void testModel() {
-        Script script = load0("loader/model.xml");
+        Script script = load("loader/model.xml");
         int[] index = new int[]{0};
         walk(new Model.Visitor<>() {
             @Override
@@ -354,7 +428,7 @@ class ScriptLoaderTest {
 
     @Test
     void testScopedModel() {
-        Script script = load0("loader/scoped-model.xml");
+        Script script = load("loader/scoped-model.xml");
         int[] index = new int[]{0};
         walk(new Model.Visitor<>() {
             @Override
@@ -379,7 +453,7 @@ class ScriptLoaderTest {
 
     @Test
     void testConditional() {
-        Script script = load0("loader/conditional.xml");
+        Script script = load("loader/conditional.xml");
         int[] index = new int[]{0};
         Output.Visitor<Void> outputVisitor = new Output.Visitor<>() {
             @Override

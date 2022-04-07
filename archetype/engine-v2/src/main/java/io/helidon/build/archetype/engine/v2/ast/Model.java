@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 package io.helidon.build.archetype.engine.v2.ast;
 
 import java.nio.file.Path;
+
+import io.helidon.build.archetype.engine.v2.ScriptLoader;
 
 /**
  * Model block.
@@ -175,9 +177,8 @@ public abstract class Model extends Block {
 
         private MergeableModel(Model.Builder builder) {
             super(builder);
-            String rawOrder = builder.attribute("order", false);
-            this.order = rawOrder != null ? Integer.parseInt(rawOrder) : 100;
-            this.key = builder.attribute("key", false);
+            this.order = builder.attribute("order", ValueTypes.INT, 100);
+            this.key = builder.attribute("key", false).asString();
         }
 
         /**
@@ -230,10 +231,10 @@ public abstract class Model extends Block {
 
         private Value(Model.Builder builder) {
             super(builder);
-            this.template = builder.attribute("template", false);
+            this.template = builder.attribute("template", false).asString();
             this.value = builder.value;
             if (this.value == null) {
-                this.file = builder.attribute("file", true);
+                this.file = builder.attribute("file", true).asString();
             } else {
                 this.file = null;
             }
@@ -276,13 +277,14 @@ public abstract class Model extends Block {
     /**
      * Create a new model block builder.
      *
+     * @param loader     script loader
      * @param scriptPath script path
-     * @param position   position
+     * @param location   location
      * @param kind       block kind
      * @return builder
      */
-    public static Builder builder(Path scriptPath, Position position, Kind kind) {
-        return new Builder(scriptPath, position, kind);
+    public static Builder builder(ScriptLoader loader, Path scriptPath, Location location, Kind kind) {
+        return new Builder(loader, scriptPath, location, kind);
     }
 
     /**
@@ -292,8 +294,8 @@ public abstract class Model extends Block {
 
         private String value;
 
-        private Builder(Path scriptPath, Position position, Kind kind) {
-            super(scriptPath, position, kind);
+        private Builder(ScriptLoader loader, Path scriptPath, Location location, Kind kind) {
+            super(loader, scriptPath, location, kind);
         }
 
         @Override

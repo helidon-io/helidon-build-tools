@@ -21,22 +21,29 @@ import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Objects;
 import java.util.WeakHashMap;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
+import io.helidon.build.archetype.engine.v2.ast.DynamicValue;
 import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Invocation;
+import io.helidon.build.archetype.engine.v2.ast.Location;
+import io.helidon.build.archetype.engine.v2.ast.Method;
 import io.helidon.build.archetype.engine.v2.ast.Model;
 import io.helidon.build.archetype.engine.v2.ast.Node;
 import io.helidon.build.archetype.engine.v2.ast.Output;
-import io.helidon.build.archetype.engine.v2.ast.Position;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Step;
+import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.common.Maps;
+import io.helidon.build.common.VirtualFileSystem;
 import io.helidon.build.common.xml.SimpleXMLParser;
 import io.helidon.build.common.xml.SimpleXMLParser.XMLReaderException;
 
@@ -46,7 +53,22 @@ import io.helidon.build.common.xml.SimpleXMLParser.XMLReaderException;
  */
 public class ScriptLoader {
 
-    private static final Map<FileSystem, Map<Path, Script>> CACHE = new WeakHashMap<>();
+    private static final Map<FileSystem, ScriptLoader> LOADERS = new WeakHashMap<>();
+    private static final SecureRandom RANDOM = new SecureRandom();
+
+    private final Map<Path, Script> scripts = new HashMap<>();
+
+    private ScriptLoader() {
+    }
+
+    /**
+     * Create a new instance.
+     *
+     * @return ScriptLoader
+     */
+    public static ScriptLoader create() {
+        return new ScriptLoader();
+    }
 
     /**
      * Get or load the script at the given path.
@@ -55,48 +77,73 @@ public class ScriptLoader {
      * @return script
      */
     public static Script load(Path path) {
-        return CACHE.computeIfAbsent(path.getFileSystem(), fs -> new HashMap<>())
-                    .computeIfAbsent(path, ScriptLoader::load0);
+        return LOADERS.computeIfAbsent(path.getFileSystem(), fs -> new ScriptLoader())
+                      .get(path);
+    }
+
+    /**
+     * Create an unknown script path.
+     *
+     * @return path
+     */
+    public Path unknownPath() {
+        Path randomDir = Path.of(String.valueOf(RANDOM.nextLong()));
+        return VirtualFileSystem.create(randomDir).getPath("/").resolve("[unknown]");
+    }
+
+    /**
+     * Add a script to this script loader.
+     *
+     * @param script script
+     */
+    public void add(Script script) {
+        if (scripts.containsKey(script.scriptPath())) {
+            throw new IllegalStateException("Script already defined: " + script);
+        }
+        scripts.put(script.scriptPath(), script);
     }
 
     /**
      * Load a script.
      *
-     * @param path script path
-     * @return script
+     * @param path path to the script
+     * @return Script
      */
-    static Script load0(Path path) {
-        try {
-            return load0(Files.newInputStream(path), path);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
+    public Script get(Path path) {
+        return scripts.computeIfAbsent(path.toAbsolutePath().normalize(), this::loadScript);
     }
 
     /**
-     * Load a script with an input stream.
+     * Load an unnamed script.
      *
      * @param is input stream
-     * @return script
+     * @return Script
      */
-    static Script load0(InputStream is) {
-        return load0(is, null);
+    @SuppressWarnings("unused")
+    public Script loadScript(InputStream is) {
+        return loadScript(is, unknownPath());
     }
 
-    private static Script load0(InputStream is, Path path) {
+    private Script loadScript(Path path) {
         try {
-            return new ReaderImpl().read(is, path);
+            return loadScript(Files.newInputStream(path), path);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
     }
 
-    private ScriptLoader() {
+    private Script loadScript(InputStream is, Path path) {
+        try {
+            return new ReaderImpl(this).read(is, path);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
     }
 
     private enum State {
         PRESET,
         INPUT,
+        METHOD,
         EXECUTABLE,
         OUTPUT,
         MODEL,
@@ -116,54 +163,56 @@ public class ScriptLoader {
 
     private static final class ReaderImpl implements SimpleXMLParser.Reader {
 
-        private Path location;
-        private Position position;
+        private final ScriptLoader loader;
+        private Path path;
+        private Location location;
         private SimpleXMLParser parser;
         private String qName;
-        private Map<String, String> attrs;
+        private Map<String, Value> attrs;
         private LinkedList<Context> stack;
         private Context ctx;
-        private Script.Builder script;
+        private Script.Builder scriptBuilder;
 
-        ReaderImpl() {
+        ReaderImpl(ScriptLoader loader) {
+            this.loader = loader;
         }
 
         Script read(InputStream is, Path path) throws IOException {
-            location = path;
+            this.path = Objects.requireNonNull(path, "path is null");
             stack = new LinkedList<>();
             parser = SimpleXMLParser.create(is, this);
             parser.parse();
-            if (script == null) {
+            if (scriptBuilder == null) {
                 throw new IllegalStateException("Unable to create script");
             }
-            return script.build();
+            return scriptBuilder.build();
         }
 
         @Override
         public void startElement(String qName, Map<String, String> attrs) {
             this.qName = qName;
-            this.attrs = attrs;
-            position = Position.of(parser.lineNumber(), parser.charNumber());
+            this.attrs = Maps.mapValue(attrs, DynamicValue::create);
+            location = Location.of(path, parser.lineNumber(), parser.charNumber());
             ctx = stack.peek();
             if (ctx == null) {
                 if (!"archetype-script".equals(qName)) {
                     throw new XMLReaderException(String.format(
-                            "Invalid root element '%s'. {file=%s, position=%s}",
-                            qName, location, position));
+                            "Invalid root element '%s'. {file=%s, location=%s}",
+                            qName, path, path));
                 }
-                script = Script.builder(location, position);
-                stack.push(new Context(State.EXECUTABLE, script));
+                scriptBuilder = Script.builder(loader, path);
+                stack.push(new Context(State.EXECUTABLE, scriptBuilder));
             } else {
                 try {
                     processElement();
                 } catch (IllegalArgumentException ex) {
                     throw new XMLReaderException(String.format(
-                            "Invalid element '%s'. { file=%s, position=%s }",
-                            qName, location, position), ex);
+                            "Invalid element '%s'. { file=%s, location=%s }",
+                            qName, path, path), ex);
                 } catch (Throwable ex) {
                     throw new XMLReaderException(String.format(
-                            "An unexpected error occurred. { file=%s, position=%s }",
-                            location, position), ex);
+                            "An unexpected error occurred. { file=%s, location=%s }",
+                            path, path), ex);
                 }
             }
         }
@@ -191,14 +240,12 @@ public class ScriptLoader {
             }
             switch (ctx.state) {
                 case EXECUTABLE:
-                    switch (qName) {
-                        case "exec":
-                        case "source":
-                            addChild(ctx.state, Invocation.builder(location, position, invocationKind()));
-                            break;
-                        default:
-                            processBlock();
+                    if (!processExec()) {
+                        processBlock();
                     }
+                    break;
+                case METHOD:
+                    processMethod();
                     break;
                 case BLOCK:
                     processBlock();
@@ -221,7 +268,26 @@ public class ScriptLoader {
             }
         }
 
+        void processMethod() {
+            addChild(State.EXECUTABLE, Method.builder(loader, path, location));
+        }
+
+        boolean processExec() {
+            switch (qName) {
+                case "exec":
+                case "source":
+                case "call":
+                    addChild(ctx.state, Invocation.builder(loader, path, location, invocationKind()));
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         void processInput() {
+            if (processExec()) {
+                return;
+            }
             State nextState;
             Block.Kind kind = blockKind();
             switch (kind) {
@@ -241,7 +307,7 @@ public class ScriptLoader {
                     throw new XMLReaderException(String.format(
                             "Invalid input block: %s. { element=%s }", kind, qName));
             }
-            addChild(nextState, Input.builder(location, position, kind));
+            addChild(nextState, Input.builder(loader, path, location, kind));
         }
 
         void processPreset() {
@@ -252,10 +318,10 @@ public class ScriptLoader {
                 case TEXT:
                 case ENUM:
                 case LIST:
-                    builder = Preset.builder(location, position, blockKind());
+                    builder = Preset.builder(loader, path, location, blockKind());
                     break;
                 case VALUE:
-                    builder = Block.builder(location, position, blockKind());
+                    builder = Block.builder(loader, path, location, blockKind());
                     break;
                 default:
                     throw new XMLReaderException(String.format(
@@ -272,7 +338,7 @@ public class ScriptLoader {
             switch (kind) {
                 case INCLUDES:
                 case EXCLUDES:
-                    builder = Block.builder(location, position, kind);
+                    builder = Block.builder(loader, path, location, kind);
                     break;
                 case INCLUDE:
                 case EXCLUDE:
@@ -282,11 +348,11 @@ public class ScriptLoader {
                 case TEMPLATES:
                 case FILE:
                 case TEMPLATE:
-                    builder = Output.builder(location, position, kind);
+                    builder = Output.builder(loader, path, location, kind);
                     break;
                 case MODEL:
                     nextState = State.MODEL;
-                    builder = Block.builder(location, position, kind);
+                    builder = Block.builder(loader, path, location, kind);
                     break;
                 default:
                     throw new XMLReaderException(String.format(
@@ -303,7 +369,7 @@ public class ScriptLoader {
                 case MAP:
                 case VALUE:
                 case LIST:
-                    builder = Model.builder(location, position, kind);
+                    builder = Model.builder(loader, path, location, kind);
                     break;
                 default:
                     throw new XMLReaderException(String.format(
@@ -321,9 +387,16 @@ public class ScriptLoader {
                 case SCRIPT:
                     nextState = State.EXECUTABLE;
                     break;
+                case METHODS:
+                    nextState = State.METHOD;
+                    break;
+                case METHOD:
+                    nextState = State.EXECUTABLE;
+                    builder = Method.builder(loader, path, location);
+                    break;
                 case STEP:
                     nextState = State.EXECUTABLE;
-                    builder = Step.builder(location, position, kind);
+                    builder = Step.builder(loader, path, location);
                     break;
                 case INPUTS:
                     nextState = State.INPUT;
@@ -337,16 +410,18 @@ public class ScriptLoader {
                 default:
             }
             if (builder == null) {
-                builder = Block.builder(location, position, kind);
+                builder = Block.builder(loader, path, location, kind);
             }
             addChild(nextState, builder);
         }
 
         void addChild(State nextState, Node.Builder<? extends Node, ?> builder) {
             builder.attributes(attrs);
-            String ifExpr = attrs.get("if");
+            Value ifExpr = attrs.get("if");
             if (ifExpr != null) {
-                ctx.builder.addChild(Condition.builder(location, position).expression(ifExpr).then(builder));
+                ctx.builder.addChild(Condition.builder(loader, path, location)
+                                              .expression(ifExpr.asString())
+                                              .then(builder));
             } else {
                 ctx.builder.addChild(builder);
             }
@@ -368,14 +443,14 @@ public class ScriptLoader {
         private final String qName;
 
         ValueBuilder(Node.Builder<?, ?> parent, String qName) {
-            super(null, null);
+            super(parent.loader(), parent.scriptPath(), null);
             this.parent = parent;
             this.qName = qName;
         }
 
         @Override
         public ValueBuilder value(String value) {
-            parent.attribute(qName, value);
+            parent.attribute(qName, DynamicValue.create(value));
             return this;
         }
 

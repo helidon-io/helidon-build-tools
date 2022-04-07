@@ -1,0 +1,252 @@
+{
+  "expressions": {},
+  "methods": {
+    "main": [
+      {
+        "label": "Cake",
+        "id": "3",
+        "kind": "step",
+        "children": [
+          {
+            "kind": "call",
+            "method": "fruit"
+          },
+          {
+            "kind": "call",
+            "method": "common"
+          },
+          {
+            "kind": "call",
+            "method": "customize"
+          }
+        ]
+      }
+    ],
+    "fruit": [
+      {
+        "kind": "inputs",
+        "children": [
+          {
+            "label": "Fruit",
+            "name": "fruit",
+            "global": false,
+            "optional": false,
+            "default": "berries",
+            "kind": "enum",
+            "children": [
+              {
+                "label": "Berries",
+                "value": "berries",
+                "kind": "option",
+                "children": [
+                  {
+                    "kind": "call",
+                    "method": "berries"
+                  }
+                ]
+              },
+              {
+                "label": "Tropical",
+                "value": "tropical",
+                "kind": "option",
+                "children": [
+                  {
+                    "kind": "call",
+                    "method": "tropical"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "berries": [
+      {
+        "kind": "inputs",
+        "children": [
+          {
+            "label": "Berry type",
+            "name": "berry-type",
+            "global": false,
+            "optional": false,
+            "default": "raspberry",
+            "kind": "enum",
+            "children": [
+              {
+                "label": "Raspberry",
+                "value": "raspberry",
+                "kind": "option",
+                "children": [
+                  {
+                    "kind": "call",
+                    "method": "raspberry"
+                  }
+                ]
+              },
+              {
+                "label": "Strawberry",
+                "value": "strawberry",
+                "kind": "option",
+                "children": [
+                  {
+                    "kind": "call",
+                    "method": "strawberry"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "tropical": [
+      {
+        "kind": "inputs",
+        "children": [
+          {
+            "label": "Tropical type",
+            "name": "tropical-type",
+            "global": false,
+            "optional": false,
+            "default": "mango",
+            "kind": "enum",
+            "children": [
+              {
+                "label": "Mango",
+                "value": "mango",
+                "kind": "option",
+                "children": [
+                  {
+                    "kind": "call",
+                    "method": "mango"
+                  }
+                ]
+              },
+              {
+                "label": "Banana",
+                "value": "banana",
+                "kind": "option",
+                "children": [
+                  {
+                    "kind": "call",
+                    "method": "banana"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "raspberry": [
+      {
+        "kind": "inputs",
+        "children": [
+          {
+            "label": "Organic",
+            "name": "organic",
+            "global": false,
+            "optional": false,
+            "default": true,
+            "kind": "boolean"
+          }
+        ]
+      }
+    ],
+    "strawberry": [
+      {
+        "kind": "inputs",
+        "children": [
+          {
+            "label": "Frozen",
+            "name": "frozen",
+            "global": false,
+            "optional": false,
+            "default": true,
+            "kind": "boolean"
+          }
+        ]
+      }
+    ],
+    "mango": [
+      {
+        "kind": "inputs",
+        "children": [
+          {
+            "label": "Fare trade",
+            "name": "fare-trade",
+            "global": false,
+            "optional": false,
+            "default": true,
+            "kind": "boolean",
+            "children": [
+              {
+                "kind": "call",
+                "method": "common"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "banana": [
+      {
+        "kind": "inputs",
+        "children": [
+          {
+            "label": "Plantain",
+            "name": "plantain",
+            "global": false,
+            "optional": false,
+            "default": true,
+            "kind": "boolean"
+          }
+        ]
+      }
+    ],
+    "common": [
+      {
+        "kind": "inputs",
+        "children": [
+          {
+            "label": "Comment",
+            "name": "comment",
+            "global": false,
+            "optional": true,
+            "default": null,
+            "kind": "text"
+          }
+        ]
+      }
+    ],
+    "customize": [
+      {
+        "label": "Customize cake",
+        "id": "4",
+        "kind": "step",
+        "children": [
+          {
+            "kind": "inputs",
+            "children": [
+              {
+                "label": "Frosting",
+                "name": "frosting",
+                "global": false,
+                "optional": false,
+                "default": true,
+                "kind": "boolean"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "children": [
+    {
+      "kind": "call",
+      "method": "main"
+    }
+  ]
+}
