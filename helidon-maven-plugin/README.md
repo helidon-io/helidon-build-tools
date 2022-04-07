@@ -34,6 +34,8 @@ This plugin binds to the `package` phase by default.
 | skipNativeImage | boolean | `false` | Skip this goal execution |
 | execMode | enum | `jar` | Execution mode - `jar`, `jar-cp`, or `main` |
 | mainClass | String | `${mainClass}` | Main class to use when execMode is set to `main` | 
+| finalName | String  | `${project.build.finalName}` | Name of the output file to be generated |
+| jarFile | File | `target/${finalName}.jar` | Project JAR file |
 
 Except for `skipNativeImage`, the above parameters are mapped to user properties of the form `native.image.PROPERTY`; 
 `skipNativeImage` is mapped to `native.image.skip`. Multiple values for the `native.image.additonalArgs` and 
