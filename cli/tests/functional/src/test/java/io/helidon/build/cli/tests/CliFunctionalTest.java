@@ -128,37 +128,36 @@ public class CliFunctionalTest {
 
     @ParameterizedTest
     @CsvSource({
-            "se,bare,2.3.0",
-            "se,database,2.3.0",
-            "se,quickstart,2.3.0",
-            "mp,bare,2.3.0",
-            "mp,database,2.3.0",
-            "mp,quickstart,2.3.0"})
+            "se,bare,2.4.2",
+            "se,database,2.4.2",
+            "se,quickstart,2.4.2",
+            "mp,bare,2.4.2",
+            "mp,database,2.4.2",
+            "mp,quickstart,2.4.2"})
     void batchVersionTestShellScript(String flavor, String archetype, String version) throws Exception {
         runHelidonScriptTest(flavor, version, archetype, null, null, null, null, true);
     }
 
     @ParameterizedTest
     @CsvSource({
-            "se,bare,2.3.0",
-            "se,database,2.3.0",
-            "se,quickstart,2.3.0",
-            "mp,bare,2.3.0",
-            "mp,database,2.3.0",
-            "mp,quickstart,2.3.0"})
+            "se,bare,2.4.2",
+            "se,database,2.4.2",
+            "se,quickstart,2.4.2",
+            "mp,bare,2.4.2",
+            "mp,database,2.4.2",
+            "mp,quickstart,2.4.2"})
     void batchVersionTestEmbedded(String flavor, String archetype, String version) throws Exception {
         runEmbeddedTest(flavor, version, archetype, null, null, null, null, true);
     }
 
-
     @ParameterizedTest
     @CsvSource({
-            "se,bare,2.3.0",
-            "se,database,2.3.0",
-            "se,quickstart,2.3.0",
-            "mp,bare,2.3.0",
-            "mp,database,2.3.0",
-            "mp,quickstart,2.3.0"})
+            "se,bare,2.4.2",
+            "se,database,2.4.2",
+            "se,quickstart,2.4.2",
+            "mp,bare,2.4.2",
+            "mp,database,2.4.2",
+            "mp,quickstart,2.4.2"})
     @EnabledIfSystemProperty(named = "native.image", matches = "true")
     void batchVersionTestNativeImage(String flavor, String archetype, String version) throws Exception {
         runNativeImageTest(flavor, version, archetype, null, null, null, null, true);
