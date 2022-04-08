@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.functional;
+package io.helidon.build.cli.tests;
 
 import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.NetworkConnection;

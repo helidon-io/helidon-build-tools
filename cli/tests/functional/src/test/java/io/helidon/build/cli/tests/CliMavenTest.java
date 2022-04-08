@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.tests.functional;
+package io.helidon.build.cli.tests;
 
 import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.maven.MavenCommand;

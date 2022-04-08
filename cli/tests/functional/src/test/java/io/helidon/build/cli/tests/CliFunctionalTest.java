@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.tests.functional;
+package io.helidon.build.cli.tests;
 
 import io.helidon.build.cli.impl.CommandInvoker;
 import io.helidon.build.common.OSType;
@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -42,17 +43,12 @@ public class CliFunctionalTest {
     private static final String CUSTOM_ARTIFACT_ID = "myartifactid";
     private static final String CUSTOM_PROJECT = "myproject";
     private static final String CUSTOM_PACKAGE_NAME = "custom.pack.name";
-    private static final boolean IS_NATIVE_IMAGE = isNativeImage();
 
     private static Path workDir;
     private static Path inputFile;
     private static Path helidonShell;
     private static Path helidonBatch;
     private static Path helidonNativeImage;
-
-    private static boolean isNativeImage() {
-        return Boolean.parseBoolean(System.getProperty("native.image"));
-    }
 
     @BeforeAll
     static void setup() throws IOException {
@@ -95,6 +91,25 @@ public class CliFunctionalTest {
 
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
+    void batchTestShellScript(String flavor, String archetype) throws Exception {
+        runHelidonScriptTest(flavor, HELIDON_VERSION, archetype, null, null, null, null, true);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
+    void batchTestEmbedded(String flavor, String archetype) throws Exception {
+        runEmbeddedTest(flavor, HELIDON_VERSION, archetype, null, null, null, null, true);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
+    @EnabledIfSystemProperty(named = "native.image", matches = "true")
+    void batchTestNativeImage(String flavor, String archetype) throws Exception {
+        runNativeImageTest(flavor, HELIDON_VERSION, archetype, null, null, null, null, true);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void interactiveTest(String flavor, String archetype) throws Exception {
         runInteractiveTest(flavor, null, archetype, null, null, null, null, true);
     }
@@ -109,6 +124,43 @@ public class CliFunctionalTest {
             "mp,quickstart,2.3.0"})
     void batchVersionTest(String flavor, String archetype, String version) throws Exception {
         runBatchTest(flavor, version, archetype, null, null, null, null, false);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "se,bare,2.4.2",
+            "se,database,2.4.2",
+            "se,quickstart,2.4.2",
+            "mp,bare,2.4.2",
+            "mp,database,2.4.2",
+            "mp,quickstart,2.4.2"})
+    void batchVersionTestShellScript(String flavor, String archetype, String version) throws Exception {
+        runHelidonScriptTest(flavor, version, archetype, null, null, null, null, true);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "se,bare,2.4.2",
+            "se,database,2.4.2",
+            "se,quickstart,2.4.2",
+            "mp,bare,2.4.2",
+            "mp,database,2.4.2",
+            "mp,quickstart,2.4.2"})
+    void batchVersionTestEmbedded(String flavor, String archetype, String version) throws Exception {
+        runEmbeddedTest(flavor, version, archetype, null, null, null, null, true);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "se,bare,2.4.2",
+            "se,database,2.4.2",
+            "se,quickstart,2.4.2",
+            "mp,bare,2.4.2",
+            "mp,database,2.4.2",
+            "mp,quickstart,2.4.2"})
+    @EnabledIfSystemProperty(named = "native.image", matches = "true")
+    void batchVersionTestNativeImage(String flavor, String archetype, String version) throws Exception {
+        runNativeImageTest(flavor, version, archetype, null, null, null, null, true);
     }
 
     @ParameterizedTest
@@ -131,6 +183,25 @@ public class CliFunctionalTest {
 
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
+    void batchAllTestShellScript(String flavor, String archetype) throws Exception {
+        runHelidonScriptTest(flavor, "2.3.0", archetype, CUSTOM_GROUP_ID, CUSTOM_ARTIFACT_ID, CUSTOM_PACKAGE_NAME, CUSTOM_PROJECT, false);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
+    void batchAllTestEmbedded(String flavor, String archetype) throws Exception {
+        runEmbeddedTest(flavor, "2.3.0", archetype, CUSTOM_GROUP_ID, CUSTOM_ARTIFACT_ID, CUSTOM_PACKAGE_NAME, CUSTOM_PROJECT, false);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
+    @EnabledIfSystemProperty(named = "native.image", matches = "true")
+    void batchAllTestNativeImage(String flavor, String archetype) throws Exception {
+        runNativeImageTest(flavor, "2.3.0", archetype, CUSTOM_GROUP_ID, CUSTOM_ARTIFACT_ID, CUSTOM_PACKAGE_NAME, CUSTOM_PROJECT, false);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void interactiveAllTest(String flavor, String archetype) throws Exception {
         runInteractiveTest(flavor, "2.3.0", archetype, CUSTOM_GROUP_ID, CUSTOM_ARTIFACT_ID, CUSTOM_PACKAGE_NAME, CUSTOM_PROJECT, false);
     }
@@ -139,6 +210,25 @@ public class CliFunctionalTest {
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customPackageNameBatchTest(String flavor, String archetype) throws Exception {
         runBatchTest(flavor, HELIDON_VERSION, archetype, null, null, CUSTOM_PACKAGE_NAME, null, false);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
+    void customPackageNameBatchTestShellScript(String flavor, String archetype) throws Exception {
+        runHelidonScriptTest(flavor, HELIDON_VERSION, archetype, null, null, CUSTOM_PACKAGE_NAME, null, false);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
+    void customPackageNameBatchTestEmbedded(String flavor, String archetype) throws Exception {
+        runEmbeddedTest(flavor, HELIDON_VERSION, archetype, null, null, CUSTOM_PACKAGE_NAME, null, false);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
+    @EnabledIfSystemProperty(named = "native.image", matches = "true")
+    void customPackageNameBatchTestNativeImage(String flavor, String archetype) throws Exception {
+        runNativeImageTest(flavor, HELIDON_VERSION, archetype, null, null, CUSTOM_PACKAGE_NAME, null, false);
     }
 
     @ParameterizedTest
@@ -155,6 +245,25 @@ public class CliFunctionalTest {
 
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
+    void customGroupIdBatchTestShellScript(String flavor, String archetype) throws Exception {
+        runHelidonScriptTest(flavor, HELIDON_VERSION, archetype, CUSTOM_GROUP_ID, null, null, null, false);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
+    void customGroupIdBatchTestEmbedded(String flavor, String archetype) throws Exception {
+        runEmbeddedTest(flavor, HELIDON_VERSION, archetype, CUSTOM_GROUP_ID, null, null, null, false);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
+    @EnabledIfSystemProperty(named = "native.image", matches = "true")
+    void customGroupIdBatchTestNativeImage(String flavor, String archetype) throws Exception {
+        runNativeImageTest(flavor, HELIDON_VERSION, archetype, CUSTOM_GROUP_ID, null, null, null, false);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customGroupIdInteractiveTest(String flavor, String archetype) throws Exception {
         runInteractiveTest(flavor, null, archetype, CUSTOM_GROUP_ID, null, null, null, false);
     }
@@ -167,6 +276,25 @@ public class CliFunctionalTest {
 
     @ParameterizedTest
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
+    void customArtifactIdBatchTestShellScript(String flavor, String archetype) throws Exception {
+        runHelidonScriptTest(flavor, HELIDON_VERSION, archetype, null, CUSTOM_ARTIFACT_ID, null, null, false);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
+    void customArtifactIdBatchTestEmbedded(String flavor, String archetype) throws Exception {
+        runEmbeddedTest(flavor, HELIDON_VERSION, archetype, null, CUSTOM_ARTIFACT_ID, null, null, false);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
+    @EnabledIfSystemProperty(named = "native.image", matches = "true")
+    void customArtifactIdBatchTestNativeImage(String flavor, String archetype) throws Exception {
+        runNativeImageTest(flavor, HELIDON_VERSION, archetype, null, CUSTOM_ARTIFACT_ID, null, null, false);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customArtifactIdInteractiveTest(String flavor, String archetype) throws Exception {
         runInteractiveTest(flavor, null, archetype, CUSTOM_ARTIFACT_ID, null, null, null, false);
     }
@@ -175,6 +303,25 @@ public class CliFunctionalTest {
     @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
     void customProjectNameBatchTest(String flavor, String archetype) throws Exception {
         runBatchTest(flavor, HELIDON_VERSION, archetype, null, null, null, CUSTOM_PROJECT, false);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
+    void customProjectNameBatchTestShellScript(String flavor, String archetype) throws Exception {
+        runHelidonScriptTest(flavor, HELIDON_VERSION, archetype, null, null, null, CUSTOM_PROJECT, false);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
+    void customProjectNameBatchTestEmbedded(String flavor, String archetype) throws Exception {
+        runEmbeddedTest(flavor, HELIDON_VERSION, archetype, null, null, null, CUSTOM_PROJECT, false);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"se,bare", "se,database", "se,quickstart", "mp,bare", "mp,database", "mp,quickstart"})
+    @EnabledIfSystemProperty(named = "native.image", matches = "true")
+    void customProjectNameBatchTestNativeImage(String flavor, String archetype) throws Exception {
+        runNativeImageTest(flavor, HELIDON_VERSION, archetype, null, null, null, CUSTOM_PROJECT, false);
     }
 
     @ParameterizedTest
@@ -288,11 +435,6 @@ public class CliFunctionalTest {
         commandInvoker(flavor, version, archetype, groupId, artifactId, packageName, name, startApp)
                 .invokeInit()
                 .validateProject();
-        runHelidonScriptTest(flavor, version, archetype, groupId, artifactId, packageName, name, startApp);
-        runHelidonClassTest(flavor, version, archetype, groupId, artifactId, packageName, name, startApp);
-        if (IS_NATIVE_IMAGE) {
-            runNativeImageTest(flavor, version, archetype, groupId, artifactId, packageName, name, startApp);
-        }
     }
 
     private void runInteractiveTest(String flavor,
@@ -327,7 +469,7 @@ public class CliFunctionalTest {
                 .validateProject();
     }
 
-    private void runHelidonClassTest(String flavor,
+    private void runEmbeddedTest(String flavor,
                                      String version,
                                      String archetype,
                                      String groupId,
