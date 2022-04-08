@@ -107,9 +107,14 @@ public class GraalNativeMojo extends AbstractMojo {
     /**
      * Name of the output file to be generated.
      */
-    @Parameter(defaultValue = "${project.build.finalName}", readonly = true,
-            required = true)
+    @Parameter(defaultValue = "${project.build.finalName}", required = true, property = "native.image.finalName")
     private String finalName;
+
+    /**
+     * Project JAR file.
+     */
+    @Parameter(property = "native.image.jarFile")
+    private File jarFile;
 
     /**
      * Show exception stack traces for exceptions during image building.
@@ -186,9 +191,10 @@ public class GraalNativeMojo extends AbstractMojo {
             return;
         }
 
-        NativeContext context = new NativeContext(execMode, mainClass);
-        context.artifact(project, buildDirectory);
-        context.validate();
+        NativeContext context = new NativeContext(execMode);
+        if (context.useMain() && mainClass == null) {
+            throw new MojoFailureException("Main class not configured and required. Use option \"mainClass\"");
+        }
 
         // create the command
         List<String> command = new ArrayList<>();
@@ -223,8 +229,18 @@ public class GraalNativeMojo extends AbstractMojo {
          * classpath automatically.
          */
         if (context.useJar()) {
+            if (jarFile == null) {
+                File artifact = project.getArtifact().getFile();
+                if (artifact == null) {
+                    artifact = new File(buildDirectory, finalName + ".jar");
+                }
+                jarFile = artifact;
+            }
+            if (!jarFile.exists()) {
+                throw new MojoFailureException("Artifact does not exist: " + jarFile.getAbsolutePath());
+            }
             command.add("-jar");
-            command.add(context.artifact().getAbsolutePath());
+            command.add(jarFile.getAbsolutePath());
         }
 
         if (context.useMain()) {
@@ -522,15 +538,12 @@ public class GraalNativeMojo extends AbstractMojo {
     }
 
     private static final class NativeContext {
+
         private final boolean useJar;
         private final boolean useMain;
         private final boolean addClasspath;
-        private final String mainClass;
 
-        private File artifact;
-
-        private NativeContext(String execMode, String mainClass) throws MojoFailureException {
-            this.mainClass = mainClass;
+        private NativeContext(String execMode) throws MojoFailureException {
             switch (execMode) {
             case EXEC_MODE_JAR:
                 useJar = true;
@@ -565,30 +578,6 @@ public class GraalNativeMojo extends AbstractMojo {
 
         boolean addClasspath() {
             return addClasspath;
-        }
-
-        File artifact() {
-            return artifact;
-        }
-
-        void artifact(MavenProject project, File buildDirectory) throws MojoFailureException {
-            if (useJar) {
-                artifact = project.getArtifact().getFile();
-                if (artifact == null) {
-                    artifact = new File(buildDirectory,
-                                        project.getBuild().getFinalName() + ".jar");
-                }
-                if (!artifact.exists()) {
-                    throw new MojoFailureException("Artifact does not exist: "
-                                                           + artifact.getAbsolutePath());
-                }
-            }
-        }
-
-        void validate() throws MojoFailureException {
-            if ((null == mainClass) && useMain) {
-                throw new MojoFailureException("Main class not configured and required. Use option \"mainClass\"");
-            }
         }
     }
 }
