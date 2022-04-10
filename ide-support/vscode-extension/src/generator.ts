@@ -49,7 +49,7 @@ export async function showHelidonGenerator(extensionPath: string, steps: any) {
 
         const archetypeValues = prepareProperties(projectData);
         const cmd = `java -jar ${extensionPath}/target/cli/helidon.jar init --batch \
-            --reset --url file://${extensionPath}/cli-data \
+            --reset --url file:///${extensionPath}/cli-data \
             ${archetypeValues}`;
 
         const channel = VSCodeAPI.createOutputChannel('helidon');
@@ -65,6 +65,7 @@ export async function showHelidonGenerator(extensionPath: string, steps: any) {
                 VSCodeAPI.showInformationMessage('Project generated...');
                 openPreparedProject(projectDir);
             } else {
+                console.log(error.toString());
                 VSCodeAPI.showInformationMessage('Project generation failed...');
             }
             if (stderr) {
@@ -298,8 +299,6 @@ export async function showHelidonGenerator(extensionPath: string, steps: any) {
 
                 lastSelectedItems = quickPick.selectedItems;
             }
-
-            console.log(items);
         });
         quickPick.onDidTriggerButton(item => {
             if (item === QuickInputButtons.Back) {

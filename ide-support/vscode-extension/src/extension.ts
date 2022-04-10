@@ -37,6 +37,17 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
+
+    let initialEnvPath = process.env.PATH;
+    let initialEnvJavaHome = process.env.JAVA_HOME;
+    vscode.workspace.onDidChangeConfiguration(event => {
+        if (event.affectsConfiguration('helidon')){
+            console.log("affectsConfiguration - helidon")
+            process.env.PATH = initialEnvPath;
+            process.env.JAVA_HOME = initialEnvJavaHome;
+        }
+    })
+
     context.subscriptions.push(vscode.commands.registerCommand(VSCodeHelidonCommands.GENERATE_PROJECT, () => {
         showHelidonGenerator(context.extensionPath, STEPS);
     }));
@@ -57,4 +68,6 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
+    process.env.JAVA_HOME = undefined;
+    process.env.PATH = undefined;
 }
