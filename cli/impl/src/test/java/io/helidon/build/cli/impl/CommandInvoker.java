@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Objects;
 
 import io.helidon.build.cli.common.ProjectConfig;
+import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.SubstitutionVariables;
 
 import io.helidon.build.common.maven.MavenModel;
@@ -47,6 +48,10 @@ import static org.hamcrest.Matchers.greaterThan;
  * Test utility to invoke {@code helidon}.
  */
 public interface CommandInvoker {
+
+    enum InvokerMode {
+        CLASSPATH, EMBEDDED, EXECUTABLE
+    }
 
     /**
      * Create a new init command invoker builder.
@@ -150,6 +155,21 @@ public interface CommandInvoker {
     InvocationResult invokeInit() throws Exception;
 
     /**
+     * Invoke the dev command.
+     *
+     * @return invocation result
+     * @throws Exception if an error occurs
+     */
+    InvocationResult invokeDev() throws Exception;
+
+    /**
+     * Stop the dev command.
+     *
+     * @return invocation result
+     */
+    InvocationResult stopMonitor();
+
+    /**
      * Invoke the given command on the project.
      *
      * @param command command to invoke
@@ -223,7 +243,7 @@ public interface CommandInvoker {
      * @param sourceRoot source root directory
      * @return this invoker
      */
-    CommandInvoker assertPackageExists(Path sourceRoot);
+    CommandInvoker assertPackageExists(Path sourceRoot) throws IOException;
 
     /**
      * Assert that there is at least one {@code .java} file in the given "source root" directory.
@@ -259,8 +279,14 @@ public interface CommandInvoker {
         private final Path workDir;
         private final UserConfig config;
         private final String helidonVersion;
+        private final Path executable;
         private final boolean buildProject;
+        private final String appJvmArgs;
+        private final boolean verbose;
+        private final boolean debug;
+        private ProcessMonitor devMonitor;
         private final boolean useProjectOption;
+        private final InvokerMode invokerMode;
 
         private InvokerImpl(Builder builder) {
             useProjectOption = builder.useProjectOption;
@@ -285,12 +311,27 @@ public interface CommandInvoker {
             groupId = builder.groupId == null ? config.defaultGroupId(substitutions) : builder.groupId;
             artifactId = config.artifactId(builder.artifactId, builder.projectName, substitutions);
             packageName = builder.packageName == null ? config.defaultPackageName(substitutions) : builder.packageName;
+            executable = builder.executable;
+            invokerMode = setInvokerMode(builder.executable, builder.embedded);
+            appJvmArgs = builder.appJvmArgs;
+            verbose = builder.verbose;
+            debug = builder.debug;
             try {
                 workDir = builder.workDir == null ? Files.createTempDirectory("helidon-init") : builder.workDir;
                 projectDir = unique(workDir, projectName);
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }
+        }
+
+        private InvokerMode setInvokerMode(Path executable, boolean embedded) {
+            if (executable != null) {
+                return InvokerMode.EXECUTABLE;
+            }
+            if (embedded) {
+                return InvokerMode.EMBEDDED;
+            }
+            return InvokerMode.CLASSPATH;
         }
 
         @Override
@@ -362,6 +403,9 @@ public interface CommandInvoker {
             if (input == null) {
                 args.add("--batch");
             }
+            if (debug) {
+                args.add("--debug");
+            }
             if (helidonVersion != null) {
                 args.add("--version");
                 args.add(helidonVersion);
@@ -391,9 +435,49 @@ public interface CommandInvoker {
             args.forEach(a -> System.out.print(a + " "));
             System.out.println();
 
+            return new InvocationResult(this, execute(workDir.toFile(), input, argsArray));
+        }
+
+        private String execute(File wd, File input, String... args) throws Exception {
+
+            if (invokerMode == InvokerMode.EXECUTABLE) {
+                return TestUtils.execWithExecutable(executable, wd, args);
+            }
+
+            if (invokerMode == InvokerMode.EMBEDDED) {
+                Helidon.execute(args);
+                return "Helidon class executed";
+            }
+
+            return TestUtils.execWithDirAndInput(workDir.toFile(), input, args);
+        }
+
+        @Override
+        public InvocationResult invokeDev() throws Exception {
+            List<String> args = new ArrayList<>();
+            args.add("dev");
+            if (verbose) {
+                args.add("--verbose");
+            }
+            if (debug) {
+                args.add("--debug");
+            }
+            if (appJvmArgs != null) {
+                args.add("--app-jvm-args");
+                args.add(appJvmArgs);
+            }
+            System.out.print("Executing with args ");
+            args.forEach(a -> System.out.print(a + " "));
+            System.out.println();
+
             // Execute and verify process exit code
-            String output = TestUtils.execWithDirAndInput(workDir.toFile(), input, argsArray);
-            return new InvocationResult(this, output);
+            devMonitor = TestUtils.startWithDirAndInput(workDir.toFile(), input, args);
+            return new InvocationResult(this, devMonitor.output());
+        }
+
+        public InvocationResult stopMonitor() {
+            devMonitor.stop();
+            return new InvocationResult(this, devMonitor.output());
         }
 
         @Override
@@ -457,8 +541,11 @@ public interface CommandInvoker {
         }
 
         @Override
-        public CommandInvoker assertPackageExists(Path sourceRoot) {
-            TestUtils.assertPackageExists(projectDir, packageName);
+        public CommandInvoker assertPackageExists(Path sourceRoot) throws IOException {
+            long sources = Files.walk(sourceRoot)
+                    .filter(file -> file.toString().contains(packageName.replace(".", File.separator)))
+                    .count();
+            assertThat(sources, is(greaterThan(0L)));
             return this;
         }
 
@@ -560,6 +647,16 @@ public interface CommandInvoker {
         }
 
         @Override
+        public InvocationResult invokeDev() throws Exception {
+            return delegate.invokeDev();
+        }
+
+        @Override
+        public InvocationResult stopMonitor() {
+            return delegate.stopMonitor();
+        }
+
+        @Override
         public InvocationResult invokeCommand(String command) throws Exception {
             return delegate.invokeCommand(command);
         }
@@ -585,7 +682,7 @@ public interface CommandInvoker {
         }
 
         @Override
-        public CommandInvoker assertPackageExists(Path sourceRoot) {
+        public CommandInvoker assertPackageExists(Path sourceRoot) throws IOException {
             return delegate.assertPackageExists(sourceRoot);
         }
 
@@ -638,8 +735,13 @@ public interface CommandInvoker {
         private Path workDir;
         private File input;
         private String helidonVersion;
+        private Path executable;
         private boolean buildProject;
         private boolean useProjectOption;
+        private boolean embedded;
+        private boolean verbose;
+        private boolean debug;
+        private String appJvmArgs;
 
         /**
          * Use the {@code --project} option instead of the project argument.
@@ -786,6 +888,57 @@ public interface CommandInvoker {
         }
 
         /**
+         * Run cli with helidon.sh script.
+         *
+         * @return this builder
+         */
+        public Builder executable(Path executable) {
+            this.executable = executable;
+            return this;
+        }
+
+        /**
+         * Run cli with {@code helidon} class.
+         *
+         * @return this builder
+         */
+        public Builder embedded() {
+            this.embedded = true;
+            return this;
+        }
+
+        /**
+         * Set the application jvm arguments.
+         *
+         * @param args arguments
+         * @return this builder
+         */
+        public Builder appJvmArgs(String args) {
+            this.appJvmArgs = args;
+            return this;
+        }
+
+        /**
+         * Set verbose.
+         *
+         * @return this builder
+         */
+        public Builder verbose() {
+            this.verbose = true;
+            return this;
+        }
+
+        /**
+         * Set debug.
+         *
+         * @return this builder
+         */
+        public Builder debug() {
+            this.debug = true;
+            return this;
+        }
+
+        /**
          * Build the command invoker instance.
          *
          * @return invoker instance
@@ -803,5 +956,16 @@ public interface CommandInvoker {
         public CommandInvoker.InvocationResult invokeInit() throws Exception {
             return new InvokerImpl(this).invokeInit();
         }
+
+        /**
+         * Build the command invoker instance and invoke the dev command.
+         *
+         * @return invoker instance
+         * @throws Exception if any error occurs
+         */
+        public CommandInvoker invokeDev() throws Exception {
+            return new InvokerImpl(this).invokeDev();
+        }
+
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,20 @@
 
 package io.helidon.build.archetype.engine.v2.ast;
 
-/**
- * Source position.
- */
-public final class Position {
+import java.nio.file.Path;
+import java.util.Objects;
 
+/**
+ * Source location.
+ */
+public final class Location {
+
+    private final Path path;
     private final int lineNo;
     private final int charNo;
 
-    private Position(int lineNo, int charNo) {
+    private Location(Path path, int lineNo, int charNo) {
+        this.path = Objects.requireNonNull(path, "path is null");
         if (lineNo < 0) {
             throw new IllegalArgumentException("Invalid line number: " + lineNo);
         }
@@ -36,7 +41,16 @@ public final class Position {
     }
 
     /**
-     * Get the current line number.
+     * Get the path.
+     *
+     * @return path
+     */
+    public Path path() {
+        return path;
+    }
+
+    /**
+     * Get the line number.
      *
      * @return line number
      */
@@ -45,7 +59,7 @@ public final class Position {
     }
 
     /**
-     * Get the current line character number.
+     * Get the line character number.
      *
      * @return line character number
      */
@@ -55,7 +69,7 @@ public final class Position {
 
     @Override
     public String toString() {
-        return lineNo + ":" + charNo;
+        return path + ":" + lineNo + ":" + charNo;
     }
 
     /**
@@ -63,18 +77,19 @@ public final class Position {
      *
      * @return copy
      */
-    public Position copy() {
-        return new Position(lineNo, charNo);
+    public Location copy() {
+        return new Location(path, lineNo, charNo);
     }
 
     /**
-     * Create a new position.
+     * Create a new location.
      *
+     * @param path   file path
      * @param lineNo line number
      * @param charNo line character number
-     * @return position
+     * @return location
      */
-    public static Position of(int lineNo, int charNo) {
-        return new Position(lineNo, charNo);
+    public static Location of(Path path, int lineNo, int charNo) {
+        return new Location(path, lineNo, charNo);
     }
 }

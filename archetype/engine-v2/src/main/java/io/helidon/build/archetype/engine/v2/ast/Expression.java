@@ -56,10 +56,20 @@ public final class Expression {
      * Get or create an expression.
      *
      * @param expression expression
-     * @return script
+     * @return Expression
      */
     public static Expression create(String expression) {
         return CACHE.computeIfAbsent(expression, Expression::parse);
+    }
+
+    /**
+     * Create an expression from a list of tokens.
+     *
+     * @param tokens list of tokens
+     * @return Expression
+     */
+    public static Expression create(List<Token> tokens) {
+        return new Expression(tokens);
     }
 
     private Expression(List<Token> tokens) {
@@ -345,6 +355,36 @@ public final class Expression {
             this.operator = operator;
             this.variable = variable;
             this.operand = operand;
+        }
+
+        /**
+         * Create a new operator token.
+         *
+         * @param operator operator.
+         * @return Token
+         */
+        public static Token create(Operator operator) {
+            return new Token(operator, null, null);
+        }
+
+        /**
+         * Create a new variable token.
+         *
+         * @param variable variable.
+         * @return Token
+         */
+        public static Token create(String variable) {
+            return new Token(null, variable, null);
+        }
+
+        /**
+         * Create a new operand token.
+         *
+         * @param value value.
+         * @return Token
+         */
+        public static Token create(Value value) {
+            return new Token(null, null, value);
         }
 
         /**

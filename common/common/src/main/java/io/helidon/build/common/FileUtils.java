@@ -748,6 +748,37 @@ public final class FileUtils {
     }
 
     /**
+     * Unzip a zip file using {@link FileSystem}.
+     *
+     * @param zip       source file
+     * @param directory target directory
+     */
+    public static void unzip(Path zip, Path directory) {
+        try (FileSystem fs = newZipFileSystem(zip)) {
+            if (!Files.exists(directory)) {
+                Files.createDirectory(directory);
+            }
+            Path root = fs.getRootDirectories().iterator().next();
+            Files.walk(root)
+                    .filter(p -> !p.equals(root))
+                    .forEach(file -> {
+                        Path filePath = directory.resolve(Path.of(file.toString().substring(1)));
+                        try {
+                            if (Files.isDirectory(file)) {
+                                Files.createDirectories(filePath);
+                            } else {
+                                Files.copy(file, filePath);
+                            }
+                        } catch (IOException ioe) {
+                            throw new UncheckedIOException(ioe);
+                        }
+                    });
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
      * Get the path for the given URI.
      *
      * @param uri uri

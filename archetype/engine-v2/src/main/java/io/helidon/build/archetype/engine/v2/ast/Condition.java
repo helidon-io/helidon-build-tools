@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,20 @@ package io.helidon.build.archetype.engine.v2.ast;
 
 import java.nio.file.Path;
 
+import io.helidon.build.archetype.engine.v2.ScriptLoader;
+
 /**
  * Condition.
  */
 public final class Condition extends Node {
 
+    private final String rawExpression;
     private final Expression expression;
     private final Node then;
 
     private Condition(Builder builder) {
         super(builder);
+        this.rawExpression = builder.rawExpression;
         this.expression = builder.expression;
         this.then = builder.then.doBuild();
     }
@@ -51,6 +55,14 @@ public final class Condition extends Node {
     }
 
     @Override
+    public String toString() {
+        return "Condition{"
+                + "expression=" + rawExpression
+                + ", then=" + then
+                + '}';
+    }
+
+    @Override
     public <A> VisitResult accept(Visitor<A> visitor, A arg) {
         return visitor.visitCondition(this, arg);
     }
@@ -58,12 +70,13 @@ public final class Condition extends Node {
     /**
      * Create a new builder.
      *
+     * @param loader     script loader
      * @param scriptPath script path
-     * @param position   position
+     * @param location   location
      * @return builder
      */
-    public static Builder builder(Path scriptPath, Position position) {
-        return new Builder(scriptPath, position);
+    public static Builder builder(ScriptLoader loader, Path scriptPath, Location location) {
+        return new Builder(loader, scriptPath, location);
     }
 
     /**
@@ -71,11 +84,12 @@ public final class Condition extends Node {
      */
     public static final class Builder extends Node.Builder<Condition, Builder> {
 
+        private String rawExpression;
         private Expression expression;
         private Node.Builder<? extends Node, ?> then;
 
-        private Builder(Path scriptPath, Position position) {
-            super(scriptPath, position);
+        private Builder(ScriptLoader loader, Path scriptPath, Location location) {
+            super(loader, scriptPath, location);
         }
 
         /**
@@ -85,7 +99,19 @@ public final class Condition extends Node {
          * @return this builder
          */
         public Builder expression(String expression) {
+            this.rawExpression = expression;
             this.expression = Expression.create(expression);
+            return this;
+        }
+
+        /**
+         * Set the expression.
+         *
+         * @param expression expression
+         * @return this builder
+         */
+        public Builder expression(Expression expression) {
+            this.expression = expression;
             return this;
         }
 

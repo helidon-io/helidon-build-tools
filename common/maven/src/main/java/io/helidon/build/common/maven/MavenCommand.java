@@ -287,7 +287,7 @@ public class MavenCommand {
      * {@link MavenCommand} builder.
      */
     public static class Builder {
-        private static final String MAVEN_EXEC = OS.mavenExec();
+        private static final String DEFAULT_MAVEN_EXEC = OS.mavenExec();
         private static final String PATH_VAR = "PATH";
         private static final String MAVEN_OPTS_VAR = "MAVEN_OPTS";
         private static final String MAVEN_DEBUG_OPTS_VAR = "MAVEN_DEBUG_OPTS";
@@ -314,6 +314,7 @@ public class MavenCommand {
         private Runnable afterShutdown = () -> {};
         private MavenVersion requiredMinimumVersion;
         private ProcessBuilder processBuilder;
+        private Path executable;
 
         private Builder() {
             this.mavenArgs = new ArrayList<>();
@@ -500,6 +501,17 @@ public class MavenCommand {
         }
 
         /**
+         * Sets the maven executable path to be used for command execution.
+         *
+         * @param mvn the maven executable path
+         * @return This builder.
+         */
+        public Builder executable(Path mvn) {
+            executable = mvn;
+            return this;
+        }
+
+        /**
          * Sets the maximum number of seconds to wait for command to complete.
          *
          * @param maxWaitSeconds The seconds.
@@ -521,7 +533,7 @@ public class MavenCommand {
             // Create the command
 
             List<String> command = new ArrayList<>();
-            command.add(MAVEN_EXEC);
+            command.add(executable == null ? DEFAULT_MAVEN_EXEC : executable.toString());
             command.addAll(mavenArgs);
             if (verbose) {
                 command.add("--debug");
@@ -584,7 +596,9 @@ public class MavenCommand {
         }
 
         private void prepare() {
-            requireMavenVersion(requiredMinimumVersion);
+            if (executable == null) {
+                requireMavenVersion(requiredMinimumVersion);
+            }
             requireNonNull(directory, "directory required");
             requireJavaExecutable();
             if (stdOut == null) {

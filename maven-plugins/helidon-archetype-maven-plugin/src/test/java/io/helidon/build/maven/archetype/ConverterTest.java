@@ -19,6 +19,7 @@ import io.helidon.build.archetype.engine.v2.ScriptLoader;
 import io.helidon.build.archetype.engine.v2.Walker;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Invocation;
+import io.helidon.build.archetype.engine.v2.ast.Invocation.ScriptInvocation;
 import io.helidon.build.archetype.engine.v2.ast.Node;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
@@ -123,6 +124,6 @@ class ConverterTest {
 
         assertThat(invocations.size(), is(1));
         assertThat(invocations.get(0).kind(), is(Invocation.Kind.EXEC));
-        assertThat(invocations.get(0).src(), is("mvn://com.example:archetype:1.0.0/main.xml"));
+        assertThat(((ScriptInvocation) invocations.get(0)).src(), is("mvn://com.example:archetype:1.0.0/main.xml"));
     }
 }

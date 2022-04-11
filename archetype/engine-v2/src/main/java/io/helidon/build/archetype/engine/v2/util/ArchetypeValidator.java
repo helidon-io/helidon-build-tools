@@ -112,7 +112,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
                 errors.add(String.format(
                         "%s:%s %s: '%s'",
                         preset.scriptPath(),
-                        preset.position(),
+                        preset.location(),
                         PRESET_UNRESOLVED,
                         path));
             } else {
@@ -121,7 +121,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
                     errors.add(String.format(
                             "%s:%s %s: '%s', expected: %s, actual: %s",
                             preset.scriptPath(),
-                            preset.position(),
+                            preset.location(),
                             PRESET_TYPE_MISMATCH,
                             path,
                             ref.kind(),
@@ -157,14 +157,14 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
         } catch (Expression.UnresolvedVariableException ex) {
             errors.add(String.format("%s:%s %s: '%s'",
                     condition.scriptPath(),
-                    condition.position(),
+                    condition.location(),
                     EXPR_UNRESOLVED_VARIABLE,
                     ex.variable()));
         } catch (IllegalStateException ex) {
             errors.add(String.format(
                     "%s:%s %s: '%s'",
                     condition.scriptPath(),
-                    condition.position(),
+                    condition.location(),
                     EXPR_EVAL_ERROR,
                     ex.getMessage()));
         }
@@ -219,17 +219,17 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
         if (stepState.inputs == 0) {
             errors.add(String.format("%s:%s %s",
                     step.scriptPath(),
-                    step.position(),
+                    step.location(),
                     STEP_NO_INPUT));
         } else if (declaredOptional && !optional) {
             errors.add(String.format("%s:%s %s",
                     step.scriptPath(),
-                    step.position(),
+                    step.location(),
                     STEP_DECLARED_OPTIONAL));
         } else if (!declaredOptional && optional) {
             errors.add(String.format("%s:%s %s",
                     step.scriptPath(),
-                    step.position(),
+                    step.location(),
                     STEP_NOT_DECLARED_OPTIONAL));
         }
         return VisitResult.CONTINUE;
@@ -255,7 +255,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
             if (currentScope.containsKey(inputPath)) {
                 errors.add(String.format("%s:%s %s: '%s'",
                         input.scriptPath(),
-                        input.position(),
+                        input.location(),
                         INPUT_ALREADY_DECLARED,
                         inputPath));
             } else {
@@ -266,7 +266,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
                     if (duplicate.kind() != input.kind()) {
                         errors.add(String.format("%s:%s %s: '%s'",
                                 input.scriptPath(),
-                                input.position(),
+                                input.location(),
                                 INPUT_TYPE_MISMATCH,
                                 inputPath));
                     }
@@ -278,7 +278,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
             if (optional && input.defaultValue().unwrap() == null) {
                 errors.add(String.format("%s:%s %s: '%s'",
                         input.scriptPath(),
-                        input.position(),
+                        input.location(),
                         INPUT_OPTIONAL_NO_DEFAULT,
                         inputPath));
             }
@@ -287,7 +287,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
             if (stepState == null) {
                 errors.add(String.format("%s:%s %s: '%s'",
                         input.scriptPath(),
-                        input.position(),
+                        input.location(),
                         INPUT_NOT_IN_STEP,
                         inputPath));
             } else {
@@ -301,7 +301,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
                 errors.add(String.format(
                         "%s:%s %s: '%s'",
                         option.scriptPath(),
-                        option.position(),
+                        option.location(),
                         OPTION_VALUE_ALREADY_DECLARED,
                         value));
             }

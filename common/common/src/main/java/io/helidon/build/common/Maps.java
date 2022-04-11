@@ -15,13 +15,24 @@
  */
 package io.helidon.build.common;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Set;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
+
+import static java.util.stream.Collectors.toMap;
 
 /**
- * Class Maps. Utility class to convert between {@code Properties} and {@code Map}.
+ * Map utilities.
  */
 public class Maps {
 
@@ -52,5 +63,74 @@ public class Maps {
         Properties properties = new Properties();
         map.forEach(properties::setProperty);
         return properties;
+    }
+
+    /**
+     * Utility to reverse a map.
+     *
+     * @param map map to reverse
+     * @param <T> key type
+     * @param <U> value type
+     * @return reversed map
+     */
+    public static <T, U> Map<U, Set<T>> reverse(Map<T, U> map) {
+        Map<U, Set<T>> reversed = new HashMap<>();
+        for (Entry<T, U> entry : map.entrySet()) {
+            reversed.computeIfAbsent(entry.getValue(), v -> new HashSet<>())
+                    .add(entry.getKey());
+        }
+        return reversed;
+    }
+
+    /**
+     * Sort the given map by values.
+     *
+     * @param map map
+     * @param cmp comparator
+     * @param <K> key type
+     * @param <V> value type
+     * @return sorted map
+     */
+    public static <K, V> Map<K, V> sortByValue(Map<K, V> map, Comparator<V> cmp) {
+        List<Entry<K, V>> list = new ArrayList<>(map.entrySet());
+        list.sort(Entry.comparingByValue(cmp));
+        Map<K, V> result = new LinkedHashMap<>();
+        for (Entry<K, V> entry : list) {
+            result.put(entry.getKey(), entry.getValue());
+        }
+        return result;
+    }
+
+
+    /**
+     * Map the given map values.
+     *
+     * @param map    input map
+     * @param mapper mapping function
+     * @param <K>    key type
+     * @param <V>    original value type
+     * @param <X>    mapped value type
+     * @return new map
+     */
+    public static <K, V, X> Map<K, X> mapValue(Map<K, V> map, Function<V, X> mapper) {
+        return mapValue(map, (k, v) -> true, mapper);
+    }
+
+    /**
+     * Map the given map values.
+     *
+     * @param map    input map
+     * @param filter key predicate
+     * @param mapper mapping function
+     * @param <K>    key type
+     * @param <V>    original value type
+     * @param <X>    mapped value type
+     * @return new map
+     */
+    public static <K, V, X> Map<K, X> mapValue(Map<K, V> map, BiPredicate<K, V> filter, Function<V, X> mapper) {
+        return map.entrySet()
+                  .stream()
+                  .filter(e -> filter.test(e.getKey(), e.getValue()))
+                  .collect(toMap(Map.Entry::getKey, e -> mapper.apply(e.getValue())));
     }
 }

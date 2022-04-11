@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,10 @@ package io.helidon.build.archetype.engine.v2.ast;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
+import io.helidon.build.archetype.engine.v2.ScriptLoader;
 
 /**
  * Block.
@@ -38,22 +39,26 @@ public class Block extends Node {
     protected Block(Builder builder) {
         super(builder);
         this.kind = Objects.requireNonNull(builder.kind, "kind is null");
-        this.children = builder.children()
-                               .stream()
-                               .map(Node.Builder::build)
-                               .collect(toUnmodifiableList());
+        this.children = builder.children();
     }
 
     /**
      * Create a new block.
      *
+     * @param loader     script loader
      * @param scriptPath script path
-     * @param position   position
+     * @param location   location
+     * @param attributes attributes map
      * @param kind       kind
      * @param children   children
      */
-    protected Block(Path scriptPath, Position position, Kind kind, List<Node> children) {
-        super(scriptPath, position);
+    protected Block(ScriptLoader loader,
+                    Path scriptPath,
+                    Location location,
+                    Map<String, Value> attributes,
+                    Kind kind,
+                    List<Node> children) {
+        super(loader, scriptPath, location, attributes);
         this.kind = Objects.requireNonNull(kind, "kind is null");
         this.children = Objects.requireNonNull(children, "children is null");
     }
@@ -74,7 +79,14 @@ public class Block extends Node {
      * @return block
      */
     public Block wrap(Block.Kind kind) {
-        return new Block(scriptPath(), position(), kind, List.of(this));
+        return new Block(loader(), scriptPath(), location(), attributes(), kind, List.of(this));
+    }
+
+    @Override
+    public String toString() {
+        return "Block{"
+                + "kind=" + kind
+                + '}';
     }
 
     /**
@@ -262,6 +274,16 @@ public class Block extends Node {
         SCRIPT,
 
         /**
+         * Methods.
+         */
+        METHODS,
+
+        /**
+         * Method.
+         */
+        METHOD,
+
+        /**
          * Step.
          */
         STEP,
@@ -385,13 +407,14 @@ public class Block extends Node {
     /**
      * Create a new builder.
      *
+     * @param loader     script loader
      * @param scriptPath script path
-     * @param position   position
+     * @param location   location
      * @param kind       kind
      * @return builder
      */
-    public static Builder builder(Path scriptPath, Position position, Kind kind) {
-        return new Builder(scriptPath, position, kind);
+    public static Builder builder(ScriptLoader loader, Path scriptPath, Location location, Kind kind) {
+        return new Builder(loader, scriptPath, location, kind);
     }
 
     /**
@@ -404,12 +427,13 @@ public class Block extends Node {
         /**
          * Create a new builder.
          *
+         * @param loader     script loader
          * @param scriptPath script path
-         * @param position   position
+         * @param location   location
          * @param kind       kind
          */
-        protected Builder(Path scriptPath, Position position, Kind kind) {
-            super(scriptPath, position);
+        protected Builder(ScriptLoader loader, Path scriptPath, Location location, Kind kind) {
+            super(loader, scriptPath, location);
             this.kind = kind;
         }
 

@@ -16,6 +16,7 @@
 
 package io.helidon.build.archetype.engine.v2.ast;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -25,53 +26,30 @@ import io.helidon.build.common.GenericType;
  * Value.
  * The wrapped value is typed and can only be used as such.
  */
-public class Value {
+public interface Value {
 
     /**
      * True boolean value.
      */
-    public static final Value TRUE = new Value(true, ValueTypes.BOOLEAN);
+    Value TRUE = new TypedValue(true, ValueTypes.BOOLEAN);
 
     /**
      * False boolean value.
      */
-    public static final Value FALSE = new Value(false, ValueTypes.BOOLEAN);
+    Value FALSE = new TypedValue(false, ValueTypes.BOOLEAN);
 
     /**
      * Null string value.
      */
-    public static final Value NULL = new Value(null, ValueTypes.STRING);
-
-    private final Object value;
-    private final GenericType<?> type;
+    Value NULL = new NullValue();
 
     /**
-     * Create a new value.
+     * Get this value as a boolean.
      *
-     * @param value value
-     * @param type  value type
+     * @return boolean
      */
-    protected Value(Object value, GenericType<?> type) {
-        this.value = value;
-        this.type = type;
-    }
-
-    /**
-     * Unwrap the value.
-     *
-     * @return value
-     */
-    public Object unwrap() {
-        return value;
-    }
-
-    /**
-     * Get the value type.
-     *
-     * @return type
-     */
-    public GenericType<?> type() {
-        return type;
+    default Boolean asBoolean() {
+        return as(ValueTypes.BOOLEAN);
     }
 
     /**
@@ -79,17 +57,8 @@ public class Value {
      *
      * @return string
      */
-    public String asString() {
+    default String asString() {
         return as(ValueTypes.STRING);
-    }
-
-    /**
-     * Get this value as a boolean.
-     *
-     * @return boolean
-     */
-    public Boolean asBoolean() {
-        return as(ValueTypes.BOOLEAN);
     }
 
     /**
@@ -97,7 +66,7 @@ public class Value {
      *
      * @return int
      */
-    public Integer asInt() {
+    default Integer asInt() {
         return as(ValueTypes.INT);
     }
 
@@ -106,9 +75,23 @@ public class Value {
      *
      * @return list
      */
-    public List<String> asList() {
+    default List<String> asList() {
         return as(ValueTypes.STRING_LIST);
     }
+
+    /**
+     * Unwrap the value.
+     *
+     * @return value
+     */
+    Object unwrap();
+
+    /**
+     * Get the value type.
+     *
+     * @return type
+     */
+    GenericType<?> type();
 
     /**
      * Get this value as the given type.
@@ -118,18 +101,16 @@ public class Value {
      * @return instance as the given type
      * @throws ValueTypeException if this instance type does not match the given type
      */
-    @SuppressWarnings("unchecked")
-    public <U> U as(GenericType<U> type) {
-        Objects.requireNonNull(type, "type is null");
-        if (!this.type.equals(type)) {
-            throw new ValueTypeException(this.type, type);
-        }
-        return (U) value;
-    }
+    <U> U as(GenericType<U> type);
 
-    @Override
-    public String toString() {
-        return "Value{ " + value + " }";
+    /**
+     * Create a new value.
+     *
+     * @param value value
+     * @return Value
+     */
+    static Value create(String value) {
+        return value == null ? NULL : new TypedValue(value, ValueTypes.STRING);
     }
 
     /**
@@ -138,8 +119,8 @@ public class Value {
      * @param value value
      * @return Value
      */
-    public static Value create(String value) {
-        return value == null ? NULL : new Value(value, ValueTypes.STRING);
+    static Value create(List<String> value) {
+        return new TypedValue(value, ValueTypes.STRING_LIST);
     }
 
     /**
@@ -148,17 +129,7 @@ public class Value {
      * @param value value
      * @return Value
      */
-    public static Value create(List<String> value) {
-        return new Value(value, ValueTypes.STRING_LIST);
-    }
-
-    /**
-     * Create a new value.
-     *
-     * @param value value
-     * @return Value
-     */
-    public static Value create(boolean value) {
+    static Value create(boolean value) {
         return value ? TRUE : FALSE;
     }
 
@@ -170,14 +141,14 @@ public class Value {
      * @param <T>   value type
      * @return Value
      */
-    public static <T> Value create(T value, GenericType<T> type) {
-        return new Value(value, type);
+    static <T> Value create(T value, GenericType<T> type) {
+        return new TypedValue(value, type);
     }
 
     /**
      * Exception raised for unexpected type usages.
      */
-    public static final class ValueTypeException extends IllegalStateException {
+    class ValueTypeException extends IllegalStateException {
 
         /**
          * Create a new value type exception.
@@ -187,6 +158,90 @@ public class Value {
          */
         ValueTypeException(GenericType<?> actual, GenericType<?> expected) {
             super(String.format("Cannot get a value of { %s } as { %s }", actual, expected));
+        }
+
+        /**
+         * Create a new value type exception.
+         *
+         * @param message exception message
+         */
+        protected ValueTypeException(String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * Typed value.
+     * The wrapped value is typed and can only be used as such.
+     */
+    class TypedValue implements Value {
+
+        private final Object value;
+        private final GenericType<?> type;
+
+        /**
+         * Create a new value.
+         *
+         * @param value value
+         * @param type  value type
+         */
+        protected TypedValue(Object value, GenericType<?> type) {
+            this.value = value;
+            this.type = type;
+        }
+
+        @Override
+        public Object unwrap() {
+            return value;
+        }
+
+        @Override
+        public GenericType<?> type() {
+            return type;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public <U> U as(GenericType<U> type) {
+            Objects.requireNonNull(type, "type is null");
+            if (!this.type.equals(type)) {
+                throw new ValueTypeException(this.type, type);
+            }
+            return (U) value;
+        }
+
+        @Override
+        public String toString() {
+            return "TypedValue{ " + value + ", " + type + " }";
+        }
+    }
+
+    final class NullValue implements Value {
+
+        private NullValue() {
+        }
+
+        @Override
+        public Object unwrap() {
+            return null;
+        }
+
+        @Override
+        public GenericType<?> type() {
+            return null;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public <U> U as(GenericType<U> type) {
+            if (type.equals(ValueTypes.BOOLEAN)) {
+                return (U) Boolean.FALSE;
+            } else if (type.equals(ValueTypes.INT)) {
+                return (U) Integer.valueOf(0);
+            } else if (type.equals(ValueTypes.STRING_LIST)) {
+                return (U) Collections.emptyList();
+            }
+            return null;
         }
     }
 }

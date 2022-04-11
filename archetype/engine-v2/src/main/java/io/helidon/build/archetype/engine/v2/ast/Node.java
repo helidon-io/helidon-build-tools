@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import io.helidon.build.archetype.engine.v2.ScriptLoader;
+import io.helidon.build.common.GenericType;
 
 import static java.util.Objects.requireNonNull;
 
@@ -34,8 +39,14 @@ public abstract class Node {
     private static final AtomicInteger NEXT_ID = new AtomicInteger();
 
     private final int id;
+    private final ScriptLoader loader;
     private final Path scriptPath;
-    private final Position position;
+    // TODO use a "Location" that captures lineNo + charNo + original scriptPath
+    //  this will provide good stack traces even for compiled scripts
+    //  use workDir instead of scriptPath
+    //  use node.id() as the key in ScriptLoader
+    private final Location location;
+    private final Map<String, Value> attributes;
 
     /**
      * Create a new node.
@@ -43,28 +54,32 @@ public abstract class Node {
      * @param builder builder
      */
     protected Node(Builder<?, ?> builder) {
-        this(builder.scriptPath, builder.position);
+        this(builder.loader, builder.scriptPath, builder.location, builder.attributes);
     }
 
     /**
      * Create a new node.
      *
-     * @param scriptPath scriptPath
-     * @param position   position
+     * @param loader     script loader
+     * @param scriptPath script path
+     * @param location   location
+     * @param attributes attributes map
      */
-    protected Node(Path scriptPath, Position position) {
-        this.scriptPath = requireNonNull(scriptPath, "source is null");
-        this.position = requireNonNull(position, "position is null");
+    protected Node(ScriptLoader loader, Path scriptPath, Location location, Map<String, Value> attributes) {
+        this.loader = requireNonNull(loader, "loader is null");
+        this.scriptPath = requireNonNull(scriptPath, "scriptPath is null");
+        this.location = requireNonNull(location, "location is null");
+        this.attributes = requireNonNull(attributes, "attributes is null");
         this.id = NEXT_ID.updateAndGet(i -> i == Integer.MAX_VALUE ? 1 : i + 1);
     }
 
     /**
-     * Get the source position.
+     * Get the source location.
      *
-     * @return position
+     * @return location
      */
-    public Position position() {
-        return position;
+    public Location location() {
+        return location;
     }
 
     /**
@@ -74,6 +89,33 @@ public abstract class Node {
      */
     public Path scriptPath() {
         return scriptPath;
+    }
+
+    /**
+     * Get the script loader.
+     *
+     * @return script loader
+     */
+    public ScriptLoader loader() {
+        return loader;
+    }
+
+    /**
+     * Get the attributes.
+     *
+     * @return attributes map
+     */
+    public Map<String, Value> attributes() {
+        return attributes;
+    }
+
+    /**
+     * Get the enclosing script.
+     *
+     * @return script
+     */
+    public Script script() {
+        return loader.get(scriptPath);
     }
 
     /**
@@ -231,25 +273,52 @@ public abstract class Node {
     @SuppressWarnings({"unchecked", "UnusedReturnValue"})
     public abstract static class Builder<T, U extends Builder<T, U>> {
 
-        private static final Path NULL_SCRIPT_PATH = Path.of("script.xml");
-        private static final Position NULL_SOURCE = Position.of(0, 0);
-
         private final List<Node.Builder<? extends Node, ?>> children = new LinkedList<>();
-        private final Map<String, String> attributes = new HashMap<>();
+        private final Map<String, Value> attributes = new HashMap<>();
+        private final ScriptLoader loader;
         private final Path scriptPath;
-        private final Position position;
+        private final Location location;
         private String value;
         private T instance;
 
         /**
          * Create a new node builder.
          *
-         * @param scriptPath scriptPath
-         * @param position   position
+         * @param loader     script loader
+         * @param scriptPath script path
+         * @param location   location
          */
-        protected Builder(Path scriptPath, Position position) {
-            this.scriptPath = scriptPath == null ? NULL_SCRIPT_PATH : scriptPath.normalize();
-            this.position = position == null ? NULL_SOURCE : position;
+        protected Builder(ScriptLoader loader, Path scriptPath, Location location) {
+            this.loader = requireNonNull(loader, "loader is null");
+            this.scriptPath = requireNonNull(scriptPath, "scriptPath is null").toAbsolutePath().normalize();
+            this.location = location == null ? Location.of(scriptPath, 0, 0) : location;
+        }
+
+        /**
+         * Get the script loader.
+         *
+         * @return ScriptLoader
+         */
+        public ScriptLoader loader() {
+            return loader;
+        }
+
+        /**
+         * Get the script path.
+         *
+         * @return Path
+         */
+        public Path scriptPath() {
+            return scriptPath;
+        }
+
+        /**
+         * Get the nested builders.
+         *
+         * @return builders
+         */
+        public List<Builder<? extends Node, ?>> nestedBuilders() {
+            return children;
         }
 
         /**
@@ -257,8 +326,34 @@ public abstract class Node {
          *
          * @return children
          */
-        protected List<Builder<? extends Node, ?>> children() {
-            return children;
+        public List<Node> children() {
+            return children.stream()
+                           .map(Node.Builder::build)
+                           .collect(Collectors.toUnmodifiableList());
+        }
+
+        /**
+         * Get the children of a given type.
+         *
+         * @param clazz type
+         * @param <V>   children type
+         * @return children
+         */
+        public <V> List<V> children(Class<V> clazz) {
+            return childrenStream(clazz).collect(Collectors.toUnmodifiableList());
+        }
+
+        /**
+         * Get the children of a given type.
+         *
+         * @param clazz type
+         * @param <V>   children type
+         * @return children
+         */
+        public <V> Stream<V> childrenStream(Class<V> clazz) {
+            return children.stream().map(Node.Builder::build)
+                           .filter(clazz::isInstance)
+                           .map(clazz::cast);
         }
 
         /**
@@ -288,7 +383,7 @@ public abstract class Node {
          *
          * @return value.
          */
-        protected String value() {
+        public String value() {
             return value;
         }
 
@@ -298,7 +393,7 @@ public abstract class Node {
          * @param attributes attributes
          * @return this builder
          */
-        public U attributes(Map<String, String> attributes) {
+        public U attributes(Map<String, Value> attributes) {
             this.attributes.putAll(attributes);
             return (U) this;
         }
@@ -310,27 +405,38 @@ public abstract class Node {
          * @param value attribute value
          * @return this builder
          */
-        public U attribute(String name, String value) {
+        public U attribute(String name, Value value) {
             this.attributes.put(name, value);
             return (U) this;
         }
 
         /**
-         * Get a required attribute.
+         * Get an attribute.
          *
          * @param key      attribute key
          * @param required {@code true} if required
          * @return value
          * @throws IllegalStateException if {@code required} is {@code true} and the value is {@code null}
          */
-        String attribute(String key, boolean required) {
-            String value = attributes.get(key);
-            if (required && value == null) {
-                throw new IllegalStateException(String.format(
-                        "Unable to get attribute '%s', file=%s, position=%s",
-                        key, scriptPath, position));
+        Value attribute(String key, boolean required) {
+            Value value = attributes.get(key);
+            if (value == null) {
+                if (required) {
+                    throw new IllegalStateException(String.format(
+                            "Unable to get attribute '%s', file=%s, location=%s",
+                            key, scriptPath, location));
+                }
+                return Value.NULL;
             }
             return value;
+        }
+
+        <V> V attribute(String key, GenericType<V> type, V defaultValue) {
+            Value value = attributes.get(key);
+            if (value == null) {
+                return defaultValue;
+            }
+            return value.as(type);
         }
 
         /**

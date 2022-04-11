@@ -21,10 +21,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import io.helidon.build.archetype.engine.v2.InvalidInputException;
+import io.helidon.build.archetype.engine.v2.ScriptLoader;
 
-import static java.lang.Boolean.parseBoolean;
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Input block.
@@ -37,9 +36,9 @@ public abstract class Input extends Block {
 
     private Input(Input.Builder builder) {
         super(builder);
-        label = builder.attribute("label", false);
-        prompt = builder.attribute("prompt", false);
-        help = builder.attribute("help", false);
+        label = builder.attribute("label", false).asString();
+        prompt = builder.attribute("prompt", false).asString();
+        help = builder.attribute("help", false).asString();
     }
 
     /**
@@ -80,7 +79,7 @@ public abstract class Input extends Block {
          * Visit a boolean input.
          *
          * @param input input
-         * @param arg visitor argument
+         * @param arg   visitor argument
          * @return result
          */
         default VisitResult visitBoolean(Boolean input, A arg) {
@@ -91,7 +90,7 @@ public abstract class Input extends Block {
          * Visit a boolean input after traversing the nested nodes.
          *
          * @param input input
-         * @param arg visitor argument
+         * @param arg   visitor argument
          * @return result
          */
         default VisitResult postVisitBoolean(Boolean input, A arg) {
@@ -102,7 +101,7 @@ public abstract class Input extends Block {
          * Visit a text input.
          *
          * @param input input
-         * @param arg visitor argument
+         * @param arg   visitor argument
          * @return result
          */
         default VisitResult visitText(Text input, A arg) {
@@ -113,7 +112,7 @@ public abstract class Input extends Block {
          * Visit a text input after traversing the nested nodes.
          *
          * @param input input
-         * @param arg visitor argument
+         * @param arg   visitor argument
          * @return result
          */
         default VisitResult postVisitText(Text input, A arg) {
@@ -124,7 +123,7 @@ public abstract class Input extends Block {
          * Visit an option.
          *
          * @param option option
-         * @param arg visitor argument
+         * @param arg    visitor argument
          * @return result
          */
         default VisitResult visitOption(Option option, A arg) {
@@ -135,7 +134,7 @@ public abstract class Input extends Block {
          * Visit an option after traversing the nested nodes.
          *
          * @param option option
-         * @param arg visitor argument
+         * @param arg    visitor argument
          * @return result
          */
         default VisitResult postVisitOption(Option option, A arg) {
@@ -146,7 +145,7 @@ public abstract class Input extends Block {
          * Visit an enum input.
          *
          * @param input input
-         * @param arg visitor argument
+         * @param arg   visitor argument
          * @return result
          */
         default VisitResult visitEnum(Enum input, A arg) {
@@ -157,7 +156,7 @@ public abstract class Input extends Block {
          * Visit an enum input after traversing the nested nodes.
          *
          * @param input input
-         * @param arg visitor argument
+         * @param arg   visitor argument
          * @return result
          */
         default VisitResult postVisitEnum(Enum input, A arg) {
@@ -168,7 +167,7 @@ public abstract class Input extends Block {
          * Visit a list input.
          *
          * @param input input
-         * @param arg visitor argument
+         * @param arg   visitor argument
          * @return result
          */
         default VisitResult visitList(List input, A arg) {
@@ -179,7 +178,7 @@ public abstract class Input extends Block {
          * Visit a list input after traversing the nested nodes.
          *
          * @param input input
-         * @param arg visitor argument
+         * @param arg   visitor argument
          * @return result
          */
         default VisitResult postVisitList(List input, A arg) {
@@ -190,7 +189,7 @@ public abstract class Input extends Block {
          * Visit any input.
          *
          * @param input input
-         * @param arg visitor argument
+         * @param arg   visitor argument
          * @return result
          */
         @SuppressWarnings("unused")
@@ -202,7 +201,7 @@ public abstract class Input extends Block {
          * Visit any input after traversing the nested nodes.
          *
          * @param input input
-         * @param arg visitor argument
+         * @param arg   visitor argument
          * @return result
          */
         @SuppressWarnings("unused")
@@ -215,8 +214,8 @@ public abstract class Input extends Block {
      * Visit this input.
      *
      * @param visitor visitor
-     * @param arg visitor argument
-     * @param <A> visitor argument type
+     * @param arg     visitor argument
+     * @param <A>     visitor argument type
      * @return result
      */
     public abstract <A> VisitResult accept(Visitor<A> visitor, A arg);
@@ -225,8 +224,8 @@ public abstract class Input extends Block {
      * Visit this input after traversing the nested nodes.
      *
      * @param visitor visitor
-     * @param arg visitor argument
-     * @param <A> visitor argument type
+     * @param arg     visitor argument
+     * @param <A>     visitor argument type
      * @return result
      */
     public abstract <A> VisitResult acceptAfter(Visitor<A> visitor, A arg);
@@ -252,9 +251,9 @@ public abstract class Input extends Block {
 
         private NamedInput(Input.Builder builder) {
             super(builder);
-            this.name = builder.attribute("name", true);
-            this.optional = parseBoolean(builder.attribute("optional", false));
-            this.global = parseBoolean(builder.attribute("global", false));
+            this.name = builder.attribute("name", true).asString();
+            this.optional = builder.attribute("optional", false).asBoolean();
+            this.global = builder.attribute("global", false).asBoolean();
         }
 
         /**
@@ -295,7 +294,7 @@ public abstract class Input extends Block {
          * Validate the given value against this input.
          *
          * @param value value
-         * @param path input path
+         * @param path  input path
          * @throws InvalidInputException if the value is invalid
          */
         @SuppressWarnings("unused")
@@ -315,7 +314,7 @@ public abstract class Input extends Block {
         /**
          * Compute the visit result for the given option.
          *
-         * @param value current value
+         * @param value  current value
          * @param option option
          * @return visit result
          */
@@ -336,10 +335,10 @@ public abstract class Input extends Block {
         @Override
         public String toString() {
             return "NamedInput{"
-                   + "name='" + name + '\''
-                   + ", optional=" + optional
-                   + ", global=" + global
-                   + '}';
+                    + "name='" + name + '\''
+                    + ", optional=" + optional
+                    + ", global=" + global
+                    + '}';
         }
     }
 
@@ -352,7 +351,7 @@ public abstract class Input extends Block {
 
         private Option(Input.Builder builder) {
             super(builder);
-            this.value = builder.attribute("value", true);
+            this.value = builder.attribute("value", true).asString();
         }
 
         @Override
@@ -377,8 +376,8 @@ public abstract class Input extends Block {
         @Override
         public String toString() {
             return "InputOption{"
-                   + "value='" + value + '\''
-                   + '}';
+                    + "value='" + value + '\''
+                    + '}';
         }
     }
 
@@ -391,7 +390,7 @@ public abstract class Input extends Block {
 
         private Text(Input.Builder builder) {
             super(builder);
-            this.defaultValue = builder.attribute("default", false);
+            this.defaultValue = builder.attribute("default", false).asString();
         }
 
 
@@ -413,12 +412,12 @@ public abstract class Input extends Block {
         @Override
         public String toString() {
             return "InputText{"
-                   + "name='" + name() + '\''
-                   + ", label='" + label() + '\''
-                   + ", optional=" + isOptional()
-                   + ", global=" + isGlobal()
-                   + ", defaultValue='" + defaultValue + '\''
-                   + '}';
+                    + "name='" + name() + '\''
+                    + ", label='" + label() + '\''
+                    + ", optional=" + isOptional()
+                    + ", global=" + isGlobal()
+                    + ", defaultValue='" + defaultValue + '\''
+                    + '}';
         }
     }
 
@@ -431,7 +430,7 @@ public abstract class Input extends Block {
 
         private Boolean(Input.Builder builder) {
             super(builder);
-            defaultValue = parseBoolean(builder.attribute("default", false));
+            defaultValue = builder.attribute("default", false).asBoolean();
         }
 
         @Override
@@ -467,10 +466,10 @@ public abstract class Input extends Block {
         /**
          * Returns the boolean value of the given input.
          *
-         * @param input The input.
+         * @param input  The input.
          * @param strict {@code true} if an exception should be thrown if the value is not one of
-         * "y", "yes", "true", "n", "no", or "false". If {@code false}, any unknown value is treated
-         * as false.
+         *               "y", "yes", "true", "n", "no", or "false". If {@code false}, any unknown value is treated
+         *               as false.
          * @return The boolean value.
          */
         public static boolean valueOf(String input, boolean strict) {
@@ -494,12 +493,12 @@ public abstract class Input extends Block {
         @Override
         public String toString() {
             return "InputBoolean{"
-                   + "name='" + name() + '\''
-                   + ", label='" + label() + '\''
-                   + ", optional=" + isOptional()
-                   + ", global=" + isGlobal()
-                   + ", defaultValue='" + defaultValue + '\''
-                   + '}';
+                    + "name='" + name() + '\''
+                    + ", label='" + label() + '\''
+                    + ", optional=" + isOptional()
+                    + ", global=" + isGlobal()
+                    + ", defaultValue='" + defaultValue + '\''
+                    + '}';
         }
     }
 
@@ -512,11 +511,7 @@ public abstract class Input extends Block {
 
         private Options(Input.Builder builder) {
             super(builder);
-            options = builder.children().stream()
-                             .map(Node.Builder::build)
-                             .filter(Option.class::isInstance)
-                             .map(Option.class::cast)
-                             .collect(Collectors.toUnmodifiableList());
+            options = builder.children(Option.class);
         }
 
         /**
@@ -543,14 +538,7 @@ public abstract class Input extends Block {
 
         private List(Input.Builder builder) {
             super(builder);
-            String rawDefault = builder.attribute("default", false);
-            if (rawDefault != null) {
-                defaultValue = Arrays.stream(rawDefault.split(","))
-                                     .map(String::trim)
-                                     .collect(toList());
-            } else {
-                defaultValue = emptyList();
-            }
+            defaultValue = builder.attribute("default", ValueTypes.STRING_LIST, emptyList());
         }
 
         /**
@@ -613,12 +601,12 @@ public abstract class Input extends Block {
         @Override
         public String toString() {
             return "InputList{"
-                   + "name='" + name() + '\''
-                   + ", label='" + label() + '\''
-                   + ", optional=" + isOptional()
-                   + ", global=" + isGlobal()
-                   + ", defaultValue='" + defaultValue + '\''
-                   + '}';
+                    + "name='" + name() + '\''
+                    + ", label='" + label() + '\''
+                    + ", optional=" + isOptional()
+                    + ", global=" + isGlobal()
+                    + ", defaultValue='" + defaultValue + '\''
+                    + '}';
         }
 
         private static boolean containsIgnoreCase(java.util.List<String> values, String expected) {
@@ -640,7 +628,7 @@ public abstract class Input extends Block {
 
         private Enum(Input.Builder builder) {
             super(builder);
-            this.defaultValue = builder.attribute("default", false);
+            this.defaultValue = builder.attribute("default", false).asString();
         }
 
         /**
@@ -695,25 +683,26 @@ public abstract class Input extends Block {
         @Override
         public String toString() {
             return "InputEnum{"
-                   + "name='" + name() + '\''
-                   + ", label='" + label() + '\''
-                   + ", optional=" + isOptional()
-                   + ", global=" + isGlobal()
-                   + ", defaultValue='" + defaultValue + '\''
-                   + '}';
+                    + "name='" + name() + '\''
+                    + ", label='" + label() + '\''
+                    + ", optional=" + isOptional()
+                    + ", global=" + isGlobal()
+                    + ", defaultValue='" + defaultValue + '\''
+                    + '}';
         }
     }
 
     /**
      * Create a new input block builder.
      *
+     * @param loader     script loader
      * @param scriptPath script path
-     * @param position position
-     * @param blockKind block kind
+     * @param location   location
+     * @param blockKind  block kind
      * @return builder
      */
-    public static Builder builder(Path scriptPath, Position position, Kind blockKind) {
-        return new Builder(scriptPath, position, blockKind);
+    public static Builder builder(ScriptLoader loader, Path scriptPath, Location location, Kind blockKind) {
+        return new Builder(loader, scriptPath, location, blockKind);
     }
 
     /**
@@ -721,8 +710,8 @@ public abstract class Input extends Block {
      */
     public static class Builder extends Block.Builder {
 
-        private Builder(Path scriptPath, Position position, Kind blockKind) {
-            super(scriptPath, position, blockKind);
+        private Builder(ScriptLoader loader, Path scriptPath, Location location, Kind blockKind) {
+            super(loader, scriptPath, location, blockKind);
         }
 
         @Override

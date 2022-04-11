@@ -17,8 +17,8 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -33,6 +33,19 @@
 
     <dependencies>
         <dependency>
+            <!-- Ensure helidon cli maven plugin is built before running functional test -->
+            <groupId>io.helidon.build-tools</groupId>
+            <artifactId>helidon-cli-maven-plugin</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools.common</groupId>
+            <artifactId>helidon-build-common-maven</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.build-tools.cli</groupId>
             <artifactId>helidon-cli-impl</artifactId>
             <version>${project.version}</version>
@@ -43,6 +56,12 @@
             <artifactId>helidon-cli-impl</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools.cli</groupId>
+            <artifactId>helidon-cli-common</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -60,6 +79,11 @@
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -71,9 +95,31 @@
                     <systemPropertyVariables>
                         <!-- version should be upgraded to 3.0.0 once released-->
                         <helidon.test.version>2.4.0</helidon.test.version>
+                        <helidon.executable.directory>${project.basedir}/../../impl</helidon.executable.directory>
+                        <helidon.cli.version>3.0.0-M1</helidon.cli.version>
+                        <helidon.plugin.version>${project.version}</helidon.plugin.version>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>native-image</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <native.image>true</native.image>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
