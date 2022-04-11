@@ -81,15 +81,15 @@
             "default": true,
             "description": "If start page should be displayed on extension startup."
           },
-          "helidon.javaBinDirForHelidonDev": {
+          "helidon.javaHomeDir": {
             "type": "string",
             "default": "",
-            "description": "Path to the bin directory of the installed JDK that will be used for Helidon Developer Loop."
+            "description": "Path to the JAVA_HOME directory of the installed JDK that will be used by the plugin."
           },
-          "helidon.mavenBinDirForHelidonDev": {
+          "helidon.mavenHomeDir": {
             "type": "string",
             "default": "",
-            "description": "Path to the bin directory of installed Apache Maven that will be used for Helidon Developer Loop."
+            "description": "Path to the directory where Apache Maven is install that will be used by the plugin."
           }
         }
       }

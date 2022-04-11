@@ -137,48 +137,56 @@ function refreshLaunchedServers() {
     });
 }
 
-function preparePathForRegExp(path: string) : string {
+function preparePathForRegExp(path: string): string {
     return path.replace(/\\/g, "\\\\");
 }
 
-let envPathBackUp : string = "";
+function configEnvPath(configPath : string, binPath: string, pathDelimiter: string) {
+    if (process.env.PATH != null) {
+        if (!process.env.PATH.includes(configPath)) {
+            process.env.PATH = `${binPath}${process.env.PATH}`;
+        } else {
+            process.env.PATH = process.env.PATH.replace(
+                new RegExp(preparePathForRegExp(configPath) + `.?bin.?${pathDelimiter}?`),
+                binPath
+            );
+        }
+    }
+}
 
 function obtainNewServerProcess(helidonProjectDir: string, extensionPath: string): ChildProcess {
     let cmdSpan = "java";
     const args = ['-jar', `${extensionPath}/target/cli/helidon.jar`, 'dev'];
 
-    let pathSeparator = path.sep;
     let pathDelimiter = path.delimiter;
-    console.log("pathSeparator - "+pathSeparator);
-    console.log("pathDelimiter - "+pathDelimiter);
+    console.log("pathDelimiter - " + pathDelimiter);
 
     let helidonConfig = vscode.workspace.getConfiguration('helidon');
-    let configJavaHome : string = helidonConfig.get("javaBinDirForHelidonDev")!;
+
+    let configJavaHome: string = helidonConfig.get("javaHomeDir")!;
     let javaHomeBinDir: string = configJavaHome ? `${configJavaHome}/bin${pathDelimiter}` : "";
-    let mavenBinDir: string = helidonConfig.get("mavenBinDirForHelidonDev")
-        ? `${helidonConfig.get("mavenBinDirForHelidonDev")}/bin${pathDelimiter}` : "";
-        if (process.env.PATH != null) {
-            if (mavenBinDir !== "" && !process.env.PATH.includes(helidonConfig.get("mavenBinDirForHelidonDev")!)) {
-                process.env.PATH=`${mavenBinDir}${process.env.PATH}`;
-            }
-            if (javaHomeBinDir !== "") {
-                process.env.JAVA_HOME=configJavaHome;
-                if ( !process.env.PATH.includes(helidonConfig.get("javaBinDirForHelidonDev")!)){
-                    process.env.PATH=`${javaHomeBinDir}${process.env.PATH}`;
-                } else {
-                    process.env.PATH = process.env.PATH.replace(
-                        new RegExp(preparePathForRegExp(configJavaHome)+`.?bin.?${pathDelimiter}?`),
-                        javaHomeBinDir
-                        );
-                }
-            } 
-        } else {
-            process.env.PATH=`${javaHomeBinDir}${mavenBinDir}`;
+    let configMavenHome: string = helidonConfig.get("mavenHomeDir")!;
+    let mavenBinDir: string = configMavenHome ? `${configMavenHome}/bin${pathDelimiter}` : "";
+
+    if (process.env.PATH != null) {
+        if (mavenBinDir !== ""){
+            process.env.M2_HOME = configMavenHome;
+            process.env.MAVEN_HOME = configMavenHome;
+            configEnvPath(configMavenHome, mavenBinDir, pathDelimiter);
         }
-    console.log("javaHome - "+javaHomeBinDir);
-    console.log("mavenBinDir - "+mavenBinDir);
-    console.log("process.env.PATH - "+process.env.PATH);
-    console.log("JAVA_HOME - "+process.env.JAVA_HOME);
+
+        if (javaHomeBinDir !== "") {
+            process.env.JAVA_HOME = configJavaHome;
+            configEnvPath(configJavaHome, javaHomeBinDir, pathDelimiter);
+        }
+    } else {
+        process.env.PATH = `${javaHomeBinDir}${mavenBinDir}`;
+    }
+    console.log("javaHome - " + javaHomeBinDir);
+    console.log("mavenBinDir - " + mavenBinDir);
+    console.log("process.env.PATH - " + process.env.PATH);
+    console.log("JAVA_HOME - " + process.env.JAVA_HOME);
+    console.log("MAVEN_HOME - " + process.env.MAVEN_HOME);
 
     const opts = {
         cwd: helidonProjectDir, // cwd means -> current working directory (where this command will by executed)

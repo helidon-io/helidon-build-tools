@@ -26,6 +26,11 @@ import { STEPS } from "./steps_data";
 
 export function activate(context: vscode.ExtensionContext) {
 
+    let initialEnvPath = process.env.PATH;
+    let initialEnvJavaHome = process.env.JAVA_HOME;
+    let initialEnvM2Home = process.env.M2_HOME;
+    let initialEnvMavenHome = process.env.MAVEN_HOME;
+
     vscode.workspace.onDidChangeWorkspaceFolders((event: WorkspaceFoldersChangeEvent) => {
         if (event.added.length > 0) {
             commands.executeCommand('setContext', 'helidonProjectsExist', true);
@@ -37,14 +42,13 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-
-    let initialEnvPath = process.env.PATH;
-    let initialEnvJavaHome = process.env.JAVA_HOME;
     vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('helidon')){
             console.log("affectsConfiguration - helidon")
             process.env.PATH = initialEnvPath;
             process.env.JAVA_HOME = initialEnvJavaHome;
+            process.env.M2_HOME = initialEnvM2Home;
+            process.env.MAVEN_HOME = initialEnvMavenHome;
         }
     })
 
@@ -70,4 +74,6 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
     process.env.JAVA_HOME = undefined;
     process.env.PATH = undefined;
+    process.env.M2_HOME = undefined;
+    process.env.MAVEN_HOME = undefined;
 }
