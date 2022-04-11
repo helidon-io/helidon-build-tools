@@ -44,7 +44,6 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('helidon')){
-            console.log("affectsConfiguration - helidon")
             process.env.PATH = initialEnvPath;
             process.env.JAVA_HOME = initialEnvJavaHome;
             process.env.M2_HOME = initialEnvM2Home;

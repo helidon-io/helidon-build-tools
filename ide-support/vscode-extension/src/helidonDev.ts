@@ -159,7 +159,6 @@ function obtainNewServerProcess(helidonProjectDir: string, extensionPath: string
     const args = ['-jar', `${extensionPath}/target/cli/helidon.jar`, 'dev'];
 
     let pathDelimiter = path.delimiter;
-    console.log("pathDelimiter - " + pathDelimiter);
 
     let helidonConfig = vscode.workspace.getConfiguration('helidon');
 
@@ -182,11 +181,6 @@ function obtainNewServerProcess(helidonProjectDir: string, extensionPath: string
     } else {
         process.env.PATH = `${javaHomeBinDir}${mavenBinDir}`;
     }
-    console.log("javaHome - " + javaHomeBinDir);
-    console.log("mavenBinDir - " + mavenBinDir);
-    console.log("process.env.PATH - " + process.env.PATH);
-    console.log("JAVA_HOME - " + process.env.JAVA_HOME);
-    console.log("MAVEN_HOME - " + process.env.MAVEN_HOME);
 
     const opts = {
         cwd: helidonProjectDir, // cwd means -> current working directory (where this command will by executed)
