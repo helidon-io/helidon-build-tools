@@ -29,14 +29,4 @@ suite('Common functions Test Suite', () => {
                 assert(content, "File is not found")
             )
     });
-
-    test("some", ()=> {
-        let initArr : any [] = [];
-        initArr.push("1");
-        let arr: any [] = ['2','3','4'];
-        initArr.push(...arr);
-        initArr.push('5');
-        console.log(initArr.toString())
-    });
-
 });

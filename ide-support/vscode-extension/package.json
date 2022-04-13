@@ -80,6 +80,16 @@
             "type": "boolean",
             "default": true,
             "description": "If start page should be displayed on extension startup."
+          },
+          "helidon.javaHomeDir": {
+            "type": "string",
+            "default": "",
+            "description": "Path to the JAVA_HOME directory of the installed JDK that will be used by the plugin."
+          },
+          "helidon.mavenHomeDir": {
+            "type": "string",
+            "default": "",
+            "description": "Path to the directory where Apache Maven is install that will be used by the plugin."
           }
         }
       }
