@@ -16,6 +16,7 @@
 
 package io.helidon.build.archetype.engine.v2;
 
+import java.util.Deque;
 import java.util.Objects;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
@@ -24,6 +25,8 @@ import io.helidon.build.archetype.engine.v2.ast.Model;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Output;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
+import io.helidon.build.archetype.engine.v2.ast.Step;
+import io.helidon.build.archetype.engine.v2.ast.Variable;
 
 /**
  * Controller.
@@ -32,16 +35,37 @@ import io.helidon.build.archetype.engine.v2.ast.Preset;
  */
 final class Controller extends VisitorAdapter<Context> {
 
+    private final Deque<Step> steps;
+
     private Controller(InputResolver inputResolver,
                        Output.Visitor<Context> outputVisitor,
                        Model.Visitor<Context> modelVisitor) {
 
         super(inputResolver, outputVisitor, modelVisitor);
+        this.steps = inputResolver.steps();
+    }
+
+    @Override
+    public VisitResult visitStep(Step step, Context ctx) {
+        steps.push(step);
+        return super.visitStep(step, ctx);
+    }
+
+    @Override
+    public VisitResult postVisitStep(Step step, Context arg) {
+        steps.pop();
+        return super.postVisitStep(step, arg);
     }
 
     @Override
     public VisitResult visitPreset(Preset preset, Context ctx) {
-        ctx.put(preset.path(), preset.value());
+        ctx.put(preset.path(), preset.value(), true);
+        return VisitResult.CONTINUE;
+    }
+
+    @Override
+    public VisitResult visitVariable(Variable variable, Context ctx) {
+        ctx.put(variable.path(), variable.value(), false);
         return VisitResult.CONTINUE;
     }
 
@@ -155,7 +179,7 @@ final class Controller extends VisitorAdapter<Context> {
     /**
      * Walk.
      *
-     * @param inputResolver input resolver
+     * @param resolver input resolver
      * @param outputVisitor output visitor
      * @param modelVisitor  model visitor
      * @param block         block, must be non {@code null}
@@ -163,14 +187,14 @@ final class Controller extends VisitorAdapter<Context> {
      * @throws NullPointerException if context or block is {@code null}
      * @throws InvocationException  if an exception is thrown while traversing
      */
-    static void walk(InputResolver inputResolver,
+    static void walk(InputResolver resolver,
                      Output.Visitor<Context> outputVisitor,
                      Model.Visitor<Context> modelVisitor,
                      Block block,
                      Context context) {
 
         Objects.requireNonNull(context, "context is null");
-        Controller controller = new Controller(inputResolver, outputVisitor, modelVisitor);
+        Controller controller = new Controller(resolver, outputVisitor, modelVisitor);
         Walker.walk(controller, block, context, context::cwd);
     }
 }

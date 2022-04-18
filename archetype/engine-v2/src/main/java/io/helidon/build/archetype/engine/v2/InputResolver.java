@@ -16,12 +16,17 @@
 
 package io.helidon.build.archetype.engine.v2;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Input.NamedInput;
 import io.helidon.build.archetype.engine.v2.ast.Input.Option;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
+import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
 import io.helidon.build.common.GenericType;
@@ -34,17 +39,41 @@ import io.helidon.build.common.GenericType;
  */
 public abstract class InputResolver implements Input.Visitor<Context> {
 
-    private NamedInput lastVisited;
+    private final Deque<NamedInput> parents = new ArrayDeque<>();
+    private final Deque<Step> currentSteps = new ArrayDeque<>();
+    private final Set<Step> visitedSteps = new HashSet<>();
+
+    /**
+     * Get the stack of steps.
+     *
+     * @return steps
+     */
+    Deque<Step> steps() {
+        return currentSteps;
+    }
+
+    /**
+     * Invoked for every visited step.
+     *
+     * @param step    step
+     * @param context context
+     */
+    protected void onVisitStep(Step step, Context context) {
+    }
 
     /**
      * Invoked for every named input visit.
      *
-     * @param input input
+     * @param input   input
      * @param context context
      * @return visit result if a value already exists, {@code null} otherwise
      */
     protected VisitResult onVisitInput(NamedInput input, Context context) {
-        lastVisited = input;
+        Step currentStep = currentSteps.peek();
+        if (currentStep == null) {
+            throw new IllegalStateException("Invalid state, input not nested inside a step");
+        }
+        parents.push(input);
         boolean global = input.isGlobal();
         String path = context.path(input.name());
         if (global) {
@@ -54,6 +83,10 @@ public abstract class InputResolver implements Input.Visitor<Context> {
         }
         Value value = context.get(path);
         if (value == null) {
+            if (!visitedSteps.contains(currentStep)) {
+                visitedSteps.add(currentStep);
+                onVisitStep(currentStep, context);
+            }
             return null;
         }
         input.validate(value, path);
@@ -64,7 +97,7 @@ public abstract class InputResolver implements Input.Visitor<Context> {
     /**
      * Compute the default value for an input.
      *
-     * @param input input
+     * @param input   input
      * @param context context
      * @return default value or {@code null} if none
      */
@@ -90,12 +123,13 @@ public abstract class InputResolver implements Input.Visitor<Context> {
 
     @Override
     public VisitResult visitOption(Option option, Context context) {
-        if (lastVisited == null) {
-            throw new IllegalStateException("lastVisited must be non null");
+        if (parents.isEmpty()) {
+            throw new IllegalStateException("parents is empty");
         }
-        Value inputValue = context.lookup("PARENT." + lastVisited.name());
+        NamedInput parent = parents.peek();
+        Value inputValue = context.lookup("PARENT." + parent.name());
         if (inputValue != null) {
-            return lastVisited.visitOption(inputValue, option);
+            return parent.visitOption(inputValue, option);
         }
         return VisitResult.SKIP_SUBTREE;
     }
@@ -103,6 +137,7 @@ public abstract class InputResolver implements Input.Visitor<Context> {
     @Override
     public VisitResult postVisitAny(Input input, Context context) {
         if (input instanceof NamedInput) {
+            parents.pop();
             if (!((NamedInput) input).isGlobal()) {
                 context.pop();
             }

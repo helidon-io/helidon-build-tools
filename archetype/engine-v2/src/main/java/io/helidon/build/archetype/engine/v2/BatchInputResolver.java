@@ -21,6 +21,8 @@ import io.helidon.build.archetype.engine.v2.ast.Input.NamedInput;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 
+import java.util.List;
+
 /**
  * Batch input resolver.
  * Only fails if a non-optional input is unresolved, or an optional input cannot be resolved with a default value.
@@ -55,18 +57,18 @@ public class BatchInputResolver extends InputResolver {
         Value defaultValue = defaultValue(input, context);
         if (input.isOptional()) {
             if (defaultValue != null) {
-                context.push(input.name(), defaultValue, input.isGlobal());
+                context.push(input.name(), defaultValue, input.isGlobal(), true);
                 if (input instanceof Input.Boolean && !defaultValue.asBoolean()) {
                     return VisitResult.SKIP_SUBTREE;
                 }
                 return VisitResult.CONTINUE;
             }
         } else if (input instanceof Input.Enum){
+            List<Input.Option> options = ((Input.Enum) input).options(context::filterNode);
+            int defaultIndex = ((Input.Enum) input).optionIndex(defaultValue.asString(), options);
             // skip prompting if there is only one option with a default value
-            Input.Enum enumInput = (Input.Enum) input;
-            int defaultIndex = enumInput.optionIndex(defaultValue.asString());
-            if (enumInput.options().size() == 1 && defaultIndex >= 0) {
-                context.push(input.name(), defaultValue, input.isGlobal());
+            if (options.size() == 1 && defaultIndex >= 0) {
+                context.push(input.name(), defaultValue, input.isGlobal(), true);
                 return VisitResult.CONTINUE;
             }
         }

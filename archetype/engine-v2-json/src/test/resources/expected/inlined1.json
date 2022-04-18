@@ -14,8 +14,6 @@
               "kind": "boolean",
               "label": "Boolean1",
               "name": "boolean1",
-              "global": false,
-              "optional": false,
               "default": false
             }
           ]

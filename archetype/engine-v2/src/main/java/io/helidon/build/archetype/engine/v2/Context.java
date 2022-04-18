@@ -22,7 +22,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.DynamicValue;
+import io.helidon.build.archetype.engine.v2.ast.Node;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.common.GenericType;
 
@@ -105,27 +107,18 @@ public final class Context {
     /**
      * Put a value in the context.
      *
-     * @param path  input path
-     * @param value value
+     * @param path     input path
+     * @param value    value
+     * @param readonly true if the value is read-only
      * @throws IllegalStateException if a value already exists
      */
-    public void put(String path, Value value) {
+    public void put(String path, Value value, boolean readonly) {
         ContextValue current = values.get(path);
-        if (current == null) {
-            values.put(path, new ContextValue(value, true));
-        } else {
-            if (current.external) {
-                if (!current.unwrap().equals(value.unwrap())) {
-                    throw new IllegalStateException(String.format(
-                            "%s requires %s=%s", fullPath(), path, value.unwrap()));
-                }
-            } else if (current.internal) {
-                throw new IllegalStateException(String.format(
-                        "Archetype error, internal value '%s' already set", path));
-            } else {
-                throw new IllegalStateException(String.format(
-                        "Archetype error, value '%s' already set", path));
-            }
+        if (current == null || !current.readonly) {
+            values.put(path, new ContextValue(value, readonly));
+        } else if (!current.unwrap().equals(value.unwrap())) {
+            throw new IllegalStateException(String.format(
+                    "%s requires %s=%s", fullPath(), path, value.unwrap()));
         }
     }
 
@@ -142,7 +135,7 @@ public final class Context {
     /**
      * Push the given input path.
      *
-     * @param path input path
+     * @param path   input path
      * @param global true if the input is global
      */
     public void push(String path, boolean global) {
@@ -154,14 +147,14 @@ public final class Context {
     /**
      * Push a new input value.
      *
-     * @param name input name
-     * @param value value
+     * @param name   input name
+     * @param value  value
      * @param global true if the input is global
      */
-    public void push(String name, Value value, boolean global) {
+    public void push(String name, Value value, boolean global, boolean readonly) {
         String path = path(name);
         if (value != null) {
-            values.put(path, new ContextValue(value, false));
+            values.put(path, new ContextValue(value, readonly));
             push(path, global);
         } else if (values.get(path) != null) {
             push(path, global);
@@ -176,28 +169,28 @@ public final class Context {
     }
 
     /**
-     * Lookup a context value.
+     * Compute the relative input path for the given query.
      *
-     * @param path input path
+     * @param query input path query
      * @return value, {@code null} if not found
      */
-    public Value lookup(String path) {
+    public String queryPath(String query) {
         String current = inputs.peek();
         if (current == null) {
             current = "";
         }
         String key;
-        if (path.startsWith("ROOT.")) {
-            key = path.substring(5);
+        if (query.startsWith("ROOT.")) {
+            key = query.substring(5);
         } else {
             int offset = 0;
             int level = 0;
-            while (path.startsWith("PARENT.", offset)) {
+            while (query.startsWith("PARENT.", offset)) {
                 offset += 7;
                 level++;
             }
             if (offset > 0) {
-                path = path.substring(offset);
+                query = query.substring(offset);
             } else {
                 level = 0;
             }
@@ -208,12 +201,22 @@ public final class Context {
                 }
             }
             if (index > 0) {
-                key = current.substring(0, index + 1) + "." + path;
+                key = current.substring(0, index + 1) + "." + query;
             } else {
-                key = path;
+                key = query;
             }
         }
-        return values.get(key);
+        return key;
+    }
+
+    /**
+     * Lookup a context value.
+     *
+     * @param path input path
+     * @return value, {@code null} if not found
+     */
+    public Value lookup(String path) {
+        return values.get(queryPath(path));
     }
 
     /**
@@ -234,6 +237,7 @@ public final class Context {
 
     /**
      * Returns the current input path.
+     *
      * @return input path
      */
     public String path() {
@@ -269,6 +273,16 @@ public final class Context {
         if (!inputs.isEmpty()) {
             throw new IllegalStateException("Invalid state, inputs is not empty: " + inputs);
         }
+    }
+
+    /**
+     * If the given node is an instance of {@link Condition}, evaluate the expression.
+     *
+     * @param node node
+     * @return {@code true} if the node is not an instance of {@link Condition} or the expression result
+     */
+    public boolean filterNode(Node node) {
+        return Condition.filter(node, this::lookup);
     }
 
     private String fullPath() {
@@ -317,7 +331,7 @@ public final class Context {
     }
 
     private static ContextValue externalValue(String value) {
-        return new ContextValue(DynamicValue.create(value), false);
+        return new ContextValue(DynamicValue.create(value), true);
     }
 
     /**
@@ -325,14 +339,12 @@ public final class Context {
      */
     private static final class ContextValue implements Value {
 
-        private final boolean internal;
-        private final boolean external;
+        private final boolean readonly;
         private final Value value;
 
-        private ContextValue(Value value, boolean internal) {
+        private ContextValue(Value value, boolean readonly) {
             this.value = value;
-            this.internal = internal;
-            this.external = true;
+            this.readonly = readonly;
         }
 
         @Override
@@ -368,6 +380,14 @@ public final class Context {
         @Override
         public <U> U as(GenericType<U> type) {
             return value.as(type);
+        }
+
+        @Override
+        public String toString() {
+            return "ContextValue{" +
+                    "readonly=" + readonly +
+                    ", value=" + value +
+                    '}';
         }
     }
 }

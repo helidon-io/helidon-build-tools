@@ -23,7 +23,6 @@ import java.util.function.Consumer;
 
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Value;
-import io.helidon.build.common.test.utils.TestFiles;
 
 import org.junit.jupiter.api.Test;
 
@@ -90,7 +89,7 @@ class OutputGeneratorTest {
     @Test
     void testReplacement() throws IOException {
         Path outputDir = generate("generator/replacement.xml",
-                ctx -> ctx.put("package", Value.create("com.example")));
+                ctx -> ctx.put("package", Value.create("com.example"), true));
         Path expected = outputDir.resolve("com/example/file1.txt");
         assertThat(Files.exists(expected), is(true));
         assertThat(readFile(expected), is("foo\n"));

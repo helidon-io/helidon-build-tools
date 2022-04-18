@@ -16,11 +16,8 @@
 
 package io.helidon.build.archetype.engine.v2.ast;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-
-import io.helidon.build.archetype.engine.v2.ScriptLoader;
 
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toUnmodifiableMap;
@@ -61,12 +58,11 @@ public final class Script extends DeclaredBlock {
     /**
      * Create a new builder.
      *
-     * @param loader     script loader
-     * @param scriptPath script path
+     * @param info builder info
      * @return builder
      */
-    public static Builder builder(ScriptLoader loader, Path scriptPath) {
-        return new Builder(loader, scriptPath);
+    public static Builder builder(BuilderInfo info) {
+        return new Builder(info);
     }
 
     /**
@@ -74,8 +70,8 @@ public final class Script extends DeclaredBlock {
      */
     public static final class Builder extends Block.Builder {
 
-        private Builder(ScriptLoader loader, Path scriptPath) {
-            super(loader, scriptPath, null, Kind.SCRIPT);
+        private Builder(BuilderInfo info) {
+            super(info, Kind.SCRIPT);
         }
 
         @Override

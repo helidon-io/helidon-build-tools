@@ -38,6 +38,7 @@ import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.archetype.engine.v2.ast.Variable;
 
 import static java.util.Objects.requireNonNull;
 
@@ -135,7 +136,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
     public VisitResult visitCondition(Condition condition, Context ctx) {
         try {
             condition.expression().eval(variable -> {
-                List<Block> refs = allRefs.get(variable);
+                List<Block> refs = allRefs.get(ctx.queryPath(variable));
                 if (refs == null || refs.isEmpty()) {
                     return null;
                 }
@@ -144,7 +145,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
                 switch (kind) {
                     case LIST:
                     case ENUM:
-                        String value = ((Input.Options) ref).options().get(0).value();
+                        String value = ((Input.Options) ref).options(ctx::filterNode).get(0).value();
                         return kind == Input.Kind.LIST ? Value.create(List.of(value)) : Value.create(value);
                     case TEXT:
                         return Value.create("some text");
@@ -174,11 +175,13 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
 
     @Override
     public VisitResult visitPreset(Preset preset, Context ctx) {
-        if (preset.isResolvable()) {
-            presets.add(preset);
-        } else {
-            allRefs.computeIfAbsent(preset.path(), k -> new ArrayList<>()).add(preset);
-        }
+        presets.add(preset);
+        return VisitResult.CONTINUE;
+    }
+
+    @Override
+    public VisitResult visitVariable(Variable variable, Context arg) {
+        allRefs.computeIfAbsent(variable.path(), k -> new ArrayList<>()).add(variable);
         return VisitResult.CONTINUE;
     }
 

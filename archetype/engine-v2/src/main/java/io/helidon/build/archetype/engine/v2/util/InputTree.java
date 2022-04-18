@@ -35,7 +35,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.build.archetype.engine.v2.Context;
-import io.helidon.build.archetype.engine.v2.InputResolver;
 import io.helidon.build.archetype.engine.v2.ScriptLoader;
 import io.helidon.build.archetype.engine.v2.UnresolvedInputException;
 import io.helidon.build.archetype.engine.v2.VisitorAdapter;
@@ -50,6 +49,7 @@ import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
+import io.helidon.build.archetype.engine.v2.ast.Variable;
 import io.helidon.build.archetype.engine.v2.util.InputTree.Node.Kind;
 import io.helidon.build.common.GenericType;
 import io.helidon.build.common.VirtualFileSystem;
@@ -1093,10 +1093,16 @@ public class InputTree {
         public VisitResult visitPreset(Preset preset, Context ctx) {
             String path = preset.path();
             Value value = preset.value();
-            ctx.put(path, value);
+            ctx.put(path, value, true);
 
             PresetNode presets = (PresetNode) builder.current();
             presets.add(path, asString(value));
+            return VisitResult.CONTINUE;
+        }
+
+        @Override
+        public VisitResult visitVariable(Variable variable, Context ctx) {
+            ctx.put(variable.path(), variable.value(), false);
             return VisitResult.CONTINUE;
         }
 
@@ -1141,7 +1147,7 @@ public class InputTree {
             return VisitResult.CONTINUE;
         }
 
-        private static class InputCollector extends InputResolver {
+        private static class InputCollector implements Input.Visitor<Context> {
             private final Builder builder;
 
             InputCollector(Builder builder) {
@@ -1237,7 +1243,12 @@ public class InputTree {
                     default:
                         throw new IllegalStateException("unknown kind: " + input.kind());
                 }
-                return super.postVisitAny(input, context);
+                if (input instanceof NamedInput) {
+                    if (!((NamedInput) input).isGlobal()) {
+                        context.pop();
+                    }
+                }
+                return VisitResult.CONTINUE;
             }
         }
     }

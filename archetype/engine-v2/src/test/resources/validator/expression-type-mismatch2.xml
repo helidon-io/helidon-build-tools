@@ -20,8 +20,8 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <presets>
-        <text path="input1" resolvable="false">false</text>
-    </presets>
+    <variables>
+        <text path="input1">false</text>
+    </variables>
     <output if="${input1}"/>
 </archetype-script>

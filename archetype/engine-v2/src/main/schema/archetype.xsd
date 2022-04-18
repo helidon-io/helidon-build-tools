@@ -171,15 +171,15 @@
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
                 <xs:documentation source="description">
-                    Flow context path expression to guard this element.
+                    Expression to guard this element.
                     <br/>
                     <br/>
                     <p>
-                        Flow context path expressions are boolean expressions that can be used to query the flow
-                        context.
+                        Expressions are boolean expressions that can be used to query the context.
                         <br/>
                         <br/>
-                        Values can be either flow context path values or literal, and are only of the following types:
+                        Values can be either context values (<code>${path}</code>) or literal, and are only of the
+                        following types:
                     </p>
                     <ul>
                         <li><b>Boolean</b>: <code>true</code> or
@@ -260,7 +260,7 @@
                     <br/>
                     <br/>
                     <p>
-                        The template data model is shared across the flow. The key identifies the data to set.
+                        The template data model is shared. The key identifies the data to set.
 
                         The key is the identifier used when resolving data from a template. The syntax for
                         resolving data from a template is template specific. E.g. in mustache: <code>{{my-key}}</code>.
@@ -440,16 +440,27 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:attributeGroup name="preset-attribute-group">
+    <xs:attributeGroup name="transient-attribute-group">
+        <xs:attribute name="transient" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Indicate if a variable should be serialized to a client.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+
+    <xs:attributeGroup name="context-attribute-group">
         <xs:attribute name="path" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
                 <xs:documentation source="description">
-                    The flow context path of the input whose value is to be set.
+                    The path of the input whose value is to be set.
                     <br/>
                     <br/>
                     <p>
-                        A path can be used to point at a node in the flow context. Path members are separated with a
+                        A path can be used to point at a node in the context. Path members are separated with a
                         dot (<code>.</code>) character.
                     </p>
                     <br/>
@@ -484,43 +495,28 @@
                             <code>${provider}</code>
                             is resolved as
                             <code>${flavor.base.security.provider}</code>
-                            if the current flow context node is
+                            if the current context node is
                             <code>flavor.base.security</code>
                         </li>
                         <li>
                             <code>${PARENT.security.provider}</code>
                             is resolved as
                             <code>${flavor.base.security.provider}</code>
-                            if the parent of the current flow context node is
+                            if the parent of the current context node is
                             <code>flavor.base.security</code>
                         </li>
                     </ul>
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="resolvable" type="xs:boolean">
-            <xs:annotation>
-                <xs:documentation source="version">2.0</xs:documentation>
-                <xs:documentation source="description">
-                    Indicate if a preset path can be resolved to an input.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="transient" type="xs:boolean">
-            <xs:annotation>
-                <xs:documentation source="version">2.0</xs:documentation>
-                <xs:documentation source="description">
-                    Indicate if a preset should be serialized to a client.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
+        <xs:attributeGroup ref="a:if-group"/>
     </xs:attributeGroup>
 
-    <xs:complexType name="presets-type">
+    <xs:complexType name="variables-type">
         <xs:annotation>
             <xs:documentation source="version">2.0</xs:documentation>
             <xs:documentation source="description">
-                Define a read-only value for an input.
+                Define a variable.
             </xs:documentation>
         </xs:annotation>
         <xs:choice minOccurs="0" maxOccurs="unbounded">
@@ -534,7 +530,8 @@
                     </xs:annotation>
                     <xs:simpleContent>
                         <xs:extension base="xs:boolean">
-                            <xs:attributeGroup ref="a:preset-attribute-group"/>
+                            <xs:attributeGroup ref="a:context-attribute-group"/>
+                            <xs:attributeGroup ref="a:transient-attribute-group"/>
                         </xs:extension>
                     </xs:simpleContent>
                 </xs:complexType>
@@ -549,7 +546,8 @@
                     </xs:annotation>
                     <xs:simpleContent>
                         <xs:extension base="xs:string">
-                            <xs:attributeGroup ref="a:preset-attribute-group"/>
+                            <xs:attributeGroup ref="a:context-attribute-group"/>
+                            <xs:attributeGroup ref="a:transient-attribute-group"/>
                         </xs:extension>
                     </xs:simpleContent>
                 </xs:complexType>
@@ -564,7 +562,8 @@
                     </xs:annotation>
                     <xs:simpleContent>
                         <xs:extension base="xs:string">
-                            <xs:attributeGroup ref="a:preset-attribute-group"/>
+                            <xs:attributeGroup ref="a:context-attribute-group"/>
+                            <xs:attributeGroup ref="a:transient-attribute-group"/>
                         </xs:extension>
                     </xs:simpleContent>
                 </xs:complexType>
@@ -584,7 +583,82 @@
                             </xs:simpleType>
                         </xs:element>
                     </xs:sequence>
-                    <xs:attributeGroup ref="a:preset-attribute-group"/>
+                    <xs:attributeGroup ref="a:context-attribute-group"/>
+                    <xs:attributeGroup ref="a:transient-attribute-group"/>
+                </xs:complexType>
+            </xs:element>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="presets-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Define a read-only value for an input.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="boolean">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation source="version">2.0</xs:documentation>
+                        <xs:documentation source="description">
+                            Define a boolean value.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleContent>
+                        <xs:extension base="xs:boolean">
+                            <xs:attributeGroup ref="a:context-attribute-group"/>
+                        </xs:extension>
+                    </xs:simpleContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="text">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation source="version">2.0</xs:documentation>
+                        <xs:documentation source="description">
+                            Define a text value.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleContent>
+                        <xs:extension base="xs:string">
+                            <xs:attributeGroup ref="a:context-attribute-group"/>
+                        </xs:extension>
+                    </xs:simpleContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="enum">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation source="version">2.0</xs:documentation>
+                        <xs:documentation source="description">
+                            Define an enum value.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleContent>
+                        <xs:extension base="xs:string">
+                            <xs:attributeGroup ref="a:context-attribute-group"/>
+                        </xs:extension>
+                    </xs:simpleContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="list">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation source="version">2.0</xs:documentation>
+                        <xs:documentation source="description">
+                            Define a list value.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                        <xs:element name="value">
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string"/>
+                            </xs:simpleType>
+                        </xs:element>
+                    </xs:sequence>
+                    <xs:attributeGroup ref="a:context-attribute-group"/>
                 </xs:complexType>
             </xs:element>
         </xs:choice>
@@ -692,6 +766,7 @@
         <xs:sequence>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element name="presets" type="a:presets-type"/>
+                <xs:element name="variables" type="a:variables-type"/>
                 <xs:element name="exec" type="a:exec-type"/>
                 <xs:element name="source" type="a:source-type"/>
                 <xs:element name="call" type="a:call-type"/>
@@ -718,6 +793,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attributeGroup ref="a:if-group"/>
     </xs:attributeGroup>
 
     <xs:complexType name="text-input-type">
@@ -769,7 +845,7 @@
                             <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
                             <xs:element name="output" type="a:output-type" minOccurs="0"/>
                         </xs:sequence>
-                        <xs:attribute name="value" type="xs:string">
+                        <xs:attribute name="value" type="xs:string" use="required">
                             <xs:annotation>
                                 <xs:documentation source="version">2.0</xs:documentation>
                                 <xs:documentation source="description">
@@ -778,6 +854,7 @@
                             </xs:annotation>
                         </xs:attribute>
                         <xs:attributeGroup ref="a:label-group"/>
+                        <xs:attributeGroup ref="a:if-group"/>
                     </xs:complexType>
                 </xs:element>
             </xs:choice>
@@ -807,7 +884,7 @@
                             <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
                             <xs:element name="output" type="a:output-type" minOccurs="0"/>
                         </xs:sequence>
-                        <xs:attribute name="value" type="xs:string">
+                        <xs:attribute name="value" type="xs:string" use="required">
                             <xs:annotation>
                                 <xs:documentation source="version">2.0</xs:documentation>
                                 <xs:documentation source="description">
@@ -816,6 +893,7 @@
                             </xs:annotation>
                         </xs:attribute>
                         <xs:attributeGroup ref="a:label-group"/>
+                        <xs:attributeGroup ref="a:if-group"/>
                     </xs:complexType>
                 </xs:element>
             </xs:choice>
@@ -872,6 +950,7 @@
             <xs:element name="help" type="a:help-type" minOccurs="0"/>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element name="presets" type="a:presets-type"/>
+                <xs:element name="variables" type="a:variables-type"/>
                 <xs:element name="exec" type="a:exec-type"/>
                 <xs:element name="source" type="a:source-type"/>
                 <xs:element name="call" type="a:call-type"/>

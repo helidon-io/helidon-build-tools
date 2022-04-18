@@ -24,15 +24,17 @@ import io.helidon.build.archetype.engine.v2.ScriptLoader;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.DeclaredBlock;
+import io.helidon.build.archetype.engine.v2.ast.DeclaredValue;
 import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Invocation;
-import io.helidon.build.archetype.engine.v2.ast.Location;
 import io.helidon.build.archetype.engine.v2.ast.Method;
 import io.helidon.build.archetype.engine.v2.ast.Node;
+import io.helidon.build.archetype.engine.v2.ast.Node.BuilderInfo;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.archetype.engine.v2.ast.Variable;
 
 /**
  * Client script builder.
@@ -51,8 +53,9 @@ public class ClientCompiler implements Node.Visitor<Script> {
     private ClientCompiler(ArchetypeInfo info, boolean obfuscate) {
         this.info = info;
         this.obfuscate = obfuscate;
-        methodsBuilder = Block.builder(loader, path, null, Block.Kind.METHODS);
-        scriptBuilder = Script.builder(loader, path);
+        BuilderInfo builderInfo = BuilderInfo.of(loader, path);
+        methodsBuilder = Block.builder(builderInfo, Block.Kind.METHODS);
+        scriptBuilder = Script.builder(builderInfo);
         scriptBuilder.addChild(methodsBuilder);
     }
 
@@ -62,10 +65,15 @@ public class ClientCompiler implements Node.Visitor<Script> {
             throw new IllegalStateException("parent builder is null");
         }
         if (parent instanceof Condition.Builder) {
+            stack.pop();
             ((Condition.Builder) parent).then(builder);
         } else {
             parent.addChild(builder);
         }
+    }
+
+    private BuilderInfo builderInfo(Node node) {
+        return BuilderInfo.of(loader, path, node.location());
     }
 
     @Override
@@ -74,7 +82,7 @@ public class ClientCompiler implements Node.Visitor<Script> {
         if (declaredBlock == null) {
             throw new IllegalStateException("Unresolved invocation: " + invocation);
         }
-        Invocation.Builder builder = Invocation.builder(loader, path, invocation.location(), Invocation.Kind.CALL);
+        Invocation.Builder builder = Invocation.builder(builderInfo(invocation), Invocation.Kind.CALL);
         builder.attribute("method", Value.create(methodName(declaredBlock)));
         addChild(builder);
         return Node.VisitResult.CONTINUE;
@@ -82,14 +90,16 @@ public class ClientCompiler implements Node.Visitor<Script> {
 
     @Override
     public Node.VisitResult visitCondition(Condition condition, Script script) {
-        addChild(Condition.builder(loader, path, condition.location()).expression(condition.expression()));
+        Condition.Builder builder = Condition.builder(builderInfo(condition)).expression(condition.expression());
+        addChild(builder);
+        stack.push(builder);
         return Node.VisitResult.CONTINUE;
     }
 
     @Override
     public Node.VisitResult visitBlock(Block block, Script script) {
         Block.Kind kind = block.kind();
-        Location location = block.location();
+        BuilderInfo builderInfo = builderInfo(block);
         if (block instanceof DeclaredBlock) {
             if (block.equals(script)) {
                 stack.push(scriptBuilder);
@@ -97,7 +107,7 @@ public class ClientCompiler implements Node.Visitor<Script> {
                 String methodName = methodName((DeclaredBlock) block);
                 Method.Builder builder = methodBuilders.get(methodName);
                 if (builder == null) {
-                    builder = Method.builder(loader, path, location);
+                    builder = Method.builder(builderInfo);
                     builder.attribute("name", Value.create(methodName));
                     methodsBuilder.addChild(builder);
                     methodBuilders.put(methodName, builder);
@@ -106,19 +116,33 @@ public class ClientCompiler implements Node.Visitor<Script> {
             }
         } else {
             Block.Builder builder;
-            if (block instanceof Preset) {
-                builder = Preset.builder(loader, path, null, kind);
+            if (block instanceof DeclaredValue) {
+                if (block instanceof Preset) {
+                    builder = Preset.builder(builderInfo(block), kind);
+                } else if (block instanceof Variable) {
+                    builder = Variable.builder(builderInfo(block), kind);
+                } else {
+                    throw new UnsupportedOperationException("Unsupported declared value: " + block);
+                }
+                DeclaredValue declaredValue = (DeclaredValue) block;
                 if (kind == Block.Kind.LIST) {
-                    for (String value : ((Preset) block).value().asList()) {
-                        builder.addChild(Block.builder(loader, path, location, Block.Kind.VALUE).value(value));
+                    for (String value : declaredValue.value().asList()) {
+                        builder.addChild(Block.builder(builderInfo, Block.Kind.VALUE).value(value));
+                    }
+                } else {
+                    String value = String.valueOf(declaredValue.value().unwrap());
+                    if (kind == Block.Kind.ENUM) {
+                        builder.value(value);
+                    } else {
+                        builder.addChild(Block.builder(builderInfo, Block.Kind.VALUE).value(value));
                     }
                 }
             } else if (block instanceof Step) {
-                builder = Step.builder(loader, path, location);
+                builder = Step.builder(builderInfo(block));
             } else if (block instanceof Input) {
-                builder = Input.builder(loader, path, location, kind);
+                builder = Input.builder(builderInfo, kind);
             } else {
-                builder = Block.builder(loader, path, location, kind);
+                builder = Block.builder(builderInfo, kind);
             }
             builder.attributes(block.attributes());
             addChild(builder);
@@ -136,6 +160,7 @@ public class ClientCompiler implements Node.Visitor<Script> {
                 case STEP:
                 case INPUTS:
                 case PRESETS:
+                case VARIABLES:
                 case INVOKE:
                 case INVOKE_DIR:
                     Node.Builder<?, ?> parentBuilder = stack.peek();

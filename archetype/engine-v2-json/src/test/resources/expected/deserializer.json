@@ -10,9 +10,7 @@
             "kind": "text",
             "label": "Comment",
             "name": "comment",
-            "global": false,
-            "optional": true,
-            "default": null
+            "optional": true
           }
         ]
       }
@@ -31,8 +29,6 @@
               "kind": "enum",
               "label": "Fruit",
               "name": "fruit",
-              "global": false,
-              "optional": false,
               "default": "berries",
               "children": [
                 {
@@ -47,8 +43,6 @@
                           "kind": "enum",
                           "label": "Berry type",
                           "name": "berry-type",
-                          "global": false,
-                          "optional": false,
                           "default": "raspberry",
                           "children": [
                             {
@@ -63,8 +57,6 @@
                                       "kind": "boolean",
                                       "label": "Organic",
                                       "name": "organic",
-                                      "global": false,
-                                      "optional": false,
                                       "default": true
                                     }
                                   ]
@@ -83,8 +75,6 @@
                                       "kind": "boolean",
                                       "label": "Frozen",
                                       "name": "frozen",
-                                      "global": false,
-                                      "optional": false,
                                       "default": true
                                     }
                                   ]
@@ -109,8 +99,6 @@
                           "kind": "enum",
                           "label": "Tropical type",
                           "name": "tropical-type",
-                          "global": false,
-                          "optional": false,
                           "default": "mango",
                           "children": [
                             {
@@ -125,8 +113,6 @@
                                       "kind": "boolean",
                                       "label": "Fare trade",
                                       "name": "fare-trade",
-                                      "global": false,
-                                      "optional": false,
                                       "default": true,
                                       "children": [
                                         {
@@ -151,8 +137,6 @@
                                       "kind": "boolean",
                                       "label": "Plantain",
                                       "name": "plantain",
-                                      "global": false,
-                                      "optional": false,
                                       "default": true
                                     }
                                   ]
@@ -185,8 +169,6 @@
                   "kind": "boolean",
                   "label": "Frosting",
                   "name": "frosting",
-                  "global": false,
-                  "optional": false,
                   "default": true
                 }
               ]

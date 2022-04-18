@@ -13,10 +13,8 @@
             {
               "label": "Boolean1",
               "name": "boolean1",
-              "global": false,
-              "optional": false,
-              "default": false,
-              "kind": "boolean"
+              "kind": "boolean",
+              "default": false
             }
           ]
         }

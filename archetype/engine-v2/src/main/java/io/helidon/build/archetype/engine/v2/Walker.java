@@ -135,21 +135,25 @@ public final class Walker<A> {
             if (!traversing) {
                 stack.pop();
                 if (result == VisitResult.SKIP_SIBLINGS) {
-                    while (!stack.isEmpty()) {
-                        Node n = stack.peek();
-                        if (!(n instanceof Block)) {
-                            continue;
-                        } else if (n.nodeId() == parentId) {
-                            break;
-                        }
-                        stack.pop();
-                    }
+                    skipSiblings(parentId);
                 } else if (result == VisitResult.TERMINATE) {
                     return;
                 }
             }
         }
         accept(block, arg, false);
+    }
+
+    private void skipSiblings(int parentId) {
+        while (!stack.isEmpty()) {
+            Node n = stack.peek();
+            if (n instanceof Block) {
+                if (n.nodeId() == parentId) {
+                    break;
+                }
+                stack.pop();
+            }
+        }
     }
 
     private Script resolveScript(ScriptInvocation invocation) {

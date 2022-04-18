@@ -242,7 +242,7 @@ class MustacheSupportTest {
     void testModelValueWithContextVariable() {
         Block scope = model(modelValue("color", "${color}")).build();
         Context context = Context.create();
-        context.put("color", Value.create("red"));
+        context.put("color", Value.create("red"), true);
         assertThat(render("{{color}}", scope, null, context), is("red"));
     }
 
@@ -250,8 +250,8 @@ class MustacheSupportTest {
     void testModelValueWithContextVariables() {
         Block scope = model(modelValue("colors", "${red},${blue}")).build();
         Context context = Context.create();
-        context.put("red", Value.create("red"));
-        context.put("blue", Value.create("blue"));
+        context.put("red", Value.create("red"), true);
+        context.put("blue", Value.create("blue"), true);
         assertThat(render("{{colors}}", scope, null, context), is("red,blue"));
     }
 

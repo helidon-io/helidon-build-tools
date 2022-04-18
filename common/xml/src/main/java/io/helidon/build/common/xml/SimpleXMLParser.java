@@ -301,6 +301,20 @@ public final class SimpleXMLParser {
     }
 
     /**
+     * Replace XML entities with their non escaped values.
+     *
+     * @param input string containing XML entities
+     * @return new string with replaced values
+     */
+    public static String processXmlEscapes(String input) {
+        return input.replaceAll("&quot;", "\"")
+                    .replaceAll("&apos", "'")
+                    .replaceAll("&lt;", "<")
+                    .replaceAll("&gt;", ">")
+                    .replaceAll("&amp;", "&");
+    }
+
+    /**
      * Get the current line number.
      *
      * @return line number
@@ -568,7 +582,7 @@ public final class SimpleXMLParser {
     }
 
     private void validateAttrValueChar(char c) {
-        if (c == MARKUP_START || c == MARKUP_END || c == '&') {
+        if (c == MARKUP_START || c == MARKUP_END) {
             throw new IllegalStateException(String.format(
                     "Invalid character found in value: '%c', line: %d, char: %d", c, lineNo, charNo));
         }

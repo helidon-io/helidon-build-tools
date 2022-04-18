@@ -13,9 +13,6 @@
             {
               "label": "Enum1",
               "name": "enum1",
-              "global": false,
-              "optional": false,
-              "default": null,
               "kind": "enum",
               "children": [
                 {

@@ -36,7 +36,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 class ClientCompilerTest {
 
-
     @Test
     void testEmptyScript() {
         Script script = load("compiler/empty-script/main.xml");

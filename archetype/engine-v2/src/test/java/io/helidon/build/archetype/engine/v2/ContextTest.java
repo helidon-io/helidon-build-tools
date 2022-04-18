@@ -34,7 +34,7 @@ class ContextTest {
     @Test
     void testLookup() {
         Context context = Context.create();
-        context.push("foo", Value.create("foo-value"), false);
+        context.push("foo", Value.create("foo-value"), false, true);
 
         Value value;
 
@@ -61,9 +61,9 @@ class ContextTest {
     @Test
     void testLookupInScope() {
         Context context = Context.create();
-        context.push("foo", Value.TRUE, false);
-        context.push("bar", Value.TRUE, false);
-        context.push("color", Value.create("blue"), false);
+        context.push("foo", Value.TRUE, false, true);
+        context.push("bar", Value.TRUE, false, true);
+        context.push("color", Value.create("blue"), false, true);
         context.pop();
         Value value = context.lookup("color");
         assertThat(value, is(notNullValue()));
@@ -73,7 +73,7 @@ class ContextTest {
     @Test
     void testLookupInternalOnly() {
         Context context = Context.create();
-        context.put("foo", Value.create("foo-value"));
+        context.put("foo", Value.create("foo-value"), true);
 
         Value value;
 
@@ -101,8 +101,8 @@ class ContextTest {
     @Test
     void testRelativeLookup() {
         Context context = Context.create();
-        context.push("foo", Value.create("foo-value"), false);
-        context.push("bar", Value.create("bar-value"), false);
+        context.push("foo", Value.create("foo-value"), false, true);
+        context.push("bar", Value.create("bar-value"), false, true);
 
         Value value;
 
@@ -139,8 +139,8 @@ class ContextTest {
     @Test
     void testPopInput() {
         Context context = Context.create();
-        context.push("foo", Value.create("foo-value"), false);
-        context.push("bar", Value.create("bar-value"), false);
+        context.push("foo", Value.create("foo-value"), false, true);
+        context.push("bar", Value.create("bar-value"), false, true);
         context.pop();
 
         Value value;

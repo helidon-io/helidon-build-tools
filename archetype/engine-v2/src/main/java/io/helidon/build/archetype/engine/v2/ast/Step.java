@@ -16,10 +16,6 @@
 
 package io.helidon.build.archetype.engine.v2.ast;
 
-import java.nio.file.Path;
-
-import io.helidon.build.archetype.engine.v2.ScriptLoader;
-
 /**
  * Step.
  */
@@ -84,13 +80,11 @@ public class Step extends Block {
     /**
      * Create a new Step block builder.
      *
-     * @param loader     script loader
-     * @param scriptPath script path
-     * @param location   location
+     * @param info builder info
      * @return builder
      */
-    public static Builder builder(ScriptLoader loader, Path scriptPath, Location location) {
-        return new Builder(loader, scriptPath, location);
+    public static Builder builder(BuilderInfo info) {
+        return new Builder(info);
     }
 
     /**
@@ -98,8 +92,8 @@ public class Step extends Block {
      */
     public static final class Builder extends Block.Builder {
 
-        private Builder(ScriptLoader loader, Path scriptPath, Location location) {
-            super(loader, scriptPath, location, Kind.STEP);
+        private Builder(BuilderInfo info) {
+            super(info, Kind.STEP);
         }
 
         @Override

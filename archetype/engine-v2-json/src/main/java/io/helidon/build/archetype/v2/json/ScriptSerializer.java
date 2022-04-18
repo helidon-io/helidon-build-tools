@@ -47,7 +47,13 @@ import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.archetype.engine.v2.ast.Variable;
 import io.helidon.build.archetype.engine.v2.util.ClientCompiler;
+
+// TODO don't include default attributes (global=false, optional=false etc)
+// TODO don't include input prompt (for cli only)
+// TODO bug with conditional preset
+// TODO bug with variable/preset null value
 
 /**
  * Script serializer.
@@ -264,10 +270,17 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
     }
 
     private VisitResult visitNamed(Input.NamedInput input, JsonObjectBuilder builder) {
-        builder.add("name", input.name())
-               .add("global", input.isGlobal())
-               .add("optional", input.isOptional())
-               .add("default", JsonFactory.createValue(input.defaultValue()));
+        builder.add("name", input.name());
+        if (input.isGlobal()) {
+            builder.add("global", true);
+        }
+        if (input.isOptional()) {
+            builder.add("optional", true);
+        }
+        Value defaultValue = input.defaultValue();
+        if (defaultValue != null && defaultValue != Value.NULL) {
+            builder.add("default", JsonFactory.createValue(defaultValue));
+        }
         return VisitResult.CONTINUE;
     }
 
@@ -291,6 +304,13 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
     public VisitResult visitPreset(Preset preset, JsonObjectBuilder builder) {
         builder.add("path", preset.path())
                .add("value", JsonFactory.createValue(preset.value()));
+        return VisitResult.SKIP_SUBTREE;
+    }
+
+    @Override
+    public VisitResult visitVariable(Variable variable, JsonObjectBuilder builder) {
+        builder.add("path", variable.path())
+               .add("value", JsonFactory.createValue(variable.value()));
         return VisitResult.SKIP_SUBTREE;
     }
 

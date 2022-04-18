@@ -20,24 +20,35 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
+import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.common.logging.Log;
+import io.helidon.build.common.logging.LogLevel;
 
+import static io.helidon.build.common.Strings.padding;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldRed;
+import static java.util.Collections.emptyList;
+
+// TODO use prompt attribute when available
+//      restrict so that it is not usable in option
 
 /**
  * Prompter that uses CLI for input/output.
  */
 public class TerminalInputResolver extends InputResolver {
     private static final String ENTER_SELECTION = Bold.apply("Enter selection");
-    private static final String ENTER_LIST_SELECTION = ENTER_SELECTION + " (one or more numbers separated by spaces)";
+    private static final String ENTER_LIST_SELECTION = ENTER_SELECTION + " (numbers separated by spaces or 'none')";
 
     private final InputStream in;
     private String lastLabel;
@@ -59,6 +70,11 @@ public class TerminalInputResolver extends InputResolver {
     }
 
     @Override
+    protected void onVisitStep(Step step, Context context) {
+        System.out.printf("%n| %s%n%n", step.label());
+    }
+
+    @Override
     public VisitResult visitBoolean(Input.Boolean input, Context context) {
         VisitResult result = onVisitInput(input, context);
         if (result != null) {
@@ -66,22 +82,31 @@ public class TerminalInputResolver extends InputResolver {
         }
         while (true) {
             try {
-                printLabel(input);
                 Value defaultValue = defaultValue(input, context);
-                String defaultText = defaultValue != null ? BoldBlue.apply(defaultValue.asBoolean()) : null;
+                String defaultText = defaultValue != null ? BoldBlue.apply(Input.Boolean.asString(defaultValue)) : null;
                 String question = String.format("%s (yes/no)", Bold.apply(input.label()));
                 String response = prompt(question, defaultText);
                 if (response == null || response.trim().length() == 0) {
-                    context.push(input.name(), defaultValue, input.isGlobal());
+                    context.push(input.name(), defaultValue, input.isGlobal(), true);
+                    if (defaultValue == null || !defaultValue.asBoolean()) {
+                        return VisitResult.SKIP_SUBTREE;
+                    }
                     return VisitResult.CONTINUE;
                 }
                 boolean value;
                 try {
                     value = Input.Boolean.valueOf(response, true);
                 } catch (Exception e) {
+                    System.out.println(BoldRed.apply("Invalid response: " + response));
+                    if (LogLevel.isDebug()) {
+                        Log.debug(e.getMessage());
+                    }
                     continue;
                 }
-                context.push(input.name(), Value.create(value), input.isGlobal());
+                context.push(input.name(), Value.create(value), input.isGlobal(), true);
+                if (!value) {
+                    return VisitResult.SKIP_SUBTREE;
+                }
                 return VisitResult.CONTINUE;
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -100,9 +125,9 @@ public class TerminalInputResolver extends InputResolver {
             String defaultText = defaultValue != null ? BoldBlue.apply(defaultValue) : null;
             String response = prompt(Bold.apply(input.label()), defaultText);
             if (response == null || response.trim().length() == 0) {
-                context.push(input.name(), Value.create(defaultValue), input.isGlobal());
+                context.push(input.name(), Value.create(defaultValue), input.isGlobal(), true);
             } else {
-                context.push(input.name(), Value.create(response), input.isGlobal());
+                context.push(input.name(), Value.create(response), input.isGlobal(), true);
             }
             return VisitResult.CONTINUE;
         } catch (IOException e) {
@@ -117,40 +142,41 @@ public class TerminalInputResolver extends InputResolver {
             return result;
         }
         while (true) {
+            String response = null;
             try {
                 Value defaultValue = defaultValue(input, context);
-                int defaultIndex = input.optionIndex(defaultValue.asString());
-
+                List<Input.Option> options = input.options(context::filterNode);
+                int defaultIndex = input.optionIndex(defaultValue.asString(), options);
                 // skip prompting if there is only one option with a default value
-                if (input.options().size() == 1 && defaultIndex >= 0) {
-                    context.push(input.name(), defaultValue, input.isGlobal());
+                if (options.size() == 1 && defaultIndex >= 0) {
+                    context.push(input.name(), defaultValue, input.isGlobal(), true);
                     return VisitResult.CONTINUE;
                 }
 
                 printLabel(input);
-                printOptions(input);
+                printOptions(options);
 
                 String defaultText = defaultIndex != -1
                         ? BoldBlue.apply(String.format("%s", defaultIndex + 1))
                         : null;
 
-                String response = prompt(ENTER_SELECTION, defaultText);
+                response = prompt(ENTER_SELECTION, defaultText);
                 lastLabel = input.label();
                 if ((response == null || response.trim().length() == 0)) {
-                    if (defaultIndex >= 0) {
-                        context.push(input.name(), defaultValue, input.isGlobal());
-                        return VisitResult.CONTINUE;
+                    if (defaultIndex < 0) {
+                        continue;
                     }
+                    context.push(input.name(), defaultValue, input.isGlobal(), true);
                 } else {
-                    int index = Integer.parseInt(response.trim());
-                    if (index > 0 && index <= input.options().size()) {
-                        String value = input.normalizeOptionValue(input.options().get(index - 1).value());
-                        context.push(input.name(), Value.create(value), input.isGlobal());
-                        return VisitResult.CONTINUE;
-                    }
+                    Value value = Value.create(parseEnumResponse(response, options));
+                    context.push(input.name(), value, input.isGlobal(), true);
                 }
-            } catch (NumberFormatException e) {
-                System.out.println(BoldRed.apply(e.getMessage()));
+                return VisitResult.CONTINUE;
+            } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                System.out.println(BoldRed.apply("Invalid response: " + response));
+                if (LogLevel.isDebug()) {
+                    Log.debug(e.getMessage());
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -164,31 +190,30 @@ public class TerminalInputResolver extends InputResolver {
             return result;
         }
         while (true) {
+            String response = null;
             try {
+                List<Input.Option> options = input.options(context::filterNode);
+
                 printLabel(input);
-                printOptions(input);
+                printOptions(options);
 
                 Value defaultValue = defaultValue(input, context);
-                List<Integer> defaultIndexes = input.optionIndexes(defaultValue.asList());
-                String defaultText = defaultIndexes.size() > 0
-                        ? BoldBlue.apply(String.format("%s",
-                        defaultIndexes.stream().map(i -> (i + 1) + "").collect(Collectors.joining(", "))))
-                        : null;
+                String defaultText = BoldBlue.apply(defaultResponse(defaultValue.asList(), options));
 
-                String response = prompt(ENTER_LIST_SELECTION, defaultText);
-
+                response = prompt(ENTER_LIST_SELECTION, defaultText);
                 lastLabel = input.label();
                 if (response == null || response.trim().length() == 0) {
-                    if (!defaultIndexes.isEmpty()) {
-                        context.push(input.name(), defaultValue, input.isGlobal());
-                        return VisitResult.CONTINUE;
-                    }
+                    context.push(input.name(), defaultValue, input.isGlobal(), true);
                 } else {
-                    context.push(input.name(), Value.create(input.parseResponse(response)), input.isGlobal());
-                    return VisitResult.CONTINUE;
+                    Value value = Value.create(parseListResponse(response, options));
+                    context.push(input.name(), value, input.isGlobal(), true);
                 }
+                return VisitResult.CONTINUE;
             } catch (NumberFormatException | IndexOutOfBoundsException e) {
-                System.out.println(BoldRed.apply(e.getMessage()));
+                System.out.println(BoldRed.apply("Invalid response: " + response));
+                if (LogLevel.isDebug()) {
+                    Log.debug(e.getMessage());
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -202,15 +227,11 @@ public class TerminalInputResolver extends InputResolver {
         }
     }
 
-    private static void printOptions(Input.Options input) {
-        List<Input.Option> options = input.options();
+    private static void printOptions(List<Input.Option> options) {
         int index = 0;
+        int maxKeyWidth = maxKeyWidth(optionValues(options));
         for (Input.Option option : options) {
-            String o = BoldBlue.apply(String.format("  (%d) %s ", index + 1, option.value()));
-            String optionText = option.label() != null && !option.label().isBlank()
-                    ? String.format("%s | %s", o, option.label())
-                    : o;
-            System.out.println(optionText);
+            System.out.println(optionText(option, maxKeyWidth, index));
             index++;
         }
     }
@@ -222,5 +243,70 @@ public class TerminalInputResolver extends InputResolver {
         System.out.print(promptText);
         System.out.flush();
         return new BufferedReader(new InputStreamReader(in)).readLine();
+    }
+
+    private static String optionText(Input.Option option, int maxKeyWidth, int index) {
+        String o = BoldBlue.apply(String.format("  (%d) %s ", index + 1, option.value()));
+        String label = option.label();
+        if (label != null && !label.isBlank()) {
+            return String.format("%s%s| %s", o, padding(" ", maxKeyWidth, option.value()), label);
+        }
+        return o;
+    }
+
+    private static int maxKeyWidth(List<String> labels) {
+        int maxLen = 0;
+        for (String label : labels) {
+            int len = label.length();
+            if (len > maxLen) {
+                maxLen = len;
+            }
+        }
+        return maxLen;
+    }
+
+    private static List<String> optionValues(List<Input.Option> options) {
+        return options.stream()
+                      .map(Input.Option::value)
+                      .collect(Collectors.toList());
+    }
+
+    private static String parseEnumResponse(String response, List<Input.Option> options) {
+        int index = Integer.parseInt(response.trim());
+        return options.get(index - 1).value().toLowerCase();
+    }
+
+    private static List<String> parseListResponse(String response, List<Input.Option> options) {
+        response = response.trim();
+        if ("none".equals(response)) {
+            return emptyList();
+        }
+        return Arrays.stream(response.trim().split("\\s+"))
+                     .map(Integer::parseInt)
+                     .distinct()
+                     .map(i -> options.get(i - 1))
+                     .map(Input.Option::value)
+                     .map(String::toLowerCase)
+                     .collect(Collectors.toList());
+    }
+
+    private static String defaultResponse(List<String> optionNames, List<Input.Option> options) {
+        if (optionNames == null || optionNames.isEmpty()) {
+            return "none";
+        }
+        return IntStream.range(0, options.size())
+                        .boxed()
+                        .filter(i -> containsIgnoreCase(optionNames, options.get(i).value()))
+                        .map(i -> (i + 1) + "")
+                        .collect(Collectors.joining(", "));
+    }
+
+    private static boolean containsIgnoreCase(Collection<String> values, String expected) {
+        for (String optionName : values) {
+            if (optionName.equalsIgnoreCase(expected)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -125,6 +125,7 @@ public class InputCombinations implements Iterable<Map<String, String>> {
          *
          * @return The count.
          */
+        @SuppressWarnings("unused")
         int iterations() {
             return iterations;
         }
@@ -235,6 +236,7 @@ public class InputCombinations implements Iterable<Map<String, String>> {
          * @param listCombiner The list combiner.
          * @return This instance, for chaining.
          */
+        @SuppressWarnings("unused")
         public Builder listCombiner(BiFunction<List<String>, List<String>, List<List<String>>> listCombiner) {
             builder.listCombiner(listCombiner);
             return this;

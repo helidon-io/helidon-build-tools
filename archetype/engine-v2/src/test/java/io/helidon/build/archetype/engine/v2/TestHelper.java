@@ -16,20 +16,7 @@
 
 package io.helidon.build.archetype.engine.v2;
 
-import io.helidon.build.archetype.engine.v2.ast.Block;
-import io.helidon.build.archetype.engine.v2.ast.DynamicValue;
-import io.helidon.build.archetype.engine.v2.ast.Input;
-import io.helidon.build.archetype.engine.v2.ast.Model;
-import io.helidon.build.archetype.engine.v2.ast.Node;
-import io.helidon.build.archetype.engine.v2.ast.Output;
-import io.helidon.build.archetype.engine.v2.ast.Script;
-import io.helidon.build.archetype.engine.v2.ast.Value;
-import io.helidon.build.common.Instance;
-import io.helidon.build.common.Strings;
-import io.helidon.build.common.VirtualFileSystem;
-
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,18 +24,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.build.archetype.engine.v2.ast.Block;
+import io.helidon.build.archetype.engine.v2.ast.DynamicValue;
+import io.helidon.build.archetype.engine.v2.ast.Input;
+import io.helidon.build.archetype.engine.v2.ast.Model;
+import io.helidon.build.archetype.engine.v2.ast.Node;
+import io.helidon.build.archetype.engine.v2.ast.Node.BuilderInfo;
+import io.helidon.build.archetype.engine.v2.ast.Output;
+import io.helidon.build.archetype.engine.v2.ast.Script;
+import io.helidon.build.archetype.engine.v2.ast.Step;
+import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.common.Instance;
+import io.helidon.build.common.Strings;
+import io.helidon.build.common.VirtualFileSystem;
+
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsNull.notNullValue;
 
 /**
  * Test helper.
  */
 public class TestHelper {
 
-    private static final Path SCRIPT_PATH = Path.of("test-helper.xml");
-    private static final ScriptLoader LOADER = ScriptLoader.create();
+    private static final BuilderInfo BUILDER_INFO = BuilderInfo.of(ScriptLoader.create(), Path.of("test-helper.xml"), null);
     private static final Instance<FileSystem> FS = new Instance<>(TestHelper::createTestFileSystem);
 
     private static FileSystem createTestFileSystem() {
@@ -126,7 +123,7 @@ public class TestHelper {
      * @return block builder
      */
     public static Block.Builder block(Block.Kind kind, Block.Builder... children) {
-        Block.Builder builder = Block.builder(LOADER, SCRIPT_PATH, null, kind);
+        Block.Builder builder = Block.builder(BUILDER_INFO, kind);
         for (Block.Builder child : children) {
             builder.addChild(child);
         }
@@ -240,6 +237,22 @@ public class TestHelper {
     }
 
     /**
+     * Create a new step block builder.
+     *
+     * @param label    step label
+     * @param children nested children
+     * @return block builder
+     */
+    public static Block.Builder step(String label, Block.Builder... children) {
+        Block.Builder builder = Step.builder(BUILDER_INFO)
+                                    .attribute("label", Value.create(label));
+        for (Block.Builder child : children) {
+            builder.addChild(child);
+        }
+        return builder;
+    }
+
+    /**
      * Create an input option block builder.
      *
      * @param name     option name
@@ -248,7 +261,7 @@ public class TestHelper {
      * @return block builder
      */
     public static Block.Builder inputOption(String name, String value, Block.Builder... children) {
-        Block.Builder builder = Input.builder(LOADER, SCRIPT_PATH, null, Block.Kind.OPTION)
+        Block.Builder builder = Input.builder(BUILDER_INFO, Block.Kind.OPTION)
                                      .attributes(inputAttributes(name, value));
         for (Block.Builder child : children) {
             builder.addChild(child);
@@ -304,7 +317,7 @@ public class TestHelper {
     }
 
     private static Block.Builder inputBuilder(String name, Block.Kind kind, String defaultValue, Block.Builder... children) {
-        Block.Builder builder = Input.builder(LOADER, SCRIPT_PATH, null, kind)
+        Block.Builder builder = Input.builder(BUILDER_INFO, kind)
                                      .attributes(inputAttributes(name, defaultValue, name));
         for (Block.Builder child : children) {
             builder.addChild(child);
@@ -313,7 +326,7 @@ public class TestHelper {
     }
 
     private static Block.Builder modelBuilder(String key, Block.Kind kind, int order, Block.Builder... children) {
-        Block.Builder builder = Model.builder(LOADER, SCRIPT_PATH, null, kind)
+        Block.Builder builder = Model.builder(BUILDER_INFO, kind)
                                      .attributes(Map.of("order", DynamicValue.create(String.valueOf(order))));
         if (key != null) {
             builder.attributes(Map.of("key", DynamicValue.create(key)));

@@ -20,9 +20,9 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <presets>
+    <variables>
         <boolean path="foo" transient="true">true</boolean>
-    </presets>
+    </variables>
     <step label="Step1">
         <inputs>
             <boolean name="boolean1" label="Boolean1">
