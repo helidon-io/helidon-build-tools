@@ -28,6 +28,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
 import io.helidon.build.archetype.engine.v2.BatchInputResolver;
@@ -210,14 +214,23 @@ public class IntegrationTestMojo extends AbstractMojo {
         try {
             if (generateCombinations) {
                 logCombinationsInput(testName);
-                InputCombinations combinations = InputCombinations.builder()
-                                                                  .archetypePath(archetypeFile.toPath())
-                                                                  .externalValues(externalValues)
-                                                                  .externalDefaults(externalDefaults)
-                                                                  .build();
+                List<Map<String, String>> combinations = InputCombinations.builder()
+                                                                          .archetypePath(archetypeFile.toPath())
+                                                                          .externalValues(externalValues)
+                                                                          .externalDefaults(externalDefaults)
+                                                                          .build()
+                                                                          .toList();
 
-                // TODO print the number of combinations
+                log.info("Total combinations: " + combinations.size());
+                for (Map<String, String> combination : combinations) {
+                    combinationNumber++;
+                    log.info(combinationNumber + ": " + combination);
+                }
 
+                // TODO add a mojo to print the combinations (helidon-archetype:combinations)
+                // TODO add an option to run a combination by id(s)
+                // TODO 'none' shows up as empty string
+                combinationNumber = 0;
                 for (Map<String, String> combination : combinations) {
                     combinationNumber++;
                     processIntegrationTest(testName, combination, archetypeFile);
@@ -368,7 +381,7 @@ public class IntegrationTestMojo extends AbstractMojo {
                 ArchetypeNotConfigured anc = (ArchetypeNotConfigured) result.getCause();
                 throw new MojoExecutionException(
                         "Missing required properties in archetype.properties: "
-                        + StringUtils.join(anc.getMissingProperties().iterator(), ", "), anc);
+                                + StringUtils.join(anc.getMissingProperties().iterator(), ", "), anc);
             }
             throw new MojoExecutionException(result.getCause().getMessage(), result.getCause());
         }
@@ -409,7 +422,7 @@ public class IntegrationTestMojo extends AbstractMojo {
             getLog().info("Post-archetype-generation invoker exit code: " + result.getExitCode());
             if (result.getExitCode() != 0) {
                 throw new MojoExecutionException("Execution failure: exit code = " + result.getExitCode(),
-                                                 result.getExecutionException());
+                        result.getExecutionException());
             }
         } catch (MavenInvocationException ex) {
             throw new MojoExecutionException(ex.getMessage(), ex);

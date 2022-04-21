@@ -26,6 +26,7 @@ import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.DynamicValue;
 import io.helidon.build.archetype.engine.v2.ast.Node;
 import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
 import io.helidon.build.common.GenericType;
 
 import static io.helidon.build.common.PropertyEvaluator.evaluate;
@@ -108,17 +109,34 @@ public final class Context {
      * Put a value in the context.
      *
      * @param path     input path
-     * @param value    value
+     * @param newValue    value
      * @param readonly true if the value is read-only
      * @throws IllegalStateException if a value already exists
      */
-    public void put(String path, Value value, boolean readonly) {
-        ContextValue current = values.get(path);
-        if (current == null || !current.readonly) {
-            values.put(path, new ContextValue(value, readonly));
-        } else if (!current.unwrap().equals(value.unwrap())) {
-            throw new IllegalStateException(String.format(
-                    "%s requires %s=%s", fullPath(), path, value.unwrap()));
+    public void put(String path, Value newValue, boolean readonly) {
+        ContextValue currentValue = values.get(path);
+        if (currentValue == null || !currentValue.readonly) {
+            values.put(path, new ContextValue(newValue, readonly));
+        } else {
+            GenericType<?> type = currentValue.type();
+            if (type == null) {
+                type = newValue.type();
+            }
+            if (type == null) {
+                type = ValueTypes.STRING;
+            }
+            Object currentVal = currentValue.as(type);
+            Object newVal = newValue.as(type);
+            if (!currentVal.equals(newVal)) {
+                String fullPath = fullPath();
+                if (fullPath.isEmpty()) {
+                    throw new IllegalStateException(String.format(
+                            "Cannot set %s=%s, value already exists", path, newVal));
+                } else {
+                    throw new IllegalStateException(String.format(
+                            "%s requires %s=%s", fullPath, path, currentVal));
+                }
+            }
         }
     }
 
@@ -172,7 +190,7 @@ public final class Context {
      * Compute the relative input path for the given query.
      *
      * @param query input path query
-     * @return value, {@code null} if not found
+     * @return query path
      */
     public String queryPath(String query) {
         String current = inputs.peek();

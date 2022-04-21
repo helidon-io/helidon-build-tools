@@ -1093,7 +1093,7 @@ public class InputTree {
         public VisitResult visitPreset(Preset preset, Context ctx) {
             String path = preset.path();
             Value value = preset.value();
-            ctx.put(path, value, true);
+            ctx.put(path, value, false);
 
             PresetNode presets = (PresetNode) builder.current();
             presets.add(path, asString(value));
