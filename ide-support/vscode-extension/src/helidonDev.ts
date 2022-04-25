@@ -21,6 +21,7 @@ import { VSCodeAPI } from "./VSCodeAPI";
 import { FileSystemAPI } from "./FileSystemAPI";
 import { ChildProcessAPI } from "./ChildProcessAPI";
 import { OutputFormatter } from "./OutputFormatter";
+import * as vscode from "vscode";
 
 const POM_XML_FILE: string = 'pom.xml';
 const SRC_DIR: string = 'src';
@@ -50,6 +51,7 @@ export async function startHelidonDev(extensionPath: string): Promise<Map<string
         let helidonProjectDir: string;
 
         if (helidonProjectDirs.length === 0) {
+            VSCodeAPI.showInformationMessage("Helidon projects have not been found in the workspace folders.");
             return new Map();
         } else if (helidonProjectDirs.length === 1) {
             helidonProjectDir = helidonProjectDirs[0];
@@ -135,9 +137,50 @@ function refreshLaunchedServers() {
     });
 }
 
+function preparePathForRegExp(path: string): string {
+    return path.replace(/\\/g, "\\\\");
+}
+
+function configEnvPath(configPath : string, binPath: string, pathDelimiter: string) {
+    if (process.env.PATH != null) {
+        if (!process.env.PATH.includes(configPath)) {
+            process.env.PATH = `${binPath}${process.env.PATH}`;
+        } else {
+            process.env.PATH = process.env.PATH.replace(
+                new RegExp(preparePathForRegExp(configPath) + `.?bin.?${pathDelimiter}?`),
+                binPath
+            );
+        }
+    }
+}
+
 function obtainNewServerProcess(helidonProjectDir: string, extensionPath: string): ChildProcess {
     let cmdSpan = "java";
     const args = ['-jar', `${extensionPath}/target/cli/helidon.jar`, 'dev'];
+
+    let pathDelimiter = path.delimiter;
+
+    let helidonConfig = vscode.workspace.getConfiguration('helidon');
+
+    let configJavaHome: string = helidonConfig.get("javaHomeDir")!;
+    let javaHomeBinDir: string = configJavaHome ? `${configJavaHome}/bin${pathDelimiter}` : "";
+    let configMavenHome: string = helidonConfig.get("mavenHomeDir")!;
+    let mavenBinDir: string = configMavenHome ? `${configMavenHome}/bin${pathDelimiter}` : "";
+
+    if (process.env.PATH != null) {
+        if (mavenBinDir !== ""){
+            process.env.M2_HOME = configMavenHome;
+            process.env.MAVEN_HOME = configMavenHome;
+            configEnvPath(configMavenHome, mavenBinDir, pathDelimiter);
+        }
+
+        if (javaHomeBinDir !== "") {
+            process.env.JAVA_HOME = configJavaHome;
+            configEnvPath(configJavaHome, javaHomeBinDir, pathDelimiter);
+        }
+    } else {
+        process.env.PATH = `${javaHomeBinDir}${mavenBinDir}`;
+    }
 
     const opts = {
         cwd: helidonProjectDir, // cwd means -> current working directory (where this command will by executed)
@@ -157,20 +200,18 @@ function configureServerOutput(serverProcess: ChildProcess, outputChannel: Outpu
 
     serverProcess!.stderr!.on('data', (data: string) => {
         outputFormatter.formatInputString(data);
-        console.error(data);
+        console.error(data.toString());
         VSCodeAPI.showErrorMessage(data);
     });
 
     serverProcess.on('close', (code: string) => {
         outputChannel.appendLine("Server stopped");
+        stopHelidonDev();
     });
 }
 
 export async function stopHelidonDev() {
     try {
-        if (!ChildProcessAPI.isCommandExist('helidon')) {
-            return;
-        }
         let currentHelidonServer: HelidonServerInstance;
         const activeServerNames = getActiveServerNames();
         if (activeServerNames.length === 0) {
