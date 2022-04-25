@@ -16,6 +16,9 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
+import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -112,6 +115,27 @@ class EmbeddedModeTest {
         assertThat(lines.get(0), is("Updating metadata for Helidon version 99.99"));
         assertThat(lines.get(1), containsStringIgnoringStyle("jabberwocky" + SEP + "99.99" + SEP + "cli-data.zip"));
         assertThat(lines.get(2), equalToIgnoringStyle("Helidon version lookup failed."));
+    }
+
+    @Test
+    void testNotExistingArgsFile() {
+        UncheckedIOException e = assertThrows(
+                UncheckedIOException.class,
+                () -> Helidon.execute("--args-file", "file" + ":///not_existing_file")
+        );
+        assertThat(e.getMessage(), isNotStyled());
+        assertThat(e.getMessage(), containsStringIgnoringStyle("No such file or directory"));
+    }
+
+    @Test
+    void testExistingArgsFile() throws MalformedURLException {
+        File resourceFile = new File(getClass().getResource("argFile.txt").getFile());
+        URL resourceFileUrl = resourceFile.toURI().toURL();
+        Helidon.execute("--args-file", resourceFileUrl.toString());
+        List<String> lines = loggedLines();
+        assertThat(lines.get(1), containsStringIgnoringStyle("Helidon command line tool"));
+        assertThat(lines.get(3), containsStringIgnoringStyle("Options"));
+        assertThat(lines.get(9), containsStringIgnoringStyle("Commands"));
     }
 
     private static List<String> loggedLines() {
