@@ -27,7 +27,7 @@
             lines="1"/>
     <suppress checks="IllegalImport"
               files="cli/impl/src/main/java/io/helidon/build/cli/impl/Helidon.java"
-              lines="22"/>
+              lines="32"/>
     <suppress checks="LineLength"
             files="archetype/engine-v1/src/test/resources/META-INF/test.properties" />
     <suppress checks="LineLength"
