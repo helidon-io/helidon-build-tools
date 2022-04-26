@@ -15,7 +15,14 @@
  */
 package io.helidon.build.cli.harness;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -75,7 +82,8 @@ public final class CommandParser {
         Properties properties = new Properties();
         Map<String, Parameter> params = new HashMap<>();
         String error = null;
-        List<String> argsList = mapArgs(args);
+        String[] processedArgs = preProcessArgs(args);
+        List<String> argsList = mapArgs(processedArgs);
         Iterator<String> it = argsList.iterator();
         while (it.hasNext()) {
             String rawArg = it.next();
@@ -110,6 +118,41 @@ public final class CommandParser {
             }
         }
         return new CommandParser(argsList, commandName, new Resolver(params, properties), error);
+    }
+
+    static String[] preProcessArgs(String[] args) {
+        List<String> result = new ArrayList<>();
+        for (int i = 0; i < args.length; i++) {
+            if ("--args-file".equals(args[i]) && (i < args.length - 1)) {
+                String argsFile = args[i + 1];
+                result.addAll(readArgsFile(argsFile));
+                i++;
+            } else {
+                result.add(args[i]);
+            }
+        }
+        return result.toArray(new String[0]);
+    }
+
+    static List<String> readArgsFile(String argsFile) {
+        List<String> result = new ArrayList<>();
+        try {
+            URL fileURL = new URL(argsFile);
+            fileURL.toURI();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(fileURL.openStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (!line.startsWith("#")) {
+                    result.addAll(Arrays.asList(line.split("\\s+")));
+                }
+            }
+            reader.close();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Option argsFile is incorrect.", e);
+        }
+        return result;
     }
 
     static List<String> mapArgs(String... args) {
