@@ -18,10 +18,9 @@ package io.helidon.build.cli.harness;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -137,20 +136,14 @@ public final class CommandParser {
     static List<String> readArgsFile(String argsFile) {
         List<String> result = new ArrayList<>();
         try {
-            URL fileURL = new URL(argsFile);
-            fileURL.toURI();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(fileURL.openStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
+            Path filePath = Path.of(argsFile);
+            Files.lines(filePath).forEach(line -> {
                 if (!line.startsWith("#")) {
                     result.addAll(Arrays.asList(line.split("\\s+")));
                 }
-            }
-            reader.close();
+            });
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Option argsFile is incorrect.", e);
         }
         return result;
     }
