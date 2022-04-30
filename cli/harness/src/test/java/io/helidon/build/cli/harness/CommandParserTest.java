@@ -16,6 +16,9 @@
 package io.helidon.build.cli.harness;
 
 import java.io.UncheckedIOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Properties;
 
@@ -278,12 +281,12 @@ public class CommandParserTest {
     }
 
     @Test
-    public void testArgsFileOptionWithExistingFile() {
+    public void testArgsFileOptionWithExistingFile() throws URISyntaxException {
         KeyValueInfo<String> param = new KeyValueInfo<>(String.class, "flavor", "flavor", null, false);
         CommandParameters cmd = new CommandParameters(param);
 
-        String argsFilePath = getClass().getResource("args.txt").getPath();
-        CommandParser parser = CommandParser.create("command", "--args-file", argsFilePath);
+        URI argsFilePath = getClass().getResource("args.txt").toURI();
+        CommandParser parser = CommandParser.create("command", "--args-file", Paths.get(argsFilePath).toString());
         CommandParser.Resolver resolver = parser.parseCommand(cmd);
 
         Map<String, CommandParser.Parameter> params = resolver.params();
