@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import io.helidon.build.cli.harness.CommandModel.ArgumentInfo;
 import io.helidon.build.cli.harness.CommandModel.FlagInfo;
@@ -133,18 +134,14 @@ public final class CommandParser {
     }
 
     static List<String> readArgsFile(String argsFile) {
-        List<String> result = new ArrayList<>();
         try {
-            Path filePath = Path.of(argsFile);
-            Files.lines(filePath).forEach(line -> {
-                if (!line.startsWith("#")) {
-                    result.addAll(Arrays.asList(line.split("\\s+")));
-                }
-            });
+            return Files.lines(Path.of(argsFile))
+                        .filter(line -> !line.startsWith("#"))
+                        .flatMap(line -> Arrays.stream(line.split("\\s+")))
+                        .collect(Collectors.toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        return result;
     }
 
     static List<String> mapArgs(String... args) {
